@@ -102,6 +102,9 @@ export async function runLevelUpCommand(
         return;
       }
       choices = collected;
+      for (const choice of preview.requiredChoices) {
+        if (choice.optional === true) askedOptional.add(choice.id);
+      }
     }
     preview = runGuidedLevelUp(db, {
       ...base,
@@ -244,10 +247,19 @@ function describeChoice(io: CliIO, choice: LevelUpRequiredChoice): void {
   if (choice.options !== undefined && choice.options.length > 0) {
     for (const option of choice.options) {
       io.write(
-        `  ${option.id} - ${option.name}${option.prerequisite !== undefined ? ` (requires: ${option.prerequisite})` : ''}`,
+        `  ${option.id} - ${option.name}${option.level !== undefined ? ` (${option.level === 0 ? 'cantrip' : `level ${option.level}`})` : ''}${option.prerequisite !== undefined ? ` (requires: ${option.prerequisite})` : ''}`,
       );
     }
-    if ((choice.choose ?? 1) > 1) {
+    if (choice.spellChoice?.mode === 'replace') {
+      io.write(
+        `  Spells you can give up: ${(choice.spellChoice.heldRefs ?? []).join(', ')}`,
+      );
+      io.write('  (enter "old-spell-id, new-spell-id")');
+    } else if (choice.spellChoice?.mode === 'prepare') {
+      io.write(
+        `  (enter up to ${choice.choose} spell ids separated by commas)`,
+      );
+    } else if ((choice.choose ?? 1) > 1) {
       io.write('  (enter ids separated by commas)');
     }
   } else if (choice.from !== undefined && choice.from.length > 0) {

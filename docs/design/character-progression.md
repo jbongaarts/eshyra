@@ -122,8 +122,8 @@ rows in `eshyra-lupf.3`).
   class's progression row.
 - **Spellcasting capacity** where the class supports it: cantrip/spell-known
   counts and spell slots per spell level, from the progression row's
-  `spellcasting` block. Specific spell/cantrip selections and preparation
-  changes are required choices, not automatic effects (see below).
+  `spellcasting` block. Specific spell/cantrip selections are required choices, not automatic effects;
+  preparation is an optional choice (see below).
 
 This flow is single-class by contract under
 [ADR 0018](../adr/0018-single-class-engine-boundary.md): `sheet.level` is both
@@ -158,13 +158,69 @@ post-level-up state (unknown prerequisite kinds are refused). Picks persist on
 the sheet's optional `featureChoices` and in the ledger change set. Only the pick
 is recorded; the option's mechanical effect stays DM-adjudicated. Choices that
 exist only because of a pick (Pact of the Tome cantrips, Book of Ancient Secrets
-rituals) are surfaced as unsupported only when that pick is made in the same
-level-up. Ranger Favored Enemy / Natural Explorer growth is carried by the pack
-only as feature-improvement rows and remains unsupported.
+rituals) are spell choices owned by the spell section below and appear only when
+that pick is made in the same level-up.
+Ranger Favored Enemy / Natural Explorer growth is carried by the pack only as
+feature-improvement rows and remains unsupported.
+
+### Spell selection (`eshyra-ug4i.2`)
+
+**Sheet.** An optional `spellcasting` field holds the structured spell state, all
+canonical `spell:<slug>` refs: `cantrips`, plus `known` (bard, sorcerer, ranger,
+warlock), `spellbook` (wizard) and `prepared` (cleric, druid, paladin, wizard),
+`mysticArcanum` (`{ level, spellRef }`) and `designations` (Spell Mastery /
+Signature Spells). `sheet.spells` stays the derived union, so existing consumers
+are unchanged. The shape is validated like `featureChoices` (no ref in two of
+cantrips/known/spellbook; refs canonical where a resolver is available). Level-1
+creation does not write it yet (`eshyra-nnj6`); a sheet without it is a legacy
+sheet.
+
+**Legacy classification.** At its first level-up a caster's flat `spells` list is
+classified deterministically: every entry must resolve to a pack spell (else the
+level-up is refused, naming the entry); level 0 goes to `cantrips`; leveled
+spells go to `known` (known casters), `spellbook` (the wizard, identified by the
+pack's `spellbookStartingSpells`) or `prepared` (other prepared casters). A
+non-caster, or a caster with no spells, gets no field.
+
+**Descriptors.** Ids are `level.<n>.spells.<bucket>` or, for feature choices, the
+feature descriptor id `level.<n>.feature.<slug>.<choice-id>`:
+
+- `cantrips`: the `cantripsKnown` delta from the class cantrip list.
+- `known` (known casters): the `spellsKnown` delta from the class list at levels
+  castable at the TARGET level (warlock: pact slot level), minus any feature
+  picks that count against spells known (bard Magical Secrets at 10/14/18: the
+  table growth IS the secrets). Plus an optional `replace` descriptor
+  `[oldRef, newRef]` every level (SRD: replace one spell you know).
+- `spellbook` (wizard): two spells per level, castable level only.
+- Feature spell choices due at the level: Magical Secrets and its repeats,
+  College of Lore's Additional Magical Secrets, Mystic Arcanum (stored in
+  `mysticArcanum`), Spell Mastery and Signature Spells (stored as
+  `designations`, chosen from the spellbook), and Pact of the Tome cantrips /
+  Book of Ancient Secrets rituals when the triggering option is picked in the
+  same level-up. Magical Secrets, Tome and Book picks are stored with the known
+  spells (a cantrip among them goes to `cantrips`).
+- Prepared casters are never blocked: preparation is a long-rest action. One
+  OPTIONAL `prepare` descriptor replaces the prepared list with up to
+  `max(minimum, abilityMod + floor(classLevel / divisor))` spells (modifier from
+  the post-ASI scores); the wizard prepares from its spellbook.
+
+**One evaluator.** Every list is the result of a single spell-filter evaluator
+over the pack's `spellFilter`: class lists, level bounds, "castable" (spell level
+1..highest slot level at the target level), ritual-only, must-be-in-spellbook.
+An unknown filter key, a feature that grants a spell without a structured choice
+(Circle of the Land's Bonus Cantrip), an unresolved legacy entry, or an
+unaccountable count is an UNSUPPORTED descriptor naming the cause; nothing is
+silently dropped. Validation: exact counts, distinct, resolvable, legal for the
+filter, not already held, and a spell cannot be learned by two descriptors of the
+same level-up.
+
+**Apply.** The chosen spells update the buckets and the `spells` union; the
+ledger change set records per-bucket added/removed refs (`spellSelections`).
+Slot syncing is unchanged.
 
 **Fail closed.** Where a granted level requires a choice the engine cannot yet
-apply deterministically — most importantly specific cantrip/spell selections and
-preparation changes — the level-up is **blocked with an explicit reason**, not
+apply deterministically — for example Expertise, or a spell grant the pack does
+not model as a choice — the level-up is **blocked with an explicit reason**, not
 inferred or silently skipped. This deliberately diverges from the lenient
 creation-time seam, where the draft engine's mechanical-choice gate covers only
 skills/tools/equipment/languages and the wizard treats empty spell input as

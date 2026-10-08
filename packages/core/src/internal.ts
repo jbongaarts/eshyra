@@ -339,13 +339,18 @@ export {
 export type {
   CharacterFeatureChoice,
   CharacterSheet,
+  CharacterSpellcasting,
+  CharacterSpellDesignation,
   CharacterWallet,
   FinalizeCharacterResult,
   FinalizedAbilityScore,
   FinalizedRecordRef,
   FinalizeMetadata,
 } from './character/finalizeCharacter.js';
-export { finalizeCharacterDraft } from './character/finalizeCharacter.js';
+export {
+  finalizeCharacterDraft,
+  validateCharacterSheetSpellcasting,
+} from './character/finalizeCharacter.js';
 export type {
   GuidedLevelUpInput,
   GuidedLevelUpOutcome,
@@ -377,6 +382,20 @@ export {
   LevelUpRequiredChoicesError,
   previewLevelUpChangeSet,
 } from './character/levelUpEngine.js';
+// Level-up spell selection (eshyra-ug4i.2).
+export type {
+  AppliedSpellChoice,
+  LevelUpSpellChoiceRef,
+  LevelUpSpellSelections,
+  SpellBucket,
+  SpellPlacement,
+} from './character/levelUpSpells.js';
+export {
+  effectiveSpellcasting,
+  highestCastableLevel,
+  parseSpellFilter,
+  spellsUnion,
+} from './character/levelUpSpells.js';
 export type {
   CreatedPathfinderCharacter,
   PathfinderCharacterCreationResult,

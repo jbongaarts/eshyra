@@ -249,7 +249,7 @@ describe('runGuidedLevelUp', () => {
     db.close();
   });
 
-  it('halts on unsupported spell choices even when supported choices are supplied', () => {
+  it('asks for the missing spellbook picks even when other supported choices are supplied', () => {
     const db = bareDb();
     const store = createSqliteCharacterSheetStore(db, () => AT);
     store.save(
@@ -270,14 +270,12 @@ describe('runGuidedLevelUp', () => {
     });
 
     expect(result).toMatchObject({
-      outcome: 'blocked',
+      outcome: 'needs-choices',
       requiredChoices: [
         {
-          id: 'level.2.spell-selection',
-          status: 'unsupported',
-          unsupportedReason: expect.stringContaining(
-            'deterministic spell application is not implemented yet',
-          ),
+          id: 'level.2.spells.spellbook',
+          status: 'supported',
+          choose: 2,
         },
       ],
     });
