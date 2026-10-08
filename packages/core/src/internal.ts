@@ -337,6 +337,7 @@ export {
 // Guided-creation finalization (eshyra-b69j.14): turn a complete draft into a
 // canonical, serializable CharacterSheet record (or report what is missing).
 export type {
+  CharacterFeatureChoice,
   CharacterSheet,
   CharacterWallet,
   FinalizeCharacterResult,

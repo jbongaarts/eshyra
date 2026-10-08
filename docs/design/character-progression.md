@@ -144,6 +144,24 @@ guided flow (`eshyra-lupf.9`, `.10`):
 - New spells learned / known / prepared
 - Expertise and similar class-specific picks
 
+**Option-catalog feature choices (`eshyra-ug4i.3`).** A feature whose pack
+`choices[]` entry has a discrete option list (Fighting Style, Metamagic, Eldritch
+Invocations, Pact Boon, Hunter options) is a supported choice. Descriptors are
+keyed `level.<n>.feature.<feature-slug>.<choice-id>` and carry the option names
+and prerequisites. Newly granted features ask the pack's `choose`; growth of a
+held feature asks only the delta (the `invocationsKnown` column for warlock
+invocations; one pick for the repeated Metamagic grant, per the SRD prose). An
+optional `.replace` descriptor (`[oldId, newId]`) lets a warlock swap one held
+invocation. Selections are validated against the catalog, the "no repeated
+Fighting Style" rule, and structured prerequisites evaluated against the
+post-level-up state (unknown prerequisite kinds are refused). Picks persist on
+the sheet's optional `featureChoices` and in the ledger change set. Only the pick
+is recorded; the option's mechanical effect stays DM-adjudicated. Choices that
+exist only because of a pick (Pact of the Tome cantrips, Book of Ancient Secrets
+rituals) are surfaced as unsupported only when that pick is made in the same
+level-up. Ranger Favored Enemy / Natural Explorer growth is carried by the pack
+only as feature-improvement rows and remains unsupported.
+
 **Fail closed.** Where a granted level requires a choice the engine cannot yet
 apply deterministically — most importantly specific cantrip/spell selections and
 preparation changes — the level-up is **blocked with an explicit reason**, not

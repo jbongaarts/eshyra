@@ -24,6 +24,7 @@
 
 import { parseDice } from '../orchestrator/dice.js';
 import { getBundledDnd5eSrdPack } from '../rules/bundledSrdPack.js';
+import type { FeatureChoice } from '../rules/featureChoices.js';
 import { lookupRulesRecord, type RulesLookupResult } from '../rules/lookup.js';
 import { type ResolvedRulesStack, resolveRulesStack } from '../rules/stack.js';
 import type { RulesRecord, RulesRecordKind } from '../rules/types.js';
@@ -251,6 +252,12 @@ export interface ResolvedFeatureData {
   readonly name: string;
   readonly source: string;
   readonly level: number;
+  /**
+   * The feature's structured player choices (`data.choices[]`, eshyra-o9bd.9),
+   * passed through verbatim for level-up option-catalog collection. Absent when
+   * the record carries none.
+   */
+  readonly choices?: readonly FeatureChoice[];
 }
 
 /** Player-selected feat fields consumed by the optional ASI/feat rule. */
@@ -1032,6 +1039,9 @@ function resolveFeature(
       name: result.record.name,
       source: data.source,
       level: data.level,
+      ...(Array.isArray(data.choices)
+        ? { choices: data.choices as readonly FeatureChoice[] }
+        : {}),
     },
   };
 }
@@ -1524,6 +1534,7 @@ function isGeneratedSubclassData(data: unknown): data is GeneratedSubclassData {
 interface GeneratedFeatureData {
   readonly source: string;
   readonly level: number;
+  readonly choices?: unknown;
 }
 
 function isGeneratedFeatureData(data: unknown): data is GeneratedFeatureData {
