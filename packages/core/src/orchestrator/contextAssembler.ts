@@ -1026,7 +1026,7 @@ function renderState(state: StateSnapshot): string {
           ? ''
           : ` @ ${actor.currentLocationId}`;
       lines.push(
-        `- ${actor.actorId}: ${actor.displayName} [${actor.status}], ${actor.actorKind}${rules}${hp}${conditions}${location}`,
+        `- ${actor.actorId}: ${actor.displayName} [${actor.status === 'pocketed' ? 'pocketed: in its pocket dimension, out of play' : actor.status}], ${actor.actorKind}${rules}${hp}${conditions}${location}`,
       );
     }
   }

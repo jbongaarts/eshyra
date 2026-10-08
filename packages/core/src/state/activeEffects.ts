@@ -49,8 +49,11 @@ import { addCondition, removeCondition } from './domainMutations.js';
 import {
   EncounterCombatantError,
   ensureCampaignActorFromCombatant,
+  findLiveActorCombatantId,
   getActiveCombatInstance,
   getCampaignActor,
+  moveBondedCreatureOutOfPlay,
+  recallPocketedCampaignActor,
   removeCampaignActorFromPlay,
   removeCombatantFromPlay,
   restoreBondedCampaignActor,
@@ -477,6 +480,50 @@ export interface RecastBondedSummonResult {
   readonly form?: string;
 }
 
+export const BONDED_SUMMON_TRIGGERS = [
+  'action-temporary-dismissal',
+  'action-recall',
+  'action-permanent-dismissal',
+  'action-dismissal',
+  'action-release',
+] as const;
+export type BondedSummonTrigger = (typeof BONDED_SUMMON_TRIGGERS)[number];
+
+export interface TransitionBondedSummonInput extends EffectMutationContext {
+  readonly campaignId: string;
+  readonly effectId: string;
+  /** The spell record whose action-triggered transition is executed. */
+  readonly spellRef: string;
+  readonly trigger: BondedSummonTrigger;
+  /** Recall into an active combat instance: the side of a creature that has
+   *  no combatant in it yet (defaults to its most recent row's side). */
+  readonly side?: string;
+  readonly faction?: string;
+  readonly placement?: string;
+}
+
+export interface TransitionBondedSummonResult {
+  readonly effect: ActiveEffectView;
+  readonly spellRef: string;
+  readonly transitionId: string;
+  readonly trigger: BondedSummonTrigger;
+  readonly actorId: string;
+  readonly from: { readonly presence: string; readonly link: 'active' };
+  readonly to: { readonly presence: string; readonly link: 'active' | 'none' };
+  /** The combatant row that left play, when the creature was in combat. */
+  readonly combatantLeft?: string;
+  /** The new combatant row a recall created in the active combat instance. */
+  readonly combatantEntered?: string;
+  /** True when the transition closed the bond and ended the effect. */
+  readonly effectEnded: boolean;
+  /** The record's placement operation, which the engine does not track: the
+   *  model narrates where the creature reappears. */
+  readonly narratedPlacement?: {
+    readonly kind: string;
+    readonly withinFeet?: number;
+  };
+}
+
 export interface SuppressEffectInput extends EffectMutationContext {
   readonly campaignId: string;
   readonly effectId: string;
@@ -528,6 +575,7 @@ export interface ActiveEffectEventView {
     | 'target-removed'
     | 'combat-closed'
     | 'recast'
+    | 'presence-transition'
     | 'ended';
   readonly detail: Record<string, unknown>;
   readonly occurredAt: string;
@@ -1696,6 +1744,35 @@ export function auditActiveEffectIntegrity(
       issue: `combatant '${orphan.combatant_id}' reverts to its natural form at 0 hit points but no active actor link records that natural form`,
     });
   }
+  // eshyra-82uk: a pocketed actor exists only as a bonded summon, held by
+  // exactly one active actor link of a live, spell-sourced summoning effect.
+  const pocketedActors = db
+    .prepare(
+      `SELECT actor_id FROM campaign_actor
+       WHERE campaign_id = ? AND status = 'pocketed' ORDER BY actor_id`,
+    )
+    .all(campaignId) as { actor_id: string }[];
+  for (const pocketed of pocketedActors) {
+    const holders = db
+      .prepare(
+        `SELECT l.effect_id FROM active_effect_link l
+         JOIN active_effect e
+           ON e.campaign_id = l.campaign_id AND e.effect_id = l.effect_id
+         WHERE l.campaign_id = ? AND l.link_kind = 'actor' AND l.status = 'active'
+           AND (l.campaign_actor_id = ?
+             OR (l.target_kind = 'campaign_actor' AND l.target_ref = ?))
+           AND e.status IN ('active', 'suppressed') AND e.kind = 'summoning'
+           AND e.source_kind = 'spell'`,
+      )
+      .all(campaignId, pocketed.actor_id, pocketed.actor_id) as {
+      effect_id: string;
+    }[];
+    if (holders.length !== 1)
+      issues.push({
+        effectId: holders[0]?.effect_id ?? '(campaign-actor)',
+        issue: `campaign actor '${pocketed.actor_id}' is pocketed but is held by ${holders.length} active actor link(s) of live spell-sourced summoning effects; a pocketed actor needs exactly one`,
+      });
+  }
   const stalePersistentLinks = db
     .prepare(
       `SELECT effect_id, target_ref FROM active_effect_link
@@ -2456,9 +2533,36 @@ function applyLinkPolicy(
   ctx: EffectMutationContext,
 ): EffectCleanupAction['action'] {
   if (policy !== 'revert') refuseLegacyFormReversion(db, campaignId, link);
+  // A creature dismissed to its pocket dimension never outlives its bond:
+  // whatever the stored policy, ending the bond takes it out of play
+  // (absent), never leaving an unbonded pocketed actor (eshyra-82uk).
+  if (policy !== 'revert' && holdsPocketedActor(db, campaignId, link))
+    return removeProjection(db, campaignId, link, ctx);
   if (policy === 'release') return 'released';
   if (policy === 'revert') return revertProjection(db, campaignId, link, ctx);
   return removeProjection(db, campaignId, link, ctx);
+}
+
+/** True when the actor link's holder is a campaign actor in its pocket dimension. */
+function holdsPocketedActor(
+  db: Db,
+  campaignId: string,
+  link: EffectLinkRow,
+): boolean {
+  if (link.link_kind !== 'actor') return false;
+  const actorId =
+    link.campaign_actor_id ??
+    (link.target_kind === 'campaign_actor' ? link.target_ref : null);
+  if (actorId === null) return false;
+  return (
+    (
+      db
+        .prepare(
+          'SELECT status FROM campaign_actor WHERE campaign_id = ? AND actor_id = ?',
+        )
+        .get(campaignId, actorId) as { status: string } | undefined
+    )?.status === 'pocketed'
+  );
 }
 
 /** A live creature whose 0-hit-point rule is 'revert-form' returns to its
@@ -5224,9 +5328,22 @@ export function removeEffectTarget(
 interface BondedRecastTransition {
   readonly id: string;
   /** The modelled presence the transition applies from. */
-  readonly from: 'absent' | 'present';
+  readonly from: 'absent' | 'present' | 'pocket-dimension';
   readonly operation: 'restore-same-actor' | 'select-new-form';
   readonly forms: readonly string[];
+}
+
+/** The presence a bonded actor's status stands for (eshyra-82uk). */
+function bondedPresence(
+  status: string,
+): 'absent' | 'present' | 'pocket-dimension' | undefined {
+  return status === 'absent'
+    ? 'absent'
+    : status === 'alive'
+      ? 'present'
+      : status === 'pocketed'
+        ? 'pocket-dimension'
+        : undefined;
 }
 
 const asObject = (v: unknown): Record<string, unknown> | undefined =>
@@ -5239,11 +5356,12 @@ const axisIncludes = (v: unknown, value: string): boolean =>
 
 /** The spell record's cast-again transition for a creature whose link is still
  *  active and whose modelled presence is `from`. From 'absent' it must restore
- *  presence (presence -> present); from 'present' it must change no presence.
+ *  presence (presence -> present); from 'present' or 'pocket-dimension' it
+ *  must change no presence.
  *  Its operation, never the spell's name, decides what a recast does. */
 function findBondedRecastTransition(
   record: RulesRecord,
-  from: 'absent' | 'present',
+  from: 'absent' | 'present' | 'pocket-dimension',
 ):
   | { transition: BondedRecastTransition }
   | { unsupportedOperation: string }
@@ -5392,27 +5510,23 @@ export function recastBondedSummon(
       throw new ActiveEffectError(
         `effect '${input.effectId}' links campaign actor '${link.campaign_actor_id}', which does not exist`,
       );
-    // The engine models two presences: absent (vanished at 0 HP) and present.
-    const presence: 'absent' | 'present' | undefined =
-      bondedActor.status === 'absent'
-        ? 'absent'
-        : bondedActor.status === 'alive'
-          ? 'present'
-          : undefined;
+    // The engine models three presences: absent (vanished at 0 HP or
+    // dismissed), present, and pocket-dimension (eshyra-82uk).
+    const presence = bondedPresence(bondedActor.status);
     if (presence === undefined)
       throw new ActiveEffectError(
-        `campaign actor '${bondedActor.actorId}' is ${bondedActor.status}, which is neither absent nor present; a recast cannot reason about that presence`,
+        `campaign actor '${bondedActor.actorId}' is ${bondedActor.status}, which is not absent, present or in its pocket dimension; a recast cannot reason about that presence`,
       );
     const found = findBondedRecastTransition(record, presence);
     if (found === undefined)
       throw new ActiveEffectError(
         presence === 'absent'
           ? `spell '${record.name}' has no cast-again transition that restores an absent creature whose link is active; recast_bonded_summon does not apply`
-          : `spell '${record.name}' has no cast-again transition for a present creature whose link is active; recast_bonded_summon does not apply`,
+          : `spell '${record.name}' has no cast-again transition for a ${presence === 'present' ? 'present' : 'pocketed'} creature whose link is active; recast_bonded_summon does not apply`,
       );
     if ('unsupportedOperation' in found)
       throw new ActiveEffectError(
-        `spell '${record.name}' recasts a${presence === 'absent' ? 'n absent' : ' present'} creature with operation '${found.unsupportedOperation}', which the engine cannot execute`,
+        `spell '${record.name}' recasts a${presence === 'absent' ? 'n absent' : presence === 'present' ? ' present' : ' pocketed'} creature with operation '${found.unsupportedOperation}', which the engine cannot execute`,
       );
     const { transition } = found;
     if (transition.operation === 'restore-same-actor') {
@@ -5475,6 +5589,399 @@ export function recastBondedSummon(
       hpCurrent: restored.hpCurrent,
       hpMax: restored.hpMax,
       ...(input.form === undefined ? {} : { form: input.form }),
+    };
+  });
+}
+
+interface BondedPresenceTransition {
+  readonly id: string;
+  readonly presenceTo: string | undefined;
+  readonly linkTo: string | undefined;
+  readonly operation: { kind: string; withinFeet?: number } | undefined;
+}
+
+/** The record transition for an action trigger, its current presence and an
+ *  active link. 'gated' carries the ambiguity id of an availability gate. */
+function findBondedActionTransition(
+  record: RulesRecord,
+  trigger: string,
+  presence: string,
+):
+  | { transition: BondedPresenceTransition }
+  | { gated: string }
+  | { unsupported: string }
+  | undefined {
+  const mechanics = asObject(asObject(record.data)?.mechanics);
+  const effects = Array.isArray(mechanics?.effects) ? mechanics.effects : [];
+  for (const rawEffect of effects) {
+    const effect = asObject(rawEffect);
+    if (effect?.kind !== 'summoning') continue;
+    const transitions = Array.isArray(effect.transitions)
+      ? effect.transitions
+      : [];
+    for (const rawTransition of transitions) {
+      const t = asObject(rawTransition);
+      const when = asObject(t?.when);
+      if (
+        t === undefined ||
+        t.trigger !== trigger ||
+        !axisIncludes(when?.presence, presence) ||
+        !axisIncludes(when?.link, 'active')
+      )
+        continue;
+      const id = String(t.id ?? trigger);
+      const availability = asObject(t.availability);
+      if (availability !== undefined) {
+        if (
+          availability.kind === 'source-ambiguity' &&
+          typeof availability.ambiguityId === 'string'
+        )
+          return { gated: availability.ambiguityId };
+        return {
+          unsupported: `transition '${id}' has an availability gate of kind '${String(availability.kind)}'`,
+        };
+      }
+      const changes = (Array.isArray(t.changes) ? t.changes : []).map(asObject);
+      const other = changes.find(
+        (c) => c?.axis !== 'presence' && c?.axis !== 'link',
+      );
+      if (other !== undefined)
+        return {
+          unsupported: `transition '${id}' changes '${String(other.axis)}', which the engine does not execute here`,
+        };
+      const presenceTo = changes.find((c) => c?.axis === 'presence')?.to;
+      const linkTo = changes.find((c) => c?.axis === 'link')?.to;
+      const operation = asObject(t.operation);
+      if (
+        operation !== undefined &&
+        operation.kind !== 'place-in-unoccupied-space'
+      )
+        return {
+          unsupported: `transition '${id}' has operation '${String(operation.kind)}', which the engine does not execute`,
+        };
+      return {
+        transition: {
+          id,
+          presenceTo: typeof presenceTo === 'string' ? presenceTo : undefined,
+          linkTo: typeof linkTo === 'string' ? linkTo : undefined,
+          operation:
+            operation === undefined
+              ? undefined
+              : {
+                  kind: String(operation.kind),
+                  ...(typeof operation.withinFeet === 'number'
+                    ? { withinFeet: operation.withinFeet }
+                    : {}),
+                },
+        },
+      };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * transition_bonded_summon (eshyra-82uk): executes an action-triggered
+ * presence transition declared by a bonded summon's spell record (Find
+ * Familiar: temporary dismissal to the pocket dimension, recall, permanent
+ * dismissal; Find Steed: dismissal, release). The transition is selected by
+ * trigger, the creature's modelled presence (alive -> present, pocketed ->
+ * pocket-dimension, absent -> absent) and an active link, never by spell
+ * name, and executed by its declared changes:
+ *  - presence present -> pocket-dimension: the creature (and its combatant,
+ *    when in combat) leaves play; the actor is pocketed with its hit points
+ *    and conditions;
+ *  - presence pocket-dimension -> present: the actor returns alive and, when
+ *    a combat instance is active, enters it as a NEW combatant row;
+ *  - presence present -> absent, link unchanged: the creature leaves play
+ *    (absent) and stays bonded; a later cast restores it;
+ *  - link -> none (presence absent): the creature leaves play, the link is
+ *    closed, and the effect ends ('dismissed') when it owned nothing else.
+ * Validated before any write (the whole call is one transaction); spends no
+ * action.
+ */
+export function transitionBondedSummon(
+  db: Db,
+  input: TransitionBondedSummonInput,
+): TransitionBondedSummonResult {
+  return withTransaction(db, (txnDb) => {
+    if (!BONDED_SUMMON_TRIGGERS.includes(input.trigger))
+      throw new ActiveEffectError(
+        `unknown trigger '${input.trigger}'; expected one of: ${BONDED_SUMMON_TRIGGERS.join(', ')}`,
+      );
+    const row = readEffectRow(txnDb, input.campaignId, input.effectId);
+    if (row === undefined)
+      throw new ActiveEffectError(
+        `no active effect '${input.effectId}' exists`,
+      );
+    if (row.status === 'ended')
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' has ended; a dismissed or released creature returns only as a new creature from a new cast (start_effect, then start_encounter)`,
+      );
+    if (row.status !== 'active')
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' is suppressed; a presence transition needs an active bond (unsuppress it first)`,
+      );
+    if (row.kind !== 'summoning')
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' is a ${row.kind} effect; transition_bonded_summon applies only to a summoning effect`,
+      );
+    if (row.source_kind !== 'spell')
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' was not recorded from its spell (source kind '${row.source_kind}'), so the engine cannot tell which spell created the bond; a presence transition applies only to a bond created with start_effect source { kind: 'spell', ref }`,
+      );
+    if (row.source_ref !== input.spellRef)
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' was cast from '${row.source_ref ?? 'no spell'}', not '${input.spellRef}'`,
+      );
+    const record = lookupCampaignRecord(
+      txnDb,
+      'spell',
+      input.spellRef,
+      input.resolveRulesPack,
+    );
+    if (record === undefined)
+      throw new ActiveEffectError(
+        `no spell record '${input.spellRef}' resolves in this campaign's rules`,
+      );
+    const activeLinks = readLinkRows(
+      txnDb,
+      input.campaignId,
+      input.effectId,
+    ).filter((link) => link.link_kind === 'actor' && link.status === 'active');
+    const link = activeLinks[0];
+    if (link === undefined)
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' holds no active actor link (it was released or its creature is gone); a released or dismissed creature returns only as a new creature from a new cast`,
+      );
+    if (activeLinks.length !== 1)
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' holds ${activeLinks.length} active actor links; a bonded transition needs exactly one`,
+      );
+    const actorId = link.campaign_actor_id;
+    if (actorId === null)
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' links an encounter-only creature with no durable campaign actor; only a durable bonded creature can change presence`,
+      );
+    const actor = getCampaignActor(txnDb, input.campaignId, actorId);
+    if (actor === undefined)
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' links campaign actor '${actorId}', which does not exist`,
+      );
+    if (asObject(actor.state.combatLifecycle)?.zeroHpRule !== 'vanish-bonded')
+      throw new ActiveEffectError(
+        `campaign actor '${actorId}' does not have the 'vanish-bonded' zero-hit-point rule; presence transitions apply only to a bonded familiar or steed`,
+      );
+    const presence = bondedPresence(actor.status);
+    if (presence === undefined)
+      throw new ActiveEffectError(
+        `campaign actor '${actorId}' is ${actor.status}, which is not absent, present or in its pocket dimension; a presence transition cannot reason about that presence`,
+      );
+    const found = findBondedActionTransition(record, input.trigger, presence);
+    if (found === undefined)
+      throw new ActiveEffectError(
+        `spell '${record.name}' has no ${input.trigger} transition for a creature that is ${presence === 'pocket-dimension' ? 'in its pocket dimension' : presence} with its link active`,
+      );
+    if ('gated' in found)
+      throw new ActiveEffectError(
+        `spell '${record.name}' ${input.trigger} from ${presence} is gated by an unresolved source ambiguity (${found.gated}); the engine does not execute it`,
+      );
+    if ('unsupported' in found)
+      throw new ActiveEffectError(
+        `spell '${record.name}': ${found.unsupported}`,
+      );
+    const { transition } = found;
+    const presenceTo = transition.presenceTo ?? presence;
+    const linkTo = transition.linkTo ?? 'active';
+    let kind: 'pocket' | 'recall' | 'dismiss' | 'release';
+    if (linkTo === 'none' && presenceTo === 'absent') kind = 'release';
+    else if (linkTo !== 'active')
+      throw new ActiveEffectError(
+        `spell '${record.name}' transition '${transition.id}' sets the link to '${linkTo}', which the engine does not execute`,
+      );
+    else if (presence === 'present' && presenceTo === 'pocket-dimension')
+      kind = 'pocket';
+    else if (presence === 'pocket-dimension' && presenceTo === 'present')
+      kind = 'recall';
+    else if (presence === 'present' && presenceTo === 'absent')
+      kind = 'dismiss';
+    else
+      throw new ActiveEffectError(
+        `spell '${record.name}' transition '${transition.id}' moves presence ${presence} -> ${presenceTo}, which the engine does not execute`,
+      );
+    if (kind !== 'recall' && transition.operation !== undefined)
+      throw new ActiveEffectError(
+        `spell '${record.name}' transition '${transition.id}' carries operation '${transition.operation.kind}' the engine does not execute for this change`,
+      );
+
+    // ---- execution: every check above passed ----
+    const ctx = {
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+      ...(input.resolveRulesPack === undefined
+        ? {}
+        : { resolveRulesPack: input.resolveRulesPack }),
+    };
+    let combatantLeft: string | undefined;
+    let combatantEntered: string | undefined;
+    try {
+      if (kind === 'recall') {
+        combatantEntered = recallPocketedCampaignActor(txnDb, {
+          campaignId: input.campaignId,
+          actorId,
+          ...(input.side === undefined ? {} : { side: input.side }),
+          ...(input.faction === undefined ? {} : { faction: input.faction }),
+          ...(input.placement === undefined
+            ? {}
+            : { placement: input.placement }),
+          ...ctx,
+        }).combatantEntered;
+      } else {
+        // A creature leaving a combat instance keeps its references: its
+        // links/targets/source refs move onto the durable actor first, the
+        // same rebinding combat closure applies.
+        const live = findLiveActorCombatantId(txnDb, input.campaignId, actorId);
+        if (live !== undefined) {
+          const instanceId = (
+            txnDb
+              .prepare(
+                `SELECT combat_instance_id FROM encounter_combatant
+                 WHERE campaign_id = ? AND combatant_id = ?`,
+              )
+              .get(input.campaignId, live) as { combat_instance_id: string }
+          ).combat_instance_id;
+          rebindCombatantReferencesToActor(
+            txnDb,
+            input.campaignId,
+            live,
+            actorId,
+            instanceId,
+            ctx,
+            new Map(),
+            {
+              actorsRebound: 0,
+              sourceActorsRebound: 0,
+              targetsRebound: 0,
+              linksRebound: 0,
+            },
+          );
+        }
+        combatantLeft = moveBondedCreatureOutOfPlay(txnDb, {
+          campaignId: input.campaignId,
+          actorId,
+          to: kind === 'pocket' ? 'pocketed' : 'absent',
+          ...ctx,
+        }).combatantLeft;
+      }
+    } catch (e) {
+      if (e instanceof EncounterCombatantError)
+        throw new ActiveEffectError(e.message);
+      throw e;
+    }
+    if (kind === 'release') {
+      // Re-read: the combatant rebind above may have moved the link.
+      const held = readLinkRows(txnDb, input.campaignId, input.effectId).find(
+        (l) => l.link_kind === 'actor' && l.status === 'active',
+      );
+      if (held === undefined)
+        throw new ActiveEffectError(
+          `effect '${input.effectId}' lost its actor link during the transition`,
+        );
+      txnDb
+        .prepare(
+          `UPDATE active_effect_link
+           SET status = 'removed', removed_reason = ?, removed_at = ?,
+               provenance = ?, session_id = ?, updated_at = ?
+           WHERE campaign_id = ? AND effect_id = ? AND link_kind = ?
+             AND target_kind = ? AND target_ref = ? AND projection_ref = ?`,
+        )
+        .run(
+          `bond-ended:${transition.id}`,
+          input.at,
+          input.provenance,
+          input.sessionId,
+          input.at,
+          input.campaignId,
+          input.effectId,
+          held.link_kind,
+          held.target_kind,
+          held.target_ref,
+          held.projection_ref,
+        );
+      txnDb
+        .prepare(
+          `UPDATE active_effect_target
+           SET status = 'removed', removed_reason = ?, removed_at = ?,
+               provenance = ?, session_id = ?, updated_at = ?
+           WHERE campaign_id = ? AND effect_id = ? AND status = 'active'
+             AND target_kind = ? AND target_ref = ?`,
+        )
+        .run(
+          `bond-ended:${transition.id}`,
+          input.at,
+          input.provenance,
+          input.sessionId,
+          input.at,
+          input.campaignId,
+          input.effectId,
+          held.target_kind,
+          held.target_ref,
+        );
+    }
+    const narratedPlacement =
+      kind === 'recall' ? transition.operation : undefined;
+    appendEvent(
+      txnDb,
+      input.campaignId,
+      input.effectId,
+      'presence-transition',
+      {
+        spellRef: input.spellRef,
+        transitionId: transition.id,
+        trigger: input.trigger,
+        actor: actorId,
+        from: { presence, link: 'active' },
+        to: { presence: presenceTo, link: linkTo },
+        ...(combatantLeft === undefined ? {} : { combatantLeft }),
+        ...(combatantEntered === undefined ? {} : { combatantEntered }),
+      },
+      input,
+    );
+    let effectEnded = false;
+    if (kind === 'release') {
+      const ownsMore = readLinkRows(
+        txnDb,
+        input.campaignId,
+        input.effectId,
+      ).some((l) => l.link_kind === 'actor' && l.status === 'active');
+      if (!ownsMore) {
+        const live = readEffectRow(txnDb, input.campaignId, input.effectId);
+        if (live !== undefined && live.status !== 'ended')
+          effectEnded = finalizeEnd(
+            txnDb,
+            live,
+            {
+              reason: 'dismissed',
+              detail: input.trigger,
+              note: `its last owned creature '${actorId}' was ${input.trigger === 'action-release' ? 'released from its bond' : 'dismissed forever'}`,
+            },
+            input,
+          ).performed;
+      }
+    }
+    return {
+      effect: requireEffectView(txnDb, input.campaignId, input.effectId),
+      spellRef: input.spellRef,
+      transitionId: transition.id,
+      trigger: input.trigger,
+      actorId,
+      from: { presence, link: 'active' },
+      to: { presence: presenceTo, link: linkTo as 'active' | 'none' },
+      ...(combatantLeft === undefined ? {} : { combatantLeft }),
+      ...(combatantEntered === undefined ? {} : { combatantEntered }),
+      effectEnded,
+      ...(narratedPlacement === undefined ? {} : { narratedPlacement }),
     };
   });
 }
@@ -6033,6 +6540,140 @@ export interface CombatClosureEffectReactions {
   readonly instanceOnlyLinksReleased: number;
 }
 
+interface RebindCounts {
+  actorsRebound: number;
+  sourceActorsRebound: number;
+  targetsRebound: number;
+  linksRebound: number;
+}
+
+function liveEffectRowsOrdered(db: Db, campaignId: string): ActiveEffectRow[] {
+  return db
+    .prepare(
+      `SELECT ${EFFECT_COLUMNS} FROM active_effect
+       WHERE campaign_id = ? AND status IN ('active', 'suppressed')
+       ORDER BY created_at, effect_id`,
+    )
+    .all(campaignId) as ActiveEffectRow[];
+}
+
+/** Rebind every live reference to a combatant (actor/condition links, targets,
+ *  source actor) onto its durable campaign actor, recording what moved in
+ *  `rebindEvidence`. Shared by combat closure and the bonded-summon presence
+ *  transitions (eshyra-82uk), so the rebinding rules cannot drift. */
+function rebindCombatantReferencesToActor(
+  db: Db,
+  campaignId: string,
+  combatantId: string,
+  actorId: string,
+  combatInstanceId: string,
+  ctx: EffectMutationContext,
+  rebindEvidence: Map<string, Record<string, unknown>>,
+  counts: RebindCounts,
+): void {
+  const affected = liveEffectRowsOrdered(db, campaignId).filter(
+    (row) => row.status !== 'ended',
+  );
+  for (const row of affected) {
+    const links = readLinkRows(db, campaignId, row.effect_id).filter(
+      (link) =>
+        link.status === 'active' &&
+        link.target_kind === 'combatant' &&
+        link.target_ref === combatantId,
+    );
+    for (const link of links) {
+      db.prepare(
+        `UPDATE active_effect_link SET target_kind = 'campaign_actor', target_ref = ?,
+           campaign_actor_id = COALESCE(campaign_actor_id, ?), provenance = ?, session_id = ?, updated_at = ?
+         WHERE campaign_id = ? AND effect_id = ? AND link_kind = ? AND target_kind = 'combatant' AND target_ref = ? AND projection_ref = ?`,
+      ).run(
+        actorId,
+        actorId,
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+        campaignId,
+        row.effect_id,
+        link.link_kind,
+        combatantId,
+        link.projection_ref,
+      );
+      counts.linksRebound += 1;
+      if (link.link_kind === 'actor') counts.actorsRebound += 1;
+      const evidence = rebindEvidence.get(row.effect_id) ?? {
+        combatInstanceId,
+        referencesRebound: [],
+        actorSnapshots: [],
+      };
+      (evidence.referencesRebound as unknown[]).push({
+        kind: link.link_kind === 'condition' ? 'condition-link' : 'actor-link',
+        old: { kind: 'combatant', ref: combatantId },
+        campaignActorId: actorId,
+      });
+      rebindEvidence.set(row.effect_id, evidence);
+    }
+    const target = db
+      .prepare(
+        `SELECT 1 FROM active_effect_target WHERE campaign_id = ? AND effect_id = ? AND target_kind = 'combatant' AND target_ref = ? AND status = 'active'`,
+      )
+      .get(campaignId, row.effect_id, combatantId);
+    if (target !== undefined) {
+      db.prepare(
+        `UPDATE active_effect_target SET target_kind = 'campaign_actor', target_ref = ?, provenance = ?, session_id = ?, updated_at = ?
+         WHERE campaign_id = ? AND effect_id = ? AND target_kind = 'combatant' AND target_ref = ? AND status = 'active'`,
+      ).run(
+        actorId,
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+        campaignId,
+        row.effect_id,
+        combatantId,
+      );
+      counts.targetsRebound += 1;
+      const evidence = rebindEvidence.get(row.effect_id) ?? {
+        combatInstanceId,
+        referencesRebound: [],
+        actorSnapshots: [],
+      };
+      (evidence.referencesRebound as unknown[]).push({
+        kind: 'target',
+        old: { kind: 'combatant', ref: combatantId },
+        campaignActorId: actorId,
+      });
+      rebindEvidence.set(row.effect_id, evidence);
+    }
+    const source = readEffectRow(db, campaignId, row.effect_id);
+    if (
+      source?.source_actor_kind === 'combatant' &&
+      source.source_actor_ref === combatantId
+    ) {
+      db.prepare(
+        `UPDATE active_effect SET source_actor_kind = 'campaign_actor', source_actor_ref = ?, provenance = ?, session_id = ?, updated_at = ? WHERE campaign_id = ? AND effect_id = ?`,
+      ).run(
+        actorId,
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+        campaignId,
+        row.effect_id,
+      );
+      counts.sourceActorsRebound += 1;
+      const evidence = rebindEvidence.get(row.effect_id) ?? {
+        combatInstanceId,
+        referencesRebound: [],
+        actorSnapshots: [],
+      };
+      (evidence.referencesRebound as unknown[]).push({
+        kind: 'source-actor',
+        old: { kind: 'combatant', ref: combatantId },
+        campaignActorId: actorId,
+      });
+      rebindEvidence.set(row.effect_id, evidence);
+    }
+  }
+}
+
 /**
  * Apply the fail-closed combat-closure boundary to live effect state, called
  * by `closeCombatInstance` inside its transaction and BEFORE the instance
@@ -6257,6 +6898,24 @@ export function applyCombatClosureToEffects(
         ? combatant.identity_ref
         : claims[0]?.campaign_actor_id;
     if (durable === undefined || durable === null) continue;
+    // A bonded creature dismissed and recalled in this instance leaves an
+    // older absent row behind (eshyra-82uk): only its newest row speaks for
+    // the actor, and its references were rebound when it left.
+    if (
+      combatant?.identity_kind === 'campaign_actor' &&
+      db
+        .prepare(
+          `SELECT 1 FROM encounter_combatant
+           WHERE campaign_id = ? AND combat_instance_id = ?
+             AND identity_kind = 'campaign_actor' AND identity_ref = ?
+             AND rowid > (SELECT rowid FROM encounter_combatant
+                          WHERE campaign_id = ? AND combatant_id = ?)
+           LIMIT 1`,
+        )
+        .get(campaignId, combatInstanceId, durable, campaignId, id) !==
+        undefined
+    )
+      continue;
     const directOwner = db
       .prepare(
         `SELECT effect_id FROM active_effect_link
@@ -6297,113 +6956,27 @@ export function applyCombatClosureToEffects(
   // Rebind the complete F3 topology. Concentration and participant clocks are
   // deliberately absent here: they were settled above and remain combatant
   // only by contract.
-  let actorsRebound = 0;
-  let sourceActorsRebound = 0;
-  let targetsRebound = 0;
-  let linksRebound = 0;
+  const rebindCounts: RebindCounts = {
+    actorsRebound: 0,
+    sourceActorsRebound: 0,
+    targetsRebound: 0,
+    linksRebound: 0,
+  };
   const rebindEvidence = new Map<string, Record<string, unknown>>();
   for (const [combatantId, actorId] of actorMap) {
-    const affected = liveRowsOrdered().filter((row) => row.status !== 'ended');
-    for (const row of affected) {
-      const links = readLinkRows(db, campaignId, row.effect_id).filter(
-        (link) =>
-          link.status === 'active' &&
-          link.target_kind === 'combatant' &&
-          link.target_ref === combatantId,
-      );
-      for (const link of links) {
-        db.prepare(
-          `UPDATE active_effect_link SET target_kind = 'campaign_actor', target_ref = ?,
-             campaign_actor_id = COALESCE(campaign_actor_id, ?), provenance = ?, session_id = ?, updated_at = ?
-           WHERE campaign_id = ? AND effect_id = ? AND link_kind = ? AND target_kind = 'combatant' AND target_ref = ? AND projection_ref = ?`,
-        ).run(
-          actorId,
-          actorId,
-          ctx.provenance,
-          ctx.sessionId,
-          ctx.at,
-          campaignId,
-          row.effect_id,
-          link.link_kind,
-          combatantId,
-          link.projection_ref,
-        );
-        linksRebound += 1;
-        if (link.link_kind === 'actor') actorsRebound += 1;
-        const evidence = rebindEvidence.get(row.effect_id) ?? {
-          combatInstanceId,
-          referencesRebound: [],
-          actorSnapshots: [],
-        };
-        (evidence.referencesRebound as unknown[]).push({
-          kind:
-            link.link_kind === 'condition' ? 'condition-link' : 'actor-link',
-          old: { kind: 'combatant', ref: combatantId },
-          campaignActorId: actorId,
-        });
-        rebindEvidence.set(row.effect_id, evidence);
-      }
-      const target = db
-        .prepare(
-          `SELECT 1 FROM active_effect_target WHERE campaign_id = ? AND effect_id = ? AND target_kind = 'combatant' AND target_ref = ? AND status = 'active'`,
-        )
-        .get(campaignId, row.effect_id, combatantId);
-      if (target !== undefined) {
-        db.prepare(
-          `UPDATE active_effect_target SET target_kind = 'campaign_actor', target_ref = ?, provenance = ?, session_id = ?, updated_at = ?
-           WHERE campaign_id = ? AND effect_id = ? AND target_kind = 'combatant' AND target_ref = ? AND status = 'active'`,
-        ).run(
-          actorId,
-          ctx.provenance,
-          ctx.sessionId,
-          ctx.at,
-          campaignId,
-          row.effect_id,
-          combatantId,
-        );
-        targetsRebound += 1;
-        const evidence = rebindEvidence.get(row.effect_id) ?? {
-          combatInstanceId,
-          referencesRebound: [],
-          actorSnapshots: [],
-        };
-        (evidence.referencesRebound as unknown[]).push({
-          kind: 'target',
-          old: { kind: 'combatant', ref: combatantId },
-          campaignActorId: actorId,
-        });
-        rebindEvidence.set(row.effect_id, evidence);
-      }
-      const source = readEffectRow(db, campaignId, row.effect_id);
-      if (
-        source?.source_actor_kind === 'combatant' &&
-        source.source_actor_ref === combatantId
-      ) {
-        db.prepare(
-          `UPDATE active_effect SET source_actor_kind = 'campaign_actor', source_actor_ref = ?, provenance = ?, session_id = ?, updated_at = ? WHERE campaign_id = ? AND effect_id = ?`,
-        ).run(
-          actorId,
-          ctx.provenance,
-          ctx.sessionId,
-          ctx.at,
-          campaignId,
-          row.effect_id,
-        );
-        sourceActorsRebound += 1;
-        const evidence = rebindEvidence.get(row.effect_id) ?? {
-          combatInstanceId,
-          referencesRebound: [],
-          actorSnapshots: [],
-        };
-        (evidence.referencesRebound as unknown[]).push({
-          kind: 'source-actor',
-          old: { kind: 'combatant', ref: combatantId },
-          campaignActorId: actorId,
-        });
-        rebindEvidence.set(row.effect_id, evidence);
-      }
-    }
+    rebindCombatantReferencesToActor(
+      db,
+      campaignId,
+      combatantId,
+      actorId,
+      combatInstanceId,
+      ctx,
+      rebindEvidence,
+      rebindCounts,
+    );
   }
+  const { actorsRebound, sourceActorsRebound, targetsRebound, linksRebound } =
+    rebindCounts;
   // 4 + 5. Detach/remove remaining instance-only references.
   // Actor links are released FIRST: a combatant that is both a target and
   // an owned actor keeps the release disposition (the engine relinquishes

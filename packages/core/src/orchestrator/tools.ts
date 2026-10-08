@@ -86,6 +86,7 @@ import { startEffectTool } from './toolStartEffect.js';
 import { startEncounterTool } from './toolStartEncounter.js';
 import { suppressEffectTool } from './toolSuppressEffect.js';
 import { transferItemTool } from './toolTransferItem.js';
+import { transitionBondedSummonTool } from './toolTransitionBondedSummon.js';
 import { unsuppressEffectTool } from './toolUnsuppressEffect.js';
 import { updateClockTool } from './toolUpdateClock.js';
 import { updateCombatantTool } from './toolUpdateCombatant.js';
@@ -129,6 +130,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   unsuppressEffectTool,
   refreshEffectTool,
   recastBondedSummonTool,
+  transitionBondedSummonTool,
   removeEffectTargetTool,
   resolveConcentrationTool,
   spendUsageTool,
