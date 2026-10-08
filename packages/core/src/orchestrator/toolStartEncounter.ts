@@ -1,3 +1,4 @@
+import type { JsonSchema } from '../model/toolSchema.js';
 import {
   EncounterCombatantError,
   type StartEncounterActorInput,
@@ -10,7 +11,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function parseActors(value: unknown): StartEncounterActorInput[] | undefined {
+export function parseActors(
+  value: unknown,
+): StartEncounterActorInput[] | undefined {
   if (value === undefined) return undefined;
   if (!Array.isArray(value)) return undefined;
   const actors: StartEncounterActorInput[] = [];
@@ -65,6 +68,43 @@ function parseActors(value: unknown): StartEncounterActorInput[] | undefined {
   return actors;
 }
 
+export const ACTOR_ITEM_SCHEMA: JsonSchema = {
+  type: 'object',
+  properties: {
+    actorId: { type: 'string', minLength: 1 },
+    displayName: { type: 'string', minLength: 1 },
+    actorKind: {
+      type: 'string',
+      enum: ['npc', 'creature', 'monster', 'companion', 'other'],
+    },
+    sourceKind: {
+      type: 'string',
+      enum: [
+        'module_npc',
+        'module_creature',
+        'encounter_instance',
+        'campaign_created',
+      ],
+    },
+    sourceRef: { type: 'string', minLength: 1 },
+    rulesRef: { type: 'string', minLength: 1 },
+    hpCurrent: { type: 'integer', minimum: 0 },
+    hpMax: { type: 'integer', minimum: 0 },
+    conditions: { type: 'array', items: { type: 'object' } },
+    status: {
+      type: 'string',
+      enum: ['alive', 'dead', 'unconscious', 'escaped', 'inactive', 'unknown'],
+    },
+    currentLocationId: { type: 'string', minLength: 1 },
+    state: { type: 'object', additionalProperties: true },
+    side: { type: 'string', minLength: 1 },
+    faction: { type: 'string', minLength: 1 },
+    placement: { type: 'string', minLength: 1 },
+  },
+  required: ['actorId'],
+  additionalProperties: false,
+};
+
 export const startEncounterTool: Tool = {
   name: 'start_encounter',
   mutates: true,
@@ -101,49 +141,7 @@ export const startEncounterTool: Tool = {
         type: 'array',
         description:
           'Optional persistent actor projections to include in combat. Use explicit actorId/rulesRef for named or recurring NPCs/monsters.',
-        items: {
-          type: 'object',
-          properties: {
-            actorId: { type: 'string', minLength: 1 },
-            displayName: { type: 'string', minLength: 1 },
-            actorKind: {
-              type: 'string',
-              enum: ['npc', 'creature', 'monster', 'companion', 'other'],
-            },
-            sourceKind: {
-              type: 'string',
-              enum: [
-                'module_npc',
-                'module_creature',
-                'encounter_instance',
-                'campaign_created',
-              ],
-            },
-            sourceRef: { type: 'string', minLength: 1 },
-            rulesRef: { type: 'string', minLength: 1 },
-            hpCurrent: { type: 'integer', minimum: 0 },
-            hpMax: { type: 'integer', minimum: 0 },
-            conditions: { type: 'array', items: { type: 'object' } },
-            status: {
-              type: 'string',
-              enum: [
-                'alive',
-                'dead',
-                'unconscious',
-                'escaped',
-                'inactive',
-                'unknown',
-              ],
-            },
-            currentLocationId: { type: 'string', minLength: 1 },
-            state: { type: 'object', additionalProperties: true },
-            side: { type: 'string', minLength: 1 },
-            faction: { type: 'string', minLength: 1 },
-            placement: { type: 'string', minLength: 1 },
-          },
-          required: ['actorId'],
-          additionalProperties: false,
-        },
+        items: ACTOR_ITEM_SCHEMA,
       },
     },
     additionalProperties: false,

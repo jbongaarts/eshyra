@@ -2237,6 +2237,164 @@ function admitCampaignActorToInstance(
   return projectedId;
 }
 
+/** Combatant id for a campaign actor's row in an instance: the plain
+ *  `${instance}-${slug(actorId)}`, else `-2`, `-3`... Shared by the bonded
+ *  recall and join_combat so a re-manifested actor never collides. */
+function nextFreeActorCombatantId(
+  db: Db,
+  campaignId: string,
+  combatInstanceId: string,
+  actorId: string,
+): string {
+  const base = `${combatInstanceId}-${slug(actorId)}`;
+  let id = base;
+  for (let n = 2; readCombatant(db, campaignId, id) !== undefined; n += 1)
+    id = `${base}-${n}`;
+  return id;
+}
+
+export interface JoinCombatCreatureInput {
+  readonly rulesRef: string;
+  readonly count?: number;
+  readonly side: string;
+  readonly faction?: string;
+  readonly displayLabel?: string;
+  readonly placement?: string;
+}
+
+export interface JoinCombatInput {
+  readonly campaignId: string;
+  readonly creatures?: readonly JoinCombatCreatureInput[];
+  readonly actors?: readonly StartEncounterActorInput[];
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
+  readonly provenance: string;
+  readonly sessionId: string;
+  readonly at: string;
+}
+
+export interface JoinCombatResult {
+  readonly combatInstance: CombatInstance;
+  readonly joined: readonly EncounterCombatant[];
+}
+
+/** Admit creatures into the campaign's ACTIVE combat instance (mid-combat
+ *  summons and arrivals). One transaction: any refusal rolls everything back. */
+export function joinCombat(db: Db, input: JoinCombatInput): JoinCombatResult {
+  return withTransaction(db, (txn) => {
+    if ((input.creatures?.length ?? 0) + (input.actors?.length ?? 0) === 0)
+      throw new EncounterCombatantError(
+        'join_combat requires at least one creature or actor',
+      );
+    const instance = activeInstance(txn, input.campaignId);
+    if (instance === undefined)
+      throw new EncounterCombatantError(
+        'no combat instance is active; start_encounter opens one',
+      );
+    const { combatInstanceId, locationId } = instance;
+    const joinedIds: string[] = [];
+    for (const creature of input.creatures ?? []) {
+      if (creature.side.trim() === '')
+        throw new EncounterCombatantError(
+          `join_combat creature '${creature.rulesRef}' needs a side`,
+        );
+      const count = creature.count ?? 1;
+      if (!Number.isInteger(count) || count < 1)
+        throw new EncounterCombatantError(
+          `join_combat creature '${creature.rulesRef}' count must be an integer >= 1`,
+        );
+      const record = lookupCreatureRecord(
+        txn,
+        creature.rulesRef,
+        input.resolveRulesPack,
+      );
+      if (record === undefined)
+        throw new EncounterCombatantError(
+          `join_combat cannot resolve '${creature.rulesRef}' as a creature record`,
+        );
+      const hpMax = readCreatureHp(record);
+      const ac = readCreatureAc(record);
+      const baseLabel =
+        creature.displayLabel ??
+        record.name ??
+        displayNameFromRulesRef(creature.rulesRef);
+      const prefix = `${combatInstanceId}-${slug(creature.rulesRef)}-`;
+      let ordinal = 1;
+      for (let i = 0; i < count; i += 1) {
+        while (readCombatant(txn, input.campaignId, `${prefix}${ordinal}`))
+          ordinal += 1;
+        const combatantId = `${prefix}${ordinal}`;
+        insertCombatant(txn, {
+          campaignId: input.campaignId,
+          combatInstanceId,
+          sourceEncounterId: instance.sourceEncounterId,
+          combatantId,
+          identityKind: 'encounter_instance',
+          displayLabel: count > 1 ? `${baseLabel} ${i + 1}` : baseLabel,
+          rulesRef: creature.rulesRef,
+          side: creature.side,
+          faction: creature.faction,
+          hpCurrent: hpMax,
+          hpMax,
+          ac,
+          status: 'alive',
+          headCount: initialHeadCount(record),
+          locationId,
+          placement: creature.placement,
+          provenance: input.provenance,
+          sessionId: input.sessionId,
+          at: input.at,
+        });
+        admitCombatantLifecycle(txn, input.campaignId, combatantId, input);
+        joinedIds.push(combatantId);
+      }
+    }
+    for (const actorInput of input.actors ?? []) {
+      if (actorInput.side === undefined || actorInput.side.trim() === '')
+        throw new EncounterCombatantError(
+          `join_combat actor '${actorInput.actorId}' needs a side`,
+        );
+      const present = txn
+        .prepare(
+          `SELECT combatant_id FROM encounter_combatant
+           WHERE campaign_id = ? AND combat_instance_id = ?
+             AND identity_kind = 'campaign_actor' AND identity_ref = ?
+             AND status <> 'absent' LIMIT 1`,
+        )
+        .get(input.campaignId, combatInstanceId, actorInput.actorId) as
+        | { combatant_id: string }
+        | undefined;
+      if (present !== undefined)
+        throw new EncounterCombatantError(
+          `campaign actor '${actorInput.actorId}' is already in combat instance '${combatInstanceId}' as '${present.combatant_id}'`,
+        );
+      joinedIds.push(
+        admitCampaignActorToInstance(
+          txn,
+          input,
+          {
+            combatInstanceId,
+            sourceEncounterId: instance.sourceEncounterId,
+            locationId,
+          },
+          actorInput,
+          nextFreeActorCombatantId(
+            txn,
+            input.campaignId,
+            combatInstanceId,
+            actorInput.actorId,
+          ),
+        ),
+      );
+    }
+    const joined: EncounterCombatant[] = [];
+    for (const id of joinedIds) {
+      const row = readCombatant(txn, input.campaignId, id);
+      if (row !== undefined) joined.push(row);
+    }
+    return { combatInstance: instance, joined };
+  });
+}
+
 export function startEncounter(
   db: Db,
   input: StartEncounterInput,
@@ -3478,14 +3636,12 @@ export function recallPocketedCampaignActor(
         throw new EncounterCombatantError(
           `combat instance '${instance.combatInstanceId}' is active and '${actor.actorId}' has no combatant in it to take a side from; pass side (and faction) for the recalled creature`,
         );
-      const base = `${instance.combatInstanceId}-${slug(actor.actorId)}`;
-      projectedId = base;
-      for (
-        let n = 2;
-        readCombatant(txn, input.campaignId, projectedId) !== undefined;
-        n += 1
-      )
-        projectedId = `${base}-${n}`;
+      projectedId = nextFreeActorCombatantId(
+        txn,
+        input.campaignId,
+        instance.combatInstanceId,
+        actor.actorId,
+      );
     }
     upsertCampaignActor(txn, {
       campaignId: input.campaignId,

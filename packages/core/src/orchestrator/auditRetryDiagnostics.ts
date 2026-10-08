@@ -17,6 +17,7 @@ const STATE_TOOLS = new Set([
   'remove_condition',
   'update_combatant',
   'start_encounter',
+  'join_combat',
   'close_combat',
   'begin_turn',
   'spend_turn_resource',
