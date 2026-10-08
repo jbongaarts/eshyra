@@ -14,6 +14,7 @@ import {
 import type { CliIO, PlayDeps } from './playTypes.js';
 
 const RECENT_EVENT_LIMIT = 5;
+const MAX_CHOICE_ROUNDS = 5;
 
 export function showProgression(io: CliIO, db: Db): void {
   const state = getProgressionState(db);
@@ -81,26 +82,60 @@ export async function runLevelUpCommand(
   }
 
   let choices: LevelUpChoiceSelections = {};
-  if (initial.outcome === 'needs-choices') {
-    const collected = await collectSupportedChoices(
-      deps.io,
-      initial.requiredChoices,
-    );
-    if (collected === undefined) {
-      deps.io.write('Level-up cancelled.');
+  let preview: ReturnType<typeof runGuidedLevelUp> = initial;
+  const askedOptional = new Set<string>();
+  // Choices can unlock further choices (a Hunter option after choosing the
+  // Hunter subclass; a refused pick re-asked), so collect until the preview
+  // settles. Each pass asks only for supported choices not yet answered.
+  for (let round = 0; ; round += 1) {
+    if (preview.outcome === 'needs-choices') {
+      if (round > 0) {
+        printMissingChoices(deps.io, preview.requiredChoices);
+      }
+      const collected = await collectSupportedChoices(
+        deps.io,
+        preview.requiredChoices,
+        choices,
+      );
+      if (collected === undefined) {
+        deps.io.write('Level-up cancelled.');
+        return;
+      }
+      choices = collected;
+    }
+    preview = runGuidedLevelUp(db, {
+      ...base,
+      choices,
+      hitPointChoice: { method: 'fixed-average' },
+    });
+    if (preview.outcome === 'preview') {
+      // Optional choices (e.g. an invocation replacement) never block, so offer
+      // each once before settling on the preview.
+      const optional = preview.requiredChoices.filter(
+        (choice) =>
+          choice.optional === true &&
+          choice.status === 'supported' &&
+          !askedOptional.has(choice.id),
+      );
+      if (optional.length === 0) break;
+      for (const choice of optional) askedOptional.add(choice.id);
+      const collected = await collectSupportedChoices(
+        deps.io,
+        optional,
+        choices,
+      );
+      if (collected === undefined) {
+        deps.io.write('Level-up cancelled.');
+        return;
+      }
+      choices = collected;
+      continue;
+    }
+    if (preview.outcome !== 'needs-choices') break;
+    if (round >= MAX_CHOICE_ROUNDS) {
+      printMissingChoices(deps.io, preview.requiredChoices);
       return;
     }
-    choices = collected;
-  }
-
-  const preview = runGuidedLevelUp(db, {
-    ...base,
-    choices,
-    hitPointChoice: { method: 'fixed-average' },
-  });
-  if (preview.outcome === 'needs-choices') {
-    printMissingChoices(deps.io, preview.requiredChoices);
-    return;
   }
   if (preview.outcome === 'blocked') {
     printBlockedChoices(deps.io, preview.requiredChoices);
@@ -170,23 +205,29 @@ export async function runLevelUpCommand(
 async function collectSupportedChoices(
   io: CliIO,
   requiredChoices: readonly LevelUpRequiredChoice[],
+  answered: LevelUpChoiceSelections,
 ): Promise<LevelUpChoiceSelections | undefined> {
-  const choices: Record<string, readonly string[]> = {};
+  const choices: Record<string, readonly string[]> = { ...answered };
   for (const choice of requiredChoices) {
     if (choice.status !== 'supported') {
       continue;
     }
-    if (choice.from !== undefined && choice.from.length > 0) {
-      io.write(`${choice.label}: ${choice.from.join(', ')}`);
-    } else {
-      io.write(choice.label);
-    }
+    // A previously answered choice is re-asked only when it is still required
+    // (the engine refused it), which the caller signals by re-listing it.
+    describeChoice(io, choice);
     const answer = await io.prompt(`${choice.id}> `);
-    if (answer === undefined || answer.trim().length === 0) {
+    if (answer === undefined) {
+      return undefined;
+    }
+    if (answer.trim().length === 0) {
+      if (choice.optional === true) {
+        delete choices[choice.id];
+        continue;
+      }
       return undefined;
     }
     choices[choice.id] =
-      choice.kind === 'ability-score-improvement'
+      choice.kind === 'ability-score-improvement' || (choice.choose ?? 1) > 1
         ? answer
             .split(',')
             .map((value) => value.trim())
@@ -194,6 +235,24 @@ async function collectSupportedChoices(
         : [answer.trim()];
   }
   return choices;
+}
+
+function describeChoice(io: CliIO, choice: LevelUpRequiredChoice): void {
+  io.write(
+    `${choice.label}${choice.optional === true ? ' [optional; blank to skip]' : ''}`,
+  );
+  if (choice.options !== undefined && choice.options.length > 0) {
+    for (const option of choice.options) {
+      io.write(
+        `  ${option.id} - ${option.name}${option.prerequisite !== undefined ? ` (requires: ${option.prerequisite})` : ''}`,
+      );
+    }
+    if ((choice.choose ?? 1) > 1) {
+      io.write('  (enter ids separated by commas)');
+    }
+  } else if (choice.from !== undefined && choice.from.length > 0) {
+    io.write(choice.from.join(', '));
+  }
 }
 
 function printMissingChoices(
