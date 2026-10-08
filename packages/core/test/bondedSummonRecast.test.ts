@@ -65,21 +65,33 @@ function setup() {
       },
     ],
   });
-  const bond = (effectId: string, actorId: string, source?: unknown) =>
-    must('start_effect', {
-      effectId,
-      kind: 'summoning',
-      displayName: effectId,
-      source: source ?? { kind: 'ruling' },
-      duration: { kind: 'until-removed' },
-      actors: [
-        {
-          combatantId: `c-${actorId}`,
-          campaignActorId: actorId,
-          atZeroHitPoints: 'vanish-bonded',
-        },
-      ],
-    });
+  const bondArgs = (
+    effectId: string,
+    actorId: string,
+    over: Record<string, unknown> = {},
+  ) => ({
+    effectId,
+    kind: 'summoning',
+    displayName: effectId,
+    source: {
+      kind: 'spell',
+      ref: actorId === 'steed' ? 'spell:find-steed' : 'spell:find-familiar',
+      actor: { kind: 'combatant', ref: 'c-wiz' },
+    },
+    duration: { kind: 'until-removed' },
+    actors: [{ combatantId: `c-${actorId}`, campaignActorId: actorId }],
+    ...over,
+  });
+  const bond = (
+    effectId: string,
+    actorId: string,
+    over: Record<string, unknown> = {},
+  ) => must('start_effect', bondArgs(effectId, actorId, over));
+  const tryBond = (
+    effectId: string,
+    actorId: string,
+    over: Record<string, unknown> = {},
+  ) => call('start_effect', bondArgs(effectId, actorId, over));
   const actor = (id: string) => {
     const a = getCampaignActor(db, campaign, id);
     if (!a) throw new Error(`missing actor ${id}`);
@@ -103,6 +115,7 @@ function setup() {
     call,
     must,
     bond,
+    tryBond,
     actor,
     effect,
     vanish,
@@ -239,7 +252,7 @@ describe('recast_bonded_summon: Find Steed (restore-same-actor)', () => {
     expect(s.actor('steed').status).toBe('absent');
   });
 
-  it('refuses a spell with no restoring cast-again transition', () => {
+  it('refuses a different spell than the one that created the bond', () => {
     const s = setup();
     s.bond('steed-fx', 'steed');
     s.vanish('c-steed', 19);
@@ -249,18 +262,16 @@ describe('recast_bonded_summon: Find Steed (restore-same-actor)', () => {
       spellRef: 'spell:conjure-animals',
     });
     expect(r.ok).toBe(false);
-    expect(s.message(r)).toMatch(
-      /no cast-again transition that restores an absent creature/,
-    );
+    expect(s.message(r)).toMatch(/was cast from 'spell:find-steed'/);
     expect(s.actor('steed').status).toBe('absent');
   });
 
-  it('refuses an unknown spell and an unknown effect', () => {
+  it('refuses a spell the bond was not cast from and an unknown effect', () => {
     const s = setup();
     s.bond('steed-fx', 'steed');
     expect(
       s.message(s.recast({ effectId: 'steed-fx', spellRef: 'spell:nope' })),
-    ).toMatch(/no spell record/);
+    ).toMatch(/was cast from 'spell:find-steed', not 'spell:nope'/);
     expect(
       s.message(s.recast({ effectId: 'nope', spellRef: 'spell:find-steed' })),
     ).toMatch(/no active effect 'nope'/);
@@ -562,5 +573,166 @@ describe('recast_bonded_summon: Find Familiar (select-new-form)', () => {
     expect(r.ok).toBe(false);
     expect(s.message(r)).toMatch(/has ended/);
     expect(s.actor('fam').status).toBe('absent');
+  });
+});
+
+describe('spell-sourced bonded summons (eshyra-qxnc)', () => {
+  it('derives vanish-bonded from the record and keeps the bond spell-sourced', () => {
+    const s = setup();
+    s.bond('steed-fx', 'steed');
+    expect(s.effect('steed-fx').source).toMatchObject({
+      kind: 'spell',
+      ref: 'spell:find-steed',
+      actor: { kind: 'combatant', ref: 'c-wiz' },
+    });
+    expect(
+      listCombatants(s.db, campaign).find((c) => c.combatantId === 'c-steed')
+        ?.zeroHpRule,
+    ).toBe('vanish-bonded');
+  });
+
+  it.each(['absent', 'present'])(
+    'refuses recasting a steed bond as Find Familiar (%s), leaving the actor unchanged',
+    (presence) => {
+      const s = setup();
+      s.bond('steed-fx', 'steed');
+      if (presence === 'absent') s.vanish('c-steed', 19);
+      const before = s.actor('steed');
+      const r = s.recast({
+        effectId: 'steed-fx',
+        spellRef: 'spell:find-familiar',
+        form: 'creature:owl',
+      });
+      expect(r.ok).toBe(false);
+      expect(s.message(r)).toMatch(/was cast from/);
+      expect(s.actor('steed')).toEqual(before);
+    },
+  );
+
+  it('allows a ruling-sourced vanish-bonded bond but refuses to recast it', () => {
+    const s = setup();
+    s.must('start_effect', {
+      effectId: 'ruling-fx',
+      kind: 'summoning',
+      displayName: 'ruling-fx',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      actors: [
+        {
+          combatantId: 'c-steed',
+          campaignActorId: 'steed',
+          atZeroHitPoints: 'vanish-bonded',
+        },
+      ],
+    });
+    const r = s.recast({ effectId: 'ruling-fx', spellRef: 'spell:find-steed' });
+    expect(r.ok).toBe(false);
+    expect(s.message(r)).toMatch(/not recorded from its spell/);
+    expect(s.actor('steed').status).toBe('alive');
+  });
+
+  it('allows one bond per caster per spell, across active, absent and suppressed, until it ends', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    const second = () =>
+      s.tryBond('fam-fx-2', 'steed', {
+        source: {
+          kind: 'spell',
+          ref: 'spell:find-familiar',
+          actor: { kind: 'combatant', ref: 'c-wiz' },
+        },
+      });
+    let r = second();
+    expect(r.ok).toBe(false);
+    expect(s.message(r)).toMatch(/fam-fx/);
+    expect(s.message(r)).toMatch(/recast_bonded_summon/);
+    s.vanish('c-fam', 1);
+    expect(s.actor('fam').status).toBe('absent');
+    r = second();
+    expect(r.ok).toBe(false);
+    s.must('suppress_effect', { effectId: 'fam-fx' });
+    r = second();
+    expect(r.ok).toBe(false);
+    s.must('end_effect', {
+      effectId: 'fam-fx',
+      reason: 'ruled',
+      note: 'familiar permanently dismissed',
+    });
+    expect(second().ok).toBe(true);
+  });
+
+  it('lets one caster hold a Find Familiar and a Find Steed bond together', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    s.bond('steed-fx', 'steed');
+    expect(s.effect('fam-fx').status).toBe('active');
+    expect(s.effect('steed-fx').status).toBe('active');
+  });
+
+  it('lets a different caster hold its own Find Familiar bond', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    const other = s.tryBond('fam-fx-2', 'steed', {
+      source: {
+        kind: 'spell',
+        ref: 'spell:find-familiar',
+        actor: { kind: 'combatant', ref: 'c-steed' },
+      },
+    });
+    expect(other.ok).toBe(true);
+    expect(s.effect('fam-fx-2').status).toBe('active');
+  });
+
+  it('refuses two actors entries on one Find Familiar bond', () => {
+    const s = setup();
+    const r = s.tryBond('fam-fx', 'fam', {
+      actors: [
+        { combatantId: 'c-fam', campaignActorId: 'fam' },
+        { combatantId: 'c-steed', campaignActorId: 'steed' },
+      ],
+    });
+    expect(r.ok).toBe(false);
+    expect(s.message(r)).toMatch(/at most 1 creature/);
+  });
+
+  it('refuses a missing source.actor and a non-until-removed duration', () => {
+    const s = setup();
+    let r = s.tryBond('fam-fx', 'fam', {
+      source: { kind: 'spell', ref: 'spell:find-familiar' },
+    });
+    expect(r.ok).toBe(false);
+    expect(s.message(r)).toMatch(/source\.actor/);
+    r = s.tryBond('fam-fx', 'fam', {
+      duration: { kind: 'until-dismissed' },
+    });
+    expect(r.ok).toBe(false);
+    expect(s.message(r)).toMatch(/until removed/);
+  });
+
+  it('still refuses an instantaneous record without a persistent-linked summoning effect', () => {
+    const s = setup();
+    const r = s.tryBond('mm-fx', 'fam', {
+      source: {
+        kind: 'spell',
+        ref: 'spell:magic-missile',
+        actor: { kind: 'combatant', ref: 'c-wiz' },
+      },
+    });
+    expect(r.ok).toBe(false);
+    expect(s.message(r)).toMatch(/is instantaneous per its record/);
+  });
+
+  it('refuses atZeroHitPoints vanish on a Find Familiar spell bond', () => {
+    const s = setup();
+    const r = s.tryBond('fam-fx', 'fam', {
+      actors: [
+        {
+          combatantId: 'c-fam',
+          campaignActorId: 'fam',
+          atZeroHitPoints: 'vanish',
+        },
+      ],
+    });
+    expect(r.ok).toBe(false);
   });
 });
