@@ -412,6 +412,85 @@ describe('warlock Pact Boon, growth, and replacement', () => {
       detectLevelUpRequiredChoices(warlock(1)).map((c) => c.id),
     ).not.toContain(`${INV(2)}.replace`);
   });
+
+  it('refuses the same invocation as both the growth pick and the replacement', () => {
+    const sheet = warlock(4, { featureChoices: twoInvocations });
+    const choices = {
+      [INV(5)]: [invocation('mire-the-mind')],
+      [`${INV(5)}.replace`]: [
+        invocation('devils-sight'),
+        invocation('mire-the-mind'),
+      ],
+    };
+    expect(blockerFor(sheet, choices, `${INV(5)}.replace`)?.reason).toContain(
+      'can be taken only once',
+    );
+    expect(
+      previewLevelUpChangeSet(sheet, { choices }).ok,
+      'a duplicated invocation must block the level-up',
+    ).toBe(false);
+  });
+
+  it('replacing Book of Ancient Secrets away does not trigger its rituals', () => {
+    const sheet = warlock(4, {
+      featureChoices: [
+        held(
+          'feature:warlock:pact-boon',
+          'pact-boon',
+          ['pact-boon:pact-of-the-tome'],
+          3,
+        ),
+        held(
+          INV_FEATURE,
+          'eldritch-invocations',
+          [invocation('book-of-ancient-secrets'), invocation('beast-speech')],
+          2,
+        ),
+      ],
+    });
+    const ids = detectLevelUpRequiredChoices(sheet, undefined, undefined, {
+      [INV(5)]: [invocation('mire-the-mind')],
+      [`${INV(5)}.replace`]: [
+        invocation('book-of-ancient-secrets'),
+        invocation('eldritch-sight'),
+      ],
+    }).map((c) => c.id);
+    expect(
+      ids.some((id) => id.endsWith('book-of-ancient-secrets-rituals')),
+    ).toBe(false);
+  });
+
+  it('Book of Ancient Secrets picked at a later level still blocks on its rituals', () => {
+    const sheet = warlock(4, {
+      featureChoices: [
+        held(
+          'feature:warlock:pact-boon',
+          'pact-boon',
+          ['pact-boon:pact-of-the-tome'],
+          3,
+        ),
+        ...twoInvocations,
+      ],
+    });
+    for (const choices of [
+      { [INV(5)]: [invocation('book-of-ancient-secrets')] },
+      {
+        [INV(5)]: [invocation('mire-the-mind')],
+        [`${INV(5)}.replace`]: [
+          invocation('devils-sight'),
+          invocation('book-of-ancient-secrets'),
+        ],
+      },
+    ]) {
+      const rituals = detectLevelUpRequiredChoices(
+        sheet,
+        undefined,
+        undefined,
+        choices,
+      ).find((c) => c.id.endsWith('book-of-ancient-secrets-rituals'));
+      expect(rituals).toMatchObject({ status: 'unsupported' });
+    }
+  });
 });
 
 describe('sorcerer Metamagic', () => {

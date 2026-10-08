@@ -211,26 +211,36 @@ export function detectFeatureChoiceDescriptors(
         );
         continue;
       }
+      if (CONDITIONAL_CHOICES[choice.id] !== undefined) covered.add(ref);
+    }
+  }
+
+  // Conditional choices fire whenever their trigger option is picked in this
+  // level-up, on a newly granted feature or a held one (Book of Ancient
+  // Secrets taken as a later invocation, by growth or replacement).
+  const pickedNow = selectedOptionIds(ctx.selections, ctx.toLevel);
+  const conditionalSeen = new Set<string>();
+  for (const ref of [...ctx.targetFeatureRefs, ...ctx.heldFeatureRefs]) {
+    if (conditionalSeen.has(ref)) continue;
+    conditionalSeen.add(ref);
+    const feature = featureOf(ctx.resolver, ref);
+    for (const choice of feature?.choices ?? []) {
       const conditional = CONDITIONAL_CHOICES[choice.id];
-      if (conditional !== undefined) {
-        covered.add(ref);
-        if (
-          selectedOptionIds(ctx.selections, ctx.toLevel).has(
-            conditional.triggerOption,
-          )
-        ) {
-          choices.push({
-            id: descriptorId(ctx.toLevel, ref, choice.id),
-            kind: 'spell-selection',
-            status: 'unsupported',
-            label: conditional.label,
-            featureRef: ref,
-            reason: `${conditional.label}: ${choice.prompt}`,
-            unsupportedReason:
-              'This spell selection is owned by the level-up spell-selection work (eshyra-ug4i.2) and is not implemented yet.',
-          });
-        }
-      }
+      if (
+        conditional === undefined ||
+        !pickedNow.has(conditional.triggerOption)
+      )
+        continue;
+      choices.push({
+        id: descriptorId(ctx.toLevel, ref, choice.id),
+        kind: 'spell-selection',
+        status: 'unsupported',
+        label: conditional.label,
+        featureRef: ref,
+        reason: `${conditional.label}: ${choice.prompt}`,
+        unsupportedReason:
+          'This spell selection is owned by the level-up spell-selection work (eshyra-ug4i.2) and is not implemented yet.',
+      });
     }
   }
 
@@ -262,10 +272,20 @@ function selectedOptionIds(
   const ids = new Set<string>();
   for (const [key, values] of Object.entries(selections)) {
     if (key.startsWith(`level.${toLevel}.feature.`)) {
-      for (const value of values) ids.add(value);
+      for (const value of newPicks(key, values)) ids.add(value);
     }
   }
   return ids;
+}
+
+/** The options a selection adds: a replacement's first entry is the option it
+ *  gives up, never a pick (so replacing Book of Ancient Secrets away does not
+ *  trigger its rituals, nor satisfy a prerequisite). */
+function newPicks(
+  descriptorKey: string,
+  values: readonly string[],
+): readonly string[] {
+  return descriptorKey.endsWith('.replace') ? values.slice(1) : values;
 }
 
 function listDescriptor(
@@ -384,6 +404,20 @@ export function resolveFeatureChoiceSelection(
       return {
         ok: false,
         reason: `'${replaces}' is not currently held, so it cannot be replaced`,
+      };
+    }
+  }
+  // The growth pick and the replacement of the same feature choice are
+  // separate descriptors; together they must not pick one option twice.
+  const baseId = choice.id.replace(/\.replace$/, '');
+  for (const siblingId of [baseId, `${baseId}.replace`]) {
+    if (siblingId === choice.id) continue;
+    const sibling = newPicks(siblingId, allSelections[siblingId] ?? []);
+    const shared = picks.find((id) => sibling.includes(id));
+    if (shared !== undefined) {
+      return {
+        ok: false,
+        reason: `'${shared}' is also picked by ${siblingId}; an option can be taken only once`,
       };
     }
   }
