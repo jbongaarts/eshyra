@@ -168,6 +168,136 @@ export function validateCharacterSheetFeatureChoices(
   }
 }
 
+/** A spell designated by a class feature (Spell Mastery, Signature Spells). */
+export interface CharacterSpellDesignation {
+  readonly kind: 'spell-mastery' | 'signature-spell';
+  /** The designated spell's own level. */
+  readonly level: number;
+  readonly spellRef: string;
+}
+
+/**
+ * Structured spell state (eshyra-ug4i.2): which spells the character knows,
+ * keeps in a spellbook or has prepared, distinguished by bucket. All entries are
+ * canonical `spell:<slug>` refs. `cantrips` is always present once the field
+ * exists; the other buckets appear only for classes that use them (`known`:
+ * bard/sorcerer/ranger/warlock; `spellbook`: wizard; `prepared`: cleric, druid,
+ * paladin, wizard). `CharacterSheet.spells` stays the derived union of every
+ * bucket so existing consumers are unchanged.
+ */
+export interface CharacterSpellcasting {
+  readonly cantrips: readonly string[];
+  readonly known?: readonly string[];
+  readonly spellbook?: readonly string[];
+  readonly prepared?: readonly string[];
+  /** Warlock Mystic Arcanum picks, one per spell level. */
+  readonly mysticArcanum?: readonly {
+    readonly level: number;
+    readonly spellRef: string;
+  }[];
+  readonly designations?: readonly CharacterSpellDesignation[];
+}
+
+const SPELL_REF_PATTERN = /^spell:[^\s]+$/;
+
+/**
+ * Validate the shape of a sheet's optional `spellcasting` (old sheets omit it).
+ * When `resolveSpellKey` is supplied, every ref must also resolve to the pack's
+ * canonical spell key. No ref may sit in two of cantrips/known/spellbook.
+ */
+export function validateCharacterSheetSpellcasting(
+  sheet: CharacterSheet,
+  resolveSpellKey?: (ref: string) => string | undefined,
+): void {
+  const value: unknown = sheet.spellcasting;
+  if (value === undefined) return;
+  const where = 'character sheet spellcasting';
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${where} must be an object`);
+  }
+  const record = value as Record<string, unknown>;
+  const checkRef = (ref: unknown, path: string): string => {
+    if (typeof ref !== 'string' || !SPELL_REF_PATTERN.test(ref)) {
+      throw new Error(`${where}.${path} must be a 'spell:' record ref`);
+    }
+    if (resolveSpellKey !== undefined && resolveSpellKey(ref) !== ref) {
+      throw new Error(
+        `${where}.${path} '${ref}' is not a canonical pack spell`,
+      );
+    }
+    return ref;
+  };
+  const refList = (name: string, required: boolean): readonly string[] => {
+    const list = record[name];
+    if (list === undefined) {
+      if (required) throw new Error(`${where}.${name} must be an array`);
+      return [];
+    }
+    if (!Array.isArray(list)) {
+      throw new Error(`${where}.${name} must be an array`);
+    }
+    const refs = list.map((ref, index) => checkRef(ref, `${name}[${index}]`));
+    if (new Set(refs).size !== refs.length) {
+      throw new Error(`${where}.${name} must not repeat a spell`);
+    }
+    return refs;
+  };
+  const cantrips = refList('cantrips', true);
+  const known = refList('known', false);
+  const spellbook = refList('spellbook', false);
+  refList('prepared', false);
+  const seen = new Set<string>();
+  for (const ref of [...cantrips, ...known, ...spellbook]) {
+    if (seen.has(ref)) {
+      throw new Error(
+        `${where}: '${ref}' appears in more than one of cantrips/known/spellbook`,
+      );
+    }
+    seen.add(ref);
+  }
+  const arcanum = record.mysticArcanum;
+  if (arcanum !== undefined) {
+    if (!Array.isArray(arcanum)) {
+      throw new Error(`${where}.mysticArcanum must be an array`);
+    }
+    for (const [index, entry] of arcanum.entries()) {
+      const item = entry as Record<string, unknown> | null;
+      if (
+        item === null ||
+        typeof item !== 'object' ||
+        !Number.isInteger(item.level) ||
+        (item.level as number) < 1 ||
+        (item.level as number) > 9
+      ) {
+        throw new Error(`${where}.mysticArcanum[${index}].level must be 1-9`);
+      }
+      checkRef(item.spellRef, `mysticArcanum[${index}].spellRef`);
+    }
+  }
+  const designations = record.designations;
+  if (designations !== undefined) {
+    if (!Array.isArray(designations)) {
+      throw new Error(`${where}.designations must be an array`);
+    }
+    for (const [index, entry] of designations.entries()) {
+      const item = entry as Record<string, unknown> | null;
+      if (
+        item === null ||
+        typeof item !== 'object' ||
+        (item.kind !== 'spell-mastery' && item.kind !== 'signature-spell') ||
+        !Number.isInteger(item.level) ||
+        (item.level as number) < 1 ||
+        (item.level as number) > 9
+      ) {
+        throw new Error(
+          `${where}.designations[${index}] must have kind spell-mastery|signature-spell and a level 1-9`,
+        );
+      }
+      checkRef(item.spellRef, `designations[${index}].spellRef`);
+    }
+  }
+}
+
 export interface CharacterSheet {
   readonly schemaVersion: 1;
   readonly system: string;
@@ -231,6 +361,13 @@ export interface CharacterSheet {
    * it. Level-1 creation choices are not recorded here yet (eshyra-nnj6).
    */
   readonly featureChoices?: readonly CharacterFeatureChoice[];
+  /**
+   * Structured spell buckets (eshyra-ug4i.2). Optional: absent on sheets that
+   * predate it (their flat `spells` list is classified at the first level-up)
+   * and on non-casters. When present, `spells` is its derived union.
+   * Level-1 creation does not write it yet (eshyra-nnj6).
+   */
+  readonly spellcasting?: CharacterSpellcasting;
   readonly metadata: FinalizeMetadata;
 }
 
@@ -241,6 +378,7 @@ export function validateCharacterSheetRollEvidence(
   // Every store/registry path that persists or loads a sheet already calls this
   // validator, so the optional `featureChoices` shape check rides along here.
   validateCharacterSheetFeatureChoices(sheet);
+  validateCharacterSheetSpellcasting(sheet);
   if (sheet.rolledAbilityScores === undefined) return;
   validateRolledAbilityScoreSet(sheet.rolledAbilityScores);
   const assigned = Object.fromEntries(

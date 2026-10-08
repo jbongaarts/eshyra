@@ -688,7 +688,7 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
     db.close();
   });
 
-  it('blocks a subclass + spell level (Wizard 1→2) and applies nothing', () => {
+  it('withholds a subclass + spellbook level (Wizard 1→2) until both are chosen and applies nothing', () => {
     const db = bareDb();
     const store = createSqliteCharacterSheetStore(db, () => AT);
     const sheet = buildSheet({
@@ -710,11 +710,9 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
       from: ['School of Evocation'],
     });
     expect(choices.find((c) => c.kind === 'spell-selection')).toMatchObject({
-      id: 'level.2.spell-selection',
-      status: 'unsupported',
-      unsupportedReason: expect.stringContaining(
-        'deterministic spell application is not implemented yet',
-      ),
+      id: 'level.2.spells.spellbook',
+      status: 'supported',
+      choose: 2,
     });
 
     let thrown: unknown;
@@ -734,8 +732,8 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
     expect(
       (thrown as LevelUpRequiredChoicesError).requiredChoices[0],
     ).toMatchObject({
-      id: 'level.2.spell-selection',
-      status: 'unsupported',
+      id: 'level.2.spells.spellbook',
+      status: 'supported',
     });
 
     // Nothing advanced: the stored sheet is untouched and no ledger row exists.

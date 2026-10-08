@@ -25,6 +25,14 @@
 // option's mechanical effect (Archery's +2, an invocation's benefit) is NOT
 // implemented here and stays DM-adjudicated. See levelUpFeatureChoices.ts.
 //
+// Spell selection (eshyra-ug4i.2): cantrips, known spells (+ an optional
+// replacement), the wizard's spellbook growth, feature spell choices (Magical
+// Secrets, Mystic Arcanum, Spell Mastery, Tome cantrips, ...) and an optional
+// preparation for prepared casters are derived, validated and applied in
+// levelUpSpells.ts and PERSISTED on the sheet's optional `spellcasting` (with
+// `spells` kept as the derived union). Prepared casters are never blocked:
+// preparation is a long-rest action.
+//
 // The whole step is one transaction: the updated sheet is saved, the live
 // `character` projection (level, hp_max, hp_current) is mutated through the
 // validated provenance seam, and a `level-up` ledger row carrying the full
@@ -67,6 +75,16 @@ import {
   detectFeatureChoiceDescriptors,
   resolveFeatureChoiceSelection,
 } from './levelUpFeatureChoices.js';
+import {
+  type AppliedSpellChoice,
+  buildSpellSelections,
+  detectSpellDescriptors,
+  effectiveSpellcasting,
+  type LevelUpSpellChoiceRef,
+  type LevelUpSpellSelections,
+  resolveSpellChoiceSelection,
+  spellsUnion,
+} from './levelUpSpells.js';
 import {
   getBundledDnd5eCharacterResolver,
   type ResolvedClassData,
@@ -126,6 +144,13 @@ export interface LevelUpChangeSet {
   readonly spellSaveDc?: LevelUpDelta<number | undefined>;
   /** Recomputed spell attack modifier, under the same condition as {@link spellSaveDc}. */
   readonly spellAttackModifier?: LevelUpDelta<number | undefined>;
+  /**
+   * What the level-up did to the structured spell state (eshyra-ug4i.2): the
+   * added/removed spell refs per bucket, and the sheet's resulting
+   * `spellcasting`. Present only when spell choices were applied or a legacy
+   * flat spell list was classified.
+   */
+  readonly spellSelections?: LevelUpSpellSelections;
   /** Supported level-up choices applied as part of this step. */
   readonly choicesApplied?: readonly LevelUpAppliedChoice[];
   readonly abilityScoreIncreases?: readonly AppliedAbilityScoreIncrease[];
@@ -221,6 +246,8 @@ export type LevelUpRequiredChoiceStatus = 'supported' | 'unsupported';
 export interface LevelUpChoiceOption {
   readonly id: string;
   readonly name: string;
+  /** Spell options: the spell's level (0 = cantrip). */
+  readonly level?: number;
   /** Verbatim SRD prerequisite text. */
   readonly prerequisite?: string;
   /** Structured prerequisite clauses the engine validates (fail closed if unknown). */
@@ -256,6 +283,12 @@ export interface LevelUpRequiredChoice {
     readonly replacement?: boolean;
     readonly heldOptionIds?: readonly string[];
   };
+  /**
+   * Set on spell choices (eshyra-ug4i.2): how the selection is stored in the
+   * sheet's `spellcasting` buckets. Options are spell refs; a `replace` choice
+   * takes `[oldRef, newRef]`; a `prepare` choice takes up to `choose` refs.
+   */
+  readonly spellChoice?: LevelUpSpellChoiceRef;
   /** Human-readable explanation of what must be decided. */
   readonly reason: string;
   /** The pack feature ref that triggered this choice, when applicable. */
@@ -276,6 +309,7 @@ export interface LevelUpAppliedChoice {
     | 'ability-score-improvement'
     | 'fighting-style'
     | 'class-feature-choice'
+    | 'spell-selection'
   >;
   readonly value: string;
   readonly label: string;
@@ -289,6 +323,8 @@ export interface LevelUpAppliedChoice {
     /** Set when this pick replaced a held option (invocation replacement). */
     readonly replaces?: string;
   };
+  /** Spell placements persisted on `CharacterSheet.spellcasting`. */
+  readonly spellChoice?: AppliedSpellChoice;
   readonly abilityScoreIncreases?: readonly AppliedAbilityScoreIncrease[];
   readonly featRef?: string;
 }
@@ -514,14 +550,27 @@ export function previewLevelUpChangeSet(
     binding,
     input.hitPointChoice,
   );
+  const classForSpells = resolver.resolveClass(sheet.class.key);
+  if (!classForSpells.ok) throw new LevelUpEngineError(classForSpells.message);
+  const effectiveSpells = effectiveSpellcasting(
+    sheet,
+    classForSpells.record,
+    resolver,
+  );
+  const spellSelections = effectiveSpells.ok
+    ? buildSpellSelections(effectiveSpells, resolvedChoices.applied)
+    : undefined;
   return {
     ok: true,
     requiredChoices,
-    changeSet: recomputeAfterChoices(
-      applyResolvedChoicesToChangeSet(baseChangeSet, resolvedChoices.applied),
-      sheet,
-      resolver,
-    ),
+    changeSet: {
+      ...recomputeAfterChoices(
+        applyResolvedChoicesToChangeSet(baseChangeSet, resolvedChoices.applied),
+        sheet,
+        resolver,
+      ),
+      ...(spellSelections !== undefined ? { spellSelections } : {}),
+    },
   };
 }
 
@@ -611,13 +660,11 @@ export function computeLevelUpChangeSet(
  * pack; the guided flow (eshyra-lupf.10) calls this to preview blockers, and
  * {@link applyLevelUp} refuses to advance while any remain.
  *
- * Conservative by intent for now: it flags known generic choice signals on the
- * target level — subclass-selection features, Ability Score Improvement / feat
- * rows, fighting-style and expertise picks, other class-feature choices, and
- * any new spell to learn/prepare (a caster gaining cantrips/known spells, a new
- * spell level, or a Wizard's per-level spellbook growth). The structured
- * descriptors and accepted choice inputs that will *replace* this block are
- * eshyra-lupf.9.
+ * Conservative by intent: it flags known generic choice signals on the target
+ * level — subclass-selection features, Ability Score Improvement / feat rows,
+ * fighting-style and expertise picks, other class-feature choices, and the
+ * spell side of the level (cantrips, known spells, the Wizard's spellbook
+ * growth, feature spell choices, optional preparation: see levelUpSpells.ts).
  *
  * @throws {LevelUpEngineError} when the pack has no class/progression row for
  *   the target level (same fail-closed condition as {@link computeLevelUpChangeSet}).
@@ -741,12 +788,18 @@ export function detectLevelUpRequiredChoices(
   );
 
   choices.push(
-    ...spellSelectionChoices(
-      classResult.record,
-      fromRow?.spellcasting,
-      toRow.spellcasting,
+    ...detectSpellDescriptors({
+      sheet,
+      classKey,
+      classRecord: classResult.record,
       toLevel,
-    ),
+      fromSpellcasting: fromRow?.spellcasting,
+      toSpellcasting: toRow.spellcasting,
+      targetFeatureRefs,
+      heldFeatureRefs,
+      resolver,
+      selections,
+    }),
   );
 
   return choices;
@@ -874,72 +927,6 @@ function levelUpChoiceLabel(kind: LevelUpRequiredChoiceKind): string {
   }
 }
 
-/**
- * Spell-learning choices implied by the target level for a casting class: a new
- * cantrip, a new known spell, access to a new spell level, or a Wizard's
- * per-level spellbook additions. Empty for non-casters and for rows that add no
- * new learnable/preparable spells.
- */
-function spellSelectionChoices(
-  classRecord: ResolvedClassData,
-  fromSpellcasting: ResolvedLevelSpellcasting | undefined,
-  toSpellcasting: ResolvedLevelSpellcasting | undefined,
-  toLevel: number,
-): readonly LevelUpRequiredChoice[] {
-  if (
-    classRecord.spellcastingAbility === undefined ||
-    toSpellcasting === undefined
-  ) {
-    return [];
-  }
-  const reasons: string[] = [];
-  if (
-    (toSpellcasting.cantripsKnown ?? 0) > (fromSpellcasting?.cantripsKnown ?? 0)
-  ) {
-    reasons.push('a new cantrip is learned');
-  }
-  if (
-    (toSpellcasting.spellsKnown ?? 0) > (fromSpellcasting?.spellsKnown ?? 0)
-  ) {
-    reasons.push('a new spell is learned');
-  }
-  if (gainsNewSpellLevel(fromSpellcasting?.slots, toSpellcasting.slots)) {
-    reasons.push('a new spell level becomes available');
-  }
-  // The Wizard adds spells to its spellbook every level; generated
-  // spellPreparation marks that with a starting-spellbook size. This remains a
-  // per-level learning choice even when cantrip/known counts are unchanged.
-  if (classRecord.spellPreparation?.spellbookStartingSpells !== undefined) {
-    reasons.push('spells are added to the spellbook');
-  }
-  if (reasons.length === 0) {
-    return [];
-  }
-  return [
-    {
-      id: `level.${toLevel}.spell-selection`,
-      kind: 'spell-selection',
-      status: 'unsupported',
-      label: 'Choose spells for this level',
-      reason: `level ${toLevel} spellcasting: ${reasons.join('; ')}`,
-      unsupportedReason:
-        'Level-up spell selection changes cantrips/spells known, spellbook contents, or preparation state, but deterministic spell application is not implemented yet.',
-    },
-  ];
-}
-
-/** Whether `to` grants a spell-slot level that `from` did not have. */
-function gainsNewSpellLevel(
-  from: Readonly<Record<string, number>> | undefined,
-  to: Readonly<Record<string, number>> | undefined,
-): boolean {
-  if (to === undefined) {
-    return false;
-  }
-  const had = new Set(Object.keys(from ?? {}));
-  return Object.keys(to).some((level) => !had.has(level));
-}
-
 interface ResolvedLevelUpChoices {
   readonly blockers: readonly LevelUpRequiredChoice[];
   readonly applied: readonly LevelUpAppliedChoice[];
@@ -960,6 +947,30 @@ function resolveLevelUpChoices(
       continue;
     }
     const selected = selections[choice.id] ?? [];
+    if (choice.spellChoice !== undefined) {
+      const classRecord = resolver.resolveClass(sheet.class.key);
+      if (!classRecord.ok) {
+        throw new LevelUpEngineError(classRecord.message);
+      }
+      const resolution = resolveSpellChoiceSelection({
+        choice,
+        selected,
+        sheet,
+        classRecord: classRecord.record,
+        resolver,
+        requiredChoices,
+        selections,
+      });
+      if (!resolution.ok) {
+        blockers.push({
+          ...choice,
+          reason: `${choice.reason}; selection refused: ${resolution.reason}`,
+        });
+      } else if (resolution.applied !== undefined) {
+        applied.push(resolution.applied);
+      }
+      continue;
+    }
     if (choice.featureChoice !== undefined) {
       const resolution = resolveFeatureChoiceSelection(
         choice,
@@ -1389,6 +1400,12 @@ function applyChangeSetToSheet(
   const next: CharacterSheet = {
     ...sheet,
     ...(featureChoices !== undefined ? { featureChoices } : {}),
+    ...(changeSet.spellSelections !== undefined
+      ? {
+          spellcasting: changeSet.spellSelections.resulting,
+          spells: spellsUnion(changeSet.spellSelections.resulting),
+        }
+      : {}),
     level: changeSet.level.to,
     proficiencyBonus: changeSet.proficiencyBonus.to,
     maxHitPoints: changeSet.hitPoints.maxHitPoints.to,

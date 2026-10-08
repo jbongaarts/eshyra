@@ -643,13 +643,18 @@ describe('runPlay', () => {
     dispose();
   });
 
-  it('surfaces /levelup blockers clearly', async () => {
+  it('collects wizard spellbook picks in /levelup and persists them', async () => {
     const { db, dispose } = makeDb();
     const { io, lines } = scriptedIO([
       'import',
       'ezra',
       'gain xp',
       '/levelup',
+      'School of Evocation',
+      'spell:burning-hands, spell:charm-person',
+      '', // skip the optional preparation
+      'fixed',
+      'y',
       '/quit',
     ]);
     const deps = baseDeps(db, io, xpAwardingTurn);
@@ -666,11 +671,47 @@ describe('runPlay', () => {
 
     expect(code).toBe(0);
     const out = lines.join('\n');
-    expect(out).toContain('Level-up blocked:');
-    expect(out).toContain('Choose a subclass');
-    expect(out).toContain(
-      'deterministic spell application is not implemented yet',
+    expect(out).toContain('Add 2 spell(s) to your spellbook');
+    expect(out).toContain('spell:burning-hands - Burning Hands (level 1)');
+    expect(out).toContain('Level-up applied: level 1 -> 2.');
+    expect(
+      createSqliteCharacterSheetStore(db).load('pc-1')?.spellcasting,
+    ).toEqual({
+      cantrips: [],
+      spellbook: ['spell:burning-hands', 'spell:charm-person'],
+    });
+    dispose();
+  });
+
+  it('surfaces /levelup blockers clearly', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO([
+      'import',
+      'ezra',
+      'gain xp',
+      '/levelup',
+      '/quit',
+    ]);
+    const deps = baseDeps(db, io, xpAwardingTurn);
+
+    const code = await runPlay(
+      {
+        ...deps,
+        characterRegistry: memoryFinalizedStore({
+          ezra: {
+            ...finalizedCharacter('Ezra', 'Wizard'),
+            spells: ['Flarble the Unreal'],
+          },
+        }),
+      },
+      { dbPath: 'demo.db' },
     );
+
+    expect(code).toBe(0);
+    const out = lines.join('\n');
+    expect(out).toContain('Level-up blocked:');
+    expect(out).toContain('Classify existing spells');
+    expect(out).toContain('Flarble the Unreal');
     expect(
       db.prepare(`SELECT level FROM character WHERE id = 'pc-1'`).get(),
     ).toEqual({ level: 1 });
