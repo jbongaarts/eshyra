@@ -12,9 +12,10 @@
 //   - Mechanical effects of a chosen option (Archery's +2, an invocation's
 //     benefit) are NOT implemented; they stay DM-adjudicated until a later
 //     bead selects them as deterministic capabilities.
-//   - Expertise (eshyra-ug4i.1), every spell/cantrip category (eshyra-ug4i.2),
-//     the asiOrFeat feat variant and Channel Divinity are not handled here; the
-//     engine keeps them fail-closed.
+//   - Expertise (eshyra-ug4i.1), the asiOrFeat feat variant and Channel Divinity
+//     are not handled here; the engine keeps them fail-closed. Every
+//     spell/cantrip choice (including the Pact of the Tome / Book of Ancient
+//     Secrets conditional ones) lives in levelUpSpells.ts (eshyra-ug4i.2).
 //   - Feature improvements (Ranger Favored Enemy / Natural Explorer growth at
 //     6/10/14) are carried by the pack only as `featureImprovement` rows with no
 //     option structure, so the engine keeps emitting them as unsupported.
@@ -58,24 +59,16 @@ const REPEATED_GRANT_PICKS: Readonly<Record<string, number>> = {
 };
 
 /**
- * Choices that exist only because of one option of a sibling list choice
- * (SRD: "If you choose Pact of the Tome, choose three cantrips..."). They are
- * surfaced as unsupported (owned by eshyra-ug4i.2) only when the triggering
- * option is picked in this very level-up, so a Chain/Blade warlock never
- * blocks on them. A pick held from an earlier level-up was already resolved (or
- * blocked) at that level.
+ * Spell/cantrip choices that exist only because of one option of a sibling list
+ * choice (SRD: "If you choose Pact of the Tome, choose three cantrips..."). The
+ * spell-selection module (levelUpSpells.ts, eshyra-ug4i.2) owns their
+ * descriptors and fires them only when the triggering option is picked in this
+ * very level-up; this table lets the list path mark the owning feature covered
+ * so the legacy unsupported fallback for it is dropped.
  */
-const CONDITIONAL_CHOICES: Readonly<
-  Record<string, { readonly triggerOption: string; readonly label: string }>
-> = {
-  'pact-of-the-tome-cantrips': {
-    triggerOption: 'pact-boon:pact-of-the-tome',
-    label: 'Pact of the Tome cantrips',
-  },
-  'book-of-ancient-secrets-rituals': {
-    triggerOption: 'eldritch-invocation:book-of-ancient-secrets',
-    label: 'Book of Ancient Secrets rituals',
-  },
+const CONDITIONAL_CHOICES: Readonly<Record<string, true>> = {
+  'pact-of-the-tome-cantrips': true,
+  'book-of-ancient-secrets-rituals': true,
 };
 
 export interface FeatureChoiceDetectionContext {
@@ -104,7 +97,7 @@ export function featureSlug(featureRef: string): string {
     .replace(/^-|-$/g, '');
 }
 
-function descriptorId(
+export function descriptorId(
   toLevel: number,
   featureRef: string,
   choiceId: string,
@@ -211,36 +204,7 @@ export function detectFeatureChoiceDescriptors(
         );
         continue;
       }
-      if (CONDITIONAL_CHOICES[choice.id] !== undefined) covered.add(ref);
-    }
-  }
-
-  // Conditional choices fire whenever their trigger option is picked in this
-  // level-up, on a newly granted feature or a held one (Book of Ancient
-  // Secrets taken as a later invocation, by growth or replacement).
-  const pickedNow = selectedOptionIds(ctx.selections, ctx.toLevel);
-  const conditionalSeen = new Set<string>();
-  for (const ref of [...ctx.targetFeatureRefs, ...ctx.heldFeatureRefs]) {
-    if (conditionalSeen.has(ref)) continue;
-    conditionalSeen.add(ref);
-    const feature = featureOf(ctx.resolver, ref);
-    for (const choice of feature?.choices ?? []) {
-      const conditional = CONDITIONAL_CHOICES[choice.id];
-      if (
-        conditional === undefined ||
-        !pickedNow.has(conditional.triggerOption)
-      )
-        continue;
-      choices.push({
-        id: descriptorId(ctx.toLevel, ref, choice.id),
-        kind: 'spell-selection',
-        status: 'unsupported',
-        label: conditional.label,
-        featureRef: ref,
-        reason: `${conditional.label}: ${choice.prompt}`,
-        unsupportedReason:
-          'This spell selection is owned by the level-up spell-selection work (eshyra-ug4i.2) and is not implemented yet.',
-      });
+      if (CONDITIONAL_CHOICES[choice.id] === true) covered.add(ref);
     }
   }
 
@@ -265,7 +229,7 @@ export function detectFeatureChoiceDescriptors(
   return { choices, coveredFeatureRefs: covered };
 }
 
-function selectedOptionIds(
+export function selectedOptionIds(
   selections: LevelUpChoiceSelections,
   toLevel: number,
 ): ReadonlySet<string> {

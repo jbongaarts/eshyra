@@ -3,9 +3,9 @@
 // hunter options are detected from the pack's feature choices, validated against
 // the option catalog and structured prerequisites, applied, and persisted on the
 // sheet's optional featureChoices. Mechanical effects of the picks are not
-// implemented (DM-adjudicated). Spell selection (eshyra-ug4i.2) still blocks the
-// caster levels, so persistence tests run through a resolver that holds spell
-// growth constant to isolate the feature-choice path under test.
+// implemented (DM-adjudicated). Spell selection (eshyra-ug4i.2) is covered in
+// levelUpSpellSelection.test.ts; the persistence tests here run through a
+// resolver that holds spell growth constant to isolate the feature-choice path.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -84,8 +84,8 @@ const bundled = getBundledDnd5eCharacterResolver();
 
 /**
  * Test-only resolver: caster rows keep the previous level's cantrips/spells/
- * slots so the (separately owned, still fail-closed) spell-selection blocker
- * does not mask the feature-choice path. invocationsKnown is left intact.
+ * slots so the (separately tested) spell-selection descriptors do not require
+ * picks in the feature-choice path under test. invocationsKnown is left intact.
  */
 function withoutSpellGrowth(baseLevel: number): RulesPackCharacterResolver {
   return {
@@ -180,12 +180,12 @@ describe('warlock Eldritch Invocations (level 2)', () => {
     expect(descriptor?.from).toContain(invocation('agonizing-blast'));
   });
 
-  it('accepts prerequisite-free invocations (only spell selection still blocks)', () => {
+  it('accepts prerequisite-free invocations (only the spell pick remains)', () => {
     const ids = blockerIds(sheet, {
       [INV(2)]: [invocation('armor-of-shadows'), invocation('beast-speech')],
     });
     expect(ids).not.toContain(INV(2));
-    expect(ids).toContain('level.2.spell-selection');
+    expect(ids).toContain('level.2.spells.known');
   });
 
   it('refuses an Eldritch Blast invocation without the cantrip and accepts it with the cantrip', () => {
@@ -285,7 +285,7 @@ describe('warlock Pact Boon, growth, and replacement', () => {
     db.close();
   });
 
-  it('blocks Pact of the Tome on its unsupported cantrips; Chain and Blade do not', () => {
+  it('asks for Pact of the Tome cantrips (supported); Chain and Blade do not', () => {
     const sheet = warlock(2, { featureChoices: twoInvocations });
     const tome = blockerIds(sheet, {
       [PACT]: ['pact-boon:pact-of-the-tome'],
@@ -297,7 +297,7 @@ describe('warlock Pact Boon, growth, and replacement', () => {
       undefined,
       { [PACT]: ['pact-boon:pact-of-the-tome'] },
     ).find((c) => c.id === TOME_CANTRIPS);
-    expect(tomeDescriptor?.status).toBe('unsupported');
+    expect(tomeDescriptor?.status).toBe('supported');
     for (const boon of [CHAIN, BLADE]) {
       expect(blockerIds(sheet, { [PACT]: [boon] })).not.toContain(
         TOME_CANTRIPS,
@@ -460,7 +460,7 @@ describe('warlock Pact Boon, growth, and replacement', () => {
     ).toBe(false);
   });
 
-  it('Book of Ancient Secrets picked at a later level still blocks on its rituals', () => {
+  it('Book of Ancient Secrets picked at a later level still asks for its rituals', () => {
     const sheet = warlock(4, {
       featureChoices: [
         held(
@@ -488,7 +488,7 @@ describe('warlock Pact Boon, growth, and replacement', () => {
         undefined,
         choices,
       ).find((c) => c.id.endsWith('book-of-ancient-secrets-rituals'));
-      expect(rituals).toMatchObject({ status: 'unsupported' });
+      expect(rituals).toMatchObject({ status: 'supported', choose: 2 });
     }
   });
 });

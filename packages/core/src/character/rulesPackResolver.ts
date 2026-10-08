@@ -226,6 +226,8 @@ export interface ResolvedSpellData {
   readonly name: string;
   readonly level: number;
   readonly classes: readonly string[];
+  /** Ritual tag (`data.ritual`), when the spell carries it. */
+  readonly ritual?: boolean;
 }
 
 /**
@@ -993,6 +995,7 @@ function resolveSpell(
       name: result.record.name,
       level: data.level,
       classes: data.classes,
+      ...(data.ritual === true ? { ritual: true } : {}),
     },
   };
 }
@@ -1508,6 +1511,7 @@ function isGeneratedClassData(data: unknown): data is GeneratedClassData {
 interface GeneratedSpellData {
   readonly level: number;
   readonly classes: readonly string[];
+  readonly ritual?: boolean;
 }
 
 function isGeneratedSpellData(data: unknown): data is GeneratedSpellData {
