@@ -38,8 +38,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 41,
-      name: 'active_effect_recast_event',
+      version: 42,
+      name: 'bonded_summon_pocket_presence',
     });
     db.close();
   });

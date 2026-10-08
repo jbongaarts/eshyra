@@ -404,6 +404,64 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  it('migration 0042 accepts the pocketed actor status and the presence-transition event kind, preserving rows', () => {
+    const bundled = discoverMigrations();
+    const file = (m: { version: number; name: string }) =>
+      `${String(m.version).padStart(4, '0')}_${m.name}.sql`;
+    const dir = makeMigrationDir(
+      Object.fromEntries(bundled.slice(0, 41).map((m) => [file(m), m.sql])),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(41);
+    db.prepare(
+      `INSERT INTO campaign_actor(campaign_id, actor_id, display_name,
+         actor_kind, source_kind, status, hp_current, hp_max, provenance,
+         session_id, updated_at)
+       VALUES ('c1','a1','Actor','creature','campaign_created','alive',3,5,'test','s',?)`,
+    ).run(NOW());
+    expect(() =>
+      db.prepare("UPDATE campaign_actor SET status='pocketed'").run(),
+    ).toThrow();
+
+    const migration42 = bundled.find((m) => m.version === 42);
+    if (!migration42) throw new Error('missing migration 0042');
+    writeFileSync(join(dir, file(migration42)), migration42.sql);
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([42]);
+
+    expect(
+      db
+        .prepare(
+          "SELECT status, hp_current, hp_max FROM campaign_actor WHERE actor_id='a1'",
+        )
+        .get(),
+    ).toEqual({ status: 'alive', hp_current: 3, hp_max: 5 });
+    db.prepare("UPDATE campaign_actor SET status='pocketed'").run();
+    expect(
+      db.prepare("SELECT status FROM campaign_actor WHERE actor_id='a1'").get(),
+    ).toEqual({ status: 'pocketed' });
+    expect(() =>
+      db.prepare("UPDATE campaign_actor SET status='bogus'").run(),
+    ).toThrow();
+    db.prepare(
+      `INSERT INTO active_effect_event(campaign_id, effect_id, seq, event_kind,
+         detail_json, occurred_at, provenance, session_id)
+       VALUES ('c1','e1',1,'presence-transition','{}',?, 'test','s')`,
+    ).run(NOW());
+    expect(() =>
+      db.prepare("UPDATE active_effect_event SET event_kind='bogus'").run(),
+    ).toThrow();
+    expect(
+      (
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'campaign_actor_%' ORDER BY name",
+          )
+          .all() as { name: string }[]
+      ).map((r) => r.name),
+    ).toEqual(['campaign_actor_location', 'campaign_actor_source']);
+    db.close();
+  });
+
   it('migration 0040 splits the legacy revert rule by owning spell and adds the natural-form column', () => {
     const bundled = discoverMigrations();
     const file = (m: { version: number; name: string }) =>
