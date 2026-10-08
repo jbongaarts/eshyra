@@ -302,8 +302,10 @@ typed audit events.
     is executable (Find Familiar, `reform-present-familiar`): `form` is
     required, and the same actor stays alive in that form. The source says the
     familiar "has the statistics of the chosen form" and "transforms into the
-    chosen creature", and carries no damage across a transformation, so the
-    reformed familiar takes the new form's hit points: the maximum is that
+    chosen creature", and it says nothing of damage carrying across the
+    transformation (no official ruling addresses it either). The engine reads
+    hit points as part of those statistics, as it does for the absent restore,
+    so the reformed familiar takes the new form's hit points: the maximum is that
     creature record's hit points and the current hit points are the
     exhaustion-adjusted maximum (a damaged familiar reformed into the same
     form returns at full). Find Steed has no `cast-again` transition for a
