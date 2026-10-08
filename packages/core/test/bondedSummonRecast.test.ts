@@ -1,5 +1,6 @@
-/** eshyra-s02z: recast_bonded_summon restores an absent bonded creature
- * (Find Familiar / Find Steed), driven through the real tool registry. */
+/** eshyra-s02z / eshyra-71u1: recast_bonded_summon restores an absent bonded
+ * creature and reforms a present familiar (Find Familiar / Find Steed), driven
+ * through the real tool registry. */
 import { describe, expect, it } from 'vitest';
 import type { ToolContext } from '../src/internal.js';
 import {
@@ -10,6 +11,7 @@ import {
   listCombatants,
   listEffectEvents,
 } from '../src/internal.js';
+import { lookupCampaignRecord } from '../src/state/campaignRecordLookup.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
   DEFAULT_TEST_SESSION_ID,
@@ -195,14 +197,22 @@ describe('recast_bonded_summon: Find Steed (restore-same-actor)', () => {
     expect(s.actor('steed').status).toBe('absent');
   });
 
-  it('refuses a present steed and says reforming is unsupported', () => {
+  it('refuses a present steed: no cast-again transition for a present creature', () => {
     const s = setup();
     s.bond('steed-fx', 'steed');
+    s.must('close_combat_instance', { status: 'completed' });
+    const before = s.actor('steed');
     const r = s.recast(steedRecast);
     expect(r.ok).toBe(false);
-    expect(s.message(r)).toMatch(/not absent/);
-    expect(s.message(r)).toMatch(/Reforming a present or pocketed familiar/);
-    expect(s.actor('steed')).toMatchObject({ status: 'alive', hpCurrent: 19 });
+    expect(s.message(r)).toMatch(
+      /no cast-again transition for a present creature whose link is active/,
+    );
+    expect(s.actor('steed')).toEqual(before);
+    expect(
+      listEffectEvents(s.db, campaign, 'steed-fx').filter(
+        (e) => e.eventKind === 'recast',
+      ),
+    ).toEqual([]);
   });
 
   it('refuses after the effect ended (the bond is gone)', () => {
@@ -360,15 +370,174 @@ describe('recast_bonded_summon: Find Familiar (select-new-form)', () => {
     });
   });
 
-  it('refuses a present familiar (reform of a present or pocketed familiar is out of scope)', () => {
+  const recordHp = (s: ReturnType<typeof setup>, ref: string): number => {
+    const data = lookupCampaignRecord(s.db, 'creature', ref, undefined)
+      ?.data as { hitPoints?: number | { value?: number } };
+    const hp = data.hitPoints;
+    const value = typeof hp === 'object' ? hp?.value : hp;
+    if (typeof value !== 'number') throw new Error(`no hp for ${ref}`);
+    return value;
+  };
+  const presentFamiliar = (s: ReturnType<typeof setup>) => {
+    s.bond('fam-fx', 'fam');
+    s.must('close_combat_instance', { status: 'completed' });
+  };
+
+  it('reforms a present familiar in place: same actor, new form and its record HP', () => {
+    const s = setup();
+    presentFamiliar(s);
+    const owlHp = recordHp(s, 'creature:owl');
+    const before = s.actor('fam');
+    const r = s.must('recast_bonded_summon', {
+      ...famRecast,
+      form: 'creature:owl',
+    });
+    expect(r.data).toMatchObject({
+      actorId: 'fam',
+      transitionId: 'reform-present-familiar',
+      rulesRef: 'creature:owl',
+      hpCurrent: owlHp,
+      hpMax: owlHp,
+      form: 'creature:owl',
+    });
+    expect(s.actor('fam')).toMatchObject({
+      actorId: 'fam',
+      status: 'alive',
+      rulesRef: 'creature:owl',
+      hpCurrent: owlHp,
+      hpMax: owlHp,
+      displayName: before.displayName,
+      conditions: before.conditions,
+    });
+    const fx = s.effect('fam-fx');
+    expect(fx.status).toBe('active');
+    expect(fx.links.find((l) => l.linkKind === 'actor')?.status).toBe('active');
+    expect(listEffectEvents(s.db, campaign, 'fam-fx').at(-1)).toMatchObject({
+      eventKind: 'recast',
+      detail: {
+        spellRef: 'spell:find-familiar',
+        transitionId: 'reform-present-familiar',
+        actor: 'fam',
+        hpCurrent: owlHp,
+        hpMax: owlHp,
+        form: 'creature:owl',
+      },
+    });
+  });
+
+  it('returns a damaged familiar reformed into the same form at that form’s full HP', () => {
     const s = setup();
     s.bond('fam-fx', 'fam');
-    const r = s.recast({ ...famRecast, form: 'creature:owl' });
-    expect(r.ok).toBe(false);
-    expect(s.message(r)).toMatch(/Reforming a present or pocketed familiar/);
+    s.vanish('c-fam', 1);
+    s.must('close_combat_instance', { status: 'completed' });
+    s.must('recast_bonded_summon', { ...famRecast, form: 'creature:octopus' });
+    const octopusHp = recordHp(s, 'creature:octopus');
+    s.must('start_encounter', {
+      combatInstanceId: 'c2',
+      actors: [{ actorId: 'fam' }],
+    });
+    s.must('update_combatant', { combatantId: 'c2-fam', hpDelta: -1 });
+    expect(s.actor('fam')).toMatchObject({ status: 'alive' });
+    expect(s.actor('fam').hpCurrent).toBeLessThan(octopusHp);
+    expect(s.actor('fam').hpCurrent).toBeGreaterThan(0);
+    s.must('close_combat_instance', { status: 'completed' });
+    s.must('recast_bonded_summon', { ...famRecast, form: 'creature:octopus' });
     expect(s.actor('fam')).toMatchObject({
       status: 'alive',
-      rulesRef: 'creature:bat',
+      rulesRef: 'creature:octopus',
+      hpCurrent: octopusHp,
+      hpMax: octopusHp,
+    });
+  });
+
+  it('reforms a present familiar at exhaustion level 4 to the halved effective maximum', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    s.must('adjust_exhaustion', { combatantId: 'c-fam', delta: 4 });
+    s.must('close_combat_instance', { status: 'completed' });
+    const octopusHp = recordHp(s, 'creature:octopus');
+    const r = s.must('recast_bonded_summon', {
+      ...famRecast,
+      form: 'creature:octopus',
+    });
+    expect(r.data).toMatchObject({
+      hpCurrent: Math.floor(octopusHp / 2),
+      hpMax: octopusHp,
+    });
+    expect(s.actor('fam')).toMatchObject({
+      status: 'alive',
+      rulesRef: 'creature:octopus',
+      hpCurrent: Math.floor(octopusHp / 2),
+      hpMax: octopusHp,
+    });
+  });
+
+  it('refuses a present familiar reform with no form or a form outside the list, unchanged', () => {
+    const s = setup();
+    presentFamiliar(s);
+    const before = s.actor('fam');
+    const missing = s.recast(famRecast);
+    expect(missing.ok).toBe(false);
+    expect(s.message(missing)).toMatch(/pass form as one of/);
+    expect(s.actor('fam')).toEqual(before);
+    const wrong = s.recast({ ...famRecast, form: 'creature:warhorse' });
+    expect(wrong.ok).toBe(false);
+    expect(s.message(wrong)).toMatch(/not one of the forms/);
+    expect(s.actor('fam')).toEqual(before);
+  });
+
+  it('refuses a present familiar reform while it has a combatant in an active combat instance', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    const before = s.actor('fam');
+    const r = s.recast({ ...famRecast, form: 'creature:owl' });
+    expect(r.ok).toBe(false);
+    expect(s.message(r)).toMatch(/active combat instance/);
+    expect(s.actor('fam')).toEqual(before);
+  });
+
+  it('refuses an actor that is neither absent nor alive, naming the status', () => {
+    const s = setup();
+    presentFamiliar(s);
+    s.db
+      .prepare(
+        `UPDATE campaign_actor SET status = 'inactive' WHERE campaign_id = ? AND actor_id = 'fam'`,
+      )
+      .run(campaign);
+    const r = s.recast({ ...famRecast, form: 'creature:owl' });
+    expect(r.ok).toBe(false);
+    expect(s.message(r)).toMatch(/is inactive/);
+    expect(s.actor('fam').rulesRef).toBe('creature:bat');
+  });
+
+  it('keeps vanish-bonded after a reform: it can vanish at 0 HP and be restored by an absent recast', () => {
+    const s = setup();
+    presentFamiliar(s);
+    s.must('recast_bonded_summon', { ...famRecast, form: 'creature:cat' });
+    s.must('start_encounter', {
+      combatInstanceId: 'c2',
+      actors: [{ actorId: 'fam' }],
+    });
+    const hit = s.must('update_combatant', {
+      combatantId: 'c2-fam',
+      hpDelta: -recordHp(s, 'creature:cat'),
+    });
+    expect(hit.data).toMatchObject({
+      vanished: { rule: 'vanish-bonded', linkKept: true, effectEnded: false },
+    });
+    expect(s.actor('fam').status).toBe('absent');
+    s.must('close_combat_instance', { status: 'completed' });
+    const r = s.must('recast_bonded_summon', {
+      ...famRecast,
+      form: 'creature:owl',
+    });
+    expect(r.data).toMatchObject({
+      transitionId: 'restore-and-reform-absent-familiar',
+      rulesRef: 'creature:owl',
+    });
+    expect(s.actor('fam')).toMatchObject({
+      status: 'alive',
+      rulesRef: 'creature:owl',
     });
   });
 
