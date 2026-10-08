@@ -76,7 +76,7 @@ function setup() {
     source: {
       kind: 'spell',
       ref: actorId === 'steed' ? 'spell:find-steed' : 'spell:find-familiar',
-      actor: { kind: 'combatant', ref: 'c-wiz' },
+      actor: { kind: 'campaign_actor', ref: 'wiz' },
     },
     duration: { kind: 'until-removed' },
     actors: [{ combatantId: `c-${actorId}`, campaignActorId: actorId }],
@@ -583,7 +583,7 @@ describe('spell-sourced bonded summons (eshyra-qxnc)', () => {
     expect(s.effect('steed-fx').source).toMatchObject({
       kind: 'spell',
       ref: 'spell:find-steed',
-      actor: { kind: 'combatant', ref: 'c-wiz' },
+      actor: { kind: 'campaign_actor', ref: 'wiz' },
     });
     expect(
       listCombatants(s.db, campaign).find((c) => c.combatantId === 'c-steed')
@@ -639,7 +639,7 @@ describe('spell-sourced bonded summons (eshyra-qxnc)', () => {
         source: {
           kind: 'spell',
           ref: 'spell:find-familiar',
-          actor: { kind: 'combatant', ref: 'c-wiz' },
+          actor: { kind: 'campaign_actor', ref: 'wiz' },
         },
       });
     let r = second();
@@ -676,7 +676,7 @@ describe('spell-sourced bonded summons (eshyra-qxnc)', () => {
       source: {
         kind: 'spell',
         ref: 'spell:find-familiar',
-        actor: { kind: 'combatant', ref: 'c-steed' },
+        actor: { kind: 'campaign_actor', ref: 'fam' },
       },
     });
     expect(other.ok).toBe(true);
@@ -703,6 +703,17 @@ describe('spell-sourced bonded summons (eshyra-qxnc)', () => {
     expect(r.ok).toBe(false);
     expect(s.message(r)).toMatch(/source\.actor/);
     r = s.tryBond('fam-fx', 'fam', {
+      source: {
+        kind: 'spell',
+        ref: 'spell:find-familiar',
+        actor: { kind: 'combatant', ref: 'c-wiz' },
+      },
+    });
+    expect(r.ok).toBe(false);
+    expect(s.message(r)).toMatch(
+      /character or campaign_actor, not combatant 'c-wiz'/,
+    );
+    r = s.tryBond('fam-fx', 'fam', {
       duration: { kind: 'until-dismissed' },
     });
     expect(r.ok).toBe(false);
@@ -715,7 +726,7 @@ describe('spell-sourced bonded summons (eshyra-qxnc)', () => {
       source: {
         kind: 'spell',
         ref: 'spell:magic-missile',
-        actor: { kind: 'combatant', ref: 'c-wiz' },
+        actor: { kind: 'campaign_actor', ref: 'wiz' },
       },
     });
     expect(r.ok).toBe(false);
@@ -734,5 +745,6 @@ describe('spell-sourced bonded summons (eshyra-qxnc)', () => {
       ],
     });
     expect(r.ok).toBe(false);
+    expect(s.message(r)).toMatch(/contradicts it/);
   });
 });

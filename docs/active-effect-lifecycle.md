@@ -98,7 +98,10 @@ is authoritative where it parses:
   `initialState.link: active` (Find Familiar, Find Steed), decided by the
   record, never the spell's name. Such a bond must declare an `until-removed`
   duration (it lasts until released or dismissed), a `source.actor` (the
-  caster it is bonded to), and between one and `identity.maximumLinked` actors
+  caster it is bonded to, as a `character` or `campaign_actor`: the bond
+  outlives any combat instance, so a `combatant` id, which names one
+  projection in one instance, is refused), and between one and
+  `identity.maximumLinked` actors
   entries. A caster may hold one such bond per spell: creation is refused while
   another active or suppressed effect has the same spell, the same source
   actor, and an active actor link, and points at `recast_bonded_summon`.

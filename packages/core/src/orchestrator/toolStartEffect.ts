@@ -46,7 +46,9 @@ export const startEffectTool: Tool = {
     'their own mutations — EXCEPT a bonded summon whose record keeps a ' +
     'persistent link after casting (Find Familiar, Find Steed). Those are ' +
     'spell-sourced summoning effects with duration until-removed and ' +
-    'source.actor set to the caster, with one bond per caster per spell ' +
+    'source.actor set to the caster as a character or campaign_actor (the ' +
+    'bond outlives combat, so never a combatant id), with one bond per ' +
+    'caster per spell ' +
     '(casting again while the bond lasts is recast_bonded_summon).',
   inputSchema: {
     type: 'object',

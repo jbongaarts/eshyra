@@ -3523,6 +3523,12 @@ export function createActiveEffect(
         throw new ActiveEffectError(
           `'${spellRecord?.name}' bonds its creature to the caster: declare source.actor (the caster the creature is bonded to)`,
         );
+      // The bond outlives any combat instance, so its caster needs a durable
+      // identity; a combatant id names one projection in one instance.
+      if (input.source.actor.kind === 'combatant')
+        throw new ActiveEffectError(
+          `'${spellRecord?.name}' bonds its creature to the caster beyond any one combat: declare source.actor as the caster's character or campaign_actor, not combatant '${input.source.actor.ref}'`,
+        );
       const linked = (input.actors ?? []).length;
       const max = bondedSummon.maximumLinked;
       if (linked < 1 || (max !== undefined && linked > max))
