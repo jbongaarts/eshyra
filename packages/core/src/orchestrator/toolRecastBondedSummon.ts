@@ -10,7 +10,9 @@ export const recastBondedSummonTool: Tool = {
   description:
     'Record that the summoner casts a bonded-summon spell again (Find ' +
     'Familiar, Find Steed) while the bond (the effect and its actor link) ' +
-    'stays active. The creature’s modelled presence and the spell record’s ' +
+    'stays active. The bond must have been created from its spell ' +
+    '(start_effect source { kind: "spell", ref }) and spellRef must be that ' +
+    'spell; a ruling-sourced bond is refused. The creature’s modelled presence and the spell record’s ' +
     'cast-again transition decide the result. An ABSENT creature (it ' +
     'disappeared at 0 hit points) is restored: a spell that restores the ' +
     'same creature at maximum hit points (Find Steed) takes NO form and ' +
