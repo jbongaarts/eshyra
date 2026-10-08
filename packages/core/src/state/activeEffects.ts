@@ -516,6 +516,12 @@ export interface TransitionBondedSummonResult {
   readonly combatantEntered?: string;
   /** True when the transition closed the bond and ended the effect. */
   readonly effectEnded: boolean;
+  /** Participant-turn timers anchored to the combatant that left play; they
+   *  expire rather than follow it to the campaign actor (eshyra-q16x). */
+  readonly timersExpired?: readonly {
+    readonly effectId: string;
+    readonly displayName: string;
+  }[];
   /** The record's placement operation, which the engine does not track: the
    *  model narrates where the creature reappears. */
   readonly narratedPlacement?: {
@@ -5825,6 +5831,7 @@ export function transitionBondedSummon(
     };
     let combatantLeft: string | undefined;
     let combatantEntered: string | undefined;
+    let timersExpired: { effectId: string; displayName: string }[] = [];
     try {
       if (kind === 'recall') {
         combatantEntered = recallPocketedCampaignActor(txnDb, {
@@ -5851,6 +5858,14 @@ export function transitionBondedSummon(
               )
               .get(input.campaignId, live) as { combat_instance_id: string }
           ).combat_instance_id;
+          timersExpired = expireDepartingParticipantTimers(
+            txnDb,
+            input.campaignId,
+            live,
+            instanceId,
+            input.trigger,
+            ctx,
+          );
           rebindCombatantReferencesToActor(
             txnDb,
             input.campaignId,
@@ -5945,6 +5960,9 @@ export function transitionBondedSummon(
         to: { presence: presenceTo, link: linkTo },
         ...(combatantLeft === undefined ? {} : { combatantLeft }),
         ...(combatantEntered === undefined ? {} : { combatantEntered }),
+        ...(timersExpired.length === 0
+          ? {}
+          : { timersExpired: timersExpired.map((t) => t.effectId) }),
       },
       input,
     );
@@ -5981,9 +5999,89 @@ export function transitionBondedSummon(
       ...(combatantLeft === undefined ? {} : { combatantLeft }),
       ...(combatantEntered === undefined ? {} : { combatantEntered }),
       effectEnded,
+      ...(timersExpired.length === 0 ? {} : { timersExpired }),
       ...(narratedPlacement === undefined ? {} : { narratedPlacement }),
     };
   });
+}
+
+/**
+ * A bonded creature pocketed, dismissed or released mid-combat leaves play,
+ * and the transition rebinds its references from the combatant to the
+ * campaign actor. A participant-turn timer anchored to that combatant cannot
+ * follow: participant clocks are combatant-only by contract, a campaign actor
+ * is not a turn participant, and a recall enters as a new combatant identity,
+ * so the old clock would no longer describe the creature in play. Keeping the
+ * anchor while the target moves breaks the anchor-matches-target invariant
+ * that every turn boundary and combat closure validates. Following the
+ * combat-closure precedent for round-scale timers whose clock is leaving, each
+ * such timer expires here, before the references are rebound (eshyra-q16x).
+ * The bond effect itself is never among them: a bonded-summon effect must be
+ * declared 'until-removed'.
+ */
+function expireDepartingParticipantTimers(
+  db: Db,
+  campaignId: string,
+  combatantId: string,
+  combatInstanceId: string,
+  trigger: BondedSummonTrigger,
+  ctx: EffectMutationContext,
+): { effectId: string; displayName: string }[] {
+  const participant = { kind: 'combatant', ref: combatantId } as const;
+  const rows = (
+    db
+      .prepare(
+        `SELECT ${EFFECT_COLUMNS} FROM active_effect
+         WHERE campaign_id = ? AND status IN ('active', 'suppressed')
+           AND anchor_combat_instance_id = ?
+           AND anchor_participant_kind = 'combatant'
+           AND anchor_participant_ref = ?
+         ORDER BY created_at, effect_id`,
+      )
+      .all(campaignId, combatInstanceId, combatantId) as ActiveEffectRow[]
+  ).filter((row) => isParticipantTurnAnchor(row.anchor_kind));
+  // Validate every affected clock before ending any, as the turn boundary and
+  // combat closure do: a malformed row aborts the whole transition.
+  const deadlines = rows.map((row) =>
+    requireParticipantTimerDeadline(
+      row,
+      readTargetRows(db, campaignId, row.effect_id),
+    ),
+  );
+  const current = readAnchorTurnOrdinal(
+    db,
+    campaignId,
+    combatInstanceId,
+    participant,
+  );
+  const expired: { effectId: string; displayName: string }[] = [];
+  rows.forEach((row, index) => {
+    // An earlier expiry can cascade and end a later row; the primitive claims
+    // against the durable row and a stale entry is not reported.
+    const live = readEffectRow(db, campaignId, row.effect_id);
+    if (live === undefined || live.status === 'ended') return;
+    const remaining = Math.max(
+      0,
+      (deadlines[index]?.deadlineOrdinal ?? current) - current,
+    );
+    const outcome = finalizeEnd(
+      db,
+      live,
+      {
+        reason: 'expired',
+        note:
+          `its turn-anchored participant, combatant '${combatantId}', left ` +
+          `play (${trigger}) in combat instance '${combatInstanceId}' with ` +
+          `${remaining} participant turn-start boundary/boundaries remaining; ` +
+          'the round-scale duration elapses as the participant leaves',
+      },
+      ctx,
+    );
+    if (outcome.performed) {
+      expired.push({ effectId: row.effect_id, displayName: row.display_name });
+    }
+  });
+  return expired;
 }
 
 export function refreshEffect(
