@@ -5,8 +5,10 @@
 // pack's curated `resource-conversion` procedure and are evaluated by
 // `executeBoundedProcedure`; this module only gathers the live inputs (points
 // left, available slots) and applies the resulting transition in one
-// transaction. It does not consume the bonus action — the DM tracks that with
-// the turn-resource tool in combat.
+// transaction. Both operations take a bonus action (SRD): in an active combat
+// instance the bonus action is spent here through the action-economy owner,
+// before any point or slot mutation, so a refusal aborts atomically. Outside
+// structured combat there is no turn timing and nothing is consumed.
 
 import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
 import { createRulesPackCharacterResolver } from '../character/rulesPackResolver.js';
@@ -17,12 +19,14 @@ import {
   executeBoundedProcedure,
   resourceConversionMaximum,
 } from '../rules/boundedProcedures.js';
+import { ActionEconomyError, spendTurnResource } from './actionEconomy.js';
 import { resolveCharacterId } from './activeCharacter.js';
 import {
   type CampaignRulesPackResolver,
   lookupStrictCampaignRecord,
   memoizeCampaignRulesPackResolver,
 } from './campaignRecordLookup.js';
+import { getActiveCombatInstance } from './encounterCombatants.js';
 import {
   addCreatedSpellSlot,
   expendSpellSlotAtLevel,
@@ -60,8 +64,11 @@ export interface FlexibleCastingResult {
   readonly pointDelta: number;
   readonly sorceryPoints: { readonly remaining: number; readonly max: number };
   readonly slot: SpellSlotCounter;
-  /** Action the SRD requires; the DM tracks it, this tool does not. */
+  /** Action the SRD requires. */
   readonly actionCost: string;
+  /** True when an active combat instance's bonus action was spent by this
+   *  operation; absent outside structured combat (nothing is consumed). */
+  readonly bonusActionSpent?: true;
   readonly createdSlotExpires?: string;
 }
 
@@ -153,6 +160,32 @@ export function flexibleCasting(
       );
     }
 
+    // SRD: both operations take a bonus action. Spend it first, in this
+    // transaction, so not-your-turn / already-used / surprised refusals abort
+    // before any point or slot changes.
+    let bonusActionSpent = false;
+    if (getActiveCombatInstance(txnDb, input.campaignId) !== undefined) {
+      try {
+        spendTurnResource(txnDb, {
+          ...mutation,
+          campaignId: input.campaignId,
+          participant: { kind: 'character', ref: characterId },
+          resource: 'bonus_action',
+          activity:
+            input.operation === 'create-slot'
+              ? `Font of Magic: sorcery points into a level ${input.slotLevel} slot`
+              : `Font of Magic: level ${input.slotLevel} slot into sorcery points`,
+          ...(resolveRulesPack === undefined ? {} : { resolveRulesPack }),
+        });
+      } catch (e) {
+        if (e instanceof ActionEconomyError) {
+          throw new FlexibleCastingError(e.message);
+        }
+        throw e;
+      }
+      bonusActionSpent = true;
+    }
+
     const slotContext = { ...mutation, characterId, resolver };
     const usage = {
       ...mutation,
@@ -194,6 +227,7 @@ export function flexibleCasting(
           sorceryPoints: pointsOf(spent.counter),
           slot,
           actionCost: transition.actionCost,
+          ...(bonusActionSpent ? { bonusActionSpent: true as const } : {}),
           ...(transition.createdSlotExpires === undefined
             ? {}
             : { createdSlotExpires: transition.createdSlotExpires }),
@@ -229,6 +263,7 @@ export function flexibleCasting(
         sorceryPoints: pointsOf(restored.counter),
         slot,
         actionCost: transition.actionCost,
+        ...(bonusActionSpent ? { bonusActionSpent: true as const } : {}),
       };
     } catch (e) {
       if (e instanceof BoundedProcedureError) {
