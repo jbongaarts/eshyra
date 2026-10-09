@@ -128,6 +128,7 @@ const LAND = 'level.3.feature.circle-of-the-land-circle-spells.land';
 const CANTRIP =
   'level.2.feature.circle-of-the-land-bonus-cantrip.bonus-cantrip';
 const SKILLS = 'level.3.feature.college-of-lore-bonus-proficiencies.skills';
+const EXPERTISE = 'level.3.feature.bard-expertise.expertise';
 const LORE = { key: 'subclass:college-of-lore', name: 'College of Lore' };
 const LAND_SUBCLASS = {
   key: 'subclass:circle-of-the-land',
@@ -261,26 +262,9 @@ describe('Circle of the Land Circle Spells (level 3 land)', () => {
 });
 
 describe('College of Lore Bonus Proficiencies (level 3 skills)', () => {
-  // Expertise (a separate, still-unsupported bead) also lands at bard level 3;
-  // drop it from the level-3 row so the apply path under test is unblocked.
-  const noGrowth = withoutSpellGrowth(2);
-  const resolver: RulesPackCharacterResolver = {
-    ...noGrowth,
-    resolveClassLevel(classKey, level) {
-      const row = noGrowth.resolveClassLevel(classKey, level);
-      return row.ok && level === 3
-        ? {
-            ok: true,
-            record: {
-              ...row.record,
-              featureRefs: row.record.featureRefs.filter(
-                (ref) => !ref.endsWith(':expertise'),
-              ),
-            },
-          }
-        : row;
-    },
-  };
+  // Spell growth is held constant so only the skill/expertise interaction is
+  // under test; the REAL bard level-3 row (with Expertise) is otherwise used.
+  const resolver: RulesPackCharacterResolver = withoutSpellGrowth(2);
   const base = { 'level.3.subclass': ['College of Lore'] };
 
   it('offers three skills excluding held proficiencies', () => {
@@ -306,6 +290,7 @@ describe('College of Lore Bonus Proficiencies (level 3 skills)', () => {
       choices: {
         ...base,
         [SKILLS]: ['Arcana', 'History', 'Persuasion'],
+        [EXPERTISE]: ['skill:Insight', 'skill:Stealth'],
       },
       ...APPLY,
     });
@@ -317,14 +302,16 @@ describe('College of Lore Bonus Proficiencies (level 3 skills)', () => {
       'History',
       'Persuasion',
     ]);
-    expect(result.sheet.featureChoices).toEqual([
-      {
-        featureRef: 'feature:college-of-lore:bonus-proficiencies',
-        choiceId: 'skills',
-        optionIds: ['Arcana', 'History', 'Persuasion'],
-        level: 3,
-      },
-    ]);
+    expect(result.sheet.featureChoices).toEqual(
+      expect.arrayContaining([
+        {
+          featureRef: 'feature:college-of-lore:bonus-proficiencies',
+          choiceId: 'skills',
+          optionIds: ['Arcana', 'History', 'Persuasion'],
+          level: 3,
+        },
+      ]),
+    );
     expect(store.load('pc-1')?.skillProficiencies).toEqual(
       result.sheet.skillProficiencies,
     );
@@ -355,6 +342,89 @@ describe('College of Lore Bonus Proficiencies (level 3 skills)', () => {
       ? undefined
       : result.requiredChoices.find((choice) => choice.id === SKILLS);
     expect(blocker?.reason).toContain('selection refused');
+  });
+
+  describe('same-level Expertise on newly picked Lore skills', () => {
+    const lore = ['Arcana', 'History', 'Persuasion'];
+    const expertiseOptions = (picked: readonly string[]) =>
+      detectLevelUpRequiredChoices(loreBard(), resolver, undefined, {
+        ...base,
+        [SKILLS]: picked,
+      }).find((d) => d.id === EXPERTISE)?.from;
+
+    it('makes a validly picked Lore skill eligible for Expertise in the same step', () => {
+      const db = bareDb();
+      const store = createSqliteCharacterSheetStore(db, () => AT);
+      store.save('pc-1', loreBard());
+      const result = applyLevelUp(db, {
+        store,
+        resolver,
+        choices: {
+          ...base,
+          [SKILLS]: lore,
+          [EXPERTISE]: ['skill:Arcana', 'skill:Insight'],
+        },
+        ...APPLY,
+      });
+      expect(result.sheet.skillProficiencies).toEqual(
+        expect.arrayContaining(lore),
+      );
+      expect(result.sheet.featureChoices).toEqual(
+        expect.arrayContaining([
+          {
+            featureRef: 'feature:college-of-lore:bonus-proficiencies',
+            choiceId: 'skills',
+            optionIds: lore,
+            level: 3,
+          },
+          {
+            featureRef: 'feature:bard:expertise',
+            choiceId: 'expertise',
+            optionIds: ['skill:Arcana', 'skill:Insight'],
+            level: 3,
+          },
+        ]),
+      );
+      db.close();
+    });
+
+    it('offers no pending skill before the Lore picks are valid', () => {
+      expect(expertiseOptions(lore)).toContain('skill:Arcana');
+      expect(
+        detectLevelUpRequiredChoices(
+          loreBard(),
+          resolver,
+          undefined,
+          base,
+        ).find((d) => d.id === EXPERTISE)?.from,
+      ).not.toContain('skill:Arcana');
+      // 'Insight' is already held: the whole Lore selection is invalid.
+      expect(
+        expertiseOptions(['Insight', 'History', 'Persuasion']),
+      ).not.toContain('skill:History');
+    });
+
+    it.each([
+      [
+        'Expertise on a skill only in an invalid (held) Lore selection',
+        ['Insight', 'History', 'Persuasion'],
+        ['skill:History', 'skill:Insight'],
+      ],
+      [
+        'Expertise on a skill only in a duplicate Lore selection',
+        ['Arcana', 'Arcana', 'History'],
+        ['skill:Arcana', 'skill:Insight'],
+      ],
+      ['a duplicate Expertise pick', lore, ['skill:Arcana', 'skill:Arcana']],
+    ])('blocks %s', (_label, skills, expertise) => {
+      const result = previewLevelUpChangeSet(loreBard(), {
+        resolver,
+        choices: { ...base, [SKILLS]: skills, [EXPERTISE]: expertise },
+      });
+      expect(result.ok).toBe(false);
+      const blocked = result.ok ? [] : result.requiredChoices.map((c) => c.id);
+      expect(blocked).toContain(EXPERTISE);
+    });
   });
 });
 
@@ -417,6 +487,125 @@ describe('generalized choice-coverage invariant', () => {
       status: 'unsupported',
       kind: 'class-feature-choice',
       featureRef: 'feature:college-of-lore:cutting-words',
+    });
+  });
+
+  describe('per-choice-instance coverage on one feature', () => {
+    const CUTTING = 'feature:college-of-lore:cutting-words';
+    const overlay = (
+      choices: readonly Record<string, unknown>[],
+    ): RulesPackCharacterResolver => ({
+      ...bundled,
+      listFeatures: () =>
+        bundled
+          .listFeatures()
+          .map((feature) =>
+            feature.key === CUTTING
+              ? { ...feature, choices: choices as never }
+              : feature,
+          ),
+    });
+    const handledList = {
+      id: 'style',
+      category: 'other',
+      prompt: 'Pick a style.',
+      level: 3,
+      choose: 1,
+      from: ['a', 'b'],
+    };
+    const unhandled = {
+      id: 'weirdness',
+      category: 'other',
+      prompt: 'Pick the weird thing.',
+      level: 3,
+      choose: 1,
+      from: { kind: 'someFutureFilter' },
+    };
+    const conditionalSpell = {
+      id: 'tome-style-cantrips',
+      category: 'cantrip',
+      prompt: 'If you choose X, choose cantrips.',
+      level: 3,
+      choose: 3,
+      from: { requiresFeatureOption: 'pact-boon:not-picked' },
+    };
+    const picks = { 'level.3.subclass': ['College of Lore'] };
+    const idOf = (choiceId: string) =>
+      `level.3.feature.college-of-lore-cutting-words.${choiceId}`;
+
+    it('blocks an unhandled choice that shares a feature with a handled one, and apply refuses', () => {
+      const resolver = overlay([handledList, unhandled]);
+      const found = detectLevelUpRequiredChoices(
+        loreBard(),
+        resolver,
+        undefined,
+        picks,
+      );
+      expect(found.find((d) => d.id === idOf('style'))).toMatchObject({
+        status: 'supported',
+      });
+      expect(found.find((d) => d.id === idOf('weirdness'))).toMatchObject({
+        status: 'unsupported',
+        featureRef: CUTTING,
+      });
+      const preview = previewLevelUpChangeSet(loreBard(), {
+        resolver: resolver,
+        choices: {
+          ...picks,
+          [idOf('style')]: ['a'],
+          [SKILLS]: ['Arcana', 'History', 'Persuasion'],
+          [EXPERTISE]: ['skill:Arcana', 'skill:Insight'],
+        },
+      });
+      expect(preview.ok).toBe(false);
+      expect(
+        preview.ok ? [] : preview.requiredChoices.map((c) => c.id),
+      ).toContain(idOf('weirdness'));
+    });
+
+    it('does not require an untriggered conditional sibling', () => {
+      const found = detectLevelUpRequiredChoices(
+        loreBard(),
+        overlay([handledList, conditionalSpell]),
+        undefined,
+        picks,
+      );
+      expect(found.map((d) => d.id)).not.toContain(idOf(conditionalSpell.id));
+    });
+
+    it('blocks a repeated grant whose skill choice no module handles', () => {
+      const SKILL_FEATURE = 'feature:college-of-lore:bonus-proficiencies';
+      const repeat: RulesPackCharacterResolver = {
+        ...bundled,
+        resolveClassLevel(classKey, level) {
+          const row = bundled.resolveClassLevel(classKey, level);
+          return row.ok && classKey === 'class:bard' && level === 2
+            ? {
+                ok: true,
+                record: {
+                  ...row.record,
+                  featureRefs: [...row.record.featureRefs, SKILL_FEATURE],
+                },
+              }
+            : row;
+        },
+      };
+      const sheet = buildSheet({
+        classKey: 'class:bard',
+        className: 'Bard',
+        level: 2,
+        subclass: LORE,
+        skills: ['Insight', 'Stealth'],
+        spellcasting: {
+          cantrips: spellsOf('Bard', 0, 2),
+          known: spellsOf('Bard', 1, 5),
+        },
+      });
+      const found = detectLevelUpRequiredChoices(sheet, repeat);
+      expect(found.find((d) => d.id === SKILLS)).toMatchObject({
+        status: 'unsupported',
+        featureRef: SKILL_FEATURE,
+      });
     });
   });
 

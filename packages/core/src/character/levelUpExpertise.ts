@@ -14,12 +14,16 @@
 
 import type { FeatureChoice } from '../rules/featureChoices.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
+import {
+  choiceInstanceKey,
+  descriptorId,
+  type HandledChoiceInstances,
+} from './levelUpChoiceCoverage.js';
 import type {
   LevelUpAppliedChoice,
   LevelUpChoiceOption,
   LevelUpRequiredChoice,
 } from './levelUpEngine.js';
-import { descriptorId } from './levelUpFeatureChoices.js';
 import type { RulesPackCharacterResolver } from './rulesPackResolver.js';
 
 /**
@@ -88,11 +92,15 @@ function expertiseFilter(choice: FeatureChoice): ExpertiseFilter | undefined {
 function eligibleOptions(
   sheet: CharacterSheet,
   filter: ExpertiseFilter,
+  pendingSkills: readonly string[],
 ): readonly LevelUpChoiceOption[] {
   const taken = characterExpertise(sheet);
   const options: LevelUpChoiceOption[] = [];
   if (filter.proficiencyTypes.includes('skill')) {
-    for (const skill of sheet.skillProficiencies) {
+    const heldNames = new Set<string>();
+    for (const skill of [...sheet.skillProficiencies, ...pendingSkills]) {
+      if (heldNames.has(skill.toLowerCase())) continue;
+      heldNames.add(skill.toLowerCase());
       options.push({ id: `skill:${skill}`, name: skill });
     }
   }
@@ -111,15 +119,23 @@ export interface ExpertiseDetectionContext {
   readonly targetFeatureRefs: readonly string[];
   readonly heldFeatureRefs: ReadonlySet<string>;
   readonly resolver: RulesPackCharacterResolver;
+  /**
+   * Skills validly gained earlier in this same level-up (College of Lore's
+   * Bonus Proficiencies at bard 3) that Expertise may already target.
+   */
+  readonly pendingSkillProficiencies?: readonly string[];
 }
 
 /** Expertise descriptors for the features granted at this level-up. */
 export function detectExpertiseDescriptors(ctx: ExpertiseDetectionContext): {
   readonly choices: readonly LevelUpRequiredChoice[];
   readonly coveredFeatureRefs: ReadonlySet<string>;
+  readonly handledInstances: HandledChoiceInstances;
 } {
   const choices: LevelUpRequiredChoice[] = [];
   const covered = new Set<string>();
+  const handled = new Set<string>();
+  const pending = ctx.pendingSkillProficiencies ?? [];
   const features = ctx.resolver.listFeatures();
   for (const ref of new Set(ctx.targetFeatureRefs)) {
     if (!isExpertiseFeatureRef(ref)) continue;
@@ -127,6 +143,7 @@ export function detectExpertiseDescriptors(ctx: ExpertiseDetectionContext): {
     for (const choice of feature?.choices ?? []) {
       if (feature === undefined || choice.category !== 'expertise') continue;
       covered.add(ref);
+      handled.add(choiceInstanceKey(ref, choice.id));
       const count = ctx.heldFeatureRefs.has(ref)
         ? REPEATED_EXPERTISE_PICKS
         : choice.choose;
@@ -146,7 +163,7 @@ export function detectExpertiseDescriptors(ctx: ExpertiseDetectionContext): {
         });
         continue;
       }
-      const options = eligibleOptions(ctx.sheet, filter);
+      const options = eligibleOptions(ctx.sheet, filter, pending);
       if (options.length < count) {
         choices.push({
           ...base,
@@ -166,7 +183,7 @@ export function detectExpertiseDescriptors(ctx: ExpertiseDetectionContext): {
       });
     }
   }
-  return { choices, coveredFeatureRefs: covered };
+  return { choices, coveredFeatureRefs: covered, handledInstances: handled };
 }
 
 export type ExpertiseResolution =
