@@ -70,7 +70,10 @@ import {
 } from './characterSheetStore.js';
 import type { SavingThrowDerived } from './derivedValues.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
-import { uncoveredChoiceDescriptors } from './levelUpChoiceCoverage.js';
+import {
+  choiceInstanceKey,
+  uncoveredChoiceDescriptors,
+} from './levelUpChoiceCoverage.js';
 import {
   detectExpertiseDescriptors,
   resolveExpertiseSelection,
@@ -764,12 +767,66 @@ export function detectLevelUpRequiredChoices(
       }
     }
   }
+  const handled = new Set<string>();
+  // Legacy supported descriptors (subclass pick, Ability Score Improvement)
+  // handle the pack choices of their feature in those categories: the ASI
+  // descriptor's `from` already offers feats and resolution applies featRef.
+  const legacyCategory: Partial<Record<LevelUpRequiredChoiceKind, string>> = {
+    subclass: 'subclass',
+    'ability-score-improvement': 'asiOrFeat',
+  };
+  for (const entry of choices) {
+    const category = legacyCategory[entry.kind];
+    if (
+      entry.status !== 'supported' ||
+      entry.featureRef === undefined ||
+      category === undefined
+    ) {
+      continue;
+    }
+    const feature = resolver
+      .listFeatures()
+      .find((candidate) => candidate.key === entry.featureRef);
+    for (const choice of feature?.choices ?? []) {
+      if (choice.category === category) {
+        handled.add(choiceInstanceKey(entry.featureRef, choice.id));
+      }
+    }
+  }
+  // Skill picks run before Expertise: a Lore skill validly picked in this very
+  // level-up is a held proficiency Expertise may target. Invalid picks add
+  // nothing (and the skill descriptor still blocks on its own).
+  const skills = detectSkillChoiceDescriptors({
+    sheet,
+    toLevel,
+    targetFeatureRefs,
+    heldFeatureRefs,
+    resolver,
+  });
+  const pendingSkillProficiencies: string[] = [];
+  for (const descriptor of skills.choices) {
+    if (descriptor.status !== 'supported') continue;
+    const picked = selections[descriptor.id];
+    if (picked === undefined) continue;
+    const resolution = resolveSkillChoiceSelection(
+      descriptor,
+      picked,
+      sheet,
+      toLevel,
+    );
+    if (resolution.ok) {
+      pendingSkillProficiencies.push(
+        ...(resolution.applied.skillProficiencies ?? []),
+      );
+    }
+  }
   const expertise = detectExpertiseDescriptors({
     sheet,
     toLevel,
     targetFeatureRefs,
     heldFeatureRefs,
     resolver,
+    pendingSkillProficiencies,
   });
   const featureChoices = detectFeatureChoiceDescriptors({
     sheet,
@@ -801,16 +858,14 @@ export function detectLevelUpRequiredChoices(
       }
     }
   }
-  choices.push(...expertise.choices, ...featureChoices.choices);
   choices.push(
-    ...detectSkillChoiceDescriptors({
-      sheet,
-      toLevel,
-      targetFeatureRefs,
-      heldFeatureRefs,
-      resolver,
-    }),
+    ...expertise.choices,
+    ...featureChoices.choices,
+    ...skills.choices,
   );
+  for (const result of [expertise, featureChoices, skills]) {
+    for (const key of result.handledInstances) handled.add(key);
+  }
 
   choices.push(
     ...subclassFeatureSlotChoices(
@@ -822,20 +877,20 @@ export function detectLevelUpRequiredChoices(
     ...featureImprovementChoices(toRow.featureImprovements, toLevel),
   );
 
-  choices.push(
-    ...detectSpellDescriptors({
-      sheet,
-      classKey,
-      classRecord: classResult.record,
-      toLevel,
-      fromSpellcasting: fromRow?.spellcasting,
-      toSpellcasting: toRow.spellcasting,
-      targetFeatureRefs,
-      heldFeatureRefs,
-      resolver,
-      selections,
-    }),
-  );
+  const spells = detectSpellDescriptors({
+    sheet,
+    classKey,
+    classRecord: classResult.record,
+    toLevel,
+    fromSpellcasting: fromRow?.spellcasting,
+    toSpellcasting: toRow.spellcasting,
+    targetFeatureRefs,
+    heldFeatureRefs,
+    resolver,
+    selections,
+  });
+  choices.push(...spells.choices);
+  for (const key of spells.handledInstances) handled.add(key);
 
   // Coverage invariant (eshyra-91o0): no pack-modeled choice on a feature
   // gained at this level may be skipped by every detector above.
@@ -844,6 +899,7 @@ export function detectLevelUpRequiredChoices(
       toLevel,
       targetFeatureRefs,
       emitted: choices,
+      handled,
       resolver,
     }),
   );

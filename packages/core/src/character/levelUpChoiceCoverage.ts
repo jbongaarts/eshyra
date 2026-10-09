@@ -1,16 +1,22 @@
 // Generalized level-up choice-coverage invariant (eshyra-91o0).
 //
-// After every detector has run, each pack-modeled choice instance available at
-// the target level on a feature the character gains must be covered by some
-// emitted descriptor carrying that feature ref (supported OR unsupported).
-// Detection used to be per-feature and silently skipped anything it did not
-// recognize (subclass-granted Bonus Cantrip, Circle Spells, Lore proficiencies,
-// ...). This pass is the single place that turns an uncovered instance into an
-// explicit unsupported descriptor, so a new pack choice can never be skipped.
+// After every detector has run, each pack-modeled choice INSTANCE
+// (featureRef + choiceId) available at the target level on a feature the
+// character gains must be accounted for. Detection used to be per-feature and
+// silently skipped anything it did not recognize (subclass-granted Bonus
+// Cantrip, Circle Spells, Lore proficiencies, ...). This pass is the single
+// place that turns an unaccounted instance into an explicit unsupported
+// descriptor, so a new pack choice can never be skipped.
+//
+// Contract: every detector reports the instances it took responsibility for
+// at this level as `choiceInstanceKey(featureRef, choiceId)` keys, INCLUDING
+// instances it evaluated and decided need no descriptor (a replacement with
+// nothing held, a conditional spell choice whose trigger was not picked). The
+// only thing that may account for instances by featureRef is an UNSUPPORTED
+// descriptor carrying that ref, because it already blocks the level-up.
 
 import type { FeatureChoice } from '../rules/featureChoices.js';
 import type { LevelUpRequiredChoice } from './levelUpEngine.js';
-import { descriptorId } from './levelUpFeatureChoices.js';
 import type { RulesPackCharacterResolver } from './rulesPackResolver.js';
 
 /**
@@ -40,44 +46,65 @@ export function choiceInstancesAtLevel(
   return exact.length > 0 ? exact : choices;
 }
 
-function isBaseSpellcastingRef(ref: string): boolean {
-  return /^feature:[a-z0-9-]+:(?:spellcasting|pact-magic)$/.test(ref);
+export function featureSlug(featureRef: string): string {
+  return featureRef
+    .replace(/^feature:/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
+
+export function descriptorId(
+  toLevel: number,
+  featureRef: string,
+  choiceId: string,
+): string {
+  return `level.${toLevel}.feature.${featureSlug(featureRef)}.${choiceId}`;
+}
+
+/** Identity of one choice instance: `${featureRef}\0${choiceId}`. */
+export function choiceInstanceKey(
+  featureRef: string,
+  choiceId: string,
+): string {
+  return `${featureRef}\0${choiceId}`;
+}
+
+/** The set of {@link choiceInstanceKey}s a detector took responsibility for. */
+export type HandledChoiceInstances = ReadonlySet<string>;
 
 export function uncoveredChoiceDescriptors(ctx: {
   readonly toLevel: number;
   readonly targetFeatureRefs: readonly string[];
   readonly emitted: readonly LevelUpRequiredChoice[];
+  /** Instances the detectors handled (union of their reports). */
+  readonly handled: HandledChoiceInstances;
   readonly resolver: RulesPackCharacterResolver;
 }): readonly LevelUpRequiredChoice[] {
-  // A descriptor covers a feature by carrying its ref. The one exception is a
-  // class's base Spellcasting / Pact Magic feature: levelUpSpells.ts owns its
-  // whole choice set (cantrips, known, prepared, spellbook, replacement) under
-  // `level.N.spells.*` ids that carry no featureRef, so it counts as covered
-  // when that module emitted any descriptor at this level.
-  const spellModuleEmitted = ctx.emitted.some((choice) =>
-    choice.id.startsWith(`level.${ctx.toLevel}.spells.`),
-  );
-  const covered = new Set<string>();
+  // An unsupported descriptor carrying a featureRef already blocks the
+  // level-up, so every instance on that feature counts as covered.
+  const blockedRefs = new Set<string>();
   const emittedIds = new Set<string>();
   for (const choice of ctx.emitted) {
     emittedIds.add(choice.id);
-    if (choice.featureRef !== undefined) covered.add(choice.featureRef);
+    if (choice.featureRef !== undefined && choice.status === 'unsupported') {
+      blockedRefs.add(choice.featureRef);
+    }
   }
   const out: LevelUpRequiredChoice[] = [];
   const seen = new Set<string>();
   const features = ctx.resolver.listFeatures();
   for (const ref of ctx.targetFeatureRefs) {
-    if (seen.has(ref) || covered.has(ref)) continue;
+    if (seen.has(ref) || blockedRefs.has(ref)) continue;
     seen.add(ref);
     const feature = features.find((entry) => entry.key === ref);
     if (feature === undefined) continue;
-    if (spellModuleEmitted && isBaseSpellcastingRef(ref)) continue;
     for (const choice of choiceInstancesAtLevel(
       feature.choices ?? [],
       ctx.toLevel,
     )) {
       if (isUseTimeChoice(choice)) continue;
+      if (ctx.handled.has(choiceInstanceKey(ref, choice.id))) continue;
       const id = descriptorId(ctx.toLevel, ref, choice.id);
       if (emittedIds.has(id)) continue;
       out.push({

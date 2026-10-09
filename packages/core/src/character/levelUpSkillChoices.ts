@@ -11,11 +11,15 @@
 
 import type { FeatureChoice } from '../rules/featureChoices.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
+import {
+  choiceInstanceKey,
+  descriptorId,
+  type HandledChoiceInstances,
+} from './levelUpChoiceCoverage.js';
 import type {
   LevelUpAppliedChoice,
   LevelUpRequiredChoice,
 } from './levelUpEngine.js';
-import { descriptorId } from './levelUpFeatureChoices.js';
 import type { RulesPackCharacterResolver } from './rulesPackResolver.js';
 
 function isSkillListChoice(choice: FeatureChoice): boolean {
@@ -42,8 +46,12 @@ export function detectSkillChoiceDescriptors(ctx: {
   readonly targetFeatureRefs: readonly string[];
   readonly heldFeatureRefs: ReadonlySet<string>;
   readonly resolver: RulesPackCharacterResolver;
-}): readonly LevelUpRequiredChoice[] {
+}): {
+  readonly choices: readonly LevelUpRequiredChoice[];
+  readonly handledInstances: HandledChoiceInstances;
+} {
   const out: LevelUpRequiredChoice[] = [];
+  const handled = new Set<string>();
   const seen = new Set<string>();
   const held = heldSkills(ctx.sheet);
   for (const ref of ctx.targetFeatureRefs) {
@@ -54,6 +62,7 @@ export function detectSkillChoiceDescriptors(ctx: {
       .find((entry) => entry.key === ref);
     for (const choice of feature?.choices ?? []) {
       if (feature === undefined || !isSkillListChoice(choice)) continue;
+      handled.add(choiceInstanceKey(ref, choice.id));
       const options = (choice.from as readonly string[])
         .filter((skill) => !held.has(skill.toLowerCase()))
         .map((skill) => ({ id: skill, name: skill }));
@@ -72,7 +81,7 @@ export function detectSkillChoiceDescriptors(ctx: {
       });
     }
   }
-  return out;
+  return { choices: out, handledInstances: handled };
 }
 
 export type SkillChoiceResolution =
