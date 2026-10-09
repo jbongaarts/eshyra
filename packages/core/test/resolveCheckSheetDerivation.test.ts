@@ -201,6 +201,32 @@ describe('resolve_check sheet derivation', () => {
     expect(r).toMatchObject({ ok: false, code: 'invalid_args' });
   });
 
+  it('accepts a situational bonus whose descriptive label mentions the ability', () => {
+    const base = data(
+      invoke({
+        kind: 'saving_throw',
+        actor: 'Kira',
+        ability: 'dexterity',
+        modifiers: [{ label: 'half cover', value: 2, source: 'cover:half' }],
+      }),
+    );
+    const described = data(
+      invoke({
+        kind: 'saving_throw',
+        actor: 'Kira',
+        ability: 'dexterity',
+        modifiers: [
+          {
+            label: 'Dexterity saving throw bonus from half cover',
+            value: 2,
+            source: 'cover:half',
+          },
+        ],
+      }),
+    );
+    expect(described.modifierTotal).toBe(base.modifierTotal);
+  });
+
   it('refuses a caller modifier naming the governing ability', () => {
     for (const source of ['DEX', 'Dexterity score']) {
       const r = invoke({

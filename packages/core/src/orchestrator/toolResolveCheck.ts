@@ -219,10 +219,10 @@ function deriveFromSheet(
 
   const caller = parseCallerModifiers(a);
   for (const m of caller) {
-    if (
-      namesAbility(m.label, ability) ||
-      (m.source !== undefined && namesAbility(m.source, ability))
-    ) {
+    // The source says where a bonus comes from; only a source naming the
+    // governing ability duplicates the sheet-derived modifier. A descriptive
+    // label ('Dexterity saving throw bonus from half cover') is legitimate.
+    if (m.source !== undefined && namesAbility(m.source, ability)) {
       return err(
         'invalid_args',
         `resolve_check: modifier '${m.label}' names ${ability}, which the engine already derives from the sheet; remove it (declare only situational extras)`,
@@ -256,7 +256,7 @@ export const resolveCheckTool: Tool = {
     'modifiers apply and setting the DC stay your rulings; the arithmetic is ' +
     'engine-owned. ' +
     "vs is the target's unmodified DC or AC from 1 to 99, and a total equal to vs succeeds. Modifiers apply only to the roller and are summed by the engine. When the source adds a term to the target's AC or to a DC, pass the base number as vs and declare the term as an equal negative modifier on the roll: for example a cover bonus to AC, or the Charisma modifier in a DC of 12 + a Charisma modifier. Declare a bonus to the roller's own save as a positive modifier. " +
-    'For a character with a stored sheet, PREFER skill (ability_check; one of the 18 skills) or ability (ability_check or saving_throw): the engine then derives the governing ability modifier and the proficiency term itself (expertise, Jack of All Trades, Remarkable Athlete, save proficiency) and records them as labelled components. With skill/ability, do NOT pass proficiency or any modifier naming that ability (refused as a double count); pass only situational extras (Guidance, cover, ...) as modifiers. For monsters/combatants or characters without a sheet, omit skill/ability and declare modifiers/proficiency yourself. ' +
+    'For a character with a stored sheet, PREFER skill (ability_check; one of the 18 skills) or ability (ability_check or saving_throw): the engine then derives the governing ability modifier and the proficiency term itself (expertise, Jack of All Trades, Remarkable Athlete, save proficiency) and records them as labelled components. With skill/ability, do NOT pass proficiency or any modifier whose source is that ability (refused as a double count); pass only situational extras (Guidance, cover, ...) as modifiers. Attack rolls always declare modifiers/proficiency (no skill/ability). For monsters/combatants or characters without a sheet, omit skill/ability and declare modifiers/proficiency yourself. ' +
     'args: { kind, reason, actor?, skill?, ability?, advantage?, disadvantage?, modifiers?, proficiency?, vs?, visibility? }.',
   inputSchema: {
     type: 'object',
