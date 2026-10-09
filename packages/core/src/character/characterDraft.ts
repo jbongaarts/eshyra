@@ -735,10 +735,13 @@ export function createCharacterCreationEngine(
       satisfied: isChoiceSatisfied(choice, stored[choice.id] ?? []),
     }));
     const background = effectiveBackground(draft.selections, resolver);
+    const ancestrySkills =
+      resolveAncestry(draft.selections.ancestry)?.skillProficiencies ?? [];
     const withReplacements = appendProficiencyReplacements(
       choices,
       classRecord,
       background,
+      ancestrySkills,
       stored,
       resolver,
     );
@@ -755,6 +758,7 @@ export function createCharacterCreationEngine(
       stored,
       skillProficiencies: [
         ...new Set([
+          ...ancestrySkills,
           ...(background?.skillProficiencies ?? []),
           ...held('skills'),
         ]),
@@ -782,6 +786,7 @@ export function createCharacterCreationEngine(
     choices: readonly MechanicalChoiceState[],
     classRecord: ResolvedClassData,
     background: ResolvedBackgroundData | undefined,
+    ancestrySkills: readonly string[],
     stored: Readonly<Record<string, readonly string[]>>,
     resolver: RulesPackCharacterResolver,
   ): readonly MechanicalChoiceState[] {
@@ -792,6 +797,7 @@ export function createCharacterCreationEngine(
       );
       if (ordinaryEntries.some((entry) => !entry.satisfied)) continue;
       const grants = [
+        ...(kind === 'skills' ? ancestrySkills : []),
         ...(kind === 'skills' ? (background?.skillProficiencies ?? []) : []),
         ...(kind === 'tools' ? (classRecord.toolProficiencies ?? []) : []),
         ...(kind === 'tools' ? (background?.toolProficiencies ?? []) : []),

@@ -357,6 +357,17 @@ function collectAncestryChoices(
   grantedLanguages: readonly string[],
   choices: Level1RequiredChoice[],
 ): void {
+  (ancestry.skillChoices ?? []).forEach((spec, index) => {
+    choices.push({
+      id: index === 0 ? 'ancestry.skills' : `ancestry.skills.${index}`,
+      kind: 'skills',
+      source: 'ancestry',
+      status: 'structured',
+      label: spec.text || 'Choose ancestry skill proficiencies',
+      choose: spec.choose,
+      from: spec.from,
+    });
+  });
   (ancestry.toolProficiencyChoices ?? []).forEach((spec) => {
     choices.push({
       id: 'ancestry.tools',

@@ -29,6 +29,7 @@ import { lookupRulesRecord, type RulesLookupResult } from '../rules/lookup.js';
 import { type ResolvedRulesStack, resolveRulesStack } from '../rules/stack.js';
 import type { RulesRecord, RulesRecordKind } from '../rules/types.js';
 import type { AbilityScoreName } from './creation.js';
+import { getFixedAncestrySkills } from './srdAncestrySkills.js';
 import {
   type BackgroundEquipmentGrant,
   getAncestryCreationChoices,
@@ -321,6 +322,9 @@ export interface ResolvedAncestryData {
   readonly abilityScoreIncreases?: readonly ResolvedAncestryAbilityScoreIncrease[];
   /** Structured ancestry language grants. */
   readonly languages?: readonly ResolvedLanguageGrant[];
+  /** Fixed, unconditional skill grants from ancestry traits. */
+  readonly skillProficiencies?: readonly string[];
+  readonly skillChoices?: readonly ResolvedChoiceSpec[];
   readonly toolProficiencyChoices?: readonly ResolvedChoiceSpec[];
   /** Racial traits as `{ name, text }`. */
   readonly traits?: readonly ResolvedAncestryTrait[];
@@ -1187,6 +1191,16 @@ function resolveAncestry(
       ),
       languages: parseLanguageGrants(raw.languages),
       traits: parseAncestryTraits(raw.traits),
+      skillProficiencies: getFixedAncestrySkills(result.record.key),
+      skillChoices: getAncestryCreationChoices(result.record.key, {
+        wizardCantrips: [],
+      })
+        ?.filter((choice) => choice.category === 'skill')
+        .map((choice) => ({
+          text: choice.prompt,
+          choose: choice.choose,
+          from: choice.from,
+        })),
       toolProficiencyChoices: getAncestryCreationChoices(result.record.key, {
         wizardCantrips: [],
       })

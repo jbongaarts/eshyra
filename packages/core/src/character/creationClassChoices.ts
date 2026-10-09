@@ -84,7 +84,7 @@ export interface CreationClassChoiceInput {
   readonly classRecord: ResolvedClassData;
   /** The draft's stored selections, keyed by choice id. */
   readonly stored: Readonly<Record<string, readonly string[]>>;
-  /** Skill proficiencies the character holds so far (background + class picks). */
+  /** Skill proficiencies held so far (ancestry + background + class picks). */
   readonly skillProficiencies: readonly string[];
   /** Tool proficiencies the character holds so far. */
   readonly toolProficiencies: readonly string[];
