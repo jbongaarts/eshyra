@@ -55,6 +55,10 @@ import {
 } from '../rules/binding.js';
 import { resolveCharacterId } from '../state/activeCharacter.js';
 import {
+  type CampaignRulesPackResolver,
+  resolveCampaignCharacterResolver,
+} from '../state/campaignRecordLookup.js';
+import {
   classResourceBindingsFor,
   classResourceCapacity,
   describeClassResourceCapacity,
@@ -277,8 +281,13 @@ export interface ApplyLevelUpInput {
   readonly store: CharacterSheetStore;
   /** Resolves the active live character when omitted. */
   readonly characterId?: string;
-  /** Defaults to the bundled SRD resolver; the pack guard enforces correctness. */
+  /**
+   * Defaults to the campaign's exact rules binding (add-ons included), resolved
+   * through `resolveRulesPack`; the pack guard enforces correctness.
+   */
   readonly resolver?: RulesPackCharacterResolver;
+  /** Supplies non-bundled packs named by the campaign binding. */
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
   /** Narrative cause recorded on the ledger row (guided flow, manual, …). */
   readonly source: string;
   /**
@@ -484,7 +493,9 @@ export function applyLevelUp(
   input: ApplyLevelUpInput,
 ): ApplyLevelUpResult {
   assertSupportedCharacterBuild(input, { operation: 'level-up apply' });
-  const resolver = input.resolver ?? getBundledDnd5eCharacterResolver();
+  const resolver =
+    input.resolver ??
+    resolveCampaignCharacterResolver(db, input.resolveRulesPack);
   const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
   // Validate the ledger-required audit fields up front, before any write, so a
   // missing one fails fast rather than after the sheet has been saved (the

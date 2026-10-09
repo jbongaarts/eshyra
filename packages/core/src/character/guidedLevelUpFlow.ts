@@ -13,6 +13,10 @@ import {
   readCampaignRulesBinding,
 } from '../rules/binding.js';
 import { resolveCharacterId } from '../state/activeCharacter.js';
+import {
+  type CampaignRulesPackResolver,
+  resolveCampaignCharacterResolver,
+} from '../state/campaignRecordLookup.js';
 import type { LevelUpEligibility } from '../state/levelUpEligibility.js';
 import { getLevelUpEligibility } from '../state/levelUpEligibility.js';
 import { assertSupportedCharacterBuild } from './characterBuild.js';
@@ -28,10 +32,7 @@ import {
   type LevelUpRequiredChoice,
   previewLevelUpChangeSet,
 } from './levelUpEngine.js';
-import {
-  getBundledDnd5eCharacterResolver,
-  type RulesPackCharacterResolver,
-} from './rulesPackResolver.js';
+import type { RulesPackCharacterResolver } from './rulesPackResolver.js';
 
 export type GuidedLevelUpOutcome =
   | 'not-eligible'
@@ -73,7 +74,10 @@ export type GuidedLevelUpResult =
 export interface GuidedLevelUpInput {
   readonly store: CharacterSheetStore;
   readonly characterId?: string;
+  /** Defaults to the campaign's exact rules binding (add-ons included). */
   readonly resolver?: RulesPackCharacterResolver;
+  /** Supplies non-bundled packs named by the campaign binding. */
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
   readonly choices?: LevelUpChoiceSelections;
   readonly hitPointChoice?: LevelUpHitPointChoice;
   /**
@@ -98,7 +102,9 @@ export function runGuidedLevelUp(
     return { outcome: 'not-eligible', characterId, eligibility };
   }
 
-  const resolver = input.resolver ?? getBundledDnd5eCharacterResolver();
+  const resolver =
+    input.resolver ??
+    resolveCampaignCharacterResolver(db, input.resolveRulesPack);
   const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
   const sheet = input.store.load(characterId);
   if (sheet === undefined) {

@@ -1,3 +1,8 @@
+import {
+  createRulesPackCharacterResolver,
+  getBundledDnd5eCharacterResolver,
+  type RulesPackCharacterResolver,
+} from '../character/rulesPackResolver.js';
 import type { Db } from '../persistence/db.js';
 import {
   DEFAULT_DND5E_SRD_BINDING,
@@ -97,6 +102,34 @@ export function resolveStrictCampaignRulesStack(
   const base = exactPack(binding.base, resolver);
   const addons = binding.addons.map((addon) => exactPack(addon, resolver));
   return resolveRulesStack({ base, addons });
+}
+
+/**
+ * Character-rules resolver over the campaign's exact binding, add-ons
+ * included. Callers that derive class mechanics from a campaign (Hit Dice,
+ * slot capacities, level-up) use this rather than the bundled resolver, so an
+ * add-on class override governs every consumer. The default binding with no
+ * supplied pack resolver can only resolve to the bundled pack, so it reuses the
+ * cached bundled resolver instead of rebuilding the same stack.
+ */
+export function resolveCampaignCharacterResolver(
+  db: Db,
+  resolver?: CampaignRulesPackResolver,
+): RulesPackCharacterResolver {
+  const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
+  const base = DEFAULT_DND5E_SRD_BINDING.base;
+  if (
+    resolver === undefined &&
+    binding.addons.length === 0 &&
+    binding.base.systemId === base.systemId &&
+    binding.base.packId === base.packId &&
+    binding.base.version === base.version
+  ) {
+    return getBundledDnd5eCharacterResolver();
+  }
+  return createRulesPackCharacterResolver(
+    resolveStrictCampaignRulesStack(db, resolver),
+  );
 }
 
 /**

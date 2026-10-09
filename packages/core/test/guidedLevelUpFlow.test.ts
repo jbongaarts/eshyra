@@ -4,10 +4,13 @@ import {
   type CharacterSheet,
   createSqliteCharacterSheetStore,
   getBundledAdvancementTable,
+  getBundledDnd5eSrdPack,
   listProgressionEvents,
   mutateState,
+  type RulesPack,
   runGuidedLevelUp,
   UnsupportedCharacterBuildError,
+  writeCampaignRulesBinding,
 } from '../src/internal.js';
 import { bareDb, DEFAULT_TEST_SESSION_ID } from './support/db.js';
 
@@ -283,6 +286,76 @@ describe('runGuidedLevelUp', () => {
     expect(
       listProgressionEvents(db).filter((e) => e.kind === 'level-up'),
     ).toHaveLength(0);
+    db.close();
+  });
+
+  it('derives level-up class rules from the campaign binding, add-ons included', () => {
+    const base = getBundledDnd5eSrdPack();
+    const fighter = structuredClone(
+      base.records.find((record) => record.key === 'class:fighter'),
+    );
+    if (fighter === undefined) throw new Error('missing Fighter fixture');
+    (fighter.data as Record<string, unknown>).hitDie = 12;
+    const addon: RulesPack = {
+      meta: {
+        ...base.meta,
+        packId: 'rules:test-level-up-addon',
+        title: 'Test level-up add-on',
+        description: 'Test-only Fighter override.',
+        role: 'addon',
+        version: '1.0.0',
+        order: 1,
+        compatibleBaseSystems: [
+          { systemId: base.meta.systemId, versions: [base.meta.version] },
+        ],
+      },
+      records: [
+        { ...fighter, overrides: [`${base.meta.packId}/class:fighter`] },
+      ],
+    };
+    const db = bareDb();
+    writeCampaignRulesBinding(db, {
+      base: {
+        systemId: base.meta.systemId,
+        packId: base.meta.packId,
+        version: base.meta.version,
+      },
+      addons: [
+        {
+          systemId: addon.meta.systemId,
+          packId: addon.meta.packId,
+          version: addon.meta.version,
+        },
+      ],
+      resolvedAt: AT,
+    });
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save(
+      'pc-1',
+      buildSheet({
+        level: 2,
+        maxHitPoints: 20,
+        modifiers: { constitution: 2 },
+      }),
+    );
+    setLiveCharacter(db, 2, 20, 18);
+    awardXp(db, L3, 'test threshold', FLOW);
+
+    const result = runGuidedLevelUp(db, {
+      store,
+      resolveRulesPack: (ref) =>
+        ref.packId === addon.meta.packId ? addon : undefined,
+      choices: { 'level.3.subclass': ['Champion'] },
+      hitPointChoice: { method: 'fixed-average' },
+      confirm: true,
+      ...FLOW,
+    });
+
+    // The add-on's d12 averages 7 (bundled d10: 6), plus CON +2.
+    expect(result).toMatchObject({
+      outcome: 'committed',
+      sheet: { level: 3, maxHitPoints: 29 },
+    });
     db.close();
   });
 });
