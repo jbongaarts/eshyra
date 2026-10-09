@@ -1013,6 +1013,16 @@ function resolvePackBoundTarget(
   };
 }
 
+/** The owner's duplicate rule, shared by the mutating reconciliation and the
+ *  read projection: the most-spent legacy row wins, clamped to the active
+ *  finite capacity. */
+function mostSpentUsed(
+  rows: readonly { readonly uses_used: number }[],
+  capacity: number,
+): number {
+  return Math.min(Math.max(...rows.map((row) => row.uses_used)), capacity);
+}
+
 function boundCounterKeys(binding: ClassResourceBinding): string[] {
   return [
     binding.counterKey,
@@ -1073,10 +1083,7 @@ function reconcileBoundCounterRows(
   }
   for (const [campaign, group] of byCampaign) {
     // One counter per resource: the most-spent legacy row wins the used count.
-    const used = Math.min(
-      Math.max(...group.map((row) => row.uses_used)),
-      capacity.value,
-    );
+    const used = mostSpentUsed(group, capacity.value);
     const canonical = group.some(
       (row) => row.counter_key === binding.counterKey,
     );
@@ -1744,7 +1751,13 @@ function activeBoundCapacities(
 /** Characters whose class-resource counters a reset event touches: the named
  *  character, none for a combatant/item owner, else every character with a
  *  counter in the campaign. */
-function reconcileScopeBoundCounters(db: Db, input: ResetUsageInput): void {
+function reconcileScopeBoundCounters(
+  db: Db,
+  input: ResetUsageInput,
+): Set<string> {
+  // Rows of bound resources whose ACTIVE capacity is 'none': they keep their
+  // historical expenditure but must never be refilled or reported as recovered.
+  const unavailable = new Set<string>();
   let characterIds: string[];
   if (input.owner !== undefined) {
     const resolved = resolveOwner(db, input.campaignId, input.owner);
@@ -1782,7 +1795,12 @@ function reconcileScopeBoundCounters(db: Db, input: ResetUsageInput): void {
     for (const { binding, capacity } of capacities ?? []) {
       // 'none' leaves the counter alone (level-up reconciliation does the
       // same); 'count' realigns it; 'unlimited' removes it.
-      if (capacity.kind === 'none') continue;
+      if (capacity.kind === 'none') {
+        for (const key of boundCounterKeys(binding)) {
+          unavailable.add(unavailableKey(characterId, key));
+        }
+        continue;
+      }
       reconcileBoundCounterRows(
         db,
         input.campaignId,
@@ -1793,6 +1811,11 @@ function reconcileScopeBoundCounters(db: Db, input: ResetUsageInput): void {
       );
     }
   }
+  return unavailable;
+}
+
+function unavailableKey(characterId: string, counterKey: string): string {
+  return `${characterId}\u0000${counterKey}`;
 }
 
 export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
@@ -1828,10 +1851,10 @@ export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
     // against the ACTIVE campaign class table (one stack resolution) BEFORE
     // filtering by reset kind, so the reset selects, persists and reports the
     // active maximum/reset/source for stale canonical and alias counters.
-    reconcileScopeBoundCounters(txnDb, input);
+    const unavailable = reconcileScopeBoundCounters(txnDb, input);
 
     const placeholders = kinds.map(() => '?').join(', ');
-    const rows = txnDb
+    const candidateRows = txnDb
       .prepare(
         `SELECT ${COUNTER_COLUMNS}
          FROM entity_usage_counter
@@ -1846,6 +1869,13 @@ export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
          ORDER BY owner_kind, owner_ref, counter_key`,
       )
       .all(input.campaignId, ...kinds, ...ownerParams) as CounterRow[];
+    const rows = candidateRows.filter(
+      (row) =>
+        !(
+          row.owner_kind === 'character' &&
+          unavailable.has(unavailableKey(row.owner_ref, row.counter_key))
+        ),
+    );
 
     const labelFor = ownerLabelMaps(txnDb, input.campaignId);
     const reset: UsageCounter[] = [];
@@ -1905,42 +1935,114 @@ export function readSpentUsageCounters(
     )
     .all(campaignId) as CounterRow[];
   const labelFor = ownerLabelMaps(db, campaignId);
-  // Read-only overlay: a bound class-resource counter reports the ACTIVE class
-  // table maximum (used clamped), never a stale stored one. Persistence is the
-  // mutating operations' job; a read must not write.
-  const activeResolver = lazyActiveClassResolver(db, resolveRulesPack);
-  const capacityByCharacter = new Map<
-    string,
-    ReturnType<typeof activeBoundCapacities>
-  >();
-  const counters: UsageCounter[] = [];
-  for (const row of rows) {
-    let adjusted = row;
-    if (row.owner_kind === 'character') {
-      if (!capacityByCharacter.has(row.owner_ref)) {
-        capacityByCharacter.set(
-          row.owner_ref,
-          activeBoundCapacities(db, row.owner_ref, activeResolver, () => true),
-        );
-      }
-      const match = capacityByCharacter
-        .get(row.owner_ref)
-        ?.find(({ binding }) =>
-          boundCounterKeys(binding).includes(row.counter_key),
-        );
-      if (match !== undefined && match.capacity.kind === 'count') {
-        adjusted = {
-          ...row,
-          uses_max: match.capacity.value,
-          uses_used: Math.min(row.uses_used, match.capacity.value),
-        };
-      }
+  const projected = projectBoundClassResources(
+    db,
+    campaignId,
+    rows,
+    lazyActiveClassResolver(db, resolveRulesPack),
+  );
+  return projected
+    .filter((row) => row.uses_used > 0)
+    .map((row) => rowToCounter(row, labelFor(row)));
+}
+
+/**
+ * Pure, non-mutating canonical projection of pack-bound class-resource
+ * counters (eshyra-09co.9). Per character/resource it groups canonical and
+ * alias rows into ONE pool exactly as `reconcileBoundCounterRows` would
+ * persist: most-spent used clamped to the ACTIVE finite capacity, canonical
+ * key/display name/reset/source, recharge fields cleared. Resources whose
+ * active capacity is 'none' (no finite economy at this level) or 'unlimited'
+ * are omitted, never shown as a finite pool. Other counters pass through
+ * unchanged. Nothing is written.
+ */
+function projectBoundClassResources(
+  db: Db,
+  campaignId: string,
+  rows: readonly CounterRow[],
+  activeResolver: ReturnType<typeof lazyActiveClassResolver>,
+): CounterRow[] {
+  const sheets = createSqliteCharacterSheetStore(db);
+  const everyKey = (characterId: string): Set<string> => {
+    const keys = new Set<string>();
+    const sheet = sheets.load(characterId);
+    if (sheet === undefined) return keys;
+    for (const b of classResourceBindingsFor(sheet.class.key)) {
+      for (const k of boundCounterKeys(b)) keys.add(k);
     }
-    if (adjusted.uses_used > 0) {
-      counters.push(rowToCounter(adjusted, labelFor(adjusted)));
+    return keys;
+  };
+  const boundKeys = new Map<string, Set<string>>();
+  const characters = new Set<string>();
+  for (const row of rows) {
+    if (row.owner_kind !== 'character') continue;
+    if (!boundKeys.has(row.owner_ref)) {
+      boundKeys.set(row.owner_ref, everyKey(row.owner_ref));
+    }
+    if (boundKeys.get(row.owner_ref)?.has(row.counter_key)) {
+      characters.add(row.owner_ref);
     }
   }
-  return counters;
+  if (characters.size === 0) return [...rows];
+  const result: CounterRow[] = [];
+  const handled = new Set<string>();
+  for (const characterId of characters) {
+    const bindings = activeBoundCapacities(
+      db,
+      characterId,
+      activeResolver,
+      () => true,
+    );
+    for (const { binding, capacity } of bindings ?? []) {
+      const keys = boundCounterKeys(binding);
+      // The group is every stored row of the resource, including rows the
+      // spent-only query excluded (an unspent alias must not mask a spent one).
+      const group = db
+        .prepare(
+          `SELECT ${COUNTER_COLUMNS} FROM entity_usage_counter
+             WHERE campaign_id = ? AND owner_kind = 'character'
+               AND owner_ref = ? AND counter_key IN (${keys.map(() => '?').join(', ')})
+             ORDER BY counter_key`,
+        )
+        .all(campaignId, characterId, ...keys) as CounterRow[];
+      if (group.length === 0) continue;
+      for (const row of group) {
+        handled.add(unavailableKey(characterId, row.counter_key));
+      }
+      if (capacity.kind !== 'count') continue;
+      const canonical =
+        group.find((row) => row.counter_key === binding.counterKey) ??
+        // biome-ignore lint/style/noNonNullAssertion: group is non-empty
+        group[0]!;
+      result.push({
+        ...canonical,
+        counter_key: binding.counterKey,
+        display_name: binding.displayName,
+        uses_max: capacity.value,
+        uses_used: mostSpentUsed(group, capacity.value),
+        reset_kind: binding.reset,
+        recharge_roll: null,
+        recharge_minimum: null,
+        recharge_formula: null,
+        source: 'record',
+      });
+    }
+  }
+  for (const row of rows) {
+    if (
+      row.owner_kind === 'character' &&
+      handled.has(unavailableKey(row.owner_ref, row.counter_key))
+    ) {
+      continue;
+    }
+    result.push(row);
+  }
+  return result.sort(
+    (x, y) =>
+      x.owner_kind.localeCompare(y.owner_kind) ||
+      x.owner_ref.localeCompare(y.owner_ref) ||
+      x.counter_key.localeCompare(y.counter_key),
+  );
 }
 
 /** Render one spent counter as the compact fragment the context snapshot

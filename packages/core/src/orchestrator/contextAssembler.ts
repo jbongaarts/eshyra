@@ -642,6 +642,7 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     input.db,
     input.actingCharacterId,
     input.campaignId,
+    input.resolveRulesPack,
   );
 
   const adventures = assembleAdventureContext(

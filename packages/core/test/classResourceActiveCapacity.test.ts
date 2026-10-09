@@ -10,17 +10,24 @@ import type {
   RulesPack,
 } from '../src/internal.js';
 import {
+  assembleContext,
   completeLongRest,
   completeShortRest,
   createDefaultToolRegistry,
   createSeededRng,
   createSqliteCharacterSheetStore,
+  formatCampaignPosition,
   getBundledDnd5eSrdPack,
   readSpentUsageCounters,
   resetUsage,
+  spendUsage,
   writeCampaignRulesBinding,
 } from '../src/internal.js';
-import { bareDb, DEFAULT_TEST_SESSION_ID } from './support/db.js';
+import {
+  bareDb,
+  DEFAULT_TEST_SESSION_ID,
+  freshDbWithSession,
+} from './support/db.js';
 
 const AT = '2026-07-11T12:00:00.000Z';
 const CTX = {
@@ -337,5 +344,189 @@ describe('context counter reader reports the active maximum', () => {
       ).toMatchObject([{ usesMax: 2, usesUsed: 2, usesRemaining: 0 }]);
       db.close();
     });
+  }
+});
+
+function rowsOf(db: ReturnType<typeof bareDb>) {
+  return db
+    .prepare('SELECT * FROM entity_usage_counter ORDER BY counter_key')
+    .all();
+}
+
+/** Class-table-only add-on that REMOVES the level 3 resource progression. */
+function installNoneAddon(
+  db: ReturnType<typeof bareDb>,
+  res: Resource,
+): CampaignRulesPackResolver {
+  const resolver = installClassAddon(db, res, 1);
+  const addon = resolver({
+    systemId: getBundledDnd5eSrdPack().meta.systemId,
+    packId: ADDON_ID,
+    version: '1.0.0',
+  } as never) as RulesPack;
+  const data = addon.records[0]?.data as {
+    progression: {
+      level: number;
+      advancement: { kind: string; resource?: string }[];
+    }[];
+  };
+  const row = data.progression.find((l) => l.level === 3);
+  if (row === undefined) throw new Error('no level 3');
+  row.advancement = row.advancement.filter(
+    (a) => !(a.kind === 'resourceProgression' && a.resource === res.resource),
+  );
+  return resolver;
+}
+
+describe('assembleContext keeps a non-bundled binding usable across a spend', () => {
+  for (const res of RESOURCES) {
+    it(`${res.name}: before and after spendUsage, showing the active capacity`, () => {
+      const db = freshDbWithSession();
+      createSqliteCharacterSheetStore(db).save('pc-1', sheet(res.classKey));
+      db.prepare(
+        'UPDATE character SET name = ?, level = 3, hp_current = 8, hp_max = 8 WHERE id = ?',
+      ).run('Cap Tester', 'pc-1');
+      const resolveRulesPack = installClassAddon(db, res, 4);
+      const ctxInput = {
+        db,
+        campaignId: CAMPAIGN,
+        actingCharacterId: 'pc-1',
+        campaignPosition: formatCampaignPosition({
+          sessionId: DEFAULT_TEST_SESSION_ID,
+          turnId: 'turn-1',
+          ordinal: 1,
+        }),
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        playerInput: 'continue',
+        resolveRulesPack,
+      };
+      expect(() => assembleContext(ctxInput)).not.toThrow();
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: { kind: 'character', ref: 'pc-1' },
+        ability: res.name,
+        resolveRulesPack,
+        ...CTX,
+      });
+      const after = assembleContext(ctxInput);
+      expect(after.state.spentUsageCounters).toMatchObject([
+        { usesMax: 4, usesUsed: 1 },
+      ]);
+      db.close();
+    });
+  }
+});
+
+describe('read projection agrees with the owner without writing', () => {
+  for (const res of RESOURCES) {
+    const shapes: [string, [string, string, number][]][] = [
+      ['canonical', [[res.canonical, 'long_rest', 1]]],
+      ['alias-only', [[res.alias, 'short_rest', 2]]],
+      [
+        'duplicate legacy',
+        [
+          [res.alias, 'short_rest', 3],
+          [res.canonical, 'long_rest', 1],
+        ],
+      ],
+    ];
+    for (const [shape, seeds] of shapes) {
+      it(`${res.name} ${shape}: finite capacity`, () => {
+        const readDb = setup(res);
+        const ownerDb = setup(res);
+        const resolver = installClassAddon(readDb, res, 4);
+        installClassAddon(ownerDb, res, 4);
+        for (const [k, r, u] of seeds) {
+          seed(readDb, k, r, u);
+          seed(ownerDb, k, r, u);
+        }
+        const before = rowsOf(readDb);
+        const read = readSpentUsageCounters(readDb, CAMPAIGN, resolver);
+        expect(rowsOf(readDb)).toEqual(before);
+        // Owner: long-rest reset persists the canonical row.
+        resetUsage(ownerDb, {
+          campaignId: CAMPAIGN,
+          event: 'dawn',
+          resolveRulesPack: resolver,
+          ...CTX,
+        });
+        const owner = ownerDb
+          .prepare(
+            'SELECT counter_key, uses_max, reset_kind, source FROM entity_usage_counter',
+          )
+          .all();
+        expect(read).toHaveLength(1);
+        expect(owner).toHaveLength(1);
+        expect({
+          counter_key: read[0]?.counterKey,
+          uses_max: read[0]?.usesMax,
+          reset_kind: read[0]?.resetKind,
+          source: read[0]?.source,
+        }).toEqual(owner[0]);
+        expect(read[0]?.usesUsed).toBe(
+          Math.min(Math.max(...seeds.map((x) => x[2])), 4),
+        );
+        readDb.close();
+        ownerDb.close();
+      });
+    }
+
+    it(`${res.name}: none capacity is not advertised`, () => {
+      const db = setup(res);
+      const resolver = installNoneAddon(db, res);
+      seed(db, res.alias, 'long_rest', 2);
+      const before = rowsOf(db);
+      expect(readSpentUsageCounters(db, CAMPAIGN, resolver)).toEqual([]);
+      expect(rowsOf(db)).toEqual(before);
+      db.close();
+    });
+
+    it(`${res.name}: unlimited capacity is not shown as a finite pool`, () => {
+      // Barbarian 20 only; other classes have no unlimited tier.
+      if (res.resource !== 'rages') return;
+      const db = setup(res);
+      db.prepare('UPDATE character SET level = 20 WHERE id = ?').run('pc-1');
+      const store = createSqliteCharacterSheetStore(db);
+      store.save('pc-1', {
+        ...sheet(res.classKey),
+        level: 20,
+      } as CharacterSheet);
+      seed(db, res.canonical, 'long_rest', 3);
+      expect(readSpentUsageCounters(db, CAMPAIGN)).toEqual([]);
+      db.close();
+    });
+  }
+});
+
+describe('a none-capacity bound resource is never refilled or reported', () => {
+  for (const res of RESOURCES) {
+    for (const key of [res.canonical, res.alias]) {
+      it(`${res.name} ${key}: resetUsage and completeLongRest`, () => {
+        const db = setup(res);
+        const resolveRulesPack = installNoneAddon(db, res);
+        seed(db, key, 'long_rest', 1);
+        const before = rowsOf(db);
+        const result = resetUsage(db, {
+          campaignId: CAMPAIGN,
+          event: 'long_rest',
+          owner: { kind: 'character', ref: 'pc-1' },
+          resolveRulesPack,
+          ...CTX,
+        });
+        expect(result.reset).toEqual([]);
+        expect(rowsOf(db)).toEqual(before);
+        const rest = completeLongRest(db, {
+          campaignId: CAMPAIGN,
+          restId: 'rest-1',
+          participants: ['pc-1'],
+          qualification: LONG,
+          resolveRulesPack,
+          ...CTX,
+        }) as { usageReset: Record<string, Entry[]> };
+        expect(rest.usageReset['pc-1']).toEqual([]);
+        expect(rowsOf(db)).toEqual(before);
+        db.close();
+      });
+    }
   }
 });
