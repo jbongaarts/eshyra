@@ -51,11 +51,13 @@ import {
   deriveCreationClassChoices,
   isCreationClassChoiceId,
 } from './creationClassChoices.js';
+import { level1SpellRequirements } from './creationSpellCounts.js';
 import {
   type CharacterDerivedValues,
   deriveLevel1Values,
   LEVEL_1_PROFICIENCY_BONUS,
 } from './derivedValues.js';
+import type { CharacterFeatureChoice } from './finalizeCharacter.js';
 import {
   normalizeProficiency,
   proficiencyReplacementId,
@@ -73,6 +75,7 @@ import {
   type RulesPackCharacterResolver,
   STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './rulesPackResolver.js';
+import { computeAlwaysPrepared } from './spellPreparation.js';
 import { SRD_5_1_SKILLS } from './srdCreationChoices.js';
 import {
   type StartingWealthResult,
@@ -155,6 +158,11 @@ export interface Dnd5eDraftSelections {
   /** Immutable canonical F1 evidence for the rolled score pool. */
   readonly rolledAbilityScores?: readonly RolledAbilityScore[];
   readonly spells?: readonly string[];
+  /**
+   * The wizard's prepared spells at creation (eshyra-eb9n.1): 1..limit spells
+   * drawn from the chosen spellbook. Ignored for every other class.
+   */
+  readonly preparedSpells?: readonly string[];
   /**
    * Selected options for the structured level-1 mechanical choices (skills,
    * tools, equipment, languages), keyed by the choice id from
@@ -280,6 +288,11 @@ export interface CharacterCreationEngine {
     rolls: readonly RolledAbilityScore[] | undefined,
   ): CharacterDraft;
   setSpells(
+    draft: CharacterDraft,
+    spells: readonly string[] | undefined,
+  ): CharacterDraft;
+  /** Set (or clear) the wizard's prepared spells (a subset of the spellbook). */
+  setPreparedSpells(
     draft: CharacterDraft,
     spells: readonly string[] | undefined,
   ): CharacterDraft;
@@ -470,6 +483,25 @@ function castsAtLevel1(classRecord: ResolvedClassData | undefined): boolean {
   );
 }
 
+/** The subclass / feature picks the draft's satisfied class choices apply. */
+function creationFeatureState(entries: readonly MechanicalChoiceState[]): {
+  readonly subclass?: { readonly key: string };
+  readonly featureChoices?: CharacterFeatureChoice[];
+} {
+  let subclass: { readonly key: string } | undefined;
+  const picks: CharacterFeatureChoice[] = [];
+  for (const entry of entries) {
+    const application = entry.application;
+    if (application === undefined) continue;
+    if (application.kind === 'subclass') subclass = application.subclass;
+    else picks.push(application.featureChoice);
+  }
+  return {
+    ...(subclass !== undefined ? { subclass } : {}),
+    ...(picks.length > 0 ? { featureChoices: picks } : {}),
+  };
+}
+
 function level1SpellcastingAbility(classRecord: ResolvedClassData | undefined) {
   return castsAtLevel1(classRecord)
     ? classRecord?.spellcastingAbility
@@ -606,6 +638,14 @@ export function createCharacterCreationEngine(
         stale.push(entry.choice.id);
       }
     }
+    validateSpellCounts(
+      selections,
+      classRecord,
+      derived.abilityModifiers,
+      entries,
+      diagnostics,
+      stale,
+    );
     const choices = Object.fromEntries(
       Object.entries(selections.choices ?? {}).filter(
         ([id]) =>
@@ -1098,6 +1138,141 @@ export function createCharacterCreationEngine(
     }
   }
 
+  /**
+   * Level-1 spell counts (eshyra-eb9n.1). A shortfall is a `spellCounts.*`
+   * pending diagnostic that `missingRequiredChoices` reports (nothing is wrong
+   * yet, the player just has not chosen enough); an excess, a duplicate, or a
+   * prepared spell outside the spellbook is an `error`.
+   */
+  function validateSpellCounts(
+    selections: Dnd5eDraftSelections,
+    classRecord: ResolvedClassData | undefined,
+    abilityModifiers: CharacterDraft['derived']['abilityModifiers'],
+    entries: readonly MechanicalChoiceState[],
+    diagnostics: CharacterCreationDiagnostic[],
+    stale: string[],
+  ): void {
+    if (classRecord === undefined) return;
+    const required = level1SpellRequirements(
+      classRecord,
+      abilityModifiers,
+      resolver,
+    );
+    const short = (field: string, message: string): void => {
+      diagnostics.push({
+        field: `spellCounts.${field}`,
+        severity: 'pending',
+        message,
+      });
+    };
+    const invalid = (field: string, message: string): void => {
+      diagnostics.push({ field, severity: 'error', message });
+    };
+    const resolve = (refs: readonly string[], field: string) => {
+      const out: { key: string; name: string; level: number }[] = [];
+      for (const ref of refs) {
+        const result = resolver.resolveSpell(ref);
+        if (!result.ok) continue; // reported by validateSpells / below
+        const { key, name, level } = result.record;
+        if (out.some((entry) => entry.key === key)) {
+          invalid(field, `${name} is listed more than once.`);
+          continue;
+        }
+        out.push({ key, name, level });
+      }
+      return out;
+    };
+    const chosen = resolve(selections.spells ?? [], 'spells');
+    const cantrips = chosen.filter((entry) => entry.level === 0);
+    const levelOne = chosen.filter((entry) => entry.level === 1);
+    const exact = (
+      label: string,
+      field: string,
+      have: number,
+      want: number,
+    ): void => {
+      if (have < want) {
+        short(field, `Choose ${want} ${label} (${have} chosen).`);
+      } else if (have > want) {
+        invalid(
+          'spells',
+          `Too many ${label}: ${have} chosen, ${want} allowed.`,
+        );
+      }
+    };
+    if (required.cantrips !== undefined) {
+      exact('cantrips', 'cantrips', cantrips.length, required.cantrips);
+    }
+    if (required.known !== undefined) {
+      exact('level-1 spells', 'spells', levelOne.length, required.known);
+    }
+    if (required.spellbook !== undefined) {
+      exact(
+        'level-1 spells for your spellbook',
+        'spellbook',
+        levelOne.length,
+        required.spellbook,
+      );
+    }
+    if (required.preparedFromList !== undefined) {
+      const { limit } = required.preparedFromList;
+      let always: readonly string[] = [];
+      try {
+        always = computeAlwaysPrepared(
+          { ...creationFeatureState(entries), level: 1 },
+          classRecord,
+          resolver,
+        ).refs;
+      } catch {
+        // an unresolvable subclass table cannot reduce the count
+      }
+      const picks = levelOne.filter((entry) => !always.includes(entry.key));
+      if (picks.length < 1) {
+        short(
+          'prepared',
+          `Prepare between 1 and ${limit} level-1 spells (none chosen).`,
+        );
+      } else if (picks.length > limit) {
+        invalid(
+          'spells',
+          `Too many prepared spells: ${picks.length} chosen, at most ${limit} allowed (always-prepared domain spells do not count).`,
+        );
+      }
+    }
+    if (required.wizardPrepared !== undefined) {
+      const { limit } = required.wizardPrepared;
+      const prepared = resolve(
+        selections.preparedSpells ?? [],
+        'preparedSpells',
+      );
+      const outside = (selections.preparedSpells ?? []).filter((ref) => {
+        const result = resolver.resolveSpell(ref);
+        return (
+          !result.ok ||
+          !levelOne.some((entry) => entry.key === result.record.key)
+        );
+      });
+      for (const ref of outside) {
+        invalid(
+          'preparedSpells',
+          `${ref} is not in your spellbook, so it cannot be prepared.`,
+        );
+      }
+      if (outside.length > 0) stale.push('preparedSpells');
+      if (prepared.length < 1) {
+        short(
+          'prepared',
+          `Prepare between 1 and ${limit} spells from your spellbook (none chosen).`,
+        );
+      } else if (prepared.length > limit) {
+        invalid(
+          'preparedSpells',
+          `Too many prepared spells: ${prepared.length} chosen, at most ${limit} allowed.`,
+        );
+      }
+    }
+  }
+
   function missingRequiredChoices(
     draft: CharacterDraft,
   ): readonly RequiredChoice[] {
@@ -1124,10 +1299,22 @@ export function createCharacterCreationEngine(
       missing.push('abilityScores');
     }
 
-    return missing.map((field) => ({
-      field,
-      label: REQUIRED_CHOICE_LABELS[field] ?? field,
-    }));
+    return [
+      ...missing.map((field) => ({
+        field,
+        label: REQUIRED_CHOICE_LABELS[field] ?? field,
+      })),
+      ...draft.diagnostics
+        .filter(
+          (diagnostic) =>
+            diagnostic.severity === 'pending' &&
+            diagnostic.field.startsWith('spellCounts.'),
+        )
+        .map((diagnostic) => ({
+          field: diagnostic.field,
+          label: diagnostic.message,
+        })),
+    ];
   }
 
   function hasCompleteValidScores(draft: CharacterDraft): boolean {
@@ -1318,6 +1505,12 @@ export function createCharacterCreationEngine(
     setSpells(draft, spells): CharacterDraft {
       return withSelections(draft, {
         spells: spells === undefined ? undefined : [...spells],
+      });
+    },
+
+    setPreparedSpells(draft, spells): CharacterDraft {
+      return withSelections(draft, {
+        preparedSpells: spells === undefined ? undefined : [...spells],
       });
     },
 

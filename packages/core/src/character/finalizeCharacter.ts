@@ -685,6 +685,7 @@ function buildFinalizedCharacter(
       classRecord,
       resolver,
       classFeatureState(engine.mechanicalChoices(draft)),
+      selections.preparedSpells ?? [],
     ),
     ...classFeatureState(engine.mechanicalChoices(draft)),
     metadata,
@@ -766,6 +767,37 @@ function spellState(
 }
 
 /**
+ * The wizard prepares from the spellbook at creation (eshyra-eb9n.1): the
+ * draft-validated subset is written to `prepared`. Other classes are unchanged.
+ */
+function withWizardPrepared(
+  state: Pick<CharacterSheet, 'spells' | 'spellcasting'>,
+  classRecord: ResolvedClassData,
+  resolver: RulesPackCharacterResolver,
+  picks: readonly string[],
+): Pick<CharacterSheet, 'spells' | 'spellcasting'> {
+  if (
+    state.spellcasting === undefined ||
+    classRecord.spellPreparation?.spellbookStartingSpells === undefined
+  ) {
+    return state;
+  }
+  const prepared: string[] = [];
+  for (const pick of picks) {
+    const result = resolver.resolveSpell(pick);
+    if (!result.ok) {
+      throw new Error(`finalization invariant: unknown prepared spell ${pick}`);
+    }
+    prepared.push(result.record.key);
+  }
+  const spellcasting: CharacterSpellcasting = {
+    ...state.spellcasting,
+    prepared,
+  };
+  return { spells: [...spellsUnion(spellcasting)], spellcasting };
+}
+
+/**
  * Level-1 spell state plus the subclass's always-prepared spells (eshyra-kn38):
  * a prepared caster with a creation-time subclass (Life Domain) gets them in
  * `alwaysPrepared`, removed from `prepared` if also picked.
@@ -775,8 +807,14 @@ function finalSpellState(
   classRecord: ResolvedClassData,
   resolver: RulesPackCharacterResolver,
   features: Pick<CharacterSheet, 'subclass' | 'featureChoices'>,
+  wizardPrepared: readonly string[] = [],
 ): Pick<CharacterSheet, 'spells' | 'spellcasting'> {
-  const state = spellState(chosen, classRecord, resolver);
+  const state = withWizardPrepared(
+    spellState(chosen, classRecord, resolver),
+    classRecord,
+    resolver,
+    wizardPrepared,
+  );
   let always: ReturnType<typeof computeAlwaysPrepared>;
   try {
     always = computeAlwaysPrepared(

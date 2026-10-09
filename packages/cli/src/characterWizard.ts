@@ -450,27 +450,97 @@ class Wizard {
     return this.choiceConfig(stepId).resolveName(current) !== undefined;
   }
 
+  /** Outstanding level-1 spell requirements (the engine's own messages). */
+  private spellShortfalls(): string[] {
+    return this.draft.diagnostics
+      .filter(
+        (d) => d.severity === 'pending' && d.field.startsWith('spellCounts.'),
+      )
+      .map((d) => d.message);
+  }
+
+  private spellErrors(): string[] {
+    return this.draft.diagnostics
+      .filter(
+        (d) =>
+          (d.field === 'spells' || d.field === 'preparedSpells') &&
+          d.severity === 'error',
+      )
+      .map((d) => d.message);
+  }
+
+  private isWizardClass(): boolean {
+    const className = this.draft.selections.className;
+    if (className === undefined) return false;
+    const record = this.deps.resolver.resolveClass(className);
+    return (
+      record.ok &&
+      record.record.spellPreparation?.spellbookStartingSpells !== undefined
+    );
+  }
+
+  /** The wizard prepares from its spellbook once the spellbook is complete. */
+  private isWizardPreparationPhase(): boolean {
+    return (
+      this.isWizardClass() &&
+      !this.draft.diagnostics.some(
+        (d) =>
+          d.field === 'spellCounts.cantrips' ||
+          d.field === 'spellCounts.spellbook' ||
+          (d.field === 'spells' && d.severity === 'error'),
+      )
+    );
+  }
+
   private applySpells(value: string): Nav {
+    const shortfalls = this.spellShortfalls();
+    const errors0 = this.spellErrors();
     if (value.length === 0) {
-      return 'advance'; // spells are optional for a finalizable draft
+      // A non-caster (or a caster whose counts are already met, e.g. on
+      // resume) advances; a caster with outstanding counts must make them.
+      if (shortfalls.length === 0 && errors0.length === 0) {
+        return 'advance';
+      }
+      for (const line of [...errors0, ...shortfalls]) {
+        this.write(`  • ${line}`);
+      }
+      this.write('Enter the required spells (comma-separated) to continue.');
+      return 'stay';
     }
-    const spells = value
+    const names = value
       .split(',')
       .map((entry) => entry.trim())
       .filter((entry) => entry.length > 0);
-    this.draft = this.deps.engine.setSpells(this.draft, spells);
+    const preparing = this.isWizardPreparationPhase();
+    this.draft = preparing
+      ? this.deps.engine.setPreparedSpells(this.draft, names)
+      : this.deps.engine.setSpells(this.draft, names);
     this.dirty = true;
-    const errors = this.draft.diagnostics.filter(
-      (d) => d.field === 'spells' && d.severity === 'error',
-    );
+    const errors = this.spellErrors();
     if (errors.length > 0) {
       for (const error of errors) {
-        this.write(`  ✗ ${error.message}`);
+        this.write(`  ✗ ${error}`);
       }
-      this.write('Fix the spell selection or `set spells <names>` to retry.');
+      this.write(
+        `Fix the selection or \`set ${preparing ? 'preparedSpells' : 'spells'} <names>\` to retry.`,
+      );
       return 'stay';
     }
-    this.write(`Selected ${spells.length} spell(s).`);
+    this.write(
+      `Selected ${names.length} ${preparing ? 'prepared ' : ''}spell(s).`,
+    );
+    const remaining = this.spellShortfalls();
+    if (remaining.length > 0) {
+      for (const line of remaining) {
+        this.write(`  • ${line}`);
+      }
+      if (this.isWizardPreparationPhase()) {
+        this.write(
+          'Now enter the spells to prepare, chosen from your spellbook (comma-separated).',
+        );
+      }
+      return 'stay';
+    }
     return 'advance';
   }
 
@@ -539,6 +609,15 @@ class Wizard {
         this.draft = result.draft;
         break;
       }
+      case 'preparedspells':
+        this.draft = this.deps.engine.setPreparedSpells(
+          this.draft,
+          value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter((entry) => entry.length > 0),
+        );
+        break;
       case 'spells':
         this.draft = this.deps.engine.setSpells(
           this.draft,
@@ -1155,12 +1234,26 @@ class Wizard {
       case 'class-choices':
         return 'Review the level-1 choices your class grants.';
       case 'spells-equipment':
-        return 'Enter level-1 spells (comma-separated), or press Enter to skip.';
+        return this.spellStepIntro();
       case 'review':
         return 'Review your draft. Press Enter to finish, or `set <field> <value>` to correct.';
       default:
         return '';
     }
+  }
+
+  private spellStepIntro(): string {
+    const needed = this.spellShortfalls();
+    if (needed.length === 0) {
+      return 'Enter level-1 spells (comma-separated), or press Enter to continue.';
+    }
+    return [
+      'Required level-1 spells (cantrips and spells go in one comma-separated list):',
+      ...needed.map((line) => `  • ${line}`),
+      ...(this.isWizardClass()
+        ? ['You then choose which spellbook spells to prepare.']
+        : []),
+    ].join('\n');
   }
 
   private printHelp(stepId: string): void {
@@ -1312,6 +1405,9 @@ class Wizard {
     }
     if (d.selections.spells && d.selections.spells.length > 0) {
       this.write(`Spells:    ${d.selections.spells.join(', ')}`);
+    }
+    if (d.selections.preparedSpells && d.selections.preparedSpells.length > 0) {
+      this.write(`Prepared:  ${d.selections.preparedSpells.join(', ')}`);
     }
 
     // Level-1 mechanical choices (skills/tools/equipment/languages): show each

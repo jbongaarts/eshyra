@@ -5,6 +5,7 @@ import {
   createCharacterCreationEngine,
   createSeededRng,
   finalizeCharacterDraft,
+  getBundledDnd5eCharacterResolver,
   getDnd5eCharacterCreationEngine,
   rollAbilityScoreSet,
   rollStartingWealth,
@@ -22,6 +23,17 @@ import { getSyntheticStartingWealthResolver } from './support/startingWealthSupp
 
 const engine = getDnd5eCharacterCreationEngine();
 const META = { createdAt: '2026-06-26T00:00:00.000Z', source: 'test' } as const;
+
+/** First `n` canonical spell names of a class at a spell level. */
+function casterSpells(className: string, level: number, n: number): string[] {
+  return getBundledDnd5eCharacterResolver()
+    .listSpells()
+    .filter(
+      (spell) => spell.level === level && spell.classes.includes(className),
+    )
+    .slice(0, n)
+    .map((spell) => spell.name);
+}
 
 /** A fully-complete Fighter + Human draft (every required choice made). */
 function completeDraft(
@@ -469,6 +481,10 @@ describe('finalizeCharacterDraft', () => {
         }
       }
     }
+    draft = engine.setSpells(draft, [
+      ...casterSpells('Cleric', 0, 3),
+      ...casterSpells('Cleric', 1, 1),
+    ]);
     const result = finalizeCharacterDraft(draft, META);
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -513,6 +529,11 @@ describe('finalizeCharacterDraft', () => {
         (entry.choice.from ?? []).slice(0, need),
       );
     }
+    draft = engine.setSpells(draft, [
+      ...casterSpells('Wizard', 0, 3),
+      ...casterSpells('Wizard', 1, 6),
+    ]);
+    draft = engine.setPreparedSpells(draft, casterSpells('Wizard', 1, 1));
     const result = finalizeCharacterDraft(draft, META);
     expect(result.ok).toBe(true);
     if (!result.ok) {

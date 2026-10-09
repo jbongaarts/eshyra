@@ -157,6 +157,17 @@ function supplementedResolver(): RulesPackCharacterResolver {
   );
 }
 
+/** First `n` real SRD wizard spell names at a spell level. */
+function wizardSpells(level: number, n: number): string[] {
+  return getBundledDnd5eCharacterResolver()
+    .listSpells()
+    .filter((s) => s.level === level && s.classes.includes('Wizard'))
+    .slice(0, n)
+    .map((s) => s.name);
+}
+const WIZARD_SPELLS = [...wizardSpells(0, 3), ...wizardSpells(1, 6)];
+const WIZARD_PREPARED = wizardSpells(1, 2);
+
 const text = (lines: readonly string[]): string => lines.join('\n');
 
 describe('character wizard — concept-first happy path', () => {
@@ -188,7 +199,10 @@ describe('character wizard — concept-first happy path', () => {
       '1', // equipment.0 → a quarterstaff
       '2', // equipment.1 → an arcane focus
       'scholar', // equipment.2 → a scholar's pack (prefix)
-      'Fire Bolt, Magic Missile', // spells
+      // Fewer than the required counts stays on the step and says why.
+      'Fire Bolt, Magic Missile',
+      WIZARD_SPELLS.join(', '), // 3 cantrips + 6 spellbook spells
+      WIZARD_PREPARED.join(', '), // prepared from the spellbook
       '', // review: Enter to finish
     ]);
 
@@ -209,10 +223,10 @@ describe('character wizard — concept-first happy path', () => {
     expect(result.draft.selections.choices?.['class.equipment.0']).toEqual([
       'a quarterstaff',
     ]);
-    expect(result.draft.selections.spells).toEqual([
-      'Fire Bolt',
-      'Magic Missile',
-    ]);
+    expect(result.draft.selections.spells).toEqual(WIZARD_SPELLS);
+    expect(result.draft.selections.preparedSpells).toEqual(WIZARD_PREPARED);
+    expect(text(lines)).toMatch(/Choose 3 cantrips \(1 chosen\)/);
+    expect(text(lines)).toMatch(/Now enter the spells to prepare/);
     // High Elf +1 INT pushes base 15 → 16; spell DC = 8 + 2 + 3 = 13.
     expect(result.draft.derived.spellSaveDc).toBe(13);
     // Completion persists the draft.
@@ -427,7 +441,8 @@ describe('character wizard — ability-first flow', () => {
       '1', // a quarterstaff
       '1', // a component pouch
       '1', // a scholar's pack
-      '', // spells skip
+      WIZARD_SPELLS.join(', '), // spells
+      WIZARD_PREPARED.join(', '), // prepared
       '', // review finish
     ]);
 
