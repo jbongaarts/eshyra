@@ -361,6 +361,7 @@ export function readStateSnapshot(
   db: Db,
   activeCharacterId?: string,
   campaignId?: string,
+  resolveRulesPack?: import('../state/campaignRecordLookup.js').CampaignRulesPackResolver,
 ): StateSnapshot {
   assertNoInventoryIdentityRepairs(db);
   const charId = resolveActingCharacterId(db, activeCharacterId);
@@ -565,9 +566,11 @@ export function readStateSnapshot(
         ? undefined
         : readCombatTurnState(db, campaignId),
     spentUsageCounters:
-      campaignId === undefined ? [] : readSpentUsageCounters(db, campaignId),
+      campaignId === undefined
+        ? []
+        : readSpentUsageCounters(db, campaignId, resolveRulesPack),
     spentSpellSlots: readSpellSlots(db, charId).filter(
-      (slot) => slot.slotsUsed > 0,
+      (slot) => slot.slotsUsed > 0 || slot.created === true,
     ),
     campaignActors:
       campaignId === undefined ? [] : listCampaignActors(db, campaignId),
@@ -639,6 +642,7 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     input.db,
     input.actingCharacterId,
     input.campaignId,
+    input.resolveRulesPack,
   );
 
   const adventures = assembleAdventureContext(
@@ -1003,7 +1007,7 @@ function renderState(state: StateSnapshot): string {
       `Spell slots spent: ${state.spentSpellSlots
         .map(
           (slot) =>
-            `${slot.pool === 'pact_magic' ? 'Pact Magic ' : ''}level ${slot.spellLevel}: ${slot.slotsUsed}/${slot.slotsMax}`,
+            `${slot.pool === 'pact_magic' ? 'Pact Magic ' : ''}${slot.created === true ? 'created (until long rest) ' : ''}level ${slot.spellLevel}: ${slot.slotsUsed}/${slot.slotsMax}`,
         )
         .join('; ')}`,
     );

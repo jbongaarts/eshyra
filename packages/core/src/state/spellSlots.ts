@@ -33,6 +33,12 @@ export interface SpellSlotCounter {
   readonly slotsMax: number;
   readonly slotsUsed: number;
   readonly slotsRemaining: number;
+  /**
+   * Present (true) only for a slot created from sorcery points (Flexible
+   * Casting). Created slots live outside the class progression, may exceed
+   * it, and vanish on a long rest.
+   */
+  readonly created?: true;
 }
 
 export interface SpellSlotMutationContext {
@@ -73,6 +79,8 @@ export interface RestoreSpellSlotsInput extends SpellSlotMutationContext {
 export interface RestoreSpellSlotsResult {
   readonly event: SpellSlotRestEvent;
   readonly restored: readonly SpellSlotCounter[];
+  /** Created slots that vanished (long rest only); omitted when none. */
+  readonly expiredCreated?: readonly SpellSlotCounter[];
 }
 
 export class SpellSlotError extends Error {
@@ -96,6 +104,13 @@ interface SlotCapacity {
   readonly slotsMax: number;
 }
 
+interface CreatedSlotRow {
+  readonly character_id: string;
+  readonly spell_level: number;
+  readonly created: number;
+  readonly used: number;
+}
+
 const SLOT_COLUMNS =
   'character_id, pool_kind, spell_level, slots_max, slots_used';
 
@@ -117,7 +132,7 @@ export function syncSpellSlots(
       input.resolver,
     );
     reconcileSlots(txnDb, characterId, capacities, input);
-    return readSlotRows(txnDb, characterId).map(rowToCounter);
+    return readAllCounters(txnDb, characterId);
   });
 }
 
@@ -126,9 +141,7 @@ export function readSpellSlots(
   db: Db,
   characterId?: string,
 ): readonly SpellSlotCounter[] {
-  return readSlotRows(db, resolveCharacterId(db, characterId)).map(
-    rowToCounter,
-  );
+  return readAllCounters(db, resolveCharacterId(db, characterId));
 }
 
 /**
@@ -191,16 +204,32 @@ export function spendSpellSlot(
       input.resolver,
     );
     reconcileSlots(txnDb, characterId, capacities, input);
-    const candidates = readSlotRows(txnDb, characterId).filter(
-      (row) =>
-        row.slots_used < row.slots_max &&
-        row.spell_level >= input.spellLevel &&
-        (input.slotLevel === undefined || row.spell_level === input.slotLevel),
-    );
+    // A created slot vanishes at the next long rest anyway, so it is spent
+    // before an ordinary slot of the same level.
+    const wanted = (level: number): boolean =>
+      level >= input.spellLevel &&
+      (input.slotLevel === undefined || level === input.slotLevel);
+    const candidates: SelectedSlot[] = [
+      ...readCreatedRows(txnDb, characterId)
+        .filter((row) => row.used < row.created && wanted(row.spell_level))
+        .map((row) => ({ created: true as const, level: row.spell_level })),
+      ...readSlotRows(txnDb, characterId)
+        .filter(
+          (row) => row.slots_used < row.slots_max && wanted(row.spell_level),
+        )
+        .map((row) => ({
+          created: false as const,
+          level: row.spell_level,
+          pool: row.pool_kind,
+        })),
+    ];
     const selected = candidates.sort(
       (left, right) =>
-        left.spell_level - right.spell_level ||
-        left.pool_kind.localeCompare(right.pool_kind),
+        left.level - right.level ||
+        Number(right.created) - Number(left.created) ||
+        (!left.created && !right.created
+          ? left.pool.localeCompare(right.pool)
+          : 0),
     )[0];
     if (selected === undefined) {
       const requested = input.slotLevel ?? input.spellLevel;
@@ -208,7 +237,13 @@ export function spendSpellSlot(
         `no available level ${requested} or higher spell slot for a level ${input.spellLevel} spell`,
       );
     }
-    input.beforeSpend?.(selected.spell_level);
+    input.beforeSpend?.(selected.level);
+    if (selected.created) {
+      return {
+        spent: true,
+        counter: expendCreatedSlot(txnDb, characterId, selected.level, input),
+      };
+    }
     txnDb
       .prepare(
         `UPDATE character_spell_slot
@@ -220,13 +255,12 @@ export function spendSpellSlot(
         input.sessionId,
         input.at,
         characterId,
-        selected.pool_kind,
-        selected.spell_level,
+        selected.pool,
+        selected.level,
       );
     const after = readSlotRows(txnDb, characterId).find(
       (row) =>
-        row.pool_kind === selected.pool_kind &&
-        row.spell_level === selected.spell_level,
+        row.pool_kind === selected.pool && row.spell_level === selected.level,
     );
     if (after === undefined) {
       throw new SpellSlotError('spell-slot counter disappeared during spend');
@@ -278,10 +312,23 @@ export function restoreSpellSlots(
           row.spell_level,
         );
     }
-    return {
-      event: input.event,
-      restored: spent.map((row) => rowToCounter({ ...row, slots_used: 0 })),
-    };
+    const restored = spent.map((row) =>
+      rowToCounter({ ...row, slots_used: 0 }),
+    );
+    if (input.event === 'long_rest') {
+      const expiredCreated = readCreatedRows(txnDb, characterId).map(
+        createdRowToCounter,
+      );
+      if (expiredCreated.length > 0) {
+        txnDb
+          .prepare(
+            'DELETE FROM character_created_spell_slot WHERE character_id = ?',
+          )
+          .run(characterId);
+        return { event: input.event, restored, expiredCreated };
+      }
+    }
+    return { event: input.event, restored };
   });
 }
 
@@ -291,6 +338,168 @@ export function restoreSpellSlotsAfterLongRest(
   input: Omit<RestoreSpellSlotsInput, 'event'>,
 ): RestoreSpellSlotsResult {
   return restoreSpellSlots(db, { ...input, event: 'long_rest' });
+}
+
+type SelectedSlot =
+  | { readonly created: true; readonly level: number }
+  | {
+      readonly created: false;
+      readonly level: number;
+      readonly pool: SpellSlotPoolKind;
+    };
+
+/**
+ * Add one slot created from sorcery points (Flexible Casting). Runs the same
+ * single-class build/pack/level validation as a spend and seeds ordinary
+ * counters; the caller owns the surrounding transaction and the point cost.
+ */
+export function addCreatedSpellSlot(
+  db: Db,
+  input: SpellSlotMutationContext & { readonly slotLevel: number },
+): SpellSlotCounter {
+  if (
+    !Number.isInteger(input.slotLevel) ||
+    input.slotLevel < 1 ||
+    input.slotLevel > 5
+  ) {
+    throw new SpellSlotError('a created spell slot must be level 1 through 5');
+  }
+  return withTransaction(db, (txnDb) => {
+    const characterId = resolveCharacterId(txnDb, input.characterId);
+    reconcileSlots(
+      txnDb,
+      characterId,
+      resolveSlotCapacities(txnDb, characterId, input.resolver),
+      input,
+    );
+    txnDb
+      .prepare(
+        `INSERT INTO character_created_spell_slot(
+           character_id, spell_level, created, used, provenance, session_id, updated_at
+         ) VALUES (?, ?, 1, 0, ?, ?, ?)
+         ON CONFLICT(character_id, spell_level) DO UPDATE SET
+           created = created + 1, provenance = excluded.provenance,
+           session_id = excluded.session_id, updated_at = excluded.updated_at`,
+      )
+      .run(
+        characterId,
+        input.slotLevel,
+        input.provenance,
+        input.sessionId,
+        input.at,
+      );
+    const row = readCreatedRows(txnDb, characterId).find(
+      (candidate) => candidate.spell_level === input.slotLevel,
+    ) as CreatedSlotRow;
+    return createdRowToCounter(row);
+  });
+}
+
+/**
+ * Expend one available ordinary Spellcasting or created slot at exactly
+ * `slotLevel` (created first) without a spell cast, for Flexible Casting's
+ * slot-to-points conversion. Pact Magic slots are refused.
+ */
+export function expendSpellSlotAtLevel(
+  db: Db,
+  input: SpellSlotMutationContext & { readonly slotLevel: number },
+): SpellSlotCounter {
+  if (
+    !Number.isInteger(input.slotLevel) ||
+    input.slotLevel < 1 ||
+    input.slotLevel > 9
+  ) {
+    throw new SpellSlotError('slotLevel must be an integer from 1 through 9');
+  }
+  return withTransaction(db, (txnDb) => {
+    const characterId = resolveCharacterId(txnDb, input.characterId);
+    reconcileSlots(
+      txnDb,
+      characterId,
+      resolveSlotCapacities(txnDb, characterId, input.resolver),
+      input,
+    );
+    const created = readCreatedRows(txnDb, characterId).find(
+      (row) => row.spell_level === input.slotLevel && row.used < row.created,
+    );
+    if (created !== undefined) {
+      return expendCreatedSlot(txnDb, characterId, input.slotLevel, input);
+    }
+    const ordinary = readSlotRows(txnDb, characterId).find(
+      (row) =>
+        row.pool_kind === 'spellcasting' &&
+        row.spell_level === input.slotLevel &&
+        row.slots_used < row.slots_max,
+    );
+    if (ordinary === undefined) {
+      throw new SpellSlotError(
+        `no available level ${input.slotLevel} spell slot (Pact Magic slots cannot be converted)`,
+      );
+    }
+    txnDb
+      .prepare(
+        `UPDATE character_spell_slot
+         SET slots_used = slots_used + 1, provenance = ?, session_id = ?, updated_at = ?
+         WHERE character_id = ? AND pool_kind = 'spellcasting' AND spell_level = ?`,
+      )
+      .run(
+        input.provenance,
+        input.sessionId,
+        input.at,
+        characterId,
+        input.slotLevel,
+      );
+    return rowToCounter({ ...ordinary, slots_used: ordinary.slots_used + 1 });
+  });
+}
+
+function expendCreatedSlot(
+  db: Db,
+  characterId: string,
+  level: number,
+  input: SpellSlotMutationContext,
+): SpellSlotCounter {
+  db.prepare(
+    `UPDATE character_created_spell_slot
+     SET used = used + 1, provenance = ?, session_id = ?, updated_at = ?
+     WHERE character_id = ? AND spell_level = ?`,
+  ).run(input.provenance, input.sessionId, input.at, characterId, level);
+  const after = readCreatedRows(db, characterId).find(
+    (row) => row.spell_level === level,
+  );
+  if (after === undefined) {
+    throw new SpellSlotError('created spell slot disappeared during spend');
+  }
+  return createdRowToCounter(after);
+}
+
+function readCreatedRows(db: Db, characterId: string): CreatedSlotRow[] {
+  return db
+    .prepare(
+      `SELECT character_id, spell_level, created, used
+       FROM character_created_spell_slot
+       WHERE character_id = ? ORDER BY spell_level`,
+    )
+    .all(characterId) as CreatedSlotRow[];
+}
+
+function createdRowToCounter(row: CreatedSlotRow): SpellSlotCounter {
+  return {
+    characterId: row.character_id,
+    pool: 'spellcasting',
+    spellLevel: row.spell_level,
+    slotsMax: row.created,
+    slotsUsed: row.used,
+    slotsRemaining: row.created - row.used,
+    created: true,
+  };
+}
+
+function readAllCounters(db: Db, characterId: string): SpellSlotCounter[] {
+  return [
+    ...readSlotRows(db, characterId).map(rowToCounter),
+    ...readCreatedRows(db, characterId).map(createdRowToCounter),
+  ];
 }
 
 function resolveSlotCapacities(

@@ -782,6 +782,18 @@ function procedureOfKind<K extends BoundedProcedure['kind']>(
   return matches[0];
 }
 
+/** The resource-conversion procedure's pool maximum at a class level, when it
+ *  declares one. Lets callers cross-check the procedure against another
+ *  authority (the class table) before applying a transition. */
+export function resourceConversionMaximum(
+  data: unknown,
+  classLevel: number,
+): number | undefined {
+  return procedureOfKind(data, 'resource-conversion').pool.maximumByLevel.find(
+    (entry) => entry.level === classLevel,
+  )?.maximum;
+}
+
 export interface FeatureChoiceBinding {
   readonly choiceIndex: number;
   readonly choiceId: string;

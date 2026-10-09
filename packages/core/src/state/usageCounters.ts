@@ -62,15 +62,17 @@
 
 import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
 import {
-  getBundledDnd5eCharacterResolver,
+  createRulesPackCharacterResolver,
   type ResolvedClassLevel,
 } from '../character/rulesPackResolver.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
 import {
+  CampaignRulesBindingResolutionError,
   type CampaignRulesPackResolver,
   lookupCampaignRecord,
+  resolveStrictCampaignRulesStack,
 } from './campaignRecordLookup.js';
 import {
   type ClassResourceBinding,
@@ -877,7 +879,12 @@ function resolveCounterTarget(
     }
   }
 
-  const bound = resolveBoundClassResource(db, resolved, input.ability);
+  const bound = resolveBoundClassResource(
+    db,
+    resolved,
+    input.ability,
+    resolver,
+  );
   if (bound !== undefined) {
     return resolvePackBoundTarget(db, campaignId, resolved, input, bound);
   }
@@ -926,6 +933,7 @@ function resolveBoundClassResource(
   db: Db,
   resolved: ResolvedOwner,
   ability: string,
+  resolver?: CampaignRulesPackResolver,
 ): BoundClassResource | undefined {
   if (resolved.owner.kind !== 'character') return undefined;
   const normalized = normalizeAbilityName(ability);
@@ -933,10 +941,23 @@ function resolveBoundClassResource(
   if (sheet === undefined) return undefined;
   const binding = findClassResourceBinding(sheet.class.key, normalized);
   if (binding === undefined) return undefined;
-  const row = getBundledDnd5eCharacterResolver().resolveClassLevel(
-    sheet.class.key,
-    sheet.level,
-  );
+  // Capacity comes from the ACTIVE campaign rules stack (base + add-ons), never
+  // a silent bundled fallback: an unresolvable binding fails closed.
+  let row: ReturnType<
+    ReturnType<typeof createRulesPackCharacterResolver>['resolveClassLevel']
+  >;
+  try {
+    row = createRulesPackCharacterResolver(
+      resolveStrictCampaignRulesStack(db, resolver),
+    ).resolveClassLevel(sheet.class.key, sheet.level);
+  } catch (e) {
+    if (e instanceof CampaignRulesBindingResolutionError) {
+      throw new UsageCounterError(
+        `cannot resolve ${binding.displayName} capacity: ${e.message}`,
+      );
+    }
+    throw e;
+  }
   if (!row.ok) {
     throw new UsageCounterError(
       `cannot resolve ${binding.displayName} capacity for ${sheet.class.key} level ${sheet.level}: ${row.message}`,
@@ -990,6 +1011,16 @@ function resolvePackBoundTarget(
       source: 'record',
     },
   };
+}
+
+/** The owner's duplicate rule, shared by the mutating reconciliation and the
+ *  read projection: the most-spent legacy row wins, clamped to the active
+ *  finite capacity. */
+function mostSpentUsed(
+  rows: readonly { readonly uses_used: number }[],
+  capacity: number,
+): number {
+  return Math.min(Math.max(...rows.map((row) => row.uses_used)), capacity);
 }
 
 function boundCounterKeys(binding: ClassResourceBinding): string[] {
@@ -1052,10 +1083,7 @@ function reconcileBoundCounterRows(
   }
   for (const [campaign, group] of byCampaign) {
     // One counter per resource: the most-spent legacy row wins the used count.
-    const used = Math.min(
-      Math.max(...group.map((row) => row.uses_used)),
-      capacity.value,
-    );
+    const used = mostSpentUsed(group, capacity.value);
     const canonical = group.some(
       (row) => row.counter_key === binding.counterKey,
     );
@@ -1185,6 +1213,61 @@ function insertCounter(
   );
 }
 
+export interface BoundClassResourceBalance {
+  readonly max: number;
+  readonly used: number;
+}
+
+/**
+ * Read a pack-bound class resource's balance THROUGH the counter owner:
+ * legacy/alias/duplicate rows are adopted into the canonical record counter
+ * (most-spent wins; max/reset/source normalized to the active class table)
+ * exactly as `spendUsage` does. Returns undefined when the character has no
+ * such bound resource, or the table gives it no finite capacity. A missing
+ * counter reads as fully unspent at the table maximum (no row is created).
+ * Runs inside the caller's transaction.
+ */
+export function readBoundClassResourceBalance(
+  db: Db,
+  input: UsageMutationContext & {
+    readonly campaignId: string;
+    readonly characterId: string;
+    readonly ability: string;
+  },
+): BoundClassResourceBalance | undefined {
+  const resolved = resolveOwner(db, input.campaignId, {
+    kind: 'character',
+    ref: input.characterId,
+  });
+  const bound = resolveBoundClassResource(
+    db,
+    resolved,
+    input.ability,
+    input.resolveRulesPack,
+  );
+  if (bound === undefined) return undefined;
+  const capacity = classResourceCapacity(bound.binding, bound.row);
+  if (capacity.kind !== 'count') return undefined;
+  reconcileBoundCounterRows(
+    db,
+    input.campaignId,
+    input.characterId,
+    bound.binding,
+    capacity,
+    input,
+  );
+  const row = readCounterRow(
+    db,
+    input.campaignId,
+    resolved.owner,
+    bound.binding.counterKey,
+  );
+  return {
+    max: capacity.value,
+    used: Math.min(row?.uses_used ?? 0, capacity.value),
+  };
+}
+
 export function spendUsage(
   db: Db,
   input: SpendUsageInput,
@@ -1293,6 +1376,8 @@ function findCounter(
   campaignId: string,
   resolved: ResolvedOwner,
   ref: { ability?: string; itemId?: string },
+  resolver?: CampaignRulesPackResolver,
+  ctx?: UsageMutationContext,
 ): { row: CounterRow; counterOwner: UsageOwner; counterLabel: string } {
   if (ref.itemId !== undefined) {
     const { owner, itemName } = resolveItemCounter(db, resolved, ref.itemId);
@@ -1310,8 +1395,32 @@ function findCounter(
   const slug = normalizeAbilityName(ref.ability);
   // A pack-bound class resource is stored under its canonical key whichever
   // alias named it ('Ki Points' -> ability:ki, 'Rages' -> ability:rage).
-  const boundKey = resolveBoundClassResource(db, resolved, ref.ability)?.binding
-    .counterKey;
+  const bound = resolveBoundClassResource(db, resolved, ref.ability, resolver);
+  const boundKey = bound?.binding.counterKey;
+  if (bound !== undefined) {
+    // Reconcile to the ACTIVE class capacity before selecting the row, so a
+    // restore reports/persists the table maximum (most-spent adoption, as
+    // spendUsage does) rather than a stale stored economy.
+    const capacity = classResourceCapacity(bound.binding, bound.row);
+    if (capacity.kind === 'none') {
+      throw new UsageCounterError(
+        `${resolved.ownerLabel} has no ${bound.binding.displayName} at level ${bound.level} per the class table; nothing to restore`,
+      );
+    }
+    if (capacity.kind === 'unlimited') {
+      throw new UsageCounterError(
+        `${bound.binding.displayName} is unlimited at this level per the class table; nothing to restore`,
+      );
+    }
+    reconcileBoundCounterRows(
+      db,
+      campaignId,
+      resolved.owner.ref,
+      bound.binding,
+      capacity,
+      ctx,
+    );
+  }
   const rows = listCounterRows(db, campaignId, resolved.owner);
   const matches = rows.filter(
     (row) =>
@@ -1435,6 +1544,8 @@ export function restoreUsage(
         ...(input.ability === undefined ? {} : { ability: input.ability }),
         ...(input.itemId === undefined ? {} : { itemId: input.itemId }),
       },
+      input.resolveRulesPack,
+      input,
     );
 
     if (input.roll !== undefined) {
@@ -1583,6 +1694,130 @@ function ownerLabelMaps(db: Db, campaignId: string) {
   };
 }
 
+/** Lazily resolve the active campaign rules stack once per operation. */
+function lazyActiveClassResolver(
+  db: Db,
+  resolver?: CampaignRulesPackResolver,
+): () => ReturnType<typeof createRulesPackCharacterResolver> {
+  let memo: ReturnType<typeof createRulesPackCharacterResolver> | undefined;
+  return () => {
+    if (memo === undefined) {
+      try {
+        memo = createRulesPackCharacterResolver(
+          resolveStrictCampaignRulesStack(db, resolver),
+        );
+      } catch (e) {
+        if (e instanceof CampaignRulesBindingResolutionError) {
+          throw new UsageCounterError(
+            `cannot resolve class resource capacity: ${e.message}`,
+          );
+        }
+        throw e;
+      }
+    }
+    return memo;
+  };
+}
+
+/** Active-table capacity of every bound class resource of a stored character
+ *  sheet (undefined when the character has no sheet or no bound resources). */
+function activeBoundCapacities(
+  db: Db,
+  characterId: string,
+  activeResolver: ReturnType<typeof lazyActiveClassResolver>,
+  hasRows: (binding: ClassResourceBinding) => boolean,
+):
+  | {
+      binding: ClassResourceBinding;
+      capacity: ReturnType<typeof classResourceCapacity>;
+    }[]
+  | undefined {
+  const sheet = createSqliteCharacterSheetStore(db).load(characterId);
+  if (sheet === undefined) return undefined;
+  const bindings = classResourceBindingsFor(sheet.class.key).filter(hasRows);
+  if (bindings.length === 0) return undefined;
+  const row = activeResolver().resolveClassLevel(sheet.class.key, sheet.level);
+  if (!row.ok) {
+    throw new UsageCounterError(
+      `cannot resolve class resource capacity for ${sheet.class.key} level ${sheet.level}: ${row.message}`,
+    );
+  }
+  return bindings.map((binding) => ({
+    binding,
+    capacity: classResourceCapacity(binding, row.record),
+  }));
+}
+
+/** Characters whose class-resource counters a reset event touches: the named
+ *  character, none for a combatant/item owner, else every character with a
+ *  counter in the campaign. */
+function reconcileScopeBoundCounters(
+  db: Db,
+  input: ResetUsageInput,
+): Set<string> {
+  // Rows of bound resources whose ACTIVE capacity is 'none': they keep their
+  // historical expenditure but must never be refilled or reported as recovered.
+  const unavailable = new Set<string>();
+  let characterIds: string[];
+  if (input.owner !== undefined) {
+    const resolved = resolveOwner(db, input.campaignId, input.owner);
+    characterIds =
+      resolved.owner.kind === 'character' ? [resolved.owner.ref] : [];
+  } else {
+    characterIds = (
+      db
+        .prepare(
+          `SELECT DISTINCT owner_ref FROM entity_usage_counter
+           WHERE campaign_id = ? AND owner_kind = 'character'
+           ORDER BY owner_ref`,
+        )
+        .all(input.campaignId) as { owner_ref: string }[]
+    ).map((row) => row.owner_ref);
+  }
+  const activeResolver = lazyActiveClassResolver(db, input.resolveRulesPack);
+  for (const characterId of characterIds) {
+    const existing = new Set(
+      (
+        db
+          .prepare(
+            `SELECT counter_key FROM entity_usage_counter
+             WHERE campaign_id = ? AND owner_kind = 'character' AND owner_ref = ?`,
+          )
+          .all(input.campaignId, characterId) as { counter_key: string }[]
+      ).map((row) => row.counter_key),
+    );
+    const capacities = activeBoundCapacities(
+      db,
+      characterId,
+      activeResolver,
+      (binding) => boundCounterKeys(binding).some((key) => existing.has(key)),
+    );
+    for (const { binding, capacity } of capacities ?? []) {
+      // 'none' leaves the counter alone (level-up reconciliation does the
+      // same); 'count' realigns it; 'unlimited' removes it.
+      if (capacity.kind === 'none') {
+        for (const key of boundCounterKeys(binding)) {
+          unavailable.add(unavailableKey(characterId, key));
+        }
+        continue;
+      }
+      reconcileBoundCounterRows(
+        db,
+        input.campaignId,
+        characterId,
+        binding,
+        capacity,
+        input,
+      );
+    }
+  }
+  return unavailable;
+}
+
+function unavailableKey(characterId: string, counterKey: string): string {
+  return `${characterId}\u0000${counterKey}`;
+}
+
 export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
   const kinds = EVENT_RESETS[input.event];
   if (kinds === undefined) {
@@ -1612,8 +1847,14 @@ export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
                (SELECT id FROM inventory WHERE character_id IS NOT NULL)))`;
     }
 
+    // Reconcile pack-bound class-resource counters of the characters in scope
+    // against the ACTIVE campaign class table (one stack resolution) BEFORE
+    // filtering by reset kind, so the reset selects, persists and reports the
+    // active maximum/reset/source for stale canonical and alias counters.
+    const unavailable = reconcileScopeBoundCounters(txnDb, input);
+
     const placeholders = kinds.map(() => '?').join(', ');
-    const rows = txnDb
+    const candidateRows = txnDb
       .prepare(
         `SELECT ${COUNTER_COLUMNS}
          FROM entity_usage_counter
@@ -1628,6 +1869,13 @@ export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
          ORDER BY owner_kind, owner_ref, counter_key`,
       )
       .all(input.campaignId, ...kinds, ...ownerParams) as CounterRow[];
+    const rows = candidateRows.filter(
+      (row) =>
+        !(
+          row.owner_kind === 'character' &&
+          unavailable.has(unavailableKey(row.owner_ref, row.counter_key))
+        ),
+    );
 
     const labelFor = ownerLabelMaps(txnDb, input.campaignId);
     const reset: UsageCounter[] = [];
@@ -1670,6 +1918,7 @@ export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
 export function readSpentUsageCounters(
   db: Db,
   campaignId: string,
+  resolveRulesPack?: CampaignRulesPackResolver,
 ): UsageCounter[] {
   const rows = db
     .prepare(
@@ -1686,7 +1935,114 @@ export function readSpentUsageCounters(
     )
     .all(campaignId) as CounterRow[];
   const labelFor = ownerLabelMaps(db, campaignId);
-  return rows.map((row) => rowToCounter(row, labelFor(row)));
+  const projected = projectBoundClassResources(
+    db,
+    campaignId,
+    rows,
+    lazyActiveClassResolver(db, resolveRulesPack),
+  );
+  return projected
+    .filter((row) => row.uses_used > 0)
+    .map((row) => rowToCounter(row, labelFor(row)));
+}
+
+/**
+ * Pure, non-mutating canonical projection of pack-bound class-resource
+ * counters (eshyra-09co.9). Per character/resource it groups canonical and
+ * alias rows into ONE pool exactly as `reconcileBoundCounterRows` would
+ * persist: most-spent used clamped to the ACTIVE finite capacity, canonical
+ * key/display name/reset/source, recharge fields cleared. Resources whose
+ * active capacity is 'none' (no finite economy at this level) or 'unlimited'
+ * are omitted, never shown as a finite pool. Other counters pass through
+ * unchanged. Nothing is written.
+ */
+function projectBoundClassResources(
+  db: Db,
+  campaignId: string,
+  rows: readonly CounterRow[],
+  activeResolver: ReturnType<typeof lazyActiveClassResolver>,
+): CounterRow[] {
+  const sheets = createSqliteCharacterSheetStore(db);
+  const everyKey = (characterId: string): Set<string> => {
+    const keys = new Set<string>();
+    const sheet = sheets.load(characterId);
+    if (sheet === undefined) return keys;
+    for (const b of classResourceBindingsFor(sheet.class.key)) {
+      for (const k of boundCounterKeys(b)) keys.add(k);
+    }
+    return keys;
+  };
+  const boundKeys = new Map<string, Set<string>>();
+  const characters = new Set<string>();
+  for (const row of rows) {
+    if (row.owner_kind !== 'character') continue;
+    if (!boundKeys.has(row.owner_ref)) {
+      boundKeys.set(row.owner_ref, everyKey(row.owner_ref));
+    }
+    if (boundKeys.get(row.owner_ref)?.has(row.counter_key)) {
+      characters.add(row.owner_ref);
+    }
+  }
+  if (characters.size === 0) return [...rows];
+  const result: CounterRow[] = [];
+  const handled = new Set<string>();
+  for (const characterId of characters) {
+    const bindings = activeBoundCapacities(
+      db,
+      characterId,
+      activeResolver,
+      () => true,
+    );
+    for (const { binding, capacity } of bindings ?? []) {
+      const keys = boundCounterKeys(binding);
+      // The group is every stored row of the resource, including rows the
+      // spent-only query excluded (an unspent alias must not mask a spent one).
+      const group = db
+        .prepare(
+          `SELECT ${COUNTER_COLUMNS} FROM entity_usage_counter
+             WHERE campaign_id = ? AND owner_kind = 'character'
+               AND owner_ref = ? AND counter_key IN (${keys.map(() => '?').join(', ')})
+             ORDER BY counter_key`,
+        )
+        .all(campaignId, characterId, ...keys) as CounterRow[];
+      if (group.length === 0) continue;
+      for (const row of group) {
+        handled.add(unavailableKey(characterId, row.counter_key));
+      }
+      if (capacity.kind !== 'count') continue;
+      const canonical =
+        group.find((row) => row.counter_key === binding.counterKey) ??
+        // biome-ignore lint/style/noNonNullAssertion: group is non-empty
+        group[0]!;
+      result.push({
+        ...canonical,
+        counter_key: binding.counterKey,
+        display_name: binding.displayName,
+        uses_max: capacity.value,
+        uses_used: mostSpentUsed(group, capacity.value),
+        reset_kind: binding.reset,
+        recharge_roll: null,
+        recharge_minimum: null,
+        recharge_formula: null,
+        source: 'record',
+      });
+    }
+  }
+  for (const row of rows) {
+    if (
+      row.owner_kind === 'character' &&
+      handled.has(unavailableKey(row.owner_ref, row.counter_key))
+    ) {
+      continue;
+    }
+    result.push(row);
+  }
+  return result.sort(
+    (x, y) =>
+      x.owner_kind.localeCompare(y.owner_kind) ||
+      x.owner_ref.localeCompare(y.owner_ref) ||
+      x.counter_key.localeCompare(y.counter_key),
+  );
 }
 
 /** Render one spent counter as the compact fragment the context snapshot
