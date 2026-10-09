@@ -509,6 +509,50 @@ describe('deriveFeatureChoices — ASI vs feat (eshyra-o9bd.9.4)', () => {
   });
 });
 
+// Favored Enemy fixtures (eshyra-mdke): the guarded SRD sentences, plus the
+// creature / ancestry / language-table records the humanoid-race and language
+// menus derive from.
+const FAVORED_ENEMY_TEXT =
+  'Choose a type of favored enemy: aberrations, beasts, celestials, or undead. ' +
+  'Alternatively, you can select two races of humanoid (such as gnolls and orcs) as favored enemies. ' +
+  'You have advantage on Wisdom (Survival) checks to track your favored enemies. ' +
+  'When you gain this feature, you also learn one language of your choice that is spoken by your favored enemies, if they speak one at all.';
+
+function languageTable(key: string, languages: readonly string[]): RulesRecord {
+  return rec('table', key, key, {
+    projection: {
+      kind: 'languageOptions',
+      rows: languages.map((language) => ({ language })),
+    },
+  });
+}
+
+function favoredEnemyExtras() {
+  return {
+    creatureRecords: [
+      rec('creature', 'creature:gnoll', 'Gnoll', { type: 'humanoid (gnoll)' }),
+      rec('creature', 'creature:orc', 'Orc', { type: 'humanoid (orc)' }),
+      rec('creature', 'creature:bandit', 'Bandit', {
+        type: 'humanoid (any race)',
+      }),
+      rec('creature', 'creature:cultist', 'Cultist', {
+        type: 'humanoid (human, shapechanger)',
+      }),
+      rec('creature', 'creature:aboleth', 'Aboleth', { type: 'aberration' }),
+    ],
+    ancestryRecords: [
+      rec('ancestry', 'ancestry:elf', 'Elf', {}),
+      rec('ancestry', 'ancestry:high-elf', 'High Elf', {
+        subraceOf: 'ancestry:elf',
+      }),
+    ],
+    tableRecords: [
+      languageTable('table:standard-languages', ['Common', 'Elvish']),
+      languageTable('table:exotic-languages', ['Abyssal']),
+    ],
+  };
+}
+
 describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () => {
   function optionFeature(
     classKey: string,
@@ -535,23 +579,108 @@ describe('deriveFeatureChoices — option-list choices (eshyra-o9bd.9.5)', () =>
     });
   }
 
-  it('parses the favored enemy colon-list into an enumerated from', () => {
-    const out = optionFeature(
-      'class:ranger',
-      'Ranger',
+  it('parses the favored enemy colon-list into an enumerated from, plus the curated humanoid alternative and language (eshyra-mdke)', () => {
+    const out = deriveFeatureChoices({
+      classRecords: [
+        classRec('class:ranger', 'Ranger', {
+          grants: [{ ref: 'feature:ranger:favored-enemy', level: 1 }],
+        }),
+      ],
+      subclassRecords: [],
+      featureRecords: [
+        rec('feature', 'feature:ranger:favored-enemy', 'Favored Enemy', {
+          source: 'class:ranger',
+          level: 1,
+          description: FAVORED_ENEMY_TEXT,
+        }),
+      ],
+      ...favoredEnemyExtras(),
+    });
+    const [enemy, races, language] = featureChoices(
+      out,
       'feature:ranger:favored-enemy',
-      'Favored Enemy',
-      'Choose a type of favored enemy: aberrations, beasts, celestials, or undead. You have advantage…',
     );
-    const choice = featureChoices(out, 'feature:ranger:favored-enemy')[0];
-    expect(choice.category).toBe('favoredEnemy');
-    expect(choice.choose).toBe(1);
-    expect(choice.from).toEqual([
+    expect(enemy.category).toBe('favoredEnemy');
+    expect(enemy.choose).toBe(1);
+    expect(enemy.from).toEqual([
       'aberrations',
       'beasts',
       'celestials',
       'undead',
+      'humanoids',
     ]);
+    expect(races).toMatchObject({
+      id: 'humanoid-races',
+      category: 'favoredEnemy',
+      choose: 2,
+      requiresOption: { choiceId: 'favored-enemy', optionId: 'humanoids' },
+    });
+    // Subtype tags + base ancestries; 'any race' / 'shapechanger' dropped and
+    // subraces excluded; sorted and deduped.
+    expect(races.from).toEqual(['elf', 'gnoll', 'human', 'orc']);
+    expect(language).toMatchObject({
+      id: 'favored-enemy-language',
+      category: 'language',
+      choose: 1,
+      optional: true,
+      from: ['Common', 'Elvish', 'Abyssal'],
+    });
+  });
+
+  it.each([
+    ['two races of humanoid', 'two races of humans'],
+    ['such as gnolls and orcs', 'such as dwarves and elves'],
+    [
+      'one language of your choice that is spoken by your favored enemies',
+      'one language of your choice',
+    ],
+  ])(
+    'fails the import when the Favored Enemy text loses "%s"',
+    (phrase, replacement) => {
+      expect(() =>
+        deriveFeatureChoices({
+          classRecords: [
+            classRec('class:ranger', 'Ranger', {
+              grants: [{ ref: 'feature:ranger:favored-enemy', level: 1 }],
+            }),
+          ],
+          subclassRecords: [],
+          featureRecords: [
+            rec('feature', 'feature:ranger:favored-enemy', 'Favored Enemy', {
+              source: 'class:ranger',
+              level: 1,
+              description: FAVORED_ENEMY_TEXT.replace(phrase, replacement),
+            }),
+          ],
+          ...favoredEnemyExtras(),
+        }),
+      ).toThrow(/no longer contains/);
+    },
+  );
+
+  it('fails the import when a SRD example race is absent from the pack-derived set', () => {
+    const extras = favoredEnemyExtras();
+    expect(() =>
+      deriveFeatureChoices({
+        classRecords: [
+          classRec('class:ranger', 'Ranger', {
+            grants: [{ ref: 'feature:ranger:favored-enemy', level: 1 }],
+          }),
+        ],
+        subclassRecords: [],
+        featureRecords: [
+          rec('feature', 'feature:ranger:favored-enemy', 'Favored Enemy', {
+            source: 'class:ranger',
+            level: 1,
+            description: FAVORED_ENEMY_TEXT,
+          }),
+        ],
+        ...extras,
+        creatureRecords: extras.creatureRecords.filter(
+          (record) => record.key !== 'creature:gnoll',
+        ),
+      }),
+    ).toThrow(/"gnoll" is missing/);
   });
 
   it('parses the favored terrain colon-list', () => {
@@ -1095,17 +1224,24 @@ describe('deriveFeatureChoices — fail-closed count parsing (review fix)', () =
   }
 
   it('reads the indefinite article "a" as a count of 1 (not via a default)', () => {
-    const out = deriveFeatureChoices(
-      grantedFeature(
+    const out = deriveFeatureChoices({
+      ...grantedFeature(
         'class:ranger',
         'feature:ranger:favored-enemy',
         'Favored Enemy',
-        'Choose a type of favored enemy: aberrations, beasts, or undead. You have advantage…',
+        FAVORED_ENEMY_TEXT,
       ),
-    );
+      ...favoredEnemyExtras(),
+    });
     const choice = featureChoices(out, 'feature:ranger:favored-enemy')[0];
     expect(choice.choose).toBe(1);
-    expect(choice.from).toEqual(['aberrations', 'beasts', 'undead']);
+    expect(choice.from).toEqual([
+      'aberrations',
+      'beasts',
+      'celestials',
+      'undead',
+      'humanoids',
+    ]);
   });
 
   it('throws (does not invent a count) when an option-list count is unparseable', () => {

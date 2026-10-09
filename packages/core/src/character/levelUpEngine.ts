@@ -89,6 +89,7 @@ import {
 } from './levelUpExpertise.js';
 import {
   applyFeatureChoicesToSheet,
+  applyLanguagesToSheet,
   classifyFeatureImprovements,
   detectFeatureChoiceDescriptors,
   detectFeatureImprovementDescriptors,
@@ -362,6 +363,11 @@ export interface LevelUpRequiredChoice {
   readonly spellChoice?: LevelUpSpellChoiceRef;
   /** Set on skill-proficiency choices (levelUpSkillChoices.ts). */
   readonly skillChoice?: true;
+  /**
+   * Set on `language` feature choices (eshyra-mdke): the pick is also appended
+   * to `CharacterSheet.languages` and excludes languages already known.
+   */
+  readonly languageChoice?: true;
   /** Human-readable explanation of what must be decided. */
   readonly reason: string;
   /** The pack feature ref that triggered this choice, when applicable. */
@@ -399,6 +405,8 @@ export interface LevelUpAppliedChoice {
   };
   /** Skills appended to `CharacterSheet.skillProficiencies`. */
   readonly skillProficiencies?: readonly string[];
+  /** Languages appended to `CharacterSheet.languages` (eshyra-mdke). */
+  readonly languages?: readonly string[];
   /** Spell placements persisted on `CharacterSheet.spellcasting`. */
   readonly spellChoice?: AppliedSpellChoice;
   readonly abilityScoreIncreases?: readonly AppliedAbilityScoreIncrease[];
@@ -1665,9 +1673,13 @@ function applyChangeSetToSheet(
     sheet.skillProficiencies,
     appliedChoices,
   );
+  const languages = applyLanguagesToSheet(sheet.languages, appliedChoices);
   const next: CharacterSheet = {
     ...sheet,
     skillProficiencies: [...skillProficiencies],
+    ...(languages.length !== (sheet.languages ?? []).length
+      ? { languages }
+      : {}),
     ...(featureChoices !== undefined ? { featureChoices } : {}),
     ...spellStateAfterLevelUp(sheet, changeSet),
     level: changeSet.level.to,

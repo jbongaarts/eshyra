@@ -677,6 +677,11 @@ const rules: readonly ClassificationRule[] = [
     matches: exactPath(
       'data.choices[].id',
       'data.choices[].category',
+      // Conditional-choice trigger (eshyra-mdke): validated against the sibling
+      // choice's `from` by kindSchemas and consumed by the level-up/creation
+      // detectors (levelUpFeatureChoices.triggerSatisfied).
+      'data.choices[].requiresOption.choiceId',
+      'data.choices[].requiresOption.optionId',
       'data.choices[].options[].id',
       'data.choices[].options[].prerequisites[].kind',
       'data.startingEquipment.entries[].kind',

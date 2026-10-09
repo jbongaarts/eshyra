@@ -3,6 +3,7 @@ import {
   createCharacterCreationEngine,
   createRulesPackCharacterResolver,
   createSeededRng,
+  finalizeCharacterDraft,
   getBundledDnd5eCharacterResolver,
   getBundledDnd5eSrdPack,
   type RulesPack,
@@ -951,5 +952,89 @@ describe('character wizard — level-1 spell step for non-casters (eshyra-n7ls.1
       'This class has no level-1 spells to choose; press Enter to continue.',
     );
     expect(text(lines)).not.toContain('Enter level-1 spells');
+  });
+});
+
+describe('character wizard — optional choice (eshyra-mdke.3)', () => {
+  const ID = 'class.feature.ranger-favored-enemy.favored-enemy-language';
+  const TO_CLASS_CHOICES = [
+    'Wren',
+    'Ranger',
+    'Human',
+    '',
+    'point_buy',
+    'str 10',
+    'dex 15',
+    'con 13',
+    'int 8',
+    'wis 15',
+    'cha 8',
+    'done',
+    '',
+  ];
+  async function run(tail: string[]) {
+    const { deps: d, lines } = deps([...TO_CLASS_CHOICES, ...tail]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'wren',
+    });
+    return { result, lines };
+  }
+
+  const TO_LANGUAGE = [
+    'Athletics',
+    'Insight',
+    'Nature',
+    '1',
+    '1',
+    '1',
+    'Dwarvish', // Human's free language
+    'humanoids',
+    'gnoll',
+    'orc',
+  ];
+
+  it('offers an optional choice as a picker: Enter skips, a pick persists, clear re-shows the picker', async () => {
+    // Initial empty display lists the options and the skip prompt; Enter skips.
+    const skipped = await run([...TO_LANGUAGE, '', '1', '', '']);
+    const shown = text(skipped.lines);
+    const at = shown.indexOf('favored-enemy-language');
+    expect(at).toBeGreaterThan(-1);
+    expect(shown.slice(at)).toMatch(/\[ \] \d+\. Orc/);
+    expect(shown.slice(at)).toContain('press Enter to skip');
+    expect(skipped.result.outcome).toBe('completed');
+    expect(skipped.result.draft.selections.choices?.[ID] ?? []).toEqual([]);
+
+    // Picking a language persists it through finalization.
+    const picked = await run([...TO_LANGUAGE, 'Elvish', '1', '', '']);
+    expect(picked.result.outcome).toBe('completed');
+    expect(picked.result.draft.selections.choices?.[ID]).toEqual(['Elvish']);
+    const finalized = finalizeCharacterDraft(picked.result.draft, {
+      createdAt: '2026-10-09T00:00:00.000Z',
+      source: 'test',
+    });
+    expect(finalized.ok && finalized.character.languages).toContain('Elvish');
+
+    // Revisiting a populated optional choice keeps it on Enter, and `clear`
+    // re-shows the picker (it does not advance) so a new pick replaces it.
+    const repick = await run([
+      ...TO_LANGUAGE,
+      'Elvish',
+      '1', // Natural Explorer terrain
+      '', // spells step: continue
+      'back', // from review
+      'back', // from spells
+      ...['', '', '', '', '', '', '', ''], // keep acquisition, skills, 3 equipment, language, enemy, races
+      'clear',
+      'Orc',
+      '', // keep Natural Explorer terrain
+      '', // spells step: continue
+      '', // review: finish
+    ]);
+
+    expect(repick.result.draft.selections.choices?.[ID]).toEqual(['Orc']);
+    const tail = text(repick.lines).split('Cleared.')[1] ?? '';
+    expect(tail).toMatch(/\[ \] \d+\. Orc/);
+    expect(tail).toContain('press Enter to skip');
   });
 });

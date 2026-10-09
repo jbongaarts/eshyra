@@ -72,6 +72,7 @@ import {
   type ResolvedAncestryData,
   type ResolvedBackgroundData,
   type ResolvedClassData,
+  type ResolvedLanguageGrant,
   type RulesPackCharacterResolver,
   STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './rulesPackResolver.js';
@@ -502,6 +503,18 @@ function creationFeatureState(entries: readonly MechanicalChoiceState[]): {
   };
 }
 
+/** Fixed (non-choice) languages an ancestry or background grants. */
+function fixedLanguageGrants(
+  record:
+    | { readonly languages?: string | readonly ResolvedLanguageGrant[] }
+    | undefined,
+): readonly string[] {
+  const languages = record?.languages;
+  return Array.isArray(languages)
+    ? languages.flatMap((grant: ResolvedLanguageGrant) => grant.fixed)
+    : [];
+}
+
 function level1SpellcastingAbility(classRecord: ResolvedClassData | undefined) {
   return castsAtLevel1(classRecord)
     ? classRecord?.spellcastingAbility
@@ -808,6 +821,15 @@ export function createCharacterCreationEngine(
           ...(classRecord.toolProficiencies ?? []),
           ...(background?.toolProficiencies ?? []),
           ...held('tools'),
+        ]),
+      ],
+      languages: [
+        ...new Set([
+          ...fixedLanguageGrants(resolveAncestry(draft.selections.ancestry)),
+          ...fixedLanguageGrants(background),
+          ...withReplacements
+            .filter((entry) => entry.choice.kind === 'languages')
+            .flatMap((entry) => entry.selected),
         ]),
       ],
     });

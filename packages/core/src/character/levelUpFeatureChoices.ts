@@ -26,9 +26,15 @@
 //     Movement, the Paladin auras) is model-adjudicated and never blocks; any
 //     other target stays an unsupported, fail-closed descriptor. Legacy sheets
 //     with no recorded level-1 pick (created before eshyra-nnj6.1) proceed with
-//     an empty exclusion set. The pack does not structure the
-//     humanoid-races alternative or Favored Enemy's associated language, so
-//     neither is collected here.
+//     an empty exclusion set. Favored Enemy's "two races of humanoid"
+//     alternative and its associated language are structured in the pack
+//     (eshyra-mdke): `humanoid-races` is a conditional choice
+//     (`requiresOption` on the sibling `favored-enemy` option `humanoids`) and
+//     `favored-enemy-language` is an optional `language` choice. Both are
+//     collected at creation/level 1 and on the 6th/14th-level improvement
+//     pick; the language is persisted as a featureChoices entry AND appended
+//     to `sheet.languages`. Which languages "your favored enemies" speak stays
+//     DM-adjudicated; the pack bounds the menu.
 
 import type { FeatureChoice } from '../rules/featureChoices.js';
 import type {
@@ -62,6 +68,7 @@ const LIST_CHOICE_CATEGORIES: ReadonlySet<string> = new Set([
   'invocation',
   'favoredEnemy',
   'naturalExplorer',
+  'language',
   'other',
 ]);
 
@@ -139,12 +146,16 @@ export function classifyFeatureImprovements(
     let recognized = true;
     for (const ref of improvement.targetRefs) {
       const feature = featureOf(resolver, ref);
-      const listChoices = (feature?.choices ?? []).filter(
-        (choice) =>
-          isListChoice(choice) &&
+      const listChoices = (feature?.choices ?? []).filter(isListChoice);
+      // A feature qualifies by its favoredEnemy / naturalExplorer choice; its
+      // conditional / optional siblings (humanoid races, associated language;
+      // eshyra-mdke) are collected with it.
+      if (
+        feature !== undefined &&
+        listChoices.some((choice) =>
           IMPROVEMENT_PLAYER_CATEGORIES.has(choice.category),
-      );
-      if (feature !== undefined && listChoices.length > 0) {
+        )
+      ) {
         for (const choice of listChoices) picks.push({ feature, choice });
       } else if (!MODEL_ADJUDICATED_IMPROVEMENT_TARGETS.has(ref)) {
         recognized = false;
@@ -187,6 +198,37 @@ function isListChoice(choice: FeatureChoice): boolean {
     LIST_CHOICE_CATEGORIES.has(choice.category) &&
     Array.isArray(choice.from) &&
     typeof choice.choose === 'number'
+  );
+}
+
+/**
+ * A conditional choice (`requiresOption`, eshyra-mdke) applies only when its
+ * trigger option of the sibling choice is picked in this very acquisition; an
+ * unconditional choice always applies.
+ */
+function triggerSatisfied(
+  ctx: Pick<FeatureChoiceDetectionContext, 'selections' | 'toLevel'>,
+  feature: ResolvedFeatureData,
+  choice: FeatureChoice,
+): boolean {
+  const trigger = choice.requiresOption;
+  if (trigger === undefined) return true;
+  const siblingKey = descriptorId(ctx.toLevel, feature.key, trigger.choiceId);
+  return (ctx.selections[siblingKey] ?? []).includes(trigger.optionId);
+}
+
+/** Option ids a sibling choice's `requiresOption` names: re-pickable even when
+ *  held (a later "additional favored enemy" may again be two humanoid races). */
+function reusableOptionIds(
+  feature: ResolvedFeatureData,
+  choice: FeatureChoice,
+): ReadonlySet<string> {
+  return new Set(
+    (feature.choices ?? []).flatMap((sibling) =>
+      sibling.requiresOption?.choiceId === choice.id
+        ? [sibling.requiresOption.optionId]
+        : [],
+    ),
   );
 }
 
@@ -274,6 +316,7 @@ export function detectFeatureChoiceDescriptors(
         covered.add(ref);
         introduced.add(`${ref}\0${choice.id}`);
         handled.add(choiceInstanceKey(ref, choice.id));
+        if (!triggerSatisfied(ctx, feature, choice)) continue;
         const count = repeated
           ? REPEATED_GRANT_PICKS[choice.category]
           : (choice.choose as number);
@@ -347,10 +390,22 @@ export function detectFeatureImprovementDescriptors(
     }
     for (const { feature, choice } of row.picks) {
       handled.add(choiceInstanceKey(feature.key, choice.id));
-      const base = listDescriptor(ctx, feature, choice, 1);
+      if (!triggerSatisfied(ctx, feature, choice)) continue;
+      // Conditional / optional siblings keep their own pick count; the base
+      // list choice gains exactly one additional pick.
+      const sibling =
+        choice.requiresOption !== undefined || choice.optional === true;
+      const base = listDescriptor(
+        ctx,
+        feature,
+        choice,
+        sibling ? (choice.choose as number) : 1,
+      );
       choices.push({
         ...base,
-        label: `${feature.name}: choose 1 additional (${choice.id})`,
+        ...(sibling
+          ? {}
+          : { label: `${feature.name}: choose 1 additional (${choice.id})` }),
         reason: `level ${ctx.toLevel} '${row.label}': ${choice.prompt}`,
       });
     }
@@ -387,8 +442,21 @@ function listDescriptor(
   choice: FeatureChoice,
   count: number,
 ): LevelUpRequiredChoice {
-  const held = heldOptionIds(ctx.sheet, feature.key, choice);
-  const options = optionsOf(choice).filter((option) => !held.has(option.id));
+  const held = new Set(heldOptionIds(ctx.sheet, feature.key, choice));
+  for (const id of reusableOptionIds(feature, choice)) held.delete(id);
+  if (choice.category === 'language') {
+    for (const language of ctx.sheet.languages ?? []) {
+      held.add(language);
+    }
+  }
+  const options = optionsOf(choice).filter(
+    (option) =>
+      !held.has(option.id) &&
+      !(
+        choice.category === 'language' &&
+        [...held].some((h) => h.toLowerCase() === option.id.toLowerCase())
+      ),
+  );
   return {
     id: descriptorId(ctx.toLevel, feature.key, choice.id),
     kind:
@@ -396,6 +464,10 @@ function listDescriptor(
         ? 'fighting-style'
         : 'class-feature-choice',
     status: 'supported',
+    ...(choice.optional === true ? { optional: true } : {}),
+    ...(choice.category === 'language'
+      ? { languageChoice: true as const }
+      : {}),
     label: `${feature.name}: choose ${count} (${choice.id})`,
     choose: count,
     from: options.map((option) => option.id),
@@ -537,6 +609,18 @@ export function resolveFeatureChoiceSelection(
       };
     }
   }
+  if (choice.languageChoice === true) {
+    const known = new Set(
+      (sheet.languages ?? []).map((language) => language.toLowerCase()),
+    );
+    const duplicate = picks.find((id) => known.has(id.toLowerCase()));
+    if (duplicate !== undefined) {
+      return {
+        ok: false,
+        reason: `the character already knows ${duplicate}`,
+      };
+    }
+  }
   return {
     ok: true,
     applied: {
@@ -548,6 +632,7 @@ export function resolveFeatureChoiceSelection(
       value: selected.join(', '),
       label: choice.label,
       featureRefs: [],
+      ...(choice.languageChoice === true ? { languages: [...picks] } : {}),
       featureChoice: {
         featureRef: ref.featureRef,
         choiceId: ref.choiceId,
@@ -633,4 +718,21 @@ export function applyFeatureChoicesToSheet(
     }
   }
   return touched ? next : existing;
+}
+
+/** Languages learned by applied choices, appended to the sheet (deduped). */
+export function applyLanguagesToSheet(
+  existing: readonly string[] | undefined,
+  applied: readonly LevelUpAppliedChoice[],
+): readonly string[] {
+  const next = [...(existing ?? [])];
+  const seen = new Set(next.map((language) => language.toLowerCase()));
+  for (const choice of applied) {
+    for (const language of choice.languages ?? []) {
+      if (seen.has(language.toLowerCase())) continue;
+      seen.add(language.toLowerCase());
+      next.push(language);
+    }
+  }
+  return next;
 }

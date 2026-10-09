@@ -9,9 +9,9 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1866,
+  "rowCount": 1868,
   "dispositionCounts": {
-    "complete": 432,
+    "complete": 434,
     "model-adjudicated": 1229,
     "not-mechanical": 196,
     "typed-core-with-prose-qualifier": 3,
@@ -13340,7 +13340,7 @@
         "spell",
         "cantrip"
       ],
-      "population": 91,
+      "population": 93,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "kind-specific schema validates the closed choice/grant discriminator",
       "deterministicConsumers": "srdCreationChoices / feature-choice validator local choice contract",
@@ -13557,7 +13557,7 @@
         "intelligence",
         "wisdom"
       ],
-      "population": 40,
+      "population": 42,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -13581,7 +13581,7 @@
         "expertise",
         "magical-secrets"
       ],
-      "population": 91,
+      "population": 93,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "kind-specific schema validates the closed choice/grant discriminator",
       "deterministicConsumers": "srdCreationChoices / feature-choice validator local choice contract",
@@ -13876,7 +13876,7 @@
         "Choose your Bard College.",
         "Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus)."
       ],
-      "population": 91,
+      "population": 93,
       "valueClass": "source prose",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -13885,6 +13885,46 @@
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
       "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.choices[].requiresOption.choiceId",
+      "representativeValues": [
+        "favored-enemy"
+      ],
+      "population": 1,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "kind-specific schema validates the closed choice/grant discriminator",
+      "deterministicConsumers": "srdCreationChoices / feature-choice validator local choice contract",
+      "currentAuditReadiness": "choice and equipment-resolution audits validate domain membership",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "CreationChoice.id / CreationChoiceCategory / FeatureChoiceCategory",
+      "retainedProseBoundary": null,
+      "owner": "srdCreationChoices.ts and featureChoices.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.choices[].requiresOption.optionId",
+      "representativeValues": [
+        "humanoids"
+      ],
+      "population": 1,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "kind-specific schema validates the closed choice/grant discriminator",
+      "deterministicConsumers": "srdCreationChoices / feature-choice validator local choice contract",
+      "currentAuditReadiness": "choice and equipment-resolution audits validate domain membership",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "CreationChoice.id / CreationChoiceCategory / FeatureChoiceCategory",
+      "retainedProseBoundary": null,
+      "owner": "srdCreationChoices.ts and featureChoices.ts",
       "futureWork": false
     },
     {

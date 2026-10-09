@@ -82255,7 +82255,64 @@
             "monstrosities",
             "oozes",
             "plants",
-            "undead"
+            "undead",
+            "humanoids"
+          ]
+        },
+        {
+          "id": "humanoid-races",
+          "category": "favoredEnemy",
+          "prompt": "Choose two races of humanoid as favored enemies.",
+          "level": 1,
+          "choose": 2,
+          "requiresOption": {
+            "choiceId": "favored-enemy",
+            "optionId": "humanoids"
+          },
+          "from": [
+            "dragonborn",
+            "dwarf",
+            "elf",
+            "gnoll",
+            "gnome",
+            "goblinoid",
+            "grimlock",
+            "half-elf",
+            "half-orc",
+            "halfling",
+            "human",
+            "kobold",
+            "lizardfolk",
+            "merfolk",
+            "orc",
+            "sahuagin",
+            "tiefling"
+          ]
+        },
+        {
+          "id": "favored-enemy-language",
+          "category": "language",
+          "prompt": "Learn one language spoken by your favored enemies, if they speak one at all.",
+          "level": 1,
+          "choose": 1,
+          "optional": true,
+          "from": [
+            "Common",
+            "Dwarvish",
+            "Elvish",
+            "Giant",
+            "Gnomish",
+            "Goblin",
+            "Halfling",
+            "Orc",
+            "Abyssal",
+            "Celestial",
+            "Draconic",
+            "Deep Speech",
+            "Infernal",
+            "Primordial",
+            "Sylvan",
+            "Undercommon"
           ]
         }
       ]

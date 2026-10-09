@@ -988,7 +988,11 @@ class Wizard {
       this.write(initial.choice.label);
       return 'advance';
     }
-    const startedSatisfied = initial.satisfied;
+    // An optional choice with nothing selected is engine-satisfied (so it never
+    // blocks finishing) but is not *answered*: it still shows the picker.
+    const startedSatisfied =
+      initial.satisfied &&
+      !(initial.choice.optional === true && initial.selected.length === 0);
     // First-pass fills auto-advance for low friction; a group opened already
     // satisfied waits for an explicit keep so it can be edited.
     let autoAdvance = !startedSatisfied;
@@ -1003,7 +1007,8 @@ class Wizard {
       const need = choice.choose ?? 0;
       const options = choice.from ?? [];
       const selected = [...state.selected];
-      const complete = state.satisfied;
+      const optionalEmpty = choice.optional === true && selected.length === 0;
+      const complete = state.satisfied && !optionalEmpty;
       const remaining = complete ? 0 : Math.max(need - selected.length, 1);
       if (complete && autoAdvance) {
         this.write(`Selected: ${selected.join(', ')}.`);
@@ -1016,6 +1021,9 @@ class Wizard {
       } else {
         this.write(`Choose ${need} — ${remaining} remaining:`);
         this.printChoiceOptions(options, selected);
+        if (optionalEmpty) {
+          this.write('Optional — press Enter to skip.');
+        }
       }
       const input = await this.deps.io.prompt('> ');
       if (input === undefined) {
@@ -1056,6 +1064,10 @@ class Wizard {
         continue;
       }
       if (input.trim().length === 0) {
+        if (optionalEmpty) {
+          this.write('Skipped.');
+          return 'advance';
+        }
         if (complete) {
           this.write(`Selected: ${selected.join(', ')}.`);
           return 'advance'; // keep the existing selection

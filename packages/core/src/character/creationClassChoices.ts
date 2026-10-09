@@ -36,10 +36,7 @@ import {
   type HandledChoiceInstances,
   uncoveredChoiceDescriptors,
 } from './levelUpChoiceCoverage.js';
-import type {
-  LevelUpChoiceSelections,
-  LevelUpRequiredChoice,
-} from './levelUpEngine.js';
+import type { LevelUpRequiredChoice } from './levelUpEngine.js';
 import {
   detectExpertiseDescriptors,
   resolveExpertiseSelection,
@@ -66,6 +63,8 @@ export type CreationChoiceApplication =
   | {
       readonly kind: 'feature-choice';
       readonly featureChoice: CharacterFeatureChoice;
+      /** Languages the pick teaches, appended to the sheet (eshyra-mdke). */
+      readonly languages?: readonly string[];
     };
 
 /** A level-1 class-feature choice plus the draft's answer to it. */
@@ -88,6 +87,8 @@ export interface CreationClassChoiceInput {
   readonly skillProficiencies: readonly string[];
   /** Tool proficiencies the character holds so far. */
   readonly toolProficiencies: readonly string[];
+  /** Languages the character holds so far (ancestry + background). */
+  readonly languages?: readonly string[];
 }
 
 export const SUBCLASS_CHOICE_ID = 'class.subclass';
@@ -230,15 +231,26 @@ export function deriveCreationClassChoices(
     | 'toolProficiencies'
     | 'spells'
     | 'featureChoices'
+    | 'languages'
   > = {
     class: { key: classKey, name: classRecord.name },
     skillProficiencies: input.skillProficiencies,
     toolProficiencies: input.toolProficiencies,
     spells: [],
     featureChoices: undefined,
+    languages: input.languages ?? [],
   };
   const sheet = sheetView as CharacterSheet;
-  const noSelections: LevelUpChoiceSelections = {};
+  // The draft's stored picks as descriptor-keyed selections, so a conditional
+  // choice (Favored Enemy humanoid races) sees its sibling's pick (eshyra-mdke).
+  const storedSelections: Record<string, readonly string[]> = {};
+  for (const [id, values] of Object.entries(stored)) {
+    if (id.startsWith(CLASS_FEATURE_ID_PREFIX)) {
+      storedSelections[
+        `level.1.feature.${id.slice(CLASS_FEATURE_ID_PREFIX.length)}`
+      ] = values;
+    }
+  }
   const heldFeatureRefs = new Set<string>();
   const expertise = detectExpertiseDescriptors({
     sheet,
@@ -256,7 +268,7 @@ export function deriveCreationClassChoices(
     heldFeatureRefs,
     invocationsKnown: { from: undefined, to: undefined },
     resolver,
-    selections: noSelections,
+    selections: storedSelections,
   });
   const descriptors = [...expertise.choices, ...listChoices.choices].sort(
     (a, b) =>
@@ -315,8 +327,14 @@ export function deriveCreationClassChoices(
       label: descriptor.label,
       choose: descriptor.choose,
       from: options.map((option) => option.name),
+      ...(descriptor.optional === true ? { optional: true } : {}),
     };
     const selected = stored[id] ?? [];
+    if (selected.length === 0 && descriptor.optional === true) {
+      // An optional pick (Favored Enemy language) may be skipped.
+      states.push({ choice, selected, satisfied: true });
+      continue;
+    }
     if (selected.length === 0) {
       states.push({ choice, selected, satisfied: false });
       continue;
@@ -366,6 +384,9 @@ export function deriveCreationClassChoices(
           optionIds: [...fc.optionIds],
           level: fc.level,
         },
+        ...(resolution.ok && resolution.applied?.languages !== undefined
+          ? { languages: resolution.applied.languages }
+          : {}),
       },
     });
   }

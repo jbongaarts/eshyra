@@ -47,6 +47,7 @@ function buildSheet(o: {
   spells?: readonly string[];
   skills?: readonly string[];
   tools?: readonly string[];
+  languages?: readonly string[];
 }): CharacterSheet {
   const abilityScores = {} as CharacterSheet['abilityScores'];
   const savingThrows = {} as CharacterSheet['savingThrows'];
@@ -74,7 +75,7 @@ function buildSheet(o: {
     armorProficiencies: [],
     weaponProficiencies: [],
     equipment: [],
-    languages: [],
+    languages: [...(o.languages ?? [])],
     spells: [...(o.spells ?? [])],
     ...(o.featureChoices !== undefined
       ? { featureChoices: o.featureChoices }
@@ -1025,6 +1026,125 @@ describe('feature improvements (eshyra-ghzh.1)', () => {
       held(NE, 'favored-terrain', ['forest'], 6),
     ]);
     db.close();
+  });
+
+  describe('Favored Enemy humanoid races and language (eshyra-mdke)', () => {
+    const RACES6 = 'level.6.feature.ranger-favored-enemy.humanoid-races';
+    const LANG6 = 'level.6.feature.ranger-favored-enemy.favored-enemy-language';
+    const sheet5 = (languages: readonly string[] = ['Common']) =>
+      buildSheet({
+        classKey: 'class:ranger',
+        className: 'Ranger',
+        level: 5,
+        featureChoices: level1,
+        languages,
+      });
+    const preview = (
+      choices: Record<string, readonly string[]>,
+      languages?: readonly string[],
+    ) =>
+      previewLevelUpChangeSet(sheet5(languages), {
+        resolver: withoutSpellGrowth(5),
+        choices: { [TERRAIN6]: ['desert'], ...choices },
+      });
+
+    it('offers humanoids again and no races/blocker until humanoids is picked; language is optional', () => {
+      const choices = detectLevelUpRequiredChoices(sheet5());
+      expect(choices.find((c) => c.id === ENEMY6)?.from).toContain('humanoids');
+      expect(choices.some((c) => c.id === RACES6)).toBe(false);
+      expect(choices.find((c) => c.id === LANG6)).toMatchObject({
+        status: 'supported',
+        optional: true,
+        choose: 1,
+      });
+      // Beasts + no language finalizes (the language may be skipped).
+      expect(preview({ [ENEMY6]: ['beasts'] }).ok).toBe(true);
+    });
+
+    it('requires exactly two distinct humanoid races once humanoids is picked', () => {
+      const selections = { [ENEMY6]: ['humanoids'] };
+      const choices = detectLevelUpRequiredChoices(
+        sheet5(),
+        withoutSpellGrowth(5),
+        undefined,
+        selections,
+      );
+      const races = choices.find((c) => c.id === RACES6);
+      expect(races).toMatchObject({ status: 'supported', choose: 2 });
+      expect(races?.from).toEqual(expect.arrayContaining(['gnoll', 'orc']));
+      for (const bad of [[], ['gnoll'], ['gnoll', 'gnoll']]) {
+        expect(preview({ ...selections, [RACES6]: bad }).ok).toBe(false);
+      }
+      expect(preview({ ...selections, [RACES6]: ['gnoll', 'orc'] }).ok).toBe(
+        true,
+      );
+    });
+
+    it('excludes humanoid races already held for this feature but still offers humanoids', () => {
+      const sheet = buildSheet({
+        classKey: 'class:ranger',
+        className: 'Ranger',
+        level: 5,
+        featureChoices: [
+          held(FE, 'favored-enemy', ['humanoids'], 1),
+          held(FE, 'humanoid-races', ['gnoll', 'orc'], 1),
+          held(NE, 'favored-terrain', ['forest'], 1),
+        ],
+      });
+      const choices = detectLevelUpRequiredChoices(
+        sheet,
+        withoutSpellGrowth(5),
+        undefined,
+        { [ENEMY6]: ['humanoids'] },
+      );
+      expect(choices.find((c) => c.id === ENEMY6)?.from).toContain('humanoids');
+      const races = choices.find((c) => c.id === RACES6);
+      expect(races?.from).not.toContain('gnoll');
+      expect(races?.from).not.toContain('orc');
+      expect(races?.from).toContain('goblinoid');
+    });
+
+    it('persists the races and the language, appending the language to the sheet', () => {
+      const db = bareDb();
+      const store = createSqliteCharacterSheetStore(db, () => AT);
+      store.save('pc-1', sheet5());
+      const result = applyLevelUp(db, {
+        store,
+        resolver: withoutSpellGrowth(5),
+        choices: {
+          [ENEMY6]: ['humanoids'],
+          [RACES6]: ['gnoll', 'orc'],
+          [LANG6]: ['Orc'],
+          [TERRAIN6]: ['desert'],
+        },
+        ...APPLY,
+      });
+      expect(result.sheet.featureChoices).toEqual([
+        ...level1,
+        held(FE, 'favored-enemy', ['humanoids'], 6),
+        held(FE, 'humanoid-races', ['gnoll', 'orc'], 6),
+        held(FE, 'favored-enemy-language', ['Orc'], 6),
+        held(NE, 'favored-terrain', ['desert'], 6),
+      ]);
+      expect(result.sheet.languages).toEqual(['Common', 'Orc']);
+      db.close();
+    });
+
+    it('refuses a language the character already knows and hides it from the menu', () => {
+      const choices = detectLevelUpRequiredChoices(sheet5(['Common', 'Orc']));
+      const language = choices.find((c) => c.id === LANG6);
+      expect(language?.from).not.toContain('Orc');
+      expect(language?.from).not.toContain('Common');
+      const result = preview({ [ENEMY6]: ['beasts'], [LANG6]: ['Orc'] }, [
+        'Common',
+        'Orc',
+      ]);
+      expect(result.ok).toBe(false);
+      const refused = result.ok
+        ? undefined
+        : result.requiredChoices.find((c) => c.id === LANG6);
+      expect(refused?.reason).toContain("'Orc' is not a legal option");
+    });
   });
 
   it('levels Druid 3->4 through the Wild Shape improvement as model-adjudicated', () => {

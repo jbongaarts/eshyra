@@ -109,6 +109,21 @@ export interface FeatureChoice {
   readonly options?: readonly FeatureChoiceOption[];
   /** Present iff the choice is intentionally out of scope; names why. */
   readonly unsupported?: FeatureChoiceUnsupported;
+  /**
+   * The choice applies only when `optionId` of the SIBLING choice `choiceId`
+   * (same feature) is picked in the same acquisition (eshyra-mdke), e.g.
+   * Favored Enemy's "two races of humanoid" alternative. Otherwise the choice
+   * is not offered and does not block.
+   */
+  readonly requiresOption?: FeatureChoiceRequiresOption;
+  /** True when an empty selection is allowed (the choice may be skipped). */
+  readonly optional?: true;
+}
+
+/** Trigger of a conditional feature choice: a sibling choice's option id. */
+export interface FeatureChoiceRequiresOption {
+  readonly choiceId: string;
+  readonly optionId: string;
 }
 
 const CATEGORY_SET: ReadonlySet<string> = new Set(FEATURE_CHOICE_CATEGORIES);

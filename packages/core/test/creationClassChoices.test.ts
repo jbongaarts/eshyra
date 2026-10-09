@@ -257,9 +257,73 @@ describe('level-1 class-feature choices: enumeration', () => {
     });
   });
 
-  it('lists favored enemy (13 types) and favored terrain for a ranger', () => {
+  it('lists favored enemy (13 types + humanoids), its optional language, and favored terrain for a ranger', () => {
     const entries = choiceFor(baseDraft('Ranger'), 'feature_choice');
-    expect(entries.map((entry) => entry.choice.from?.length)).toEqual([13, 7]);
+    // Humanoid races are conditional and absent until 'humanoids' is picked.
+    expect(entries.map((entry) => entry.choice.from?.length)).toEqual([
+      14, 15, 7,
+    ]);
+  });
+
+  describe('Favored Enemy humanoid races and language (eshyra-mdke)', () => {
+    const ENEMY = 'class.feature.ranger-favored-enemy.favored-enemy';
+    const RACES = 'class.feature.ranger-favored-enemy.humanoid-races';
+    const LANGUAGE =
+      'class.feature.ranger-favored-enemy.favored-enemy-language';
+    const stateFor = (draft: CharacterDraft, id: string) =>
+      engine.mechanicalChoices(draft).find((entry) => entry.choice.id === id);
+
+    it('finalizes a beasts ranger with no humanoid races and the language skipped', () => {
+      let draft = engine.setChoice(baseDraft('Ranger'), ENEMY, ['beasts']);
+      expect(stateFor(draft, RACES)).toBeUndefined();
+      draft = fill(draft);
+      expect(stateFor(draft, LANGUAGE)?.satisfied).toBe(true);
+      const sheet = finalize(draft);
+      expect(sheet.featureChoices?.map((c) => c.choiceId)).not.toContain(
+        'humanoid-races',
+      );
+      // Common + the Human's own chosen language; nothing from Favored Enemy.
+      expect(sheet.languages).toHaveLength(2);
+    });
+
+    it('requires two humanoid races when humanoids is picked, and lands the language on the sheet', () => {
+      let draft = engine.setChoice(baseDraft('Ranger'), ENEMY, ['humanoids']);
+      expect(stateFor(draft, RACES)?.choice.choose).toBe(2);
+      expect(stateFor(draft, RACES)?.satisfied).toBe(false);
+      draft = engine.setChoice(draft, RACES, ['gnoll', 'orc']);
+      expect(stateFor(draft, RACES)?.satisfied).toBe(true);
+      draft = engine.setChoice(fill(draft), LANGUAGE, ['Orc']);
+      const sheet = finalize(draft);
+      expect(sheet.featureChoices).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            choiceId: 'humanoid-races',
+            optionIds: ['gnoll', 'orc'],
+          }),
+          expect.objectContaining({
+            choiceId: 'favored-enemy-language',
+            optionIds: ['Orc'],
+          }),
+        ]),
+      );
+      expect(sheet.languages).toContain('Orc');
+    });
+
+    it('does not offer a language the character already knows (Common)', () => {
+      const language = stateFor(baseDraft('Ranger'), LANGUAGE);
+      expect(language?.choice.from).not.toContain('Common');
+      expect(language?.choice.from).toContain('Elvish');
+    });
+
+    it('blocks finalization when humanoids is picked without two races', () => {
+      const draft = engine.setChoice(
+        fill(engine.setChoice(baseDraft('Ranger'), ENEMY, ['humanoids'])),
+        RACES,
+        ['gnoll'],
+      );
+      expect(stateFor(draft, RACES)?.satisfied).toBe(false);
+      expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+    });
   });
 
   it("offers rogue expertise only over held skills and thieves' tools", () => {
