@@ -13340,7 +13340,7 @@
         "spell",
         "cantrip"
       ],
-      "population": 87,
+      "population": 91,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "kind-specific schema validates the closed choice/grant discriminator",
       "deterministicConsumers": "srdCreationChoices / feature-choice validator local choice contract",
@@ -13401,12 +13401,12 @@
       "fieldPath": "data.choices[].from.classLists[]",
       "representativeValues": [
         "class:bard",
-        "class:cleric",
         "class:druid",
+        "class:cleric",
         "class:paladin",
         "class:ranger"
       ],
-      "population": 27,
+      "population": 28,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -13425,9 +13425,10 @@
       "fieldPath": "data.choices[].from.countsAsClassSpell",
       "representativeValues": [
         "class:bard",
+        "class:druid",
         "class:warlock"
       ],
-      "population": 3,
+      "population": 4,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -13448,7 +13449,7 @@
         "characterStateFilter",
         "spellFilter"
       ],
-      "population": 33,
+      "population": 34,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -13556,7 +13557,7 @@
         "intelligence",
         "wisdom"
       ],
-      "population": 37,
+      "population": 40,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -13580,7 +13581,7 @@
         "expertise",
         "magical-secrets"
       ],
-      "population": 87,
+      "population": 91,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "kind-specific schema validates the closed choice/grant discriminator",
       "deterministicConsumers": "srdCreationChoices / feature-choice validator local choice contract",
@@ -13604,7 +13605,7 @@
         "fighting-style:great-weapon-fighting",
         "fighting-style:protection"
       ],
-      "population": 74,
+      "population": 91,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "kind-specific schema validates the closed choice/grant discriminator",
       "deterministicConsumers": "srdCreationChoices / feature-choice validator local choice contract",
@@ -13628,7 +13629,7 @@
         "Great Weapon Fighting",
         "Protection"
       ],
-      "population": 74,
+      "population": 91,
       "valueClass": "source prose",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "display and navigation only",
@@ -13756,12 +13757,12 @@
       "fieldPath": "data.choices[].options[].source",
       "representativeValues": [
         "SRD 5.1 p. 24",
+        "SRD 5.1 p. 22",
+        "SRD 5.1 p. 44",
         "SRD 5.1 p. 38",
-        "SRD 5.1 p. 37",
-        "SRD 5.1 p. 31",
-        "SRD 5.1 p. 36"
+        "SRD 5.1 p. 37"
       ],
-      "population": 74,
+      "population": 91,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -13785,7 +13786,7 @@
         "When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit.",
         "When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield."
       ],
-      "population": 74,
+      "population": 91,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; any deterministic core must be represented by a separate named projection",
@@ -13809,7 +13810,7 @@
         "Choose your Bard College.",
         "Choose which of your skill proficiencies gain Expertise (doubled proficiency bonus)."
       ],
-      "population": 87,
+      "population": 91,
       "valueClass": "source prose",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",

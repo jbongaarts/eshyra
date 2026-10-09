@@ -77788,7 +77788,28 @@
     "data": {
       "source": "subclass:circle-of-the-land",
       "level": 2,
-      "description": "When you choose this circle at 2nd level, you learn one additional druid cantrip of your choice."
+      "description": "When you choose this circle at 2nd level, you learn one additional druid cantrip of your choice.",
+      "choices": [
+        {
+          "id": "bonus-cantrip",
+          "category": "cantrip",
+          "prompt": "Choose one additional druid cantrip.",
+          "level": 2,
+          "choose": 1,
+          "from": {
+            "kind": "spellFilter",
+            "classLists": [
+              "class:druid"
+            ],
+            "spellLevels": [
+              0
+            ],
+            "includeCantrips": true,
+            "countsAsClassSpell": "class:druid",
+            "countsAgainstKnown": false
+          }
+        }
+      ]
     },
     "source": "SRD 5.1 p. 21",
     "license": {
@@ -77820,7 +77841,69 @@
     "data": {
       "source": "subclass:circle-of-the-land",
       "level": 3,
-      "description": "Your mystical connection to the land infuses you with the ability to cast certain spells. At 3rd, 5th, 7th, and 9th level you gain access to circle spells connected to the land where you became a druid. Choose that land—arctic, coast, desert, forest, grassland, mountain, or swamp—and consult the associated list of spells. Once you gain access to a circle spell, you always have it prepared, and it doesn’t count against the number of spells you can prepare each day. If you gain access to a spell that doesn’t appear on the druid spell list, the spell is nonetheless a druid spell for you."
+      "description": "Your mystical connection to the land infuses you with the ability to cast certain spells. At 3rd, 5th, 7th, and 9th level you gain access to circle spells connected to the land where you became a druid. Choose that land—arctic, coast, desert, forest, grassland, mountain, or swamp—and consult the associated list of spells. Once you gain access to a circle spell, you always have it prepared, and it doesn’t count against the number of spells you can prepare each day. If you gain access to a spell that doesn’t appear on the druid spell list, the spell is nonetheless a druid spell for you.",
+      "choices": [
+        {
+          "id": "land",
+          "category": "other",
+          "prompt": "Choose the land where you became a druid; it determines your circle spells.",
+          "level": 3,
+          "choose": 1,
+          "from": [
+            "land:arctic",
+            "land:coast",
+            "land:desert",
+            "land:forest",
+            "land:grassland",
+            "land:mountain",
+            "land:swamp"
+          ],
+          "options": [
+            {
+              "id": "land:arctic",
+              "name": "Arctic",
+              "text": "Druid Level 3rd: hold person, spike growth; Druid Level 5th: sleet storm, slow; Druid Level 7th: freedom of movement, ice storm; Druid Level 9th: commune with nature, cone of cold",
+              "source": "SRD 5.1 p. 22"
+            },
+            {
+              "id": "land:coast",
+              "name": "Coast",
+              "text": "Druid Level 3rd: mirror image, misty step; Druid Level 5th: water breathing, water walk; Druid Level 7th: control water, freedom of movement; Druid Level 9th: conjure elemental, scrying",
+              "source": "SRD 5.1 p. 22"
+            },
+            {
+              "id": "land:desert",
+              "name": "Desert",
+              "text": "Druid Level 3rd: blur, silence; Druid Level 5th: create food and water, protection from energy; Druid Level 7th: blight, hallucinatory terrain; Druid Level 9th: insect plague, wall of stone",
+              "source": "SRD 5.1 p. 22"
+            },
+            {
+              "id": "land:forest",
+              "name": "Forest",
+              "text": "Druid Level 3rd: barkskin, spider climb; Druid Level 5th: call lightning, plant growth; Druid Level 7th: divination, freedom of movement; Druid Level 9th: commune with nature, tree stride",
+              "source": "SRD 5.1 p. 22"
+            },
+            {
+              "id": "land:grassland",
+              "name": "Grassland",
+              "text": "Druid Level 3rd: invisibility, pass without trace; Druid Level 5th: daylight, haste; Druid Level 7th: divination, freedom of movement; Druid Level 9th: dream, insect plague",
+              "source": "SRD 5.1 p. 22"
+            },
+            {
+              "id": "land:mountain",
+              "name": "Mountain",
+              "text": "Druid Level 3rd: spider climb, spike growth; Druid Level 5th: lightning bolt, meld into stone; Druid Level 7th: stone shape, stoneskin; Druid Level 9th: passwall, wall of stone",
+              "source": "SRD 5.1 p. 22"
+            },
+            {
+              "id": "land:swamp",
+              "name": "Swamp",
+              "text": "Druid Level 3rd: acid arrow, darkness; Druid Level 5th: water walk, stinking cloud; Druid Level 7th: freedom of movement, locate creature; Druid Level 9th: insect plague, scrying",
+              "source": "SRD 5.1 p. 22"
+            }
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 pp. 21, 22",
     "license": {
@@ -78413,7 +78496,36 @@
             "grant": "three skills of your choice"
           }
         ]
-      }
+      },
+      "choices": [
+        {
+          "id": "skills",
+          "category": "skill",
+          "prompt": "Choose 3 skills to gain proficiency with.",
+          "level": 3,
+          "choose": 3,
+          "from": [
+            "Acrobatics",
+            "Animal Handling",
+            "Arcana",
+            "Athletics",
+            "Deception",
+            "History",
+            "Insight",
+            "Intimidation",
+            "Investigation",
+            "Medicine",
+            "Nature",
+            "Perception",
+            "Performance",
+            "Persuasion",
+            "Religion",
+            "Sleight of Hand",
+            "Stealth",
+            "Survival"
+          ]
+        }
+      ]
     },
     "source": "SRD 5.1 p. 13",
     "license": {
@@ -78617,6 +78729,89 @@
           }
         ]
       },
+      "choices": [
+        {
+          "id": "dragon-ancestor",
+          "category": "other",
+          "prompt": "Choose one type of dragon as your ancestor.",
+          "level": 1,
+          "choose": 1,
+          "from": [
+            "dragon-ancestor:black",
+            "dragon-ancestor:blue",
+            "dragon-ancestor:brass",
+            "dragon-ancestor:bronze",
+            "dragon-ancestor:copper",
+            "dragon-ancestor:gold",
+            "dragon-ancestor:green",
+            "dragon-ancestor:red",
+            "dragon-ancestor:silver",
+            "dragon-ancestor:white"
+          ],
+          "options": [
+            {
+              "id": "dragon-ancestor:black",
+              "name": "Black",
+              "text": "Dragon: Black; Damage Type: Acid",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "dragon-ancestor:blue",
+              "name": "Blue",
+              "text": "Dragon: Blue; Damage Type: Lightning",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "dragon-ancestor:brass",
+              "name": "Brass",
+              "text": "Dragon: Brass; Damage Type: Fire",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "dragon-ancestor:bronze",
+              "name": "Bronze",
+              "text": "Dragon: Bronze; Damage Type: Lightning",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "dragon-ancestor:copper",
+              "name": "Copper",
+              "text": "Dragon: Copper; Damage Type: Acid",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "dragon-ancestor:gold",
+              "name": "Gold",
+              "text": "Dragon: Gold; Damage Type: Fire",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "dragon-ancestor:green",
+              "name": "Green",
+              "text": "Dragon: Green; Damage Type: Poison",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "dragon-ancestor:red",
+              "name": "Red",
+              "text": "Dragon: Red; Damage Type: Fire",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "dragon-ancestor:silver",
+              "name": "Silver",
+              "text": "Dragon: Silver; Damage Type: Cold",
+              "source": "SRD 5.1 p. 44"
+            },
+            {
+              "id": "dragon-ancestor:white",
+              "name": "White",
+              "text": "Dragon: White; Damage Type: Cold",
+              "source": "SRD 5.1 p. 44"
+            }
+          ]
+        }
+      ],
       "tableRefs": [
         "table:draconic-bloodline-draconic-ancestry"
       ]

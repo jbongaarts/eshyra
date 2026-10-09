@@ -1255,8 +1255,6 @@ export const ACCEPTED_PROSE_RECORD_KEYS: Readonly<
 > = Object.freeze({
   'feature#partial-structure': ['feature:cleric:destroy-undead'],
   'feature#prose-only': [
-    'feature:circle-of-the-land:bonus-cantrip',
-    'feature:circle-of-the-land:circle-spells',
     'feature:college-of-lore:peerless-skill',
     'feature:druid:archdruid',
     'feature:druid:beast-spells',

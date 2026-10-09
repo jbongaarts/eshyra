@@ -925,7 +925,7 @@ describe('sheet spellcasting validation', () => {
 });
 
 describe('fail closed', () => {
-  it('a feature that grants a spell without a structured choice is an unsupported descriptor', () => {
+  it('Bonus Cantrip is a supported druid-cantrip choice, no longer an unmodeled grant (eshyra-91o0)', () => {
     const sheet = buildSheet({
       classKey: 'class:druid',
       className: 'Druid',
@@ -936,13 +936,56 @@ describe('fail closed', () => {
     const found = descriptors(sheet, {
       'level.2.subclass': ['Circle of the Land'],
     });
+    const bonus = found.find(
+      (d) => d.featureRef === 'feature:circle-of-the-land:bonus-cantrip',
+    );
+    expect(bonus).toMatchObject({ status: 'supported', choose: 1 });
+    expect(bonus?.spellChoice).toBeDefined();
+  });
+
+  it('a feature spell choice the pack marks unsupported stays an unsupported descriptor', () => {
+    const resolver: RulesPackCharacterResolver = {
+      ...bundled,
+      listFeatures: () =>
+        bundled.listFeatures().map((feature) =>
+          feature.key === 'feature:circle-of-the-land:bonus-cantrip'
+            ? {
+                ...feature,
+                choices: feature.choices?.map((choice) => ({
+                  id: choice.id,
+                  category: choice.category,
+                  prompt: choice.prompt,
+                  level: choice.level,
+                  unsupported: { reason: 'synthetic' },
+                })),
+              }
+            : feature,
+        ),
+    };
+    const sheet = buildSheet({
+      classKey: 'class:druid',
+      className: 'Druid',
+      level: 1,
+      modifiers: { wisdom: 2 },
+      spellcasting: { cantrips: spellsOf('Druid', 0, 2), prepared: [] },
+    });
+    const found = descriptors(
+      sheet,
+      { 'level.2.subclass': ['Circle of the Land'] },
+      resolver,
+    );
     expect(
-      found.find(
+      found.filter(
         (d) => d.featureRef === 'feature:circle-of-the-land:bonus-cantrip',
       ),
-    ).toMatchObject({
-      status: 'unsupported',
-    });
+    ).not.toHaveLength(0);
+    expect(
+      found
+        .filter(
+          (d) => d.featureRef === 'feature:circle-of-the-land:bonus-cantrip',
+        )
+        .every((d) => d.status === 'unsupported'),
+    ).toBe(true);
   });
 
   it('an unknown spell filter key makes the descriptor unsupported, naming the key', () => {
