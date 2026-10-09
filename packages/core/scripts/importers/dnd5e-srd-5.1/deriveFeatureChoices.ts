@@ -49,6 +49,9 @@ export interface DeriveFeatureChoicesInput {
     string,
     ReadonlyMap<string, string>
   >;
+  /** Keys of every `creature:` record in the pack, for the curated
+   * summon-form-extension source-fidelity guard (eshyra-olv1). */
+  readonly creatureKeys?: ReadonlySet<string>;
 }
 
 /** A machine-readable prepared-spell count (eshyra-vk23.2): the prepared total
@@ -108,7 +111,79 @@ interface DerivedChoiceOption {
   readonly prerequisite?: string;
   /** Structured, machine-readable parse of `prerequisite` (eshyra-vk23.9). */
   readonly prerequisites?: readonly PrerequisiteClause[];
+  /** Curated extra creation forms this option grants a summoning spell
+   * (eshyra-olv1). */
+  readonly summonFormExtensions?: readonly SummonFormExtension[];
   readonly source: string;
+}
+
+interface SummonFormExtension {
+  readonly spell: string;
+  readonly forms: readonly {
+    readonly name: string;
+    readonly creatureRef: string;
+  }[];
+}
+
+/**
+ * Curated, source-grounded summon-form extensions keyed by option id
+ * (eshyra-olv1). SRD 5.1 p. 47, Pact of the Chain: "you can choose one of the
+ * normal forms for your familiar or one of the following special forms: imp,
+ * pseudodragon, quasit, or sprite." The guard below fails the import if a form
+ * name is not printed in the option's own text or a creature ref is absent.
+ */
+export const CURATED_SUMMON_FORM_EXTENSIONS: Readonly<
+  Record<string, readonly SummonFormExtension[]>
+> = {
+  'pact-boon:pact-of-the-chain': [
+    {
+      spell: 'spell:find-familiar',
+      forms: [
+        { name: 'imp', creatureRef: 'creature:imp' },
+        { name: 'pseudodragon', creatureRef: 'creature:pseudodragon' },
+        { name: 'quasit', creatureRef: 'creature:quasit' },
+        { name: 'sprite', creatureRef: 'creature:sprite' },
+      ],
+    },
+  ],
+};
+
+/**
+ * Attach curated summon-form extensions to matching options, failing closed
+ * when a form name is not verbatim in the option's own text or a creature ref
+ * does not resolve to a pack creature record.
+ */
+export function applySummonFormExtensions<
+  T extends { readonly id: string; readonly text: string },
+>(
+  options: readonly T[],
+  creatureKeys: ReadonlySet<string> | undefined,
+  curated: Readonly<
+    Record<string, readonly SummonFormExtension[]>
+  > = CURATED_SUMMON_FORM_EXTENSIONS,
+): (T | (T & { summonFormExtensions: readonly SummonFormExtension[] }))[] {
+  // Reduced parser fixtures carry no creature corpus; the real import always
+  // supplies `creatureKeys`, so only it receives (and is guarded by) the grant.
+  if (creatureKeys === undefined) return [...options];
+  return options.map((option) => {
+    const extensions = curated[option.id];
+    if (extensions === undefined) return option;
+    for (const extension of extensions) {
+      for (const form of extension.forms) {
+        if (!new RegExp(`\\b${form.name}\\b`).test(option.text)) {
+          throw new FeatureChoiceDerivationError(
+            `Curated summon form "${form.name}" is not printed in the text of option ${option.id}.`,
+          );
+        }
+        if (!creatureKeys.has(form.creatureRef)) {
+          throw new FeatureChoiceDerivationError(
+            `Curated summon form "${form.name}" of option ${option.id} names ${form.creatureRef}, which is not a creature record in the pack.`,
+          );
+        }
+      }
+    }
+    return { ...option, summonFormExtensions: extensions };
+  });
 }
 
 function optionSourceFor(
@@ -1259,11 +1334,14 @@ function deriveOptionListChoices(
         catalogSpec.countKeyword,
         catalogSpec.category,
       );
-      const options = parseOptionCatalog(
-        input,
-        feature,
-        featureOptionCatalog(feature) ?? description,
-        catalogSpec,
+      const options = applySummonFormExtensions(
+        parseOptionCatalog(
+          input,
+          feature,
+          featureOptionCatalog(feature) ?? description,
+          catalogSpec,
+        ),
+        input.creatureKeys,
       );
       out.set(feature.key, [
         {

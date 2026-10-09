@@ -76,6 +76,18 @@ export interface FeatureChoiceOption {
       }
     | { readonly kind: 'cantrip'; readonly ref: string }
   )[];
+  /**
+   * Extra creation forms this option grants a summoning spell it is held
+   * alongside (eshyra-olv1), e.g. Pact of the Chain's special familiar forms
+   * for `spell:find-familiar`. Curated and source-guarded by the importer.
+   */
+  readonly summonFormExtensions?: readonly {
+    readonly spell: string;
+    readonly forms: readonly {
+      readonly name: string;
+      readonly creatureRef: string;
+    }[];
+  }[];
   /** Human-readable source label for this option's source text. */
   readonly source: string;
 }

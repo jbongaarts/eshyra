@@ -11,6 +11,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  applySummonFormExtensions,
   deriveFeatureChoices,
   FeatureChoiceDerivationError,
 } from '../../../scripts/importers/dnd5e-srd-5.1/deriveFeatureChoices.js';
@@ -1246,5 +1247,49 @@ describe('deriveFeatureChoices — subclass build choices (eshyra-91o0)', () => 
       text: 'Dragon: Black; Damage Type: Acid',
     });
     expect(() => run(features)).toThrow(FeatureChoiceDerivationError);
+  });
+});
+
+describe('applySummonFormExtensions source-fidelity guard (eshyra-olv1)', () => {
+  const option = {
+    id: 'pact-boon:pact-of-the-chain',
+    text: 'special forms: imp, pseudodragon, quasit, or sprite.',
+  };
+  const curated = (name: string, creatureRef: string) => ({
+    'pact-boon:pact-of-the-chain': [
+      { spell: 'spell:find-familiar', forms: [{ name, creatureRef }] },
+    ],
+  });
+  const creatures = new Set(['creature:imp']);
+
+  it('attaches a curated extension whose form is printed and creature exists', () => {
+    const [out] = applySummonFormExtensions(
+      [option],
+      creatures,
+      curated('imp', 'creature:imp'),
+    );
+    expect(out).toMatchObject({
+      summonFormExtensions: [{ spell: 'spell:find-familiar' }],
+    });
+  });
+
+  it('fails the import on a form name absent from the option text', () => {
+    expect(() =>
+      applySummonFormExtensions(
+        [option],
+        new Set(['creature:homunculus']),
+        curated('homunculus', 'creature:homunculus'),
+      ),
+    ).toThrow(FeatureChoiceDerivationError);
+  });
+
+  it('fails the import on a creature ref missing from the pack', () => {
+    expect(() =>
+      applySummonFormExtensions(
+        [option],
+        creatures,
+        curated('sprite', 'creature:sprite'),
+      ),
+    ).toThrow(/not a creature record/);
   });
 });

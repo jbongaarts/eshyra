@@ -32,6 +32,7 @@
 // combinations fail closed. Zone and form projections are durable canonical
 // state and use the same ownership cleanup contract as conditions and actors.
 
+import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
@@ -5352,6 +5353,67 @@ function bondedPresence(
         : undefined;
 }
 
+/**
+ * Extra creation forms a character caster holds for `spellRef` through chosen
+ * feature options (eshyra-olv1): each option the sheet's `featureChoices`
+ * records, resolved through the pack feature's choice options, may carry a
+ * `summonFormExtensions` entry for the spell (Pact of the Chain grants the
+ * imp/pseudodragon/quasit/sprite forms of Find Familiar). Non-character source
+ * actors and sheets without such a pick get none.
+ *
+ * Scope notes. (1) Only recast_bonded_summon validates a chosen form against
+ * the spell's creation forms; initial creation (start_effect then
+ * start_encounter) performs no form validation today, so no extension check is
+ * needed or invented there. (2) The Pact of the Chain clause letting the
+ * familiar attack with its reaction in place of one of the warlock's own
+ * attacks is not enforced by any deterministic path (no engine rule stops a
+ * familiar attacking), so it remains DM-adjudicated.
+ */
+function casterSummonFormExtensions(
+  db: Db,
+  row: ActiveEffectRow,
+  spellRef: string,
+  resolveRulesPack: RecastBondedSummonInput['resolveRulesPack'],
+): readonly string[] {
+  if (row.source_actor_kind !== 'character' || row.source_actor_ref === null)
+    return [];
+  const sheet = createSqliteCharacterSheetStore(db).load(row.source_actor_ref);
+  const held = sheet?.featureChoices ?? [];
+  const refs: string[] = [];
+  for (const choice of held) {
+    const feature = lookupCampaignRecord(
+      db,
+      'feature',
+      choice.featureRef,
+      resolveRulesPack,
+    );
+    const choices = asObject(feature?.data)?.choices;
+    if (!Array.isArray(choices)) continue;
+    const entry = choices
+      .map(asObject)
+      .find((c) => c !== undefined && c.id === choice.choiceId);
+    const options = Array.isArray(entry?.options) ? entry.options : [];
+    for (const rawOption of options) {
+      const option = asObject(rawOption);
+      if (option === undefined || !choice.optionIds.includes(String(option.id)))
+        continue;
+      const extensions = Array.isArray(option.summonFormExtensions)
+        ? option.summonFormExtensions
+        : [];
+      for (const rawExtension of extensions) {
+        const extension = asObject(rawExtension);
+        if (extension?.spell !== spellRef || !Array.isArray(extension.forms))
+          continue;
+        for (const form of extension.forms) {
+          const ref = asObject(form)?.creatureRef;
+          if (typeof ref === 'string' && !refs.includes(ref)) refs.push(ref);
+        }
+      }
+    }
+  }
+  return refs;
+}
+
 const asObject = (v: unknown): Record<string, unknown> | undefined =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
     ? (v as Record<string, unknown>)
@@ -5535,6 +5597,18 @@ export function recastBondedSummon(
         `spell '${record.name}' recasts a${presence === 'absent' ? 'n absent' : presence === 'present' ? ' present' : ' pocketed'} creature with operation '${found.unsupportedOperation}', which the engine cannot execute`,
       );
     const { transition } = found;
+    const allowedForms =
+      transition.operation === 'select-new-form'
+        ? [
+            ...transition.forms,
+            ...casterSummonFormExtensions(
+              txnDb,
+              row,
+              input.spellRef,
+              input.resolveRulesPack,
+            ).filter((ref) => !transition.forms.includes(ref)),
+          ]
+        : transition.forms;
     if (transition.operation === 'restore-same-actor') {
       if (input.form !== undefined)
         throw new ActiveEffectError(
@@ -5542,11 +5616,11 @@ export function recastBondedSummon(
         );
     } else if (input.form === undefined) {
       throw new ActiveEffectError(
-        `'${record.name}' lets the creature adopt a form on its return: pass form as one of ${transition.forms.join(', ')}`,
+        `'${record.name}' lets the creature adopt a form on its return: pass form as one of ${allowedForms.join(', ')}`,
       );
-    } else if (!transition.forms.includes(input.form)) {
+    } else if (!allowedForms.includes(input.form)) {
       throw new ActiveEffectError(
-        `form '${input.form}' is not one of the forms '${record.name}' lists: ${transition.forms.join(', ')}`,
+        `form '${input.form}' is not one of the forms '${record.name}' lists: ${allowedForms.join(', ')}`,
       );
     }
     let restored: ReturnType<typeof restoreBondedCampaignActor>;

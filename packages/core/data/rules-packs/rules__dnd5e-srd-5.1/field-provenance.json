@@ -837,6 +837,12 @@
     },
     {
       "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/summonFormExtensions",
+      "class": "source-derived",
+      "reason": "curated structured summon-form grant (spell + creature refs) for the option; every form name is guarded against the option's own verbatim text and every creature ref against the pack (deriveFeatureChoices.ts), eshyra-olv1."
+    },
+    {
+      "kind": "feature",
       "pointerPrefix": "/choices/*/unsupported",
       "class": "compiler-projection",
       "reason": "the importer's own diagnostic note about a modeling gap for this choice — commentary about the compiler, not source-derived fact."
