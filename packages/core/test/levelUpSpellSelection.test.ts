@@ -678,7 +678,17 @@ describe('prepared casters are never blocked at level-up', () => {
     expect(apply(sheet, {}).result.sheet.level).toBe(3);
     const chosen = [...spellsOf('Cleric', 1, 4), ...spellsOf('Cleric', 2, 2)];
     const { result } = apply(sheet, { 'level.3.spells.prepare': chosen });
-    expect(result.sheet.spellcasting?.prepared).toEqual(chosen);
+    // Domain spells that were chosen are always prepared instead (eshyra-kn38).
+    const domain = result.sheet.spellcasting?.alwaysPrepared ?? [];
+    expect(domain).toEqual(
+      expect.arrayContaining([
+        'spell:lesser-restoration',
+        'spell:spiritual-weapon',
+      ]),
+    );
+    expect(result.sheet.spellcasting?.prepared).toEqual(
+      chosen.filter((ref) => !domain.includes(ref)),
+    );
     const over = [...chosen, spellsOf('Cleric', 2, 3)[2] as string];
     expect(
       blockers(sheet, { 'level.3.spells.prepare': over }).map((b) => b.id),
@@ -827,7 +837,13 @@ describe('legacy flat spell lists', () => {
     });
     expect(apply(cleric, {}).result.sheet.spellcasting).toEqual({
       cantrips: ['spell:sacred-flame'],
-      prepared: ['spell:bless'],
+      prepared: [],
+      alwaysPrepared: [
+        'spell:bless',
+        'spell:cure-wounds',
+        'spell:lesser-restoration',
+        'spell:spiritual-weapon',
+      ],
     });
   });
 
@@ -1154,5 +1170,159 @@ describe('every spell-related need at every caster level has a descriptor', () =
         prefix,
       ).toBe(true);
     }
+  });
+});
+
+describe('always-prepared refresh at level-up (eshyra-kn38)', () => {
+  it('cleric 2 -> 3 adds the level-3 domain spells with no spell choice; ledger records the delta', () => {
+    const sheet = buildSheet({
+      classKey: 'class:cleric',
+      className: 'Cleric',
+      level: 2,
+      subclass: { key: 'subclass:life-domain', name: 'Life Domain' },
+      spellcasting: {
+        cantrips: spellsOf('Cleric', 0, 3),
+        prepared: ['spell:bless', ...spellsOf('Cleric', 1, 2, ['spell:bless'])],
+        alwaysPrepared: ['spell:bless', 'spell:cure-wounds'],
+      },
+    });
+    const { db, result } = apply(sheet, {});
+    const always = result.sheet.spellcasting?.alwaysPrepared;
+    expect(always).toEqual([
+      'spell:bless',
+      'spell:cure-wounds',
+      'spell:lesser-restoration',
+      'spell:spiritual-weapon',
+    ]);
+    expect(result.sheet.spells).toEqual(
+      expect.arrayContaining(always as string[]),
+    );
+    expect(result.sheet.spellcasting?.prepared).not.toContain('spell:bless');
+    expect(listProgressionEvents(db)[0]?.appliedChanges).toMatchObject({
+      alwaysPrepared: {
+        from: ['spell:bless', 'spell:cure-wounds'],
+        to: always,
+      },
+      preparedRemoved: ['spell:bless'],
+    });
+  });
+
+  it('paladin choosing Oath of Devotion at 2 -> 3 gets its oath spells in the same level-up', () => {
+    const sheet = buildSheet({
+      classKey: 'class:paladin',
+      className: 'Paladin',
+      level: 2,
+      modifiers: { charisma: 3 },
+      spellcasting: { cantrips: [], prepared: [] },
+    });
+    const { result } = apply(sheet, {
+      'level.3.subclass': ['Oath of Devotion'],
+    });
+    expect(result.sheet.subclass?.key).toBe('subclass:oath-of-devotion');
+    expect(result.sheet.spellcasting?.alwaysPrepared).toEqual([
+      'spell:protection-from-evil-and-good',
+      'spell:sanctuary',
+    ]);
+  });
+
+  it('a Fiend warlock level-up never gains always-prepared spells', () => {
+    const sheet = buildSheet({
+      classKey: 'class:warlock',
+      className: 'Warlock',
+      level: 2,
+      subclass: { key: 'subclass:the-fiend', name: 'The Fiend' },
+      spellcasting: {
+        cantrips: spellsOf('Warlock', 0, 2),
+        known: spellsOf('Warlock', 1, 3),
+      },
+    });
+    const preview = previewLevelUpChangeSet(sheet, {
+      choices: {
+        'level.3.feature.warlock-pact-boon.pact-boon': [
+          'pact-boon:pact-of-the-blade',
+        ],
+        'level.3.spells.known': ['spell:darkness'],
+      },
+      resolver: bundled,
+    });
+    expect(preview.ok).toBe(true);
+    const changeSet = preview.ok ? preview.changeSet : undefined;
+    expect(changeSet?.alwaysPrepared).toBeUndefined();
+    expect(
+      changeSet?.spellSelections?.resulting.alwaysPrepared,
+    ).toBeUndefined();
+  });
+
+  it('Circle of the Land without a land pick levels up with no circle spells', () => {
+    const sheet = buildSheet({
+      classKey: 'class:druid',
+      className: 'Druid',
+      level: 4,
+      subclass: {
+        key: 'subclass:circle-of-the-land',
+        name: 'Circle of the Land',
+      },
+      modifiers: { wisdom: 3 },
+      spellcasting: {
+        cantrips: spellsOf('Druid', 0, 2),
+        prepared: spellsOf('Druid', 1, 3),
+      },
+    });
+    const { result } = apply(sheet, {});
+    expect(result.sheet.level).toBe(5);
+    expect(result.sheet.spellcasting?.alwaysPrepared).toBeUndefined();
+  });
+});
+
+describe('prepared and always-prepared stay disjoint; ledger matches the sheet (eshyra-kn38 review S1/S2)', () => {
+  const lifeCleric1 = () =>
+    buildSheet({
+      classKey: 'class:cleric',
+      className: 'Cleric',
+      level: 1,
+      modifiers: { wisdom: 3 },
+      subclass: { key: 'subclass:life-domain', name: 'Life Domain' },
+      spellcasting: {
+        cantrips: spellsOf('Cleric', 0, 3),
+        prepared: ['spell:bane'],
+        alwaysPrepared: ['spell:bless', 'spell:cure-wounds'],
+      },
+    });
+
+  it('an always-prepared pick is not kept in prepared when the grant list is unchanged', () => {
+    const { db, result } = apply(lifeCleric1(), {
+      'level.2.spells.prepare': ['spell:bless', 'spell:bane'],
+    });
+    const sc = result.sheet.spellcasting;
+    expect(sc?.alwaysPrepared).toEqual(['spell:bless', 'spell:cure-wounds']);
+    expect(sc?.prepared).toEqual(['spell:bane']);
+    const event = listProgressionEvents(db)[0]?.appliedChanges as {
+      spellSelections?: { resulting: unknown };
+      preparedRemoved?: string[];
+      alwaysPrepared?: unknown;
+    };
+    expect(event.alwaysPrepared).toBeUndefined();
+    expect(event.preparedRemoved).toEqual(['spell:bless']);
+    expect(event.spellSelections?.resulting).toEqual(sc);
+  });
+
+  it('a legacy flat list classified at level-up records the same spellcasting it persists', () => {
+    const sheet = buildSheet({
+      classKey: 'class:cleric',
+      className: 'Cleric',
+      level: 2,
+      modifiers: { wisdom: 3 },
+      subclass: { key: 'subclass:life-domain', name: 'Life Domain' },
+      spells: ['spell:sacred-flame', 'spell:bless', 'spell:bane'],
+    });
+    const { db, result } = apply(sheet, {});
+    const sc = result.sheet.spellcasting;
+    expect(sc?.prepared).toEqual(['spell:bane']);
+    expect(sc?.alwaysPrepared).toContain('spell:bless');
+    const event = listProgressionEvents(db)[0]?.appliedChanges as {
+      spellSelections?: { resulting: unknown };
+    };
+    expect(event.spellSelections?.resulting).toEqual(sc);
+    expect(result.changeSet.spellSelections?.resulting).toEqual(sc);
   });
 });
