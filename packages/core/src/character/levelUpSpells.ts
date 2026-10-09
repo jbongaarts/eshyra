@@ -65,6 +65,7 @@ export type SpellBucket =
   | 'spellbook'
   | 'prepared'
   | 'mysticArcanum'
+  | 'ritualBook'
   | 'designations';
 
 export type SpellDesignationKind = CharacterSpellDesignation['kind'];
@@ -411,6 +412,7 @@ export function spellsUnion(sc: CharacterSpellcasting): readonly string[] {
       ...(sc.prepared ?? []),
       ...(sc.alwaysPrepared ?? []),
       ...(sc.mysticArcanum ?? []).map((entry) => entry.spellRef),
+      ...(sc.ritualBook ?? []),
     ]),
   ];
 }
@@ -439,6 +441,7 @@ export function applySpellPlacements(
     ),
   );
   let arcanum = [...(base?.mysticArcanum ?? [])];
+  let ritualBook = [...(base?.ritualBook ?? [])];
   let designations = [...(base?.designations ?? [])];
   const spellChoices = applied.flatMap((choice) =>
     choice.spellChoice === undefined ? [] : [choice.spellChoice],
@@ -447,6 +450,8 @@ export function applySpellPlacements(
     for (const removal of choice.removals) {
       if (removal.bucket === 'mysticArcanum') {
         arcanum = arcanum.filter((e) => e.spellRef !== removal.spellRef);
+      } else if (removal.bucket === 'ritualBook') {
+        ritualBook = ritualBook.filter((ref) => ref !== removal.spellRef);
       } else if (removal.bucket === 'designations') {
         designations = designations.filter(
           (e) => e.spellRef !== removal.spellRef,
@@ -465,6 +470,10 @@ export function applySpellPlacements(
           level: addition.level as number,
           spellRef: addition.spellRef,
         });
+      } else if (addition.bucket === 'ritualBook') {
+        if (!ritualBook.includes(addition.spellRef)) {
+          ritualBook.push(addition.spellRef);
+        }
       } else if (addition.bucket === 'designations') {
         designations.push({
           kind: addition.designationKind as SpellDesignationKind,
@@ -485,6 +494,7 @@ export function applySpellPlacements(
     ...(present.has('spellbook') ? { spellbook: buckets.spellbook } : {}),
     ...(present.has('prepared') ? { prepared: buckets.prepared } : {}),
     ...(arcanum.length > 0 ? { mysticArcanum: arcanum } : {}),
+    ...(ritualBook.length > 0 ? { ritualBook } : {}),
     ...(designations.length > 0 ? { designations } : {}),
     ...(base?.alwaysPrepared !== undefined
       ? { alwaysPrepared: base.alwaysPrepared }
@@ -1168,6 +1178,10 @@ function featureSpellDescriptor(
       return fail('Mystic Arcanum choice does not name a single spell level.');
     }
     bucket = 'mysticArcanum';
+  } else if (choice.id === 'book-of-ancient-secrets-rituals') {
+    // SRD: the rituals "appear in the book and don't count against the number
+    // of spells you know" -- a dedicated bucket, never a known spell.
+    bucket = 'ritualBook';
   } else if (
     feature.key === 'feature:wizard:spell-mastery' ||
     feature.key === 'feature:wizard:signature-spells'

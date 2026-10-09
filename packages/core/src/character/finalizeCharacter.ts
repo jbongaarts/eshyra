@@ -205,6 +205,11 @@ export interface CharacterSpellcasting {
     readonly level: number;
     readonly spellRef: string;
   }[];
+  /**
+   * Rituals inscribed in the Book of Shadows (Book of Ancient Secrets). They are
+   * not spells known: never counted, replaceable or prepared.
+   */
+  readonly ritualBook?: readonly string[];
   readonly designations?: readonly CharacterSpellDesignation[];
 }
 
@@ -257,6 +262,7 @@ export function validateCharacterSheetSpellcasting(
   const spellbook = refList('spellbook', false);
   refList('prepared', false);
   refList('alwaysPrepared', false);
+  refList('ritualBook', false);
   const seen = new Set<string>();
   for (const ref of [...cantrips, ...known, ...spellbook]) {
     if (seen.has(ref)) {

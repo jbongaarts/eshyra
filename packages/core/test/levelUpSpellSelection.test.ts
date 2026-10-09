@@ -559,6 +559,96 @@ describe('warlock', () => {
   });
 });
 
+describe('Tome / Book picks are not spells known (eshyra-3lq2)', () => {
+  // SRD Pact of the Tome: the three cantrips "don't count against your number
+  // of cantrips known". Book of Ancient Secrets: the rituals "appear in the
+  // book and don't count against the number of spells you know".
+  const tomeSheet = (level = 4) =>
+    buildSheet({
+      classKey: 'class:warlock',
+      className: 'Warlock',
+      level,
+      spellcasting: {
+        cantrips: spellsOf('Warlock', 0, 3).concat(
+          spellsOf('Sorcerer', 0, 3, spellsOf('Warlock', 0, 3)),
+        ),
+        known: spellsOf('Warlock', 1, 3).concat(spellsOf('Warlock', 2, 1)),
+      },
+      featureChoices: [
+        {
+          featureRef: 'feature:warlock:pact-boon',
+          choiceId: 'pact-boon',
+          optionIds: ['pact-boon:pact-of-the-tome'],
+          level: 3,
+        },
+        {
+          featureRef: 'feature:warlock:eldritch-invocations',
+          choiceId: 'eldritch-invocations',
+          optionIds: [
+            'eldritch-invocation:beast-speech',
+            'eldritch-invocation:devils-sight',
+          ],
+          level: 2,
+        },
+      ],
+    });
+
+  it('Tome cantrips held do not reduce the normal cantrip offer at later levels', () => {
+    const sheet = tomeSheet(3);
+    // The warlock table grants one new cantrip at level 4 regardless of the
+    // three Tome cantrips already held.
+    const cantrips = descriptors(sheet).find(
+      (d) => d.id === 'level.4.spells.cantrips',
+    );
+    expect(cantrips).toMatchObject({ status: 'supported', choose: 1 });
+  });
+
+  it('Book rituals live in ritualBook and are never offered for replacement', () => {
+    const sheet = tomeSheet();
+    const BOOK = 'eldritch-invocation:book-of-ancient-secrets';
+    const found = descriptors(sheet, {
+      'level.5.feature.warlock-eldritch-invocations.eldritch-invocations': [
+        BOOK,
+      ],
+    });
+    const rituals = found.find((d) =>
+      d.id.endsWith('book-of-ancient-secrets-rituals'),
+    );
+    expect(rituals).toMatchObject({
+      status: 'supported',
+      choose: 2,
+      spellChoice: { mode: 'learn', bucket: 'ritualBook' },
+    });
+    const picks = (rituals?.from ?? []).filter(
+      (ref) =>
+        bundled.resolveSpell(ref).ok &&
+        (
+          bundled.resolveSpell(ref) as { record: { classes: string[] } }
+        ).record.classes.includes('Warlock'),
+    );
+    expect(picks.length).toBeGreaterThan(0);
+    const chosen = [
+      picks[0] as string,
+      rituals?.from?.find((r) => r !== picks[0]) as string,
+    ];
+    const { result } = apply(sheet, {
+      'level.5.feature.warlock-eldritch-invocations.eldritch-invocations': [
+        BOOK,
+      ],
+      [rituals?.id as string]: chosen,
+      'level.5.spells.known': [spellsOf('Warlock', 3, 1)[0] as string],
+    });
+    const after = result.sheet;
+    expect(after.spellcasting?.ritualBook).toEqual(chosen);
+    expect(after.spellcasting?.known).not.toContain(picks[0]);
+    expect(after.spells).toEqual(expect.arrayContaining(chosen));
+    // The warlock-listed ritual is not a replaceable known spell.
+    const replace = descriptors(after).find((d) => d.id.endsWith('.replace'));
+    expect(replace).toBeDefined();
+    expect(replace?.spellChoice?.heldRefs ?? []).not.toContain(picks[0]);
+  });
+});
+
 describe('wizard', () => {
   const book = spellsOf('Wizard', 1, 6);
   const sheet1 = buildSheet({
