@@ -56,14 +56,42 @@ const skillAbility = (skill: string): AbilityScoreName => {
   throw new Error(`Unknown SRD skill: ${skill}`);
 };
 
+/**
+ * The half-proficiency term an ability check gains from Jack of All Trades or
+ * Remarkable Athlete, for a check that does not already include proficiency.
+ * Shared by skill checks and raw ability checks (eshyra-r8en.1).
+ */
+export function halfProficiencyFeature(
+  sheet: CharacterSheet,
+  ability: AbilityScoreName,
+):
+  | {
+      readonly name: 'Jack of All Trades' | 'Remarkable Athlete';
+      readonly value: number;
+    }
+  | undefined {
+  const pb = sheet.proficiencyBonus;
+  const physical =
+    ability === 'strength' ||
+    ability === 'dexterity' ||
+    ability === 'constitution';
+  const jackAdd = holdsJackOfAllTrades(sheet) ? Math.floor(pb / 2) : 0;
+  const athleteAdd =
+    holdsRemarkableAthlete(sheet) && physical ? Math.ceil(pb / 2) : 0;
+  if (jackAdd <= 0 && athleteAdd <= 0) return undefined;
+  // One class sheet holds at most one of these; if both ever apply the larger
+  // single term is used (they are the same "half proficiency").
+  return athleteAdd > jackAdd
+    ? { name: 'Remarkable Athlete', value: athleteAdd }
+    : { name: 'Jack of All Trades', value: jackAdd };
+}
+
 export function deriveSkillBonuses(sheet: CharacterSheet): DerivedSkills {
   const proficient = new Set((sheet.skillProficiencies ?? []).map(norm));
   const expertise = new Set(
     [...characterExpertise(sheet)].map((id) => norm(id.replace(/^skill:/, ''))),
   );
   const pb = sheet.proficiencyBonus;
-  const jack = holdsJackOfAllTrades(sheet);
-  const remarkable = holdsRemarkableAthlete(sheet);
 
   const skills = SRD_5_1_SKILLS.map((skill): DerivedSkillBonus => {
     const ability = skillAbility(skill);
@@ -78,18 +106,10 @@ export function deriveSkillBonuses(sheet: CharacterSheet): DerivedSkills {
       pb * (level === 'expertise' ? 2 : level === 'proficient' ? 1 : 0);
     let featureBonus: DerivedSkillBonus['featureBonus'];
     if (level === 'none') {
-      const physical =
-        ability === 'strength' ||
-        ability === 'dexterity' ||
-        ability === 'constitution';
-      const jackAdd = jack ? Math.floor(pb / 2) : 0;
-      const athleteAdd = remarkable && physical ? Math.ceil(pb / 2) : 0;
-      if (jackAdd > 0 || athleteAdd > 0) {
-        // One class sheet holds at most one of these; if both ever apply the
-        // larger single term is used (they are the same "half proficiency").
-        bonus += Math.max(jackAdd, athleteAdd);
-        featureBonus =
-          athleteAdd > jackAdd ? 'Remarkable Athlete' : 'Jack of All Trades';
+      const feature = halfProficiencyFeature(sheet, ability);
+      if (feature !== undefined) {
+        bonus += feature.value;
+        featureBonus = feature.name;
       }
     }
     return {
