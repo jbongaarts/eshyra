@@ -160,7 +160,9 @@ export function flexibleCasting(
       );
     }
 
-    // SRD: both operations take a bonus action. Spend it first, in this
+    // SRD: both operations take a bonus action (the procedure schema in
+    // boundedProcedures.ts only admits actionCost 'bonus-action', so the pack
+    // cannot declare another cost). Spend it first, in this
     // transaction, so not-your-turn / already-used / surprised refusals abort
     // before any point or slot changes.
     let bonusActionSpent = false;
