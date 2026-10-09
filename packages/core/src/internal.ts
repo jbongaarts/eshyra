@@ -1631,6 +1631,15 @@ export {
   upsertCampaignActor,
 } from './state/encounterCombatants.js';
 export type {
+  FlexibleCastingInput,
+  FlexibleCastingOperation,
+  FlexibleCastingResult,
+} from './state/flexibleCasting.js';
+export {
+  FlexibleCastingError,
+  flexibleCasting,
+} from './state/flexibleCasting.js';
+export type {
   AdjustHpOptions,
   AdjustHpResult,
   DeathSaveOutcome,

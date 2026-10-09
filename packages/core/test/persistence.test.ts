@@ -38,8 +38,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 42,
-      name: 'bonded_summon_pocket_presence',
+      version: 43,
+      name: 'created_spell_slot',
     });
     db.close();
   });

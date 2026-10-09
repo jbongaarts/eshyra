@@ -36,6 +36,7 @@ import { endAttunementTool } from './toolEndAttunement.js';
 import { endEffectTool } from './toolEndEffect.js';
 import { endRetainedCheckTool } from './toolEndRetainedCheck.js';
 import { expendAmmunitionTool } from './toolExpendAmmunition.js';
+import { flexibleCastingTool } from './toolFlexibleCasting.js';
 import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
@@ -127,6 +128,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   addConditionTool,
   removeConditionTool,
   spendSpellSlotTool,
+  flexibleCastingTool,
   startEffectTool,
   endEffectTool,
   suppressEffectTool,

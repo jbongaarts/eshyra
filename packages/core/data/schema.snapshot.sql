@@ -336,6 +336,17 @@ CREATE TABLE character (
   CHECK (recovery_block IS NULL OR recovery_block = 'suffocating'), stable_recovery_settled INTEGER NOT NULL DEFAULT 0
   CHECK (stable_recovery_settled IN (0, 1)));
 
+CREATE TABLE character_created_spell_slot (
+  character_id TEXT NOT NULL REFERENCES character(id),
+  spell_level INTEGER NOT NULL CHECK (spell_level BETWEEN 1 AND 5),
+  created INTEGER NOT NULL CHECK (created >= 1),
+  used INTEGER NOT NULL DEFAULT 0 CHECK (used >= 0 AND used <= created),
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (character_id, spell_level)
+);
+
 CREATE TABLE character_hit_dice (
   character_id TEXT PRIMARY KEY REFERENCES character(id),
   die_faces INTEGER NOT NULL CHECK (die_faces IN (6, 8, 10, 12)),

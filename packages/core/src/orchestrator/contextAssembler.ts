@@ -567,7 +567,7 @@ export function readStateSnapshot(
     spentUsageCounters:
       campaignId === undefined ? [] : readSpentUsageCounters(db, campaignId),
     spentSpellSlots: readSpellSlots(db, charId).filter(
-      (slot) => slot.slotsUsed > 0,
+      (slot) => slot.slotsUsed > 0 || slot.created === true,
     ),
     campaignActors:
       campaignId === undefined ? [] : listCampaignActors(db, campaignId),
@@ -1003,7 +1003,7 @@ function renderState(state: StateSnapshot): string {
       `Spell slots spent: ${state.spentSpellSlots
         .map(
           (slot) =>
-            `${slot.pool === 'pact_magic' ? 'Pact Magic ' : ''}level ${slot.spellLevel}: ${slot.slotsUsed}/${slot.slotsMax}`,
+            `${slot.pool === 'pact_magic' ? 'Pact Magic ' : ''}${slot.created === true ? 'created (until long rest) ' : ''}level ${slot.spellLevel}: ${slot.slotsUsed}/${slot.slotsMax}`,
         )
         .join('; ')}`,
     );
