@@ -30,7 +30,7 @@ export interface DerivedSkills {
   readonly passivePerception: number;
 }
 
-// SRD 5.1 Bard (p. 11), Jack of All Trades, 2nd level: "you can add half your
+// SRD 5.1 Bard (p. 12), Jack of All Trades, 2nd level: "you can add half your
 // proficiency bonus, rounded down, to any ability check you make that doesn't
 // already include your proficiency bonus."
 const JACK_OF_ALL_TRADES_LEVEL = 2;
@@ -38,6 +38,14 @@ const JACK_OF_ALL_TRADES_LEVEL = 2;
 // your proficiency bonus (round up) to any Strength, Dexterity, or
 // Constitution check you make that doesn't already use your proficiency bonus."
 const REMARKABLE_ATHLETE_LEVEL = 7;
+
+// Feature availability depends only on class/subclass and level, never on
+// whether a named skill happens to consume the bonus (eshyra-b0hg.3).
+const holdsJackOfAllTrades = (sheet: CharacterSheet): boolean =>
+  sheet.class.key === 'class:bard' && sheet.level >= JACK_OF_ALL_TRADES_LEVEL;
+const holdsRemarkableAthlete = (sheet: CharacterSheet): boolean =>
+  sheet.subclass?.key === 'subclass:champion' &&
+  sheet.level >= REMARKABLE_ATHLETE_LEVEL;
 
 const norm = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -54,11 +62,8 @@ export function deriveSkillBonuses(sheet: CharacterSheet): DerivedSkills {
     [...characterExpertise(sheet)].map((id) => norm(id.replace(/^skill:/, ''))),
   );
   const pb = sheet.proficiencyBonus;
-  const jack =
-    sheet.class.key === 'class:bard' && sheet.level >= JACK_OF_ALL_TRADES_LEVEL;
-  const remarkable =
-    sheet.subclass?.key === 'subclass:champion' &&
-    sheet.level >= REMARKABLE_ATHLETE_LEVEL;
+  const jack = holdsJackOfAllTrades(sheet);
+  const remarkable = holdsRemarkableAthlete(sheet);
 
   const skills = SRD_5_1_SKILLS.map((skill): DerivedSkillBonus => {
     const ability = skillAbility(skill);
@@ -112,12 +117,12 @@ export function renderSkillsLine(sheet: CharacterSheet): string {
         `${s.skill} ${signed(s.bonus)}${s.proficiency === 'expertise' ? ' (expertise)' : ''}`,
     );
   const notes: string[] = [];
-  if (derived.skills.some((s) => s.featureBonus === 'Jack of All Trades')) {
+  if (holdsJackOfAllTrades(sheet)) {
     notes.push(
       `Jack of All Trades: +${Math.floor(sheet.proficiencyBonus / 2)} on other ability checks`,
     );
   }
-  if (derived.skills.some((s) => s.featureBonus === 'Remarkable Athlete')) {
+  if (holdsRemarkableAthlete(sheet)) {
     notes.push(
       `Remarkable Athlete: +${Math.ceil(sheet.proficiencyBonus / 2)} on other Str/Dex/Con checks`,
     );

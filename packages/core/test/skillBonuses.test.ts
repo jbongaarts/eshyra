@@ -108,3 +108,61 @@ describe('deriveSkillBonuses', () => {
     );
   });
 });
+
+describe('renderSkillsLine feature notes (eshyra-b0hg.3)', () => {
+  const physical = ['Athletics', 'Acrobatics', 'Stealth', 'Sleight of Hand'];
+  const champion = (level: number, skills: string[]): CharacterSheet =>
+    sheet({
+      level,
+      proficiencyBonus: 3,
+      class: { key: 'class:fighter', name: 'Fighter' },
+      subclass: { key: 'subclass:champion', name: 'Champion' },
+      skillProficiencies: skills,
+    });
+
+  it.each([
+    [7, [], true],
+    [7, physical.slice(0, 2), true],
+    [7, physical, true],
+    [6, physical, false],
+    [6, [], false],
+  ])(
+    'Champion level %i with %j proficient: Remarkable Athlete note=%s',
+    (level, skills, noted) => {
+      const line = renderSkillsLine(champion(level, skills));
+      expect(line.includes('Remarkable Athlete: +2')).toBe(noted);
+    },
+  );
+
+  it('Bard 2 proficient in every skill still renders Jack of All Trades', () => {
+    const all = [
+      'Acrobatics',
+      'Animal Handling',
+      'Arcana',
+      'Athletics',
+      'Deception',
+      'History',
+      'Insight',
+      'Intimidation',
+      'Investigation',
+      'Medicine',
+      'Nature',
+      'Perception',
+      'Performance',
+      'Persuasion',
+      'Religion',
+      'Sleight of Hand',
+      'Stealth',
+      'Survival',
+    ];
+    const bard = sheet({
+      level: 2,
+      class: { key: 'class:bard', name: 'Bard' },
+      skillProficiencies: all,
+    });
+    expect(renderSkillsLine(bard)).toContain('Jack of All Trades: +1');
+    expect(
+      renderSkillsLine({ ...bard, level: 1 }).includes('Jack of All Trades'),
+    ).toBe(false);
+  });
+});
