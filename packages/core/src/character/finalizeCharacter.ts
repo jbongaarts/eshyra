@@ -57,6 +57,7 @@ import {
   type RulesPackCharacterResolver,
   STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './rulesPackResolver.js';
+import { computeAlwaysPrepared } from './spellPreparation.js';
 import type { StartingWealthResult } from './srdStartingWealth.js';
 import { validateStartingWealthResult } from './srdStartingWealth.js';
 
@@ -679,7 +680,12 @@ function buildFinalizedCharacter(
       ancestryRecord.languages,
       backgroundRecord?.languages,
     ),
-    ...spellState(selections.spells ?? [], classRecord, resolver),
+    ...finalSpellState(
+      selections.spells ?? [],
+      classRecord,
+      resolver,
+      classFeatureState(engine.mechanicalChoices(draft)),
+    ),
     ...classFeatureState(engine.mechanicalChoices(draft)),
     metadata,
   };
@@ -717,8 +723,8 @@ function classFeatureState(
  * for a legacy flat list (`effectiveSpellcasting`): cantrips; known casters'
  * `known`; the Wizard's `spellbook`; other prepared casters' `prepared`. The
  * flat `spells` is the derived union of canonical refs. A class with no level-1
- * casting and no spells keeps the plain list. Domain/oath always-prepared
- * spells are not computed here (eshyra-kn38).
+ * casting and no spells keeps the plain list. Always-prepared spells are
+ * added by `finalSpellState`.
  */
 function spellState(
   chosen: readonly string[],
@@ -757,6 +763,44 @@ function spellState(
     spells: [...spellsUnion(structured)],
     spellcasting: structured,
   };
+}
+
+/**
+ * Level-1 spell state plus the subclass's always-prepared spells (eshyra-kn38):
+ * a prepared caster with a creation-time subclass (Life Domain) gets them in
+ * `alwaysPrepared`, removed from `prepared` if also picked.
+ */
+function finalSpellState(
+  chosen: readonly string[],
+  classRecord: ResolvedClassData,
+  resolver: RulesPackCharacterResolver,
+  features: Pick<CharacterSheet, 'subclass' | 'featureChoices'>,
+): Pick<CharacterSheet, 'spells' | 'spellcasting'> {
+  const state = spellState(chosen, classRecord, resolver);
+  let always: ReturnType<typeof computeAlwaysPrepared>;
+  try {
+    always = computeAlwaysPrepared(
+      { ...features, level: 1 },
+      classRecord,
+      resolver,
+    );
+  } catch (error) {
+    throw new Error(
+      `finalization invariant: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (always.refs.length === 0 || state.spellcasting === undefined) {
+    return state;
+  }
+  const { prepared, ...rest } = state.spellcasting;
+  const spellcasting: CharacterSpellcasting = {
+    ...rest,
+    ...(prepared !== undefined
+      ? { prepared: prepared.filter((ref) => !always.refs.includes(ref)) }
+      : {}),
+    alwaysPrepared: [...always.refs],
+  };
+  return { spells: [...spellsUnion(spellcasting)], spellcasting };
 }
 
 function assertProficiencyInvariant(
