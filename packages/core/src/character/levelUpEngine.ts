@@ -70,11 +70,17 @@ import {
 } from './characterSheetStore.js';
 import type { SavingThrowDerived } from './derivedValues.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
+import { uncoveredChoiceDescriptors } from './levelUpChoiceCoverage.js';
 import {
   applyFeatureChoicesToSheet,
   detectFeatureChoiceDescriptors,
   resolveFeatureChoiceSelection,
 } from './levelUpFeatureChoices.js';
+import {
+  applySkillProficienciesToSheet,
+  detectSkillChoiceDescriptors,
+  resolveSkillChoiceSelection,
+} from './levelUpSkillChoices.js';
 import {
   type AppliedSpellChoice,
   buildSpellSelections,
@@ -289,6 +295,8 @@ export interface LevelUpRequiredChoice {
    * takes `[oldRef, newRef]`; a `prepare` choice takes up to `choose` refs.
    */
   readonly spellChoice?: LevelUpSpellChoiceRef;
+  /** Set on skill-proficiency choices (levelUpSkillChoices.ts). */
+  readonly skillChoice?: true;
   /** Human-readable explanation of what must be decided. */
   readonly reason: string;
   /** The pack feature ref that triggered this choice, when applicable. */
@@ -323,6 +331,8 @@ export interface LevelUpAppliedChoice {
     /** Set when this pick replaced a held option (invocation replacement). */
     readonly replaces?: string;
   };
+  /** Skills appended to `CharacterSheet.skillProficiencies`. */
+  readonly skillProficiencies?: readonly string[];
   /** Spell placements persisted on `CharacterSheet.spellcasting`. */
   readonly spellChoice?: AppliedSpellChoice;
   readonly abilityScoreIncreases?: readonly AppliedAbilityScoreIncrease[];
@@ -776,6 +786,15 @@ export function detectLevelUpRequiredChoices(
     }
   }
   choices.push(...featureChoices.choices);
+  choices.push(
+    ...detectSkillChoiceDescriptors({
+      sheet,
+      toLevel,
+      targetFeatureRefs,
+      heldFeatureRefs,
+      resolver,
+    }),
+  );
 
   choices.push(
     ...subclassFeatureSlotChoices(
@@ -799,6 +818,17 @@ export function detectLevelUpRequiredChoices(
       heldFeatureRefs,
       resolver,
       selections,
+    }),
+  );
+
+  // Coverage invariant (eshyra-91o0): no pack-modeled choice on a feature
+  // gained at this level may be skipped by every detector above.
+  choices.push(
+    ...uncoveredChoiceDescriptors({
+      toLevel,
+      targetFeatureRefs,
+      emitted: choices,
+      resolver,
     }),
   );
 
@@ -967,6 +997,23 @@ function resolveLevelUpChoices(
           reason: `${choice.reason}; selection refused: ${resolution.reason}`,
         });
       } else if (resolution.applied !== undefined) {
+        applied.push(resolution.applied);
+      }
+      continue;
+    }
+    if (choice.skillChoice !== undefined) {
+      const resolution = resolveSkillChoiceSelection(
+        choice,
+        selected,
+        sheet,
+        targetLevel,
+      );
+      if (!resolution.ok) {
+        blockers.push({
+          ...choice,
+          reason: `${choice.reason}; selection refused: ${resolution.reason}`,
+        });
+      } else {
         applied.push(resolution.applied);
       }
       continue;
@@ -1397,8 +1444,13 @@ function applyChangeSetToSheet(
     sheet.featureChoices,
     appliedChoices,
   );
+  const skillProficiencies = applySkillProficienciesToSheet(
+    sheet.skillProficiencies,
+    appliedChoices,
+  );
   const next: CharacterSheet = {
     ...sheet,
+    skillProficiencies: [...skillProficiencies],
     ...(featureChoices !== undefined ? { featureChoices } : {}),
     ...(changeSet.spellSelections !== undefined
       ? {

@@ -533,15 +533,6 @@ export interface SpellDetectionContext {
   readonly selections: LevelUpChoiceSelections;
 }
 
-/**
- * Features that grant a spell/cantrip but carry no structured choice in the
- * pack. They are surfaced as unsupported rather than silently dropped.
- */
-const UNMODELED_SPELL_GRANT_FEATURES: Readonly<Record<string, string>> = {
-  'feature:circle-of-the-land:bonus-cantrip':
-    'Bonus Cantrip grants one additional druid cantrip, but the pack carries no structured choice for it',
-};
-
 function classSlug(classKey: string): string {
   return classKey.replace(/^class:/, '');
 }
@@ -817,22 +808,6 @@ export function detectSpellDescriptors(
     out.push(featureSpellDescriptor(ctx, due, held, env));
   }
 
-  // (f) spell grants the pack does not model as choices
-  const seen = new Set<string>();
-  for (const ref of ctx.targetFeatureRefs) {
-    const note = UNMODELED_SPELL_GRANT_FEATURES[ref];
-    if (note === undefined || seen.has(ref)) continue;
-    seen.add(ref);
-    out.push(
-      unsupported(
-        descriptorId(ctx.toLevel, ref, 'spell-grant'),
-        ref,
-        `level ${ctx.toLevel} grants '${ref}'`,
-        note,
-        ref,
-      ),
-    );
-  }
   return out;
 }
 

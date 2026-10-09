@@ -1149,3 +1149,102 @@ describe('deriveFeatureChoices — fail-closed count parsing (review fix)', () =
     ).toThrow(FeatureChoiceDerivationError);
   });
 });
+
+describe('deriveFeatureChoices — subclass build choices (eshyra-91o0)', () => {
+  const sub = (key: string, level: number, description: string) =>
+    rec('feature', key, key, {
+      source: 'subclass:x',
+      level,
+      description,
+    });
+  const run = (
+    featureRecords: RulesRecord[],
+    tableRecords: RulesRecord[] = [],
+  ) =>
+    deriveFeatureChoices({
+      classRecords: [],
+      subclassRecords: [],
+      featureRecords,
+      tableRecords,
+    });
+
+  it('models Lore Bonus Proficiencies as a counted skill choice from the 18 skills', () => {
+    const out = run([
+      sub(
+        'feature:college-of-lore:bonus-proficiencies',
+        3,
+        'you gain proficiency with three skills of your choice.',
+      ),
+    ]);
+    const choice = featureChoices(
+      out,
+      'feature:college-of-lore:bonus-proficiencies',
+    )[0];
+    expect(choice).toMatchObject({
+      id: 'skills',
+      category: 'skill',
+      choose: 3,
+    });
+    expect(choice.from).toHaveLength(18);
+  });
+
+  it('fails closed when the skills count is unparseable', () => {
+    expect(() =>
+      run([
+        sub(
+          'feature:college-of-lore:bonus-proficiencies',
+          3,
+          'you gain some skills of your choice.',
+        ),
+      ]),
+    ).toThrow(FeatureChoiceDerivationError);
+  });
+
+  it('builds the land and dragon option lists from the printed tables and fails closed without them', () => {
+    const land = (slug: string) =>
+      rec('table', `table:circle-of-the-land-${slug}`, slug, {
+        columns: ['Druid Level', 'Circle Spells'],
+        rows: [['3rd', 'a, b']],
+      });
+    const lands = [
+      'arctic',
+      'coast',
+      'desert',
+      'forest',
+      'grassland',
+      'mountain',
+      'swamp',
+    ].map(land);
+    const dragons = rec(
+      'table',
+      'table:draconic-bloodline-draconic-ancestry',
+      'Draconic Ancestry',
+      {
+        columns: ['Dragon', 'Damage Type'],
+        rows: [['Black', 'Acid']],
+      },
+    );
+    const features = [
+      sub('feature:circle-of-the-land:circle-spells', 3, 'Choose that land.'),
+      sub('feature:draconic-bloodline:dragon-ancestor', 1, 'you choose one.'),
+    ];
+    const out = run(features, [...lands, dragons]);
+    const landChoice = featureChoices(
+      out,
+      'feature:circle-of-the-land:circle-spells',
+    )[0];
+    expect(landChoice.from).toHaveLength(7);
+    expect(landChoice.options?.[0]).toMatchObject({
+      id: 'land:arctic',
+      text: 'Druid Level 3rd: a, b',
+    });
+    expect(
+      featureChoices(out, 'feature:draconic-bloodline:dragon-ancestor')[0]
+        .options?.[0],
+    ).toMatchObject({
+      id: 'dragon-ancestor:black',
+      text: 'Dragon: Black; Damage Type: Acid',
+    });
+    expect(() => run(features)).toThrow(FeatureChoiceDerivationError);
+  });
+});

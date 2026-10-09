@@ -1803,6 +1803,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
     classRecords: enriched.classRecords,
     subclassRecords: enriched.subclassRecords,
     featureRecords: enriched.featureRecords,
+    tableRecords,
     optionSourceLabelsByFeatureKey: optionSourceLabelsByFeatureKey(
       input.features ?? [],
     ),

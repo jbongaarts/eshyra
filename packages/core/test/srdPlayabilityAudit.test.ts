@@ -648,6 +648,89 @@ describe('subclass choice-coverage gate (eshyra-o9bd.9.2)', () => {
   });
 });
 
+describe('subclass-granted feature choice coverage (eshyra-91o0)', () => {
+  const loreSubclass = record({
+    kind: 'subclass',
+    key: 'subclass:college-of-lore',
+    name: 'College of Lore',
+    data: {
+      parentClass: 'class:bard',
+      features: ['feature:college-of-lore:bonus-proficiencies'],
+      featuresByLevel: [
+        { level: 3, features: ['feature:college-of-lore:bonus-proficiencies'] },
+      ],
+    },
+  });
+  const skillsFeature = (extra: Record<string, unknown> = {}) =>
+    feature(
+      'feature:college-of-lore:bonus-proficiencies',
+      'When you join the College of Lore at 3rd level, you gain proficiency with three skills of your choice.',
+      'subclass:college-of-lore',
+      { level: 3, ...extra },
+    );
+
+  it('audits a feature granted only through a subclass record', () => {
+    // No class progression row grants it; only the subclass slot does.
+    const findings = findingsByCategory(
+      auditSrdPlayability(pack([loreSubclass, skillsFeature()])),
+      'choice-coverage',
+    ).filter((f) => f.key === 'feature:college-of-lore:bonus-proficiencies');
+    expect(findings).toHaveLength(1);
+    expect(findings[0].detail).toContain('level 3');
+    expect(findings[0].detail).toContain("'skill'");
+  });
+
+  it('is silent once the subclass feature carries the structured choice', () => {
+    const modeled = skillsFeature({
+      choices: [
+        {
+          id: 'skills',
+          category: 'skill',
+          prompt: 'Choose three skills.',
+          level: 3,
+          choose: 3,
+          from: ['Arcana', 'History'],
+        },
+      ],
+    });
+    expect(
+      findingsByCategory(
+        auditSrdPlayability(pack([loreSubclass, modeled])),
+        'choice-coverage',
+      ),
+    ).toHaveLength(0);
+  });
+
+  it('detects the real subclass choice prose in the bundled pack', () => {
+    // Each new signal is exercised against the full feature text the pack
+    // carries, not a hand-written paraphrase.
+    const bundled = getBundledDnd5eSrdPack();
+    const stripped = (key: string): RulesRecord => {
+      const real = bundled.records.find((r) => r.key === key);
+      if (real === undefined) throw new Error(`missing ${key}`);
+      const { choices: _choices, ...data } = real.data as Record<
+        string,
+        unknown
+      >;
+      return { ...real, data };
+    };
+    const keys = [
+      'feature:college-of-lore:bonus-proficiencies',
+      'feature:circle-of-the-land:circle-spells',
+      'feature:circle-of-the-land:bonus-cantrip',
+      'feature:draconic-bloodline:dragon-ancestor',
+    ];
+    const swapped = bundled.records.map((r) =>
+      keys.includes(r.key) ? stripped(r.key) : r,
+    );
+    const flagged = findingsByCategory(
+      auditSrdPlayability({ ...bundled, records: swapped }),
+      'choice-coverage',
+    ).map((f) => f.key);
+    expect([...new Set(flagged)].sort()).toEqual([...keys].sort());
+  });
+});
+
 describe('unresolvable-inline-option-ref gate (eshyra-ldqb)', () => {
   it('fires on a pactBoon prerequisite ref that no choice offers', () => {
     const invocations = feature(
