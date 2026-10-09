@@ -72,6 +72,10 @@ import type { SavingThrowDerived } from './derivedValues.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
 import { uncoveredChoiceDescriptors } from './levelUpChoiceCoverage.js';
 import {
+  detectExpertiseDescriptors,
+  resolveExpertiseSelection,
+} from './levelUpExpertise.js';
+import {
   applyFeatureChoicesToSheet,
   detectFeatureChoiceDescriptors,
   resolveFeatureChoiceSelection,
@@ -316,6 +320,7 @@ export interface LevelUpAppliedChoice {
     | 'subclass'
     | 'ability-score-improvement'
     | 'fighting-style'
+    | 'expertise'
     | 'class-feature-choice'
     | 'spell-selection'
   >;
@@ -759,6 +764,13 @@ export function detectLevelUpRequiredChoices(
       }
     }
   }
+  const expertise = detectExpertiseDescriptors({
+    sheet,
+    toLevel,
+    targetFeatureRefs,
+    heldFeatureRefs,
+    resolver,
+  });
   const featureChoices = detectFeatureChoiceDescriptors({
     sheet,
     classKey,
@@ -773,19 +785,23 @@ export function detectLevelUpRequiredChoices(
     resolver,
     selections,
   });
-  if (featureChoices.coveredFeatureRefs.size > 0) {
+  const coveredFeatureRefs = new Set([
+    ...featureChoices.coveredFeatureRefs,
+    ...expertise.coveredFeatureRefs,
+  ]);
+  if (coveredFeatureRefs.size > 0) {
     for (let index = choices.length - 1; index >= 0; index -= 1) {
       const entry = choices[index];
       if (
         entry?.featureRef !== undefined &&
         entry.status === 'unsupported' &&
-        featureChoices.coveredFeatureRefs.has(entry.featureRef)
+        coveredFeatureRefs.has(entry.featureRef)
       ) {
         choices.splice(index, 1);
       }
     }
   }
-  choices.push(...featureChoices.choices);
+  choices.push(...expertise.choices, ...featureChoices.choices);
   choices.push(
     ...detectSkillChoiceDescriptors({
       sheet,
@@ -1015,6 +1031,22 @@ function resolveLevelUpChoices(
         });
       } else {
         applied.push(resolution.applied);
+      }
+      continue;
+    }
+    if (choice.kind === 'expertise') {
+      const resolution = resolveExpertiseSelection(
+        choice,
+        selected,
+        targetLevel,
+      );
+      if (resolution.ok) {
+        applied.push(resolution.applied);
+      } else {
+        blockers.push({
+          ...choice,
+          reason: `${choice.reason}; selection refused: ${resolution.reason}`,
+        });
       }
       continue;
     }
