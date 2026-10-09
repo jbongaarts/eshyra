@@ -3,6 +3,7 @@ import type {
   CharacterSheet,
   RulesPack,
   RulesRecord,
+  ToolContext,
 } from '../src/internal.js';
 import {
   advanceWorldTime,
@@ -32,6 +33,7 @@ import {
   UsageCounterError,
   updateClock,
   useItem,
+  writeCampaignRulesBinding,
   writeItemState,
 } from '../src/internal.js';
 import {
@@ -201,8 +203,11 @@ function itemFixture(
   };
 }
 
+// The bound base pack plus test items: rests resolve class data (Hit Dice,
+// slots) from this same binding, so it must keep the bundled classes.
 function itemPack(records: readonly RulesRecord[]): RulesPack {
-  return { ...getBundledDnd5eSrdPack(), records };
+  const bundled = getBundledDnd5eSrdPack();
+  return { ...bundled, records: [...bundled.records, ...records] };
 }
 
 function installEmptyItem(
@@ -1572,6 +1577,172 @@ describe('class resource counters reset through real rest operations', () => {
     expect(counterRow(db, 'ability:rage')?.uses_used).toBe(1);
     longRest(db, 'rage-long');
     expect(counterRow(db, 'ability:rage')?.uses_used).toBe(0);
+    db.close();
+  });
+});
+
+describe('rests resolve class data from the active campaign binding', () => {
+  const base = getBundledDnd5eSrdPack();
+  const ADDON_ID = 'rules:test-rest-addon';
+
+  // An add-on Wizard granting a level-4 slot at level 5 and a d10 Hit Die;
+  // `plain` keeps the add-on's identity but the bundled Wizard values.
+  function wizardAddon(plain = false): RulesPack {
+    const wizard = structuredClone(
+      base.records.find((record) => record.key === 'class:wizard'),
+    );
+    if (wizard === undefined) throw new Error('missing Wizard fixture');
+    if (!plain) {
+      const data = wizard.data as Record<string, unknown>;
+      data.hitDie = 10;
+      const levelFive = (data.progression as Record<string, unknown>[]).find(
+        (row) => row.level === 5,
+      );
+      const spellcasting = (
+        levelFive?.advancement as Record<string, unknown>[] | undefined
+      )?.find((entry) => entry.kind === 'spellcastingProgression');
+      if (spellcasting === undefined)
+        throw new Error('missing Wizard level-five spellcasting progression');
+      (spellcasting.slots as Record<string, number>)['4'] = 1;
+    }
+    return {
+      meta: {
+        ...base.meta,
+        packId: ADDON_ID,
+        title: 'Test rest add-on',
+        description: 'Test-only Wizard override.',
+        role: 'addon',
+        version: '1.0.0',
+        order: 1,
+        compatibleBaseSystems: [
+          { systemId: base.meta.systemId, versions: [base.meta.version] },
+        ],
+      },
+      records: [{ ...wizard, overrides: [`${base.meta.packId}/class:wizard`] }],
+    };
+  }
+
+  function boundLevelFiveWizard(): ReturnType<typeof freshDbWithSession> {
+    const db = setupCharacters();
+    createSqliteCharacterSheetStore(db).save('pc-2', sheet('class:wizard', 5));
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-2',
+      field: 'level',
+      op: 'set',
+      value: 5,
+      ...CTX,
+    });
+    writeCampaignRulesBinding(db, {
+      base: {
+        systemId: base.meta.systemId,
+        packId: base.meta.packId,
+        version: base.meta.version,
+      },
+      addons: [
+        { systemId: base.meta.systemId, packId: ADDON_ID, version: '1.0.0' },
+      ],
+      resolvedAt: CTX.at,
+    });
+    return db;
+  }
+
+  function toolContext(
+    db: ReturnType<typeof freshDbWithSession>,
+    resolveRulesPack: ToolContext['resolveRulesPack'],
+  ): ToolContext {
+    return {
+      db,
+      rng: createSeededRng(3),
+      campaignId: CTX.campaignId,
+      sessionId: CTX.sessionId,
+      turnId: 'addon-rest-turn',
+      at: CTX.at,
+      actingCharacterId: 'pc-2',
+      resolveRulesPack,
+    };
+  }
+
+  const SHORT_REST = {
+    restId: 'addon-short',
+    participants: ['pc-2'],
+    qualification: { durationMinutes: 60, strenuousActivity: false },
+  };
+
+  it('keeps a spent add-on slot spent across a short rest and rolls the add-on Hit Die', () => {
+    const db = boundLevelFiveWizard();
+    const addon = wizardAddon();
+    const ctx = toolContext(db, (ref) =>
+      ref.packId === ADDON_ID ? addon : undefined,
+    );
+    const registry = createDefaultToolRegistry();
+    expect(
+      registry.invoke(
+        'spend_spell_slot',
+        { spellRef: 'spell:fireball', slotLevel: 4 },
+        ctx,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: { counter: { spellLevel: 4, slotsMax: 1, slotsUsed: 1 } },
+    });
+    expect(
+      registry.invoke('complete_short_rest', SHORT_REST, ctx),
+    ).toMatchObject({
+      ok: true,
+      data: { recovery: { 'pc-2': { hitDieFaces: 10 } } },
+    });
+    expect(
+      readSpellSlots(db, 'pc-2').find((slot) => slot.spellLevel === 4),
+    ).toMatchObject({ slotsMax: 1, slotsUsed: 1 });
+    expect(
+      registry.invoke(
+        'spend_spell_slot',
+        { spellRef: 'spell:fireball', slotLevel: 4 },
+        ctx,
+      ),
+    ).toMatchObject({ ok: false });
+    expect(
+      readHitDice(db, 'pc-2', {
+        ...CTX,
+        resolveRulesPack: ctx.resolveRulesPack,
+      }).dieFaces,
+    ).toBe(10);
+    expect(
+      registry.invoke('spend_rest_hit_die', { restId: 'addon-short' }, ctx),
+    ).toMatchObject({ ok: true, data: { dice: '1d10' } });
+    db.close();
+  });
+
+  it('resolves the stack once per rest even if the pack resolver changes its answer', () => {
+    const db = boundLevelFiveWizard();
+    const addon = wizardAddon();
+    const plain = wizardAddon(true);
+    expect(
+      createDefaultToolRegistry().invoke(
+        'spend_spell_slot',
+        { spellRef: 'spell:fireball', slotLevel: 4 },
+        toolContext(db, (ref) => (ref.packId === ADDON_ID ? addon : undefined)),
+      ),
+    ).toMatchObject({ ok: true });
+    let calls = 0;
+    const fickle = toolContext(db, (ref) =>
+      ref.packId === ADDON_ID ? (calls++ === 0 ? addon : plain) : undefined,
+    );
+    expect(
+      createDefaultToolRegistry().invoke(
+        'complete_short_rest',
+        SHORT_REST,
+        fickle,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: { recovery: { 'pc-2': { hitDieFaces: 10 } } },
+    });
+    expect(calls).toBe(1);
+    expect(
+      readSpellSlots(db, 'pc-2').find((slot) => slot.spellLevel === 4),
+    ).toMatchObject({ slotsMax: 1, slotsUsed: 1 });
     db.close();
   });
 });
