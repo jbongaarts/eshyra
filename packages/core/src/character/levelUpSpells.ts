@@ -37,13 +37,18 @@ import type {
   CharacterSpellcasting,
   CharacterSpellDesignation,
 } from './finalizeCharacter.js';
+import {
+  choiceInstanceKey,
+  descriptorId,
+  type HandledChoiceInstances,
+} from './levelUpChoiceCoverage.js';
 import type {
   LevelUpAppliedChoice,
   LevelUpChoiceOption,
   LevelUpChoiceSelections,
   LevelUpRequiredChoice,
 } from './levelUpEngine.js';
-import { descriptorId, selectedOptionIds } from './levelUpFeatureChoices.js';
+import { selectedOptionIds } from './levelUpFeatureChoices.js';
 import type {
   ResolvedClassData,
   ResolvedFeatureData,
@@ -533,15 +538,6 @@ export interface SpellDetectionContext {
   readonly selections: LevelUpChoiceSelections;
 }
 
-/**
- * Features that grant a spell/cantrip but carry no structured choice in the
- * pack. They are surfaced as unsupported rather than silently dropped.
- */
-const UNMODELED_SPELL_GRANT_FEATURES: Readonly<Record<string, string>> = {
-  'feature:circle-of-the-land:bonus-cantrip':
-    'Bonus Cantrip grants one additional druid cantrip, but the pack carries no structured choice for it',
-};
-
 function classSlug(classKey: string): string {
   return classKey.replace(/^class:/, '');
 }
@@ -619,10 +615,13 @@ interface DueFeatureChoice {
  * contributes all its choices; a conditional choice (`requiresFeatureOption`)
  * is due only when its trigger option is picked in this very level-up.
  */
-function dueFeatureSpellChoices(
-  ctx: SpellDetectionContext,
-): readonly DueFeatureChoice[] {
+function dueFeatureSpellChoices(ctx: SpellDetectionContext): {
+  readonly due: readonly DueFeatureChoice[];
+  /** Spell/cantrip choice instances evaluated here, due or decided not due. */
+  readonly handled: ReadonlySet<string>;
+} {
   const due: DueFeatureChoice[] = [];
+  const handled = new Set<string>();
   const pickedNow = selectedOptionIds(ctx.selections, ctx.toLevel);
   const target = new Set(ctx.targetFeatureRefs);
   const refs = new Set([...ctx.targetFeatureRefs, ...ctx.heldFeatureRefs]);
@@ -640,20 +639,30 @@ function dueFeatureSpellChoices(
         choice.level === ctx.toLevel && requiredTrigger(choice) === undefined,
     );
     const repeatedGrant = target.has(ref) && ctx.heldFeatureRefs.has(ref);
+    // A first grant (target, not held) whose unconditional choice is not
+    // printed at this level is NOT a decision to skip it: leave it unhandled
+    // so the coverage invariant blocks rather than dropping a build choice.
+    const firstGrant = target.has(ref) && !ctx.heldFeatureRefs.has(ref);
     for (const choice of spellChoices) {
       const trigger = requiredTrigger(choice);
       if (trigger !== undefined) {
+        // Conditional: evaluated either way (due only when picked now).
+        handled.add(choiceInstanceKey(ref, choice.id));
         if (pickedNow.has(trigger)) due.push({ feature, choice });
         continue;
       }
       if (choice.level === ctx.toLevel) {
+        handled.add(choiceInstanceKey(ref, choice.id));
         due.push({ feature, choice });
       } else if (repeatedGrant && exact.length === 0) {
+        handled.add(choiceInstanceKey(ref, choice.id));
         due.push({ feature, choice });
+      } else if (!firstGrant) {
+        handled.add(choiceInstanceKey(ref, choice.id));
       }
     }
   }
-  return due;
+  return { due, handled };
 }
 
 function requiredTrigger(choice: FeatureChoice): string | undefined {
@@ -669,10 +678,12 @@ function requiredTrigger(choice: FeatureChoice): string | undefined {
  * Required-choice descriptors for the spell side of one level-up. See the
  * module header for the per-class derivation.
  */
-export function detectSpellDescriptors(
-  ctx: SpellDetectionContext,
-): readonly LevelUpRequiredChoice[] {
+export function detectSpellDescriptors(ctx: SpellDetectionContext): {
+  readonly choices: readonly LevelUpRequiredChoice[];
+  readonly handledInstances: HandledChoiceInstances;
+} {
   const out: LevelUpRequiredChoice[] = [];
+  const handled = new Set<string>();
   const prefix = `level.${ctx.toLevel}.spells`;
   const effective = effectiveSpellcasting(
     ctx.sheet,
@@ -680,14 +691,19 @@ export function detectSpellDescriptors(
     ctx.resolver,
   );
   if (!effective.ok) {
-    return [
-      unsupported(
-        `${prefix}.legacy-classification`,
-        'Classify existing spells',
-        effective.reason,
-        `${effective.reason}. A legacy flat spell list must resolve entirely before it can be classified into known/spellbook/prepared buckets; unresolved entries are never guessed.`,
-      ),
-    ];
+    // Nothing is handled: the unsupported descriptor blocks the level-up and
+    // the coverage invariant reports any instance it leaves unevaluated.
+    return {
+      choices: [
+        unsupported(
+          `${prefix}.legacy-classification`,
+          'Classify existing spells',
+          effective.reason,
+          `${effective.reason}. A legacy flat spell list must resolve entirely before it can be classified into known/spellbook/prepared buckets; unresolved entries are never guessed.`,
+        ),
+      ],
+      handledInstances: handled,
+    };
   }
   const sc = effective.spellcasting;
   const held = heldRefsOf(sc);
@@ -703,7 +719,17 @@ export function detectSpellDescriptors(
   const casts = ctx.classRecord.spellcastingAbility !== undefined;
 
   // Feature choices first: bard Magical Secrets counts against spells known.
-  const dueFeatures = dueFeatureSpellChoices(ctx);
+  const { due: dueFeatures, handled: featureHandled } =
+    dueFeatureSpellChoices(ctx);
+  for (const key of featureHandled) handled.add(key);
+  // Base Spellcasting / Pact Magic choices: each is handled only when the
+  // branch that evaluates it below actually ran.
+  const base = baseFeature(ctx);
+  const handleBase = (choiceId: string): void => {
+    if (base !== undefined && ctx.targetFeatureRefs.includes(base.key)) {
+      handled.add(choiceInstanceKey(base.key, choiceId));
+    }
+  };
   let secretsCountingAgainstKnown = 0;
   for (const { choice } of dueFeatures) {
     const parsed = parseSpellFilter(choice.from);
@@ -718,6 +744,7 @@ export function detectSpellDescriptors(
 
   if (casts && ctx.toSpellcasting !== undefined) {
     // (a) cantrips
+    handleBase('cantrips');
     const cantripDelta =
       (ctx.toSpellcasting.cantripsKnown ?? 0) -
       (ctx.fromSpellcasting?.cantripsKnown ?? 0);
@@ -740,6 +767,8 @@ export function detectSpellDescriptors(
     }
     // (b) known casters
     if (preparation?.kind === 'known') {
+      handleBase('spells');
+      handleBase('spell-replacement');
       const knownDelta =
         (ctx.toSpellcasting.spellsKnown ?? 0) -
         (ctx.fromSpellcasting?.spellsKnown ?? 0);
@@ -768,6 +797,7 @@ export function detectSpellDescriptors(
     }
     // (c) wizard spellbook growth
     if (preparation?.spellbookStartingSpells !== undefined) {
+      handleBase('spellbook-growth');
       const growth = baseChoice(ctx, 'spellbook-growth');
       if (growth === undefined) {
         out.push(
@@ -798,6 +828,7 @@ export function detectSpellDescriptors(
     }
     // (e) prepared casters: optional, never a blocker
     if (preparation?.kind === 'prepared') {
+      handleBase('prepared-spells');
       out.push(prepareDescriptor(ctx, prefix, preparation, sc, env));
     }
     if (preparation === undefined) {
@@ -817,23 +848,7 @@ export function detectSpellDescriptors(
     out.push(featureSpellDescriptor(ctx, due, held, env));
   }
 
-  // (f) spell grants the pack does not model as choices
-  const seen = new Set<string>();
-  for (const ref of ctx.targetFeatureRefs) {
-    const note = UNMODELED_SPELL_GRANT_FEATURES[ref];
-    if (note === undefined || seen.has(ref)) continue;
-    seen.add(ref);
-    out.push(
-      unsupported(
-        descriptorId(ctx.toLevel, ref, 'spell-grant'),
-        ref,
-        `level ${ctx.toLevel} grants '${ref}'`,
-        note,
-        ref,
-      ),
-    );
-  }
-  return out;
+  return { choices: out, handledInstances: handled };
 }
 
 interface LearnOptions {

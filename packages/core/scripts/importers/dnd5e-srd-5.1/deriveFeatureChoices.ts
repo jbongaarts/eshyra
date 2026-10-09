@@ -21,6 +21,7 @@
  * composed per feature so a single feature can carry several choices.
  */
 
+import { SRD_5_1_SKILLS } from '../../../src/character/srdCreationChoices.js';
 import type { FeatureChoiceCategory } from '../../../src/rules/featureChoices.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 import { reconstructFeatureText } from './parseFeatures.js';
@@ -41,6 +42,9 @@ export interface DeriveFeatureChoicesInput {
   readonly classRecords: readonly RulesRecord[];
   readonly subclassRecords: readonly RulesRecord[];
   readonly featureRecords: readonly RulesRecord[];
+  /** Table records, for choices whose option catalog is a printed table
+   * (Circle of the Land lands, Draconic Ancestry; eshyra-91o0). */
+  readonly tableRecords?: readonly RulesRecord[];
   readonly optionSourceLabelsByFeatureKey?: ReadonlyMap<
     string,
     ReadonlyMap<string, string>
@@ -1382,6 +1386,182 @@ function deriveSubclassFeatureChoices(
 }
 
 // ---------------------------------------------------------------------------
+// Deriver: subclass build choices (eshyra-91o0)
+// ---------------------------------------------------------------------------
+
+function tableRecordByKey(
+  input: DeriveFeatureChoicesInput,
+  key: string,
+  featureKey: string,
+): RulesRecord {
+  const table = input.tableRecords?.find((t) => t.key === key);
+  if (table === undefined) {
+    throw new FeatureChoiceDerivationError(
+      `Cannot derive the choice for ${featureKey}: table record ${key} is missing.`,
+    );
+  }
+  return table;
+}
+
+function tableRows(table: RulesRecord): {
+  readonly columns: readonly string[];
+  readonly rows: readonly (readonly string[])[];
+} {
+  const data = dataOf(table);
+  return {
+    columns: Array.isArray(data.columns) ? (data.columns as string[]) : [],
+    rows: Array.isArray(data.rows) ? (data.rows as string[][]) : [],
+  };
+}
+
+/** The Circle of the Land lands, in the SRD's own order (the feature prose
+ * lists them: arctic, coast, desert, forest, grassland, mountain, swamp). */
+const CIRCLE_LANDS = [
+  'arctic',
+  'coast',
+  'desert',
+  'forest',
+  'grassland',
+  'mountain',
+  'swamp',
+] as const;
+
+/**
+ * Subclass build choices the prose states but no other deriver models:
+ * Circle of the Land Bonus Cantrip and Circle Spells (land), College of Lore
+ * Bonus Proficiencies (three skills), and Draconic Bloodline Dragon Ancestor.
+ * Counts and option sets come from the feature prose and printed tables; the
+ * deriver throws if the anchoring phrasing or table disappears.
+ */
+function deriveSubclassBuildChoices(
+  input: DeriveFeatureChoicesInput,
+): Map<string, DerivedChoice[]> {
+  const out = new Map<string, DerivedChoice[]>();
+  for (const feature of input.featureRecords) {
+    const description = featureDescription(feature);
+    const level = featureLevel(feature);
+
+    if (feature.key === 'feature:circle-of-the-land:bonus-cantrip') {
+      if (!/one additional druid cantrip of your choice/i.test(description)) {
+        throw new FeatureChoiceDerivationError(
+          `Cannot parse the druid cantrip choice for ${feature.key}; the SRD phrasing may have changed.`,
+        );
+      }
+      out.set(feature.key, [
+        {
+          id: 'bonus-cantrip',
+          category: 'cantrip',
+          prompt: 'Choose one additional druid cantrip.',
+          level,
+          choose: 1,
+          from: spellFilter({
+            classLists: ['class:druid'],
+            spellLevels: [0],
+            includeCantrips: true,
+            countsAsClassSpell: 'class:druid',
+            countsAgainstKnown: false,
+          }),
+        },
+      ]);
+    }
+
+    if (feature.key === 'feature:circle-of-the-land:circle-spells') {
+      const options: DerivedChoiceOption[] = CIRCLE_LANDS.map((land) => {
+        const table = tableRecordByKey(
+          input,
+          `table:circle-of-the-land-${land}`,
+          feature.key,
+        );
+        const { columns, rows } = tableRows(table);
+        if (rows.length === 0) {
+          throw new FeatureChoiceDerivationError(
+            `Circle spells table ${table.key} for ${feature.key} has no rows.`,
+          );
+        }
+        return {
+          id: optionId('land', land),
+          name: land.charAt(0).toUpperCase() + land.slice(1),
+          text: rows
+            .map((row) => `${columns[0]} ${row[0]}: ${row[1]}`)
+            .join('; '),
+          source: table.source,
+        };
+      });
+      out.set(feature.key, [
+        {
+          id: 'land',
+          category: 'other',
+          prompt:
+            'Choose the land where you became a druid; it determines your circle spells.',
+          level,
+          choose: 1,
+          from: options.map((option) => option.id),
+          options,
+        },
+      ]);
+    }
+
+    if (feature.key === 'feature:college-of-lore:bonus-proficiencies') {
+      const match = description.match(
+        new RegExp(
+          `\\b(${COUNT_WORD_ALTERNATION})\\s+skills of your choice`,
+          'i',
+        ),
+      );
+      const choose =
+        match === null ? undefined : NUMBER_WORDS[match[1].toLowerCase()];
+      if (choose === undefined) {
+        throw new FeatureChoiceDerivationError(
+          `Cannot parse the skills-of-your-choice count for ${feature.key}; the SRD phrasing may have changed.`,
+        );
+      }
+      out.set(feature.key, [
+        {
+          id: 'skills',
+          category: 'skill',
+          prompt: `Choose ${choose} skills to gain proficiency with.`,
+          level,
+          choose,
+          from: [...SRD_5_1_SKILLS],
+        },
+      ]);
+    }
+
+    if (feature.key === 'feature:draconic-bloodline:dragon-ancestor') {
+      const table = tableRecordByKey(
+        input,
+        'table:draconic-bloodline-draconic-ancestry',
+        feature.key,
+      );
+      const { columns, rows } = tableRows(table);
+      if (rows.length === 0) {
+        throw new FeatureChoiceDerivationError(
+          `Draconic ancestry table ${table.key} for ${feature.key} has no rows.`,
+        );
+      }
+      const options: DerivedChoiceOption[] = rows.map((row) => ({
+        id: optionId('dragon-ancestor', row[0]),
+        name: row[0],
+        text: row.map((cell, i) => `${columns[i]}: ${cell}`).join('; '),
+        source: table.source,
+      }));
+      out.set(feature.key, [
+        {
+          id: 'dragon-ancestor',
+          category: 'other',
+          prompt: 'Choose one type of dragon as your ancestor.',
+          level,
+          choose: 1,
+          from: options.map((option) => option.id),
+          options,
+        },
+      ]);
+    }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Compose + apply
 // ---------------------------------------------------------------------------
 
@@ -1417,6 +1597,7 @@ export function deriveFeatureChoices(
     deriveOptionListChoices(input, granted),
     deriveSpellChoices(input, granted),
     deriveSubclassFeatureChoices(input, granted),
+    deriveSubclassBuildChoices(input),
   ]);
 
   return input.featureRecords.map((feature) => {

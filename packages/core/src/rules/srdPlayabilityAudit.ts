@@ -546,24 +546,83 @@ const CHOICE_SIGNALS: readonly ChoiceSignal[] = [
     bead: 'eshyra-o9bd.9.6',
     test: /choose [^.]*\bskill proficiencies\b/i,
   },
+  // Subclass build choices outside the class-feature menus above (eshyra-91o0).
+  // Skills granted outright ("three skills of your choice"), a land ("Choose
+  // that land"), and a dragon ancestor ("you choose one type of dragon").
+  {
+    category: 'skill',
+    bead: 'eshyra-91o0',
+    test: /\bskills? of your choice\b/i,
+  },
+  {
+    category: 'other',
+    bead: 'eshyra-91o0',
+    test: /\bchoose (?:that|a|the|your) land\b/i,
+  },
+  {
+    category: 'other',
+    bead: 'eshyra-91o0',
+    test: /\bchoose one type of dragon\b/i,
+  },
 ];
 
-/** Class-feature keys granted by any class progression row, with the earliest
- * grant level — the in-scope universe for choice coverage (a feature the player
- * actually gains at creation or level-up). */
-function grantedClassFeatureLevels(pack: RulesPack): Map<string, number> {
+/**
+ * The complete applicable grant graph: feature keys the player actually gains,
+ * with the earliest grant level. Two edge kinds feed it — class progression
+ * `featureGrant` rows, and subclass records' feature slots (`featuresByLevel`,
+ * falling back to `features` + the feature's own `level`), including level-1
+ * subclasses (cleric, sorcerer, warlock). Auditing only the first edge kind
+ * silently skipped every subclass-granted build choice (eshyra-91o0).
+ */
+export function grantedFeatureLevels(pack: RulesPack): Map<string, number> {
   const levels = new Map<string, number>();
+  const note = (ref: string | null, level: number | null): void => {
+    if (ref === null || level === null) return;
+    const prior = levels.get(ref);
+    if (prior === undefined || level < prior) levels.set(ref, level);
+  };
+  const byKey = new Map<string, RulesRecord>();
+  for (const record of pack.records) byKey.set(record.key, record);
   for (const record of pack.records) {
     const rows = classProgressionRows(record);
-    if (rows === null) continue;
-    for (const row of rows) {
-      const level = typeof row.level === 'number' ? row.level : null;
-      for (const entry of rowAdvancement(row)) {
-        if (entry.kind !== 'featureGrant') continue;
-        const ref = asString(entry.ref);
-        if (ref === null || level === null) continue;
-        const prior = levels.get(ref);
-        if (prior === undefined || level < prior) levels.set(ref, level);
+    if (rows !== null) {
+      for (const row of rows) {
+        const level = typeof row.level === 'number' ? row.level : null;
+        for (const entry of rowAdvancement(row)) {
+          if (entry.kind !== 'featureGrant') continue;
+          note(asString(entry.ref), level);
+        }
+      }
+    }
+    if (record.kind !== 'subclass') continue;
+    const data = dataObject(record);
+    if (data === null) continue;
+    const slotted = new Set<string>();
+    if (Array.isArray(data.featuresByLevel)) {
+      for (const slotValue of data.featuresByLevel) {
+        const slot = asObject(slotValue);
+        const level =
+          slot !== null && typeof slot.level === 'number' ? slot.level : null;
+        if (slot === null || !Array.isArray(slot.features)) continue;
+        for (const ref of slot.features) {
+          if (typeof ref !== 'string') continue;
+          slotted.add(ref);
+          note(ref, level);
+        }
+      }
+    }
+    if (Array.isArray(data.features)) {
+      for (const ref of data.features) {
+        if (typeof ref !== 'string' || slotted.has(ref)) continue;
+        const featureRecord = byKey.get(ref);
+        const featureData =
+          featureRecord === undefined ? null : dataObject(featureRecord);
+        note(
+          ref,
+          featureData !== null && typeof featureData.level === 'number'
+            ? featureData.level
+            : null,
+        );
       }
     }
   }
@@ -602,7 +661,7 @@ function checkSubclassChoiceCoverage(pack: RulesPack): SrdPlayabilityFinding[] {
     const parent = data === null ? null : asString(data.parentClass);
     if (parent !== null) subclassParents.add(parent);
   }
-  const granted = grantedClassFeatureLevels(pack);
+  const granted = grantedFeatureLevels(pack);
   // Granted feature keys grouped by their grantor class key.
   const grantedByClass = new Map<string, RulesRecord[]>();
   for (const record of pack.records) {
@@ -643,7 +702,7 @@ function checkSubclassChoiceCoverage(pack: RulesPack): SrdPlayabilityFinding[] {
  * the owning modeling slice so the report reads as a punch list.
  */
 function checkChoiceCoverage(pack: RulesPack): SrdPlayabilityFinding[] {
-  const granted = grantedClassFeatureLevels(pack);
+  const granted = grantedFeatureLevels(pack);
   const findings: SrdPlayabilityFinding[] = [];
   for (const record of pack.records) {
     if (record.kind !== 'feature') continue;

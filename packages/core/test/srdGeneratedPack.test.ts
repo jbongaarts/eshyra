@@ -740,7 +740,10 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // (spellbook-initial/spellbook-growth); those choices move onto
   // feature:wizard:spellcasting (already counted as non-missing), so this
   // field's own missing/total delta is unaffected by that move.
-  { kind: 'feature', field: 'choices', missingCount: 124, totalInKind: 179 },
+  // 124 -> 120 (eshyra-91o0): four subclass-granted build choices gained
+  // structured choices[] (Land Bonus Cantrip, Circle Spells land, Lore Bonus
+  // Proficiencies, Dragon Ancestor).
+  { kind: 'feature', field: 'choices', missingCount: 120, totalInKind: 179 },
   // First-pass mechanics projections (eshyra-ngcj.6): 74 features with explicit
   // rest-reset resources, critical range, extra attack, advantage/resistance,
   // proficiency, or spell-grant patterns carry `mechanics`; the rest remain

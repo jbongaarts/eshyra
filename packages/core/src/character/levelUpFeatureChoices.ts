@@ -25,6 +25,11 @@ import type {
   CharacterFeatureChoice,
   CharacterSheet,
 } from './finalizeCharacter.js';
+import {
+  choiceInstanceKey,
+  descriptorId,
+  type HandledChoiceInstances,
+} from './levelUpChoiceCoverage.js';
 import type {
   LevelUpAppliedChoice,
   LevelUpChoiceOption,
@@ -35,6 +40,8 @@ import type {
   ResolvedFeatureData,
   RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
+
+export { descriptorId, featureSlug } from './levelUpChoiceCoverage.js';
 
 /** Choice categories this slice collects as structured list choices. */
 const LIST_CHOICE_CATEGORIES: ReadonlySet<string> = new Set([
@@ -87,22 +94,6 @@ export interface FeatureChoiceDetectionContext {
   };
   readonly resolver: RulesPackCharacterResolver;
   readonly selections: LevelUpChoiceSelections;
-}
-
-export function featureSlug(featureRef: string): string {
-  return featureRef
-    .replace(/^feature:/, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-export function descriptorId(
-  toLevel: number,
-  featureRef: string,
-  choiceId: string,
-): string {
-  return `level.${toLevel}.feature.${featureSlug(featureRef)}.${choiceId}`;
 }
 
 function isListChoice(choice: FeatureChoice): boolean {
@@ -178,9 +169,12 @@ export function detectFeatureChoiceDescriptors(
 ): {
   readonly choices: readonly LevelUpRequiredChoice[];
   readonly coveredFeatureRefs: ReadonlySet<string>;
+  /** Every list choice instance processed (new, grown, repeated, replaced). */
+  readonly handledInstances: HandledChoiceInstances;
 } {
   const choices: LevelUpRequiredChoice[] = [];
   const covered = new Set<string>();
+  const handled = new Set<string>();
   const seen = new Set<string>();
   const introduced = new Set<string>(); // featureRef\0choiceId handled as new/grown
 
@@ -194,6 +188,7 @@ export function detectFeatureChoiceDescriptors(
       if (isListChoice(choice)) {
         covered.add(ref);
         introduced.add(`${ref}\0${choice.id}`);
+        handled.add(choiceInstanceKey(ref, choice.id));
         const count = repeated
           ? REPEATED_GRANT_PICKS[choice.category]
           : (choice.choose as number);
@@ -204,7 +199,7 @@ export function detectFeatureChoiceDescriptors(
         );
         continue;
       }
-      if (CONDITIONAL_CHOICES[choice.id] === true) covered.add(ref);
+      if (CONDITIONAL_CHOICES[choice.id] === true) covered.add(ref); // owned by levelUpSpells.ts
     }
   }
 
@@ -217,6 +212,7 @@ export function detectFeatureChoiceDescriptors(
     for (const choice of feature?.choices ?? []) {
       if (feature === undefined || !isListChoice(choice)) continue;
       if (choice.category !== 'invocation') continue;
+      handled.add(choiceInstanceKey(ref, choice.id));
       if (grown > 0 && !introduced.has(`${ref}\0${choice.id}`)) {
         choices.push(listDescriptor(ctx, feature, choice, grown));
       }
@@ -226,7 +222,11 @@ export function detectFeatureChoiceDescriptors(
       }
     }
   }
-  return { choices, coveredFeatureRefs: covered };
+  return {
+    choices,
+    coveredFeatureRefs: covered,
+    handledInstances: handled,
+  };
 }
 
 export function selectedOptionIds(
