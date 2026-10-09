@@ -71,7 +71,7 @@ const DEFAULT_DM_MODEL: Record<ProviderVendor, string> = {
  */
 const DEFAULT_AUDIT_MODEL_BY_VENDOR: Record<ProviderVendor, string> = {
   anthropic: 'claude-haiku-4-5-20251001',
-  openai: 'gpt-6.1-luna',
+  openai: 'gpt-6-luna',
 };
 
 /**

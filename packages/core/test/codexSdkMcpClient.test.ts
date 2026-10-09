@@ -194,7 +194,7 @@ describe('CodexSdkMcpModelClient', () => {
   });
 
   it('does not configure an empty required MCP server for tool-less calls', async () => {
-    await new CodexSdkMcpModelClient('gpt-6.1-luna').complete({
+    await new CodexSdkMcpModelClient('gpt-6-luna').complete({
       messages: [{ role: 'user', content: 'audit this turn' }],
       tools: [],
     });

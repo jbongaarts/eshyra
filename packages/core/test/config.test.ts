@@ -83,7 +83,7 @@ describe('loadConfig provider selection', () => {
 
     const codex = loadConfig({}, CODEX_PRESENT);
     expect(codex.model).toBe('gpt-6.1-sol');
-    expect(codex.auditModel).toBe('gpt-6.1-luna');
+    expect(codex.auditModel).toBe('gpt-6-luna');
 
     const overridden = load({
       ANTHROPIC_API_KEY: 'sk',
