@@ -417,8 +417,20 @@ export function spellsUnion(sc: CharacterSpellcasting): readonly string[] {
   ];
 }
 
+/**
+ * Ownership is per destination: a Book of Ancient Secrets ritual lives in its
+ * own `ritualBook` bucket and does not count as an ordinarily known/prepared
+ * spell (SRD p.48: such a spell can still be learned by another means), so the
+ * ordinary held set excludes ritualBook-only entries, and the ritualBook held
+ * set is only the ritual book itself.
+ */
 function heldRefsOf(sc: CharacterSpellcasting | undefined): Set<string> {
-  return new Set(sc === undefined ? [] : spellsUnion(sc));
+  if (sc === undefined) return new Set();
+  return new Set(spellsUnion({ ...sc, ritualBook: undefined }));
+}
+
+function heldRitualRefsOf(sc: CharacterSpellcasting | undefined): Set<string> {
+  return new Set(sc?.ritualBook ?? []);
 }
 
 /** Apply placements (removals first) to a spellcasting state, immutably. */
@@ -722,6 +734,7 @@ export function detectSpellDescriptors(ctx: SpellDetectionContext): {
   }
   const sc = effective.spellcasting;
   const held = heldRefsOf(sc);
+  const heldRituals = heldRitualRefsOf(sc);
   const spellbook = [...(sc?.spellbook ?? []), ...pendingSpellbookPicks(ctx)];
   const env = (excluded: ReadonlySet<string>): FilterEnv => ({
     resolver: ctx.resolver,
@@ -860,7 +873,7 @@ export function detectSpellDescriptors(ctx: SpellDetectionContext): {
 
   // (d) feature spell choices
   for (const due of dueFeatures) {
-    out.push(featureSpellDescriptor(ctx, due, held, env));
+    out.push(featureSpellDescriptor(ctx, due, held, heldRituals, env));
   }
 
   return { choices: out, handledInstances: handled };
@@ -983,11 +996,11 @@ function replacementDescriptor(
   const className = ctx.classRecord.name;
   const replaceable = (sc?.known ?? []).filter((ref) => {
     const spell = ctx.resolver.resolveSpell(ref);
-    return (
-      spell.ok &&
-      spell.record.level > 0 &&
-      spell.record.classes.includes(className)
-    );
+    // The OLD spell need not be on the native class list (Magical Secrets
+    // picks are class spells for this character); only the NEW spell is
+    // filtered by class list/level. `known` never holds cantrips or
+    // ritualBook-only spells.
+    return spell.ok && spell.record.level > 0;
   });
   if (replaceable.length === 0) return undefined;
   const evaluated = evaluateSpellFilter(parsed.filter, env(held));
@@ -1144,6 +1157,7 @@ function featureSpellDescriptor(
   ctx: SpellDetectionContext,
   due: DueFeatureChoice,
   held: ReadonlySet<string>,
+  heldRituals: ReadonlySet<string>,
   env: (excluded: ReadonlySet<string>) => FilterEnv,
 ): LevelUpRequiredChoice {
   const { feature, choice } = due;
@@ -1205,7 +1219,9 @@ function featureSpellDescriptor(
             .filter((entry) => entry.kind === designationKind)
             .map((entry) => entry.spellRef),
         )
-      : held;
+      : bucket === 'ritualBook'
+        ? heldRituals
+        : held;
   return learnDescriptor(ctx, id, choice, choice.choose, {
     bucket,
     excluded,
@@ -1320,6 +1336,11 @@ export function resolveSpellChoiceSelection(args: {
       });
       const otherPicks =
         other.spellChoice.mode === 'replace' ? otherKeys.slice(1) : otherKeys;
+      // Ownership is per destination: a ritualBook inscription and an ordinary
+      // known/spellbook pick of the same spell are independent acquisitions.
+      if (isRitualDestination(other.spellChoice) !== isRitualDestination(ref)) {
+        continue;
+      }
       const shared = picks.find((key) => otherPicks.includes(key));
       if (shared !== undefined) {
         return {
@@ -1384,6 +1405,10 @@ export function resolveSpellChoiceSelection(args: {
       spellChoice: { additions, removals },
     },
   };
+}
+
+function isRitualDestination(ref: LevelUpSpellChoiceRef): boolean {
+  return ref.mode === 'learn' && ref.bucket === 'ritualBook';
 }
 
 /** Spell data the guided flow can display for an option id. */

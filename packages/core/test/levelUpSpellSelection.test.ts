@@ -624,7 +624,8 @@ describe('Tome / Book picks are not spells known (eshyra-3lq2)', () => {
         bundled.resolveSpell(ref).ok &&
         (
           bundled.resolveSpell(ref) as { record: { classes: string[] } }
-        ).record.classes.includes('Warlock'),
+        ).record.classes.includes('Warlock') &&
+        !(sheet.spellcasting?.known ?? []).includes(ref),
     );
     expect(picks.length).toBeGreaterThan(0);
     const chosen = [
@@ -646,6 +647,205 @@ describe('Tome / Book picks are not spells known (eshyra-3lq2)', () => {
     const replace = descriptors(after).find((d) => d.id.endsWith('.replace'));
     expect(replace).toBeDefined();
     expect(replace?.spellChoice?.heldRefs ?? []).not.toContain(picks[0]);
+  });
+});
+
+describe('ritualBook ownership is independent of known-spell ownership (eshyra-3lq2.3)', () => {
+  const BOOK = 'eldritch-invocation:book-of-ancient-secrets';
+  const INV_ID =
+    'level.5.feature.warlock-eldritch-invocations.eldritch-invocations';
+  const ritual = allSpells.find(
+    (s) =>
+      s.level === 1 &&
+      s.classes.includes('Warlock') &&
+      s.name === 'Unseen Servant',
+  )?.key as string;
+  const warlock = (
+    level: number,
+    spellcasting: NonNullable<CharacterSheet['spellcasting']>,
+  ) =>
+    buildSheet({
+      classKey: 'class:warlock',
+      className: 'Warlock',
+      level,
+      subclass: { key: 'subclass:the-fiend', name: 'The Fiend' },
+      spellcasting,
+      featureChoices: [
+        {
+          featureRef: 'feature:warlock:pact-boon',
+          choiceId: 'pact-boon',
+          optionIds: ['pact-boon:pact-of-the-tome'],
+          level: 3,
+        },
+      ],
+    });
+  const own = (n: number) =>
+    spellsOf('Warlock', 1, n + 1, [ritual]).slice(0, n);
+  const lvl5Cantrips = spellsOf('Warlock', 0, 3);
+  const patronless: RulesPackCharacterResolver = bundled;
+  /** Legal picks for every non-optional supported spell descriptor. */
+  const required = (sheet: CharacterSheet, avoid: string) =>
+    Object.fromEntries(
+      descriptors(sheet, {}, patronless)
+        .filter((d) => d.status === 'supported' && d.optional !== true)
+        .map((d) => [
+          d.id,
+          (d.from ?? []).filter((ref) => ref !== avoid).slice(0, d.choose ?? 1),
+        ]),
+    );
+
+  it('a ritualBook spell may be learned as an ordinary known spell, and replacing that copy keeps the book entry', () => {
+    // Level 5 -> 6 grants one new spell known; the ritual is only in the book.
+    const sheet = warlock(5, {
+      cantrips: lvl5Cantrips,
+      known: [...own(5), ...spellsOf('Warlock', 2, 1)].slice(0, 6),
+      ritualBook: [ritual],
+    });
+    const known = descriptors(sheet).find(
+      (d) => d.id === 'level.6.spells.known',
+    );
+    expect(known?.from).toContain(ritual);
+    const learned = apply(
+      sheet,
+      { 'level.6.spells.known': [ritual] },
+      patronless,
+    );
+    expect(learned.result.sheet.spellcasting?.known).toContain(ritual);
+    expect(learned.result.sheet.spellcasting?.ritualBook).toEqual([ritual]);
+    // Replace the independently known copy at the next level.
+    const after = learned.result.sheet;
+    const replace = descriptors(after, {}, patronless).find((d) =>
+      d.id.endsWith('.replace'),
+    );
+    expect(replace?.spellChoice?.heldRefs).toContain(ritual);
+    const newSpell = (replace?.from ?? []).find(
+      (ref) => !(after.spells ?? []).includes(ref),
+    ) as string;
+    const replaced = apply(
+      after,
+      {
+        [replace?.id as string]: [ritual, newSpell],
+        ...required(after, newSpell),
+      },
+      patronless,
+    ).result.sheet;
+    expect(replaced.spellcasting?.known).not.toContain(ritual);
+    expect(replaced.spellcasting?.ritualBook).toEqual([ritual]);
+    expect(replaced.spells).toContain(ritual);
+  });
+
+  it('an already-known spell may be inscribed via the Book; duplicating within the book stays invalid', () => {
+    const sheet = warlock(4, {
+      cantrips: lvl5Cantrips,
+      known: [ritual, ...own(4)],
+    });
+    const found = descriptors(sheet, { [INV_ID]: [BOOK] });
+    const rituals = found.find((d) =>
+      d.id.endsWith('book-of-ancient-secrets-rituals'),
+    );
+    expect(rituals?.from).toContain(ritual);
+    const other = rituals?.from?.find((r) => r !== ritual) as string;
+    // Duplicate within the same bucket.
+    expect(
+      blockers(sheet, {
+        [INV_ID]: [BOOK],
+        [rituals?.id as string]: [ritual, ritual],
+      }).map((b) => b.id),
+    ).toContain(rituals?.id);
+    const booked = warlock(5, {
+      cantrips: lvl5Cantrips,
+      known: [ritual, ...own(4)],
+      ritualBook: [other],
+    });
+    const again = descriptors(booked, { [INV_ID]: [BOOK] }).find((d) =>
+      d.id.endsWith('book-of-ancient-secrets-rituals'),
+    );
+    expect(again?.from ?? []).not.toContain(other);
+  });
+
+  it('the same ritual may be learned normally and inscribed in one level-up, but not twice in one bucket', () => {
+    const sheet = warlock(4, {
+      cantrips: lvl5Cantrips,
+      known: [...own(4)],
+    });
+    const choices = { [INV_ID]: [BOOK] };
+    const found = descriptors(sheet, choices);
+    const rituals = found.find((d) =>
+      d.id.endsWith('book-of-ancient-secrets-rituals'),
+    );
+    const known = found.find((d) => d.id === 'level.5.spells.known');
+    expect(known?.from).toContain(ritual);
+    expect(rituals?.from).toContain(ritual);
+    const other = rituals?.from?.find((r) => r !== ritual) as string;
+    const rid = rituals?.id as string;
+    const ok = apply(sheet, {
+      ...choices,
+      'level.5.spells.known': [ritual],
+      [rid]: [ritual, other],
+    }).result.sheet;
+    expect(ok.spellcasting?.known).toContain(ritual);
+    expect(ok.spellcasting?.ritualBook).toEqual([ritual, other]);
+  });
+
+  it('a ritualBook-only spell is not replaceable and a cantrip is never replaceable', () => {
+    const sheet = warlock(6, {
+      cantrips: lvl5Cantrips,
+      known: own(6),
+      ritualBook: [ritual],
+    });
+    const replace = descriptors(sheet).find((d) => d.id.endsWith('.replace'));
+    const held = replace?.spellChoice?.heldRefs ?? [];
+    expect(held).not.toContain(ritual);
+    for (const cantrip of lvl5Cantrips) expect(held).not.toContain(cantrip);
+    expect(held.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Magical Secrets spells are replaceable regardless of native list (eshyra-3lq2.3)', () => {
+  it('a leveled off-list spell known to a bard can be replaced by a bard-list spell', () => {
+    const fireball = allSpells.find((s) => s.name === 'Fireball')
+      ?.key as string;
+    expect(
+      allSpells.find((s) => s.key === fireball)?.classes.includes('Bard'),
+    ).toBe(false);
+    const cantrips = spellsOf('Bard', 0, 4);
+    const sheet = buildSheet({
+      classKey: 'class:bard',
+      className: 'Bard',
+      level: 10,
+      spellcasting: {
+        cantrips,
+        known: [fireball, ...spellsOf('Bard', 1, 12)],
+      },
+    });
+    const replace = descriptors(
+      sheet,
+      {},
+      withoutFeatures('feature:bard:expertise'),
+    ).find((d) => d.id.endsWith('.replace'));
+    expect(replace?.spellChoice?.heldRefs).toContain(fireball);
+    for (const cantrip of cantrips) {
+      expect(replace?.spellChoice?.heldRefs).not.toContain(cantrip);
+    }
+    const resolver = withoutFeatures('feature:bard:expertise');
+    const others = descriptors(sheet, {}, resolver).filter(
+      (d) => d.id !== replace?.id && d.status === 'supported' && !d.optional,
+    );
+    const taken = new Set(sheet.spellcasting?.known);
+    const choices: Record<string, string[]> = {};
+    for (const d of others) {
+      choices[d.id] = (d.from ?? [])
+        .filter((ref) => !taken.has(ref))
+        .slice(0, d.choose ?? 1);
+      for (const ref of choices[d.id] ?? []) taken.add(ref);
+    }
+    const newSpell = (replace?.from ?? []).find(
+      (ref) => !taken.has(ref),
+    ) as string;
+    choices[replace?.id as string] = [fireball, newSpell];
+    const next = apply(sheet, choices, resolver).result.sheet;
+    expect(next.spellcasting?.known).not.toContain(fireball);
+    expect(next.spellcasting?.known).toContain(newSpell);
   });
 });
 
