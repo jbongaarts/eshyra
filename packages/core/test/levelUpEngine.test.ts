@@ -22,6 +22,7 @@ import {
   readSpellSlots,
   renderContextMessage,
   spendSpellSlot,
+  spendUsage,
   syncSpellSlots,
   UnsupportedCharacterBuildError,
 } from '../src/internal.js';
@@ -972,6 +973,146 @@ describe('applyLevelUp — F6 life-state gate (eshyra-2n1t.8)', () => {
       .prepare("SELECT hp_current, life_state FROM character WHERE id = 'pc-1'")
       .get() as Record<string, unknown>;
     expect(row).toEqual({ hp_current: 9, life_state: 'alive' });
+    db.close();
+  });
+});
+
+describe('class resource capacities (eshyra-2llo.1)', () => {
+  const OWNER = { kind: 'character' as const, ref: 'pc-1' };
+  const CTX = { campaignId: DEFAULT_TEST_CAMPAIGN_ID, owner: OWNER, ...APPLY };
+
+  function setup(classKey: string, className: string, level: number) {
+    const db = freshDbWithSession();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save('pc-1', buildSheet({ classKey, className, level }));
+    seedLiveHp(db, 40, 40);
+    return { db, store };
+  }
+
+  function counters(db: ReturnType<typeof bareDb>) {
+    return db
+      .prepare(
+        `SELECT counter_key, uses_max, uses_used, source, reset_kind
+         FROM entity_usage_counter ORDER BY counter_key`,
+      )
+      .all();
+  }
+
+  it('derives Rage from the pack, reconciles at level-up, and records the ledger change', () => {
+    const { db, store } = setup('class:barbarian', 'Barbarian', 16);
+    const spent = spendUsage(db, { ...CTX, ability: 'Rage' });
+    expect(spent.counter).toMatchObject({
+      counterKey: 'ability:rage',
+      usesMax: 5,
+      usesUsed: 1,
+      source: 'record',
+      resetKind: 'long_rest',
+    });
+    const result = applyLevelUp(db, { store, ...APPLY });
+    expect(result.changeSet.classResources).toEqual([
+      { resource: 'rages', displayName: 'Rage', from: 5, to: 6 },
+    ]);
+    expect(counters(db)).toEqual([
+      {
+        counter_key: 'ability:rage',
+        uses_max: 6,
+        uses_used: 1,
+        source: 'record',
+        reset_kind: 'long_rest',
+      },
+    ]);
+    expect(listProgressionEvents(db)[0]?.appliedChanges).toMatchObject({
+      classResources: [{ resource: 'rages', from: 5, to: 6 }],
+    });
+    db.close();
+  });
+
+  it('refuses a declared economy for a pack-bound class resource', () => {
+    const { db } = setup('class:barbarian', 'Barbarian', 2);
+    expect(() =>
+      spendUsage(db, {
+        ...CTX,
+        ability: 'Rage',
+        declared: { maxUses: 9, reset: 'long_rest' },
+      }),
+    ).toThrow(/derives from the class table/);
+    expect(counters(db)).toEqual([]);
+    db.close();
+  });
+
+  it('refuses Ki at monk level 1 and derives it at level 2', () => {
+    const one = setup('class:monk', 'Monk', 1);
+    expect(() => spendUsage(one.db, { ...CTX, ability: 'Ki' })).toThrow(
+      /no Ki at level 1/,
+    );
+    one.db.close();
+    const two = setup('class:monk', 'Monk', 2);
+    const spent = spendUsage(two.db, { ...CTX, ability: 'ki points' });
+    expect(spent.counter).toMatchObject({
+      counterKey: 'ability:ki',
+      usesMax: 2,
+      resetKind: 'short_or_long_rest',
+    });
+    two.db.close();
+  });
+
+  it('spends Rage without a counter at barbarian 20 and deletes it on reaching 20', () => {
+    const at20 = setup('class:barbarian', 'Barbarian', 20);
+    const result = spendUsage(at20.db, { ...CTX, ability: 'Rage' });
+    expect(result).toMatchObject({ unlimited: true });
+    expect(counters(at20.db)).toEqual([]);
+    at20.db.close();
+
+    const { db, store } = setup('class:barbarian', 'Barbarian', 19);
+    spendUsage(db, { ...CTX, ability: 'Rage' });
+    expect(counters(db)).toHaveLength(1);
+    const applied = applyLevelUp(db, { store, ...APPLY });
+    expect(applied.changeSet.classResources).toEqual([
+      { resource: 'rages', displayName: 'Rage', from: 6, to: 'unlimited' },
+    ]);
+    expect(counters(db)).toEqual([]);
+    db.close();
+  });
+
+  it('adopts a legacy declared alias counter into a single canonical record counter', () => {
+    const { db, store } = setup('class:monk', 'Monk', 4);
+    db.prepare(
+      `INSERT INTO entity_usage_counter(
+         campaign_id, owner_kind, owner_ref, counter_key, display_name,
+         uses_max, uses_used, reset_kind, source, provenance, session_id, updated_at)
+       VALUES (?, 'character', 'pc-1', 'ability:ki-points', 'Ki points',
+               9, 3, 'long_rest', 'declared', 'test', ?, ?)`,
+    ).run(DEFAULT_TEST_CAMPAIGN_ID, DEFAULT_TEST_SESSION_ID, AT);
+    applyLevelUp(db, { store, ...APPLY });
+    expect(counters(db)).toEqual([
+      {
+        counter_key: 'ability:ki',
+        uses_max: 5,
+        uses_used: 3,
+        source: 'record',
+        reset_kind: 'short_or_long_rest',
+      },
+    ]);
+    const spent = spendUsage(db, { ...CTX, ability: 'Ki' });
+    expect(spent.counter).toMatchObject({ usesMax: 5, usesUsed: 4 });
+    expect(counters(db)).toHaveLength(1);
+    db.close();
+  });
+
+  it('keeps the declared path for non-bound abilities and other classes', () => {
+    const { db } = setup('class:fighter', 'Fighter', 2);
+    const spent = spendUsage(db, {
+      ...CTX,
+      ability: 'Second Wind',
+      declared: { maxUses: 1, reset: 'short_or_long_rest' },
+    });
+    expect(spent.counter).toMatchObject({
+      counterKey: 'ability:second-wind',
+      source: 'declared',
+    });
+    expect(() => spendUsage(db, { ...CTX, ability: 'Rage' })).toThrow(
+      /no recorded usage economy/,
+    );
     db.close();
   });
 });

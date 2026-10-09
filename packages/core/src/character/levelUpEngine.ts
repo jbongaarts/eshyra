@@ -54,6 +54,11 @@ import {
   readCampaignRulesBinding,
 } from '../rules/binding.js';
 import { resolveCharacterId } from '../state/activeCharacter.js';
+import {
+  classResourceBindingsFor,
+  classResourceCapacity,
+  describeClassResourceCapacity,
+} from '../state/classResources.js';
 import { effectiveHpMax } from '../state/exhaustion.js';
 import { validateConditionsJson } from '../state/liveStateSchema.js';
 import { mutateState } from '../state/mutateState.js';
@@ -62,6 +67,7 @@ import {
   recordProgressionEvent,
 } from '../state/progression.js';
 import { syncSpellSlots } from '../state/spellSlots.js';
+import { reconcileClassResourceCounters } from '../state/usageCounters.js';
 import { abilityModifier, abilityNameFromToken } from './abilities.js';
 import { assertSupportedCharacterBuild } from './characterBuild.js';
 import {
@@ -103,6 +109,7 @@ import {
 import {
   getBundledDnd5eCharacterResolver,
   type ResolvedClassData,
+  type ResolvedClassLevel,
   type ResolvedFeatureImprovement,
   type ResolvedLevelSpellcasting,
   type ResolvedSubclassData,
@@ -174,6 +181,12 @@ export interface LevelUpChangeSet {
    * {@link choicesApplied}; model-adjudicated effects stay DM-adjudicated.
    */
   readonly featureImprovements?: readonly LevelUpFeatureImprovement[];
+  /**
+   * Pack-bound expendable class resource capacities whose value changes at the
+   * new level (eshyra-2llo.1): Rage, Ki, Sorcery Points. Existing counters are
+   * reconciled to `to` in the same transaction (used preserved, never restored).
+   */
+  readonly classResources?: readonly LevelUpClassResourceChange[];
   readonly abilityScoreIncreases?: readonly AppliedAbilityScoreIncrease[];
   readonly savingThrows?: Readonly<
     Record<
@@ -181,6 +194,14 @@ export interface LevelUpChangeSet {
       LevelUpDelta<SavingThrowDerived>
     >
   >;
+}
+
+/** One class-resource capacity change recorded in the change set. */
+export interface LevelUpClassResourceChange {
+  readonly resource: string;
+  readonly displayName: string;
+  readonly from: number | 'unlimited' | 'none';
+  readonly to: number | 'unlimited' | 'none';
 }
 
 /** One dispositioned `featureImprovement` row recorded in the change set. */
@@ -529,6 +550,25 @@ export function applyLevelUp(
       sessionId: input.sessionId,
       at: input.at,
     });
+    // Reconcile existing pack-bound class-resource counters (Rage, Ki, Sorcery
+    // Points) to the new level's table value in the same transaction.
+    const newRow = resolver.resolveClassLevel(
+      sheet.class.key,
+      changeSet.level.to,
+    );
+    if (!newRow.ok) {
+      throw new LevelUpEngineError(
+        `cannot resolve level ${changeSet.level.to} of '${sheet.class.key}': ${newRow.message}`,
+      );
+    }
+    reconcileClassResourceCounters(txnDb, {
+      characterId,
+      classKey: sheet.class.key,
+      row: newRow.record,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
     const event = recordProgressionEvent(txnDb, {
       characterId,
       kind: 'level-up',
@@ -677,6 +717,7 @@ export function computeLevelUpChangeSet(
     },
     featuresGained: [...row.featureRefs, ...existingSubclassFeatureRefs],
     ...featureImprovementChanges(row.featureImprovements, resolver),
+    ...classResourceChanges(classKey, sheet.level, row, resolver),
     ...spellcastingChanges(
       sheet,
       classResult.record,
@@ -982,6 +1023,35 @@ function featureImprovementChanges(
     });
   }
   return recorded.length > 0 ? { featureImprovements: recorded } : {};
+}
+
+function classResourceChanges(
+  classKey: string,
+  fromLevel: number,
+  toRow: ResolvedClassLevel,
+  resolver: RulesPackCharacterResolver,
+): { readonly classResources?: readonly LevelUpClassResourceChange[] } {
+  const bindings = classResourceBindingsFor(classKey);
+  if (bindings.length === 0) return {};
+  const fromResult = resolver.resolveClassLevel(classKey, fromLevel);
+  const fromRow = fromResult.ok ? fromResult.record : { resources: {} };
+  const changes: LevelUpClassResourceChange[] = [];
+  for (const binding of bindings) {
+    const from = describeClassResourceCapacity(
+      classResourceCapacity(binding, fromRow),
+    );
+    const to = describeClassResourceCapacity(
+      classResourceCapacity(binding, toRow),
+    );
+    if (from === to) continue;
+    changes.push({
+      resource: binding.resource,
+      displayName: binding.displayName,
+      from,
+      to,
+    });
+  }
+  return changes.length > 0 ? { classResources: changes } : {};
 }
 
 function slug(value: string): string {

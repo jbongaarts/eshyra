@@ -174,6 +174,17 @@ export interface ResolvedFeatureImprovement {
   readonly label: string;
 }
 
+/**
+ * One `resourceProgression` column value at a class level (eshyra-2llo.1):
+ * a count, the explicit 'Unlimited' / '—' markers, or any other descriptive
+ * text (damage bonus, die scaling, speed bonus).
+ */
+export type ResolvedClassResource =
+  | { readonly kind: 'count'; readonly value: number }
+  | { readonly kind: 'unlimited' }
+  | { readonly kind: 'none' }
+  | { readonly kind: 'text'; readonly value: string };
+
 /** The structured slice of a class progression row (typed `advancement[]`). */
 export interface ResolvedClassLevel {
   readonly level: number;
@@ -184,6 +195,8 @@ export interface ResolvedClassLevel {
   readonly subclassFeatureSlots: readonly ResolvedSubclassFeatureSlot[];
   /** Typed improvements to existing features at this level. */
   readonly featureImprovements: readonly ResolvedFeatureImprovement[];
+  /** Resource progression columns at this level, keyed by the pack resource name. */
+  readonly resources: Readonly<Record<string, ResolvedClassResource>>;
   /** Spellcasting counts for this level, present only for spellcasting classes. */
   readonly spellcasting?: ResolvedLevelSpellcasting;
 }
@@ -841,6 +854,7 @@ function parseClassProgressionRow(
     featureRefs: parsed.featureRefs,
     subclassFeatureSlots: parsed.subclassFeatureSlots,
     featureImprovements: parsed.featureImprovements,
+    resources: parsed.resources,
     ...(parsed.spellcasting !== undefined
       ? { spellcasting: parsed.spellcasting }
       : {}),
@@ -862,6 +876,7 @@ interface ParsedAdvancement {
   readonly featureRefs: readonly string[];
   readonly subclassFeatureSlots: readonly ResolvedSubclassFeatureSlot[];
   readonly featureImprovements: readonly ResolvedFeatureImprovement[];
+  readonly resources: Readonly<Record<string, ResolvedClassResource>>;
   readonly spellcasting?: ResolvedLevelSpellcasting;
 }
 
@@ -877,6 +892,7 @@ function parseAdvancement(value: unknown): ParsedAdvancement | undefined {
       featureRefs: [],
       subclassFeatureSlots: [],
       featureImprovements: [],
+      resources: {},
     };
   }
   if (!Array.isArray(value)) {
@@ -885,6 +901,7 @@ function parseAdvancement(value: unknown): ParsedAdvancement | undefined {
   const featureRefs: string[] = [];
   const subclassFeatureSlots: ResolvedSubclassFeatureSlot[] = [];
   const featureImprovements: ResolvedFeatureImprovement[] = [];
+  const resources: Record<string, ResolvedClassResource> = {};
   let spellcasting: ResolvedLevelSpellcasting | undefined;
   for (const entry of value) {
     if (!isRecord(entry)) {
@@ -926,8 +943,9 @@ function parseAdvancement(value: unknown): ParsedAdvancement | undefined {
       }
       case 'resourceProgression': {
         if (typeof entry.resource !== 'string') return undefined;
-        // Resource progressions are not consumed by the resolver layer today;
-        // validate the shape and carry on.
+        const resource = parseResourceValue(entry.value);
+        if (resource === undefined) return undefined;
+        resources[entry.resource] = resource;
         break;
       }
       case 'spellcastingProgression': {
@@ -944,8 +962,19 @@ function parseAdvancement(value: unknown): ParsedAdvancement | undefined {
     featureRefs,
     subclassFeatureSlots,
     featureImprovements,
+    resources,
     spellcasting,
   };
+}
+
+function parseResourceValue(value: unknown): ResolvedClassResource | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return { kind: 'count', value };
+  }
+  if (typeof value !== 'string') return undefined;
+  if (value === 'Unlimited') return { kind: 'unlimited' };
+  if (value === '—') return { kind: 'none' };
+  return { kind: 'text', value };
 }
 
 function parseSpellcastingEntry(

@@ -1859,6 +1859,7 @@ export type {
   RestoreUsageResult,
   SpendUsageInput,
   SpendUsageResult,
+  SpendUsageUnlimitedResult,
   UsageCounter,
   UsageOwnerInput,
   UsageOwnerKind,
