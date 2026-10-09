@@ -35,6 +35,7 @@ export const resolveCheckTool: Tool = {
     'modifiers apply and setting the DC stay your rulings; the arithmetic is ' +
     'engine-owned. ' +
     "vs is the target's unmodified DC or AC from 1 to 99, and a total equal to vs succeeds. Modifiers apply only to the roller and are summed by the engine. When the source adds a term to the target's AC or to a DC, pass the base number as vs and declare the term as an equal negative modifier on the roll: for example a cover bonus to AC, or the Charisma modifier in a DC of 12 + a Charisma modifier. Declare a bonus to the roller's own save as a positive modifier. " +
+    'The character sheet context shows derived skill bonuses (expertise, Jack of All Trades, Remarkable Athlete); declare those as modifiers/proficiency here. ' +
     'args: { kind, reason, actor?, advantage?, disadvantage?, modifiers?, proficiency?, vs?, visibility? }.',
   inputSchema: {
     type: 'object',

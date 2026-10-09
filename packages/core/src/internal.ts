@@ -382,7 +382,6 @@ export {
   LevelUpRequiredChoicesError,
   previewLevelUpChangeSet,
 } from './character/levelUpEngine.js';
-// Level-up expertise picks (eshyra-ug4i.1).
 export { characterExpertise } from './character/levelUpExpertise.js';
 // Level-up spell selection (eshyra-ug4i.2).
 export type {
@@ -455,6 +454,16 @@ export {
   getBundledDnd5eCharacterResolver,
   STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './character/rulesPackResolver.js';
+// Level-up expertise picks (eshyra-ug4i.1).
+export type {
+  DerivedSkillBonus,
+  DerivedSkills,
+  SkillProficiencyLevel,
+} from './character/skillBonuses.js';
+export {
+  deriveSkillBonuses,
+  renderSkillsLine,
+} from './character/skillBonuses.js';
 export type {
   DerivedModifierContribution,
   DerivedSpellcastingValues,
