@@ -50,6 +50,7 @@ import {
 } from './proficiency.js';
 import {
   getBundledDnd5eCharacterResolver,
+  type ResolvedAncestryData,
   type ResolvedBackgroundData,
   type ResolvedClassData,
   type ResolvedLanguageGrant,
@@ -455,6 +456,7 @@ export function finalizeCharacterDraft(
       engine,
       classRecordForDraft(draft, resolver),
       backgroundRecordForDraft(draft, resolver),
+      requireRecord(resolver.resolveAncestry(draft.selections.ancestry ?? '')),
     );
   } catch (error) {
     return {
@@ -659,12 +661,10 @@ function buildFinalizedCharacter(
     ...(draft.derived.spellAttackModifier !== undefined
       ? { spellAttackModifier: draft.derived.spellAttackModifier }
       : {}),
-    skillProficiencies: resolveProficiencySet(
-      draft,
-      engine,
-      'skills',
-      backgroundRecord?.skillProficiencies ?? [],
-    ),
+    skillProficiencies: resolveProficiencySet(draft, engine, 'skills', [
+      ...(ancestryRecord.skillProficiencies ?? []),
+      ...(backgroundRecord?.skillProficiencies ?? []),
+    ]),
     toolProficiencies: resolveProficiencySet(draft, engine, 'tools', [
       ...(classRecord.toolProficiencies ?? []),
       ...(backgroundRecord?.toolProficiencies ?? []),
@@ -764,6 +764,7 @@ function assertProficiencyInvariant(
   engine: CharacterCreationEngine,
   classRecord: ResolvedClassData,
   backgroundRecord: ResolvedBackgroundData | undefined,
+  ancestryRecord: ResolvedAncestryData,
 ): void {
   const generated = new Set(
     engine
@@ -778,12 +779,10 @@ function assertProficiencyInvariant(
       );
     }
   }
-  const skills = resolveProficiencySet(
-    draft,
-    engine,
-    'skills',
-    backgroundRecord?.skillProficiencies ?? [],
-  );
+  const skills = resolveProficiencySet(draft, engine, 'skills', [
+    ...(ancestryRecord.skillProficiencies ?? []),
+    ...(backgroundRecord?.skillProficiencies ?? []),
+  ]);
   const tools = resolveProficiencySet(draft, engine, 'tools', [
     ...(classRecord.toolProficiencies ?? []),
     ...(backgroundRecord?.toolProficiencies ?? []),

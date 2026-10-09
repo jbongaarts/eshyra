@@ -707,3 +707,52 @@ describe('rules-pack character resolver', () => {
     });
   });
 });
+
+describe('source-backed ancestry skill metadata', () => {
+  it.each([
+    [
+      'ancestry:elf',
+      'Keen Senses',
+      'You have proficiency in the Perception skill.',
+      'Perception',
+    ],
+    [
+      'ancestry:high-elf',
+      'Keen Senses',
+      'You have proficiency in the Perception skill.',
+      'Perception',
+    ],
+    [
+      'ancestry:half-orc',
+      'Menacing',
+      'You gain proficiency in the Intimidation skill.',
+      'Intimidation',
+    ],
+  ])(
+    'resolves the unconditional skill granted by %s',
+    (key, name, text, skill) => {
+      const resolved = resolver.resolveAncestry(key);
+      expect(resolved.ok).toBe(true);
+      if (!resolved.ok) throw new Error('ancestry did not resolve');
+      expect(resolved.record.traits).toContainEqual({ name, text });
+      expect(resolved.record.skillProficiencies).toEqual([skill]);
+    },
+  );
+
+  it('resolves Skill Versatility as two skill choices rather than a fixed grant', () => {
+    const resolved = resolver.resolveAncestry('Half-Elf');
+    if (!resolved.ok) throw new Error('Half-Elf did not resolve');
+    expect(resolved.record.traits).toContainEqual({
+      name: 'Skill Versatility',
+      text: 'You gain proficiency in two skills of your choice.',
+    });
+    expect(resolved.record.skillProficiencies).toEqual([]);
+    expect(resolved.record.skillChoices).toEqual([
+      {
+        text: 'Choose two skill proficiencies.',
+        choose: 2,
+        from: expect.arrayContaining(['Arcana', 'Nature']),
+      },
+    ]);
+  });
+});

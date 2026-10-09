@@ -89,6 +89,144 @@ function finalize(draft: CharacterDraft): CharacterSheet {
   return result.character;
 }
 
+describe('ancestry skills at creation', () => {
+  it.each([
+    { ancestry: 'Elf', grants: ['Perception'] },
+    { ancestry: 'High Elf', grants: ['Perception'] },
+    { ancestry: 'Half-Orc', grants: ['Intimidation'] },
+    { ancestry: 'Half-Elf', grants: ['Arcana', 'Nature'] },
+  ])(
+    'persists $ancestry skills and makes them eligible for expertise',
+    ({ ancestry, grants }) => {
+      let draft = baseDraft('Rogue', ancestry);
+      draft = engine.setChoice(draft, 'class.skills', [
+        'Acrobatics',
+        'Deception',
+        'Stealth',
+        'Sleight of Hand',
+      ]);
+      if (ancestry === 'Half-Elf') {
+        const skills = choiceFor(draft, 'skills').find(
+          (entry) => entry.choice.source === 'ancestry',
+        );
+        expect(skills?.choice).toMatchObject({
+          id: 'ancestry.skills',
+          choose: 2,
+          status: 'structured',
+        });
+        draft = engine.setChoice(draft, 'ancestry.skills', grants);
+      }
+      const expertise = choiceFor(draft, 'expertise')[0];
+      expect(expertise?.choice.from).toEqual(expect.arrayContaining(grants));
+      draft = fill(draft, {
+        [expertise?.choice.id as string]: [grants[0], 'Stealth'],
+      });
+      const sheet = finalize(draft);
+      expect(sheet.skillProficiencies).toEqual(expect.arrayContaining(grants));
+      expect(sheet.featureChoices).toContainEqual({
+        featureRef: 'feature:rogue:expertise',
+        choiceId: 'expertise',
+        optionIds: [`skill:${grants[0]}`, 'skill:Stealth'],
+        level: 1,
+      });
+      const leveled = levelUpToTwo(sheet);
+      expect(leveled.skillProficiencies).toEqual(sheet.skillProficiencies);
+      expect(leveled.featureChoices).toEqual(
+        expect.arrayContaining(sheet.featureChoices ?? []),
+      );
+    },
+  );
+
+  it.each(['Elf', 'Half-Elf'])(
+    'invalidates expertise when %s skill grants are removed',
+    (ancestry) => {
+      let draft = baseDraft('Rogue', ancestry);
+      draft = engine.setChoice(draft, 'class.skills', [
+        'Acrobatics',
+        'Deception',
+        'Stealth',
+        'Sleight of Hand',
+      ]);
+      if (ancestry === 'Half-Elf')
+        draft = engine.setChoice(draft, 'ancestry.skills', [
+          'Perception',
+          'Nature',
+        ]);
+      const id = choiceFor(draft, 'expertise')[0]?.choice.id as string;
+      draft = fill(draft, { [id]: ['Perception', 'Stealth'] });
+      expect(choiceFor(draft, 'expertise')[0]?.satisfied).toBe(true);
+      draft =
+        ancestry === 'Elf'
+          ? engine.setAncestry(draft, 'Human')
+          : engine.setChoice(draft, 'ancestry.skills', ['Arcana', 'Nature']);
+      expect(draft.stale).toContain(id);
+      expect(choiceFor(draft, 'expertise')[0]?.satisfied).toBe(false);
+      expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+    },
+  );
+
+  it('requires and persists replacements for overlapping ancestry, background, and class skills', () => {
+    let draft = baseDraft('Rogue', 'Half-Orc');
+    draft = engine.setBackground(draft, 'Acolyte');
+    draft = engine.setBackgroundCustomization(draft, {
+      name: 'Enforcer',
+      skillProficiencies: ['Intimidation', 'Religion'],
+      toolProficiencies: [],
+      languages: ['Elvish', 'Dwarvish'],
+      feature: 'background:acolyte#feature:shelter-of-the-faithful',
+    });
+    draft = engine.setChoice(draft, 'class.skills', [
+      'Intimidation',
+      'Acrobatics',
+      'Deception',
+      'Stealth',
+    ]);
+    const replacements = engine
+      .mechanicalChoices(draft)
+      .filter((entry) =>
+        entry.choice.id.startsWith('proficiency-replacement.skills.'),
+      );
+    expect(replacements.map((entry) => entry.choice.id)).toEqual([
+      'proficiency-replacement.skills.intimidation.1',
+      'proficiency-replacement.skills.intimidation.2',
+    ]);
+    expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+    draft = engine.setChoice(draft, replacements[0].choice.id, ['Arcana']);
+    draft = engine.setChoice(draft, replacements[1].choice.id, ['Nature']);
+    draft = fill(draft);
+    expect(finalize(draft).skillProficiencies).toEqual([
+      'Intimidation',
+      'Arcana',
+      'Religion',
+      'Nature',
+      'Acrobatics',
+      'Deception',
+      'Stealth',
+    ]);
+    draft = engine.setAncestry(draft, 'Human');
+    expect(Object.keys(draft.selections.choices ?? {})).not.toContain(
+      replacements[1].choice.id,
+    );
+  });
+
+  it.each(['Dwarf', 'Hill Dwarf', 'Rock Gnome'])(
+    'keeps conditional History benefits off the general %s skill list',
+    (ancestry) => {
+      let draft = baseDraft('Rogue', ancestry);
+      draft = engine.setChoice(draft, 'class.skills', [
+        'Acrobatics',
+        'Deception',
+        'Stealth',
+        'Sleight of Hand',
+      ]);
+      expect(choiceFor(draft, 'expertise')[0]?.choice.from).not.toContain(
+        'History',
+      );
+      expect(finalize(fill(draft)).skillProficiencies).not.toContain('History');
+    },
+  );
+});
+
 describe('level-1 class-feature choices: enumeration', () => {
   it('lists the fighting style for a fighter', () => {
     const [style] = choiceFor(baseDraft('Fighter'), 'feature_choice');
