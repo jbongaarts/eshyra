@@ -21,6 +21,7 @@ import {
   previewLevelUpChangeSet,
   readSpellSlots,
   renderContextMessage,
+  restoreUsage,
   spendSpellSlot,
   spendUsage,
   syncSpellSlots,
@@ -1052,6 +1053,16 @@ describe('class resource capacities (eshyra-2llo.1)', () => {
       counterKey: 'ability:ki',
       usesMax: 2,
       resetKind: 'short_or_long_rest',
+    });
+    // Any alias finds the canonical counter on restore.
+    const restored = restoreUsage(two.db, {
+      ...CTX,
+      ability: 'Ki Points',
+      amount: 1,
+    });
+    expect(restored.counter).toMatchObject({
+      counterKey: 'ability:ki',
+      usesUsed: 0,
     });
     two.db.close();
   });

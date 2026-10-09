@@ -1308,9 +1308,14 @@ function findCounter(
     throw new UsageCounterError('pass ability (the statblock name) or itemId');
   }
   const slug = normalizeAbilityName(ref.ability);
+  // A pack-bound class resource is stored under its canonical key whichever
+  // alias named it ('Ki Points' -> ability:ki, 'Rages' -> ability:rage).
+  const boundKey = resolveBoundClassResource(db, resolved, ref.ability)?.binding
+    .counterKey;
   const rows = listCounterRows(db, campaignId, resolved.owner);
   const matches = rows.filter(
     (row) =>
+      row.counter_key === boundKey ||
       row.counter_key === slug ||
       row.counter_key === `ability:${slug}` ||
       row.counter_key === `innate:spell:${slug}` ||
