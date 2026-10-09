@@ -688,17 +688,20 @@ class Wizard {
       this.write('No additional level-1 choices for this character.');
       return 'advance';
     }
-    const ordinaryIds = initial
-      .filter((entry) => !isReplacementChoiceId(entry.choice.id))
-      .map((entry) => entry.choice.id);
-    for (const id of ordinaryIds) {
-      if (
-        !this.deps.engine
-          .mechanicalChoices(this.draft)
-          .some((entry) => entry.choice.id === id)
-      )
-        continue;
-      const nav = await this.runChoiceGroup(id);
+    // Walk each ordinary group once, re-reading the list after every group: a
+    // pick can reveal dependent choices (a subclass's own level-1 choice).
+    const visited = new Set<string>();
+    for (;;) {
+      const next = this.deps.engine
+        .mechanicalChoices(this.draft)
+        .find(
+          (entry) =>
+            !isReplacementChoiceId(entry.choice.id) &&
+            !visited.has(entry.choice.id),
+        );
+      if (next === undefined) break;
+      visited.add(next.choice.id);
+      const nav = await this.runChoiceGroup(next.choice.id);
       if (nav !== 'advance') {
         return nav;
       }
@@ -899,6 +902,13 @@ class Wizard {
       .mechanicalChoices(this.draft)
       .find((entry) => entry.choice.id === choiceId);
     if (initial === undefined) return 'advance';
+    if (initial.choice.status === 'unstructured') {
+      // A class-feature choice the pack cannot yet enumerate (or whose options
+      // are not available yet) is shown, not guessed; it keeps blocking finish.
+      this.write('');
+      this.write(initial.choice.label);
+      return 'advance';
+    }
     const startedSatisfied = initial.satisfied;
     // First-pass fills auto-advance for low friction; a group opened already
     // satisfied waits for an explicit keep so it can be edited.

@@ -194,6 +194,7 @@ describe('runCreateCharacter — finalization (eshyra-b69j.14)', () => {
     '1',
     '1',
     'Dwarvish',
+    'Archery', // fighting style (level-1 class-feature choice)
     '', // spells skip
     '', // review → finish
   ] as const;
@@ -215,6 +216,14 @@ describe('runCreateCharacter — finalization (eshyra-b69j.14)', () => {
     expect(record?.class.name).toBe('Fighter');
     expect(record?.ancestry.name).toBe('Human');
     expect(record?.skillProficiencies).toEqual(['Athletics', 'Perception']);
+    expect(record?.featureChoices).toEqual([
+      {
+        featureRef: 'feature:fighter:fighting-style',
+        choiceId: 'fighting-style',
+        optionIds: ['fighting-style:archery'],
+        level: 1,
+      },
+    ]);
     expect(record?.metadata.createdAt).toBe(FIXED_NOW);
     expect(lines.join('\n')).toMatch(/Finalized Grok/);
   });

@@ -36,12 +36,14 @@ import {
   type CharacterDraft,
   effectiveBackground,
   getDnd5eCharacterCreationEngine,
+  type MechanicalChoiceState,
   parseStartingEquipmentMode,
   type RequiredChoice,
   type StartingEquipmentMode,
 } from './characterDraft.js';
 import type { AbilityScoreName, CharacterCreationDraft } from './creation.js';
 import type { SavingThrowDerived } from './derivedValues.js';
+import { effectiveSpellcasting, spellsUnion } from './levelUpSpells.js';
 import {
   normalizeProficiency,
   proficiencyReplacementId,
@@ -365,14 +367,15 @@ export interface CharacterSheet {
    * Option-catalog feature choices made at level-up (fighting style, metamagic,
    * eldritch invocations, pact boon, hunter options), in acquisition order.
    * Optional: sheets that predate it, and characters who have made none, omit
-   * it. Level-1 creation choices are not recorded here yet (eshyra-nnj6).
+   * it. Level-1 creation records its class-feature picks here too (level 1;
+   * eshyra-nnj6.1, see creationClassChoices.ts).
    */
   readonly featureChoices?: readonly CharacterFeatureChoice[];
   /**
    * Structured spell buckets (eshyra-ug4i.2). Optional: absent on sheets that
    * predate it (their flat `spells` list is classified at the first level-up)
    * and on non-casters. When present, `spells` is its derived union.
-   * Level-1 creation does not write it yet (eshyra-nnj6).
+   * Level-1 creation writes it for classes that cast at level 1 (eshyra-nnj6.1).
    */
   readonly spellcasting?: CharacterSpellcasting;
   readonly metadata: FinalizeMetadata;
@@ -676,10 +679,84 @@ function buildFinalizedCharacter(
       ancestryRecord.languages,
       backgroundRecord?.languages,
     ),
-    spells: [...(selections.spells ?? [])],
+    ...spellState(selections.spells ?? [], classRecord, resolver),
+    ...classFeatureState(engine.mechanicalChoices(draft)),
     metadata,
   };
   return finalized;
+}
+
+/**
+ * The level-1 class-feature picks the draft collected (eshyra-nnj6.1): the
+ * subclass and the `featureChoices` entries, built from each satisfied choice's
+ * application exactly as level-up persists them.
+ */
+function classFeatureState(
+  entries: readonly MechanicalChoiceState[],
+): Pick<CharacterSheet, 'subclass' | 'featureChoices'> {
+  let subclass: FinalizedRecordRef | undefined;
+  const picks: CharacterFeatureChoice[] = [];
+  for (const entry of entries) {
+    const application = entry.application;
+    if (application === undefined) continue;
+    if (application.kind === 'subclass') {
+      subclass = application.subclass;
+    } else {
+      picks.push(application.featureChoice);
+    }
+  }
+  return {
+    ...(subclass !== undefined ? { subclass } : {}),
+    ...(picks.length > 0 ? { featureChoices: picks } : {}),
+  };
+}
+
+/**
+ * Level-1 spell state (eshyra-nnj6.1). A class that casts at level 1 gets the
+ * structured `spellcasting` buckets, classified by the same rule level-up uses
+ * for a legacy flat list (`effectiveSpellcasting`): cantrips; known casters'
+ * `known`; the Wizard's `spellbook`; other prepared casters' `prepared`. The
+ * flat `spells` is the derived union of canonical refs. A class with no level-1
+ * casting and no spells keeps the plain list. Domain/oath always-prepared
+ * spells are not computed here (eshyra-kn38).
+ */
+function spellState(
+  chosen: readonly string[],
+  classRecord: ResolvedClassData,
+  resolver: RulesPackCharacterResolver,
+): Pick<CharacterSheet, 'spells' | 'spellcasting'> {
+  const preparation = classRecord.spellPreparation;
+  const spellcasting = classRecord.level1?.spellcasting;
+  const castsAtLevel1 =
+    spellcasting !== undefined &&
+    (spellcasting.cantripsKnown !== undefined ||
+      spellcasting.spellsKnown !== undefined ||
+      spellcasting.slots !== undefined ||
+      spellcasting.pactSlots !== undefined);
+  if (preparation === undefined || (!castsAtLevel1 && chosen.length === 0)) {
+    return { spells: [...chosen] };
+  }
+  const classified = effectiveSpellcasting(
+    { spells: chosen } as CharacterSheet,
+    classRecord,
+    resolver,
+  );
+  if (!classified.ok) {
+    // Unreachable: the draft already rejected unresolvable spells.
+    throw new Error(`finalization invariant: ${classified.reason}`);
+  }
+  const base = classified.spellcasting ?? { cantrips: [] };
+  const bucket =
+    preparation.kind === 'known'
+      ? 'known'
+      : preparation.spellbookStartingSpells !== undefined
+        ? 'spellbook'
+        : 'prepared';
+  const structured = { ...base, [bucket]: base[bucket] ?? [] };
+  return {
+    spells: [...spellsUnion(structured)],
+    spellcasting: structured,
+  };
 }
 
 function assertProficiencyInvariant(
