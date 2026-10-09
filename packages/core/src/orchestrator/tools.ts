@@ -45,6 +45,7 @@ import { listRecoverableItemsTool } from './toolListRecoverableItems.js';
 import { lookupRulesTool } from './toolLookupRules.js';
 import { markSceneTool } from './toolMarkScene.js';
 import { memoryDrilldownTool } from './toolMemoryDrilldown.js';
+import { prepareSpellsTool } from './toolPrepareSpells.js';
 import { reacquireItemTool } from './toolReacquireItem.js';
 import { recastBondedSummonTool } from './toolRecastBondedSummon.js';
 import { recordDeathSaveTool } from './toolRecordDeathSave.js';
@@ -164,6 +165,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   completeLongRestTool,
   spendRestHitDieTool,
   finishShortRestRecoveryTool,
+  prepareSpellsTool,
   setPlotFlagTool,
   setWorldFactTool,
   recordWorldFactTool,

@@ -190,6 +190,12 @@ export interface CharacterSpellcasting {
   readonly known?: readonly string[];
   readonly spellbook?: readonly string[];
   readonly prepared?: readonly string[];
+  /**
+   * Domain/oath/circle spells that are always prepared and do not count against
+   * the preparation limit (eshyra-odpc). Recomputed from the pack on every
+   * long-rest preparation; absent until the first one.
+   */
+  readonly alwaysPrepared?: readonly string[];
   /** Warlock Mystic Arcanum picks, one per spell level. */
   readonly mysticArcanum?: readonly {
     readonly level: number;
@@ -246,6 +252,7 @@ export function validateCharacterSheetSpellcasting(
   const known = refList('known', false);
   const spellbook = refList('spellbook', false);
   refList('prepared', false);
+  refList('alwaysPrepared', false);
   const seen = new Set<string>();
   for (const ref of [...cantrips, ...known, ...spellbook]) {
     if (seen.has(ref)) {
