@@ -11,6 +11,7 @@ import {
   createSqliteCharacterSheetStore,
   getBundledDnd5eCharacterResolver,
   prepareSpellsAfterLongRest,
+  startEncounter,
 } from '../src/internal.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
@@ -242,6 +243,21 @@ describe('long-rest spell preparation', () => {
     expect(stored(db).spellcasting?.prepared).toEqual(['spell:bless']);
   });
 
+  it('gate: refuses once combat starts, even though the clock has not advanced', () => {
+    const db = rested(cleric());
+    const [a, b] = spellsOf('Cleric', 1, 2) as [string, string];
+    prepare(db, [a]);
+    startEncounter(db, {
+      campaignId: CTX.campaignId,
+      combatInstanceId: 'combat-after-rest',
+      provenance: CTX.provenance,
+      sessionId: CTX.sessionId,
+      at: AT,
+    });
+    expect(() => prepare(db, [b])).toThrow(/during combat/);
+    expect(stored(db).spellcasting?.prepared).toEqual([a]);
+  });
+
   it('wizard: only spellbook spells; legacy flat list is classified as spellbook', () => {
     const l1 = spellsOf('Wizard', 1, 4);
     const db = rested(
@@ -424,6 +440,33 @@ describe('long-rest spell preparation', () => {
       'spell:bless',
       'spell:cure-wounds',
     ]);
+  });
+
+  it('prepare_spells resolves the character target by name through the shared resolver', () => {
+    const db = rested(cleric());
+    db.prepare("UPDATE character SET name = 'Darvin' WHERE id = 'pc-1'").run();
+    const ctx = {
+      db,
+      rng: createSeededRng(1),
+      turnId: 'turn-prep-name',
+      actingCharacterId: 'pc-2',
+      ...CTX,
+    };
+    const registry = createDefaultToolRegistry();
+    const byName = registry.invoke(
+      'prepare_spells',
+      { restId: 'rest-1', spells: ['Bless'], character: 'Darvin' },
+      ctx,
+    );
+    expect(byName.ok).toBe(true);
+    expect(stored(db).spellcasting?.prepared).toEqual(['spell:bless']);
+    expect(
+      registry.invoke(
+        'prepare_spells',
+        { restId: 'rest-1', spells: ['Bless'], character: 'Nobody' },
+        ctx,
+      ),
+    ).toMatchObject({ ok: false, code: 'invalid_target' });
   });
 
   it('level-up spell placement keeps alwaysPrepared', async () => {

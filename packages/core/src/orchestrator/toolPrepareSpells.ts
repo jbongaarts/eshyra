@@ -1,6 +1,13 @@
 import { prepareSpellsAfterLongRest } from '../character/spellPreparation.js';
+import { resolveCharacterId } from '../state/activeCharacter.js';
 import type { Tool } from './toolRegistry.js';
-import { asRecord, err, ok } from './toolRegistry.js';
+import {
+  asRecord,
+  CHARACTER_TARGET_SCHEMA,
+  err,
+  ok,
+  resolveTargetCharacterId,
+} from './toolRegistry.js';
 
 export const prepareSpellsTool: Tool = {
   name: 'prepare_spells',
@@ -21,7 +28,7 @@ export const prepareSpellsTool: Tool = {
         items: { type: 'string', minLength: 1 },
         minItems: 1,
       },
-      character: { type: 'string', minLength: 1 },
+      character: CHARACTER_TARGET_SCHEMA,
     },
     required: ['restId', 'spells'],
     additionalProperties: false,
@@ -40,17 +47,10 @@ export const prepareSpellsTool: Tool = {
         'prepare_spells requires restId and a non-empty spells string array',
       );
     }
-    const characterId =
-      typeof a.character === 'string'
-        ? a.character
-        : (ctx.actingCharacterId ?? '');
-    if (characterId.trim().length === 0) {
-      return err(
-        'invalid_target',
-        'prepare_spells requires an acting character or character',
-      );
-    }
+    const target = resolveTargetCharacterId(a.character, ctx);
+    if ('ok' in target) return target;
     try {
+      const characterId = resolveCharacterId(ctx.db, target.id);
       return ok(
         prepareSpellsAfterLongRest(ctx.db, {
           campaignId: ctx.campaignId,

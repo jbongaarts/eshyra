@@ -9,6 +9,7 @@
 // `end_elapsed_minutes` (the same window rule as `spendRestHitDie`). Time spent
 // preparing is treated as part of finishing the rest, so it does not advance
 // the clock. Repeated calls inside the window replace the list (last wins).
+// Preparation is refused while combat is active.
 //
 // Count limit and option set come from `evaluatePreparationBasis`, the same
 // computation level-up uses (class formula, class list at castable levels,
@@ -179,6 +180,19 @@ export function prepareSpellsAfterLongRest(
     if (!rest) {
       throw new SpellPreparationError(
         `'${input.restId}' is not a completed long rest that '${input.characterId}' took part in; spells can only be prepared when finishing a long rest`,
+      );
+    }
+    // Starting combat does not move the world clock, so the window alone would
+    // let a caster re-prepare after seeing the encounter (spendRestHitDie
+    // applies the same active-combat refusal).
+    const activeCombat = txn
+      .prepare(
+        "SELECT 1 FROM combat_instance WHERE campaign_id=? AND status='active' LIMIT 1",
+      )
+      .get(input.campaignId);
+    if (activeCombat) {
+      throw new SpellPreparationError(
+        'cannot prepare spells during combat; preparation happens when finishing the long rest',
       );
     }
     const now = txn
