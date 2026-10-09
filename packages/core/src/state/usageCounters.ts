@@ -1370,6 +1370,7 @@ function findCounter(
   resolved: ResolvedOwner,
   ref: { ability?: string; itemId?: string },
   resolver?: CampaignRulesPackResolver,
+  ctx?: UsageMutationContext,
 ): { row: CounterRow; counterOwner: UsageOwner; counterLabel: string } {
   if (ref.itemId !== undefined) {
     const { owner, itemName } = resolveItemCounter(db, resolved, ref.itemId);
@@ -1387,12 +1388,32 @@ function findCounter(
   const slug = normalizeAbilityName(ref.ability);
   // A pack-bound class resource is stored under its canonical key whichever
   // alias named it ('Ki Points' -> ability:ki, 'Rages' -> ability:rage).
-  const boundKey = resolveBoundClassResource(
-    db,
-    resolved,
-    ref.ability,
-    resolver,
-  )?.binding.counterKey;
+  const bound = resolveBoundClassResource(db, resolved, ref.ability, resolver);
+  const boundKey = bound?.binding.counterKey;
+  if (bound !== undefined) {
+    // Reconcile to the ACTIVE class capacity before selecting the row, so a
+    // restore reports/persists the table maximum (most-spent adoption, as
+    // spendUsage does) rather than a stale stored economy.
+    const capacity = classResourceCapacity(bound.binding, bound.row);
+    if (capacity.kind === 'none') {
+      throw new UsageCounterError(
+        `${resolved.ownerLabel} has no ${bound.binding.displayName} at level ${bound.level} per the class table; nothing to restore`,
+      );
+    }
+    if (capacity.kind === 'unlimited') {
+      throw new UsageCounterError(
+        `${bound.binding.displayName} is unlimited at this level per the class table; nothing to restore`,
+      );
+    }
+    reconcileBoundCounterRows(
+      db,
+      campaignId,
+      resolved.owner.ref,
+      bound.binding,
+      capacity,
+      ctx,
+    );
+  }
   const rows = listCounterRows(db, campaignId, resolved.owner);
   const matches = rows.filter(
     (row) =>
@@ -1517,6 +1538,7 @@ export function restoreUsage(
         ...(input.itemId === undefined ? {} : { itemId: input.itemId }),
       },
       input.resolveRulesPack,
+      input,
     );
 
     if (input.roll !== undefined) {

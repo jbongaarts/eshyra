@@ -17,6 +17,7 @@ import {
   mutateState,
   readSpellSlots,
   restoreSpellSlots,
+  restoreUsage,
   spendSpellSlot,
   spendUsage,
   writeCampaignRulesBinding,
@@ -408,4 +409,111 @@ describe('Flexible Casting honors the bound sorcery-point maximum', () => {
     expect(counterRows(db)).toHaveLength(0);
     db.close();
   });
+});
+
+// A resolver nothing contracts to be stable: the add-on answers with the
+// `first` pack on its first resolution and the `later` pack afterwards.
+function driftingResolver(
+  first: CampaignRulesPackResolver,
+  later: CampaignRulesPackResolver,
+): CampaignRulesPackResolver {
+  let calls = 0;
+  return (ref) => {
+    if (ref.packId !== ADDON_ID) return undefined;
+    calls += 1;
+    return (calls === 1 ? first : later)(ref);
+  };
+}
+
+describe('Flexible Casting pins one rules resolution per operation', () => {
+  it('create-slot uses the first resolution for evaluation and spend', () => {
+    const db = sorcerer3();
+    const first = installSorceryPointsAddon(db, 4);
+    const later = installSorceryPointsAddon(db, 2);
+    const result = flexibleCasting(db, {
+      campaignId: CAMPAIGN,
+      operation: 'create-slot',
+      slotLevel: 1,
+      resolveRulesPack: driftingResolver(first, later),
+      ...CTX,
+    });
+    expect(result.sorceryPoints).toEqual({ remaining: 2, max: 4 });
+    expect(counterRows(db)).toMatchObject([{ uses_max: 4, uses_used: 2 }]);
+    db.close();
+  });
+
+  it('convert-slot uses the first resolution for balance and restore', () => {
+    const db = sorcerer3();
+    const first = installSorceryPointsAddon(db, 4);
+    const later = installSorceryPointsAddon(db, 2);
+    seedLegacy(db, [{ key: 'ability:sorcery-points', max: 3, used: 2 }]);
+    const result = flexibleCasting(db, {
+      campaignId: CAMPAIGN,
+      operation: 'convert-slot',
+      slotLevel: 2,
+      resolveRulesPack: driftingResolver(first, later),
+      ...CTX,
+    });
+    expect(result.sorceryPoints).toEqual({ remaining: 4, max: 4 });
+    expect(counterRows(db)).toMatchObject([{ uses_max: 4, uses_used: 0 }]);
+    db.close();
+  });
+
+  it('refuses consistently (atomically) when the first resolution forbids the conversion', () => {
+    const db = sorcerer3();
+    const first = installSorceryPointsAddon(db, 2);
+    const later = installSorceryPointsAddon(db, 4);
+    seedLegacy(db, [{ key: 'ability:sorcery-points', max: 3, used: 1 }]);
+    expect(() =>
+      flexibleCasting(db, {
+        campaignId: CAMPAIGN,
+        operation: 'convert-slot',
+        slotLevel: 2,
+        resolveRulesPack: driftingResolver(first, later),
+        ...CTX,
+      }),
+    ).toThrow(FlexibleCastingError);
+    expect(counterRows(db)).toMatchObject([{ uses_used: 1 }]);
+    db.close();
+  });
+});
+
+describe('restore_usage reconciles a bound class resource to the active capacity', () => {
+  const representations = {
+    canonical: { key: 'ability:sorcery-points', max: 3 },
+    alias: { key: 'ability:font-of-magic', max: 9 },
+  };
+  for (const [name, rep] of Object.entries(representations)) {
+    for (const bound of [4, 2]) {
+      it(`${name} counter (stored 3) restores against bound maximum ${bound}`, () => {
+        const db = sorcerer3();
+        const resolveRulesPack = installSorceryPointsAddon(db, bound);
+        seedLegacy(db, [{ key: rep.key, max: rep.max, used: 2 }]);
+        const restored = restoreUsage(db, {
+          campaignId: CAMPAIGN,
+          owner: { kind: 'character' },
+          ability: 'sorcery-points',
+          amount: 1,
+          resolveRulesPack,
+          ...CTX,
+        });
+        // Expenditure (2, clamped to the maximum) is kept, then 1 is restored.
+        expect(restored.counter).toMatchObject({
+          usesMax: bound,
+          usesUsed: 1,
+          usesRemaining: bound - 1,
+        });
+        expect(counterRows(db)).toMatchObject([
+          {
+            counter_key: 'ability:sorcery-points',
+            uses_max: bound,
+            uses_used: 1,
+            source: 'record',
+            reset_kind: 'long_rest',
+          },
+        ]);
+        db.close();
+      });
+    }
+  }
 });

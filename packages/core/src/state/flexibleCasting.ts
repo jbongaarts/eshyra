@@ -20,6 +20,7 @@ import { resolveCharacterId } from './activeCharacter.js';
 import {
   type CampaignRulesPackResolver,
   lookupStrictCampaignRecord,
+  memoizeCampaignRulesPackResolver,
 } from './campaignRecordLookup.js';
 import {
   addCreatedSpellSlot,
@@ -75,6 +76,11 @@ export function flexibleCasting(
   db: Db,
   input: FlexibleCastingInput,
 ): FlexibleCastingResult {
+  // One rules resolution per bound pack for the whole operation: evaluation,
+  // balance reconciliation and mutation must describe the same source.
+  const resolveRulesPack = memoizeCampaignRulesPackResolver(
+    input.resolveRulesPack,
+  );
   return withTransaction(db, (txnDb) => {
     const characterId = resolveCharacterId(txnDb, input.characterId);
     const sheet = createSqliteCharacterSheetStore(txnDb).load(characterId);
@@ -97,7 +103,7 @@ export function flexibleCasting(
       txnDb,
       'feature',
       FONT_OF_MAGIC_KEY,
-      input.resolveRulesPack,
+      resolveRulesPack,
     );
     if (hit === undefined) {
       throw new FlexibleCastingError(
@@ -124,9 +130,7 @@ export function flexibleCasting(
       campaignId: input.campaignId,
       characterId,
       ability: SORCERY_POINTS_ABILITY,
-      ...(input.resolveRulesPack === undefined
-        ? {}
-        : { resolveRulesPack: input.resolveRulesPack }),
+      ...(resolveRulesPack === undefined ? {} : { resolveRulesPack }),
     });
     if (balance === undefined) {
       throw new FlexibleCastingError(
@@ -141,9 +145,7 @@ export function flexibleCasting(
       campaignId: input.campaignId,
       owner: { kind: 'character' as const, ref: characterId },
       ability: SORCERY_POINTS_ABILITY,
-      ...(input.resolveRulesPack === undefined
-        ? {}
-        : { resolveRulesPack: input.resolveRulesPack }),
+      ...(resolveRulesPack === undefined ? {} : { resolveRulesPack }),
     };
 
     try {
