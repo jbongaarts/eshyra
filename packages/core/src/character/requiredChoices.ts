@@ -47,7 +47,10 @@ import type {
   ResolvedClassData,
   ResolvedLanguageGrant,
 } from './rulesPackResolver.js';
-import { SRD_5_1_STANDARD_LANGUAGES } from './srdCreationChoices.js';
+import {
+  SRD_5_1_SKILLS,
+  SRD_5_1_STANDARD_LANGUAGES,
+} from './srdCreationChoices.js';
 
 /** Whether a required choice can be enumerated from structured pack data yet. */
 export type Level1RequiredChoiceStatus = 'structured' | 'unstructured';
@@ -233,8 +236,16 @@ function structuredProficiencyChoice(
     status: 'structured',
     label: spec.text || `Choose ${spec.choose ?? ''} ${noun}`.trim(),
     choose: spec.choose,
-    from: spec.from,
+    from: kind === 'skills' ? skillDomain(spec) : spec.from,
   };
+}
+
+/**
+ * A skill choice's option set. An open "any" choice (Bard: "Choose any three")
+ * prints no list; its universe is every SRD skill (eshyra-qga6).
+ */
+function skillDomain(spec: ResolvedChoiceSpec): readonly string[] | undefined {
+  return spec.from ?? (spec.any === true ? SRD_5_1_SKILLS : undefined);
 }
 
 function collectSpellcastingChoices(
@@ -365,7 +376,7 @@ function collectAncestryChoices(
       status: 'structured',
       label: spec.text || 'Choose ancestry skill proficiencies',
       choose: spec.choose,
-      from: spec.from,
+      from: skillDomain(spec),
     });
   });
   (ancestry.toolProficiencyChoices ?? []).forEach((spec) => {
