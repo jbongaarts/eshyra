@@ -698,16 +698,6 @@ describe('hunter options and unsupported growth', () => {
       ).find((c) => c.id === id),
     ).toMatchObject({ status: 'supported', choose: 1 });
   });
-
-  it('keeps Favored Enemy / Natural Explorer growth (feature improvements) unsupported, not skipped', () => {
-    const blockers = detectLevelUpRequiredChoices(ranger(5)).filter(
-      (c) => c.status === 'unsupported',
-    );
-    expect(blockers.map((c) => c.kind)).toContain('class-feature-choice');
-    expect(blockers.map((c) => c.id)).toContain(
-      'level.6.feature-improvement.favored-enemy-and-natural-explorer-improvements',
-    );
-  });
 });
 
 describe('level-up expertise (eshyra-ug4i.1)', () => {
@@ -919,5 +909,179 @@ describe('sheet featureChoices persistence', () => {
       ).toThrow(/featureChoices/);
     }
     db.close();
+  });
+});
+
+describe('feature improvements (eshyra-ghzh.1)', () => {
+  const FE = 'feature:ranger:favored-enemy';
+  const NE = 'feature:ranger:natural-explorer';
+  const ENEMY6 = 'level.6.feature.ranger-favored-enemy.favored-enemy';
+  const TERRAIN6 = 'level.6.feature.ranger-natural-explorer.favored-terrain';
+  const TERRAIN10 = 'level.10.feature.ranger-natural-explorer.favored-terrain';
+  const level1 = [
+    held(FE, 'favored-enemy', ['undead'], 1),
+    held(NE, 'favored-terrain', ['forest'], 1),
+  ];
+  const ranger = (
+    level: number,
+    featureChoices: CharacterSheet['featureChoices'] = level1,
+  ) =>
+    buildSheet({
+      classKey: 'class:ranger',
+      className: 'Ranger',
+      level,
+      featureChoices,
+    });
+
+  it('offers Ranger 6 two supported picks excluding held level-1 options', () => {
+    const choices = detectLevelUpRequiredChoices(ranger(5));
+    expect(choices.filter((c) => c.status === 'unsupported')).toEqual([]);
+    const enemy = choices.find((c) => c.id === ENEMY6);
+    const terrain = choices.find((c) => c.id === TERRAIN6);
+    expect(enemy).toMatchObject({ status: 'supported', choose: 1 });
+    expect(enemy?.from).not.toContain('undead');
+    expect(enemy?.from).toContain('beasts');
+    expect(terrain?.from).not.toContain('forest');
+    expect(terrain?.from).toContain('desert');
+  });
+
+  it('applies Ranger 5->6 as separate level-6 entries and records the dispositions', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save('pc-1', ranger(5));
+    const result = applyLevelUp(db, {
+      store,
+      resolver: withoutSpellGrowth(5),
+      choices: { [ENEMY6]: ['beasts'], [TERRAIN6]: ['desert'] },
+      ...APPLY,
+    });
+    expect(result.sheet.featureChoices).toEqual([
+      ...level1,
+      held(FE, 'favored-enemy', ['beasts'], 6),
+      held(NE, 'favored-terrain', ['desert'], 6),
+    ]);
+    expect(result.changeSet.featureImprovements).toEqual([
+      expect.objectContaining({
+        label: 'Favored Enemy and Natural Explorer improvements',
+        targetRefs: [FE, NE],
+        disposition: 'player-decision',
+      }),
+    ]);
+    expect(result.changeSet.choicesApplied?.map((c) => c.id)).toEqual(
+      expect.arrayContaining([ENEMY6, TERRAIN6]),
+    );
+    expect(listProgressionEvents(db)[0]?.appliedChanges).toMatchObject({
+      featureImprovements: [{ disposition: 'player-decision' }],
+    });
+    db.close();
+  });
+
+  it('refuses re-picking a held option with a reason', () => {
+    const result = previewLevelUpChangeSet(ranger(5), {
+      resolver: withoutSpellGrowth(5),
+      choices: { [ENEMY6]: ['undead'], [TERRAIN6]: ['desert'] },
+    });
+    expect(result.ok).toBe(false);
+    const refused = result.ok
+      ? undefined
+      : result.requiredChoices.find((c) => c.id === ENEMY6);
+    expect(refused?.reason).toContain("'undead' is not a legal option");
+  });
+
+  it('asks only for terrain at Ranger 10, excluding earlier level-6 picks', () => {
+    const sheet = ranger(9, [
+      ...level1,
+      held(NE, 'favored-terrain', ['desert'], 6),
+    ]);
+    const choices = detectLevelUpRequiredChoices(sheet);
+    const terrain = choices.find((c) => c.id === TERRAIN10);
+    expect(terrain?.from).not.toContain('forest');
+    expect(terrain?.from).not.toContain('desert');
+    expect(choices.some((c) => c.id.includes('favored-enemy'))).toBe(false);
+    expect(choices.filter((c) => c.status === 'unsupported')).toEqual([]);
+  });
+
+  it('lets a legacy ranger sheet with no level-1 pick level 5->6 with nothing excluded', () => {
+    const sheet = buildSheet({
+      classKey: 'class:ranger',
+      className: 'Ranger',
+      level: 5,
+    });
+    const enemy = detectLevelUpRequiredChoices(sheet).find(
+      (c) => c.id === ENEMY6,
+    );
+    expect(enemy?.from).toContain('undead');
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save('pc-1', sheet);
+    const result = applyLevelUp(db, {
+      store,
+      resolver: withoutSpellGrowth(5),
+      choices: { [ENEMY6]: ['undead'], [TERRAIN6]: ['forest'] },
+      ...APPLY,
+    });
+    expect(result.sheet.featureChoices).toEqual([
+      held(FE, 'favored-enemy', ['undead'], 6),
+      held(NE, 'favored-terrain', ['forest'], 6),
+    ]);
+    db.close();
+  });
+
+  it('levels Druid 3->4 through the Wild Shape improvement as model-adjudicated', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save(
+      'pc-1',
+      buildSheet({ classKey: 'class:druid', className: 'Druid', level: 3 }),
+    );
+    const result = applyLevelUp(db, {
+      store,
+      resolver: withoutSpellGrowth(3),
+      choices: {
+        'level.4.ability-score-improvement': ['Wisdom', 'Constitution'],
+      },
+      ...APPLY,
+    });
+    expect(result.sheet.level).toBe(4);
+    expect(result.changeSet.featureImprovements).toEqual([
+      {
+        label: 'Wild Shape improvement',
+        targetRefs: ['feature:druid:wild-shape'],
+        disposition: 'model-adjudicated',
+      },
+    ]);
+    db.close();
+  });
+
+  it('keeps an unrecognized improvement blocked, naming its label and targets', () => {
+    const stub: RulesPackCharacterResolver = {
+      ...bundled,
+      resolveClassLevel(classKey, level) {
+        const row = bundled.resolveClassLevel(classKey, level);
+        if (!row.ok || level !== 6) return row;
+        return {
+          ok: true,
+          record: {
+            ...row.record,
+            featureImprovements: [
+              {
+                label: 'Mystery improvement',
+                targetRefs: ['feature:ranger:unknown-thing'],
+              },
+            ],
+          },
+        };
+      },
+    };
+    const result = previewLevelUpChangeSet(ranger(5), { resolver: stub });
+    expect(result.ok).toBe(false);
+    const blocker = result.ok
+      ? undefined
+      : result.requiredChoices.find((c) => c.status === 'unsupported');
+    expect(blocker?.id).toBe('level.6.feature-improvement.mystery-improvement');
+    expect(blocker?.unsupportedReason).toContain('Mystery improvement');
+    expect(blocker?.unsupportedReason).toContain(
+      'feature:ranger:unknown-thing',
+    );
   });
 });

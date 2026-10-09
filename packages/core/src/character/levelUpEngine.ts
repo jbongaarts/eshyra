@@ -80,7 +80,9 @@ import {
 } from './levelUpExpertise.js';
 import {
   applyFeatureChoicesToSheet,
+  classifyFeatureImprovements,
   detectFeatureChoiceDescriptors,
+  detectFeatureImprovementDescriptors,
   resolveFeatureChoiceSelection,
 } from './levelUpFeatureChoices.js';
 import {
@@ -166,6 +168,12 @@ export interface LevelUpChangeSet {
   readonly spellSelections?: LevelUpSpellSelections;
   /** Supported level-up choices applied as part of this step. */
   readonly choicesApplied?: readonly LevelUpAppliedChoice[];
+  /**
+   * How each typed `featureImprovement` row of the target level was
+   * dispositioned (eshyra-ghzh.1). Player-decision picks are also in
+   * {@link choicesApplied}; model-adjudicated effects stay DM-adjudicated.
+   */
+  readonly featureImprovements?: readonly LevelUpFeatureImprovement[];
   readonly abilityScoreIncreases?: readonly AppliedAbilityScoreIncrease[];
   readonly savingThrows?: Readonly<
     Record<
@@ -173,6 +181,13 @@ export interface LevelUpChangeSet {
       LevelUpDelta<SavingThrowDerived>
     >
   >;
+}
+
+/** One dispositioned `featureImprovement` row recorded in the change set. */
+export interface LevelUpFeatureImprovement {
+  readonly label: string;
+  readonly targetRefs: readonly string[];
+  readonly disposition: 'player-decision' | 'model-adjudicated';
 }
 
 export type LevelUpHitPointChoice =
@@ -661,6 +676,7 @@ export function computeLevelUpChangeSet(
       },
     },
     featuresGained: [...row.featureRefs, ...existingSubclassFeatureRefs],
+    ...featureImprovementChanges(row.featureImprovements, resolver),
     ...spellcastingChanges(
       sheet,
       classResult.record,
@@ -874,8 +890,23 @@ export function detectLevelUpRequiredChoices(
       toLevel,
       resolver,
     ),
-    ...featureImprovementChoices(toRow.featureImprovements, toLevel),
   );
+  const improvements = detectFeatureImprovementDescriptors(
+    {
+      sheet,
+      classKey,
+      fromLevel: sheet.level,
+      toLevel,
+      targetFeatureRefs,
+      heldFeatureRefs,
+      invocationsKnown: { from: undefined, to: undefined },
+      resolver,
+      selections,
+    },
+    toRow.featureImprovements,
+  );
+  choices.push(...improvements.choices);
+  for (const key of improvements.handledInstances) handled.add(key);
 
   const spells = detectSpellDescriptors({
     sheet,
@@ -937,21 +968,20 @@ function subclassFeatureSlotChoices(
   return choices;
 }
 
-function featureImprovementChoices(
+function featureImprovementChanges(
   improvements: readonly ResolvedFeatureImprovement[],
-  toLevel: number,
-): readonly LevelUpRequiredChoice[] {
-  return improvements.map((improvement) => ({
-    id: `level.${toLevel}.feature-improvement.${slug(improvement.label)}`,
-    kind: 'class-feature-choice',
-    status: 'unsupported',
-    label: improvement.label,
-    reason:
-      `level ${toLevel} improves ${improvement.targetRefs.join(', ')} ` +
-      `('${improvement.label}')`,
-    unsupportedReason:
-      'Feature improvements change an existing feature; deterministic application of the level-specific change is not implemented yet.',
-  }));
+  resolver: RulesPackCharacterResolver,
+): { readonly featureImprovements?: readonly LevelUpFeatureImprovement[] } {
+  const recorded: LevelUpFeatureImprovement[] = [];
+  for (const row of classifyFeatureImprovements(improvements, resolver)) {
+    if (row.disposition === 'unsupported') continue; // blocks via its descriptor
+    recorded.push({
+      label: row.label,
+      targetRefs: row.targetRefs,
+      disposition: row.disposition,
+    });
+  }
+  return recorded.length > 0 ? { featureImprovements: recorded } : {};
 }
 
 function slug(value: string): string {
