@@ -23,9 +23,10 @@ export const flexibleCastingTool: Tool = {
     'long rest), "convert-slot" expends an available slot of slotLevel to ' +
     'regain that many sorcery points (never above the maximum). Costs and ' +
     'limits come from the rules pack; the engine refuses an unaffordable or ' +
-    'illegal request. Both take a bonus action, which this tool does not ' +
-    'consume: track it with the turn-resource tool in combat. Created slots ' +
-    'are spent before ordinary ones by spend_spell_slot.',
+    'illegal request. Both take a bonus action: in active combat this ' +
+    "tool spends the character's bonus action itself (refusing off-turn or " +
+    'if it is already used), so do NOT also call spend_turn_resource; ' +
+    'outside combat nothing is consumed. Created slots are spent before ordinary ones by spend_spell_slot.',
   inputSchema: {
     type: 'object',
     properties: {
