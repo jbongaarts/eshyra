@@ -130,6 +130,18 @@ describe('enumerateLevel1RequiredChoices', () => {
     expect(spells?.label).toMatch(/Wisdom modifier \+ level/i);
   });
 
+  it("offers every SRD skill for an open 'any' class skill choice (Bard)", () => {
+    const choices = enumerateLevel1RequiredChoices({
+      classData: classData('Bard'),
+    });
+    const skills = byId(choices, 'class.skills');
+    expect(skills?.choose).toBe(3);
+    expect(skills?.from).toHaveLength(18);
+    expect(skills?.from).toEqual(
+      expect.arrayContaining(['Perception', 'Sleight of Hand']),
+    );
+  });
+
   it('marks a known caster cantrips and spells both structured', () => {
     const choices = enumerateLevel1RequiredChoices({
       classData: classData('Bard'),
