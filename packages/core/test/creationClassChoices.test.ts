@@ -79,6 +79,19 @@ function spellNames(className: string, level: number, n: number): string[] {
     .map((spell) => spell.name);
 }
 
+/** Legal level-1 spell counts for a caster (first N cantrips / level-1 spells). */
+function withSpells(
+  draft: CharacterDraft,
+  className: string,
+  cantrips: number,
+  level1: number,
+): CharacterDraft {
+  return engine.setSpells(draft, [
+    ...spellNames(className, 0, cantrips),
+    ...spellNames(className, 1, level1),
+  ]);
+}
+
 function finalize(draft: CharacterDraft): CharacterSheet {
   const result = finalizeCharacterDraft(draft, META);
   if (!result.ok) {
@@ -453,6 +466,9 @@ describe('finalized level-1 characters', () => {
         ...spellNames(className, 0, spells.cantrips),
         ...spellNames(className, 1, spells.level1),
       ]);
+      if (className === 'Wizard') {
+        draft = engine.setPreparedSpells(draft, spellNames(className, 1, 1));
+      }
       const sheet = finalize(draft);
 
       // Choices persist exactly as level-up persists them.
@@ -532,7 +548,12 @@ describe('finalized level-1 characters', () => {
       expect.arrayContaining(['spell:bless', 'spell:cure-wounds']),
     );
     const warlock = finalize(
-      fill(baseDraft('Warlock'), { 'class.subclass': ['The Fiend'] }),
+      withSpells(
+        fill(baseDraft('Warlock'), { 'class.subclass': ['The Fiend'] }),
+        'Warlock',
+        2,
+        2,
+      ),
     );
     expect(warlock.spellcasting?.alwaysPrepared).toBeUndefined();
   });
@@ -565,9 +586,14 @@ describe('finalized level-1 characters', () => {
     expect(expertise?.optionIds).toHaveLength(2);
 
     const sorcerer = finalize(
-      fill(baseDraft('Sorcerer'), {
-        'class.subclass': ['Draconic Bloodline'],
-      }),
+      withSpells(
+        fill(baseDraft('Sorcerer'), {
+          'class.subclass': ['Draconic Bloodline'],
+        }),
+        'Sorcerer',
+        4,
+        2,
+      ),
     );
     expect(sorcerer.subclass).toEqual({
       key: 'subclass:draconic-bloodline',
