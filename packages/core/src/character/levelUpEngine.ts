@@ -643,6 +643,7 @@ export function previewLevelUpChangeSet(
     LevelUpChangeSet,
     'alwaysPrepared' | 'preparedRemoved'
   > = {};
+  let targetAlwaysPrepared: readonly string[] = [];
   {
     let computed: ReturnType<typeof computeAlwaysPrepared>;
     try {
@@ -671,18 +672,26 @@ export function previewLevelUpChangeSet(
     const differs =
       computed.refs.length !== from.length ||
       computed.refs.some((ref, i) => ref !== from[i]);
-    if (differs) {
-      const prepared =
-        spellSelections?.resulting.prepared ?? sheet.spellcasting?.prepared;
-      const removed = (prepared ?? []).filter((ref) =>
-        computed.refs.includes(ref),
-      );
-      alwaysChange = {
-        alwaysPrepared: { from: [...from], to: [...computed.refs] },
-        ...(removed.length > 0 ? { preparedRemoved: removed } : {}),
-      };
-    }
+    // Prepared and always-prepared stay disjoint on EVERY level-up, whether or
+    // not the grant list changed (an always-prepared spell never counts
+    // against the preparation limit).
+    const base = spellSelections?.resulting ?? sheet.spellcasting;
+    const removed = (base?.prepared ?? []).filter((ref) =>
+      computed.refs.includes(ref),
+    );
+    alwaysChange = {
+      ...(differs
+        ? { alwaysPrepared: { from: [...from], to: [...computed.refs] } }
+        : {}),
+      ...(removed.length > 0 ? { preparedRemoved: removed } : {}),
+    };
+    targetAlwaysPrepared = computed.refs;
   }
+  // The published `resulting` is exactly the spellcasting apply persists.
+  const finalSpellSelections =
+    spellSelections !== undefined
+      ? normalizeSpellSelections(spellSelections, targetAlwaysPrepared)
+      : undefined;
   return {
     ok: true,
     requiredChoices,
@@ -692,7 +701,9 @@ export function previewLevelUpChangeSet(
         sheet,
         resolver,
       ),
-      ...(spellSelections !== undefined ? { spellSelections } : {}),
+      ...(finalSpellSelections !== undefined
+        ? { spellSelections: finalSpellSelections }
+        : {}),
       ...alwaysChange,
     },
   };
@@ -1705,29 +1716,64 @@ function spellStateAfterLevelUp(
   sheet: CharacterSheet,
   changeSet: LevelUpChangeSet,
 ): Pick<CharacterSheet, 'spellcasting' | 'spells'> | Record<string, never> {
+  // Preview already normalized `resulting`; persist it verbatim.
+  if (changeSet.spellSelections !== undefined) {
+    const resulting = changeSet.spellSelections.resulting;
+    return { spellcasting: resulting, spells: [...spellsUnion(resulting)] };
+  }
   if (
-    changeSet.spellSelections === undefined &&
-    changeSet.alwaysPrepared === undefined
+    changeSet.alwaysPrepared === undefined &&
+    changeSet.preparedRemoved === undefined
   ) {
     return {};
   }
-  const base: CharacterSpellcasting = changeSet.spellSelections?.resulting ??
-    sheet.spellcasting ?? { cantrips: [] };
-  if (changeSet.alwaysPrepared === undefined) {
-    return { spellcasting: base, spells: [...spellsUnion(base)] };
-  }
-  const always = changeSet.alwaysPrepared.to;
+  const spellcasting = withAlwaysPrepared(
+    sheet.spellcasting ?? { cantrips: [] },
+    changeSet.alwaysPrepared?.to ?? sheet.spellcasting?.alwaysPrepared ?? [],
+  );
+  return { spellcasting, spells: [...spellsUnion(spellcasting)] };
+}
+
+/** `base` with `alwaysPrepared` set to `always` and those refs removed from
+ *  the ordinary `prepared` bucket (eshyra-kn38). */
+function withAlwaysPrepared(
+  base: CharacterSpellcasting,
+  always: readonly string[],
+): CharacterSpellcasting {
   const { alwaysPrepared: _stale, ...rest } = base;
   const prepared =
     base.prepared !== undefined
       ? base.prepared.filter((ref) => !always.includes(ref))
       : undefined;
-  const spellcasting: CharacterSpellcasting = {
+  return {
     ...rest,
     ...(prepared !== undefined ? { prepared } : {}),
     ...(always.length > 0 ? { alwaysPrepared: [...always] } : {}),
   };
-  return { spellcasting, spells: [...spellsUnion(spellcasting)] };
+}
+
+/** Spell selections whose `resulting` (and recorded prepared additions) reflect
+ *  the target always-prepared list, so the change set never contradicts the
+ *  persisted sheet. */
+function normalizeSpellSelections(
+  selections: LevelUpSpellSelections,
+  always: readonly string[],
+): LevelUpSpellSelections {
+  const prepared = selections.changes.prepared;
+  return {
+    ...selections,
+    changes:
+      prepared === undefined
+        ? selections.changes
+        : {
+            ...selections.changes,
+            prepared: {
+              added: prepared.added.filter((ref) => !always.includes(ref)),
+              removed: prepared.removed,
+            },
+          },
+    resulting: withAlwaysPrepared(selections.resulting, always),
+  };
 }
 
 function applyAbilityScoreIncreases(
