@@ -38,7 +38,11 @@ export const transitionBondedSummonTool: Tool = {
     '(start_effect, then start_encounter). Permanent dismissal of a ' +
     'familiar that already vanished at 0 hit points is refused: the source ' +
     'is ambiguous about it. A pocketed creature takes no part in combat and ' +
-    'cannot be changed or admitted by start_encounter until recalled. This ' +
+    'cannot be changed or admitted by start_encounter until recalled. When ' +
+    'a creature leaves a combat instance, every round timer anchored to its ' +
+    'own turns (anchor target-turn-start or source-turn-start) expires and ' +
+    'is reported in timersExpired; a recalled creature does not resume them. ' +
+    'This ' +
     'spends NO action: in combat spend the caster’s action with ' +
     'spend_turn_resource. A recalled familiar rolls its own initiative; ' +
     'initiative is narrated, not tracked. Refused when the effect ended or ' +

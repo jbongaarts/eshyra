@@ -424,6 +424,134 @@ describe('transition_bonded_summon: Find Familiar in combat', () => {
   });
 });
 
+describe('transition_bonded_summon: participant-turn clocks of the leaving combatant (eshyra-q16x)', () => {
+  const ward = (
+    s: ReturnType<typeof setup>,
+    effectId: string,
+    anchor: 'target-turn-start' | 'source-turn-start',
+    combatantId: string,
+  ) =>
+    s.must('start_effect', {
+      effectId,
+      kind: 'condition-package',
+      displayName: effectId,
+      source:
+        anchor === 'source-turn-start'
+          ? { kind: 'ruling', actor: { kind: 'combatant', ref: combatantId } }
+          : { kind: 'ruling' },
+      ...(anchor === 'target-turn-start'
+        ? { targets: [{ kind: 'combatant', ref: combatantId }] }
+        : {}),
+      duration: { kind: 'timed', amount: 1, unit: 'round', anchor },
+    });
+
+  it('expires clocks anchored to a pocketed familiar; other effects survive and turns and closure advance', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    s.must('begin_turn', { combatantId: 'c-wiz', round: 1 });
+    ward(s, 'fam-target-clock', 'target-turn-start', 'c-fam');
+    ward(s, 'fam-source-clock', 'source-turn-start', 'c-fam');
+    ward(s, 'wiz-target-clock', 'target-turn-start', 'c-wiz');
+    s.must('start_effect', {
+      effectId: 'fam-lasting',
+      kind: 'condition-package',
+      displayName: 'fam-lasting',
+      source: { kind: 'ruling' },
+      targets: [{ kind: 'combatant', ref: 'c-fam' }],
+      duration: { kind: 'until-removed' },
+    });
+
+    const d = s.must('transition_bonded_summon', {
+      effectId: 'fam-fx',
+      spellRef: 'spell:find-familiar',
+      trigger: 'action-temporary-dismissal',
+    });
+    expect(d.data).toMatchObject({
+      combatantLeft: 'c-fam',
+      timersExpired: [
+        { effectId: 'fam-source-clock' },
+        { effectId: 'fam-target-clock' },
+      ],
+    });
+    for (const id of ['fam-target-clock', 'fam-source-clock']) {
+      expect(s.effect(id)).toMatchObject({
+        status: 'ended',
+        endReason: 'expired',
+      });
+    }
+    // A clock on a participant still in play is untouched, and a lasting
+    // effect on the familiar follows it to the campaign actor.
+    expect(s.effect('wiz-target-clock').status).toBe('active');
+    expect(s.effect('fam-lasting')).toMatchObject({ status: 'active' });
+    expect(
+      s.effect('fam-lasting').targets.map((t) => [t.kind, t.ref, t.status]),
+    ).toEqual([['campaign_actor', 'fam', 'active']]);
+    expect(
+      listEffectEvents(s.db, campaign, 'fam-fx').find(
+        (e) => e.eventKind === 'presence-transition',
+      )?.detail,
+    ).toMatchObject({
+      timersExpired: ['fam-source-clock', 'fam-target-clock'],
+    });
+
+    // The turn boundary validates every participant clock in the instance:
+    // before the fix the retained combatant anchor refused here.
+    const next = s.must('begin_turn', { combatantId: 'c-wiz', round: 2 });
+    expect(JSON.stringify(next.data)).toContain('wiz-target-clock');
+    expect(s.effect('wiz-target-clock').status).toBe('ended');
+    s.must('transition_bonded_summon', {
+      effectId: 'fam-fx',
+      spellRef: 'spell:find-familiar',
+      trigger: 'action-recall',
+    });
+    s.must('close_combat_instance', { status: 'completed' });
+    expect(auditActiveEffectIntegrity(s.db, campaign)).toEqual([]);
+  });
+
+  it.each([
+    ['fam-fx', 'spell:find-familiar', 'action-permanent-dismissal', 'c-fam'],
+    ['steed-fx', 'spell:find-steed', 'action-dismissal', 'c-steed'],
+    ['steed-fx', 'spell:find-steed', 'action-release', 'c-steed'],
+  ])(
+    '%s %s: a target-turn clock on the leaving combatant expires and combat still advances and closes',
+    (effectId, spellRef, trigger, combatantId) => {
+      const s = setup();
+      s.bond(effectId, combatantId.slice(2));
+      s.must('begin_turn', { combatantId: 'c-wiz', round: 1 });
+      ward(s, 'clock', 'target-turn-start', combatantId);
+      const r = s.must('transition_bonded_summon', {
+        effectId,
+        spellRef,
+        trigger,
+      });
+      // Before the fix both refused: the anchor kept naming the combatant while
+      // the target moved to the campaign actor.
+      s.must('begin_turn', { combatantId: 'c-wiz', round: 2 });
+      s.must('close_combat_instance', { status: 'completed' });
+      expect(r.data).toMatchObject({ timersExpired: [{ effectId: 'clock' }] });
+      expect(s.effect('clock')).toMatchObject({
+        status: 'ended',
+        endReason: 'expired',
+      });
+      expect(auditActiveEffectIntegrity(s.db, campaign)).toEqual([]);
+    },
+  );
+
+  it('a transition with no clock on the leaving combatant reports none', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    s.must('begin_turn', { combatantId: 'c-wiz', round: 1 });
+    ward(s, 'wiz-target-clock', 'target-turn-start', 'c-wiz');
+    const r = s.must('transition_bonded_summon', {
+      effectId: 'fam-fx',
+      spellRef: 'spell:find-familiar',
+      trigger: 'action-temporary-dismissal',
+    });
+    expect(r.data).not.toHaveProperty('timersExpired');
+    expect(s.effect('wiz-target-clock').status).toBe('active');
+  });
+});
+
 describe('transition_bonded_summon: Find Steed', () => {
   it('action-dismissal in combat: combatant and actor absent, bond active; a recast restores it at maximum HP', () => {
     const s = setup();
