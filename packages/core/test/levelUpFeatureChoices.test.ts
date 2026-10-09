@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 import {
   applyLevelUp,
   type CharacterSheet,
+  characterExpertise,
   createSqliteCharacterSheetStore,
   detectLevelUpRequiredChoices,
   getBundledDnd5eCharacterResolver,
@@ -44,6 +45,8 @@ function buildSheet(o: {
   subclass?: { key: string; name: string };
   featureChoices?: CharacterSheet['featureChoices'];
   spells?: readonly string[];
+  skills?: readonly string[];
+  tools?: readonly string[];
 }): CharacterSheet {
   const abilityScores = {} as CharacterSheet['abilityScores'];
   const savingThrows = {} as CharacterSheet['savingThrows'];
@@ -66,8 +69,8 @@ function buildSheet(o: {
     proficiencyBonus: 2,
     maxHitPoints: 30,
     savingThrows,
-    skillProficiencies: [],
-    toolProficiencies: [],
+    skillProficiencies: [...(o.skills ?? [])],
+    toolProficiencies: [...(o.tools ?? [])],
     armorProficiencies: [],
     weaponProficiencies: [],
     equipment: [],
@@ -705,17 +708,160 @@ describe('hunter options and unsupported growth', () => {
       'level.6.feature-improvement.favored-enemy-and-natural-explorer-improvements',
     );
   });
+});
 
-  it('keeps expertise unsupported', () => {
-    const bard = buildSheet({
+describe('level-up expertise (eshyra-ug4i.1)', () => {
+  const ROGUE_6 = 'level.6.feature.rogue-expertise.expertise';
+  const BARD_3 = 'level.3.feature.bard-expertise.expertise';
+  const BARD_10 = 'level.10.feature.bard-expertise.expertise';
+  const SKILLS = ['Acrobatics', 'Stealth', 'Perception', 'Deception'];
+  const rogue = (extra: Partial<Parameters<typeof buildSheet>[0]> = {}) =>
+    buildSheet({
+      classKey: 'class:rogue',
+      className: 'Rogue',
+      level: 5,
+      skills: SKILLS,
+      tools: ['Thieves’ tools'],
+      ...extra,
+    });
+  const bard = (
+    level: number,
+    extra: Partial<Parameters<typeof buildSheet>[0]> = {},
+  ) =>
+    buildSheet({
       classKey: 'class:bard',
       className: 'Bard',
-      level: 2,
+      level,
+      skills: SKILLS,
+      tools: ["Thieves' tools"],
+      ...extra,
     });
-    expect(
-      detectLevelUpRequiredChoices(bard).find((c) => c.kind === 'expertise')
-        ?.status,
-    ).toBe('unsupported');
+  const rogueExpertise = held(
+    'feature:rogue:expertise',
+    'expertise',
+    ['skill:Stealth', 'tool:thieves-tools'],
+    1,
+  );
+
+  it('offers a rogue at 6 the held skills and thieves tools minus level-1 expertise', () => {
+    const choice = detectLevelUpRequiredChoices(
+      rogue({ featureChoices: [rogueExpertise] }),
+    ).find((c) => c.id === ROGUE_6);
+    expect(choice).toMatchObject({
+      kind: 'expertise',
+      status: 'supported',
+      choose: 2,
+      featureRef: 'feature:rogue:expertise',
+      featureChoice: {
+        featureRef: 'feature:rogue:expertise',
+        choiceId: 'expertise',
+      },
+    });
+    expect(choice?.from).toEqual([
+      'skill:Acrobatics',
+      'skill:Perception',
+      'skill:Deception',
+    ]);
+    const fresh = detectLevelUpRequiredChoices(rogue()).find(
+      (c) => c.id === ROGUE_6,
+    );
+    expect(fresh?.options?.map((o) => [o.id, o.name])).toContainEqual([
+      'tool:thieves-tools',
+      'Thieves’ tools',
+    ]);
+  });
+
+  it('no longer emits the legacy unsupported expertise descriptor', () => {
+    for (const choices of [
+      detectLevelUpRequiredChoices(rogue()),
+      detectLevelUpRequiredChoices(bard(2)),
+      detectLevelUpRequiredChoices(bard(9)),
+    ]) {
+      expect(choices.filter((c) => c.kind === 'expertise')).toHaveLength(1);
+      expect(choices.find((c) => c.kind === 'expertise')?.status).toBe(
+        'supported',
+      );
+      expect(choices.some((c) => /^level\.\d+\.expertise$/.test(c.id))).toBe(
+        false,
+      );
+    }
+  });
+
+  it('persists a valid rogue pick on the sheet and in the ledger row', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    store.save('pc-1', rogue({ featureChoices: [rogueExpertise] }));
+    const picks = ['skill:Perception', 'skill:Deception'];
+    const result = applyLevelUp(db, {
+      store,
+      choices: { [ROGUE_6]: picks },
+      ...APPLY,
+    });
+    expect(result.sheet.featureChoices).toEqual([
+      rogueExpertise,
+      held('feature:rogue:expertise', 'expertise', picks, 6),
+    ]);
+    expect(store.load('pc-1')?.featureChoices).toEqual(
+      result.sheet.featureChoices,
+    );
+    expect(listProgressionEvents(db)[0]?.appliedChanges).toMatchObject({
+      choicesApplied: [
+        { id: ROGUE_6, kind: 'expertise', featureChoice: { level: 6 } },
+      ],
+    });
+    db.close();
+  });
+
+  it('refuses non-held, already-expert, duplicate and wrong-count picks with a reason', () => {
+    const sheet = rogue({ featureChoices: [rogueExpertise] });
+    const refused = (picks: string[]) =>
+      blockerFor(sheet, { [ROGUE_6]: picks }, ROGUE_6)?.reason;
+    expect(refused(['skill:Perception', 'skill:Arcana'])).toMatch(
+      /'skill:Arcana' is not an eligible/,
+    );
+    expect(refused(['skill:Perception', 'skill:Stealth'])).toMatch(
+      /'skill:Stealth' is not an eligible/,
+    );
+    expect(refused(['skill:Perception', 'skill:Perception'])).toMatch(
+      /distinct/,
+    );
+    expect(refused(['skill:Perception'])).toMatch(/exactly 2/);
+    expect(refused([])).toMatch(/exactly 2/);
+    expect(refused(['skill:Perception', 'skill:Deception'])).toBeUndefined();
+  });
+
+  it('gives a bard first-grant expertise with skills only, even holding thieves tools', () => {
+    const choice = detectLevelUpRequiredChoices(bard(2)).find(
+      (c) => c.id === BARD_3,
+    );
+    expect(choice).toMatchObject({ status: 'supported', choose: 2 });
+    expect(choice?.from).toEqual(SKILLS.map((s) => `skill:${s}`));
+  });
+
+  it('repeats at bard 10 for two more, excluding the level-3 picks', () => {
+    const level3 = held(
+      'feature:bard:expertise',
+      'expertise',
+      ['skill:Stealth', 'skill:Deception'],
+      3,
+    );
+    const sheet = bard(9, { featureChoices: [level3] });
+    const choice = detectLevelUpRequiredChoices(sheet).find(
+      (c) => c.id === BARD_10,
+    );
+    expect(choice).toMatchObject({ status: 'supported', choose: 2 });
+    expect(choice?.from).toEqual(['skill:Acrobatics', 'skill:Perception']);
+    expect(characterExpertise(sheet)).toEqual(
+      new Set(['skill:Stealth', 'skill:Deception']),
+    );
+  });
+
+  it('fails closed, never auto-picking, when too few proficiencies are held', () => {
+    const choice = detectLevelUpRequiredChoices(
+      bard(2, { skills: ['Arcana'] }),
+    ).find((c) => c.id === BARD_3);
+    expect(choice?.status).toBe('unsupported');
+    expect(choice?.unsupportedReason).toMatch(/needs 2 eligible/);
   });
 });
 

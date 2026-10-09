@@ -382,6 +382,8 @@ export {
   LevelUpRequiredChoicesError,
   previewLevelUpChangeSet,
 } from './character/levelUpEngine.js';
+// Level-up expertise picks (eshyra-ug4i.1).
+export { characterExpertise } from './character/levelUpExpertise.js';
 // Level-up spell selection (eshyra-ug4i.2).
 export type {
   AppliedSpellChoice,
