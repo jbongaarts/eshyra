@@ -60,6 +60,11 @@
 // turn budget in `actionEconomy.ts` (encounter-scoped, reset by beginTurn),
 // not here: these counters are cross-session durable state.
 
+import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
+import {
+  getBundledDnd5eCharacterResolver,
+  type ResolvedClassLevel,
+} from '../character/rulesPackResolver.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
@@ -67,6 +72,12 @@ import {
   type CampaignRulesPackResolver,
   lookupCampaignRecord,
 } from './campaignRecordLookup.js';
+import {
+  type ClassResourceBinding,
+  classResourceBindingsFor,
+  classResourceCapacity,
+  findClassResourceBinding,
+} from './classResources.js';
 import type { LifeState } from './hpLifecycle.js';
 import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 import {
@@ -155,6 +166,15 @@ export interface SpendUsageResult {
   readonly counter: UsageCounter;
   /** Set when the spend consumed the last use: how the ability comes back. */
   readonly depletedHint?: string;
+}
+
+/** A pack-bound class resource with no cap at this level (Barbarian 20
+ *  Rage): the spend succeeded without consuming or creating a counter. */
+export interface SpendUsageUnlimitedResult {
+  readonly unlimited: true;
+  readonly counter?: undefined;
+  readonly displayName: string;
+  readonly note: string;
 }
 
 export interface RestoreUsageInput extends UsageMutationContext {
@@ -685,6 +705,8 @@ interface CounterTarget {
   counterLabel: string;
   counterKey: string;
   create?: CounterCreate;
+  /** Pack-bound class resource with no cap at this level. */
+  unlimited?: { displayName: string };
 }
 
 /** Verify possession and name an item's charge counter: the counter is
@@ -855,6 +877,11 @@ function resolveCounterTarget(
     }
   }
 
+  const bound = resolveBoundClassResource(db, resolved, input.ability);
+  if (bound !== undefined) {
+    return resolvePackBoundTarget(db, campaignId, resolved, input, bound);
+  }
+
   // Character ability: no structured pack source yet, so the economy is
   // declared once (validated) and durable thereafter.
   const counterKey = `ability:${normalizeAbilityName(input.ability)}`;
@@ -883,6 +910,246 @@ function resolveCounterTarget(
     counterKey,
     create: declaredCreate(input.ability, input.declared),
   };
+}
+
+interface BoundClassResource {
+  readonly binding: ClassResourceBinding;
+  readonly row: ResolvedClassLevel;
+  readonly level: number;
+}
+
+/** The pack-bound class resource a character-ability spend names, when the
+ *  character's stored canonical sheet has the binding's class and the ability
+ *  name is one of its aliases. Characters without a sheet, of another class,
+ *  or naming another ability keep the declared-economy path. */
+function resolveBoundClassResource(
+  db: Db,
+  resolved: ResolvedOwner,
+  ability: string,
+): BoundClassResource | undefined {
+  if (resolved.owner.kind !== 'character') return undefined;
+  const normalized = normalizeAbilityName(ability);
+  const sheet = createSqliteCharacterSheetStore(db).load(resolved.owner.ref);
+  if (sheet === undefined) return undefined;
+  const binding = findClassResourceBinding(sheet.class.key, normalized);
+  if (binding === undefined) return undefined;
+  const row = getBundledDnd5eCharacterResolver().resolveClassLevel(
+    sheet.class.key,
+    sheet.level,
+  );
+  if (!row.ok) {
+    throw new UsageCounterError(
+      `cannot resolve ${binding.displayName} capacity for ${sheet.class.key} level ${sheet.level}: ${row.message}`,
+    );
+  }
+  return { binding, row: row.record, level: sheet.level };
+}
+
+function resolvePackBoundTarget(
+  db: Db,
+  campaignId: string,
+  resolved: ResolvedOwner,
+  input: { declared?: DeclaredUsageEconomy },
+  bound: BoundClassResource,
+): CounterTarget {
+  const { binding, row, level } = bound;
+  if (input.declared !== undefined) {
+    throw new UsageCounterError(
+      `${binding.displayName} capacity derives from the class table, not a declared economy; omit maxUses/reset`,
+    );
+  }
+  const capacity = classResourceCapacity(binding, row);
+  if (capacity.kind === 'none') {
+    throw new UsageCounterError(
+      `${resolved.ownerLabel} has no ${binding.displayName} at level ${level} per the class table; nothing to spend`,
+    );
+  }
+  const base = {
+    counterOwner: resolved.owner,
+    counterLabel: resolved.ownerLabel,
+    counterKey: binding.counterKey,
+  };
+  if (capacity.kind === 'unlimited') {
+    return { ...base, unlimited: { displayName: binding.displayName } };
+  }
+  // Adopt any legacy/alias counter and align it to the pack maximum.
+  const reconciled = reconcileBoundCounterRows(
+    db,
+    campaignId,
+    resolved.owner.ref,
+    binding,
+    capacity,
+  );
+  if (reconciled) return base;
+  return {
+    ...base,
+    create: {
+      displayName: binding.displayName,
+      usesMax: capacity.value,
+      resetKind: binding.reset,
+      source: 'record',
+    },
+  };
+}
+
+function boundCounterKeys(binding: ClassResourceBinding): string[] {
+  return [
+    binding.counterKey,
+    ...binding.aliases.map((alias) => `ability:${alias}`),
+  ].filter((key, index, all) => all.indexOf(key) === index);
+}
+
+/** Make every counter row for one bound resource (canonical or alias key, in
+ *  the given campaign — or every campaign when `campaignId` is undefined) a
+ *  single canonical `record` row at the pack maximum, preserving `uses_used`
+ *  (clamped, never restored). 'unlimited' deletes the rows. Returns whether a
+ *  row exists afterwards. */
+function reconcileBoundCounterRows(
+  db: Db,
+  campaignId: string | undefined,
+  characterId: string,
+  binding: ClassResourceBinding,
+  capacity: ReturnType<typeof classResourceCapacity>,
+  ctx?: UsageMutationContext,
+): boolean {
+  const keys = boundCounterKeys(binding);
+  const placeholders = keys.map(() => '?').join(', ');
+  const rows = db
+    .prepare(
+      `SELECT campaign_id, counter_key, uses_used FROM entity_usage_counter
+       WHERE owner_kind = 'character' AND owner_ref = ?
+         AND counter_key IN (${placeholders})
+         ${campaignId === undefined ? '' : 'AND campaign_id = ?'}
+       ORDER BY campaign_id, counter_key`,
+    )
+    .all(
+      characterId,
+      ...keys,
+      ...(campaignId === undefined ? [] : [campaignId]),
+    ) as {
+    campaign_id: string;
+    counter_key: string;
+    uses_used: number;
+  }[];
+  if (rows.length === 0) return false;
+  const del = db.prepare(
+    `DELETE FROM entity_usage_counter
+     WHERE campaign_id = ? AND owner_kind = 'character' AND owner_ref = ?
+       AND counter_key = ?`,
+  );
+  if (capacity.kind !== 'count') {
+    for (const row of rows) {
+      del.run(row.campaign_id, characterId, row.counter_key);
+    }
+    return false;
+  }
+  const byCampaign = new Map<string, typeof rows>();
+  for (const row of rows) {
+    byCampaign.set(row.campaign_id, [
+      ...(byCampaign.get(row.campaign_id) ?? []),
+      row,
+    ]);
+  }
+  for (const [campaign, group] of byCampaign) {
+    // One counter per resource: the most-spent legacy row wins the used count.
+    const used = Math.min(
+      Math.max(...group.map((row) => row.uses_used)),
+      capacity.value,
+    );
+    const canonical = group.some(
+      (row) => row.counter_key === binding.counterKey,
+    );
+    // Drop duplicate alias rows; the canonical row (or the first alias, which
+    // is rekeyed below) is the survivor.
+    const survivor = canonical
+      ? binding.counterKey
+      : (group[0]?.counter_key ?? binding.counterKey);
+    for (const row of group) {
+      if (row.counter_key !== survivor) {
+        del.run(campaign, characterId, row.counter_key);
+      }
+    }
+    if (canonical) {
+      db.prepare(
+        `UPDATE entity_usage_counter
+         SET display_name = ?, uses_max = ?, uses_used = ?, reset_kind = ?,
+             recharge_roll = NULL, recharge_minimum = NULL,
+             recharge_formula = NULL, source = 'record',
+             provenance = COALESCE(?, provenance),
+             session_id = COALESCE(?, session_id),
+             updated_at = COALESCE(?, updated_at)
+         WHERE campaign_id = ? AND owner_kind = 'character' AND owner_ref = ?
+           AND counter_key = ?`,
+      ).run(
+        binding.displayName,
+        capacity.value,
+        used,
+        binding.reset,
+        ctx?.provenance ?? null,
+        ctx?.sessionId ?? null,
+        ctx?.at ?? null,
+        campaign,
+        characterId,
+        binding.counterKey,
+      );
+    } else {
+      // Rekey the (single remaining or first) alias row to the canonical key.
+      db.prepare(
+        `UPDATE entity_usage_counter
+         SET counter_key = ?, display_name = ?, uses_max = ?, uses_used = ?,
+             reset_kind = ?, recharge_roll = NULL, recharge_minimum = NULL,
+             recharge_formula = NULL, source = 'record',
+             provenance = COALESCE(?, provenance),
+             session_id = COALESCE(?, session_id),
+             updated_at = COALESCE(?, updated_at)
+         WHERE campaign_id = ? AND owner_kind = 'character' AND owner_ref = ?
+           AND counter_key = ?`,
+      ).run(
+        binding.counterKey,
+        binding.displayName,
+        capacity.value,
+        used,
+        binding.reset,
+        ctx?.provenance ?? null,
+        ctx?.sessionId ?? null,
+        ctx?.at ?? null,
+        campaign,
+        characterId,
+        survivor,
+      );
+    }
+  }
+  return true;
+}
+
+/**
+ * Level-up reconciliation (eshyra-2llo.1): align every EXISTING pack-bound
+ * class-resource counter of `characterId` (any campaign) with the pack value
+ * at `row`'s level. New max = pack value; used is preserved and clamped (no
+ * free restoration); 'unlimited' deletes the counter. Characters with no
+ * counter are untouched — the first spend derives it. Runs inside the
+ * caller's transaction.
+ */
+export function reconcileClassResourceCounters(
+  db: Db,
+  input: UsageMutationContext & {
+    readonly characterId: string;
+    readonly classKey: string;
+    readonly row: Pick<ResolvedClassLevel, 'resources'>;
+  },
+): void {
+  for (const binding of classResourceBindingsFor(input.classKey)) {
+    const capacity = classResourceCapacity(binding, input.row);
+    if (capacity.kind === 'none') continue;
+    reconcileBoundCounterRows(
+      db,
+      undefined,
+      input.characterId,
+      binding,
+      capacity,
+      input,
+    );
+  }
 }
 
 function insertCounter(
@@ -918,7 +1185,10 @@ function insertCounter(
   );
 }
 
-export function spendUsage(db: Db, input: SpendUsageInput): SpendUsageResult {
+export function spendUsage(
+  db: Db,
+  input: SpendUsageInput,
+): SpendUsageResult | SpendUsageUnlimitedResult {
   const uses = input.uses ?? 1;
   if (!Number.isInteger(uses) || uses < 1) {
     throw new UsageCounterError('uses must be a positive integer');
@@ -936,6 +1206,13 @@ export function spendUsage(db: Db, input: SpendUsageInput): SpendUsageResult {
       },
       input.resolveRulesPack,
     );
+    if (target.unlimited !== undefined) {
+      return {
+        unlimited: true as const,
+        displayName: target.unlimited.displayName,
+        note: `${target.unlimited.displayName} is unlimited at this level per the class table; nothing was consumed`,
+      };
+    }
     if (target.create !== undefined) {
       insertCounter(
         txnDb,
@@ -1031,9 +1308,14 @@ function findCounter(
     throw new UsageCounterError('pass ability (the statblock name) or itemId');
   }
   const slug = normalizeAbilityName(ref.ability);
+  // A pack-bound class resource is stored under its canonical key whichever
+  // alias named it ('Ki Points' -> ability:ki, 'Rages' -> ability:rage).
+  const boundKey = resolveBoundClassResource(db, resolved, ref.ability)?.binding
+    .counterKey;
   const rows = listCounterRows(db, campaignId, resolved.owner);
   const matches = rows.filter(
     (row) =>
+      row.counter_key === boundKey ||
       row.counter_key === slug ||
       row.counter_key === `ability:${slug}` ||
       row.counter_key === `innate:spell:${slug}` ||

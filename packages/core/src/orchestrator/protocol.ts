@@ -292,7 +292,7 @@ export function buildSystemPrompt(
     '  Recharge X-Y, recharge-after-rest, or per-day innate spell use with',
     "  `spend_usage` — a combatant's economy derives from its creature",
     '  record; for character abilities and legacy/ad-hoc unbound item charges, look the feature up',
-    '  via `lookup_rules` and pass maxUses + reset on the first spend. Canonical pack-bound item economies are owned only by `use_item`: never spend, restore, or reset their charges with the generic usage tools. At',
+    '  via `lookup_rules` and pass maxUses + reset on the first spend (class resources Rage, Ki, and Sorcery Points derive from the class table: never pass maxUses/reset for them). Canonical pack-bound item economies are owned only by `use_item`: never spend, restore, or reset their charges with the generic usage tools. At',
     "  the start of a monster's turn, roll spent Recharge abilities via",
     '  `roll` (d6) and pass the natural result to `restore_usage`; after',
     '  narrating a short rest, long rest, or dawn, apply it with',

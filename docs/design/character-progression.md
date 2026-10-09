@@ -205,6 +205,39 @@ races alternative or the associated language, so neither is collected.
 | Ranger 10 Natural Explorer improvement | `feature:ranger:natural-explorer` | player decision (terrain) | (same Natural Explorer sentence) |
 | Ranger 14 Favored Enemy improvement | `feature:ranger:favored-enemy` | player decision (enemy) | (same Favored Enemy sentence) |
 
+### Class resource capacities (`eshyra-2llo.1`)
+
+Every source-backed `resourceProgression` column is classified; the resolver
+retains each value on `ResolvedClassLevel.resources` (count, `Unlimited`, `—`,
+or descriptive text).
+
+| Column | Disposition |
+| --- | --- |
+| Barbarian `rages` (Rage) | **Selected** expendable capacity; `Unlimited` at 20 |
+| Monk `kiPoints` (Ki) | **Selected** expendable capacity; `—` at 1 |
+| Sorcerer `sorceryPoints` (Sorcery Points) | **Selected** expendable capacity; no entry at 1 |
+| Barbarian `rageDamage` | Derived damage bonus; descriptive, DM-adjudicated via `lookup_rules` |
+| Monk `martialArts`, Rogue `sneakAttack` | Dice scaling; descriptive |
+| Monk `unarmoredMovement` | Speed bonus; descriptive |
+
+The gameplay consumer of the selected capacities is `spend_usage` /
+`restore_usage` / `reset_usage` on a character ability. Prose-only capacities
+(Channel Divinity, Action Surge, Lay on Hands, Wild Shape, ...) are not
+selected. For a character whose stored sheet has the binding's class, a spend
+naming the ability (`state/classResources.ts` aliases) is pack-bound: the
+counter is created on first spend from the table value at the sheet's level
+(`source: 'record'`, canonical key `ability:rage` / `ability:ki` /
+`ability:sorcery-points`), any declared `maxUses`/`reset` is refused, a `—` or
+absent value is refused, and `Unlimited` succeeds without a counter. Resets
+follow the feature text (Rage: long rest; Ki: short or long rest; Sorcery
+Points: long rest). A legacy counter under an alias key is adopted into the
+canonical record counter.
+
+At level-up `computeLevelUpChangeSet` records `classResources` (`from`/`to`
+for each bound resource whose value changes) and `applyLevelUp` reconciles
+existing bound counters in the same transaction: new max = table value, used
+preserved and clamped (no free restoration), `Unlimited` deletes the counter.
+
 ### Spell selection (`eshyra-ug4i.2`)
 
 **Sheet.** An optional `spellcasting` field holds the structured spell state, all
