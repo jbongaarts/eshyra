@@ -16,9 +16,19 @@
 //     are not handled here; the engine keeps them fail-closed. Every
 //     spell/cantrip choice (including the Pact of the Tome / Book of Ancient
 //     Secrets conditional ones) lives in levelUpSpells.ts (eshyra-ug4i.2).
-//   - Feature improvements (Ranger Favored Enemy / Natural Explorer growth at
-//     6/10/14) are carried by the pack only as `featureImprovement` rows with no
-//     option structure, so the engine keeps emitting them as unsupported.
+//   - Feature improvements (eshyra-ghzh.1) are dispositioned by TARGET feature
+//     in classifyFeatureImprovements: a target whose pack record carries a
+//     favoredEnemy / naturalExplorer list choice (Ranger 6/10/14) is a player
+//     decision, collected as one extra pick on that existing choice and
+//     persisted as a SEPARATE level-tagged featureChoices entry (the level-1
+//     entry is never rewritten); a fixed set of targets whose improved effect
+//     no deterministic consumer reads (Wild Shape, Divine Intervention, Unarmored
+//     Movement, the Paladin auras) is model-adjudicated and never blocks; any
+//     other target stays an unsupported, fail-closed descriptor. Legacy sheets
+//     with no recorded level-1 pick (creation does not record it, eshyra-nnj6)
+//     proceed with an empty exclusion set. The pack does not structure the
+//     humanoid-races alternative or Favored Enemy's associated language, so
+//     neither is collected here.
 
 import type { FeatureChoice } from '../rules/featureChoices.js';
 import type {
@@ -28,6 +38,7 @@ import type {
 import {
   choiceInstanceKey,
   descriptorId,
+  featureSlug,
   type HandledChoiceInstances,
 } from './levelUpChoiceCoverage.js';
 import type {
@@ -38,6 +49,7 @@ import type {
 } from './levelUpEngine.js';
 import type {
   ResolvedFeatureData,
+  ResolvedFeatureImprovement,
   RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
 
@@ -77,6 +89,79 @@ const CONDITIONAL_CHOICES: Readonly<Record<string, true>> = {
   'pact-of-the-tome-cantrips': true,
   'book-of-ancient-secrets-rituals': true,
 };
+
+/**
+ * Targets of a `featureImprovement` row whose improved effect is a range / limit
+ * / uses change that no deterministic engine capability consumes (verified:
+ * nothing reads Wild Shape limits, aura range, the Divine Intervention roll, or
+ * Monk 9 vertical/liquid movement). Acknowledged at level-up; the effect stays
+ * DM-adjudicated and discoverable via lookup_rules.
+ */
+const MODEL_ADJUDICATED_IMPROVEMENT_TARGETS: ReadonlySet<string> = new Set([
+  'feature:cleric:divine-intervention',
+  'feature:druid:wild-shape',
+  'feature:monk:unarmored-movement',
+  'feature:paladin:aura-of-protection',
+  'feature:paladin:aura-of-courage',
+]);
+
+const IMPROVEMENT_PLAYER_CATEGORIES: ReadonlySet<string> = new Set([
+  'favoredEnemy',
+  'naturalExplorer',
+]);
+
+export interface ClassifiedFeatureImprovement {
+  readonly label: string;
+  readonly targetRefs: readonly string[];
+  /** `unsupported` when any target matches no recognized disposition. */
+  readonly disposition: 'player-decision' | 'model-adjudicated' | 'unsupported';
+  /** The existing list choices an extra pick is collected on (player-decision). */
+  readonly picks: readonly {
+    readonly feature: ResolvedFeatureData;
+    readonly choice: FeatureChoice;
+  }[];
+}
+
+/**
+ * Disposition each improvement row of the target level by its target features
+ * (not by a class/level list). One unrecognized target makes the whole row
+ * unsupported so nothing is silently dropped.
+ */
+export function classifyFeatureImprovements(
+  improvements: readonly ResolvedFeatureImprovement[],
+  resolver: RulesPackCharacterResolver,
+): readonly ClassifiedFeatureImprovement[] {
+  return improvements.map((improvement) => {
+    const picks: {
+      feature: ResolvedFeatureData;
+      choice: FeatureChoice;
+    }[] = [];
+    let recognized = true;
+    for (const ref of improvement.targetRefs) {
+      const feature = featureOf(resolver, ref);
+      const listChoices = (feature?.choices ?? []).filter(
+        (choice) =>
+          isListChoice(choice) &&
+          IMPROVEMENT_PLAYER_CATEGORIES.has(choice.category),
+      );
+      if (feature !== undefined && listChoices.length > 0) {
+        for (const choice of listChoices) picks.push({ feature, choice });
+      } else if (!MODEL_ADJUDICATED_IMPROVEMENT_TARGETS.has(ref)) {
+        recognized = false;
+      }
+    }
+    return {
+      label: improvement.label,
+      targetRefs: improvement.targetRefs,
+      disposition: !recognized
+        ? 'unsupported'
+        : picks.length > 0
+          ? 'player-decision'
+          : 'model-adjudicated',
+      picks,
+    };
+  });
+}
 
 export interface FeatureChoiceDetectionContext {
   readonly sheet: CharacterSheet;
@@ -227,6 +312,50 @@ export function detectFeatureChoiceDescriptors(
     coveredFeatureRefs: covered,
     handledInstances: handled,
   };
+}
+
+/**
+ * Descriptors for the target row's improvement rows: one supported "choose 1
+ * additional" list descriptor per player-decision pick (options minus those
+ * already held on that feature + choice), and an unsupported descriptor naming
+ * the row and target refs for any unrecognized row. Model-adjudicated rows emit
+ * no descriptor.
+ */
+export function detectFeatureImprovementDescriptors(
+  ctx: FeatureChoiceDetectionContext,
+  improvements: readonly ResolvedFeatureImprovement[],
+): {
+  readonly choices: readonly LevelUpRequiredChoice[];
+  readonly handledInstances: HandledChoiceInstances;
+} {
+  const choices: LevelUpRequiredChoice[] = [];
+  const handled = new Set<string>();
+  const classified = classifyFeatureImprovements(improvements, ctx.resolver);
+  for (const row of classified) {
+    if (row.disposition === 'unsupported') {
+      choices.push({
+        id: `level.${ctx.toLevel}.feature-improvement.${featureSlug(row.label)}`,
+        kind: 'class-feature-choice',
+        status: 'unsupported',
+        label: row.label,
+        reason:
+          `level ${ctx.toLevel} improves ${row.targetRefs.join(', ')} ` +
+          `('${row.label}')`,
+        unsupportedReason: `Feature improvement '${row.label}' (${row.targetRefs.join(', ')}) matches no player-decision or model-adjudicated disposition; deterministic application of the level-specific change is not implemented.`,
+      });
+      continue;
+    }
+    for (const { feature, choice } of row.picks) {
+      handled.add(choiceInstanceKey(feature.key, choice.id));
+      const base = listDescriptor(ctx, feature, choice, 1);
+      choices.push({
+        ...base,
+        label: `${feature.name}: choose 1 additional (${choice.id})`,
+        reason: `level ${ctx.toLevel} '${row.label}': ${choice.prompt}`,
+      });
+    }
+  }
+  return { choices, handledInstances: handled };
 }
 
 export function selectedOptionIds(

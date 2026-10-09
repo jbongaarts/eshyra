@@ -160,8 +160,50 @@ is recorded; the option's mechanical effect stays DM-adjudicated. Choices that
 exist only because of a pick (Pact of the Tome cantrips, Book of Ancient Secrets
 rituals) are spell choices owned by the spell section below and appear only when
 that pick is made in the same level-up.
-Ranger Favored Enemy / Natural Explorer growth is carried by the pack only as
-feature-improvement rows and remains unsupported.
+
+### Feature improvements (`eshyra-ghzh.1`)
+
+A class progression row's typed `featureImprovement` advancement (resolved by
+`RulesPackCharacterResolver.resolveClassLevel`) no longer blocks the level-up.
+Each row is dispositioned by its **target feature**, not by a class/level list
+(`classifyFeatureImprovements` in `levelUpFeatureChoices.ts`):
+
+- **Player decision.** A target whose pack record has a structured list choice of
+  category `favoredEnemy` / `naturalExplorer` yields one supported descriptor
+  `level.<n>.feature.<feature-slug>.<choice-id>`: choose 1 from that choice's
+  `from` list minus every option already held in `featureChoices` for the same
+  (featureRef, choiceId). The pick is persisted as a **separate** level-tagged
+  `featureChoices` entry (`level` = target level); the level-1 entry is never
+  rewritten. Re-picking a held option is refused with a reason.
+- **Model-adjudicated.** Targets whose improved effect no deterministic
+  capability consumes (Wild Shape, Divine Intervention, Unarmored Movement, the
+  Paladin auras) are acknowledged and never block; the effect stays
+  DM-adjudicated and discoverable via `lookup_rules`.
+- **Unsupported (fail closed).** Any other target keeps an unsupported
+  descriptor `level.<n>.feature-improvement.<label-slug>` whose
+  `unsupportedReason` names the row label and target refs.
+
+The change set records every non-blocking row as
+`featureImprovements: [{ label, targetRefs, disposition }]`, which reaches the
+ledger through `appliedChanges`; player-decision picks also appear in
+`choicesApplied`. No "automatic" (engine state change without a decision) row
+exists in the pack today.
+
+**Legacy sheets.** Level-1 creation does not record Favored Enemy / Natural
+Explorer picks yet (`eshyra-nnj6`). A sheet with no recorded level-1 entry
+proceeds with an empty exclusion set; the level-1 pick is neither required nor
+backfilled. **Pack gap.** The pack does not structure Favored Enemy's humanoid
+races alternative or the associated language, so neither is collected.
+
+| Row (class level) | Target refs | Disposition | SRD 5.1 citation |
+| --- | --- | --- | --- |
+| Cleric 20 Divine Intervention improvement | `feature:cleric:divine-intervention` | model-adjudicated | "At 20th level, your call for intervention succeeds automatically, no roll required." |
+| Druid 4, 8 Wild Shape improvement | `feature:druid:wild-shape` | model-adjudicated | "Your druid level determines the beasts you can transform into, as shown in the Beast Shapes table." |
+| Monk 9 Unarmored Movement improvement | `feature:monk:unarmored-movement` | model-adjudicated | "At 9th level, you gain the ability to move along vertical surfaces and across liquids on your turn without falling during the move." |
+| Paladin 18 Aura improvements | `feature:paladin:aura-of-protection`, `feature:paladin:aura-of-courage` | model-adjudicated | "At 18th level, the range of this aura increases to 30 feet." |
+| Ranger 6 Favored Enemy and Natural Explorer improvements | `feature:ranger:favored-enemy`, `feature:ranger:natural-explorer` | player decision (one extra enemy, one extra terrain) | "You choose one additional favored enemy, as well as an associated language, at 6th and 14th level." / "You choose additional favored terrain types at 6th and 10th level." |
+| Ranger 10 Natural Explorer improvement | `feature:ranger:natural-explorer` | player decision (terrain) | (same Natural Explorer sentence) |
+| Ranger 14 Favored Enemy improvement | `feature:ranger:favored-enemy` | player decision (enemy) | (same Favored Enemy sentence) |
 
 ### Spell selection (`eshyra-ug4i.2`)
 

@@ -758,7 +758,7 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
     db.close();
   });
 
-  it('blocks typed feature improvements instead of dropping them (Cleric 19→20)', () => {
+  it('levels through a model-adjudicated feature improvement and records it (Cleric 19→20)', () => {
     const db = bareDb();
     const store = createSqliteCharacterSheetStore(db, () => AT);
     const sheet = buildSheet({
@@ -774,25 +774,23 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
     });
     store.save('pc-1', sheet);
 
-    const choices = detectLevelUpRequiredChoices(sheet);
-    expect(choices).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          id: 'level.20.feature-improvement.divine-intervention-improvement',
-          kind: 'class-feature-choice',
-          status: 'unsupported',
-          label: 'Divine Intervention improvement',
-          unsupportedReason: expect.stringContaining(
-            'Feature improvements change an existing feature',
-          ),
-        }),
-      ]),
-    );
-    expect(() => applyLevelUp(db, { store, ...APPLY })).toThrow(
-      LevelUpRequiredChoicesError,
-    );
-    expect(store.load('pc-1')?.level).toBe(19);
-    expect(listProgressionEvents(db)).toHaveLength(0);
+    expect(
+      detectLevelUpRequiredChoices(sheet).filter(
+        (c) => c.status === 'unsupported',
+      ),
+    ).toEqual([]);
+    const result = applyLevelUp(db, { store, ...APPLY });
+    expect(result.changeSet.featureImprovements).toEqual([
+      {
+        label: 'Divine Intervention improvement',
+        targetRefs: ['feature:cleric:divine-intervention'],
+        disposition: 'model-adjudicated',
+      },
+    ]);
+    expect(store.load('pc-1')?.level).toBe(20);
+    expect(listProgressionEvents(db)[0]?.appliedChanges).toMatchObject({
+      featureImprovements: [{ disposition: 'model-adjudicated' }],
+    });
     db.close();
   });
 });
