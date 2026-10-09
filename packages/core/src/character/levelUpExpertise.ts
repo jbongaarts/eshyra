@@ -7,7 +7,8 @@
 // distinct, each currently eligible) and builds the applied choice the engine
 // persists on `CharacterSheet.featureChoices` (choiceId 'expertise').
 //
-// Not here: rogue level-1 expertise (character creation, eshyra-nnj6), and any
+// Rogue level-1 expertise at creation reuses this module (eshyra-nnj6.1,
+// creationClassChoices.ts). Not here: any
 // mechanical effect. The pick is recorded; doubling the proficiency bonus stays
 // the caller's `multiplier: 'double'` on the check tool until a deterministic
 // skill-bonus derivation exists.

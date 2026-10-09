@@ -47,6 +47,11 @@ import type {
   CharacterCreationDraft,
 } from './creation.js';
 import {
+  type CreationChoiceApplication,
+  deriveCreationClassChoices,
+  isCreationClassChoiceId,
+} from './creationClassChoices.js';
+import {
   type CharacterDerivedValues,
   deriveLevel1Values,
   LEVEL_1_PROFICIENCY_BONUS,
@@ -210,6 +215,13 @@ export interface MechanicalChoiceState {
   readonly choice: Level1RequiredChoice;
   readonly selected: readonly string[];
   readonly satisfied: boolean;
+  /** Why a non-empty selection is refused (class-feature choices). */
+  readonly refusal?: string;
+  /**
+   * What a satisfied class-feature choice persists on the finalized sheet
+   * (`featureChoices` entry or `subclass`); see creationClassChoices.ts.
+   */
+  readonly application?: CreationChoiceApplication;
 }
 
 /**
@@ -223,6 +235,9 @@ const MECHANICAL_CHOICE_KINDS: ReadonlySet<Level1RequiredChoiceKind> = new Set([
   'tools',
   'equipment',
   'languages',
+  'subclass',
+  'feature_choice',
+  'expertise',
 ]);
 
 /**
@@ -566,14 +581,38 @@ export function createCharacterCreationEngine(
     validateStartingEquipment(selections, diagnostics);
 
     const next = { ...draft, derived, diagnostics, stale };
+    const entries = mechanicalChoices(next);
     const generatedReplacementIds = new Set(
-      mechanicalChoices(next)
+      entries
         .filter((entry) => isReplacementChoiceId(entry.choice.id))
         .map((entry) => entry.choice.id),
     );
+    const generatedClassChoiceIds = new Set(
+      entries
+        .filter((entry) => isCreationClassChoiceId(entry.choice.id))
+        .map((entry) => entry.choice.id),
+    );
+    // A stored class-feature pick that its pack-derived choice no longer
+    // accepts (the skill it expertised was dropped, the subclass changed) is
+    // stale: it stays visible so the player re-picks, and blocks finalization
+    // through the unsatisfied choice. A pick whose choice no longer exists
+    // (a different class or subclass) is dropped.
+    for (const entry of entries) {
+      if (
+        isCreationClassChoiceId(entry.choice.id) &&
+        !entry.satisfied &&
+        entry.selected.length > 0
+      ) {
+        stale.push(entry.choice.id);
+      }
+    }
     const choices = Object.fromEntries(
       Object.entries(selections.choices ?? {}).filter(
-        ([id]) => !isReplacementChoiceId(id) || generatedReplacementIds.has(id),
+        ([id]) =>
+          (!isReplacementChoiceId(id) || generatedReplacementIds.has(id)) &&
+          (!isCreationClassChoiceId(id) ||
+            classRecord === undefined ||
+            generatedClassChoiceIds.has(id)),
       ),
     );
     return { ...next, selections: { ...selections, choices } };
@@ -695,13 +734,48 @@ export function createCharacterCreationEngine(
       selected: stored[choice.id] ?? [],
       satisfied: isChoiceSatisfied(choice, stored[choice.id] ?? []),
     }));
-    return appendProficiencyReplacements(
+    const background = effectiveBackground(draft.selections, resolver);
+    const withReplacements = appendProficiencyReplacements(
       choices,
       classRecord,
-      effectiveBackground(draft.selections, resolver),
+      background,
       stored,
       resolver,
     );
+    // Class-feature choices (subclass, fighting style, expertise, ...) sit after
+    // the ordinary choices their eligibility derives from (skills, tools) and
+    // before the generated duplicate-proficiency replacements.
+    const held = (kind: 'skills' | 'tools') =>
+      withReplacements
+        .filter((entry) => entry.choice.kind === kind)
+        .flatMap((entry) => entry.selected);
+    const classChoices = deriveCreationClassChoices({
+      resolver,
+      classRecord,
+      stored,
+      skillProficiencies: [
+        ...new Set([
+          ...(background?.skillProficiencies ?? []),
+          ...held('skills'),
+        ]),
+      ],
+      toolProficiencies: [
+        ...new Set([
+          ...(classRecord.toolProficiencies ?? []),
+          ...(background?.toolProficiencies ?? []),
+          ...held('tools'),
+        ]),
+      ],
+    });
+    return [
+      ...withReplacements.filter(
+        (entry) => !isReplacementChoiceId(entry.choice.id),
+      ),
+      ...classChoices,
+      ...withReplacements.filter((entry) =>
+        isReplacementChoiceId(entry.choice.id),
+      ),
+    ];
   }
 
   function appendProficiencyReplacements(

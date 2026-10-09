@@ -64,7 +64,14 @@ export type Level1RequiredChoiceKind =
   | 'spells'
   | 'spellcasting_ability'
   | 'ability_increase'
-  | 'languages';
+  | 'languages'
+  // Class-feature choices made at level 1 (eshyra-nnj6.1). Derived from the
+  // pack's level-1 features by creationClassChoices.ts, which needs the
+  // resolver and the draft's proficiencies, so they are not produced by
+  // enumerateLevel1RequiredChoices itself.
+  | 'subclass'
+  | 'feature_choice'
+  | 'expertise';
 
 /**
  * One required level-1 choice. `structured` descriptors carry `choose`/`from`

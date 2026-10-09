@@ -107,12 +107,16 @@ import {
   spellsUnion,
 } from './levelUpSpells.js';
 import {
+  resolveSubclassSelection,
+  SUBCLASS_FEATURE_SUFFIXES,
+  subclassFeatureRefsForLevel,
+} from './levelUpSubclass.js';
+import {
   getBundledDnd5eCharacterResolver,
   type ResolvedClassData,
   type ResolvedClassLevel,
   type ResolvedFeatureImprovement,
   type ResolvedLevelSpellcasting,
-  type ResolvedSubclassData,
   type ResolvedSubclassFeatureSlot,
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
@@ -402,27 +406,6 @@ export class LevelUpRequiredChoicesError extends Error {
     this.requiredChoices = requiredChoices;
   }
 }
-
-/**
- * Subclass-selection features by their pack feature-ref suffix (the segment
- * after the last `:`), keyed per the frozen SRD class records. Reaching the
- * level that grants one of these requires the player to choose a subclass —
- * Arcane Tradition, Martial Archetype, Divine Domain, and so on.
- */
-const SUBCLASS_FEATURE_SUFFIXES: ReadonlySet<string> = new Set([
-  'primal-path',
-  'bard-college',
-  'divine-domain',
-  'druid-circle',
-  'martial-archetype',
-  'monastic-tradition',
-  'sacred-oath',
-  'ranger-archetype',
-  'roguish-archetype',
-  'sorcerous-origin',
-  'otherworldly-patron',
-  'arcane-tradition',
-]);
 
 /**
  * Other choice-bearing class features that require a player pick. Since
@@ -1366,39 +1349,6 @@ function resolveLevelUpChoices(
     blockers.push(choice);
   }
   return { blockers, applied };
-}
-
-function resolveSubclassSelection(
-  selection: string,
-  classKey: string,
-  resolver: RulesPackCharacterResolver,
-): ResolvedSubclassData | undefined {
-  const normalized = selection.trim().toLowerCase();
-  return resolver
-    .listSubclasses()
-    .filter((subclass) => subclass.parentClass === classKey)
-    .find(
-      (subclass) =>
-        subclass.key.toLowerCase() === normalized ||
-        subclass.name.toLowerCase() === normalized,
-    );
-}
-
-function subclassFeatureRefsForLevel(
-  subclass: ResolvedSubclassData,
-  targetLevel: number,
-  resolver: RulesPackCharacterResolver,
-): readonly string[] {
-  const subclassFeatureSet = new Set(subclass.features);
-  return resolver
-    .listFeatures()
-    .filter(
-      (feature) =>
-        feature.source === subclass.key &&
-        feature.level === targetLevel &&
-        subclassFeatureSet.has(feature.key),
-    )
-    .map((feature) => feature.key);
 }
 
 function existingSubclassFeatureRefsForLevel(

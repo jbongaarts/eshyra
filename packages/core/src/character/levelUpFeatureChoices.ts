@@ -25,8 +25,8 @@
 //     no deterministic consumer reads (Wild Shape, Divine Intervention, Unarmored
 //     Movement, the Paladin auras) is model-adjudicated and never blocks; any
 //     other target stays an unsupported, fail-closed descriptor. Legacy sheets
-//     with no recorded level-1 pick (creation does not record it, eshyra-nnj6)
-//     proceed with an empty exclusion set. The pack does not structure the
+//     with no recorded level-1 pick (created before eshyra-nnj6.1) proceed with
+//     an empty exclusion set. The pack does not structure the
 //     humanoid-races alternative or Favored Enemy's associated language, so
 //     neither is collected here.
 

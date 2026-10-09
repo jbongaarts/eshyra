@@ -278,6 +278,7 @@ describe('character wizard — starting acquisition mode', () => {
         'Athletics',
         'Perception',
         'Dwarvish',
+        'Archery',
         '',
         '',
         '',
@@ -577,6 +578,68 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
     expect(result.draft.selections.choices?.['ancestry.languages']).toEqual([
       'Dwarvish',
     ]);
+  });
+
+  it('collects the level-1 fighting style after the ordinary groups (eshyra-nnj6.1)', async () => {
+    const { deps: d, lines } = deps([
+      ...TO_CLASS_CHOICES,
+      'Athletics',
+      'Perception',
+      '1',
+      '1',
+      '1',
+      '1',
+      'Dwarvish',
+      'Sniping', // not a fighting style: rejected, nothing recorded
+      'Defense',
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    expect(text(lines)).toContain('Fighting Style');
+    expect(text(lines)).toMatch(/"Sniping" is not an option here/);
+    const id = 'class.feature.fighter-fighting-style.fighting-style';
+    expect(result.draft.selections.choices?.[id]).toEqual(['Defense']);
+  });
+
+  it('asks for the Sorcerer subclass, then its Dragon Ancestor (eshyra-nnj6.1)', async () => {
+    const { deps: d } = deps([
+      'Mira',
+      'Sorcerer',
+      'Human',
+      '',
+      'point_buy',
+      'str 8',
+      'dex 14',
+      'con 13',
+      'int 10',
+      'wis 12',
+      'cha 15',
+      'done',
+      '',
+      'Arcana',
+      'Persuasion',
+      '1',
+      '1',
+      '1',
+      'Dwarvish',
+      'Draconic Bloodline', // subclass reveals the dependent choice
+      'Gold',
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'mira',
+    });
+    const choices = result.draft.selections.choices ?? {};
+    expect(choices['class.subclass']).toEqual(['Draconic Bloodline']);
+    expect(
+      choices[
+        'class.feature.draconic-bloodline-dragon-ancestor.dragon-ancestor'
+      ],
+    ).toEqual(['Gold']);
   });
 
   it('rejects an invalid pick without resetting prior valid picks', async () => {
