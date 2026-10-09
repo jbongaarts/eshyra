@@ -157,6 +157,17 @@ function supplementedResolver(): RulesPackCharacterResolver {
   );
 }
 
+/** First `n` real SRD wizard spell names at a spell level. */
+function wizardSpells(level: number, n: number): string[] {
+  return getBundledDnd5eCharacterResolver()
+    .listSpells()
+    .filter((s) => s.level === level && s.classes.includes('Wizard'))
+    .slice(0, n)
+    .map((s) => s.name);
+}
+const WIZARD_SPELLS = [...wizardSpells(0, 3), ...wizardSpells(1, 6)];
+const WIZARD_PREPARED = wizardSpells(1, 2);
+
 const text = (lines: readonly string[]): string => lines.join('\n');
 
 describe('character wizard — concept-first happy path', () => {
@@ -188,7 +199,10 @@ describe('character wizard — concept-first happy path', () => {
       '1', // equipment.0 → a quarterstaff
       '2', // equipment.1 → an arcane focus
       'scholar', // equipment.2 → a scholar's pack (prefix)
-      'Fire Bolt, Magic Missile', // spells
+      // Fewer than the required counts stays on the step and says why.
+      'Fire Bolt, Magic Missile',
+      WIZARD_SPELLS.join(', '), // 3 cantrips + 6 spellbook spells
+      WIZARD_PREPARED.join(', '), // prepared from the spellbook
       '', // review: Enter to finish
     ]);
 
@@ -209,10 +223,10 @@ describe('character wizard — concept-first happy path', () => {
     expect(result.draft.selections.choices?.['class.equipment.0']).toEqual([
       'a quarterstaff',
     ]);
-    expect(result.draft.selections.spells).toEqual([
-      'Fire Bolt',
-      'Magic Missile',
-    ]);
+    expect(result.draft.selections.spells).toEqual(WIZARD_SPELLS);
+    expect(result.draft.selections.preparedSpells).toEqual(WIZARD_PREPARED);
+    expect(text(lines)).toMatch(/Choose 3 cantrips \(1 chosen\)/);
+    expect(text(lines)).toMatch(/Now enter the spells to prepare/);
     // High Elf +1 INT pushes base 15 → 16; spell DC = 8 + 2 + 3 = 13.
     expect(result.draft.derived.spellSaveDc).toBe(13);
     // Completion persists the draft.
@@ -427,7 +441,8 @@ describe('character wizard — ability-first flow', () => {
       '1', // a quarterstaff
       '1', // a component pouch
       '1', // a scholar's pack
-      '', // spells skip
+      WIZARD_SPELLS.join(', '), // spells
+      WIZARD_PREPARED.join(', '), // prepared
       '', // review finish
     ]);
 
@@ -759,5 +774,182 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
       'Acrobatics',
       'Insight',
     ]);
+  });
+});
+
+/** Every level-`level` spell name the bundled SRD lists for a class. */
+function classSpells(className: string, level: number): string[] {
+  return getBundledDnd5eCharacterResolver()
+    .listSpells()
+    .filter((s) => s.level === level && s.classes.includes(className))
+    .map((s) => s.name);
+}
+
+describe('character wizard — level-1 spell step for non-wizard casters (eshyra-n7ls.1)', () => {
+  // Sorcerer: known caster, 4 cantrips + 2 level-1 spells, no preparation.
+  // Answers run through identity, class, ancestry, background, scores, the
+  // acquisition prompt, class choices (skills, equipment, language, origin,
+  // ancestor), and then stop at the spell step.
+  const TO_SORCERER_SPELLS = [
+    'Sora', // identity
+    'Sorcerer', // class
+    'Human', // ancestry
+    '', // background skip
+    'point_buy',
+    'str 8',
+    'dex 14',
+    'con 14',
+    'int 10',
+    'wis 10',
+    'cha 15',
+    'done',
+    '', // keep package acquisition mode
+    'Arcana', // skills 1
+    'Deception', // skills 2
+    '1', // equipment.0
+    '1', // equipment.1
+    '1', // equipment.2
+    'Dwarvish', // Human language
+    'Draconic Bloodline', // Sorcerous Origin
+    'Black', // Dragon Ancestor
+  ] as const;
+
+  it('states the known-caster counts, rejects shortfall and excess, and advances on a legal list', async () => {
+    const cantrips = classSpells('Sorcerer', 0).slice(0, 5);
+    const level1 = classSpells('Sorcerer', 1).slice(0, 2);
+    const legal = [...cantrips.slice(0, 4), ...level1];
+    const { deps: d, lines } = deps([
+      ...TO_SORCERER_SPELLS,
+      '', // spell step: Enter with outstanding counts stays on the step
+      `${cantrips[0]}, ${cantrips[1]}, ${level1[0]}`, // 2 of 4 cantrips, 1 of 2
+      [...cantrips, ...level1].join(', '), // 5 cantrips: one too many
+      legal.join(', '), // 4 cantrips + 2 level-1 spells
+      '', // review: Enter to finish
+    ]);
+
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'sora',
+    });
+
+    expect(result.outcome).toBe('completed');
+    expect(result.draft.selections.className).toBe('Sorcerer');
+    expect(result.draft.selections.spells).toEqual(legal);
+    const out = text(lines);
+    // The prompt states the exact requirements before anything is entered.
+    expect(out).toContain('Choose 4 cantrips (0 chosen).');
+    expect(out).toContain('Choose 2 level-1 spells (0 chosen).');
+    // A shortfall names what is missing and keeps the player on the step.
+    expect(out).toContain('Choose 4 cantrips (2 chosen).');
+    expect(out).toContain('Choose 2 level-1 spells (1 chosen).');
+    // An excess is an error, not a silent truncation.
+    expect(out).toContain('Too many cantrips: 5 chosen, 4 allowed.');
+    expect(out).toContain('Selected 6 spell(s).');
+  });
+});
+
+describe('character wizard — level-1 spell step for prepared casters (eshyra-n7ls.1)', () => {
+  // Cleric (Life Domain): 3 cantrips; prepares 1..(WIS modifier + 1) level-1
+  // spells from its list. Life Domain always prepares Bless and Cure Wounds,
+  // which must not count against the limit.
+  const TO_CLERIC_SPELLS = [
+    'Cleo', // identity
+    'Cleric', // class
+    'Human', // ancestry
+    '', // background skip
+    'point_buy',
+    'str 8',
+    'dex 14',
+    'con 14',
+    'int 10',
+    'wis 14', // Human +1 → 15 → modifier +2 → prepare 1..3
+    'cha 10',
+    'done',
+    '', // keep package acquisition mode
+    'History', // skills 1
+    'Insight', // skills 2
+    '1', // equipment.0
+    '1', // equipment.1
+    '1', // equipment.2
+    '1', // equipment.3
+    'Dwarvish', // Human language
+    'Life Domain', // Divine Domain
+  ] as const;
+
+  const DOMAIN_ALWAYS = ['Bless', 'Cure Wounds'];
+
+  it('states the cantrip count and the prepare range, excludes domain spells from the limit, and advances on a legal list', async () => {
+    const cantrips = classSpells('Cleric', 0).slice(0, 3);
+    const picks = classSpells('Cleric', 1)
+      .filter((name) => !DOMAIN_ALWAYS.includes(name))
+      .slice(0, 4);
+    const legal = [...cantrips, ...DOMAIN_ALWAYS, ...picks.slice(0, 3)];
+    const { deps: d, lines } = deps([
+      ...TO_CLERIC_SPELLS,
+      '', // spell step: Enter with outstanding counts stays on the step
+      [...cantrips, ...picks].join(', '), // 3 cantrips + 4 prepared: one too many
+      legal.join(', '), // 3 cantrips + domain spells + 3 prepared
+      '', // review: Enter to finish
+    ]);
+
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'cleo',
+    });
+
+    expect(result.outcome).toBe('completed');
+    expect(result.draft.selections.className).toBe('Cleric');
+    expect(result.draft.selections.spells).toEqual(legal);
+    const out = text(lines);
+    expect(out).toContain('Choose 3 cantrips (0 chosen).');
+    expect(out).toContain(
+      'Prepare between 1 and 3 level-1 spells (none chosen).',
+    );
+    expect(out).toContain('Prepared spells come from this same list');
+    expect(out).toContain(
+      'Too many prepared spells: 4 chosen, at most 3 allowed (always-prepared domain spells do not count).',
+    );
+  });
+});
+
+describe('character wizard — level-1 spell step for non-casters (eshyra-n7ls.1)', () => {
+  it('tells a Fighter there are no level-1 spells and advances on Enter', async () => {
+    const { deps: d, lines } = deps([
+      'Grok', // identity
+      'Fighter', // class
+      'Human', // ancestry
+      '', // background skip
+      'point_buy',
+      'str 15',
+      'dex 14',
+      'con 13',
+      'int 12',
+      'wis 10',
+      'cha 8',
+      'done',
+      '', // keep package acquisition mode
+      'Athletics', // skills 1
+      'Insight', // skills 2
+      '1', // equipment.0..2
+      '1',
+      '1',
+      '1',
+      'Dwarvish', // Human language
+      'Archery', // fighting style
+      '', // spell step: nothing to choose, Enter continues
+      '', // review: Enter to finish
+    ]);
+
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+
+    expect(result.outcome).toBe('completed');
+    expect(result.draft.selections.spells ?? []).toEqual([]);
+    expect(text(lines)).toContain(
+      'This class has no level-1 spells to choose; press Enter to continue.',
+    );
+    expect(text(lines)).not.toContain('Enter level-1 spells');
   });
 });
