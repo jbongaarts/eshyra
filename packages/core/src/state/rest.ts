@@ -3,10 +3,7 @@ import {
   assertSheetMatchesPack,
   createSqliteCharacterSheetStore,
 } from '../character/characterSheetStore.js';
-import {
-  createRulesPackCharacterResolver,
-  type RulesPackCharacterResolver,
-} from '../character/rulesPackResolver.js';
+import type { RulesPackCharacterResolver } from '../character/rulesPackResolver.js';
 import { type DiceRoll, rollDice } from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
 import { type Db, withTransaction } from '../persistence/db.js';
@@ -19,7 +16,7 @@ import { expireElapsedWorldEffects } from './activeEffects.js';
 import {
   type CampaignRulesPackResolver,
   memoizeCampaignRulesPackResolver,
-  resolveStrictCampaignRulesStack,
+  resolveCampaignCharacterResolver,
 } from './campaignRecordLookup.js';
 import { resolveCombatantRecoveries } from './encounterCombatants.js';
 import {
@@ -270,9 +267,7 @@ function bindRestRules<T extends RestContext>(
   );
   return {
     ctx: { ...ctx, resolveRulesPack },
-    resolver: createRulesPackCharacterResolver(
-      resolveStrictCampaignRulesStack(db, resolveRulesPack),
-    ),
+    resolver: resolveCampaignCharacterResolver(db, resolveRulesPack),
   };
 }
 

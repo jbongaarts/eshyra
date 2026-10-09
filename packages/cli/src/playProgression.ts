@@ -53,14 +53,14 @@ export function showProgression(io: CliIO, db: Db): void {
 }
 
 export async function runLevelUpCommand(
-  deps: Pick<PlayDeps, 'characterResolver' | 'characterRng' | 'io' | 'now'>,
+  deps: Pick<PlayDeps, 'characterRng' | 'io' | 'now'>,
   db: Db,
   sessionId: string,
 ): Promise<void> {
   const store = createSqliteCharacterSheetStore(db, deps.now);
+  // No resolver: level-up derives class rules from the campaign's binding.
   const base = {
     store,
-    resolver: deps.characterResolver,
     source: 'play-command',
     provenance: 'cli:/levelup',
     sessionId,
