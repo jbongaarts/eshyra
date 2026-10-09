@@ -366,7 +366,7 @@ describe('makeGameplayClient (provider -> adapter mapping, eshyra-6ygw)', () => 
   it('maps codex-sub to the agent-harness OpenAI adapter', () => {
     const c = makeGameplayClient(
       provider('codex-sub', 'openai', 'agent-harness'),
-      'gpt-5.5',
+      'gpt-6.1-sol',
       'primary DM',
     );
     expect(c.capabilities.vendor).toBe('openai');
@@ -390,7 +390,7 @@ describe('makeGameplayClient (provider -> adapter mapping, eshyra-6ygw)', () => 
       provider('openai-api', 'openai', 'api-native', {
         OPENAI_API_KEY: 'sk',
       }),
-      'gpt-5.5',
+      'gpt-6.1-sol',
       'primary DM',
     );
     expect(c.capabilities.vendor).toBe('openai');

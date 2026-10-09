@@ -521,14 +521,14 @@ const haikuAuditor = candidate(
 const gptPremiumPrimary = candidate(
   'primary_dm',
   'openai',
-  'gpt-5.5',
+  'gpt-6.1-sol',
   'premium',
   'OpenAI premium primary-DM candidate.',
 );
 const gptMiniAuditor = candidate(
   'auditor',
   'openai',
-  'gpt-5.4-mini',
+  'gpt-6-luna',
   'economy',
   'OpenAI mini auditor candidate.',
 );

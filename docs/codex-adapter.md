@@ -111,7 +111,7 @@ unset OPENAI_API_KEY CODEX_API_KEY
 #    you can confirm Codex invoked the eshyra MCP `roll` tool.
 ESHYRA_DEBUG=1 \
 ESHYRA_PROFILE_PREMIUM_DM_PROVIDER=openai \
-ESHYRA_PROFILE_PREMIUM_DM_MODEL=gpt-5.5 \
+ESHYRA_PROFILE_PREMIUM_DM_MODEL=gpt-6.1-sol \
   eshyra play
 ```
 

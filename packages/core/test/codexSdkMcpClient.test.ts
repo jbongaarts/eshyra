@@ -147,7 +147,7 @@ describe('CodexSdkMcpModelClient', () => {
   });
 
   it('declares agent-harness / agent-mcp / openai / gameplay-capable capabilities (ADR 0010)', () => {
-    const client = new CodexSdkMcpModelClient('gpt-5.5');
+    const client = new CodexSdkMcpModelClient('gpt-6.1-sol');
     expect(client.capabilities).toEqual(CODEX_SDK_MCP_ADAPTER_CAPABILITIES);
     expect(client.capabilities.adapterFamily).toBe('agent-harness');
     expect(client.capabilities.toolTransport).toBe('agent-mcp');
@@ -157,7 +157,7 @@ describe('CodexSdkMcpModelClient', () => {
   });
 
   it('requires and pre-approves the in-process MCP server and suppresses AGENTS.md', async () => {
-    await new CodexSdkMcpModelClient('gpt-5.5').complete(baseInput);
+    await new CodexSdkMcpModelClient('gpt-6.1-sol').complete(baseInput);
     const config = state.ctorOptions[0].config as {
       mcp_servers: {
         eshyra: {
@@ -186,7 +186,7 @@ describe('CodexSdkMcpModelClient', () => {
 
   it('strips an ambient OPENAI_API_KEY and injects the MCP bearer token', async () => {
     process.env.OPENAI_API_KEY = 'sk-must-not-bill';
-    await new CodexSdkMcpModelClient('gpt-5.5').complete(baseInput);
+    await new CodexSdkMcpModelClient('gpt-6.1-sol').complete(baseInput);
     const env = state.ctorOptions[0].env ?? {};
     // Subscription billing is exclusive: the API key never reaches the CLI.
     expect('OPENAI_API_KEY' in env).toBe(false);
@@ -194,7 +194,7 @@ describe('CodexSdkMcpModelClient', () => {
   });
 
   it('does not configure an empty required MCP server for tool-less calls', async () => {
-    await new CodexSdkMcpModelClient('gpt-5.4-mini').complete({
+    await new CodexSdkMcpModelClient('gpt-6-luna').complete({
       messages: [{ role: 'user', content: 'audit this turn' }],
       tools: [],
     });
@@ -203,9 +203,9 @@ describe('CodexSdkMcpModelClient', () => {
   });
 
   it('runs a sterile, read-only, network/web-disabled thread in a temp workdir', async () => {
-    await new CodexSdkMcpModelClient('gpt-5.5').complete(baseInput);
+    await new CodexSdkMcpModelClient('gpt-6.1-sol').complete(baseInput);
     const opts = state.threadOptions[0];
-    expect(opts.model).toBe('gpt-5.5');
+    expect(opts.model).toBe('gpt-6.1-sol');
     expect(opts.sandboxMode).toBe('read-only');
     expect(opts.skipGitRepoCheck).toBe(true);
     expect(opts.networkAccessEnabled).toBe(false);
@@ -215,7 +215,7 @@ describe('CodexSdkMcpModelClient', () => {
   });
 
   it('returns the final agent message, end_turn stop reason, and mapped usage', async () => {
-    const out = await new CodexSdkMcpModelClient('gpt-5.5').complete({
+    const out = await new CodexSdkMcpModelClient('gpt-6.1-sol').complete({
       ...baseInput,
       system: 'be a DM',
     });
@@ -233,7 +233,7 @@ describe('CodexSdkMcpModelClient', () => {
   it('throws ModelClientError when the turn ends without an agent message', async () => {
     state.events = [{ type: 'turn.completed', usage: null }];
     await expect(
-      new CodexSdkMcpModelClient('gpt-5.5').complete(baseInput),
+      new CodexSdkMcpModelClient('gpt-6.1-sol').complete(baseInput),
     ).rejects.toThrowError(ModelClientError);
   });
 
@@ -242,13 +242,13 @@ describe('CodexSdkMcpModelClient', () => {
       { type: 'turn.failed', error: { message: 'You hit your usage limit' } },
     ];
     await expect(
-      new CodexSdkMcpModelClient('gpt-5.5').complete(baseInput),
+      new CodexSdkMcpModelClient('gpt-6.1-sol').complete(baseInput),
     ).rejects.toBeInstanceOf(ModelRateLimitError);
   });
 
   it('reports a subscription auth failure clearly with no API-key fallback', async () => {
     state.runError = new Error('Not logged in. Please run codex login');
-    const err = await new CodexSdkMcpModelClient('gpt-5.5')
+    const err = await new CodexSdkMcpModelClient('gpt-6.1-sol')
       .complete(baseInput)
       .catch((e) => e);
     expect(err).toBeInstanceOf(ModelClientError);
@@ -261,7 +261,7 @@ describe('CodexSdkMcpModelClient', () => {
       new Error("Cannot find package '@openai/codex-sdk'"),
       { code: 'ERR_MODULE_NOT_FOUND' },
     );
-    const err = await new CodexSdkMcpModelClient('gpt-5.5')
+    const err = await new CodexSdkMcpModelClient('gpt-6.1-sol')
       .complete(baseInput)
       .catch((e) => e);
     expect(err).toBeInstanceOf(ModelClientError);
@@ -270,7 +270,7 @@ describe('CodexSdkMcpModelClient', () => {
 
   it('does not classify a generic connection failure as a rate limit', async () => {
     state.runError = new Error('connect ECONNREFUSED 127.0.0.1:1');
-    const err = await new CodexSdkMcpModelClient('gpt-5.5')
+    const err = await new CodexSdkMcpModelClient('gpt-6.1-sol')
       .complete(baseInput)
       .catch((e) => e);
     expect(err).toBeInstanceOf(ModelClientError);
@@ -304,7 +304,7 @@ describe('CodexSdkMcpModelClient', () => {
       'Codex Exec exited with code 1: Reading prompt from stdin...',
     );
 
-    const err = await new CodexSdkMcpModelClient('gpt-5.5')
+    const err = await new CodexSdkMcpModelClient('gpt-6.1-sol')
       .complete(baseInput)
       .catch((e) => e);
 
@@ -316,7 +316,7 @@ describe('CodexSdkMcpModelClient', () => {
   describe('opt-in session debug logging', () => {
     it('records the codex-mcp protocol, forwarded MCP names, and server status', async () => {
       const sink = collectingSink();
-      await new CodexSdkMcpModelClient('gpt-5.5', {
+      await new CodexSdkMcpModelClient('gpt-6.1-sol', {
         debug: sink,
         profile: 'premium_dm',
         tier: 'premium',
@@ -339,7 +339,7 @@ describe('CodexSdkMcpModelClient', () => {
     it('records a failure event for a failed turn', async () => {
       state.events = [{ type: 'turn.failed', error: { message: 'boom' } }];
       const sink = collectingSink();
-      await new CodexSdkMcpModelClient('gpt-5.5', { debug: sink })
+      await new CodexSdkMcpModelClient('gpt-6.1-sol', { debug: sink })
         .complete(baseInput)
         .catch(() => {});
       const outcome = sink.events[0].outcome as { ok: false; error: string };
