@@ -678,7 +678,32 @@ function optFeatureChoiceArray(parent: Obj, key: string, path: string): void {
       const unsupported = reqObj(entry, 'unsupported', at);
       reqStr(unsupported, 'reason', `${at}.unsupported`);
     }
+    optBoolTrue(entry, 'optional', at);
+    const requires = entry.requiresOption;
+    if (requires !== undefined) {
+      const requiresAt = `${at}.requiresOption`;
+      const trigger = reqObj(entry, 'requiresOption', at);
+      const siblingId = reqStr(trigger, 'choiceId', requiresAt);
+      const optionId = reqStr(trigger, 'optionId', requiresAt);
+      const sibling = entries.find((other) => other.id === siblingId);
+      if (sibling === undefined || sibling === entry) {
+        throw new RulesPackError(
+          `${requiresAt}.choiceId '${siblingId}' must name a sibling choice on the same feature`,
+        );
+      }
+      if (!Array.isArray(sibling.from) || !sibling.from.includes(optionId)) {
+        throw new RulesPackError(
+          `${requiresAt}.optionId '${optionId}' must be one of sibling choice '${siblingId}' from options`,
+        );
+      }
+    }
   });
+}
+
+function optBoolTrue(parent: Obj, key: string, path: string): void {
+  if (parent[key] !== undefined && parent[key] !== true) {
+    throw new RulesPackError(`${path}.${key} must be true when present`);
+  }
 }
 
 // Optional starting-equipment block on a class: verbatim `text` plus optional

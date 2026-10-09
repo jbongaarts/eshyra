@@ -95,6 +95,8 @@ export interface Level1RequiredChoice {
   readonly sourceText?: string;
   /** Follow-up bead that will make an unstructured choice structured. */
   readonly blockingBead?: string;
+  /** An empty selection satisfies the choice (eshyra-mdke). */
+  readonly optional?: boolean;
 }
 
 /** Inputs to {@link enumerateLevel1RequiredChoices}. */

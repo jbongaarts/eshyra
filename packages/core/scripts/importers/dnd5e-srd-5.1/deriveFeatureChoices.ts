@@ -52,6 +52,10 @@ export interface DeriveFeatureChoicesInput {
   /** Keys of every `creature:` record in the pack, for the curated
    * summon-form-extension source-fidelity guard (eshyra-olv1). */
   readonly creatureKeys?: ReadonlySet<string>;
+  /** Creature records, for the Favored Enemy humanoid-race menu (eshyra-mdke). */
+  readonly creatureRecords?: readonly RulesRecord[];
+  /** Ancestry records, for the Favored Enemy humanoid-race menu (eshyra-mdke). */
+  readonly ancestryRecords?: readonly RulesRecord[];
 }
 
 /** A machine-readable prepared-spell count (eshyra-vk23.2): the prepared total
@@ -78,6 +82,13 @@ interface DerivedChoice {
   /** True when the choice swaps a prior pick (known-caster level-up). */
   readonly replaces?: boolean;
   readonly unsupported?: { readonly reason: string };
+  /** Conditional choice: applies only when a sibling choice's option is picked. */
+  readonly requiresOption?: {
+    readonly choiceId: string;
+    readonly optionId: string;
+  };
+  /** An empty selection is allowed. */
+  readonly optional?: true;
 }
 
 /**
@@ -1277,6 +1288,145 @@ function parseOptionCatalog(
   });
 }
 
+/**
+ * Favored Enemy's SRD alternatives and associated language (eshyra-mdke).
+ *
+ * SRD 5.1 (Ranger, Favored Enemy): "Choose a type of favored enemy: ... or
+ * undead. Alternatively, you can select two races of humanoid (such as gnolls
+ * and orcs) as favored enemies. ... When you gain this feature, you also learn
+ * one language of your choice that is spoken by your favored enemies, if they
+ * speak one at all. You choose one additional favored enemy, as well as an
+ * associated language, at 6th and 14th level."
+ *
+ * Three curated, source-guarded structures hang off the colon-list choice:
+ *  1. `humanoids` is appended to the `favored-enemy` options (guard: the text
+ *     must contain "two races of humanoid").
+ *  2. `humanoid-races` (choose 2, conditional on `humanoids`). The SRD set of
+ *     humanoid races is OPEN-ENDED ("such as gnolls and orcs"); the menu here
+ *     is the pack-grounded CLOSED set: the humanoid subtype tags of the
+ *     pack's `humanoid (...)` creature records (minus 'any race' and
+ *     'shapechanger', which are not races) UNION the base ancestry names.
+ *     Both SRD examples (gnoll, orc) must be present or the import fails.
+ *  3. `favored-enemy-language` (choose 1, optional): the standard + exotic
+ *     language names from the pack's `languageOptions` tables. Which languages
+ *     are "spoken by your favored enemies" (and whether they speak one at
+ *     all) stays DM-adjudicated; the structure only bounds the menu and lets
+ *     the player skip.
+ */
+function deriveFavoredEnemyChoices(
+  input: DeriveFeatureChoicesInput,
+  feature: RulesRecord,
+  description: string,
+  spec: ColonListSpec,
+  choose: number,
+  from: readonly string[],
+  level: number,
+): DerivedChoice[] {
+  const flat = description.replace(/\s+/g, ' ');
+  for (const phrase of [
+    'two races of humanoid',
+    'such as gnolls and orcs',
+    'one language of your choice that is spoken by your favored enemies',
+  ]) {
+    if (!flat.includes(phrase)) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot derive Favored Enemy humanoid/language choices for ${feature.key}: ` +
+          `the description no longer contains "${phrase}". The SRD phrasing may ` +
+          'have changed or the extraction regressed.',
+      );
+    }
+  }
+  if (
+    input.creatureRecords === undefined ||
+    input.ancestryRecords === undefined
+  ) {
+    throw new FeatureChoiceDerivationError(
+      `Cannot derive the humanoid-race menu for ${feature.key}: creature and ancestry records are required.`,
+    );
+  }
+  const races = new Set<string>();
+  for (const creature of input.creatureRecords) {
+    const type = dataOf(creature).type;
+    const match =
+      typeof type === 'string' ? /^humanoid \((.+)\)$/i.exec(type) : null;
+    if (match === null) continue;
+    for (const tag of match[1].split(',')) {
+      const race = tag.trim().toLowerCase();
+      if (race.length > 0 && race !== 'any race' && race !== 'shapechanger') {
+        races.add(race);
+      }
+    }
+  }
+  for (const ancestry of input.ancestryRecords) {
+    if (dataOf(ancestry).subraceOf !== undefined) continue;
+    races.add(ancestry.name.trim().toLowerCase());
+  }
+  for (const example of ['gnoll', 'orc']) {
+    if (!races.has(example)) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot derive the humanoid-race menu for ${feature.key}: the SRD example race "${example}" is missing from the pack-derived set.`,
+      );
+    }
+  }
+  const languages: string[] = [];
+  for (const tableKey of [
+    'table:standard-languages',
+    'table:exotic-languages',
+  ]) {
+    const table = input.tableRecords?.find((record) => record.key === tableKey);
+    const projection = (
+      table === undefined ? undefined : dataOf(table).projection
+    ) as
+      | { kind?: string; rows?: ReadonlyArray<{ language?: string }> }
+      | undefined;
+    if (
+      projection?.kind !== 'languageOptions' ||
+      !Array.isArray(projection.rows)
+    ) {
+      throw new FeatureChoiceDerivationError(
+        `Cannot derive the Favored Enemy language menu for ${feature.key}: ${tableKey} has no languageOptions projection.`,
+      );
+    }
+    for (const row of projection.rows) {
+      if (
+        typeof row.language === 'string' &&
+        !languages.includes(row.language)
+      ) {
+        languages.push(row.language);
+      }
+    }
+  }
+  return [
+    {
+      id: spec.id,
+      category: spec.category,
+      prompt: spec.prompt(choose),
+      level,
+      choose,
+      from: [...from, 'humanoids'],
+    },
+    {
+      id: 'humanoid-races',
+      category: 'favoredEnemy',
+      prompt: 'Choose two races of humanoid as favored enemies.',
+      level,
+      choose: 2,
+      requiresOption: { choiceId: spec.id, optionId: 'humanoids' },
+      from: [...races].sort(),
+    },
+    {
+      id: 'favored-enemy-language',
+      category: 'language',
+      prompt:
+        'Learn one language spoken by your favored enemies, if they speak one at all.',
+      level,
+      choose: 1,
+      optional: true,
+      from: languages,
+    },
+  ];
+}
+
 function deriveOptionListChoices(
   input: DeriveFeatureChoicesInput,
   granted: ReadonlySet<string>,
@@ -1376,11 +1526,27 @@ function deriveOptionListChoices(
           'may have changed or the extraction regressed.',
       );
     }
+    const level = featureLevel(feature);
+    if (spec.id === 'favored-enemy') {
+      out.set(
+        feature.key,
+        deriveFavoredEnemyChoices(
+          input,
+          feature,
+          description,
+          spec,
+          choose,
+          from,
+          level,
+        ),
+      );
+      continue;
+    }
     const choice: DerivedChoice = {
       id: spec.id,
       category: spec.category,
       prompt: spec.prompt(choose),
-      level: featureLevel(feature),
+      level,
       choose,
       from,
     };

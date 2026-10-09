@@ -1034,6 +1034,19 @@ function collectLanguages(
         languages.add(language);
       }
     }
+    // A class-feature pick that teaches a language (Favored Enemy; eshyra-mdke).
+    const application = entry.application;
+    if (application?.kind === 'feature-choice') {
+      for (const language of application.languages ?? []) {
+        if (
+          ![...languages].some(
+            (l) => l.toLowerCase() === language.toLowerCase(),
+          )
+        ) {
+          languages.add(language);
+        }
+      }
+    }
   }
   return [...languages];
 }
