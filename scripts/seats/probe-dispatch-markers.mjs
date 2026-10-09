@@ -357,10 +357,10 @@ if (invokedDirectly) {
   // profile selection cannot hide behind a mode the probe never ran.
   const modes = [
     [],
-    ['--model', 'gpt-6-luna'],
+    ['--model', 'gpt-6.1-luna'],
     ['--effort', 'high'],
     ['--sandbox'],
-    ['--model', 'gpt-6-luna', '--effort', 'low'],
+    ['--model', 'gpt-6.1-luna', '--effort', 'low'],
   ];
   const failures = [];
   for (const mode of modes) {
