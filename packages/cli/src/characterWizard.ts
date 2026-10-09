@@ -1242,8 +1242,36 @@ class Wizard {
     }
   }
 
+  /**
+   * Whether the chosen class casts at level 1 (any level-1 cantrip, spell,
+   * slot, or pact-slot count) and whether it prepares spells from its list.
+   * Mirrors the core rule in `level1SpellRequirements`, so the prompt agrees
+   * with the counts the draft enforces.
+   */
+  private level1Casting(): { casts: boolean; prepares: boolean } {
+    const className = this.draft.selections.className;
+    if (className === undefined) return { casts: false, prepares: false };
+    const record = this.deps.resolver.resolveClass(className);
+    if (!record.ok) return { casts: false, prepares: false };
+    const casting = record.record.level1?.spellcasting;
+    const casts =
+      casting !== undefined &&
+      (casting.cantripsKnown !== undefined ||
+        casting.spellsKnown !== undefined ||
+        casting.slots !== undefined ||
+        casting.pactSlots !== undefined);
+    return {
+      casts,
+      prepares: record.record.spellPreparation?.kind === 'prepared',
+    };
+  }
+
   private spellStepIntro(): string {
     const needed = this.spellShortfalls();
+    const { casts, prepares } = this.level1Casting();
+    if (!casts) {
+      return 'This class has no level-1 spells to choose; press Enter to continue.';
+    }
     if (needed.length === 0) {
       return 'Enter level-1 spells (comma-separated), or press Enter to continue.';
     }
@@ -1252,7 +1280,11 @@ class Wizard {
       ...needed.map((line) => `  • ${line}`),
       ...(this.isWizardClass()
         ? ['You then choose which spellbook spells to prepare.']
-        : []),
+        : prepares
+          ? [
+              'Prepared spells come from this same list; always-prepared subclass spells do not count toward the limit.',
+            ]
+          : []),
     ].join('\n');
   }
 
