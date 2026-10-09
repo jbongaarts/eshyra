@@ -248,6 +248,19 @@ export interface ResolvedSubclassData {
   readonly features: readonly string[];
 }
 
+/**
+ * One subclass spell table (`subclassSpellGrants` projection): the spells the
+ * subclass grants as always-prepared at each class level (eshyra-odpc). Spell
+ * entries are the table's printed NAMES, unresolved.
+ */
+export interface ResolvedSubclassSpellTable {
+  readonly tableRef: string;
+  readonly rows: readonly {
+    readonly level: number;
+    readonly spells: readonly string[];
+  }[];
+}
+
 /** Feature fields level-up reads from generated `feature` records. */
 export interface ResolvedFeatureData {
   readonly key: string;
@@ -371,6 +384,14 @@ export interface RulesPackCharacterResolver {
   listBackgrounds(): readonly ResolvedBackgroundData[];
   /** Every well-formed `spell` record, in canonical-key order. */
   listSpells(): readonly ResolvedSpellData[];
+  /**
+   * The subclass's `spellTableRefs` resolved to their structured
+   * `subclassSpellGrants` rows (empty when the subclass names none). Fails
+   * closed on a missing or malformed table.
+   */
+  resolveSubclassSpellTables(
+    subclassRef: string,
+  ): CharacterResolution<readonly ResolvedSubclassSpellTable[]>;
   /** Every well-formed `subclass` record, in canonical-key order. */
   listSubclasses(): readonly ResolvedSubclassData[];
   /** Every well-formed `feature` record, in canonical-key order. */
@@ -389,6 +410,7 @@ export function createRulesPackCharacterResolver(
     resolveClassLevel: (nameOrRef, level) =>
       resolveClassLevel(stack, nameOrRef, level),
     resolveSpell: (nameOrRef) => resolveSpell(stack, nameOrRef),
+    resolveSubclassSpellTables: (ref) => resolveSubclassSpellTables(stack, ref),
     resolveAncestry: (nameOrRef) => resolveAncestry(stack, nameOrRef),
     resolveBackground: (nameOrRef) => resolveBackground(stack, nameOrRef),
     resolveFeat: (nameOrRef) => resolveFeat(stack, nameOrRef),
@@ -1021,6 +1043,47 @@ function resolveSubclass(
       features: data.features,
     },
   };
+}
+
+function resolveSubclassSpellTables(
+  stack: ResolvedRulesStack,
+  subclassRef: string,
+): CharacterResolution<readonly ResolvedSubclassSpellTable[]> {
+  const sub = lookup(stack, 'subclass', subclassRef);
+  if (!sub.ok) return lookupError(sub);
+  const data = sub.record.data;
+  if (!isRecord(data)) return malformed('subclass', sub.record.key);
+  const refs = data.spellTableRefs;
+  if (refs === undefined) return { ok: true, record: [] };
+  if (!isStringArray(refs)) return malformed('subclass', sub.record.key);
+  const tables: ResolvedSubclassSpellTable[] = [];
+  for (const tableRef of refs) {
+    const table = lookup(stack, 'table', tableRef);
+    if (!table.ok) return lookupError(table);
+    const projection = isRecord(table.record.data)
+      ? table.record.data.projection
+      : undefined;
+    if (
+      !isRecord(projection) ||
+      projection.kind !== 'subclassSpellGrants' ||
+      !Array.isArray(projection.rows)
+    ) {
+      return malformed('table', table.record.key);
+    }
+    const rows: { level: number; spells: readonly string[] }[] = [];
+    for (const row of projection.rows as unknown[]) {
+      if (
+        !isRecord(row) ||
+        !Number.isInteger(row.level) ||
+        !isStringArray(row.spells)
+      ) {
+        return malformed('table', table.record.key);
+      }
+      rows.push({ level: row.level as number, spells: row.spells });
+    }
+    tables.push({ tableRef: table.record.key, rows });
+  }
+  return { ok: true, record: tables };
 }
 
 function resolveFeature(

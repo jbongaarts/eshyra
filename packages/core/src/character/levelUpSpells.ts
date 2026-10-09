@@ -53,6 +53,7 @@ import type {
   ResolvedClassData,
   ResolvedFeatureData,
   ResolvedLevelSpellcasting,
+  ResolvedPreparationFormula,
   ResolvedSpellData,
   RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
@@ -408,6 +409,7 @@ export function spellsUnion(sc: CharacterSpellcasting): readonly string[] {
       ...(sc.known ?? []),
       ...(sc.spellbook ?? []),
       ...(sc.prepared ?? []),
+      ...(sc.alwaysPrepared ?? []),
       ...(sc.mysticArcanum ?? []).map((entry) => entry.spellRef),
     ]),
   ];
@@ -484,6 +486,9 @@ export function applySpellPlacements(
     ...(present.has('prepared') ? { prepared: buckets.prepared } : {}),
     ...(arcanum.length > 0 ? { mysticArcanum: arcanum } : {}),
     ...(designations.length > 0 ? { designations } : {}),
+    ...(base?.alwaysPrepared !== undefined
+      ? { alwaysPrepared: base.alwaysPrepared }
+      : {}),
   };
 }
 
@@ -829,7 +834,7 @@ export function detectSpellDescriptors(ctx: SpellDetectionContext): {
     // (e) prepared casters: optional, never a blocker
     if (preparation?.kind === 'prepared') {
       handleBase('prepared-spells');
-      out.push(prepareDescriptor(ctx, prefix, preparation, sc, env));
+      out.push(prepareDescriptor(ctx, prefix, preparation, sc, spellbook));
     }
     if (preparation === undefined) {
       out.push(
@@ -1018,41 +1023,95 @@ function modifierAfterAsi(
   return abilityModifier(score);
 }
 
+/** The legal prepared-spell option set and count limit for one class level. */
+export type PreparationBasis =
+  | {
+      readonly ok: true;
+      readonly limit: number;
+      readonly spells: readonly ResolvedSpellData[];
+      readonly formula: ResolvedPreparationFormula;
+    }
+  | { readonly ok: false; readonly reason: string };
+
+/**
+ * The single computation of what a prepared caster may prepare: the class's
+ * `prepared-spells` feature choice (evaluated by the shared spell-filter
+ * evaluator at `level`; wizard: spellbook only; castable spell levels only) and
+ * the count limit `max(minimum, mod + floor(level / divisor))`. Shared by the
+ * level-up `prepare` descriptor and the long-rest preparation operation
+ * (eshyra-odpc) so the formula and option set cannot drift apart.
+ * `modifierOf` supplies the ability modifier (level-up passes the post-ASI one).
+ */
+export function evaluatePreparationBasis(args: {
+  readonly resolver: RulesPackCharacterResolver;
+  readonly classKey: string;
+  readonly preparation: NonNullable<ResolvedClassData['spellPreparation']>;
+  readonly level: number;
+  readonly spellbook: readonly string[];
+  readonly modifierOf: (ability: AbilityScoreName) => number | undefined;
+}): PreparationBasis {
+  const choice = baseChoice(args, 'prepared-spells');
+  const formula = args.preparation.preparationFormula;
+  if (formula === undefined || choice === undefined) {
+    return {
+      ok: false,
+      reason:
+        'The class record carries no structured prepared-spell formula/choice.',
+    };
+  }
+  const ability = formula.ability as AbilityScoreName;
+  const mod = args.modifierOf(ability);
+  if (mod === undefined) {
+    return {
+      ok: false,
+      reason: `Unknown preparation ability '${formula.ability}'.`,
+    };
+  }
+  const parsed = parseSpellFilter(choice.from);
+  if (!parsed.ok) return { ok: false, reason: parsed.reason };
+  const evaluated = evaluateSpellFilter(parsed.filter, {
+    resolver: args.resolver,
+    classKey: args.classKey,
+    toLevel: args.level,
+    spellbook: args.spellbook,
+    excluded: new Set(),
+  });
+  if (!evaluated.ok) return { ok: false, reason: evaluated.reason };
+  const limit = Math.max(
+    formula.minimum,
+    mod + Math.floor(args.level / formula.classLevelDivisor),
+  );
+  return { ok: true, limit, spells: evaluated.spells, formula };
+}
+
 function prepareDescriptor(
   ctx: SpellDetectionContext,
   prefix: string,
   preparation: NonNullable<ResolvedClassData['spellPreparation']>,
   sc: CharacterSpellcasting | undefined,
-  env: (excluded: ReadonlySet<string>) => FilterEnv,
+  spellbook: readonly string[],
 ): LevelUpRequiredChoice {
   const id = `${prefix}.prepare`;
-  const choice = baseChoice(ctx, 'prepared-spells');
-  const formula = preparation.preparationFormula;
-  const fail = (why: string) =>
-    unsupported(
+  const basis = evaluatePreparationBasis({
+    resolver: ctx.resolver,
+    classKey: ctx.classKey,
+    preparation,
+    level: ctx.toLevel,
+    spellbook,
+    modifierOf: (ability) =>
+      ctx.sheet.abilityScores[ability] === undefined
+        ? undefined
+        : modifierAfterAsi(ctx.sheet, ability, ctx.selections, ctx.toLevel),
+  });
+  if (!basis.ok) {
+    return unsupported(
       id,
       'Prepare spells',
       `level ${ctx.toLevel}: prepared spells`,
-      why,
-    );
-  if (formula === undefined || choice === undefined) {
-    return fail(
-      'The class record carries no structured prepared-spell formula/choice.',
+      basis.reason,
     );
   }
-  const ability = formula.ability as AbilityScoreName;
-  if (ctx.sheet.abilityScores[ability] === undefined) {
-    return fail(`Unknown preparation ability '${formula.ability}'.`);
-  }
-  const parsed = parseSpellFilter(choice.from);
-  if (!parsed.ok) return fail(parsed.reason);
-  const evaluated = evaluateSpellFilter(parsed.filter, env(new Set()));
-  if (!evaluated.ok) return fail(evaluated.reason);
-  const mod = modifierAfterAsi(ctx.sheet, ability, ctx.selections, ctx.toLevel);
-  const limit = Math.max(
-    formula.minimum,
-    mod + Math.floor(ctx.toLevel / formula.classLevelDivisor),
-  );
+  const { limit, formula } = basis;
   return {
     id,
     kind: 'spell-selection',
@@ -1060,8 +1119,8 @@ function prepareDescriptor(
     optional: true,
     label: `Prepare up to ${limit} spell(s) (optional; preparation can also change after a long rest)`,
     choose: limit,
-    from: evaluated.spells.map((spell) => spell.key),
-    options: optionsOfSpells(evaluated.spells),
+    from: basis.spells.map((spell) => spell.key),
+    options: optionsOfSpells(basis.spells),
     spellChoice: { mode: 'prepare', bucket: 'prepared' },
     reason: `Prepare ${formula.ability} modifier + ${
       formula.classLevelDivisor === 1

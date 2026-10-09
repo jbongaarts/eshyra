@@ -461,6 +461,14 @@ export type {
   DeriveSpellcastingValuesInput,
 } from './character/spellcastingDerivation.js';
 export { deriveSpellcastingValues } from './character/spellcastingDerivation.js';
+export type {
+  PrepareSpellsInput,
+  PrepareSpellsResult,
+} from './character/spellPreparation.js';
+export {
+  prepareSpellsAfterLongRest,
+  SpellPreparationError,
+} from './character/spellPreparation.js';
 // Source-cited character-creation oracles (eshyra-o9bd.15): retained for tests
 // and audit parity only. Runtime code reads generated pack metadata instead.
 export type {
