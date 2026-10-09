@@ -1804,6 +1804,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
     subclassRecords: enriched.subclassRecords,
     featureRecords: enriched.featureRecords,
     tableRecords,
+    creatureKeys: new Set(creatureRecords.map((record) => record.key)),
     optionSourceLabelsByFeatureKey: optionSourceLabelsByFeatureKey(
       input.features ?? [],
     ),

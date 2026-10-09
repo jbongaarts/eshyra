@@ -655,6 +655,24 @@ const rules: readonly ClassificationRule[] = [
     },
   },
   {
+    name: 'curated summon form extensions',
+    matches: exactPath(
+      'data.choices[].options[].summonFormExtensions[].spell',
+      'data.choices[].options[].summonFormExtensions[].forms[].name',
+      'data.choices[].options[].summonFormExtensions[].forms[].creatureRef',
+    ),
+    classify: ({ fieldPath }) =>
+      result(
+        fieldPath.endsWith('.name') ? 'scalar-like' : 'identifier-like',
+        'complete',
+        'activeEffects recastBondedSummon caster form extensions (casterSummonFormExtensions)',
+        `${shapeValidation}; kindSchemas validates spell/creature refs and unique forms`,
+        'importer guard fails closed when a form name is not in the option text or a creature ref is absent',
+        'FeatureChoiceOption.summonFormExtensions',
+        'featureChoices.ts and activeEffects.ts',
+      ),
+  },
+  {
     name: 'local choice identities and discriminators',
     matches: exactPath(
       'data.choices[].id',

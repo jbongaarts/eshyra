@@ -805,6 +805,11 @@ prose(
   '/choices/*/options/*/text',
   "a named option's printed descriptive clause (e.g. a Fighting Style option body), quoted verbatim.",
 );
+derived(
+  'feature',
+  '/choices/*/options/*/summonFormExtensions',
+  "curated structured summon-form grant (spell + creature refs) for the option; every form name is guarded against the option's own verbatim text and every creature ref against the pack (deriveFeatureChoices.ts), eshyra-olv1.",
+);
 projection(
   'feature',
   '/choices/*/unsupported',

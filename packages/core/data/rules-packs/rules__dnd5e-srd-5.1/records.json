@@ -85174,7 +85174,30 @@
               "id": "pact-boon:pact-of-the-chain",
               "name": "Pact of the Chain",
               "text": "You learn the find familiar spell and can cast it as a ritual. The spell doesn’t count against your number of spells known. When you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: imp, pseudodragon, quasit, or sprite. Additionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction.",
-              "source": "SRD 5.1 p. 47"
+              "source": "SRD 5.1 p. 47",
+              "summonFormExtensions": [
+                {
+                  "spell": "spell:find-familiar",
+                  "forms": [
+                    {
+                      "name": "imp",
+                      "creatureRef": "creature:imp"
+                    },
+                    {
+                      "name": "pseudodragon",
+                      "creatureRef": "creature:pseudodragon"
+                    },
+                    {
+                      "name": "quasit",
+                      "creatureRef": "creature:quasit"
+                    },
+                    {
+                      "name": "sprite",
+                      "creatureRef": "creature:sprite"
+                    }
+                  ]
+                }
+              ]
             },
             {
               "id": "pact-boon:pact-of-the-blade",

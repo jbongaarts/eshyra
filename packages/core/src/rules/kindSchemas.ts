@@ -532,7 +532,47 @@ function optFeatureChoiceOptions(entry: Obj, key: string, path: string): void {
     reqStr(option, 'text', at);
     optStr(option, 'prerequisite', at);
     optPrerequisiteClauses(option, 'prerequisites', at);
+    optSummonFormExtensions(option, 'summonFormExtensions', at);
     reqStr(option, 'source', at);
+  });
+}
+
+// Curated extra summoning-spell creation forms an option grants (eshyra-olv1):
+// each names a `spell:` ref and a non-empty list of forms with unique,
+// well-formed `creature:` refs.
+function optSummonFormExtensions(parent: Obj, key: string, path: string): void {
+  const extensions = objArray(parent, key, path);
+  if (extensions === undefined) return;
+  if (extensions.length === 0) {
+    throw new RulesPackError(`${path}.${key} must not be empty when present`);
+  }
+  extensions.forEach((extension, i) => {
+    const at = `${path}.${key}[${i}]`;
+    const spell = reqStr(extension, 'spell', at);
+    if (!spell.startsWith('spell:')) {
+      throw new RulesPackError(
+        `${at}.spell must be a 'spell:' ref, got ${JSON.stringify(spell)}`,
+      );
+    }
+    const forms = objArray(extension, 'forms', at);
+    if (forms === undefined || forms.length === 0) {
+      throw new RulesPackError(`${at}.forms must be a non-empty array`);
+    }
+    const seen = new Set<string>();
+    forms.forEach((form, j) => {
+      const fat = `${at}.forms[${j}]`;
+      reqStr(form, 'name', fat);
+      const ref = reqStr(form, 'creatureRef', fat);
+      if (!/^creature:[a-z0-9][a-z0-9-]*$/.test(ref)) {
+        throw new RulesPackError(
+          `${fat}.creatureRef must be a 'creature:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+      if (seen.has(ref)) {
+        throw new RulesPackError(`${fat}.creatureRef ${ref} is duplicated`);
+      }
+      seen.add(ref);
+    });
   });
 }
 

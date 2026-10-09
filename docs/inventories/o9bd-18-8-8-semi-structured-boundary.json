@@ -9,9 +9,9 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1863,
+  "rowCount": 1866,
   "dispositionCounts": {
-    "complete": 429,
+    "complete": 432,
     "model-adjudicated": 1229,
     "not-mechanical": 196,
     "typed-core-with-prose-qualifier": 3,
@@ -13771,6 +13771,72 @@
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
       "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.choices[].options[].summonFormExtensions[].forms[].creatureRef",
+      "representativeValues": [
+        "creature:imp",
+        "creature:pseudodragon",
+        "creature:quasit",
+        "creature:sprite"
+      ],
+      "population": 4,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape; kindSchemas validates spell/creature refs and unique forms",
+      "deterministicConsumers": "activeEffects recastBondedSummon caster form extensions (casterSummonFormExtensions)",
+      "currentAuditReadiness": "importer guard fails closed when a form name is not in the option text or a creature ref is absent",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "FeatureChoiceOption.summonFormExtensions",
+      "retainedProseBoundary": null,
+      "owner": "featureChoices.ts and activeEffects.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.choices[].options[].summonFormExtensions[].forms[].name",
+      "representativeValues": [
+        "imp",
+        "pseudodragon",
+        "quasit",
+        "sprite"
+      ],
+      "population": 4,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape; kindSchemas validates spell/creature refs and unique forms",
+      "deterministicConsumers": "activeEffects recastBondedSummon caster form extensions (casterSummonFormExtensions)",
+      "currentAuditReadiness": "importer guard fails closed when a form name is not in the option text or a creature ref is absent",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "FeatureChoiceOption.summonFormExtensions",
+      "retainedProseBoundary": null,
+      "owner": "featureChoices.ts and activeEffects.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.choices[].options[].summonFormExtensions[].spell",
+      "representativeValues": [
+        "spell:find-familiar"
+      ],
+      "population": 1,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape; kindSchemas validates spell/creature refs and unique forms",
+      "deterministicConsumers": "activeEffects recastBondedSummon caster form extensions (casterSummonFormExtensions)",
+      "currentAuditReadiness": "importer guard fails closed when a form name is not in the option text or a creature ref is absent",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "FeatureChoiceOption.summonFormExtensions",
+      "retainedProseBoundary": null,
+      "owner": "featureChoices.ts and activeEffects.ts",
       "futureWork": false
     },
     {
