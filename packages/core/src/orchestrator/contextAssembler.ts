@@ -12,6 +12,7 @@ import type {
 import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
 import { normalizeCharacterWallet } from '../character/currency.js';
 import type { CharacterWallet } from '../character/finalizeCharacter.js';
+import { renderSkillsLine } from '../character/skillBonuses.js';
 import { listClosedArcSummaries } from '../memory/campaignArc.js';
 import type {
   ArcSummaryRecord,
@@ -236,6 +237,8 @@ export interface StateSnapshot {
   character: CharacterSnapshot;
   /** The acting character's canonical wallet; unavailable before sheet finalization. */
   wallet: CharacterWallet | undefined;
+  /** Derived skill bonuses line (skillBonuses.ts); absent without an SRD sheet. */
+  skills?: string;
   inventory: InventoryItem[];
   /** Deterministically bounded unheld physical rows co-located with the clock. */
   nearbyInventory: NearbyInventoryItem[];
@@ -459,6 +462,13 @@ export function readStateSnapshot(
       ? undefined
       : normalizeCharacterWallet(sheet.wallet);
 
+  const skills =
+    sheet === undefined ||
+    sheet.system !== DND5E_SRD_SYSTEM_ID ||
+    sheet.rulesPackId !== DND5E_SRD_PACK_ID
+      ? undefined
+      : renderSkillsLine(sheet);
+
   const nearbyInventory: NearbyInventoryItem[] = [];
   for (const row of nearbyInventoryRows) {
     const item: NearbyInventoryItem = {
@@ -509,6 +519,7 @@ export function readStateSnapshot(
       inspiration: character.inspiration === 1,
     },
     wallet,
+    ...(skills === undefined ? {} : { skills }),
     inventory: inventoryRows.map((row) => {
       const rawProperties = inventoryPropertiesColumn.decode(
         row.properties_json,
@@ -844,6 +855,7 @@ function renderState(state: StateSnapshot): string {
       ? 'Wallet: unavailable (no canonical character sheet)'
       : `Wallet: ${state.wallet.cp} cp, ${state.wallet.sp} sp, ${state.wallet.ep} ep, ${state.wallet.gp} gp, ${state.wallet.pp} pp`,
   );
+  if (state.skills !== undefined) lines.push(state.skills);
   if (state.attunements.length > 0) {
     lines.push(
       `Attuned items (${state.attunements.length}/${ATTUNEMENT_SLOT_LIMIT}): ${state.attunements

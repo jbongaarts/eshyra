@@ -782,6 +782,41 @@ describe('Context Assembler', () => {
     db.close();
   });
 
+  it('renders derived skill bonuses with expertise and passive Perception', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const base = testSheet();
+    createSqliteCharacterSheetStore(db).save(
+      'pc-1',
+      testSheet({
+        class: { key: 'class:rogue', name: 'Rogue' },
+        abilityScores: {
+          ...base.abilityScores,
+          dexterity: { base: 16, final: 16, modifier: 3 },
+        },
+        skillProficiencies: ['Stealth'],
+        featureChoices: [
+          {
+            featureRef: 'feature:rogue:expertise',
+            choiceId: 'expertise',
+            optionIds: ['skill:Stealth'],
+            level: 1,
+          },
+        ],
+      }),
+    );
+    const ctx = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
+      sessionId: SESSION,
+      playerInput: 'I sneak.',
+    });
+    expect(renderContextMessage(ctx)).toContain(
+      'Skills: Stealth +7 (expertise); passive Perception 10',
+    );
+    db.close();
+  });
+
   it('renders an unavailable wallet during bootstrap without a canonical sheet', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     const ctx = assembleContext({
