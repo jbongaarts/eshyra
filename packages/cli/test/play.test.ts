@@ -1,6 +1,7 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { LevelUpRequiredChoice } from '@eshyra/core';
 import {
   type CharacterDraft,
   type CharacterRegistryStore,
@@ -63,6 +64,7 @@ import {
   runDemo,
   runPlay,
 } from '../src/play.js';
+import { collectSupportedChoices } from '../src/playProgression.js';
 
 const FAKE_ARC_SUMMARY = 'FAKE_ARC_SUMMARY';
 const TEST_CAMPAIGN_POSITION = formatCampaignPosition({
@@ -1784,3 +1786,62 @@ function seedOpenSession(db: Db): void {
     at: '2026-05-19T00:02:00.000Z',
   });
 }
+
+describe('paged level-up option lists', () => {
+  const magicalSecrets: LevelUpRequiredChoice = {
+    id: 'level.10.feature.bard-magical-secrets.magical-secrets',
+    kind: 'class-feature-choice',
+    status: 'supported',
+    label: 'Magical Secrets',
+    choose: 1,
+    reason: 'test',
+    options: Array.from({ length: 300 }, (_, index) => ({
+      id: index === 250 ? 'spell:fireball' : `spell:filler-${index}`,
+      name: index === 250 ? 'Fireball' : `Filler ${index}`,
+      level: 3,
+    })),
+  };
+
+  it('pages a long option list, filters with search, and accepts a valid id', async () => {
+    const { io, lines } = scriptedIO(['search fire', 'more', 'spell:fireball']);
+
+    const choices = await collectSupportedChoices(io, [magicalSecrets], {});
+
+    expect(choices).toEqual({ [magicalSecrets.id]: ['spell:fireball'] });
+    const out = lines.join('\n');
+    expect(out).toContain('300 options; showing 1-40 of 300.');
+    expect(out).toContain(
+      "(type 'search ' to filter, 'more' for the next page)",
+    );
+    expect(out).toContain('  spell:filler-0 - Filler 0 (level 3)');
+    expect(out).toContain('300 options matching "fire"; showing 1-1 of 1.');
+    expect(out).toContain('  spell:fireball - Fireball (level 3)');
+    expect(out).toContain('No more options.');
+  });
+
+  it('moves to the next page on more without recording an answer', async () => {
+    const { io, lines } = scriptedIO(['more', 'spell:fireball']);
+
+    const choices = await collectSupportedChoices(io, [magicalSecrets], {});
+
+    expect(choices).toEqual({ [magicalSecrets.id]: ['spell:fireball'] });
+    const out = lines.join('\n');
+    expect(out).toContain('300 options; showing 41-80 of 300.');
+    expect(out).toContain('  spell:filler-40 - Filler 40 (level 3)');
+  });
+
+  it('leaves short option lists unchanged', async () => {
+    const short: LevelUpRequiredChoice = {
+      ...magicalSecrets,
+      options: [{ id: 'spell:a', name: 'Alpha' }],
+    };
+    const { io, lines } = scriptedIO(['search x']);
+
+    const choices = await collectSupportedChoices(io, [short], {});
+
+    expect(choices).toEqual({ [short.id]: ['search x'] });
+    const out = lines.join('\n');
+    expect(out).not.toContain('showing');
+    expect(out).not.toContain("'search '");
+  });
+});

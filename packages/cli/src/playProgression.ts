@@ -15,6 +15,13 @@ import type { CliIO, PlayDeps } from './playTypes.js';
 
 const RECENT_EVENT_LIMIT = 5;
 const MAX_CHOICE_ROUNDS = 5;
+// Option lists longer than this are paged and searchable so that a choice such
+// as Magical Secrets (~300 spells) does not flood the terminal.
+const OPTION_PAGE_SIZE = 40;
+
+type LevelUpChoiceOption = NonNullable<
+  LevelUpRequiredChoice['options']
+>[number];
 
 export function showProgression(io: CliIO, db: Db): void {
   const state = getProgressionState(db);
@@ -205,7 +212,8 @@ export async function runLevelUpCommand(
   );
 }
 
-async function collectSupportedChoices(
+// Exported for direct testing of the paged option prompt (synthetic long lists).
+export async function collectSupportedChoices(
   io: CliIO,
   requiredChoices: readonly LevelUpRequiredChoice[],
   answered: LevelUpChoiceSelections,
@@ -217,10 +225,15 @@ async function collectSupportedChoices(
     }
     // A previously answered choice is re-asked only when it is still required
     // (the engine refused it), which the caller signals by re-listing it.
-    describeChoice(io, choice);
-    const answer = await io.prompt(`${choice.id}> `);
-    if (answer === undefined) {
-      return undefined;
+    const view: OptionListView = { filter: undefined, offset: 0 };
+    let answer: string | undefined;
+    for (;;) {
+      describeChoice(io, choice, view);
+      answer = await io.prompt(`${choice.id}> `);
+      if (answer === undefined) {
+        return undefined;
+      }
+      if (!applyListNavigation(io, choice, view, answer.trim())) break;
     }
     if (answer.trim().length === 0) {
       if (choice.optional === true) {
@@ -240,15 +253,35 @@ async function collectSupportedChoices(
   return choices;
 }
 
-function describeChoice(io: CliIO, choice: LevelUpRequiredChoice): void {
+function describeChoice(
+  io: CliIO,
+  choice: LevelUpRequiredChoice,
+  view: OptionListView,
+): void {
   io.write(
     `${choice.label}${choice.optional === true ? ' [optional; blank to skip]' : ''}`,
   );
   if (choice.options !== undefined && choice.options.length > 0) {
-    for (const option of choice.options) {
+    const paged = choice.options.length > OPTION_PAGE_SIZE;
+    const matches = filterOptions(choice.options, view.filter);
+    const shown = paged
+      ? matches.slice(view.offset, view.offset + OPTION_PAGE_SIZE)
+      : matches;
+    if (paged) {
+      const filterNote =
+        view.filter === undefined ? '' : ` matching "${view.filter}"`;
+      const first = shown.length === 0 ? 0 : view.offset + 1;
+      io.write(
+        `  ${choice.options.length} options${filterNote}; showing ${first}-${view.offset + shown.length} of ${matches.length}.`,
+      );
+    }
+    for (const option of shown) {
       io.write(
         `  ${option.id} - ${option.name}${option.level !== undefined ? ` (${option.level === 0 ? 'cantrip' : `level ${option.level}`})` : ''}${option.prerequisite !== undefined ? ` (requires: ${option.prerequisite})` : ''}`,
       );
+    }
+    if (paged) {
+      io.write(`  (type 'search ' to filter, 'more' for the next page)`);
     }
     if (choice.spellChoice?.mode === 'replace') {
       io.write(
@@ -265,6 +298,58 @@ function describeChoice(io: CliIO, choice: LevelUpRequiredChoice): void {
   } else if (choice.from !== undefined && choice.from.length > 0) {
     io.write(choice.from.join(', '));
   }
+}
+
+interface OptionListView {
+  /** Active case-insensitive substring filter over option id and name. */
+  filter: string | undefined;
+  /** Index into the filtered options of the first option on the page. */
+  offset: number;
+}
+
+function filterOptions(
+  options: readonly LevelUpChoiceOption[],
+  filter: string | undefined,
+): readonly LevelUpChoiceOption[] {
+  if (filter === undefined) return options;
+  const needle = filter.toLowerCase();
+  return options.filter(
+    (option) =>
+      option.id.toLowerCase().includes(needle) ||
+      option.name.toLowerCase().includes(needle),
+  );
+}
+
+/**
+ * Handles the paging and search commands for long option lists. Returns true
+ * when the input was a navigation command (the caller re-prompts the same
+ * choice without recording an answer); false when it is an answer.
+ */
+function applyListNavigation(
+  io: CliIO,
+  choice: LevelUpRequiredChoice,
+  view: OptionListView,
+  input: string,
+): boolean {
+  const options = choice.options;
+  if (options === undefined || options.length <= OPTION_PAGE_SIZE) return false;
+  const search = /^search(?:\s+(.*))?$/i.exec(input);
+  if (search !== null) {
+    const text = search[1]?.trim() ?? '';
+    view.filter = text.length === 0 ? undefined : text;
+    view.offset = 0;
+    return true;
+  }
+  if (/^more$/i.test(input)) {
+    const total = filterOptions(options, view.filter).length;
+    if (view.offset + OPTION_PAGE_SIZE >= total) {
+      io.write('No more options.');
+    } else {
+      view.offset += OPTION_PAGE_SIZE;
+    }
+    return true;
+  }
+  return false;
 }
 
 function printMissingChoices(
