@@ -22,16 +22,13 @@ import {
   lookupStrictCampaignRecord,
 } from './campaignRecordLookup.js';
 import {
-  classResourceBindingsFor,
-  classResourceCapacity,
-} from './classResources.js';
-import {
   addCreatedSpellSlot,
   expendSpellSlotAtLevel,
   type SpellSlotCounter,
   SpellSlotError,
 } from './spellSlots.js';
 import {
+  readBoundClassResourceBalance,
   restoreUsage,
   spendUsage,
   type UsageCounter,
@@ -40,7 +37,6 @@ import {
 export const FONT_OF_MAGIC_KEY = 'feature:sorcerer:font-of-magic';
 const SORCERER_CLASS = 'class:sorcerer';
 const SORCERY_POINTS_ABILITY = 'sorcery-points';
-const SORCERY_POINTS_COUNTER = 'ability:sorcery-points';
 
 export type FlexibleCastingOperation = 'create-slot' | 'convert-slot';
 
@@ -115,36 +111,30 @@ export function flexibleCasting(
         `cannot resolve sorcerer level ${sheet.level}: ${classRow.message}`,
       );
     }
-    const binding = classResourceBindingsFor(SORCERER_CLASS)[0];
-    const capacity =
-      binding === undefined
-        ? undefined
-        : classResourceCapacity(binding, classRow.record);
-    if (capacity?.kind !== 'count') {
-      throw new FlexibleCastingError(
-        `the class table gives no sorcery points at level ${sheet.level}`,
-      );
-    }
-    const max = capacity.value;
-    const counter = txnDb
-      .prepare(
-        `SELECT uses_used FROM entity_usage_counter
-         WHERE campaign_id = ? AND owner_kind = 'character' AND owner_ref = ?
-           AND counter_key = ?`,
-      )
-      .get(input.campaignId, characterId, SORCERY_POINTS_COUNTER) as
-      | { uses_used: number }
-      | undefined;
-    const currentPoints = Math.max(
-      0,
-      max - Math.min(counter?.uses_used ?? 0, max),
-    );
-
     const mutation = {
       provenance: input.provenance,
       sessionId: input.sessionId,
       at: input.at,
     };
+    // Read the balance through the usage owner so legacy/alias counters are
+    // adopted into the canonical record and the maximum comes from the active
+    // campaign class table, exactly as spend_usage would.
+    const balance = readBoundClassResourceBalance(txnDb, {
+      ...mutation,
+      campaignId: input.campaignId,
+      characterId,
+      ability: SORCERY_POINTS_ABILITY,
+      ...(input.resolveRulesPack === undefined
+        ? {}
+        : { resolveRulesPack: input.resolveRulesPack }),
+    });
+    if (balance === undefined) {
+      throw new FlexibleCastingError(
+        `the class table gives no sorcery points at level ${sheet.level}`,
+      );
+    }
+    const currentPoints = balance.max - balance.used;
+
     const slotContext = { ...mutation, characterId, resolver };
     const usage = {
       ...mutation,

@@ -2,18 +2,24 @@
 // the real bundled pack's curated Font of Magic procedure.
 
 import { describe, expect, it } from 'vitest';
-import type { CharacterSheet } from '../src/internal.js';
+import type {
+  CampaignRulesPackResolver,
+  CharacterSheet,
+  RulesPack,
+} from '../src/internal.js';
 import {
   createDefaultToolRegistry,
   createSeededRng,
   createSqliteCharacterSheetStore,
   FlexibleCastingError,
   flexibleCasting,
+  getBundledDnd5eSrdPack,
   mutateState,
   readSpellSlots,
   restoreSpellSlots,
   spendSpellSlot,
   spendUsage,
+  writeCampaignRulesBinding,
 } from '../src/internal.js';
 import { bareDb, DEFAULT_TEST_SESSION_ID } from './support/db.js';
 
@@ -194,6 +200,212 @@ describe('Flexible Casting', () => {
         context,
       ),
     ).toMatchObject({ ok: false, code: 'flexible_casting_error' });
+    db.close();
+  });
+});
+
+function counterRows(db: ReturnType<typeof bareDb>) {
+  return db
+    .prepare(
+      `SELECT counter_key, uses_max, uses_used, reset_kind, source
+       FROM entity_usage_counter WHERE owner_ref = 'pc-1' ORDER BY counter_key`,
+    )
+    .all();
+}
+
+function seedLegacy(
+  db: ReturnType<typeof bareDb>,
+  rows: readonly { key: string; max: number; used: number }[],
+) {
+  for (const row of rows) {
+    db.prepare(
+      `INSERT INTO entity_usage_counter(
+         campaign_id, owner_kind, owner_ref, counter_key, display_name,
+         uses_max, uses_used, reset_kind, source, provenance, session_id,
+         updated_at)
+       VALUES (?, 'character', 'pc-1', ?, 'Font of Magic', ?, ?, 'long_rest',
+         'declared', 'test:legacy', ?, ?)`,
+    ).run(CAMPAIGN, row.key, row.max, row.used, DEFAULT_TEST_SESSION_ID, AT);
+  }
+}
+
+describe('Flexible Casting counter-owner invariants', () => {
+  // The same economy (`used` of 3 points spent) in canonical, alias-only, and
+  // duplicate legacy form must give the same balance, legality, and slot
+  // effect, and end as exactly one canonical record counter.
+  const representations = (used: number) => ({
+    canonical: [{ key: 'ability:sorcery-points', max: 3, used }],
+    'alias-only': [{ key: 'ability:font-of-magic', max: 9, used }],
+    duplicate: [
+      { key: 'ability:font-of-magic', max: 9, used },
+      { key: 'ability:sorcery-points', max: 3, used: Math.max(0, used - 1) },
+    ],
+  });
+  for (const operation of ['create-slot', 'convert-slot'] as const) {
+    // create needs 2 points left (1 spent); convert needs room (2 spent).
+    const used = operation === 'create-slot' ? 1 : 2;
+    for (const [name, rows] of Object.entries(representations(used))) {
+      it(`${name} legacy counters behave identically for ${operation}`, () => {
+        const db = sorcerer3();
+        seedLegacy(db, rows);
+        const result =
+          operation === 'create-slot'
+            ? flex(db, 'create-slot', 1)
+            : flex(db, 'convert-slot', 2);
+        expect(result).toMatchObject(
+          operation === 'create-slot'
+            ? {
+                pointDelta: -2,
+                sorceryPoints: { remaining: 0, max: 3 },
+                slot: { spellLevel: 1, created: true },
+              }
+            : {
+                pointDelta: 2,
+                sorceryPoints: { remaining: 3, max: 3 },
+                slot: { spellLevel: 2, slotsUsed: 1 },
+              },
+        );
+        const after = counterRows(db);
+        expect(after).toHaveLength(1);
+        expect(after[0]).toMatchObject({
+          counter_key: 'ability:sorcery-points',
+          uses_max: 3,
+          reset_kind: 'long_rest',
+          source: 'record',
+          uses_used: operation === 'create-slot' ? 3 : 0,
+        });
+        db.close();
+      });
+    }
+  }
+});
+
+const ADDON_ID = 'rules:test-sorcery-points-addon';
+
+function installSorceryPointsAddon(
+  db: ReturnType<typeof bareDb>,
+  level3Max: number,
+): CampaignRulesPackResolver {
+  const base = getBundledDnd5eSrdPack();
+  const clone = (key: string) => {
+    const record = base.records.find((r) => r.key === key);
+    if (record === undefined) throw new Error(`missing ${key}`);
+    const copy = structuredClone(record);
+    copy.overrides = [`${base.meta.packId}/${key}`];
+    return copy;
+  };
+  const sorcerer = clone('class:sorcerer');
+  const levels = (sorcerer.data as { progression: { level: number }[] })
+    .progression;
+  const row = levels.find((l) => l.level === 3) as unknown as {
+    advancement: { kind: string; resource?: string; value?: number }[];
+  };
+  const progression = row.advancement.find(
+    (a) => a.kind === 'resourceProgression' && a.resource === 'sorceryPoints',
+  );
+  if (progression === undefined) throw new Error('no sorceryPoints row');
+  progression.value = level3Max;
+  const font = clone('feature:sorcerer:font-of-magic');
+  const procedure = (
+    font.data as {
+      mechanics: {
+        procedures: {
+          pool: { maximumByLevel: { level: number; maximum: number }[] };
+        }[];
+      };
+    }
+  ).mechanics.procedures[0];
+  const entry = procedure?.pool.maximumByLevel.find((m) => m.level === 3);
+  if (entry === undefined) throw new Error('no level 3 maximum');
+  entry.maximum = level3Max;
+  const addon: RulesPack = {
+    meta: {
+      ...base.meta,
+      packId: ADDON_ID,
+      title: 'Test sorcery points add-on',
+      description: 'Overrides the level 3 sorcery point maximum.',
+      role: 'addon',
+      version: '1.0.0',
+      order: 1,
+      compatibleBaseSystems: [
+        { systemId: base.meta.systemId, versions: [base.meta.version] },
+      ],
+    },
+    records: [sorcerer, font],
+  };
+  writeCampaignRulesBinding(db, {
+    base: {
+      systemId: base.meta.systemId,
+      packId: base.meta.packId,
+      version: base.meta.version,
+    },
+    addons: [
+      {
+        systemId: addon.meta.systemId,
+        packId: addon.meta.packId,
+        version: addon.meta.version,
+      },
+    ],
+    resolvedAt: AT,
+  });
+  return (ref) => (ref.packId === ADDON_ID ? addon : undefined);
+}
+
+describe('Flexible Casting honors the bound sorcery-point maximum', () => {
+  for (const bound of [2, 4]) {
+    it(`persists and reports a bound maximum of ${bound} (bundled is 3), with no spend past exhaustion`, () => {
+      const db = sorcerer3();
+      const resolveRulesPack = installSorceryPointsAddon(db, bound);
+      const opts = { campaignId: CAMPAIGN, ...CTX, resolveRulesPack };
+      const created = flexibleCasting(db, {
+        ...opts,
+        operation: 'create-slot',
+        slotLevel: 1,
+      });
+      expect(created.sorceryPoints).toEqual({
+        remaining: bound - 2,
+        max: bound,
+      });
+      expect(counterRows(db)).toMatchObject([
+        { uses_max: bound, uses_used: 2, source: 'record' },
+      ]);
+      const spend = (uses: number) =>
+        spendUsage(db, {
+          campaignId: CAMPAIGN,
+          owner: { kind: 'character' },
+          ability: 'sorcery-points',
+          uses,
+          resolveRulesPack,
+          ...CTX,
+        });
+      if (bound > 2) spend(bound - 2);
+      expect(() => spend(1)).toThrow(/no uses of/);
+
+      // Converting a slot back is bounded by the same bound maximum.
+      const converted = flexibleCasting(db, {
+        ...opts,
+        operation: 'convert-slot',
+        slotLevel: 2,
+      });
+      expect(converted.sorceryPoints.max).toBe(bound);
+      expect(converted.sorceryPoints.remaining).toBe(2);
+      db.close();
+    });
+  }
+
+  it('fails closed rather than falling back to bundled capacity when the binding cannot resolve', () => {
+    const db = sorcerer3();
+    installSorceryPointsAddon(db, 2);
+    expect(() =>
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: { kind: 'character' },
+        ability: 'sorcery-points',
+        resolveRulesPack: () => undefined,
+        ...CTX,
+      }),
+    ).toThrow(/cannot resolve/);
+    expect(counterRows(db)).toHaveLength(0);
     db.close();
   });
 });

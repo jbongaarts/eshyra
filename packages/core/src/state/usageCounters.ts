@@ -62,15 +62,17 @@
 
 import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
 import {
-  getBundledDnd5eCharacterResolver,
+  createRulesPackCharacterResolver,
   type ResolvedClassLevel,
 } from '../character/rulesPackResolver.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
 import {
+  CampaignRulesBindingResolutionError,
   type CampaignRulesPackResolver,
   lookupCampaignRecord,
+  resolveStrictCampaignRulesStack,
 } from './campaignRecordLookup.js';
 import {
   type ClassResourceBinding,
@@ -877,7 +879,12 @@ function resolveCounterTarget(
     }
   }
 
-  const bound = resolveBoundClassResource(db, resolved, input.ability);
+  const bound = resolveBoundClassResource(
+    db,
+    resolved,
+    input.ability,
+    resolver,
+  );
   if (bound !== undefined) {
     return resolvePackBoundTarget(db, campaignId, resolved, input, bound);
   }
@@ -926,6 +933,7 @@ function resolveBoundClassResource(
   db: Db,
   resolved: ResolvedOwner,
   ability: string,
+  resolver?: CampaignRulesPackResolver,
 ): BoundClassResource | undefined {
   if (resolved.owner.kind !== 'character') return undefined;
   const normalized = normalizeAbilityName(ability);
@@ -933,10 +941,23 @@ function resolveBoundClassResource(
   if (sheet === undefined) return undefined;
   const binding = findClassResourceBinding(sheet.class.key, normalized);
   if (binding === undefined) return undefined;
-  const row = getBundledDnd5eCharacterResolver().resolveClassLevel(
-    sheet.class.key,
-    sheet.level,
-  );
+  // Capacity comes from the ACTIVE campaign rules stack (base + add-ons), never
+  // a silent bundled fallback: an unresolvable binding fails closed.
+  let row: ReturnType<
+    ReturnType<typeof createRulesPackCharacterResolver>['resolveClassLevel']
+  >;
+  try {
+    row = createRulesPackCharacterResolver(
+      resolveStrictCampaignRulesStack(db, resolver),
+    ).resolveClassLevel(sheet.class.key, sheet.level);
+  } catch (e) {
+    if (e instanceof CampaignRulesBindingResolutionError) {
+      throw new UsageCounterError(
+        `cannot resolve ${binding.displayName} capacity: ${e.message}`,
+      );
+    }
+    throw e;
+  }
   if (!row.ok) {
     throw new UsageCounterError(
       `cannot resolve ${binding.displayName} capacity for ${sheet.class.key} level ${sheet.level}: ${row.message}`,
@@ -1185,6 +1206,61 @@ function insertCounter(
   );
 }
 
+export interface BoundClassResourceBalance {
+  readonly max: number;
+  readonly used: number;
+}
+
+/**
+ * Read a pack-bound class resource's balance THROUGH the counter owner:
+ * legacy/alias/duplicate rows are adopted into the canonical record counter
+ * (most-spent wins; max/reset/source normalized to the active class table)
+ * exactly as `spendUsage` does. Returns undefined when the character has no
+ * such bound resource, or the table gives it no finite capacity. A missing
+ * counter reads as fully unspent at the table maximum (no row is created).
+ * Runs inside the caller's transaction.
+ */
+export function readBoundClassResourceBalance(
+  db: Db,
+  input: UsageMutationContext & {
+    readonly campaignId: string;
+    readonly characterId: string;
+    readonly ability: string;
+  },
+): BoundClassResourceBalance | undefined {
+  const resolved = resolveOwner(db, input.campaignId, {
+    kind: 'character',
+    ref: input.characterId,
+  });
+  const bound = resolveBoundClassResource(
+    db,
+    resolved,
+    input.ability,
+    input.resolveRulesPack,
+  );
+  if (bound === undefined) return undefined;
+  const capacity = classResourceCapacity(bound.binding, bound.row);
+  if (capacity.kind !== 'count') return undefined;
+  reconcileBoundCounterRows(
+    db,
+    input.campaignId,
+    input.characterId,
+    bound.binding,
+    capacity,
+    input,
+  );
+  const row = readCounterRow(
+    db,
+    input.campaignId,
+    resolved.owner,
+    bound.binding.counterKey,
+  );
+  return {
+    max: capacity.value,
+    used: Math.min(row?.uses_used ?? 0, capacity.value),
+  };
+}
+
 export function spendUsage(
   db: Db,
   input: SpendUsageInput,
@@ -1293,6 +1369,7 @@ function findCounter(
   campaignId: string,
   resolved: ResolvedOwner,
   ref: { ability?: string; itemId?: string },
+  resolver?: CampaignRulesPackResolver,
 ): { row: CounterRow; counterOwner: UsageOwner; counterLabel: string } {
   if (ref.itemId !== undefined) {
     const { owner, itemName } = resolveItemCounter(db, resolved, ref.itemId);
@@ -1310,8 +1387,12 @@ function findCounter(
   const slug = normalizeAbilityName(ref.ability);
   // A pack-bound class resource is stored under its canonical key whichever
   // alias named it ('Ki Points' -> ability:ki, 'Rages' -> ability:rage).
-  const boundKey = resolveBoundClassResource(db, resolved, ref.ability)?.binding
-    .counterKey;
+  const boundKey = resolveBoundClassResource(
+    db,
+    resolved,
+    ref.ability,
+    resolver,
+  )?.binding.counterKey;
   const rows = listCounterRows(db, campaignId, resolved.owner);
   const matches = rows.filter(
     (row) =>
@@ -1435,6 +1516,7 @@ export function restoreUsage(
         ...(input.ability === undefined ? {} : { ability: input.ability }),
         ...(input.itemId === undefined ? {} : { itemId: input.itemId }),
       },
+      input.resolveRulesPack,
     );
 
     if (input.roll !== undefined) {
