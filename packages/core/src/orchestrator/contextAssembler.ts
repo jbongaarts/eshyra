@@ -361,6 +361,7 @@ export function readStateSnapshot(
   db: Db,
   activeCharacterId?: string,
   campaignId?: string,
+  resolveRulesPack?: import('../state/campaignRecordLookup.js').CampaignRulesPackResolver,
 ): StateSnapshot {
   assertNoInventoryIdentityRepairs(db);
   const charId = resolveActingCharacterId(db, activeCharacterId);
@@ -565,7 +566,9 @@ export function readStateSnapshot(
         ? undefined
         : readCombatTurnState(db, campaignId),
     spentUsageCounters:
-      campaignId === undefined ? [] : readSpentUsageCounters(db, campaignId),
+      campaignId === undefined
+        ? []
+        : readSpentUsageCounters(db, campaignId, resolveRulesPack),
     spentSpellSlots: readSpellSlots(db, charId).filter(
       (slot) => slot.slotsUsed > 0 || slot.created === true,
     ),

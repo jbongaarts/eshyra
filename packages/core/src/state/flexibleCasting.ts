@@ -15,6 +15,7 @@ import { withTransaction } from '../persistence/db.js';
 import {
   BoundedProcedureError,
   executeBoundedProcedure,
+  resourceConversionMaximum,
 } from '../rules/boundedProcedures.js';
 import { resolveCharacterId } from './activeCharacter.js';
 import {
@@ -138,6 +139,19 @@ export function flexibleCasting(
       );
     }
     const currentPoints = balance.max - balance.used;
+    // The procedure carries its own per-level ceiling; the active class table
+    // owns the counter. If they disagree (a class-only or feature-only add-on)
+    // refuse before consuming anything rather than let a conversion's declared
+    // point gain be clamped or its ceiling check use the wrong economy.
+    const procedureMax = resourceConversionMaximum(
+      hit.record.data,
+      sheet.level,
+    );
+    if (procedureMax !== balance.max) {
+      throw new FlexibleCastingError(
+        `inconsistent rules binding: the Font of Magic procedure gives ${procedureMax ?? 'no'} sorcery points at level ${sheet.level} but the active class table gives ${balance.max}; Flexible Casting is refused until the binding agrees`,
+      );
+    }
 
     const slotContext = { ...mutation, characterId, resolver };
     const usage = {
@@ -168,6 +182,7 @@ export function flexibleCasting(
             'sorcery points are unlimited at this level; nothing to convert',
           );
         }
+        assertPointChange(spent.counter, currentPoints, transition.pointDelta);
         const slot = addCreatedSpellSlot(txnDb, {
           ...slotContext,
           slotLevel: input.slotLevel,
@@ -206,6 +221,7 @@ export function flexibleCasting(
         ...usage,
         amount: transition.pointDelta,
       });
+      assertPointChange(restored.counter, currentPoints, transition.pointDelta);
       return {
         operation: input.operation,
         slotLevel: input.slotLevel,
@@ -224,6 +240,20 @@ export function flexibleCasting(
       throw e;
     }
   });
+}
+
+/** Defensive: the persisted point change must equal the declared delta; throw
+ *  (rolling the transaction back) rather than report a clamped conversion. */
+function assertPointChange(
+  counter: UsageCounter,
+  before: number,
+  pointDelta: number,
+): void {
+  if (counter.usesRemaining - before !== pointDelta) {
+    throw new Error(
+      `Flexible Casting persisted a point change of ${counter.usesRemaining - before}, expected ${pointDelta}`,
+    );
+  }
 }
 
 function pointsOf(counter: UsageCounter): {

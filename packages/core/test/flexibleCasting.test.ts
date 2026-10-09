@@ -286,6 +286,9 @@ const ADDON_ID = 'rules:test-sorcery-points-addon';
 function installSorceryPointsAddon(
   db: ReturnType<typeof bareDb>,
   level3Max: number,
+  // Independently vary the Font of Magic procedure's duplicated ceiling
+  // (default: consistent with the class table).
+  procedureMax: number = level3Max,
 ): CampaignRulesPackResolver {
   const base = getBundledDnd5eSrdPack();
   const clone = (key: string) => {
@@ -318,7 +321,7 @@ function installSorceryPointsAddon(
   ).mechanics.procedures[0];
   const entry = procedure?.pool.maximumByLevel.find((m) => m.level === 3);
   if (entry === undefined) throw new Error('no level 3 maximum');
-  entry.maximum = level3Max;
+  entry.maximum = procedureMax;
   const addon: RulesPack = {
     meta: {
       ...base.meta,
@@ -516,4 +519,75 @@ describe('restore_usage reconciles a bound class resource to the active capacity
       });
     }
   }
+});
+
+describe('Flexible Casting refuses an inconsistent class/procedure binding atomically', () => {
+  const snapshot = (db: ReturnType<typeof bareDb>) => ({
+    counters: counterRows(db),
+    slots: readSpellSlots(db, 'pc-1'),
+  });
+  // Independently varied class-table maximum and procedure maximum.
+  const disagreements: [number, number][] = [
+    [2, 3], // class-only override down
+    [4, 3], // class-only override up
+    [3, 2], // feature-only override down
+    [3, 4], // feature-only override up
+  ];
+  for (const [classMax, procedureMax] of disagreements) {
+    for (const operation of ['create-slot', 'convert-slot'] as const) {
+      it(`${operation} with class maximum ${classMax} / procedure maximum ${procedureMax} changes nothing`, () => {
+        const db = sorcerer3();
+        const resolveRulesPack = installSorceryPointsAddon(
+          db,
+          classMax,
+          procedureMax,
+        );
+        // Give convert-slot a spent point and a slot to convert.
+        spendUsage(db, {
+          campaignId: CAMPAIGN,
+          owner: { kind: 'character' },
+          ability: 'sorcery-points',
+          uses: 1,
+          resolveRulesPack,
+          ...CTX,
+        });
+        const before = snapshot(db);
+        expect(() =>
+          flexibleCasting(db, {
+            campaignId: CAMPAIGN,
+            operation,
+            slotLevel: 1,
+            resolveRulesPack,
+            ...CTX,
+          }),
+        ).toThrow(/inconsistent rules binding/);
+        expect(snapshot(db)).toEqual(before);
+        db.close();
+      });
+    }
+  }
+
+  it('still works, with a persisted change equal to pointDelta, under a consistent override', () => {
+    const db = sorcerer3();
+    const resolveRulesPack = installSorceryPointsAddon(db, 2, 2);
+    const created = flexibleCasting(db, {
+      campaignId: CAMPAIGN,
+      operation: 'create-slot',
+      slotLevel: 1,
+      resolveRulesPack,
+      ...CTX,
+    });
+    expect(created.pointDelta).toBe(-2);
+    expect(created.sorceryPoints).toEqual({ remaining: 0, max: 2 });
+    const converted = flexibleCasting(db, {
+      campaignId: CAMPAIGN,
+      operation: 'convert-slot',
+      slotLevel: 1,
+      resolveRulesPack,
+      ...CTX,
+    });
+    expect(converted.pointDelta).toBe(1);
+    expect(converted.sorceryPoints).toEqual({ remaining: 1, max: 2 });
+    db.close();
+  });
 });
