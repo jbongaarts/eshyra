@@ -29,6 +29,7 @@ import {
   stabilizeCharacter,
   startEncounter,
   syncSpellSlots,
+  UsageCounterError,
   updateClock,
   useItem,
   writeItemState,
@@ -1395,5 +1396,182 @@ describe('F7 rest qualification boundary', () => {
       ].sort(),
     );
     expect(qualification.additionalProperties).toBe(false);
+  });
+});
+
+describe('class resource counters reset through real rest operations', () => {
+  const CLASS_NAMES = {
+    'class:barbarian': 'Barbarian',
+    'class:monk': 'Monk',
+    'class:sorcerer': 'Sorcerer',
+  } as const;
+
+  // Saves a class-bound sheet for pc-1 at the given level. The DB level is
+  // aligned too, since the rest operations read both.
+  function setupClassCharacter(
+    classKey: keyof typeof CLASS_NAMES,
+    level: number,
+  ): ReturnType<typeof freshDbWithSession> {
+    const db = setupCharacters();
+    const base = sheet('class:warlock', level);
+    createSqliteCharacterSheetStore(db).save('pc-1', {
+      ...base,
+      class: { key: classKey, name: CLASS_NAMES[classKey] },
+    });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'level',
+      op: 'set',
+      value: level,
+      ...CTX,
+    });
+    return db;
+  }
+
+  function counterRow(
+    db: ReturnType<typeof freshDbWithSession>,
+    counterKey: string,
+  ) {
+    return db
+      .prepare(
+        'SELECT uses_max, uses_used, reset_kind FROM entity_usage_counter WHERE owner_ref=? AND counter_key=?',
+      )
+      .get('pc-1', counterKey) as
+      | { uses_max: number; uses_used: number; reset_kind: string }
+      | undefined;
+  }
+
+  const shortRest = (
+    db: ReturnType<typeof freshDbWithSession>,
+    restId: string,
+  ) =>
+    completeShortRest(db, {
+      ...CTX,
+      restId,
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    });
+
+  const longRest = (
+    db: ReturnType<typeof freshDbWithSession>,
+    restId: string,
+  ) =>
+    completeLongRest(db, {
+      ...CTX,
+      restId,
+      participants: ['pc-1'],
+      qualification: {
+        durationMinutes: 480,
+        sleepMinutes: 360,
+        lightActivityMinutes: 120,
+        strenuousInterruptionMinutes: 0,
+        foodAndDrink: true,
+      },
+    });
+
+  it('monk Ki partially spent is fully restored by a short rest', () => {
+    const db = setupClassCharacter('class:monk', 2);
+    spendUsage(db, {
+      ...CTX,
+      campaignId: CTX.campaignId,
+      owner: { kind: 'character', ref: 'pc-1' },
+      ability: 'Ki',
+    });
+    expect(counterRow(db, 'ability:ki')).toMatchObject({
+      uses_max: 2,
+      uses_used: 1,
+      reset_kind: 'short_or_long_rest',
+    });
+    shortRest(db, 'ki-short');
+    expect(counterRow(db, 'ability:ki')?.uses_used).toBe(0);
+    db.close();
+  });
+
+  it('monk Ki is also restored by a long rest', () => {
+    const db = setupClassCharacter('class:monk', 2);
+    spendUsage(db, {
+      ...CTX,
+      campaignId: CTX.campaignId,
+      owner: { kind: 'character', ref: 'pc-1' },
+      ability: 'Ki',
+      uses: 2,
+    });
+    expect(counterRow(db, 'ability:ki')?.uses_used).toBe(2);
+    longRest(db, 'ki-long');
+    expect(counterRow(db, 'ability:ki')?.uses_used).toBe(0);
+    db.close();
+  });
+
+  it('sorcerer Sorcery Points spent are not restored by a short rest but are by a long rest', () => {
+    const db = setupClassCharacter('class:sorcerer', 3);
+    spendUsage(db, {
+      ...CTX,
+      campaignId: CTX.campaignId,
+      owner: { kind: 'character', ref: 'pc-1' },
+      ability: 'Sorcery Points',
+      uses: 3,
+    });
+    expect(counterRow(db, 'ability:sorcery-points')).toMatchObject({
+      uses_max: 3,
+      uses_used: 3,
+      reset_kind: 'long_rest',
+    });
+    shortRest(db, 'sp-short');
+    expect(counterRow(db, 'ability:sorcery-points')?.uses_used).toBe(3);
+    longRest(db, 'sp-long');
+    expect(counterRow(db, 'ability:sorcery-points')?.uses_used).toBe(0);
+    db.close();
+  });
+
+  it('multi-point Sorcery Points spend decrements by its cost and is refused beyond the remainder', () => {
+    const db = setupClassCharacter('class:sorcerer', 3);
+    const owner = { kind: 'character' as const, ref: 'pc-1' };
+    spendUsage(db, {
+      ...CTX,
+      campaignId: CTX.campaignId,
+      owner,
+      ability: 'Sorcery Points',
+      uses: 2,
+    });
+    expect(counterRow(db, 'ability:sorcery-points')?.uses_used).toBe(2);
+    expect(() =>
+      spendUsage(db, {
+        ...CTX,
+        campaignId: CTX.campaignId,
+        owner,
+        ability: 'Sorcery Points',
+        uses: 2,
+      }),
+    ).toThrow(UsageCounterError);
+    expect(counterRow(db, 'ability:sorcery-points')?.uses_used).toBe(2);
+    spendUsage(db, {
+      ...CTX,
+      campaignId: CTX.campaignId,
+      owner,
+      ability: 'Sorcery Points',
+      uses: 1,
+    });
+    expect(counterRow(db, 'ability:sorcery-points')?.uses_used).toBe(3);
+    db.close();
+  });
+
+  it('barbarian Rage spent is not restored by a short rest but is by a long rest', () => {
+    const db = setupClassCharacter('class:barbarian', 2);
+    spendUsage(db, {
+      ...CTX,
+      campaignId: CTX.campaignId,
+      owner: { kind: 'character', ref: 'pc-1' },
+      ability: 'Rage',
+    });
+    expect(counterRow(db, 'ability:rage')).toMatchObject({
+      uses_used: 1,
+      reset_kind: 'long_rest',
+    });
+    shortRest(db, 'rage-short');
+    expect(counterRow(db, 'ability:rage')?.uses_used).toBe(1);
+    longRest(db, 'rage-long');
+    expect(counterRow(db, 'ability:rage')?.uses_used).toBe(0);
+    db.close();
   });
 });
