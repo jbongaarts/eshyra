@@ -75,7 +75,10 @@ import {
   type CharacterSheetStore,
 } from './characterSheetStore.js';
 import type { SavingThrowDerived } from './derivedValues.js';
-import type { CharacterSheet } from './finalizeCharacter.js';
+import type {
+  CharacterSheet,
+  CharacterSpellcasting,
+} from './finalizeCharacter.js';
 import {
   choiceInstanceKey,
   uncoveredChoiceDescriptors,
@@ -121,6 +124,10 @@ import {
   type RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
 import { deriveSpellcastingValues } from './spellcastingDerivation.js';
+import {
+  computeAlwaysPrepared,
+  SpellPreparationError,
+} from './spellPreparation.js';
 
 /** A before/after pair for a single scalar value changed by a level-up. */
 export interface LevelUpDelta<T> {
@@ -177,6 +184,17 @@ export interface LevelUpChangeSet {
    * flat spell list was classified.
    */
   readonly spellSelections?: LevelUpSpellSelections;
+  /**
+   * Change to the subclass-granted always-prepared spells at the target level
+   * (eshyra-kn38), present only when the list changes. Computed with the
+   * subclass and feature choices the sheet will have after this level-up.
+   */
+  readonly alwaysPrepared?: LevelUpDelta<readonly string[]>;
+  /**
+   * Refs removed from `spellcasting.prepared` because they became
+   * always-prepared (they no longer count against the preparation limit).
+   */
+  readonly preparedRemoved?: readonly string[];
   /** Supported level-up choices applied as part of this step. */
   readonly choicesApplied?: readonly LevelUpAppliedChoice[];
   /**
@@ -616,6 +634,55 @@ export function previewLevelUpChangeSet(
   const spellSelections = effectiveSpells.ok
     ? buildSpellSelections(effectiveSpells, resolvedChoices.applied)
     : undefined;
+  // Always-prepared spells at the target level (eshyra-kn38): a subclass chosen
+  // or a land picked in this very level-up counts.
+  const appliedSubclass = resolvedChoices.applied.find(
+    (choice) => choice.kind === 'subclass',
+  );
+  let alwaysChange: Pick<
+    LevelUpChangeSet,
+    'alwaysPrepared' | 'preparedRemoved'
+  > = {};
+  {
+    let computed: ReturnType<typeof computeAlwaysPrepared>;
+    try {
+      computed = computeAlwaysPrepared(
+        {
+          level: sheet.level + 1,
+          subclass:
+            appliedSubclass !== undefined
+              ? { key: appliedSubclass.value }
+              : sheet.subclass,
+          featureChoices: applyFeatureChoicesToSheet(
+            sheet.featureChoices,
+            resolvedChoices.applied,
+          ),
+        },
+        classForSpells.record,
+        resolver,
+      );
+    } catch (error) {
+      if (error instanceof SpellPreparationError) {
+        throw new LevelUpEngineError(error.message);
+      }
+      throw error;
+    }
+    const from = sheet.spellcasting?.alwaysPrepared ?? [];
+    const differs =
+      computed.refs.length !== from.length ||
+      computed.refs.some((ref, i) => ref !== from[i]);
+    if (differs) {
+      const prepared =
+        spellSelections?.resulting.prepared ?? sheet.spellcasting?.prepared;
+      const removed = (prepared ?? []).filter((ref) =>
+        computed.refs.includes(ref),
+      );
+      alwaysChange = {
+        alwaysPrepared: { from: [...from], to: [...computed.refs] },
+        ...(removed.length > 0 ? { preparedRemoved: removed } : {}),
+      };
+    }
+  }
   return {
     ok: true,
     requiredChoices,
@@ -626,6 +693,7 @@ export function previewLevelUpChangeSet(
         resolver,
       ),
       ...(spellSelections !== undefined ? { spellSelections } : {}),
+      ...alwaysChange,
     },
   };
 }
@@ -1590,12 +1658,7 @@ function applyChangeSetToSheet(
     ...sheet,
     skillProficiencies: [...skillProficiencies],
     ...(featureChoices !== undefined ? { featureChoices } : {}),
-    ...(changeSet.spellSelections !== undefined
-      ? {
-          spellcasting: changeSet.spellSelections.resulting,
-          spells: spellsUnion(changeSet.spellSelections.resulting),
-        }
-      : {}),
+    ...spellStateAfterLevelUp(sheet, changeSet),
     level: changeSet.level.to,
     proficiencyBonus: changeSet.proficiencyBonus.to,
     maxHitPoints: changeSet.hitPoints.maxHitPoints.to,
@@ -1631,6 +1694,40 @@ function applyChangeSetToSheet(
       : {}),
   };
   return next;
+}
+
+/**
+ * The `spellcasting`/`spells` the level-up writes: the chosen spell selections
+ * and/or the refreshed always-prepared list (eshyra-kn38). Nothing is written
+ * when neither changed; existing buckets are never dropped.
+ */
+function spellStateAfterLevelUp(
+  sheet: CharacterSheet,
+  changeSet: LevelUpChangeSet,
+): Pick<CharacterSheet, 'spellcasting' | 'spells'> | Record<string, never> {
+  if (
+    changeSet.spellSelections === undefined &&
+    changeSet.alwaysPrepared === undefined
+  ) {
+    return {};
+  }
+  const base: CharacterSpellcasting = changeSet.spellSelections?.resulting ??
+    sheet.spellcasting ?? { cantrips: [] };
+  if (changeSet.alwaysPrepared === undefined) {
+    return { spellcasting: base, spells: [...spellsUnion(base)] };
+  }
+  const always = changeSet.alwaysPrepared.to;
+  const { alwaysPrepared: _stale, ...rest } = base;
+  const prepared =
+    base.prepared !== undefined
+      ? base.prepared.filter((ref) => !always.includes(ref))
+      : undefined;
+  const spellcasting: CharacterSpellcasting = {
+    ...rest,
+    ...(prepared !== undefined ? { prepared } : {}),
+    ...(always.length > 0 ? { alwaysPrepared: [...always] } : {}),
+  };
+  return { spellcasting, spells: [...spellsUnion(spellcasting)] };
 }
 
 function applyAbilityScoreIncreases(

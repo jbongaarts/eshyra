@@ -24,8 +24,8 @@
 // only the table matching the recorded land pick; with no pick recorded no
 // circle spells are set and the result carries `alwaysPreparedUnresolved`.
 //
-// Out of scope (follow-up): refreshing `alwaysPrepared` at level-up and
-// creation; no progression-ledger event is written (its kinds are
+// `computeAlwaysPrepared` is shared with level-up and creation (eshyra-kn38).
+// Out of scope: no progression-ledger event is written (its kinds are
 // xp/milestone/level-up only).
 
 import { type Db, withTransaction } from '../persistence/db.js';
@@ -85,15 +85,29 @@ export interface PrepareSpellsResult {
 
 const LAND_FEATURE_REF = 'feature:circle-of-the-land:circle-spells';
 
-interface AlwaysPrepared {
+export interface AlwaysPrepared {
   readonly refs: readonly string[];
   readonly unresolved?: string;
 }
 
-function alwaysPreparedFor(
-  sheet: CharacterSheet,
+/**
+ * Always-prepared spells for a class level + subclass (eshyra-kn38). Pure over
+ * the pack. Gated to classes whose `spellPreparation.kind` is `prepared`: every
+ * other class (e.g. the Warlock's Fiend EXPANDED list) returns no refs. Shared
+ * by long-rest preparation, level-up and character creation.
+ *
+ * @throws {SpellPreparationError} when a grant does not resolve (fail closed).
+ */
+export function computeAlwaysPrepared(
+  sheet: {
+    readonly subclass?: { readonly key: string };
+    readonly level: number;
+    readonly featureChoices?: CharacterSheet['featureChoices'];
+  },
+  classRecord: { readonly spellPreparation?: { readonly kind: string } },
   resolver: RulesPackCharacterResolver,
 ): AlwaysPrepared {
+  if (classRecord.spellPreparation?.kind !== 'prepared') return { refs: [] };
   if (sheet.subclass === undefined) return { refs: [] };
   const sub = resolver.resolveSubclassSpellTables(sheet.subclass.key);
   if (!sub.ok) {
@@ -239,7 +253,7 @@ export function prepareSpellsAfterLongRest(
       );
     }
 
-    const always = alwaysPreparedFor(sheet, resolver);
+    const always = computeAlwaysPrepared(sheet, cls.record, resolver);
     const options = new Set(basis.spells.map((s) => s.key));
     const chosen: string[] = [];
     for (const value of input.spellRefs) {

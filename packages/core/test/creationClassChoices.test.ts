@@ -479,8 +479,23 @@ describe('finalized level-1 characters', () => {
             : className === 'Cleric'
               ? sheet.spellcasting?.prepared
               : sheet.spellcasting?.known;
-        expect(bucket).toHaveLength(spells.level1);
-        expect(sheet.spells).toHaveLength(spells.cantrips + spells.level1);
+        // Domain spells are always prepared and never also in `prepared`
+        // (eshyra-kn38).
+        const always = sheet.spellcasting?.alwaysPrepared ?? [];
+        for (const ref of always) expect(bucket).not.toContain(ref);
+        expect(bucket).toHaveLength(
+          spells.level1 -
+            (className === 'Cleric'
+              ? spellNames(className, 1, spells.level1).filter((n) =>
+                  always.some((a) =>
+                    a.endsWith(n.toLowerCase().replace(/ /g, '-')),
+                  ),
+                ).length
+              : 0),
+        );
+        expect(sheet.spells).toHaveLength(
+          spells.cantrips + (bucket?.length ?? 0) + always.length,
+        );
         for (const ref of sheet.spells) expect(ref).toMatch(/^spell:/);
       } else {
         expect(sheet.spellcasting).toBeUndefined();
@@ -497,6 +512,30 @@ describe('finalized level-1 characters', () => {
       }
     },
   );
+
+  it('writes Life Domain always-prepared spells at creation, never also prepared (eshyra-kn38)', () => {
+    let draft = fill(baseDraft('Cleric'), {
+      'class.subclass': ['Life Domain'],
+    });
+    draft = engine.setSpells(draft, [
+      ...spellNames('Cleric', 0, 3),
+      'Bless',
+      'Bane',
+    ]);
+    const sheet = finalize(draft);
+    expect(sheet.spellcasting?.alwaysPrepared).toEqual([
+      'spell:bless',
+      'spell:cure-wounds',
+    ]);
+    expect(sheet.spellcasting?.prepared).toEqual(['spell:bane']);
+    expect(sheet.spells).toEqual(
+      expect.arrayContaining(['spell:bless', 'spell:cure-wounds']),
+    );
+    const warlock = finalize(
+      fill(baseDraft('Warlock'), { 'class.subclass': ['The Fiend'] }),
+    );
+    expect(warlock.spellcasting?.alwaysPrepared).toBeUndefined();
+  });
 
   it('records the exact fighter, ranger, rogue, and sorcerer shapes', () => {
     const fighter = finalize(fill(baseDraft('Fighter')));
