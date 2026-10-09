@@ -1237,11 +1237,20 @@ describe('always-prepared refresh at level-up (eshyra-kn38)', () => {
       },
     });
     const preview = previewLevelUpChangeSet(sheet, {
-      choices: {},
+      choices: {
+        'level.3.feature.warlock-pact-boon.pact-boon': [
+          'pact-boon:pact-of-the-blade',
+        ],
+        'level.3.spells.known': ['spell:darkness'],
+      },
       resolver: bundled,
     });
+    expect(preview.ok).toBe(true);
     const changeSet = preview.ok ? preview.changeSet : undefined;
     expect(changeSet?.alwaysPrepared).toBeUndefined();
+    expect(
+      changeSet?.spellSelections?.resulting.alwaysPrepared,
+    ).toBeUndefined();
   });
 
   it('Circle of the Land without a land pick levels up with no circle spells', () => {
