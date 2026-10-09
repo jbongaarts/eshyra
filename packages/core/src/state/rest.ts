@@ -3,7 +3,10 @@ import {
   assertSheetMatchesPack,
   createSqliteCharacterSheetStore,
 } from '../character/characterSheetStore.js';
-import { getBundledDnd5eCharacterResolver } from '../character/rulesPackResolver.js';
+import {
+  createRulesPackCharacterResolver,
+  type RulesPackCharacterResolver,
+} from '../character/rulesPackResolver.js';
 import { type DiceRoll, rollDice } from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
 import { type Db, withTransaction } from '../persistence/db.js';
@@ -13,7 +16,11 @@ import {
 } from '../rules/binding.js';
 import type { ExpiredWorldEffectSummary } from './activeEffects.js';
 import { expireElapsedWorldEffects } from './activeEffects.js';
-import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
+import {
+  type CampaignRulesPackResolver,
+  memoizeCampaignRulesPackResolver,
+  resolveStrictCampaignRulesStack,
+} from './campaignRecordLookup.js';
 import { resolveCombatantRecoveries } from './encounterCombatants.js';
 import {
   effectiveHpMax,
@@ -247,15 +254,37 @@ export function advanceWorldTime(
   return result;
 }
 
+/**
+ * One campaign rules-stack resolution for a whole rest operation. Hit Dice,
+ * spell-slot reconciliation, and usage/item resets must all read the active
+ * binding (add-ons included) — never the bundled pack — and must describe the
+ * same source even if the caller-supplied pack resolver changes its answer.
+ * Call inside the operation's transaction.
+ */
+function bindRestRules<T extends RestContext>(
+  db: Db,
+  ctx: T,
+): { ctx: T; resolver: RulesPackCharacterResolver } {
+  const resolveRulesPack = memoizeCampaignRulesPackResolver(
+    ctx.resolveRulesPack,
+  );
+  return {
+    ctx: { ...ctx, resolveRulesPack },
+    resolver: createRulesPackCharacterResolver(
+      resolveStrictCampaignRulesStack(db, resolveRulesPack),
+    ),
+  };
+}
+
 function resolvePool(
   db: Db,
   characterId: string,
   ctx: RestContext,
+  resolver: RulesPackCharacterResolver,
 ): HitDicePool {
   const sheet = createSqliteCharacterSheetStore(db).load(characterId);
   if (!sheet)
     throw new RestError(`no canonical character sheet for '${characterId}'`);
-  const resolver = getBundledDnd5eCharacterResolver();
   assertSupportedCharacterBuild(sheet, { operation: 'Hit Dice', resolver });
   assertSheetMatchesPack(
     sheet,
@@ -316,7 +345,10 @@ export function readHitDice(
   characterId: string,
   ctx: RestContext,
 ): HitDicePool {
-  return withTransaction(db, (txn) => resolvePool(txn, characterId, ctx));
+  return withTransaction(db, (txn) => {
+    const bound = bindRestRules(txn, ctx);
+    return resolvePool(txn, characterId, bound.ctx, bound.resolver);
+  });
 }
 
 export function readOpenShortRestRecovery(
@@ -517,8 +549,13 @@ function validateQualification(kind: RestKind, q: RestQualification): void {
     throw new RestError('long rest qualification failed');
 }
 
-function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
+function complete(
+  db: Db,
+  kind: RestKind,
+  unboundInput: CompleteRestInput,
+): unknown {
   return withTransaction(db, (txn) => {
+    const { ctx: input, resolver } = bindRestRules(txn, unboundInput);
     if (typeof input.restId !== 'string' || input.restId.trim().length === 0)
       throw new RestError('restId must be a nonblank string');
     const ids = participants(input.participants);
@@ -578,7 +615,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
     const end = start.elapsedMinutes + normalizedQualification.durationMinutes;
     const states = ids.map((id) => ({ id, ...readLife(txn, id) }));
     for (const state of states) {
-      resolvePool(txn, state.id, input);
+      resolvePool(txn, state.id, input, resolver);
       if (kind === 'long' && (state.life === 'dead' || state.hp < 1))
         throw new RestError(
           `participant '${state.id}' cannot benefit from a long rest`,
@@ -658,7 +695,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
           participants: [s.id],
         }),
       );
-      const pool = resolvePool(txn, s.id, input);
+      const pool = resolvePool(txn, s.id, input, resolver);
       if (kind === 'short')
         benefits.recovery[s.id] = {
           characterId: s.id,
@@ -686,7 +723,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
             'UPDATE character_hit_dice SET dice_used = dice_used - ?, provenance = ?, session_id = ?, updated_at = ? WHERE character_id = ?',
           )
           .run(restored, input.provenance, input.sessionId, input.at, s.id);
-        const finalPool = resolvePool(txn, s.id, input);
+        const finalPool = resolvePool(txn, s.id, input, resolver);
         benefits.hpRestored[s.id] = healed.newHp - finalState.hp;
         benefits.temporaryHpRemoved[s.id] = temp.previousTempHp;
         benefits.hitDiceRestored[s.id] = {
@@ -698,6 +735,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
           ...input,
           characterId: s.id,
           event: 'long_rest',
+          resolver,
         }).restored;
         benefits.usageReset[s.id] = resetUsage(txn, {
           ...input,
@@ -716,6 +754,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
           ...input,
           characterId: s.id,
           event: 'short_rest',
+          resolver,
         }).restored;
         benefits.usageReset[s.id] = resetUsage(txn, {
           ...input,
@@ -746,8 +785,12 @@ export function completeLongRest(db: Db, input: CompleteRestInput): unknown {
   return complete(db, 'long', input);
 }
 
-export function spendRestHitDie(db: Db, input: SpendHitDieInput): unknown {
+export function spendRestHitDie(
+  db: Db,
+  unboundInput: SpendHitDieInput,
+): unknown {
   return withTransaction(db, (txn) => {
+    const { ctx: input, resolver } = bindRestRules(txn, unboundInput);
     const row = txn
       .prepare(
         "SELECT r.end_elapsed_minutes FROM rest_event r JOIN rest_participant p USING(campaign_id, rest_id) WHERE r.campaign_id=? AND r.rest_id=? AND r.kind='short' AND r.status='completed' AND p.character_id=? AND p.short_recovery_open=1",
@@ -772,7 +815,7 @@ export function spendRestHitDie(db: Db, input: SpendHitDieInput): unknown {
       throw new RestError(
         'short-rest recovery window expired when world time advanced',
       );
-    const pool = resolvePool(txn, input.characterId, input);
+    const pool = resolvePool(txn, input.characterId, input, resolver);
     if (pool.diceRemaining < 1) throw new RestError('no Hit Dice remain');
     const state = readLife(txn, input.characterId);
     if (state.life === 'dead')
