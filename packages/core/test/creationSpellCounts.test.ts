@@ -152,3 +152,15 @@ describe('known and prepared-list casters', () => {
     expect(finalizes(baseDraft('Fighter'))).toBe(true);
   });
 });
+
+describe('bard creation (eshyra-qga6)', () => {
+  it('offers the open skill choice and finalizes a Bard', () => {
+    const draft = withSpells(baseDraft('Bard'), 'Bard', 2, 4);
+    const skills = engine
+      .mechanicalChoices(draft)
+      .find((entry) => entry.choice.id === 'class.skills');
+    expect(skills?.choice.from).toHaveLength(18);
+    expect(skills?.satisfied).toBe(true);
+    expect(problems(draft)).toEqual([]);
+  });
+});
