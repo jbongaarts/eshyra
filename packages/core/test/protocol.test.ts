@@ -195,4 +195,15 @@ describe('renderToolResults', () => {
     expect(message).toContain('mutate_error');
     expect(message).toContain('bad field');
   });
+
+  it('scopes sheet-derived resolve_check guidance to checks and saves, not attacks', () => {
+    const prompt = buildSystemPrompt(createDefaultToolRegistry()).replace(
+      /\s+/g,
+      ' ',
+    );
+    expect(prompt).toContain(
+      'for an ability check or saving throw by a character with a sheet, pass `skill` or `ability`',
+    );
+    expect(prompt).toContain('for attack rolls and everyone else, declare');
+  });
 });
