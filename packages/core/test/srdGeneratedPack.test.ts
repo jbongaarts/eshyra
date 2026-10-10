@@ -1325,6 +1325,16 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  // Registry row source-authority-opus-f20 (opus:F-20, repaired in
+  // eshyra-o9bd.19.2.1.1): the committed manifest described the pack's
+  // remaining work under a retired loreweaver-* issue ID. Before the repair it
+  // carried `loreweaver-0m9.5`; no issue-tracker claim may return to the
+  // committed manifest.
+  it('carries no stale loreweaver-* issue claim in the committed manifest (opus:F-20)', () => {
+    const manifestText = readFileSync(join(PACK_DIR, 'manifest.json'), 'utf8');
+    expect(manifestText).not.toMatch(/loreweaver-/u);
+  });
+
   describe('magic-item numeric conservation gate', () => {
     it('conserves description dice/DCs and mechanics dice/DCs in both directions', () => {
       const { findings, usedExceptions } = numericConservationFindings(
