@@ -813,7 +813,7 @@
       "aliases": ["sol:CAP-007"],
       "invariant": "Required engine capabilities have qualified ownership",
       "status": "disclosed-dependency",
-      "statusReasoning": "Ownership of deterministic capabilities actually in force is the single authoritative inventory, eshyra-o9bd.19.5.12, and this dependency closes when it lands. The per-family certification tasks were retired without certifying anything, and eshyra-olc5.2 was retired and superseded at the 2026-10-09 rebaseline, so nothing waits on family certification. The generated magic-item executionReadiness/engine:F1-F10 backlog is an unselected candidate backlog, disclosed separately; an unselected capability is not an ownership gap (ADR 0020 section 3).",
+      "statusReasoning": "Ownership of deterministic capabilities actually in force is the single authoritative inventory, eshyra-o9bd.19.5.12, and this dependency closes when it lands. The per-family certification tasks were retired in the 2026-09 ADR 0020 disposition passes, and eshyra-olc5.2 was retired and superseded at the 2026-10-09 rebaseline, so nothing waits on family certification. The generated magic-item executionReadiness/engine:F1-F10 backlog is an unselected candidate backlog, disclosed separately; an unselected capability is not an ownership gap (ADR 0020 section 3).",
       "provenance": {
         "auditFinding": "sol:CAP-007",
         "evidenceBasis": "code"
