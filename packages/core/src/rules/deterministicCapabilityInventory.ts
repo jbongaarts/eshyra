@@ -12,12 +12,16 @@ import type { RulesRecord } from './types.js';
  * mechanics, is irrelevant, or is safe to ignore, and nothing here claims the
  * rules pack is deterministically complete.
  *
- * Closure is claimed over exactly one bounded registry: every tool in
+ * Closure is claimed over two bounded populations (see
+ * `packages/core/test/deterministicCapabilityInventory.test.ts`): every tool in
  * `createDefaultToolRegistry()` appears exactly once, either as an entry here
- * or in {@link NON_CAPABILITY_TOOLS} (see
- * `packages/core/test/deterministicCapabilityInventory.test.ts`). Engine
- * (non-tool) entries are curated with evidence pointers; no closure claim is
- * made over engine code.
+ * or in {@link NON_CAPABILITY_TOOLS}; and every module file under
+ * `packages/core/src` (except the `index.ts` and `internal.ts` barrels) has
+ * exactly one disposition in {@link MODULE_DISPOSITIONS}, either covered by the
+ * entries that name it as a runtime owner or not a deterministic commitment,
+ * with the reason. The module population is file-level only: it is not a symbol
+ * census and makes no claim that every function of a covered module is a
+ * separate capability.
  *
  * The four contracts already in `RULE_DETERMINISTIC_CAPABILITY_CONTRACTS` are
  * quoted by reference, never restated.
@@ -143,7 +147,7 @@ const DICE_AND_RESOLUTION: readonly DeterministicCapabilityInventoryEntry[] = [
       'A malformed expression is refused (invalid_dice).',
       'Does not decide what the roll is for, which modifiers belong in the expression, or what the result means.',
       'Does not cancel advantage against disadvantage or add sheet-derived modifiers; resolve_check does that for d20 tests.',
-      'visibility and category are echoed only when they are recognized values; an unrecognized value is silently omitted, not refused.',
+      'visibility and category are optional; a value outside their enumerations is refused by input-schema validation before the roll, and a given value is echoed in the result.',
     ],
     residualDmInterpretation: [
       'The DM chooses the expression, whether the roll is player-visible or DM-only, and the consequence of the result.',
@@ -169,7 +173,11 @@ const DICE_AND_RESOLUTION: readonly DeterministicCapabilityInventoryEntry[] = [
     residualDmInterpretation: [
       'The DM decides whether a contest applies, which checks each side makes, the modifiers, proficiency, and advantage each side has, and what a tie or a win changes.',
     ],
-    runtimeOwner: [o('toolResolveContest.ts'), o('resolution.ts')],
+    runtimeOwner: [
+      o('toolResolveContest.ts'),
+      o('resolution.ts'),
+      o('toolResolutionShared.ts'),
+    ],
     evidence: [t('resolutionTools.test.ts'), t('resolution.test.ts')],
   }),
   toolEntry('roll_retained_check', 'state-integrity', {
@@ -188,6 +196,7 @@ const DICE_AND_RESOLUTION: readonly DeterministicCapabilityInventoryEntry[] = [
     runtimeOwner: [
       o('toolRollRetainedCheck.ts'),
       o('toolRetainedCheckShared.ts'),
+      o('toolResolutionShared.ts'),
     ],
     evidence: [t('retainedChecks.test.ts')],
   }),
@@ -204,7 +213,12 @@ const DICE_AND_RESOLUTION: readonly DeterministicCapabilityInventoryEntry[] = [
     residualDmInterpretation: [
       'The DM chooses the observers, their declared modifiers and advantage, and what follows when an observer notices or fails to notice.',
     ],
-    runtimeOwner: [o('toolResolveRetainedCheck.ts'), o('calc.ts')],
+    runtimeOwner: [
+      o('toolResolveRetainedCheck.ts'),
+      o('calc.ts'),
+      o('toolRetainedCheckShared.ts'),
+      o('toolResolutionShared.ts'),
+    ],
     evidence: [t('retainedChecks.test.ts')],
   }),
   toolEntry('end_retained_check', 'state-integrity', {
@@ -235,7 +249,11 @@ const DICE_AND_RESOLUTION: readonly DeterministicCapabilityInventoryEntry[] = [
     residualDmInterpretation: [
       'The DM decides the damage dice and types, whether the hit is critical, which targets are affected, and which resistances, vulnerabilities, or immunities apply.',
     ],
-    runtimeOwner: [o('toolResolveDamage.ts'), o('resolution.ts')],
+    runtimeOwner: [
+      o('toolResolveDamage.ts'),
+      o('resolution.ts'),
+      o('toolResolutionShared.ts'),
+    ],
     evidence: [t('resolutionTools.test.ts'), t('resolution.test.ts')],
   }),
   ledgerEntry(
@@ -248,7 +266,7 @@ const DICE_AND_RESOLUTION: readonly DeterministicCapabilityInventoryEntry[] = [
       'Evaluate one registered dice-free rules formula (breath-hold duration, carrying capacity, days without food, encumbrance thresholds, fall damage dice, forced-march DC, grapple escape DC, group check outcome, jump distance, passive score, suffocation survival rounds) with validated named arguments.',
     requiredInputs: ['formula', 'args', 'reason'],
     exclusions: [
-      'An unregistered formula or invalid or unknown arguments are rejected (invalid_formula); there is no generic expression engine.',
+      'An unregistered formula is refused by input-schema validation, and invalid or unknown arguments are rejected (invalid_formula); there is no generic expression engine.',
       'Does not roll dice; fall damage dice returns an expression for the caller to roll.',
       'Does not choose the inputs or decide that the formula applies.',
     ],
@@ -273,7 +291,7 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
   [
     toolEntry('adjust_hp', 'bounded-procedure', {
       operation:
-        'Apply a signed integer hit point change to a character in one transaction. Damage consumes temporary hit points first. Dropping from above 0 to 0 makes the character dying, or dead when the overflow reaches the effective hit point maximum, or, with knockOut=true, unconscious and stable with a seeded stable-recovery schedule. Damage at 0 hit points is dead when the whole damage reaches the effective maximum, otherwise adds a death-save failure (two on a critical) and returns a stable character to dying. Healing a non-alive character who ends above 0 hit points restores alive and clears death-save counters. Reports concentrationCheck (with its DC) when a living concentrating character stays alive, or concentrationBroken when the change leaves the character not alive; character death ends attunements.',
+        'Apply a signed integer hit point change to a character in one transaction. Damage consumes temporary hit points first. Dropping from above 0 to 0 makes the character dying, or dead when the overflow reaches the effective hit point maximum, or, with knockOut=true, stable (at 0 hit points, with death-save counters reset) with a seeded stable-recovery schedule. Damage at 0 hit points is dead when the whole damage reaches the effective maximum, otherwise adds a death-save failure (two on a critical) and returns a stable character to dying. Healing a non-alive character who ends above 0 hit points restores alive and clears death-save counters. When damage leaves a living concentrating character alive, reports concentrationCheck with its DC; leaving alive breaks the character concentration in the same transaction (reported as concentrationBroken). Death clears a recovery block and ends the character attunements.',
       requiredInputs: ['amount'],
       exclusions: [
         'Characters only; encounter combatants use update_combatant.',
@@ -352,11 +370,11 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
     }),
     toolEntry('set_suffocation', 'bounded-procedure', {
       operation:
-        'Apply a suffocation event immediately when called. drop sets the character to 0 hit points dying with a suffocating recovery block (a combatant under player-character rules becomes dying with the block, under monster rules dies, and one with a vanish or revert zero-hit-point rule becomes absent or reverts); breathe clears the block and, when a dying target already has three death-save successes, stabilizes it with a seeded recovery schedule.',
+        'Apply a suffocation event immediately when called. drop sets the character to 0 hit points dying with a suffocating recovery block (a combatant under player-character rules becomes dying with the block, under monster rules dies, and one with a vanish or revert zero-hit-point rule becomes absent or reverts); breathe clears the block and, when a dying target already has three death-save successes, stabilizes it with a seeded recovery schedule. A drop that takes a conscious target down or out of play breaks its concentration in the same transaction.',
       requiredInputs: ['event'],
       exclusions: [
         "The tool does not time the drop: it takes effect when called, so the start-of-turn timing after the survival interval is the caller's to observe (calc suffocation_survival_rounds gives the interval).",
-        'drop is refused for a dead character or combatant (and is a no-op for a character already suffocating); breathe is refused when there is no suffocation block.',
+        'drop is refused for a dead character or combatant (and changes nothing for a target already suffocating); breathe is refused when there is no suffocation block.',
         'Providing both character and combatantId is refused; a combatant must be in the active combat instance.',
         'Must not be replaced by an hp adjustment: the drop is not damage.',
       ],
@@ -377,6 +395,7 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
       requiredInputs: ['delta'],
       exclusions: [
         'Applies only the level 4 and level 6 effects; the effects of other levels are declared on the relevant rolls by the caller.',
+        'Providing both character and combatantId is refused, and an unknown combatant is refused.',
         'Does not decide how many levels a source inflicts or removes.',
       ],
       residualDmInterpretation: [
@@ -464,6 +483,7 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
       ],
       runtimeOwner: [
         o('toolStartEffect.ts'),
+        o('toolEffectShared.ts'),
         s('activeEffects.ts'),
         s('liveStateSchema.ts'),
       ],
@@ -486,7 +506,11 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
       residualDmInterpretation: [
         'The DM decides that the effect ended and which reason applies.',
       ],
-      runtimeOwner: [o('toolEndEffect.ts'), s('activeEffects.ts')],
+      runtimeOwner: [
+        o('toolEndEffect.ts'),
+        o('toolEffectShared.ts'),
+        s('activeEffects.ts'),
+      ],
       evidence: [
         t('activeEffects.test.ts'),
         t('conjureUncontrolledRemoval.test.ts'),
@@ -504,7 +528,11 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
       residualDmInterpretation: [
         'The DM decides that the effect is suppressed and for how long.',
       ],
-      runtimeOwner: [o('toolSuppressEffect.ts'), s('activeEffects.ts')],
+      runtimeOwner: [
+        o('toolSuppressEffect.ts'),
+        o('toolEffectShared.ts'),
+        s('activeEffects.ts'),
+      ],
       evidence: [t('bondedSummonTransitions.test.ts'), t('tools.test.ts')],
     }),
     toolEntry('unsuppress_effect', 'state-integrity', {
@@ -519,7 +547,11 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
       residualDmInterpretation: [
         'The DM decides that suppression has stopped.',
       ],
-      runtimeOwner: [o('toolUnsuppressEffect.ts'), s('activeEffects.ts')],
+      runtimeOwner: [
+        o('toolUnsuppressEffect.ts'),
+        o('toolEffectShared.ts'),
+        s('activeEffects.ts'),
+      ],
       evidence: [t('bondedSummonTransitions.test.ts'), t('tools.test.ts')],
     }),
     toolEntry('refresh_effect', 'state-integrity', {
@@ -533,7 +565,11 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
       residualDmInterpretation: [
         'The DM decides that a rule renews the effect and any new duration.',
       ],
-      runtimeOwner: [o('toolRefreshEffect.ts'), s('activeEffects.ts')],
+      runtimeOwner: [
+        o('toolRefreshEffect.ts'),
+        o('toolEffectShared.ts'),
+        s('activeEffects.ts'),
+      ],
       evidence: [t('activeEffects.test.ts'), t('tools.test.ts')],
     }),
     toolEntry('remove_effect_target', 'state-integrity', {
@@ -549,7 +585,11 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
       residualDmInterpretation: [
         'The DM decides that the target is no longer affected, for example after a successful save.',
       ],
-      runtimeOwner: [o('toolRemoveEffectTarget.ts'), s('activeEffects.ts')],
+      runtimeOwner: [
+        o('toolRemoveEffectTarget.ts'),
+        o('toolEffectShared.ts'),
+        s('activeEffects.ts'),
+      ],
       evidence: [t('activeEffects.test.ts'), t('zeroHpRevertRules.test.ts')],
     }),
     toolEntry('recast_bonded_summon', 'bounded-procedure', {
@@ -567,6 +607,7 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
       ],
       runtimeOwner: [
         o('toolRecastBondedSummon.ts'),
+        o('toolEffectShared.ts'),
         s('activeEffects.ts'),
         s('encounterCombatants.ts'),
       ],
@@ -577,7 +618,7 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
     }),
     toolEntry('transition_bonded_summon', 'bounded-procedure', {
       operation:
-        "Execute the action-triggered presence transition a bonded-summon spell record declares for the trigger and the creature's modelled presence: temporary dismissal to a pocket dimension, recall, dismissal, permanent dismissal, or release. Release and permanent dismissal close the link and end the effect (reason dismissed) when it was the effect's last owned creature.",
+        "Execute the action-triggered presence transition a bonded-summon spell record declares for the trigger and the creature's modelled presence: temporary dismissal to a pocket dimension, recall, dismissal, permanent dismissal, or release. A creature that leaves play while it has a combatant in the active combat instance first has participant-turn timers anchored to that combatant expired and its effect references rebound onto its durable campaign actor, then becomes pocketed or absent. Release and permanent dismissal close the actor link and target (removed with a bond-ended reason) and end the effect (reason dismissed) when it was the effect's last owned creature.",
       requiredInputs: ['effectId', 'spellRef', 'trigger'],
       exclusions: [
         'Refused for an ended or suppressed effect, a non-summoning effect, an effect not recorded from that exact spell, an effect without exactly one active durable actor link, a creature without the vanish-bonded zero-hit-point rule, a spell with no transition for that trigger and presence, a transition gated by an unresolved source ambiguity, and a transition the engine does not execute; nothing changes when refused.',
@@ -589,6 +630,7 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
       ],
       runtimeOwner: [
         o('toolTransitionBondedSummon.ts'),
+        o('toolEffectShared.ts'),
         s('activeEffects.ts'),
         s('encounterCombatants.ts'),
       ],
@@ -663,10 +705,13 @@ const COMBAT_AND_TURNS: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('close_combat_instance', 'state-integrity', {
     operation:
-      'Close the active combat instance (or one named active instance) so it cannot become active again. In the same transaction, effects settle first: round timers anchored to the instance expire; concentration owned by its combatants breaks (owner-removed); remaining effect targets and condition projections on its combatants are removed (combat-ended); owned summon links are released and effect source-actor pointers to its combatants are detached. Character-owned effects with no combatant references survive.',
+      'Close the active combat instance (or one named active instance) with an inactive status so it cannot become active again, in one transaction, settling live (active or suppressed) effects in this order before the status flips. (1) Every round or participant-turn timer anchored to the instance expires, whatever its owner. (2) Concentration owned by a combatant of the instance breaks (owner-removed). (3) A combatant with a durable identity (a campaign-actor combatant, or one an active actor link claims for a campaign actor) has its current state projected onto that campaign actor, and every remaining live reference to it (actor and condition links, targets, the source-actor pointer) is rebound onto the campaign actor: its ownership, bonds, and conditions continue after combat. (4) Only the remaining instance-only references are cleaned: actor links on instance-only combatants are released, their effect targets are removed (combat-ended, which can cascade and end an effect), leftover condition links on them are removed, and source-actor pointers to them are detached. Effects with no reference to the instance combatants are untouched.',
     requiredInputs: ['status'],
     exclusions: [
-      'An unknown instance is refused, and an instance that is already closed cannot be closed again.',
+      'An unknown instance, or no active instance when none is named, is refused, and an instance that is already closed cannot be closed again.',
+      'Conflicting durable claims (a campaign actor already owned by another effect, a combatant with incompatible actor claims, or one campaign actor claimed by two closing combatants) refuse the whole close and nothing is committed.',
+      'A durable bond is not released at close: a bonded summon remains linked to its effect on its campaign actor and can be recast or admitted to a later encounter.',
+      'Concentration and participant-turn timers are settled before rebinding and never move to the campaign actor.',
       'Does not decide that the fight is over.',
     ],
     residualDmInterpretation: [
@@ -679,6 +724,8 @@ const COMBAT_AND_TURNS: readonly DeterministicCapabilityInventoryEntry[] = [
     ],
     evidence: [
       t('encounterCombatants.test.ts'),
+      t('activeEffects.test.ts'),
+      t('bondedSummonTransitions.test.ts'),
       t('bondedSummonRecast.test.ts'),
     ],
   }),
@@ -822,6 +869,7 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
       s('domainMutations.ts'),
       s('inventoryIdentity.ts'),
       s('itemState.ts'),
+      s('itemRandomInitialization.ts'),
     ],
     evidence: [t('itemAdoption.test.ts'), t('inventoryQueryGuard.test.ts')],
   }),
@@ -918,6 +966,7 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
     runtimeOwner: [
       o('toolUseItem.ts'),
       s('itemState.ts'),
+      s('itemDepletion.ts'),
       'packages/core/src/campaign/capabilityPreflight.ts',
     ],
     evidence: [t('itemState.test.ts'), t('itemAdoption.test.ts')],
@@ -954,7 +1003,11 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
     residualDmInterpretation: [
       'The DM decides whether the item can be worn and the time it takes.',
     ],
-    runtimeOwner: [o('toolWearItem.ts'), s('inventoryWear.ts')],
+    runtimeOwner: [
+      o('toolWearItem.ts'),
+      s('inventoryWear.ts'),
+      s('curseState.ts'),
+    ],
     evidence: [t('inventoryWear.test.ts')],
   }),
   toolEntry('doff_item', 'state-integrity', {
@@ -973,6 +1026,7 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
       o('toolWearItem.ts'),
       s('inventoryWear.ts'),
       s('attunement.ts'),
+      s('curseState.ts'),
     ],
     evidence: [t('inventoryWear.test.ts')],
   }),
@@ -1443,7 +1497,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Refuse, with UnsupportedCharacterBuildError, a build record that is not a single-class build at the operation being performed: a multiclass-shaped field, an array class, a non-positive-integer level, a claimed total or sole-class level that disagrees with level, or a subclass that belongs to another class. Called at creation, finalization, sheet persistence and load, attach, level-up, rests, and spell-slot paths.',
+        'Refuse, with UnsupportedCharacterBuildError, a build record that is not a single-class build at the operation being performed: a multiclass-shaped field, an array class, a non-positive-integer level, a claimed total or sole-class level that disagrees with level, or a subclass that belongs to another class. Called at creation, finalization, sheet persistence and load, character-registry persistence and load, attach, level-up, rests, and spell-slot paths, among others.',
       requiredInputs: [
         'The record to check (a draft, sheet, or transport value)',
         'The operation name being refused',
@@ -1467,7 +1521,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
     'bounded-procedure',
     {
       operation:
-        'Recompute a guided-creation draft on every change and gate finalization: derive ability modifiers, saving throws, proficiency bonus, and hit points; validate ability scores, background customization, starting equipment or wealth, and the chosen spells against the class list and level-1 reach; classify the spell list against the level-1 counts (level1SpellRequirements), excluding always-prepared spells from the preparation limit; derive the level-1 class-feature choices (deriveCreationClassChoices) and the skill, tool, language, and equipment mechanical choices; and report missing required choices and error diagnostics. toFinalizableDraft returns the draft only when nothing is missing and no error diagnostic remains.',
+        'Recompute a guided-creation draft on every change and gate finalization: derive ability modifiers, saving throws, proficiency bonus, hit points, and spellcasting values; validate ability scores (free entry in range, point buy within the 27-point budget, the standard array, or a rolled set assigned by multiplicity from six recorded 4d6-drop-lowest rolls whose roll evidence is validated), background customization, starting equipment or wealth, and the chosen spells against the class list and level-1 reach; classify the spell list against the level-1 counts (level1SpellRequirements), excluding always-prepared spells from the preparation limit; derive the level-1 class-feature choices (deriveCreationClassChoices) and the skill, tool, language, and equipment mechanical choices; and report missing required choices and error diagnostics. toFinalizableDraft returns the draft only when nothing is missing and no error diagnostic remains. The ability-score set and starting-wealth dice are rolled from the caller-supplied RNG by rollAbilityScoreSet and rollStartingWealth (the CLI wizard), and a starting-wealth result is validated against its recorded roll.',
       requiredInputs: [
         'A rules-pack character resolver (the default is the bundled dnd5e SRD resolver)',
         'The draft selections made through the engine setters',
@@ -1485,12 +1539,19 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
         c('creationSpellCounts.ts'),
         c('creationClassChoices.ts'),
         c('requiredChoices.ts'),
+        c('abilities.ts'),
+        c('abilityAllocation.ts'),
+        c('derivedValues.ts'),
+        c('spellcastingDerivation.ts'),
+        c('proficiency.ts'),
+        c('srdStartingWealth.ts'),
       ],
       evidence: [
         t('characterDraftEngine.test.ts'),
         t('creationSpellCounts.test.ts'),
         t('creationClassChoices.test.ts'),
         t('requiredChoices.test.ts'),
+        t('abilityAllocation.test.ts'),
       ],
     },
   ),
@@ -1543,6 +1604,9 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       runtimeOwner: [
         c('creationClassChoices.ts'),
         c('levelUpFeatureChoices.ts'),
+        c('levelUpExpertise.ts'),
+        c('levelUpSubclass.ts'),
+        c('levelUpChoiceCoverage.ts'),
       ],
       evidence: [t('creationClassChoices.test.ts')],
     },
@@ -1572,6 +1636,9 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
         c('finalizeCharacter.ts'),
         c('proficiencyGrants.ts'),
         c('characterBuild.ts'),
+        c('abilityAllocation.ts'),
+        c('proficiency.ts'),
+        c('srdStartingWealth.ts'),
       ],
       evidence: [
         t('finalizeCharacter.test.ts'),
@@ -1624,6 +1691,8 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'A cross-pack attach is refused (conversion is not implemented), and the projection supports the dnd5e SRD system only.',
+        'The sheet save and the live-row import are separate writes: an import correction result (a campaign rules system other than dnd5e-srd) leaves the saved sheet in place.',
+        'Consults and records no custody; character-checkout-v1 and character-catch-up-v1 call it inside the custody lifecycle.',
       ],
       residualDmInterpretation: [
         'The player decides which registry character joins the campaign.',
@@ -1659,7 +1728,11 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       residualDmInterpretation: [
         'The player decides which character joins the campaign.',
       ],
-      runtimeOwner: [c('creation.ts'), s('mutateState.ts')],
+      runtimeOwner: [
+        c('creation.ts'),
+        s('mutateState.ts'),
+        s('activeCharacter.ts'),
+      ],
       evidence: [
         t('characterCreation.test.ts'),
         t('characterSheetStore.test.ts'),
@@ -1810,6 +1883,11 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       runtimeOwner: [
         c('levelUpEngine.ts'),
+        c('levelUpSkillChoices.ts'),
+        c('levelUpExpertise.ts'),
+        c('levelUpSubclass.ts'),
+        c('levelUpChoiceCoverage.ts'),
+        c('spellcastingDerivation.ts'),
         s('campaignRecordLookup.ts'),
         s('classResources.ts'),
         s('spellSlots.ts'),
@@ -1873,22 +1951,34 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
     },
   ),
   engineEntry(
-    'campaign-rules-binding-store-v1',
-    'checkBindingAgainstModuleRequirements',
-    r('binding.ts'),
+    'campaign-creation-v1',
+    'createCampaign',
+    'packages/core/src/campaign/campaign.ts',
     'state-integrity',
     {
       operation:
-        "Persist the campaign's single rules binding row (base pack and add-ons by system, pack id, and version) and check a binding against a module's declared rulesRequirements: the base system must match, the base version must be among any allowed versions, and every required add-on pack id must be in the binding.",
-      requiredInputs: ['A binding', 'The module rules requirements'],
+        "Create the single campaign of a campaign database from a module pack. Two separate callables are involved. checkBindingAgainstModuleRequirements(binding, requirements) is a pure check that writes nothing: the binding base system must equal the module's required base system, the base version must be among the module's allowed versions when any are listed, and every required add-on pack id must be in the binding; it returns a mismatch reason or undefined. createCampaign refuses a blank campaign id and an existing campaign, runs that check first (a mismatch refuses before any write), and then, in one transaction, forks the module template into the database (replacing every module_* table row), records the campaign id, and persists the rules binding through writeCampaignRulesBinding(db, binding), which inserts or replaces the single binding row (id 1). The binding defaults to the bundled dnd5e SRD base with no add-ons, stamped with the creation time.",
+      requiredInputs: [
+        'A database (createCampaign and writeCampaignRulesBinding)',
+        'A non-blank campaign id',
+        'The module pack (its meta.rulesRequirements feed the check)',
+        'An optional rules binding (base and add-ons by system, pack id, and version)',
+      ],
       exclusions: [
-        'The check returns a reason string on mismatch and the caller decides how to refuse; it does not resolve the packs themselves.',
+        'The check compares identities only; it does not resolve or load the bound packs (campaign-rules-binding-resolution-v1 does that later and fails closed).',
+        'A database that already holds a campaign is refused rather than re-forked; the template fork itself replaces any template rows it finds.',
+        'getCampaign reads a campaign whose binding row is missing as the default dnd5e SRD binding.',
+        'Does not decide which module or rules a campaign uses.',
       ],
       residualDmInterpretation: [
-        'The player or operator chooses the campaign rules binding.',
+        'The player or operator chooses the module and the campaign rules binding.',
       ],
-      runtimeOwner: [r('binding.ts')],
-      evidence: [t('campaignRulesBinding.test.ts'), t('campaign.test.ts')],
+      runtimeOwner: [
+        'packages/core/src/campaign/campaign.ts',
+        r('binding.ts'),
+        'packages/core/src/world/forkCampaign.ts',
+      ],
+      evidence: [t('campaign.test.ts'), t('campaignRulesBinding.test.ts')],
     },
   ),
   engineEntry(
@@ -1944,11 +2034,13 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
         'packages/core/src/persistence/checkpoint/store.ts',
         'packages/core/src/persistence/checkpoint/serialize.ts',
         'packages/core/src/persistence/checkpoint/separation.ts',
+        'packages/core/src/persistence/checkpoint/doltRepo.ts',
       ],
       evidence: [
         t('checkpoint.store.test.ts'),
         t('checkpoint.restore.test.ts'),
         t('checkpoint.separation.test.ts'),
+        t('checkpoint.doltRepo.test.ts'),
       ],
     },
   ),
@@ -2012,22 +2104,30 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
   ),
   engineEntry(
     'schema-migration-runner-v1',
-    'runMigrations',
+    'migrateDatabase',
     'packages/core/src/persistence/migrationRunner.ts',
     'state-integrity',
     {
       operation:
-        'Apply pending versioned SQL migrations, each in its own transaction with its schema_migrations ledger row, after verifying that every applied migration still has its file with the same checksum and name and that the ledger is a contiguous prefix starting at 1.',
+        'Bring a campaign database onto the current schema (initSchema calls migrateDatabase when the CLI opens or creates a campaign). A database without a schema_migrations ledger is adopted only when it is empty or is a legacy database at the baseline schema version whose table and index structure matches the baseline migration (the baseline is then recorded in the ledger); runMigrations then verifies that every applied migration still has its file with the same checksum and name and that the ledger is a contiguous prefix starting at 1, and applies each pending versioned SQL migration in its own transaction together with its ledger row.',
       requiredInputs: ['A database', 'The bundled migration files'],
       exclusions: [
+        'Any other unledgered database (tables without a meta table or schema_version, a non-integer or non-baseline version, or a baseline version whose structure differs) throws SchemaResetRequiredError and is not modified.',
         'A deleted, renamed, or edited applied migration, or a non-contiguous ledger, throws SchemaMigrationError.',
         'Does not decide when a migration is written.',
       ],
       residualDmInterpretation: [
         'None: migration integrity involves no DM interpretation.',
       ],
-      runtimeOwner: ['packages/core/src/persistence/migrationRunner.ts'],
-      evidence: [t('migrationRunner.test.ts'), t('schemaSnapshot.test.ts')],
+      runtimeOwner: [
+        'packages/core/src/persistence/migrationRunner.ts',
+        'packages/core/src/persistence/schema.ts',
+      ],
+      evidence: [
+        t('migrationRunner.test.ts'),
+        t('migrationLegacyAdoption.test.ts'),
+        t('schemaSnapshot.test.ts'),
+      ],
     },
   ),
   engineEntry(
@@ -2132,12 +2232,501 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'Storage only: it implements no award rules, advancement mode, or eligibility; awardXp, grantMilestone, and applyLevelUp call it.',
+        'The campaign advancement mode is read from a stored policy row and defaults to XP; writeCampaignProgressionPolicy, which stores that row, has no production caller.',
       ],
       residualDmInterpretation: [
         'The DM decides awards and milestones within the campaign advancement policy.',
       ],
       runtimeOwner: [s('progression.ts')],
       evidence: [t('progression.test.ts'), t('progressionAwards.test.ts')],
+    },
+  ),
+];
+
+// ---------------------------------------------------------------------------
+// Character continuity and custody across campaigns (ADR 0012)
+// ---------------------------------------------------------------------------
+
+const cli = (file: string) => `packages/cli/src/${file}`;
+
+const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
+  engineEntry(
+    'character-registry-v1',
+    'createCharacterRegistryStore',
+    c('characterRegistry.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Persist the cross-campaign character registry in its own database: one head sheet per global character id, a linear append-only revision timeline, and the custody record. appendRevision numbers the next revision (head + 1, or 1 for a new id) and inserts it and updates the head row in one transaction, recording its source (register, sync-back, or fork) and, for a fork, the parent revision. registerNewCharacter appends a register revision; the CLI play flow registers each newly finalized character and each legacy JSON library character it migrates this way. save writes only the head row, without a revision; the standalone create-character command registers this way, and the first checkout then seeds revision 1 from that head. Every write and load re-checks the single-class boundary and the roll evidence, and a load refuses a row whose mirrored schema version, system, or pack id disagrees with its sheet. The custody table holds at most one row per character: setCustody inserts or replaces it, and clearCustody deletes it (a no-op when absent).',
+      requiredInputs: [
+        'The registry database (schema created by ensureCharacterRegistrySchema)',
+        'A non-blank global character id',
+        'The sheet to register or append',
+      ],
+      exclusions: [
+        'Revisions are never edited or deleted, and a head written by save gains its revision 1 only at its first checkout or resume.',
+        'registerNewCharacter does not refuse an id that already has revisions: it appends the next revision with source register.',
+        'The store applies no custody rule itself; checkout, sync-back, release, resume, and catch-up consult and write the custody row.',
+        'No write spans the registry database and a campaign database in one transaction.',
+      ],
+      residualDmInterpretation: [
+        'None for persistence integrity; the player decides which characters to create.',
+      ],
+      runtimeOwner: [
+        c('characterRegistry.ts'),
+        c('characterCustody.ts'),
+        cli('characterRegistry.ts'),
+        cli('playCharacter.ts'),
+        cli('createCharacter.ts'),
+      ],
+      evidence: [t('characterRegistry.test.ts'), t('characterCustody.test.ts')],
+    },
+  ),
+  engineEntry(
+    'character-checkout-v1',
+    'checkoutCharacterIntoCampaign',
+    c('characterCustody.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Check a registry character out into a campaign as its single active writer. Refuses when another campaign holds custody, when this campaign holds it under a different party slot, and when the id is not registered; seeds revision 1 from a legacy head that has no timeline; attaches the registry head sheet (character-sheet-attach-v1: build and rules-pack checks, the sheet stamped with the global id, import time, and checked-out revision, then projected into the live row); and only after the attach returns records custody (campaign, slot, revision). The CLI checks out an existing registry character the player imports, each newly registered character (for the first character and /addpc), and each fork it plays.',
+      requiredInputs: [
+        'The registry store',
+        'The campaign database',
+        'globalCharacterId',
+        'campaignId',
+        'characterId (the party slot; pc-1 when omitted)',
+        'sessionId and at',
+      ],
+      exclusions: [
+        'A rejected attach (a sheet built under another rules pack, or a build outside the single-class boundary) throws before custody is recorded.',
+        'Custody is recorded whenever the attach call returns, including when its live-row import returns a correction result (ok:false) for a campaign whose rules system is not dnd5e-srd.',
+        'Re-checkout into the same campaign and slot is not refused: it re-attaches the registry head over the campaign copy, discarding unsynced campaign changes, and rewrites custody. Resuming a campaign uses character-resume-custody-v1 instead.',
+        'The campaign writes and the registry custody write are ordered, not one transaction.',
+      ],
+      residualDmInterpretation: [
+        'The player decides which registry character joins the campaign and in which slot.',
+      ],
+      runtimeOwner: [
+        c('characterCustody.ts'),
+        c('attachCharacter.ts'),
+        c('characterRegistry.ts'),
+        cli('playCharacter.ts'),
+        cli('playFork.ts'),
+      ],
+      evidence: [t('characterCustody.test.ts'), t('characterRegistry.test.ts')],
+    },
+  ),
+  engineEntry(
+    'character-sync-back-release-v1',
+    'releaseCharacterFromCampaign',
+    c('characterCustody.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Commit a campaign character back to its registry timeline and release it. syncBackCharacterFromCampaign reads the campaign sheet and follows its stamped global id, and acts only when this campaign and slot hold custody: it strips the per-attachment provenance (global id, import time, source revision) and appends a sync-back revision unless the result equals the registry head sheet (then it reports committed:false and appends nothing). releaseCharacterFromCampaign validates any selected chronicle records, performs that sync-back, and then, only when it acted as the custody holder, appends those records and clears custody. The CLI releases every campaign character on quit and reports, rather than propagates, a failure.',
+      requiredInputs: [
+        'The registry store',
+        'The campaign database',
+        'campaignId and characterId of the caller',
+        'An optional chronicle store and selected chronicle records (release)',
+      ],
+      exclusions: [
+        'A caller that is not the custody holder, and a campaign sheet with no registry link, get no result: nothing is appended and custody is untouched, so a stale campaign copy cannot revert the timeline or drop another campaign hold.',
+        'Chronicle records passed without a chronicle store are refused, and for the custody holder invalid chronicle records are refused, before the sync-back writes anything.',
+        'The revision append, the chronicle append, and the custody clear are separate writes, not one transaction.',
+        'Does not merge divergent sheets; it appends the holder copy as the next revision.',
+      ],
+      residualDmInterpretation: [
+        'The player decides when to leave a campaign and which character-scoped memories to carry forward.',
+      ],
+      runtimeOwner: [
+        c('characterCustody.ts'),
+        c('characterRegistry.ts'),
+        c('characterChronicle.ts'),
+        cli('playClose.ts'),
+      ],
+      evidence: [
+        t('characterCustody.test.ts'),
+        t('characterChronicle.test.ts'),
+      ],
+    },
+  ),
+  engineEntry(
+    'character-resume-custody-v1',
+    'acquireCustodyOnResume',
+    c('characterCustody.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Re-take custody for a campaign character that is already attached when the campaign resumes, without re-attaching, so per-turn campaign state such as hit points and conditions survives. classifyResumeConflict reads without writing: not-linked (no registry link), already-held (this campaign and slot hold custody), held-elsewhere (another holder), stale-copy (no holder, but the registry head sheet differs from this campaign copy once its provenance is stripped), or resumable. checkCustodyResumable turns held-elsewhere and stale-copy into CharacterCustodyError, and acquireCustodyOnResume records custody at the head revision only for resumable. The CLI resume flow classifies every campaign character first, stops on any held-elsewhere conflict and on a cancelled stale-copy choice before writing anything, applies each chosen catch-up or fork, and then acquires custody for every character.',
+      requiredInputs: [
+        'The registry store',
+        'The campaign database',
+        'campaignId and characterId',
+        'at (acquire)',
+      ],
+      exclusions: [
+        'Held elsewhere is a hard stop; there is no custody-steal path.',
+        'A stale copy is never resolved automatically: cancel (the default, also on end of input or unrecognized input) writes nothing, and catch-up and fork are explicit choices.',
+        'Only classification-time conflicts and cancellation abort before any write; if applying a chosen catch-up or fork fails, choices already applied remain.',
+      ],
+      residualDmInterpretation: [
+        'The player chooses how to resolve a stale copy.',
+      ],
+      runtimeOwner: [
+        c('characterCustody.ts'),
+        c('characterRegistry.ts'),
+        cli('playCharacter.ts'),
+      ],
+      evidence: [t('characterCustody.test.ts')],
+    },
+  ),
+  engineEntry(
+    'character-catch-up-v1',
+    'catchUpCharacterToHead',
+    c('characterCustody.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Adopt the registry head into a campaign whose character copy is stale: refuse a campaign character with no registry link, one whose custody another campaign or slot holds, and a character with no registry timeline; re-attach the head sheet over the campaign copy (stamped with the head as its source revision and re-projected into the live row); and record custody at the head revision. The stale campaign copy is replaced wholesale, not merged, and no registry revision is appended. The CLI runs it only as an explicit resume choice, confirmed again when a combat or scene is open.',
+      requiredInputs: [
+        'The registry store',
+        'The campaign database',
+        'campaignId and characterId',
+        'sessionId and at',
+      ],
+      exclusions: [
+        'The re-attach and the custody write are ordered, not one transaction.',
+        'An in-fiction continuity bridge is optional and composed separately; the mechanical catch-up does not depend on it.',
+      ],
+      residualDmInterpretation: [
+        'The player chooses catch-up over cancel or fork and decides whether to bridge the change in fiction.',
+      ],
+      runtimeOwner: [
+        c('characterCustody.ts'),
+        c('attachCharacter.ts'),
+        cli('playCharacter.ts'),
+      ],
+      evidence: [t('characterCustody.test.ts')],
+    },
+  ),
+  engineEntry(
+    'character-timeline-fork-v1',
+    'forkCharacterTimeline',
+    c('characterCustody.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Branch a chosen revision (the source head when none is given) of a registry character into a new global character id as its revision 1, with source fork and parent provenance (source id and revision), deliberately breaking continuity: the source timeline and custody are untouched. Refuses a target id that already has a revision timeline, a source with no timeline, and a source revision that does not exist. The CLI uses it for the explicit fork-character command (registry only, not attached) and for the resume stale-copy fork choice, which forks this campaign stamped revision and checks the fork into the same slot (character-checkout-v1).',
+      requiredInputs: [
+        'The registry store',
+        'sourceGlobalCharacterId',
+        'newGlobalCharacterId',
+        'fromRevision (optional)',
+      ],
+      exclusions: [
+        'A target id with a legacy head row but no revisions is not refused; the fork revision replaces that head.',
+        'Never moves a character between campaigns (release and re-checkout does) and never merges timelines.',
+      ],
+      residualDmInterpretation: [
+        'The player decides to fork and, for the explicit command, names the new identity.',
+      ],
+      runtimeOwner: [
+        c('characterCustody.ts'),
+        c('characterRegistry.ts'),
+        cli('playFork.ts'),
+      ],
+      evidence: [t('characterCustody.test.ts'), t('characterRegistry.test.ts')],
+    },
+  ),
+  engineEntry(
+    'character-chronicle-v1',
+    'createCharacterChronicleStore',
+    c('characterChronicle.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Persist a character portable chronicle (relationships, scars, debts, vows, subjective knowledge, and similar records) in the registry database. Appending validates every record (non-empty text, source campaign, session, and time, non-empty related ref ids, and enumerated category, portability, visibility, and truth status), assigns the next free chronicle id when none is given, refuses a duplicate id, and inserts each record with a create event in one transaction (a batch is one transaction). Updating revalidates the merged record and rewrites it with an update event listing the changed fields. Release appends the selected records (character-sync-back-release-v1). When the DM context is assembled, only portable records that are not private are included for the acting character, up to the context limit (contextAssembler.ts).',
+      requiredInputs: [
+        'The registry database',
+        'globalCharacterId',
+        'The record fields: category, text, source, portability, visibility, truth status, and related refs',
+      ],
+      exclusions: [
+        'Records are never deleted; the event log keeps each create and update.',
+        'The labels are caller-declared; the store does not judge truth or significance.',
+        'Campaign world canon is never read or merged here.',
+        'The CLI lists, shows, and updates records; no model tool writes them.',
+      ],
+      residualDmInterpretation: [
+        'The player decides what the character remembers and its labels; the DM uses dm-only entries for continuity only.',
+      ],
+      runtimeOwner: [
+        c('characterChronicle.ts'),
+        c('characterCustody.ts'),
+        o('contextAssembler.ts'),
+        cli('chronicle.ts'),
+      ],
+      evidence: [
+        t('characterChronicle.test.ts'),
+        t('contextAssembler.test.ts'),
+      ],
+    },
+  ),
+];
+
+// ---------------------------------------------------------------------------
+// Turns, sessions, campaigns, and identity
+// ---------------------------------------------------------------------------
+
+const TURNS_AND_SESSIONS: readonly DeterministicCapabilityInventoryEntry[] = [
+  engineEntry(
+    'turn-transaction-v1',
+    'runTurn',
+    o('orchestrator.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Run one campaign turn inside a SQLite savepoint, so that any failure (a model or tool error, an exhausted tool-round budget, empty narration, an audit rejection after the allowed retries, a refused precedent) rolls back every write of the turn; only a failure diagnostic is written after the rollback. Before any context assembly or tool call it refuses a turn id that already has an accepted trace, requires a pending disputed replay to be resumed with its exact input and unchanged state, resolves the campaign position, and requires the acting character to be a player character. Every tool call is validated against that tool input schema before it runs (invalid_args), and an exception thrown by a tool becomes a tool_error result. Each candidate response runs in its own nested savepoint: with no auditor the first candidate is accepted; with an auditor a rejected candidate writes are rolled back before a retry (at most three candidates; after the first, a retry only when the verdict raises a new requirement), and a rejection the auditor marks as presentation-only (roll ledger), with no disallowed call, no missing tool other than roll, no failed tool call, and explicit presentation metadata on every roll call including a player-visible one, is accepted as a repair. Ambiguity precedents proposed by the accepted candidate (at most one per ambiguity) are recorded as rulings, and an existing prospective ruling refuses the turn. The accepted turn then summarizes any scenes it closed, appends the player input and the narration to the scene log (opening an untitled scene when none is open), records the validated turn trace with the accepted state delta, retains the replay snapshot, and commits.',
+      requiredInputs: [
+        'The campaign database, model client, and tool registry',
+        'campaignId, sessionId, turnId, playerInput, and at',
+        'actingCharacterId (the active character when omitted)',
+        'An optional turn auditor and an optional tool-round budget (8 per candidate by default)',
+      ],
+      exclusions: [
+        'The audit verdict is a model judgment; the engine owns only the rollback, the retry bound, and the presentation-repair rule.',
+        'An accepted turn cannot be overwritten; a dispute goes through dispute-turn-v1.',
+        'Narration that is not a tool call changes no game state; the tools are the only writers of canon.',
+      ],
+      residualDmInterpretation: [
+        'The DM model narrates and chooses the tool calls; the auditor model judges each candidate.',
+      ],
+      runtimeOwner: [
+        o('orchestrator.ts'),
+        o('turnLoop.ts'),
+        o('toolRegistry.ts'),
+        'packages/core/src/model/toolSchemaValidation.ts',
+        o('auditRetryDiagnostics.ts'),
+        o('turnTranscript.ts'),
+        o('scene.ts'),
+        o('turnTraceProjection.ts'),
+        'packages/core/src/memory/turnTrace.ts',
+        s('activeCharacter.ts'),
+        'packages/core/src/campaign/campaignPosition.ts',
+        'packages/core/src/campaign/ambiguityResolution.ts',
+        'packages/core/src/campaign/turnReplayStore.ts',
+      ],
+      evidence: [
+        t('orchestrator.test.ts'),
+        t('turnAuditor.test.ts'),
+        t('actingCharacter.test.ts'),
+      ],
+    },
+  ),
+  engineEntry(
+    'player-visible-roll-ledger-v1',
+    'appendPlayerVisibleRollLedger',
+    o('playerVisibleRollLedger.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Replace any trailing model-written Rolls: block in a candidate narration with an engine-rendered Rolls: ledger built, in call order, only from successful player_visible results of roll, resolve_check, resolve_contest, roll_retained_check, resolve_retained_check, resolve_damage, and spend_rest_hit_die; the dice, kept and dropped dice, natural results, modifiers, totals, and outcomes come from the tool data.',
+      requiredInputs: ['The candidate narration', 'The executed tool calls'],
+      exclusions: [
+        'dm_only results, results without a recognized visibility, and failed calls never appear.',
+        'Does not decide visibility; the DM declares it on each roll (spend_rest_hit_die results are always player-visible).',
+        'Model prose and other tools are never read into the ledger.',
+      ],
+      residualDmInterpretation: [
+        'The DM decides which rolls the player sees and narrates around the ledger.',
+      ],
+      runtimeOwner: [o('playerVisibleRollLedger.ts'), o('orchestrator.ts')],
+      evidence: [t('playerVisibleRollLedger.test.ts')],
+    },
+  ),
+  engineEntry(
+    'character-targeting-v1',
+    'resolveCharacterRef',
+    s('activeCharacter.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Resolve which character an operation targets. A character reference resolves to an exact row id or, failing that, to a unique case-insensitive name; no match and more than one match are refused (tools return invalid_target). An omitted reference means the acting character of the turn. setActiveCharacterId changes the active character only to an existing player character; character creation and import set it, and the CLI /switch command sets it.',
+      requiredInputs: [
+        'A database',
+        'A character id or name (the acting character when omitted)',
+      ],
+      exclusions: [
+        'Does not decide which character the player means beyond exact id and unique name matching.',
+      ],
+      residualDmInterpretation: [
+        'The DM decides which character an action targets and names it unambiguously.',
+      ],
+      runtimeOwner: [
+        s('activeCharacter.ts'),
+        o('toolRegistry.ts'),
+        cli('playParty.ts'),
+      ],
+      evidence: [
+        t('toolCharacterTargeting.test.ts'),
+        t('actingCharacter.test.ts'),
+        t('party.test.ts'),
+      ],
+    },
+  ),
+  engineEntry(
+    'session-lifecycle-v1',
+    'startSession',
+    'packages/core/src/session/session.ts',
+    'state-integrity',
+    {
+      operation:
+        'Open and close campaign play sessions. startSession refuses blank ids, a campaign that already has an open session, and a session id already used, and inserts the open session in one transaction. closeSessionGracefully refuses an unknown session and, in one transaction and only while the session is still open, closes its open scene (writing that scene log summary), records the session recap, closes the session, and optionally stamps its memory arc; closing an already-closed session repeats none of that. A close-time checkpoint runs after that transaction commits and is marked done only when it succeeds, so a failed checkpoint is retried by the next close call.',
+      requiredInputs: [
+        'A database',
+        'campaignId and sessionId',
+        'startedAt (start), or closedAt, recap, and state delta (close)',
+        'An optional checkpoint runner and arc stamp (close)',
+      ],
+      exclusions: [
+        'The recap and summaries are generated memory supplied or derived from the log; their content is not judged here.',
+        'Does not decide when a session starts or ends.',
+      ],
+      residualDmInterpretation: [
+        'The player decides when to play and when to stop.',
+      ],
+      runtimeOwner: [
+        'packages/core/src/session/session.ts',
+        'packages/core/src/session/close.ts',
+        o('scene.ts'),
+        cli('playSession.ts'),
+        cli('playClose.ts'),
+      ],
+      evidence: [t('session.test.ts'), t('sessionClose.test.ts')],
+    },
+  ),
+  engineEntry(
+    'demo-campaign-v1',
+    'createDemoCampaign',
+    'packages/core/src/campaign/demoMode.ts',
+    'state-integrity',
+    {
+      operation:
+        'Create a bounded public demo campaign and meter its turns. createDemoCampaign requires a positive integer turn cap (DEMO_TURN_CAP when omitted) and refuses a module pack whose license is not both shippable and cleared for hosted use, then creates the campaign (campaign-creation-v1, default binding) and starts its session (session-lifecycle-v1). getDemoTurnBudget counts the distinct player turns in that session scene log against the cap; the CLI stops the demo turn loop once the cap is reached, and assertDemoTurnAllowed refuses at the cap.',
+      requiredInputs: [
+        'A database',
+        'campaignId, sessionId, and startedAt',
+        'An optional module pack, turn cap, profile registry, and DM profile',
+      ],
+      exclusions: [
+        'Campaign creation and session start are two transactions; a failed session start leaves the created campaign.',
+        'The turn count is derived from the scene log, not kept as a separate counter.',
+        'The demo model decision is reported for labelling, not enforced.',
+      ],
+      residualDmInterpretation: [
+        'The operator chooses the demo content; the player chooses to play.',
+      ],
+      runtimeOwner: [
+        'packages/core/src/campaign/demoMode.ts',
+        'packages/core/src/world/license.ts',
+        cli('play.ts'),
+        cli('playTurnLoop.ts'),
+      ],
+      evidence: [t('demoMode.test.ts')],
+    },
+  ),
+  engineEntry(
+    'adventure-run-v1',
+    'startAdventureRun',
+    'packages/core/src/campaign/adventureRun.ts',
+    'state-integrity',
+    {
+      operation:
+        'Bind a campaign to an immutable adventure module through an adventure run. startAdventureRun requires non-blank ids and provenance, a known status (active when omitted), and non-empty session markers when given, refuses a run id that already exists in the campaign, and inserts the run with empty progress in one transaction; the CLI module selector starts it. recordAdventureRunProgress validates a progress delta (non-empty ids, known encounter resolutions, non-negative integer clock fills, complete deviations) and merges it in one transaction (id lists unioned in order; encounter outcomes, clocks, and deviations replaced by id), optionally updating status, session markers, and notes, and refuses a missing run. Retained and staged: recordAdventureRunProgress has no production caller (tests only), and eshyra-aiq8 owns wiring a consumer.',
+      requiredInputs: [
+        'A database',
+        'campaignId and runId',
+        'moduleId (start)',
+        'provenance, sessionId, and updatedAt',
+        'A progress delta (progress)',
+      ],
+      exclusions: [
+        'The module is referenced by id only; its source is neither read nor written.',
+        'Does not check that recorded ids exist in the module.',
+        'start_encounter reads encounters only from active runs.',
+      ],
+      residualDmInterpretation: [
+        'The player chooses the module; the DM decides what progress happened.',
+      ],
+      runtimeOwner: [
+        'packages/core/src/campaign/adventureRun.ts',
+        cli('playModuleSelector.ts'),
+      ],
+      evidence: [t('adventureRun.test.ts')],
+    },
+  ),
+  engineEntry(
+    'simple-character-creation-v1',
+    'completeCharacterCreation',
+    c('creation.ts'),
+    'state-integrity',
+    {
+      operation:
+        'Complete the simple draft creation flow by campaign rules system: a dnd5e-srd draft is validated (a known SRD class and ancestry, a name, level 1 only, integer ability scores valid for the chosen method, the class level-1 hit point maximum, and spells that resolve and are on the class list), a pathfinder2e-remaster draft is validated against that pack, and a valid draft is projected into the live character row through the validated state seam and made the active character in one transaction. The CLI calls it only for campaigns whose rules system is not dnd5e-srd (dnd5e campaigns use the guided path), so no production caller reaches its dnd5e-srd branch.',
+      requiredInputs: [
+        'A database',
+        'The draft',
+        'sessionId and at',
+        'characterId (pc-1 when omitted)',
+      ],
+      exclusions: [
+        'An invalid draft, and a campaign rules system with no implementation, return ok:false with the reasons and write nothing.',
+        'Writes no canonical character sheet; the guided path (finalize-character-v1, character-sheet-attach-v1) does.',
+      ],
+      residualDmInterpretation: ['The player supplies every choice.'],
+      runtimeOwner: [
+        c('creation.ts'),
+        c('pathfinder2e.ts'),
+        s('activeCharacter.ts'),
+        s('mutateState.ts'),
+        cli('playCharacter.ts'),
+      ],
+      evidence: [
+        t('characterCreation.test.ts'),
+        t('pathfinderCharacterCreation.test.ts'),
+      ],
+    },
+  ),
+  engineEntry(
+    'guided-level-up-v1',
+    'runGuidedLevelUp',
+    c('guidedLevelUpFlow.ts'),
+    'bounded-procedure',
+    {
+      operation:
+        'Drive one guided level-up: refuse a build outside the single-class boundary; return not-eligible unless getLevelUpEligibility says the character may level up; refuse a missing sheet and a sheet level that disagrees with the live level; preview the change set and return the required choices (blocked when any is unsupported); and commit through applyLevelUp only on an explicit confirm, returning cancelled on an explicit decline. The CLI level-up command runs it.',
+      requiredInputs: [
+        'A database and sheet store',
+        'characterId (the active character when omitted)',
+        'The choices, hit point choice, and confirm decision',
+        'source, provenance, sessionId, and at',
+      ],
+      exclusions: [
+        'Levels at most once per call; multi-level catch-up is repeated calls.',
+        'Does not award experience or milestones.',
+      ],
+      residualDmInterpretation: [
+        'The player makes the choices and confirms; the DM adjudicates option effects the sheet only records.',
+      ],
+      runtimeOwner: [
+        c('guidedLevelUpFlow.ts'),
+        c('levelUpEngine.ts'),
+        s('levelUpEligibility.ts'),
+        cli('playProgression.ts'),
+      ],
+      evidence: [t('guidedLevelUpFlow.test.ts')],
     },
   ),
 ];
@@ -2151,6 +2740,8 @@ export const DETERMINISTIC_CAPABILITY_INVENTORY: readonly DeterministicCapabilit
     ...SPELLS_RESTS_USAGE,
     ...WORLD_AND_RULINGS,
     ...ENGINE_PATHS,
+    ...CHARACTER_CONTINUITY,
+    ...TURNS_AND_SESSIONS,
   ]);
 
 /**
@@ -2168,6 +2759,256 @@ export const NON_CAPABILITY_TOOLS: Readonly<Record<string, string>> =
     memory_drilldown:
       'read-only retrieval of omitted memory windows; makes no deterministic rules commitment',
   });
+
+/**
+ * The disposition of one module file under `packages/core/src`.
+ *
+ * `covered` is derived, never hand-maintained: a module is covered exactly when
+ * at least one inventory entry names it in `runtimeOwner`, and `by` lists those
+ * revisions. Every other module carries an explicit reason why it performs no
+ * deterministic commitment of its own.
+ */
+export type ModuleDisposition =
+  | {
+      readonly disposition: 'covered';
+      readonly by: readonly string[];
+      /** Which part of a mixed module the covering entries describe. */
+      readonly note?: string;
+    }
+  | {
+      readonly disposition: 'not-a-deterministic-commitment';
+      readonly reason: string;
+    };
+
+const PACK_DATA =
+  'reads, validates, or resolves rules-pack record data; changes no state and makes no rules decision of its own (the consuming entries state the decisions)';
+const SRD_CREATION_DATA =
+  'SRD creation data tables or lookups over pack records consumed by character creation; performs no operation of its own';
+const MODULE_PACK =
+  'loads, validates, or lists authored module or adventure pack content; changes no campaign state';
+const DISCOVERY =
+  'rule discovery retrieval, measurement, or shadow evidence (ADR 0020 section 5); selects rule-awareness context for the DM and writes no game state';
+const PROMPT =
+  'assembles or renders text for the DM or auditor model; changes no state';
+const MODEL_ADAPTER =
+  'model provider adapter, profile, or usage accounting; makes no game-state or rules commitment';
+const GENERATED_MEMORY =
+  'generated memory (scene summaries, session recaps, arcs, campaign bible) composition or storage; non-canonical by design (ADR 0001) and makes no rules or game-state commitment';
+const DIAGNOSTICS = 'diagnostics or debug recording; never changes game state';
+const TYPES = 'type declarations (and their constant vocabularies) only';
+const INFRASTRUCTURE =
+  'generic infrastructure (database open and transaction helper, JSON column codec, identifier quoting, string helpers); each atomicity or validation claim is stated on the operation that uses it';
+const AUDIT =
+  'offline audit, registry, or proof machinery over the rules pack; no gameplay path calls it';
+const DOLT_TOOLING =
+  'locates, provisions, or runs the pinned Dolt binary for checkpoint-store-v1; tooling, not a state commitment';
+const NON_CAPABILITY_TOOL =
+  'implements a registered tool listed in NON_CAPABILITY_TOOLS with its reason';
+const RULE_AWARENESS =
+  'rule-awareness presentation for the DM model and discovery; writes nothing';
+
+const core = (file: string) => `packages/core/src/${file}`;
+
+const NOT_A_DETERMINISTIC_COMMITMENT: Readonly<Record<string, string>> = {
+  [core('adventure/listModules.ts')]: MODULE_PACK,
+  [core('adventure/loadModule.ts')]: MODULE_PACK,
+  [core('adventure/references.ts')]: MODULE_PACK,
+  [core('adventure/types.ts')]: TYPES,
+  [core('adventure/validate.ts')]: MODULE_PACK,
+  [core('campaign/campaignContext.ts')]:
+    'assembles and renders the active campaign rules at the current position for the DM context; writes nothing (the rule store and its position checks are campaign-rule-store-v1)',
+  [core('character/continuityBridge.ts')]:
+    'composes an optional model-written catch-up bridge narration; changes no state',
+  [core('character/dnd5eRecipe.ts')]:
+    'creation wizard recipe (step order and modes) for the CLI; validates nothing itself',
+  [core('character/recipe.ts')]: TYPES,
+  [core('character/rulesPackResolver.ts')]: PACK_DATA,
+  [core('character/srdAncestryAbilityScoreIncreases.ts')]: SRD_CREATION_DATA,
+  [core('character/srdAncestrySkills.ts')]: SRD_CREATION_DATA,
+  [core('character/srdClassSpellcasting.ts')]: SRD_CREATION_DATA,
+  [core('character/srdClassStartingEquipment.ts')]: SRD_CREATION_DATA,
+  [core('character/srdCreationChoices.ts')]: SRD_CREATION_DATA,
+  [core('character/srdEquipmentPacks.ts')]: SRD_CREATION_DATA,
+  [core('character/srdLanguages.ts')]: SRD_CREATION_DATA,
+  [core('character/srdStartingEquipmentGrants.ts')]: SRD_CREATION_DATA,
+  [core('config.ts')]:
+    'resolves runtime provider and model configuration; makes no game-state or rules commitment',
+  [core('debug/sessionDebug.ts')]: DIAGNOSTICS,
+  [core('discovery/accounting.ts')]: DISCOVERY,
+  [core('discovery/bands.ts')]: DISCOVERY,
+  [core('discovery/blockerRepairs.ts')]: DISCOVERY,
+  [core('discovery/campaignRuleSeam.ts')]: DISCOVERY,
+  [core('discovery/candidates.ts')]: DISCOVERY,
+  [core('discovery/dedup.ts')]: DISCOVERY,
+  [core('discovery/expansion.ts')]: DISCOVERY,
+  [core('discovery/harness.ts')]: DISCOVERY,
+  [core('discovery/measurements.ts')]: DISCOVERY,
+  [core('discovery/packet.ts')]: DISCOVERY,
+  [core('discovery/packetMessage.ts')]: DISCOVERY,
+  [core('discovery/retention.ts')]: DISCOVERY,
+  [core('discovery/shadow.ts')]: DISCOVERY,
+  [core('discovery/signals.ts')]: DISCOVERY,
+  [core('discovery/structuralEquality.ts')]: DISCOVERY,
+  [core('discovery/traceDerivation.ts')]: DISCOVERY,
+  [core('discovery/traceProjection.ts')]: DISCOVERY,
+  [core('discovery/types.ts')]: TYPES,
+  [core('memory/arcSummary.ts')]: GENERATED_MEMORY,
+  [core('memory/campaignArc.ts')]: GENERATED_MEMORY,
+  [core('memory/campaignBibleExtractor.ts')]: GENERATED_MEMORY,
+  [core('memory/config.ts')]: GENERATED_MEMORY,
+  [core('memory/recapBuilder.ts')]: GENERATED_MEMORY,
+  [core('memory/summary.ts')]: GENERATED_MEMORY,
+  [core('memory/turnFailureDiagnostic.ts')]: DIAGNOSTICS,
+  [core('model/agentSdkClient.ts')]: MODEL_ADAPTER,
+  [core('model/agentSdkEnv.ts')]: MODEL_ADAPTER,
+  [core('model/agentSdkLoader.ts')]: MODEL_ADAPTER,
+  [core('model/agentSdkMcpClient.ts')]: MODEL_ADAPTER,
+  [core('model/anthropicNativeClient.ts')]: MODEL_ADAPTER,
+  [core('model/client.ts')]: MODEL_ADAPTER,
+  [core('model/codexEnv.ts')]: MODEL_ADAPTER,
+  [core('model/codexMcpHttpServer.ts')]: MODEL_ADAPTER,
+  [core('model/codexSdkMcpClient.ts')]: MODEL_ADAPTER,
+  [core('model/evaluation.ts')]:
+    'offline model-tier evaluation harness; no gameplay path calls it',
+  [core('model/jsonSchemaToZod.ts')]: MODEL_ADAPTER,
+  [core('model/openaiNativeClient.ts')]: MODEL_ADAPTER,
+  [core('model/profiles.ts')]: MODEL_ADAPTER,
+  [core('model/toolSchema.ts')]:
+    'tool input-schema types and provider rendering; schema validation of tool calls is stated in turn-transaction-v1 (model/toolSchemaValidation.ts)',
+  [core('model/usage.ts')]: MODEL_ADAPTER,
+  [core('orchestrator/adventureAudit.ts')]:
+    'builds a read-only adventure progress audit report; writes nothing',
+  [core('orchestrator/adventureContext.ts')]: PROMPT,
+  [core('orchestrator/protocol.ts')]:
+    'renders the system prompt and parses text-protocol tool calls; each call commitment is its tool entry',
+  [core('orchestrator/toolLookupRules.ts')]: NON_CAPABILITY_TOOL,
+  [core('orchestrator/toolMemoryDrilldown.ts')]: NON_CAPABILITY_TOOL,
+  [core('orchestrator/toolRequest.ts')]:
+    'normalizes provider tool-call requests before dispatch; each call commitment is its tool entry',
+  [core('orchestrator/toolWorldQuery.ts')]: NON_CAPABILITY_TOOL,
+  [core('orchestrator/tools.ts')]:
+    'the registration list of the default tool registry; the closure test accounts for every registered tool',
+  [core('orchestrator/turnAuditor.ts')]:
+    'model-based mechanics auditor whose verdict is model judgment; turn-transaction-v1 states what the engine does with the verdict',
+  [core('orchestrator/turnSceneSummary.ts')]: GENERATED_MEMORY,
+  [core('persistence/checkpoint/doltBinary.ts')]: DOLT_TOOLING,
+  [core('persistence/checkpoint/doltCli.ts')]: DOLT_TOOLING,
+  [core('persistence/checkpoint/doltProvision.ts')]: DOLT_TOOLING,
+  [core('persistence/db.ts')]: INFRASTRUCTURE,
+  [core('persistence/jsonColumn.ts')]: INFRASTRUCTURE,
+  [core('persistence/sql.ts')]: INFRASTRUCTURE,
+  [core('rules/audit.ts')]: AUDIT,
+  [core('rules/bundledSrdPack.ts')]: PACK_DATA,
+  [core('rules/conditionRelations.ts')]: PACK_DATA,
+  [core('rules/deterministicCapabilityContract.ts')]:
+    'capability contract types and the magic-item readiness contract text; the preflight itself is derived-magic-item-clauses-v1',
+  [core('rules/deterministicCapabilityInventory.ts')]:
+    'this inventory: proof machinery that states capabilities and performs none',
+  [core('rules/deterministicCapabilityLedger.ts')]:
+    'rule-bound capability contracts and their model-facing rule bindings (presentation); the operations are the entries that quote them',
+  [core('rules/featureChoices.ts')]: PACK_DATA,
+  [core('rules/fieldProvenance.ts')]: PACK_DATA,
+  [core('rules/findingRegistry.ts')]: AUDIT,
+  [core('rules/inlineFeatureOptions.ts')]: PACK_DATA,
+  [core('rules/jsonPointer.ts')]: PACK_DATA,
+  [core('rules/kindSchemas.ts')]: PACK_DATA,
+  [core('rules/license.ts')]:
+    'license policy wrapper for rules packs used by audits and tests; no gameplay path calls it',
+  [core('rules/lookup.ts')]: PACK_DATA,
+  [core('rules/magicItemLegacyCapabilityBacklog.ts')]: AUDIT,
+  [core('rules/magicItemMechanics.ts')]: PACK_DATA,
+  [core('rules/magicItemVariants.ts')]: PACK_DATA,
+  [core('rules/packLoader.ts')]: PACK_DATA,
+  [core('rules/pathfinder2eRemaster.ts')]: PACK_DATA,
+  [core('rules/recordCard.ts')]: RULE_AWARENESS,
+  [core('rules/recordRelationships.ts')]: RULE_AWARENESS,
+  [core('rules/repeatedFeatureChoices.ts')]: PACK_DATA,
+  [core('rules/ruleAwareness.ts')]: RULE_AWARENESS,
+  [core('rules/ruleKnownLimits.ts')]: RULE_AWARENESS,
+  [core('rules/rulesAmbiguities.ts')]: PACK_DATA,
+  [core('rules/spellUpcastContract.ts')]: PACK_DATA,
+  [core('rules/srdAudit.ts')]: AUDIT,
+  [core('rules/srdChoiceProseAudit.ts')]: AUDIT,
+  [core('rules/srdEquipmentResolutionAudit.ts')]: AUDIT,
+  [core('rules/srdPlayabilityAudit.ts')]: AUDIT,
+  [core('rules/summoningSchema.ts')]: PACK_DATA,
+  [core('rules/types.ts')]: TYPES,
+  [core('rules/validate.ts')]: PACK_DATA,
+  [core('rules/verticalProcedureProof.ts')]: AUDIT,
+  [core('session/launch.ts')]:
+    'read-only launch state used to choose between resuming and starting a session',
+  [core('state/nameNormalization.ts')]: INFRASTRUCTURE,
+  [core('state/party.ts')]:
+    'read-only party listing for the DM context and CLI display',
+  [core('validation.ts')]: INFRASTRUCTURE,
+  [core('world/loadModule.ts')]: MODULE_PACK,
+  [core('world/samples/emberfallHollow.ts')]: 'bundled sample module content',
+  [core('world/types.ts')]: TYPES,
+  [core('world/validate.ts')]: MODULE_PACK,
+  [core('world/worldQuery.ts')]: NON_CAPABILITY_TOOL,
+  [core('world/worldVisibility.ts')]:
+    'classifies module fields as DM-only for world_query annotations and enforces no visibility (see NON_CAPABILITY_TOOLS.world_query)',
+};
+
+const COVERED_MODULE_NOTES: Readonly<Record<string, string>> = {
+  [core('orchestrator/contextAssembler.ts')]:
+    'only its character-chronicle selection (portable, non-private records) is a commitment; the rest assembles the DM prompt context',
+  [core('orchestrator/orchestrator.ts')]:
+    'the turn savepoint, candidate, audit, and commit sequence and the roll-ledger append; discovery capture and diagnostics recording are not commitments',
+  [core('orchestrator/auditRetryDiagnostics.ts')]:
+    'only the presentation-only repair rule decides acceptance; the retry-cause classification feeds diagnostics',
+  [core('orchestrator/toolRegistry.ts')]:
+    'ToolRegistry.invoke (input-schema validation and error wrapping) and resolveTargetCharacterId; tool definitions and mutation classification are presentation helpers',
+  [core('character/abilityAllocation.ts')]:
+    'ability-score rolling, assignment, and roll-evidence validation; class recommendation and command parsing are CLI helpers',
+};
+
+function buildModuleDispositions(): Readonly<
+  Record<string, ModuleDisposition>
+> {
+  const coveredBy = new Map<string, string[]>();
+  for (const entry of DETERMINISTIC_CAPABILITY_INVENTORY)
+    for (const path of entry.runtimeOwner) {
+      if (!path.startsWith('packages/core/src/')) continue;
+      const revisions = coveredBy.get(path) ?? [];
+      if (!revisions.includes(entry.revision)) revisions.push(entry.revision);
+      coveredBy.set(path, revisions);
+    }
+  const dispositions: Record<string, ModuleDisposition> = {};
+  for (const [path, by] of [...coveredBy].sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
+    if (NOT_A_DETERMINISTIC_COMMITMENT[path] !== undefined)
+      throw new Error(
+        `${path}: covered module also has a no-commitment reason`,
+      );
+    const note = COVERED_MODULE_NOTES[path];
+    dispositions[path] = Object.freeze({
+      disposition: 'covered' as const,
+      by: Object.freeze([...by]),
+      ...(note === undefined ? {} : { note }),
+    });
+  }
+  for (const path of Object.keys(COVERED_MODULE_NOTES))
+    if (!coveredBy.has(path))
+      throw new Error(
+        `${path}: a covered-module note names an uncovered module`,
+      );
+  for (const [path, reason] of Object.entries(NOT_A_DETERMINISTIC_COMMITMENT))
+    dispositions[path] = Object.freeze({
+      disposition: 'not-a-deterministic-commitment' as const,
+      reason,
+    });
+  return Object.freeze(dispositions);
+}
+
+/**
+ * Every module file under `packages/core/src` (except the `index.ts` and
+ * `internal.ts` barrels), each with exactly one disposition. Covered modules
+ * are derived from the inventory's runtime owners; the rest name their reason.
+ */
+export const MODULE_DISPOSITIONS: Readonly<Record<string, ModuleDisposition>> =
+  buildModuleDispositions();
 
 /**
  * Report on the legacy magic-item `executionReadiness` / `engine:F` backlog.

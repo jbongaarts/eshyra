@@ -1166,9 +1166,11 @@ export type {
   DeterministicCapabilityInventoryEntry,
   DeterministicCapabilitySurface,
   MagicItemCapabilityBacklogSummary,
+  ModuleDisposition,
 } from './rules/deterministicCapabilityInventory.js';
 export {
   DETERMINISTIC_CAPABILITY_INVENTORY,
+  MODULE_DISPOSITIONS,
   NON_CAPABILITY_TOOLS,
   summarizeMagicItemCapabilityBacklog,
 } from './rules/deterministicCapabilityInventory.js';

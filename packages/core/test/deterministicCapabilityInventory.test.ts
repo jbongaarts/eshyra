@@ -1,11 +1,12 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   DETERMINISTIC_CAPABILITY_INVENTORY,
   getBundledDnd5eSrdPack,
   MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
+  MODULE_DISPOSITIONS,
   NON_CAPABILITY_TOOLS,
   RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
   summarizeMagicItemCapabilityBacklog,
@@ -122,6 +123,39 @@ describe('deterministic capability inventory (ADR 0020 section 3)', () => {
       expect(entry.runtimeOwner, entry.revision).toContain(
         entry.surface.module,
       );
+    }
+  });
+
+  it('dispositions every core module file exactly once: covered by its runtime-owner entries or not a commitment, with the reason', () => {
+    const sourceRoot = resolve(repoRoot, 'packages/core/src');
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((dirent) =>
+        dirent.isDirectory()
+          ? walk(join(dir, dirent.name))
+          : dirent.name.endsWith('.ts')
+            ? [relative(repoRoot, join(dir, dirent.name)).replaceAll('\\', '/')]
+            : [],
+      );
+    const modules = walk(sourceRoot)
+      .filter(
+        (path) =>
+          path !== 'packages/core/src/index.ts' &&
+          path !== 'packages/core/src/internal.ts',
+      )
+      .sort();
+    expect(Object.keys(MODULE_DISPOSITIONS).sort()).toEqual(modules);
+    for (const [path, disposition] of Object.entries(MODULE_DISPOSITIONS)) {
+      expect(existsSync(resolve(repoRoot, path)), path).toBe(true);
+      const owners = DETERMINISTIC_CAPABILITY_INVENTORY.filter((entry) =>
+        entry.runtimeOwner.includes(path),
+      ).map((entry) => entry.revision);
+      if (disposition.disposition === 'covered') {
+        expect(owners.length, path).toBeGreaterThan(0);
+        expect([...disposition.by].sort(), path).toEqual([...owners].sort());
+      } else {
+        expect(owners, path).toEqual([]);
+        expect(disposition.reason.length, path).toBeGreaterThan(0);
+      }
     }
   });
 
