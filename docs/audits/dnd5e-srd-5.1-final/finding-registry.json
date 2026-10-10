@@ -88,7 +88,7 @@
       "aliases": ["indep:011"],
       "invariant": "Language universe keeps its source-defined extension point",
       "status": "accepted",
-      "statusReasoning": "Still open and re-owned to eshyra-o9bd.19.3.3 (the July defect map assigns indep:011 there): background and ancestry language choices emit only the eight Standard Languages as their domain (e.g. background:acolyte, 'Two of your choice'), while rule:languages also allows a language common in the campaign and, with GM permission, an Exotic or secret language. The source extension point must be represented without silently widening or closing the choice.",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.3.3.1. Every open 'of your choice' language grant (ancestry:half-elf, ancestry:human, ancestry:high-elf, background:acolyte) carries extension {ruleRef: rule:languages, exoticTableRef: table:exotic-languages, requiresGmApproval: true} beside the unchanged Standard Languages default domain; nothing is silently widened. Creation accepts a language outside the default domain only through the explicit draft input selections.gmApprovedLanguages[choiceId], never inferred, and the CLI offers an explicit 'other language with GM approval' entry. Evidence: packages/core/test/languageExtensionPoint.test.ts and the characterWizard CLI tests.",
       "provenance": {
         "auditFinding": "indep:011",
         "evidenceBasis": "audit-finding"
@@ -137,6 +137,7 @@
       "aliases": ["indep:012"],
       "invariant": "Equipment, material, potion, and report records retain their findings",
       "status": "accepted",
+      "statusReasoning": "Cannot be evaluated: the original finding text is not recorded in the repository; the row carries only the generalized invariant. Equipment mechanics evidence lives in the o9bd-18-7-6 equipment mechanics inventory (docs/audits/dnd5e-srd-5.1-final/o9bd-18-7-6-equipment-mechanics-inventory.md). Any concrete equipment, material, potion, or report defect is a new finding. Disposition by eshyra-o9bd.19.3.3.1.",
       "provenance": {
         "auditFinding": "indep:012",
         "evidenceBasis": "audit-finding"
@@ -562,7 +563,8 @@
       "canonicalId": "ancestry-omissions",
       "aliases": ["indep:004"],
       "invariant": "Ancestry deterministic semantics are complete",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "ADR 0020 withdrew whole-record ancestry determinism as a global closure claim. The surviving obligation, discharged by eshyra-o9bd.19.3.3.1, is that ancestry projections consumed by creation are source-faithful: fixed skills, languages, ability score increases, and traits, with prose staying verbatim. The language projections are verified, and the High Elf 'Extra Language' trait now reaches creation as a real language choice (default Standard domain plus the rule:languages extension). Other ancestry mechanics remain prose and are not claimed deterministic.",
       "provenance": {
         "auditFinding": "indep:004",
         "evidenceBasis": "audit-finding"
@@ -575,6 +577,7 @@
       "aliases": ["opus:F-18"],
       "invariant": "Background equipment is structured",
       "status": "accepted",
+      "statusReasoning": "Verified satisfied by eshyra-o9bd.19.3.3.1, no repair needed. Background records carry structured equipmentGrants with quantities, refs, and currencyGp (Acolyte pouch: currencyGp 15); finalization credits that gp to the starting wallet. Evidence: the 'credits the Acolyte pouch gp' test in packages/core/test/languageExtensionPoint.test.ts and the equipment-grant tests in packages/core/test/srdCreationChoices.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-18",
         "evidenceBasis": "audit-finding"

@@ -126,7 +126,19 @@ export interface ResolvedLanguageGrant {
   readonly choose?: number;
   /** Enumerable option domain for `choose` (eshyra-8r8f), when the pack has one. */
   readonly from?: readonly string[];
+  /**
+   * Source extension point for an open "of your choice" grant: a GM may approve
+   * a language outside `from` (eshyra-o9bd.19.3.3.1). Never widens `from`.
+   */
+  readonly extension?: ResolvedLanguageChoiceExtension;
   readonly sourceText: string;
+}
+
+/** The `rule:languages` GM-permission extension on an open language choice. */
+export interface ResolvedLanguageChoiceExtension {
+  readonly ruleRef: string;
+  readonly exoticTableRef?: string;
+  readonly requiresGmApproval: true;
 }
 
 /** Structured spellcasting counts on a class's level row (from the progression table). */
@@ -392,6 +404,15 @@ export interface ResolvedBackgroundFeature {
   readonly text: string;
 }
 
+/** An ancestry `choices[]` entry of category `language`. */
+export interface ResolvedAncestryLanguageChoice {
+  readonly id: string;
+  readonly choose: number;
+  readonly from?: readonly string[];
+  readonly extension?: ResolvedLanguageChoiceExtension;
+  readonly sourceText: string;
+}
+
 /** A racial trait as stored on an ancestry record: a name and verbatim prose. */
 export interface ResolvedAncestryTrait {
   readonly name: string;
@@ -411,6 +432,12 @@ export interface ResolvedAncestryData {
   readonly abilityScoreIncreases?: readonly ResolvedAncestryAbilityScoreIncrease[];
   /** Structured ancestry language grants. */
   readonly languages?: readonly ResolvedLanguageGrant[];
+  /**
+   * Open language picks the pack emits as ancestry creation choices (High Elf
+   * "Extra Language"), each shaped like a language grant's free-choice part so
+   * creation prompts for it (eshyra-o9bd.19.3.3.1).
+   */
+  readonly languageChoices?: readonly ResolvedAncestryLanguageChoice[];
   /** Fixed, unconditional skill grants from ancestry traits. */
   readonly skillProficiencies?: readonly string[];
   readonly skillChoices?: readonly ResolvedChoiceSpec[];
@@ -1280,6 +1307,7 @@ function resolveAncestry(
         raw.abilityScoreIncreases,
       ),
       languages: parseLanguageGrants(raw.languages),
+      languageChoices: parseAncestryLanguageChoices(raw.choices),
       traits: parseAncestryTraits(raw.traits),
       skillProficiencies: getFixedAncestrySkills(result.record.key),
       skillChoices: getAncestryCreationChoices(result.record.key, {
@@ -1302,6 +1330,35 @@ function resolveAncestry(
         })),
     },
   };
+}
+
+function parseAncestryLanguageChoices(
+  value: unknown,
+): readonly ResolvedAncestryLanguageChoice[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: ResolvedAncestryLanguageChoice[] = [];
+  for (const entry of value) {
+    if (
+      !isRecord(entry) ||
+      entry.category !== 'language' ||
+      typeof entry.id !== 'string' ||
+      typeof entry.choose !== 'number' ||
+      typeof entry.sourceText !== 'string'
+    ) {
+      continue;
+    }
+    const grant = parseLanguageGrants([
+      { fixed: [], extension: entry.extension, sourceText: entry.sourceText },
+    ])?.[0];
+    out.push({
+      id: entry.id,
+      choose: entry.choose,
+      ...(isStringArray(entry.from) ? { from: entry.from } : {}),
+      ...(grant?.extension !== undefined ? { extension: grant.extension } : {}),
+      sourceText: entry.sourceText,
+    });
+  }
+  return out.length > 0 ? out : undefined;
 }
 
 function parseAncestryTraits(
@@ -1412,6 +1469,19 @@ function parseLanguageGrants(
       fixed: entry.fixed,
       ...(typeof entry.choose === 'number' ? { choose: entry.choose } : {}),
       ...(isStringArray(entry.from) ? { from: entry.from } : {}),
+      ...(isRecord(entry.extension) &&
+      typeof entry.extension.ruleRef === 'string' &&
+      entry.extension.requiresGmApproval === true
+        ? {
+            extension: {
+              ruleRef: entry.extension.ruleRef,
+              ...(typeof entry.extension.exoticTableRef === 'string'
+                ? { exoticTableRef: entry.extension.exoticTableRef }
+                : {}),
+              requiresGmApproval: true as const,
+            },
+          }
+        : {}),
       sourceText: entry.sourceText,
     });
   }

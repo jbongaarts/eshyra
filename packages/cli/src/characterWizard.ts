@@ -1021,6 +1021,11 @@ class Wizard {
       } else {
         this.write(`Choose ${need} — ${remaining} remaining:`);
         this.printChoiceOptions(options, selected);
+        if (choice.extension !== undefined) {
+          this.write(
+            '  [ ] other. Other language with GM approval (type `other`)',
+          );
+        }
         if (optionalEmpty) {
           this.write('Optional — press Enter to skip.');
         }
@@ -1058,6 +1063,11 @@ class Wizard {
           choice.id,
           undefined,
         );
+        this.draft = this.deps.engine.setGmApprovedLanguages(
+          this.draft,
+          choice.id,
+          undefined,
+        );
         this.dirty = true;
         autoAdvance = true; // a fresh re-pick advances on completion
         this.write('Cleared.');
@@ -1073,6 +1083,30 @@ class Wizard {
           return 'advance'; // keep the existing selection
         }
         this.write(`Pick ${remaining} more, or \`clear\` to start over.`);
+        continue;
+      }
+      if (choice.extension !== undefined && /^other$/i.test(input.trim())) {
+        if (selected.length >= need && need !== 1) {
+          this.write('This group is full — type `clear` to choose again.');
+          continue;
+        }
+        const name = await this.promptGmApprovedLanguage(options, selected);
+        if (name === 'eof') return 'eof';
+        if (name === undefined) continue;
+        const replacing = selected.length >= need;
+        const approvals =
+          this.draft.selections.gmApprovedLanguages?.[choice.id] ?? [];
+        this.draft = this.deps.engine.setGmApprovedLanguages(
+          this.draft,
+          choice.id,
+          [...approvals, name],
+        );
+        this.draft = this.deps.engine.setChoice(this.draft, choice.id, [
+          ...(replacing ? [] : selected),
+          name,
+        ]);
+        this.dirty = true;
+        if (replacing) autoAdvance = true;
         continue;
       }
       const picked = resolveOption(options, input.trim());
@@ -1104,6 +1138,46 @@ class Wizard {
       ]);
       this.dirty = true;
     }
+  }
+
+  /**
+   * Ask for a language outside a choice's default domain and an explicit
+   * confirmation that the GM approved it (rule:languages). Approval is never
+   * assumed: anything but an explicit yes records nothing. Returns the language
+   * name, `undefined` when declined/invalid, or `'eof'`.
+   */
+  private async promptGmApprovedLanguage(
+    options: readonly string[],
+    selected: readonly string[],
+  ): Promise<string | undefined> {
+    const raw = await this.deps.io.prompt(
+      'Language name (Exotic Languages table, or a campaign/secret language)> ',
+    );
+    if (raw === undefined) return 'eof';
+    const name = raw.trim().replace(/\s+/g, ' ');
+    if (name.length === 0) {
+      this.write('No language entered.');
+      return undefined;
+    }
+    if (resolveOption(options, name) !== undefined) {
+      this.write(`${name} is a standard option — pick it from the list.`);
+      return undefined;
+    }
+    if (selected.some((s) => s.toLowerCase() === name.toLowerCase())) {
+      this.write(`${name} is already selected.`);
+      return undefined;
+    }
+    const answer = await this.deps.io.prompt(
+      `Has your GM approved ${name} for this choice? (y/n) `,
+    );
+    if (answer === undefined) return 'eof';
+    if (!/^y(es)?$/i.test(answer.trim())) {
+      this.write(
+        'Not recorded — a language outside the list needs GM approval.',
+      );
+      return undefined;
+    }
+    return name;
   }
 
   private printChoiceOptions(

@@ -99,6 +99,12 @@ describe('language oracle', () => {
       choose: 2,
       from: SRD_STANDARD_LANGUAGES,
       sourceText: 'Two of your choice',
+      // rule:languages GM-permission extension (eshyra-o9bd.19.3.3.1).
+      extension: {
+        ruleRef: 'rule:languages',
+        exoticTableRef: 'table:exotic-languages',
+        requiresGmApproval: true,
+      },
     });
     const actual = resolver.resolveBackground('background:acolyte');
     if (!actual.ok) {
