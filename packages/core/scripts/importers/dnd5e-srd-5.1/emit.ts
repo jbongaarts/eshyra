@@ -595,10 +595,21 @@ function buildCreatureData(
   }
   // Boxed "Variant: …" sidebars that modify this creature (eshyra-70xr).
   if (creature.variants !== undefined) {
-    data.variants = creature.variants.map((v) => ({
-      name: v.name,
-      text: v.text,
-    }));
+    // A variant that prints an attack lead-in gets the same mechanics
+    // projection an action entry gets (eshyra-3qrt); other variants keep the
+    // bare {name, text} shape so no mechanics are invented for them.
+    data.variants = creature.variants.map((v) => {
+      const mechanics = deriveCreatureEntryMechanics(
+        v.name,
+        v.text,
+        resolveSpellRef,
+      );
+      return {
+        name: v.name,
+        text: v.text,
+        ...(mechanics.attacks !== undefined ? { mechanics } : {}),
+      };
+    });
   }
   return data;
 }
