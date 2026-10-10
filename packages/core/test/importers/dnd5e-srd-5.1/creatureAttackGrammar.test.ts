@@ -287,30 +287,43 @@ describe('creature attack grammar over the committed pack', () => {
   });
 
   it('projects the whole printed target phrase, through the sentence boundary', () => {
-    // Independent extraction over EVERY attack lead-in: the target phrase is
-    // everything after the LAST reach/range "ft." (the source sometimes omits
-    // the following comma, e.g. aboleth Tail "reach 10 ft. one target") up to the
-    // sentence before "Hit:" (it may carry pre-noun qualifiers such as "one
-    // Large or smaller creature" / "one prone creature", post-noun qualifiers
-    // such as "in the swarm's space", and internal commas such as the vampire's
-    // eligible-target list). A lead-in whose target cannot be extracted fails
-    // instead of shrinking the checked population.
+    // Independent extraction over EVERY attack lead-in, bound to that lead-in's
+    // own header: the text from the lead-in to its FIRST "Hit:". Inside that
+    // header the target is everything after the LAST reach/range "ft." (the
+    // source sometimes omits the following comma, e.g. aboleth Tail "reach 10
+    // ft. one target") up to the sentence end. It may carry pre-noun qualifiers
+    // ("one Large or smaller creature", "one prone creature"), post-noun
+    // qualifiers ("in the swarm's space"), and internal commas (the vampire's
+    // eligible-target list). Later "ft." or "Hit:" text can never supply the
+    // expectation, and a header lacking either delimiter fails.
     const leadIn =
       /\b(?:Melee|Ranged|Melee or Ranged) (?:Weapon|Spell) Attack:/;
-    const target = /^[\s\S]*\bft\.,?\s+([\s\S]*?)\.\s*Hit:/;
     let checked = 0;
     for (const record of records.filter((r) => r.kind === 'creature')) {
       for (const block of attackBlocks(record)) {
-        if (!leadIn.test(block.text)) continue;
-        const printed = target.exec(block.text)?.[1];
+        const start = leadIn.exec(block.text);
+        if (start === null) continue;
+        const where = `${record.key} ${block.name}`;
+        const afterLeadIn = block.text.slice(start.index);
+        const hitAt = afterLeadIn.indexOf('Hit:');
+        expect(hitAt, `${where}: no Hit: after the lead-in`).toBeGreaterThan(0);
+        const header = afterLeadIn.slice(0, hitAt);
+        const ftAt = header.lastIndexOf('ft.');
+        expect(
+          ftAt,
+          `${where}: no reach/range ft. in the header`,
+        ).toBeGreaterThan(0);
+        const printed = /^,?\s+([\s\S]*?)\.\s*$/.exec(
+          header.slice(ftAt + 'ft.'.length),
+        )?.[1];
         expect(
           printed,
-          `${record.key} ${block.name}: target phrase not extractable`,
+          `${where}: target phrase not extractable`,
         ).toBeDefined();
         const attacks = block.mechanics.attacks as
           | Record<string, unknown>[]
           | undefined;
-        expect(attacks?.[0]?.target, `${record.key} ${block.name} target`).toBe(
+        expect(attacks?.[0]?.target, `${where} target`).toBe(
           printed?.toLowerCase(),
         );
         checked += 1;
