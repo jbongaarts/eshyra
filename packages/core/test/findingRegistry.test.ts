@@ -78,7 +78,7 @@ describe('finding registry', () => {
         .filter((row) => row.status === 'disclosed-dependency')
         .map((row) => row.canonicalId)
         .sort(),
-    ).toEqual(['engine-capability-ownership', 'magic-item-effects']);
+    ).toEqual(['magic-item-effects']);
     // F-09 (design §8 step 4): the ADR 0020 reading is in place and every
     // A5 blocking gap has landed, so the finding is narrowed, not open.
     expect(

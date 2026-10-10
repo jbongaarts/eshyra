@@ -2110,7 +2110,7 @@ type RuntimeRuleDeterministicCapabilityContract =
  */
 const RULE_DISPOSITION_REPORT_CONTRACT_REVISIONS: readonly string[] =
   Object.freeze([
-    'resolve-check-v1',
+    'resolve-check-v2',
     'resolve-concentration-v1',
     'resolve-spell-upcast-v1',
   ]);

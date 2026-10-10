@@ -812,8 +812,8 @@
       "canonicalId": "engine-capability-ownership",
       "aliases": ["sol:CAP-007"],
       "invariant": "Required engine capabilities have qualified ownership",
-      "status": "disclosed-dependency",
-      "statusReasoning": "Ownership of deterministic capabilities actually in force is the single authoritative inventory, eshyra-o9bd.19.5.12, and this dependency closes when it lands. The per-family certification tasks were retired in the 2026-09 ADR 0020 disposition passes, and eshyra-olc5.2 was retired and superseded at the 2026-10-09 rebaseline, so nothing waits on family certification. The generated magic-item executionReadiness/engine:F1-F10 backlog is an unselected candidate backlog, disclosed separately; an unselected capability is not an ownership gap (ADR 0020 section 3).",
+      "status": "accepted",
+      "statusReasoning": "Ownership of the deterministic capabilities actually in force is now stated by one inventory, DETERMINISTIC_CAPABILITY_INVENTORY in packages/core/src/rules/deterministicCapabilityInventory.ts (eshyra-o9bd.19.5.12). Its closure test (packages/core/test/deterministicCapabilityInventory.test.ts) proves that every tool registered by createDefaultToolRegistry() appears exactly once, either as an inventory entry or in NON_CAPABILITY_TOOLS with a reason; that every rule-bound ledger contract revision and the magic-item readiness contract is referenced exactly once; and that every runtime owner and evidence path exists. Engine (non-tool) entries are curated with evidence pointers and carry no closure claim. The generated magic-item executionReadiness/engine:F1-F10 backlog is reported separately by summarizeMagicItemCapabilityBacklog as an unselected candidate backlog, never counted as implemented or absent; an unselected capability is not an ownership gap (ADR 0020 section 3). This reasoning does not claim the rules pack is deterministically complete.",
       "provenance": {
         "auditFinding": "sol:CAP-007",
         "evidenceBasis": "code"
