@@ -4976,6 +4976,9 @@ function validateDnd5eCreature(record: RulesRecord, path: string): void {
   optNamedEntryArray(data, 'traits', `${path}.data`);
   optNamedEntryArray(data, 'actions', `${path}.data`);
   optNamedEntryArray(data, 'reactions', `${path}.data`);
+  // Boxed "Variant: ..." sidebars (eshyra-70xr); a variant that prints an
+  // attack lead-in carries the same optional mechanics projection (eshyra-3qrt).
+  optNamedEntryArray(data, 'variants', `${path}.data`);
   const legendary = data.legendaryActions;
   if (legendary !== undefined) {
     const obj = reqObj(data, 'legendaryActions', `${path}.data`);

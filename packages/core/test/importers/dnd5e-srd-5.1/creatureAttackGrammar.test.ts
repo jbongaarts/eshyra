@@ -47,6 +47,7 @@ function attackBlocks(record: RulesRecord): {
     'actions',
     'reactions',
     'legendaryActions',
+    'variants',
   ]) {
     const entries = data[section];
     if (!Array.isArray(entries)) continue;
@@ -320,6 +321,30 @@ describe('creature attack grammar over the committed pack', () => {
         );
       }
     }
+  });
+
+  it('projects the Diseased Giant Rats variant bite like an action entry', () => {
+    const variants = (
+      recordOf('creature:giant-rat').data as {
+        variants: { name: string; mechanics?: Record<string, unknown> }[];
+      }
+    ).variants;
+    const variant = variants.find(
+      (entry) => entry.name === 'Diseased Giant Rats',
+    );
+    expect(variant?.mechanics).toEqual({
+      attacks: [
+        {
+          attackType: 'melee-weapon',
+          attackBonus: 4,
+          reachFeet: 5,
+          target: 'one target',
+          hitDamage: [{ average: 4, dice: '1d4 + 2', type: 'piercing' }],
+        },
+      ],
+      saves: [{ ability: 'constitution', dc: 10 }],
+      damage: [{ average: 4, dice: '1d4 + 2', type: 'piercing' }],
+    });
   });
 
   it('keeps Swarm of Poisonous Snakes save damage with its save, out of the default mode', () => {
