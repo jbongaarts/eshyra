@@ -33613,7 +33613,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 8,
                 "reachFeet": 10,
-                "target": "one target",
+                "target": "one target not grappled by the crocodile",
                 "hitDamage": [
                   {
                     "average": 14,
@@ -57898,7 +57898,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 4,
                 "reachFeet": 0,
-                "target": "one creature",
+                "target": "one creature in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 5,
@@ -58016,7 +58016,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 3,
                 "reachFeet": 0,
-                "target": "one target",
+                "target": "one target in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 10,
@@ -58139,7 +58139,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 6,
                 "reachFeet": 0,
-                "target": "one creature",
+                "target": "one creature in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 7,
@@ -58165,7 +58165,14 @@
               {
                 "ability": "constitution",
                 "dc": 10,
-                "damageOnSuccess": "half"
+                "damageOnSuccess": "half",
+                "damageOnFailure": [
+                  {
+                    "average": 14,
+                    "dice": "4d6",
+                    "type": "poison"
+                  }
+                ]
               }
             ],
             "damage": [
@@ -58173,11 +58180,6 @@
                 "average": 7,
                 "dice": "2d6",
                 "type": "piercing"
-              },
-              {
-                "average": 14,
-                "dice": "4d6",
-                "type": "poison"
               }
             ]
           }
@@ -58297,7 +58299,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 5,
                 "reachFeet": 0,
-                "target": "one creature",
+                "target": "one creature in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 14,
@@ -58430,7 +58432,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 2,
                 "reachFeet": 0,
-                "target": "one target",
+                "target": "one target in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 7,
@@ -58548,7 +58550,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 4,
                 "reachFeet": 5,
-                "target": "one target",
+                "target": "one target in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 7,
@@ -60610,7 +60612,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 9,
                 "reachFeet": 5,
-                "target": "one willing creature",
+                "target": "one willing creature, or a creature that is grappled by the vampire, incapacitated, or restrained",
                 "hitDamage": [
                   {
                     "average": 7,
@@ -60923,7 +60925,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 6,
                 "reachFeet": 5,
-                "target": "one willing creature",
+                "target": "one willing creature, or a creature that is grappled by the vampire, incapacitated, or restrained",
                 "hitDamage": [
                   {
                     "average": 6,

@@ -1313,6 +1313,21 @@ function optMechanics(parent: Obj, key: string, path: string): void {
   objArray(mechanics, 'attacks', `${path}.${key}`)?.forEach((attack, i) => {
     validateAttackAlternatives(attack, `${path}.${key}.attacks[${i}]`);
   });
+  // Save-governed damage printed outside an alternative-bearing attack's Hit
+  // sentence (eshyra-o9bd.19.4.2.4): a dealt-damage list owned by its save.
+  objArray(mechanics, 'saves', `${path}.${key}`)?.forEach((save, i) => {
+    const damageOnFailure = objArray(
+      save,
+      'damageOnFailure',
+      `${path}.${key}.saves[${i}]`,
+    );
+    damageOnFailure?.forEach((entry, j) => {
+      validateDamageEntry(
+        entry,
+        `${path}.${key}.saves[${i}].damageOnFailure[${j}]`,
+      );
+    });
+  });
   const resources = objArray(mechanics, 'resources', `${path}.${key}`);
   if (resources !== undefined) {
     validateFeatureResources(resources, `${path}.${key}.resources`);

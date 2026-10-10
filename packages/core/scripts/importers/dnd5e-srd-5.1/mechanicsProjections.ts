@@ -596,8 +596,15 @@ function parseAttack(text: string): Mechanics | undefined {
     match;
   const reach = /\breach\s+(\d+)\s*ft\./i.exec(middle);
   const range = ATTACK_RANGE_RE.exec(middle);
+  // The target phrase runs from its quantifier to the end of the lead-in
+  // (eshyra-o9bd.19.4.2.4): "one target in the swarm's space", "one creature
+  // not grappled by the crocodile", and the vampire's "one willing creature, or
+  // a creature that is grappled ...". A number followed by "ft"/"feet" is a
+  // range, never the quantifier.
   const target =
-    /\b((?:one|two|three|\d+)[^.]*?(?:targets?|creatures?))\b/i.exec(middle);
+    /\b((?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?!(?:ft|feet)\b)[\s\S]*)$/i.exec(
+      middle,
+    );
   const projected = projectHitDamage(hit);
   // Flat hit damage without a dice expression ("Hit: 1 piercing damage.").
   const flat =
@@ -635,7 +642,7 @@ function parseAttack(text: string): Mechanics | undefined {
         : range[2] === undefined
           ? { normal: Number(range[1]) }
           : { normal: Number(range[1]), long: Number(range[2]) },
-    target: target?.[1].toLowerCase(),
+    target: target?.[1].trim().toLowerCase(),
     hitDamage: projected?.hitDamage ?? flatDamage,
     alternatives:
       alternatives === undefined || alternatives.length === 0
@@ -658,16 +665,46 @@ function projectEntryDamage(
   if (attack === undefined || attack.alternatives === undefined) {
     return parseDamage(text);
   }
+  // Top-level damage is the default hit mode only (eshyra-o9bd.19.4.2 C3).
+  // Damage printed outside the Hit sentence belongs to its own clause and is
+  // carried by projectSaveDamage, never merged into the default mode.
+  return [...(attack.hitDamage as readonly Mechanics[])];
+}
+
+/** Text outside the attack's lead-in + Hit sentence. */
+function outsideAttackClause(text: string): string {
   const clause = ATTACK_CLAUSE_RE.exec(text);
-  const outside =
-    clause === null
-      ? text
-      : text.slice(0, clause.index) +
-        text.slice(clause.index + clause[0].length);
-  return [
-    ...(attack.hitDamage as readonly Mechanics[]),
-    ...parseDamage(outside),
-  ];
+  return clause === null
+    ? text
+    : text.slice(0, clause.index) + text.slice(clause.index + clause[0].length);
+}
+
+/**
+ * Damage printed outside the attack clause on an alternative-bearing entry is
+ * save-governed (eshyra-o9bd.19.4.2.4): e.g. Swarm of Poisonous Snakes' "The
+ * target must make a DC 10 Constitution saving throw, taking 14 (4d6) poison
+ * damage on a failed save". It attaches to the entry's save as
+ * `damageOnFailure`. Fail closed: outside damage with no save to own it throws.
+ */
+function projectSaveDamage(
+  save: Mechanics | undefined,
+  text: string,
+  attack: Mechanics | undefined,
+): Mechanics | undefined {
+  if (attack === undefined || attack.alternatives === undefined) return save;
+  const outsideDamage: Mechanics[] = [];
+  for (const sentence of outsideAttackClause(text).split(/(?<=[.!?])\s+/)) {
+    const damage = parseDamage(sentence);
+    if (damage.length === 0) continue;
+    if (save === undefined || !/\bsaving throw\b/i.test(sentence)) {
+      throw new Error(
+        `alternative-bearing attack has save-free damage outside the Hit clause: ${JSON.stringify(sentence)}`,
+      );
+    }
+    outsideDamage.push(...damage);
+  }
+  if (save === undefined || outsideDamage.length === 0) return save;
+  return { ...save, damageOnFailure: outsideDamage };
 }
 
 function parseRecharge(name: string): Mechanics | undefined {
@@ -2654,7 +2691,11 @@ export function deriveActionMechanics(action: ActionExtraction): Mechanics {
     action.name.toLowerCase(),
   );
   const attack = parseAttack(action.description);
-  const save = parseSaveWithSuccessBranch(action.description);
+  const save = projectSaveDamage(
+    parseSaveWithSuccessBranch(action.description),
+    action.description,
+    attack,
+  );
   const damage = projectEntryDamage(action.description, attack);
   return compact({
     ...standardAction,
@@ -4755,7 +4796,11 @@ export function deriveCreatureEntryMechanics(
   resolveSpellRef?: SpellRefResolver,
 ): Mechanics {
   const attack = parseAttack(text);
-  const save = parseSaveWithSuccessBranch(text);
+  const save = projectSaveDamage(
+    parseSaveWithSuccessBranch(text),
+    text,
+    attack,
+  );
   const effects = parseCreatureEntryEffects(name, text);
   return compact({
     attacks: attack === undefined ? undefined : [attack],

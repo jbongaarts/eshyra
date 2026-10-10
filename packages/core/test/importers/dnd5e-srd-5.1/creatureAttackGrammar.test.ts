@@ -285,6 +285,74 @@ describe('creature attack grammar over the committed pack', () => {
     });
   });
 
+  it('projects the whole printed target phrase, through the sentence boundary', () => {
+    // Independent extraction: the phrase starts at a word quantifier (a digit
+    // is a range, never a quantifier) and runs to the sentence before "Hit:".
+    const quantified =
+      /\b((?:one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:target|creature|willing)[\s\S]*?)\.\s*Hit:/i;
+    let checked = 0;
+    for (const record of records.filter((r) => r.kind === 'creature')) {
+      for (const block of attackBlocks(record)) {
+        const printed = quantified.exec(block.text)?.[1];
+        if (printed === undefined) continue;
+        const attacks = block.mechanics.attacks as
+          | Record<string, unknown>[]
+          | undefined;
+        expect(attacks?.[0]?.target, `${record.key} ${block.name} target`).toBe(
+          printed.toLowerCase(),
+        );
+        checked += 1;
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('keeps mechanics.damage equal to the default hit mode on alternative-bearing attacks', () => {
+    for (const record of records.filter((r) => r.kind === 'creature')) {
+      for (const block of attackBlocks(record)) {
+        const attacks = block.mechanics.attacks as
+          | Record<string, unknown>[]
+          | undefined;
+        const attack = attacks?.[0];
+        if (attack?.alternatives === undefined) continue;
+        expect(block.mechanics.damage, `${record.key} ${block.name}`).toEqual(
+          attack.hitDamage,
+        );
+      }
+    }
+  });
+
+  it('keeps Swarm of Poisonous Snakes save damage with its save, out of the default mode', () => {
+    const snakes = leadInAttack(
+      recordOf('creature:swarm-of-poisonous-snakes'),
+      'Bites',
+    );
+    expect(snakes.attack.target).toBe('one creature in the swarm’s space');
+    expect(snakes.attack.hitDamage).toEqual([
+      { average: 7, dice: '2d6', type: 'piercing' },
+    ]);
+    expect(snakes.block.mechanics.damage).toEqual([
+      { average: 7, dice: '2d6', type: 'piercing' },
+    ]);
+    expect(snakes.block.mechanics.saves).toEqual([
+      {
+        ability: 'constitution',
+        dc: 10,
+        damageOnSuccess: 'half',
+        damageOnFailure: [{ average: 14, dice: '4d6', type: 'poison' }],
+      },
+    ]);
+  });
+
+  it('keeps the crocodile tail exclusion and the vampire eligible-target alternatives', () => {
+    const tail = leadInAttack(recordOf('creature:giant-crocodile'), 'Tail');
+    expect(tail.attack.target).toBe('one target not grappled by the crocodile');
+    const bite = leadInAttack(recordOf('creature:vampire-spawn'), 'Bite');
+    expect(bite.attack.target).toBe(
+      'one willing creature, or a creature that is grappled by the vampire, incapacitated, or restrained',
+    );
+  });
+
   it('fails closed when an alternative has no condition or damage', () => {
     const druid = structuredClone(recordOf('creature:druid'));
     const traits = (
