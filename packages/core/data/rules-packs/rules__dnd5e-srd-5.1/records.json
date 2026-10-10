@@ -84122,6 +84122,7 @@
           {
             "kind": "autoSucceedSave",
             "targets": "chosen-creatures",
+            "requiresSight": true,
             "countFormula": "1 + spell-level",
             "noDamageInsteadOfHalf": true
           }
@@ -107934,7 +107935,8 @@
               "dc": 17
             },
             "rangeFeet": 60,
-            "target": "creature native to another plane of existence",
+            "target": "creature native to another plane of existence that you can see",
+            "requiresSight": true,
             "failedSaveEffect": "trapped in the flask"
           },
           {

@@ -3759,6 +3759,7 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqStr(effect, 'targets', path);
     reqStr(effect, 'countFormula', path);
     optBool(effect, 'noDamageInsteadOfHalf', path);
+    optBool(effect, 'requiresSight', path);
   },
   climbWithoutExtraMovement: markerOnly,
   evasion: markerOnly,

@@ -433,7 +433,7 @@
       "aliases": ["opus:F-35"],
       "invariant": "Targeting qualifiers are complete",
       "status": "accepted",
-      "statusReasoning": "Creature attack target phrases are projected whole, including pre-noun and post-noun qualifiers, by eshyra-o9bd.19.4.2 (PR #646), with a header-bound generalized invariant over every attack lead-in. The eshyra-o9bd.19.3.1 cross-kind sweep of non-creature target fields found no dropped qualifier.",
+      "statusReasoning": "Creature attack target phrases are projected whole, including pre-noun and post-noun qualifiers, by eshyra-o9bd.19.4.2 (PR #646), with a header-bound generalized invariant over every attack lead-in. The eshyra-o9bd.19.3.1 cross-kind sweep of non-creature target fields found two dropped printed sight restrictions, Iron Flask (\"that you can see\") and Sculpt Spells (\"other creatures that you can see\"); both are repaired by eshyra-o9bd.19.3.1.3 with requiresSight projections, and a generalized visibility-cohort invariant (nine records) now pins the remaining sight-bearing projections. No other sight-restriction loss was found; non-sight target qualifiers were checked only by a token-level audit, not a per-record proof.",
       "provenance": {
         "auditFinding": "opus:F-35",
         "evidenceBasis": "audit-finding"

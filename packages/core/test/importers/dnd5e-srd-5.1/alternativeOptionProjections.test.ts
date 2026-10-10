@@ -55,6 +55,104 @@ const ALTERNATIVE_SAVE_PRINTED = new RegExp(
   'g',
 );
 
+/** Option names and option texts removed from a feature's own body. */
+function nonOptionProse(record: PackRecord): string {
+  const choices = (record.data.choices ?? []) as {
+    options?: { name?: string; text?: string }[];
+  }[];
+  // The body is the description plus any printed subsections (the parent
+  // projection is derived from both; see reconstructFeatureText).
+  const sections = (record.data.sections ?? []) as {
+    name?: string;
+    text?: string;
+  }[];
+  let prose = [
+    String(record.data.description),
+    ...sections.map(
+      (section) => `${section.name ?? ''}. ${section.text ?? ''}`,
+    ),
+  ].join(' ');
+  for (const choice of choices) {
+    for (const option of choice.options ?? []) {
+      if (typeof option.text === 'string')
+        prose = prose.replace(option.text, ' ');
+      if (typeof option.name === 'string')
+        prose = prose.replace(option.name, ' ');
+    }
+  }
+  return prose.toLowerCase().replace(/\s+/g, ' ');
+}
+
+/**
+ * Witness phrase for each parent effect kind. A parent effect is valid only
+ * when its printed phrase occurs in the feature's non-option prose. Kinds
+ * without a witness fail closed so a new kind needs an explicit reviewed
+ * phrase here.
+ */
+const PARENT_EFFECT_WITNESSES: Readonly<
+  Record<string, (effect: Record<string, unknown>) => RegExp | undefined>
+> = {
+  expertise: () => /proficiency bonus is doubled/,
+  // "Your spell save DC" in the spellcasting body (SRD 5.1 class spellcasting).
+  saveDcFormula: () => /\bsave dc\b/,
+  // Skill/tool/language grants print "you gain proficiency with" or "proficient".
+  proficiency: () => /\bproficien/,
+  // Channel Divinity healing prints "restore a number of hit points".
+  healing: () => /\bhit points\b/,
+  // Favored Enemy's check benefit prints "advantage" on the ability checks.
+  abilityCheckModifier: () => /\badvantage\b|\bcheck\b/,
+  extraDamage: (effect) =>
+    typeof effect.dice === 'string'
+      ? new RegExp(effect.dice.replace(/[+]/g, '\\+'))
+      : undefined,
+  evasion: () => /\bevasion\b/,
+  damageReduction: () => /\bhalf\b|\bhalve\b/,
+};
+
+/** Each parent projection (saves, conditions, effects, spellGrants) that the
+ * feature's non-option prose does not print. */
+function parentProjectionViolations(record: PackRecord): string[] {
+  const prose = nonOptionProse(record);
+  const mechanics = (record.data.mechanics ?? {}) as Record<string, unknown>;
+  const violations: string[] = [];
+  for (const grant of (mechanics.spellGrants ?? []) as { spell: string }[]) {
+    const name = grant.spell.replace(/^spell:/, '').replace(/-/g, ' ');
+    if (!prose.includes(name)) violations.push(`spellGrants ${grant.spell}`);
+  }
+  for (const condition of (mechanics.conditions ?? []) as {
+    condition: string;
+  }[]) {
+    if (!prose.includes(condition.condition))
+      violations.push(`condition ${condition.condition}`);
+  }
+  for (const save of (mechanics.saves ?? []) as { ability?: string }[]) {
+    if (
+      save.ability !== undefined &&
+      !prose.includes(`${save.ability} saving throw`)
+    )
+      violations.push(`save ${save.ability}`);
+  }
+  ((mechanics.effects ?? []) as Record<string, unknown>[]).forEach(
+    (effect, index) => {
+      const kind = String(effect.kind);
+      const witness = PARENT_EFFECT_WITNESSES[kind]?.(effect);
+      if (witness === undefined || !witness.test(prose))
+        violations.push(
+          `effects[${index}] ${kind}${effect.dice ? ` ${String(effect.dice)}` : ''}`,
+        );
+    },
+  );
+  return violations;
+}
+
+/** A copy of a feature record with its parent mechanics replaced in memory. */
+function withParentMechanics(
+  record: PackRecord,
+  mechanics: Record<string, unknown>,
+): PackRecord {
+  return { ...record, data: { ...record.data, mechanics } };
+}
+
 describe('O1: alternative-ability saves', () => {
   it('projects the bulette Deadly Leap save with its printed abilities, DC, and target choice', () => {
     const bulette = byKey('creature:bulette');
@@ -180,52 +278,52 @@ describe('O5: option prose does not hoist into the parent feature', () => {
     const checked: string[] = [];
     for (const record of records) {
       if (record.kind !== 'feature') continue;
-      const choices = record.data.choices as
-        | { options?: { text?: string }[] }[]
-        | undefined;
-      if (choices === undefined) continue;
-      const optionTexts = choices.flatMap((choice) =>
-        (choice.options ?? [])
-          .map((option) => option.text)
-          .filter((text): text is string => typeof text === 'string'),
-      );
-      const description = String(record.data.description);
-      const prose = optionTexts.reduce(
-        (remaining, text) => remaining.replace(text, ' '),
-        description,
-      );
-      const mechanics = record.data.mechanics as
-        | Record<string, unknown>
-        | undefined;
-      if (mechanics === undefined) continue;
+      if (record.data.choices === undefined) continue;
+      if (record.data.mechanics === undefined) continue;
       checked.push(record.key);
-      for (const grant of (mechanics.spellGrants ?? []) as {
-        spell: string;
-      }[]) {
-        const name = grant.spell.replace(/^spell:/, '').replace(/-/g, ' ');
-        expect(
-          prose.toLowerCase(),
-          `${record.key} spellGrants ${grant.spell}`,
-        ).toContain(name);
-      }
-      for (const condition of (mechanics.conditions ?? []) as {
-        condition: string;
-      }[]) {
-        expect(
-          prose.toLowerCase(),
-          `${record.key} condition ${condition.condition}`,
-        ).toContain(condition.condition);
-      }
-      for (const save of (mechanics.saves ?? []) as { ability?: string }[]) {
-        if (save.ability === undefined) continue;
-        expect(
-          prose.toLowerCase(),
-          `${record.key} save ${save.ability}`,
-        ).toContain(`${save.ability} saving throw`);
-      }
+      expect(
+        parentProjectionViolations(record),
+        `${record.key} parent projection derived from option prose`,
+      ).toEqual([]);
     }
+    // Legitimate parent projections stay valid: Dragon Ancestor's expertise is
+    // printed in the parent prose, and fighter fighting-style procedures are
+    // option-keyed (each option carries its own effect).
     expect(checked).toContain('feature:draconic-bloodline:dragon-ancestor');
     expect(checked).toContain('feature:fighter:fighting-style');
+  });
+
+  // Negative controls (eshyra-o9bd.19.3.1.3, S2): the two source-backed bad
+  // states this invariant exists to reject. Each is injected in memory into a
+  // copy of the committed record; the predicate must report it.
+  it('rejects the source-backed option-only effects when restored to the parent', () => {
+    const hunters = byKey('feature:hunter:hunters-prey');
+    const restoredHunters = withParentMechanics(hunters, {
+      effects: [{ kind: 'extraDamage', dice: '1d8' }],
+    });
+    expect(parentProjectionViolations(restoredHunters)).toEqual([
+      expect.stringContaining('effects[0] extraDamage 1d8'),
+    ]);
+
+    const superior = byKey('feature:hunter:superior-hunters-defense');
+    const restoredSuperior = withParentMechanics(superior, {
+      saves: [{ ability: 'dexterity' }],
+      effects: [
+        { kind: 'evasion' },
+        {
+          kind: 'damageReduction',
+          multiplier: 0.5,
+          scope: 'triggering-attack',
+        },
+      ],
+    });
+    const violations = parentProjectionViolations(restoredSuperior);
+    expect(violations).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('effects[0] evasion'),
+        expect.stringContaining('effects[1] damageReduction'),
+      ]),
+    );
   });
 });
 
@@ -289,5 +387,98 @@ describe('O3b: alternative damage types in one roll', () => {
       'spell:fire-shield',
       'spell:spirit-guardians',
     ]);
+  });
+});
+
+// eshyra-o9bd.19.3.1.3 (S1): a non-creature target restricted by printed sight
+// ("can see", "visible", "see each other") must carry that sight restriction in
+// its projection. Population: every non-creature record with a projected target
+// field whose own printed text uses sight wording.
+const SIGHT_SOURCE_RE =
+  /\bcan see\b|\bvisible\b|\bsee each other\b|\bthat you can see\b/i;
+const SIGHT_PROJECTION_RE = /\bsee\b|\bvisible\b|\bsight\b/i;
+const TARGET_KEYS = new Set([
+  'target',
+  'targets',
+  'targetTypes',
+  'targetQualifier',
+  'excludesTargetTypes',
+]);
+
+function hasProjectedTarget(value: unknown): boolean {
+  for (const object of objectsIn(value)) {
+    if (Object.keys(object).some((key) => TARGET_KEYS.has(key))) return true;
+  }
+  return false;
+}
+
+/** The sight-restricted projection test: a target string or a boolean sight flag. */
+function projectsSight(data: Record<string, unknown>): boolean {
+  for (const object of objectsIn(data)) {
+    for (const [key, value] of Object.entries(object)) {
+      if (key === 'requiresSight' || key === 'requiresMutualSight') {
+        if (value === true) return true;
+      }
+      if (TARGET_KEYS.has(key)) {
+        const strings = Array.isArray(value) ? value : [value];
+        if (
+          strings.some(
+            (item) =>
+              typeof item === 'string' && SIGHT_PROJECTION_RE.test(item),
+          )
+        ) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function sightCohort(): PackRecord[] {
+  return records.filter(
+    (record) =>
+      record.kind !== 'creature' &&
+      hasProjectedTarget(record.data) &&
+      SIGHT_SOURCE_RE.test(
+        JSON.stringify({
+          d: record.data.description,
+          t: record.data.text,
+          h: record.data.higherLevels,
+        }),
+      ),
+  );
+}
+
+describe('S1: sight restrictions survive into non-creature target projections', () => {
+  it('projects the printed sight restriction for every visibility-cohort record', () => {
+    const cohort = sightCohort();
+    expect(cohort.map((record) => record.key).sort()).toEqual([
+      'feature:school-of-evocation:sculpt-spells',
+      'magic-item:eyes-of-charming',
+      'magic-item:gem-of-brightness',
+      'magic-item:iron-flask',
+      'magic-item:ring-of-the-ram',
+      'magic-item:robe-of-scintillating-colors',
+      'magic-item:rod-of-lordly-might',
+      'magic-item:rope-of-entanglement',
+      'magic-item:wand-of-paralysis',
+    ]);
+    for (const record of cohort) {
+      expect(
+        projectsSight(record.data),
+        `${record.key} omits its printed sight restriction`,
+      ).toBe(true);
+    }
+  });
+
+  it('flags a visibility-cohort record whose sight qualifier is removed (negative control)', () => {
+    const iron = byKey('magic-item:iron-flask');
+    const stripped = JSON.parse(
+      JSON.stringify(iron.data)
+        .replace(/ that you can see/g, '')
+        .replace(/"requiresSight":true,?/g, ''),
+    ) as Record<string, unknown>;
+    expect(projectsSight(stripped)).toBe(false);
   });
 });

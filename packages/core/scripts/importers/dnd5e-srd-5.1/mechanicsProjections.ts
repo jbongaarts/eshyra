@@ -5603,6 +5603,11 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
     effects.push({
       kind: 'autoSucceedSave',
       targets: 'chosen-creatures',
+      // Printed on the same feature: "other creatures that you can see"
+      // (SRD p. 54). Sight is part of the target set, not only the picks.
+      requiresSight: /\bother creatures that you can see\b/.test(text)
+        ? true
+        : undefined,
       countFormula: `${sculpt[1]} + spell-level`,
       noDamageInsteadOfHalf:
         /take no damage if they would normally take half damage on a successful save/.test(

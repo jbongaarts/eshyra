@@ -304,6 +304,9 @@ describe('re-audited action-economy and numeric features (eshyra-o9bd.18.7.5 re-
       {
         kind: 'autoSucceedSave',
         targets: 'chosen-creatures',
+        // Printed "other creatures that you can see" (eshyra-o9bd.19.3.1.3, S1):
+        // the sight restriction is part of the target set.
+        requiresSight: true,
         countFormula: '1 + spell-level',
         noDamageInsteadOfHalf: true,
       },
