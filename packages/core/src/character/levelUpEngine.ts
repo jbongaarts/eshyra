@@ -753,6 +753,7 @@ export function previewLevelUpChangeSet(
         sheet,
         resolver,
         proficiencies?.gained.savingThrows,
+        proficiencies?.removed.savingThrows,
       ),
       ...(proficiencies?.gained.empty === false
         ? { proficienciesGained: proficiencies.gained.value }
@@ -1696,6 +1697,7 @@ function recomputeAfterChoices(
   sheet: CharacterSheet,
   resolver: RulesPackCharacterResolver,
   gainedSaves: readonly AbilityScoreName[] = [],
+  removedSaves: readonly AbilityScoreName[] = [],
 ): LevelUpChangeSet {
   const increases = changeSet.abilityScoreIncreases ?? [];
   const modifiers = {
@@ -1718,7 +1720,9 @@ function recomputeAfterChoices(
     sheet.abilityScores,
   ) as import('./creation.js').AbilityScoreName[]) {
     const isProficient =
-      sheet.savingThrows[ability].proficient || gainedSaves.includes(ability);
+      (sheet.savingThrows[ability].proficient &&
+        !removedSaves.includes(ability)) ||
+      gainedSaves.includes(ability);
     const from = sheet.savingThrows[ability];
     const to = {
       modifier:
@@ -1853,14 +1857,21 @@ function applyChangeSetToSheet(
   const removedArmor = new Set(
     (changeSet.proficienciesRemoved?.armor ?? []).map((a) => a.toLowerCase()),
   );
+  // Removal precedes addition, as in levelUpProficiencies: an option that
+  // replaces another and grants the same proficiency keeps it.
   const skillProficiencies = [
-    ...applySkillProficienciesToSheet(sheet.skillProficiencies, appliedChoices),
+    ...applySkillProficienciesToSheet(
+      sheet.skillProficiencies,
+      appliedChoices,
+    ).filter((skill) => !removedSkills.has(skill.toLowerCase())),
     ...(changeSet.proficienciesGained?.skills ?? []),
-  ].filter((skill) => !removedSkills.has(skill.toLowerCase()));
+  ];
   const armorProficiencies = [
-    ...sheet.armorProficiencies,
+    ...sheet.armorProficiencies.filter(
+      (armor) => !removedArmor.has(armor.toLowerCase()),
+    ),
     ...(changeSet.proficienciesGained?.armor ?? []),
-  ].filter((armor) => !removedArmor.has(armor.toLowerCase()));
+  ];
   const languages = applyLanguagesToSheet(sheet.languages, appliedChoices);
   const next: CharacterSheet = {
     ...sheet,
