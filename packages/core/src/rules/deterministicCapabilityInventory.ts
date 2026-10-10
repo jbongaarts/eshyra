@@ -713,7 +713,7 @@ const COMBAT_AND_TURNS: readonly DeterministicCapabilityInventoryEntry[] = [
     requiredInputs: ['status'],
     exclusions: [
       'An unknown instance, or no active instance when none is named, is refused, and an instance that is already closed cannot be closed again.',
-      'Conflicting durable claims (a campaign actor already owned by another effect, a combatant with incompatible actor claims, or one campaign actor claimed by two closing combatants) refuse the whole close and nothing is committed.',
+      'Conflicting durable claims (a campaign actor already owned by another effect, a combatant with incompatible actor claims, or one campaign actor claimed by two closing combatants) refuse the whole close and nothing is committed; the refusal is reported as an effect_error result, as other effect-layer refusals are.',
       'A durable bond is not released at close: a bonded summon remains linked to its effect on its campaign actor and can be recast or admitted to a later encounter.',
       'Concentration and participant-turn timers are settled before rebinding and never move to the campaign actor.',
       'Does not decide that the fight is over.',
@@ -1696,7 +1696,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'A cross-pack attach is refused (conversion is not implemented), and the projection supports the dnd5e SRD system only.',
-        'The sheet save and the live-row import are separate writes: an import correction result (a campaign rules system other than dnd5e-srd) leaves the saved sheet in place.',
+        'The sheet save and the live-row import are one transaction: an import correction result (a campaign rules system other than dnd5e-srd) rolls the sheet save back and is returned as ok:false, and a thrown import failure also leaves the campaign sheet and live row unchanged (an existing campaign copy is preserved; a new attachment leaves no saved sheet).',
         'Consults and records no custody; character-checkout-v1 and character-catch-up-v1 call it inside the custody lifecycle.',
       ],
       residualDmInterpretation: [
@@ -1758,7 +1758,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'Applying refuses nothing: a proficiency already held is simply not recorded for the source. The only ProficiencyGrantError is the removal refusal below.',
-        'Removal (removeOptionGrants) drops only what that source ledger entry recorded and refuses when a recorded skill has Expertise. A proficiency already held when a source was applied is not recorded for it and is not removed with it; one recorded for a source is removed with it even if another source granted it later. Ancestry trait grants are not read here.',
+        'Removal (removeOptionGrants) drops only what that source ledger entry recorded, minus any item a still-held, already-applied source also confers (those stay, recorded under that source), and refuses only when a skill it would actually drop has Expertise; a shared skill that survives under another source does not trigger the refusal. A proficiency already held when a source was applied is not recorded for it and is not removed with it. A recorded proficiency that a still-held, already-applied source also confers is not removed: it stays on the sheet and is recorded under that source, so removing that source later removes it (the level-up replacement passes the still-held sources). Ancestry trait grants are not read here.',
       ],
       residualDmInterpretation: [
         'The DM adjudicates any feature effect that is not a typed proficiency grant.',
@@ -2021,7 +2021,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Serialize the live campaign database (schema, indexes, triggers, and canonical rows) into a Dolt-backed checkpoint, list checkpoints, restore one into a new working-copy database file, and fork a branch from a checkpoint, off the per-turn path. A restore builds into a sibling temporary file and renames it into place only after every record applies, with foreign keys checked at commit.',
+        'Serialize the live campaign database (schema, indexes, triggers, and canonical rows) into a Dolt-backed checkpoint, list checkpoints, restore one into a new working-copy database file, and fork a branch from a checkpoint, off the per-turn path. A restore builds into a sibling temporary file and publishes it to the destination only after every record applies, with foreign keys checked at commit, by hard-linking it so an existing destination is never replaced; a filesystem without hard-link support fails the restore rather than falling back to a replacing rename.',
       requiredInputs: [
         'A Dolt directory',
         'A beads directory',
@@ -2029,7 +2029,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'Refuses a Dolt directory that is the same as, nested with, or shares a remote or the reserved ref namespace with the beads Dolt data.',
-        'A restore destination that already exists (checked before the build) and a schema snapshot that is not the current version are refused; a restore that fails before the rename removes its temporary file and creates no database at the destination.',
+        'A restore destination that already exists (checked before the build, and again when the finished file is hard-linked into place, so one created in between is not replaced) and a schema snapshot that is not the current version are refused; a restore that fails before the rename removes its temporary file and creates no database at the destination.',
         'Does not decide when to checkpoint or which checkpoint to restore.',
       ],
       residualDmInterpretation: [
@@ -2270,7 +2270,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'Revisions are never edited or deleted, and a head written by save gains its revision 1 only at its first checkout or resume.',
-        'registerNewCharacter does not refuse an id that already has revisions: it appends the next revision with source register.',
+        'registerNewCharacter refuses an id that is already registered (a timeline or a legacy head row); the seeding of a legacy head at first checkout appends its revision 1 directly, not through registerNewCharacter.',
         'The store applies no custody rule itself; checkout, sync-back, release, resume, and catch-up consult and write the custody row.',
         'No write spans the registry database and a campaign database in one transaction.',
       ],
@@ -2294,7 +2294,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Check a registry character out into a campaign as its single active writer. Refuses when another campaign holds custody, when this campaign holds it under a different party slot, and when the id is not registered; seeds revision 1 from a legacy head that has no timeline; attaches the registry head sheet (character-sheet-attach-v1: build and rules-pack checks, the sheet stamped with the global id, import time, and checked-out revision, then projected into the live row); and only after the attach returns records custody (campaign, slot, revision). The CLI checks out an existing registry character the player imports, each newly registered character (for the first character and /addpc), and each fork it plays.',
+        'Check a registry character out into a campaign as its single active writer. Refuses when another campaign holds custody, when this campaign holds it under a different party slot, and when the id is not registered; seeds revision 1 from a legacy head that has no timeline; attaches the registry head sheet (character-sheet-attach-v1: build and rules-pack checks, the sheet stamped with the global id, import time, and checked-out revision, then projected into the live row); and only after the attach succeeds records custody (campaign, slot, revision). The CLI checks out an existing registry character the player imports, each newly registered character (for the first character and /addpc), and each fork it plays.',
       requiredInputs: [
         'The registry store',
         'The campaign database',
@@ -2305,8 +2305,8 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'A rejected attach (a sheet built under another rules pack, or a build outside the single-class boundary) throws before custody is recorded.',
-        'Custody is recorded whenever the attach call returns, including when its live-row import returns a correction result (ok:false) for a campaign whose rules system is not dnd5e-srd.',
-        'Re-checkout into the same campaign and slot is not refused: it re-attaches the registry head over the campaign copy, discarding unsynced campaign changes, and rewrites custody. Resuming a campaign uses character-resume-custody-v1 instead.',
+        'When the attach returns a correction result (ok:false, for a campaign whose rules system is not dnd5e-srd and so has no live-row import), nothing is persisted (the sheet save and import are one transaction), no custody is recorded, and the result is returned to the caller.',
+        'Re-checkout into the same campaign and slot is idempotent (it re-attaches the head and rewrites custody) only when it changes nothing: the campaign sheet, once its attachment provenance is stripped, equals the registry head, and the re-projected live character row and active character are unchanged (hit points, conditions, and every other live field); otherwise the attach is rolled back and the checkout refused so neither unsynced sheet progress nor live state is overwritten. Resuming a campaign uses character-resume-custody-v1 instead.',
         'The campaign writes and the registry custody write are ordered, not one transaction.',
       ],
       residualDmInterpretation: [
@@ -2394,7 +2394,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Adopt the registry head into a campaign whose character copy is stale: refuse a campaign character with no registry link, one whose custody another campaign or slot holds, and a character with no registry timeline; re-attach the head sheet over the campaign copy (stamped with the head as its source revision and re-projected into the live row); and record custody at the head revision. The stale campaign copy is replaced wholesale, not merged, and no registry revision is appended. The CLI runs it only as an explicit resume choice, confirmed again when a combat or scene is open.',
+        'Adopt the registry head into a campaign whose character copy is stale: refuse a campaign character with no registry link, one whose custody another campaign or slot holds, and a character with no registry timeline; re-attach the head sheet over the campaign copy (stamped with the head as its source revision and re-projected into the live row); and record custody at the head revision only after that attach succeeds; a correction result (ok:false) persists nothing, records no custody, and is raised as a custody error, which the CLI reports as a failed catch-up. The stale campaign copy is replaced wholesale, not merged, and no registry revision is appended. The CLI runs it only as an explicit resume choice, confirmed again when a combat or scene is open.',
       requiredInputs: [
         'The registry store',
         'The campaign database',
@@ -2402,7 +2402,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
         'sessionId and at',
       ],
       exclusions: [
-        'The re-attach and the custody write are ordered, not one transaction.',
+        'The re-attach and the custody write are ordered, not one transaction; a failed re-attach leaves the stale campaign copy and the custody record unchanged.',
         'An in-fiction continuity bridge is optional and composed separately; the mechanical catch-up does not depend on it.',
       ],
       residualDmInterpretation: [
@@ -2423,7 +2423,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Branch a chosen revision (the source head when none is given) of a registry character into a new global character id as its revision 1, with source fork and parent provenance (source id and revision), deliberately breaking continuity: the source timeline and custody are untouched. Refuses a target id that already has a revision timeline, a source with no timeline, and a source revision that does not exist. The CLI uses it for the explicit fork-character command (registry only, not attached) and for the resume stale-copy fork choice, which forks this campaign stamped revision and checks the fork into the same slot (character-checkout-v1).',
+        'Branch a chosen revision (the source head when none is given) of a registry character into a new global character id as its revision 1, with source fork and parent provenance (source id and revision), deliberately breaking continuity: the source timeline and custody are untouched. Refuses a target id that already has a revision timeline or a head row, a source with no timeline, and a source revision that does not exist. The CLI uses it for the explicit fork-character command (registry only, not attached) and for the resume stale-copy fork choice, which forks this campaign stamped revision and checks the fork into the same slot (character-checkout-v1); if that checkout returns a correction result or is refused, the resume fork reports failure (the registry fork already created stays), the campaign copy and custody are unchanged, and the resume does not continue.',
       requiredInputs: [
         'The registry store',
         'sourceGlobalCharacterId',
@@ -2431,7 +2431,6 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
         'fromRevision (optional)',
       ],
       exclusions: [
-        'A target id with a legacy head row but no revisions is not refused; the fork revision replaces that head.',
         'Never moves a character between campaigns (release and re-checkout does) and never merges timelines.',
       ],
       residualDmInterpretation: [
@@ -2539,12 +2538,12 @@ const TURNS_AND_SESSIONS: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Cut a candidate narration from the first "Rolls:" (in any case) that is followed by a line break to the end, then, when there is at least one entry, append an engine-rendered Rolls: ledger built, in call order, only from successful player_visible results of roll, resolve_check, resolve_contest, roll_retained_check, resolve_retained_check, resolve_damage, and spend_rest_hit_die; the dice, kept and dropped dice, natural results, modifiers, totals, and outcomes come from the tool data. It runs on every candidate before the audit.',
+        'Cut a candidate narration from the first line that begins (after optional spaces or tabs) with "Rolls:" (in any case) followed by a line break, to the end, then, when there is at least one entry, append an engine-rendered Rolls: ledger built, in call order, only from successful player_visible results of roll, resolve_check, resolve_contest, roll_retained_check, resolve_retained_check, resolve_damage, and spend_rest_hit_die; the dice, kept and dropped dice, natural results, modifiers, totals, and outcomes come from the tool data. It runs on every candidate before the audit.',
       requiredInputs: ['The candidate narration', 'The executed tool calls'],
       exclusions: [
         'dm_only results, results without a recognized visibility, and failed calls never appear.',
         'Does not decide visibility; the DM declares it on each roll (spend_rest_hit_die results are always player-visible).',
-        'Model prose and other tools are never read into the ledger; any model text after such a "Rolls:" is dropped, not preserved.',
+        'Model prose and other tools are never read into the ledger; any model text after such a line-leading "Rolls:" is dropped, not preserved; "Rolls:" in the middle of a line is left in the narration.',
       ],
       residualDmInterpretation: [
         'The DM decides which rolls the player sees and narrates around the ledger.',

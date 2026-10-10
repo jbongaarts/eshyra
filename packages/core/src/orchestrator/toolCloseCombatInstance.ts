@@ -3,6 +3,7 @@ import {
   closeCombatInstance,
   EncounterCombatantError,
 } from '../state/encounterCombatants.js';
+import { effectToolError } from './toolEffectShared.js';
 import type { Tool } from './toolRegistry.js';
 import { asRecord, err, ok } from './toolRegistry.js';
 
@@ -18,11 +19,20 @@ export const closeCombatInstanceTool: Tool = {
   mutates: true,
   description:
     'Close the active combat instance so it cannot become active again. ' +
-    'Atomically applies the F3 effect boundary: concentration owned by ' +
-    'combatants of this instance breaks (owner-removed), effect targets/' +
-    'condition projections on them are removed (combat-ended), and owned ' +
-    'summon links are released. Character-owned effects survive. args: ' +
-    '{ status: "completed"|"abandoned"|"fled"|"interrupted", ' +
+    'Atomically applies the F3 effect boundary, in this order: (1) every ' +
+    'round or participant-turn timer anchored to this instance expires, ' +
+    'whoever owns the effect (character-owned effects included); (2) ' +
+    'concentration owned by combatants of this instance breaks ' +
+    '(owner-removed); (3) a combatant backed by a durable campaign actor ' +
+    '(campaign-actor combatants, bonded summons) has all remaining live ' +
+    'references to it (owned-actor links, condition links, effect targets, ' +
+    'source-actor pointer) rebound to that actor, so its ownership, bonds, ' +
+    'and conditions continue after combat; (4) only references to ' +
+    'instance-only combatants are cleaned: their owned-actor links are ' +
+    'released, their effect targets and condition projections are removed ' +
+    '(combat-ended), and source-actor pointers are detached. Character-' +
+    'owned effects without a timer anchored to this instance survive. ' +
+    'args: { status: "completed"|"abandoned"|"fled"|"interrupted", ' +
     'combatInstanceId?: string }.',
   inputSchema: {
     type: 'object',
@@ -84,7 +94,7 @@ export const closeCombatInstanceTool: Tool = {
       if (e instanceof EncounterCombatantError) {
         return err('combatant_error', e.message);
       }
-      throw e;
+      return effectToolError(e);
     }
   },
 };

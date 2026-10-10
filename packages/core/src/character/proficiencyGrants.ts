@@ -163,14 +163,60 @@ export function applyProficiencyGrants<T extends ProficiencyState>(
 export function removeOptionGrants<T extends ProficiencyState>(
   sheet: T,
   sourceRef: string,
+  stillHeld: readonly ProficiencyGrantSource[] = [],
 ): {
   readonly sheet: T;
   readonly removed: CharacterProficiencyGrant | undefined;
 } {
-  const entry = (sheet.proficiencyGrants ?? []).find(
+  const recorded = (sheet.proficiencyGrants ?? []).find(
     (e) => e.sourceRef === sourceRef,
   );
-  if (entry === undefined) return { sheet, removed: undefined };
+  if (recorded === undefined) return { sheet, removed: undefined };
+  // An item another still-held, already-applied source also confers is not
+  // lost: it stays on the sheet and its provenance moves to that source (the
+  // ledger records only what a source newly added, so it recorded nothing).
+  const applied = new Set(
+    (sheet.proficiencyGrants ?? []).map((e) => e.sourceRef),
+  );
+  const heirs = stillHeld.filter(
+    (h) => h.sourceRef !== sourceRef && applied.has(h.sourceRef),
+  );
+  const heirOf = (kind: 'savingThrows' | 'skills' | 'armor', item: string) =>
+    heirs.find((h) =>
+      ((h.grant[kind] ?? []) as readonly string[]).some(
+        (g) => norm(g) === norm(item),
+      ),
+    )?.sourceRef;
+  const transfers = new Map<string, CharacterProficiencyGrant>();
+  const transfer = (
+    kind: 'savingThrows' | 'skills' | 'armor',
+    item: string,
+  ): boolean => {
+    const heir = heirOf(kind, item);
+    if (heir === undefined) return false;
+    const prior = transfers.get(heir) ?? { sourceRef: heir };
+    transfers.set(heir, {
+      ...prior,
+      [kind]: [...((prior[kind] as readonly string[] | undefined) ?? []), item],
+    } as CharacterProficiencyGrant);
+    return true;
+  };
+  const entry: CharacterProficiencyGrant = {
+    sourceRef,
+    ...(recorded.savingThrows !== undefined
+      ? {
+          savingThrows: recorded.savingThrows.filter(
+            (a) => !transfer('savingThrows', a),
+          ),
+        }
+      : {}),
+    ...(recorded.skills !== undefined
+      ? { skills: recorded.skills.filter((a) => !transfer('skills', a)) }
+      : {}),
+    ...(recorded.armor !== undefined
+      ? { armor: recorded.armor.filter((a) => !transfer('armor', a)) }
+      : {}),
+  };
   const expertise = new Set(
     [...characterExpertise(sheet as unknown as CharacterSheet)].map((id) =>
       norm(id.replace(/^skill:/, '')),
@@ -192,9 +238,30 @@ export function removeOptionGrants<T extends ProficiencyState>(
   }
   const dropSkills = new Set((entry.skills ?? []).map(norm));
   const dropArmor = new Set((entry.armor ?? []).map(norm));
-  const remaining = (sheet.proficiencyGrants ?? []).filter(
-    (e) => e.sourceRef !== sourceRef,
-  );
+  const remaining = (sheet.proficiencyGrants ?? [])
+    .filter((e) => e.sourceRef !== sourceRef)
+    .map((e) => {
+      const gained = transfers.get(e.sourceRef);
+      return gained === undefined
+        ? e
+        : {
+            ...e,
+            ...(gained.savingThrows !== undefined
+              ? {
+                  savingThrows: [
+                    ...(e.savingThrows ?? []),
+                    ...gained.savingThrows,
+                  ],
+                }
+              : {}),
+            ...(gained.skills !== undefined
+              ? { skills: [...(e.skills ?? []), ...gained.skills] }
+              : {}),
+            ...(gained.armor !== undefined
+              ? { armor: [...(e.armor ?? []), ...gained.armor] }
+              : {}),
+          };
+    });
   const { proficiencyGrants: _old, ...rest } = sheet;
   return {
     sheet: {

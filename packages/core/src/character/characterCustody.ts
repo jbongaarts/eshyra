@@ -31,6 +31,8 @@
  */
 
 import type { Db } from '../persistence/db.js';
+import { withTransaction } from '../persistence/db.js';
+import { tryGetActiveCharacterId } from '../state/activeCharacter.js';
 import {
   type AttachCharacterSheetInput,
   attachCharacterSheetToCampaign,
@@ -114,6 +116,13 @@ export function registerNewCharacter(
   registry: CharacterRegistryStore,
   input: { globalCharacterId: string; sheet: CharacterSheet },
 ): CharacterRevision {
+  // Revision 1 is the initial register; a second register would append onto an
+  // existing timeline and overwrite its head (ADR 0012: linear history).
+  if (registry.load(input.globalCharacterId) !== undefined) {
+    throw new CharacterCustodyError(
+      `cannot register "${input.globalCharacterId}": that id is already registered`,
+    );
+  }
   return registry.appendRevision(
     input.globalCharacterId,
     input.sheet,
@@ -139,7 +148,8 @@ function ensureRevisioned(
   if (sheet === undefined) {
     return undefined;
   }
-  return registerNewCharacter(registry, { globalCharacterId, sheet }).revision;
+  // Seeding a legacy head-only entry is not a new registration.
+  return registry.appendRevision(globalCharacterId, sheet, 'register').revision;
 }
 
 /**
@@ -179,6 +189,7 @@ export function checkoutCharacterIntoCampaign(
     );
   }
 
+  const sameSlotHeld = held !== undefined;
   const revision = ensureRevisioned(registry, input.globalCharacterId);
   if (revision === undefined) {
     throw new CharacterCustodyError(
@@ -187,6 +198,23 @@ export function checkoutCharacterIntoCampaign(
   }
   // `revision` is the head, so `load` returns that revision's sheet.
   const sheet = registry.load(input.globalCharacterId) as CharacterSheet;
+
+  // Idempotent re-checkout must not silently replace unsynced campaign
+  // progress with the registry head (ADR 0012: single writer, no silent loss).
+  if (sameSlotHeld) {
+    const campaignCopy =
+      createSqliteCharacterSheetStore(campaignDb).load(characterId);
+    if (
+      campaignCopy !== undefined &&
+      !sheetsEqual(stripCampaignProvenance(campaignCopy), sheet)
+    ) {
+      throw new CharacterCustodyError(
+        `character "${input.globalCharacterId}" is already checked out in this campaign as ${characterId} ` +
+          'with progress not yet synced to the registry; re-checkout would overwrite it. ' +
+          'Resume the campaign or release the character instead',
+      );
+    }
+  }
 
   // Attach first (it fails closed on a pack mismatch); only then record custody,
   // so a rejected attach never leaves a dangling lock.
@@ -198,7 +226,28 @@ export function checkoutCharacterIntoCampaign(
     sessionId: input.sessionId,
     at: input.at,
   };
-  const attach = attachCharacterSheetToCampaign(campaignDb, attachInput);
+  // A same-slot re-checkout must also leave every campaign-owned live field
+  // (HP, conditions, the whole live character row, the active character)
+  // exactly as it was: the attach runs in a savepoint and is rolled back if the
+  // live projection would change anything (ADR 0011 §4: hp_current and
+  // conditions_json are authoritative live state; ADR 0012: no silent loss).
+  const attach = withTransaction(campaignDb, (txn) => {
+    const before = sameSlotHeld ? liveStateSnapshot(txn, characterId) : '';
+    const result = attachCharacterSheetToCampaign(txn, attachInput);
+    if (sameSlotHeld && liveStateSnapshot(txn, characterId) !== before) {
+      throw new CharacterCustodyError(
+        `character "${input.globalCharacterId}" is already checked out in this campaign as ${characterId} ` +
+          'with live state (hit points, conditions, or other campaign-owned fields) that re-checkout would overwrite; ' +
+          'resume the campaign or release the character instead',
+      );
+    }
+    return result;
+  });
+  if (!attach.ok) {
+    // The live character was not projected (e.g. an unsupported rules system):
+    // the campaign is not a valid writer, so do not take the lock.
+    return { attach, revision, characterId };
+  }
 
   registry.setCustody({
     globalCharacterId: input.globalCharacterId,
@@ -209,6 +258,22 @@ export function checkoutCharacterIntoCampaign(
   });
 
   return { attach, revision, characterId };
+}
+
+/** Campaign-owned live state a re-attach could overwrite, as comparable text. */
+function liveStateSnapshot(db: Db, characterId: string): string {
+  const row = db
+    .prepare('SELECT * FROM character WHERE id = ?')
+    .get(characterId) as Record<string, unknown> | undefined;
+  const live =
+    row === undefined
+      ? null
+      : Object.fromEntries(
+          Object.entries(row).filter(
+            ([key]) => !/provenance|session_id|_at$/.test(key),
+          ),
+        );
+  return JSON.stringify({ live, active: tryGetActiveCharacterId(db) ?? null });
 }
 
 /**
@@ -680,6 +745,13 @@ export function catchUpCharacterToHead(
     sessionId: input.sessionId,
     at: input.at,
   });
+  if (!attach.ok) {
+    // Same rule as checkout: custody only after a successful attach. The
+    // failed attach persisted nothing (see attachCharacterSheetToCampaign).
+    throw new CharacterCustodyError(
+      `cannot catch up character "${globalCharacterId}": ${attach.errors.join('; ')}`,
+    );
+  }
 
   // Acquire custody at the adopted revision. No registry revision is appended —
   // catch-up consumes the head, it does not advance it.
@@ -731,7 +803,10 @@ export function forkCharacterTimeline(
   registry: CharacterRegistryStore,
   input: ForkCharacterInput,
 ): ForkCharacterResult {
-  if (registry.headRevision(input.newGlobalCharacterId) !== undefined) {
+  if (
+    registry.headRevision(input.newGlobalCharacterId) !== undefined ||
+    registry.load(input.newGlobalCharacterId) !== undefined
+  ) {
     throw new CharacterCustodyError(
       `cannot fork onto "${input.newGlobalCharacterId}": that id already has a registry timeline`,
     );
