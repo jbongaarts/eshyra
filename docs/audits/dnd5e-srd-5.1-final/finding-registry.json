@@ -658,7 +658,8 @@
       "canonicalId": "creature-completeness",
       "aliases": ["indep:006"],
       "invariant": "Creature triggers, branches, timing, and lifecycle are complete",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Narrowed under ADR 0020 by eshyra-o9bd.19.4.3 (amendment): the surviving obligation is that emitted creature projections agree with the printed stat block (statline gate, attack grammar gate, and the saves, legendary-budget, and rider repairs above). Evidence: packages/core/test/importers/dnd5e-srd-5.1/creatureLegendaryBudgetSavesRiders.test.ts.",
       "provenance": {
         "auditFinding": "indep:006",
         "evidenceBasis": "audit-finding"
@@ -683,6 +684,7 @@
       "aliases": ["opus:F-26"],
       "invariant": "Legendary budgets and action costs are modeled",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3 (A1/L1): the importer types legendaryActions.budget, timing, regain, and oneAtATime from the printed intro sentences, and actionEconomy allowances read the typed budget and refuse legendary_action spends when it is absent. Evidence: packages/core/test/importers/dnd5e-srd-5.1/creatureLegendaryBudgetSavesRiders.test.ts; packages/core/test/actionEconomy.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-26",
         "evidenceBasis": "audit-finding"
@@ -695,6 +697,7 @@
       "aliases": ["opus:F-28"],
       "invariant": "Druid and Dryad attacks have attack objects",
       "status": "accepted",
+      "statusReasoning": "Accepted. Repaired under eshyra-o9bd.19.4.2.1 (importer repair of the creature attack grammar; see its completion notes): creature:druid Quarterstaff and creature:dryad Club now project attacks[] with the printed default damage, the two-hands/shillelagh modes as alternatives, and the mode-specific bonus (+4 for druid, +6 for dryad) on the shillelagh alternative.",
       "provenance": {
         "auditFinding": "opus:F-28",
         "evidenceBasis": "audit-finding"
@@ -707,6 +710,7 @@
       "aliases": ["opus:F-29"],
       "invariant": "Unicode-minus damage is normalized",
       "status": "accepted",
+      "statusReasoning": "Accepted. Repaired under eshyra-o9bd.19.4.2.1 (importer repair of the creature attack grammar; see its completion notes): printed U+2212 in attack Hit-clause dice normalizes to ASCII; baboon, awakened-shrub, and giant-fire-beetle gained hitDamage. The remaining U+2212 dice-like texts (hit-point formulas and magic-item random counts) are not damage projections and are unchanged.",
       "provenance": {
         "auditFinding": "opus:F-29",
         "evidenceBasis": "audit-finding"
@@ -719,6 +723,7 @@
       "aliases": ["opus:F-31"],
       "invariant": "Ranged attacks retain range under alternate notation",
       "status": "accepted",
+      "statusReasoning": "Accepted. Verified under eshyra-o9bd.19.4.2.1 (importer repair of the creature attack grammar; see its completion notes): the premise that no ranged attack lacks rangeFeet was false. Six ranged attacks (bandit, salamander, scout, barbed-devil, efreeti, horned-devil) had lost rangeFeet under the printed notations \"N ft./M ft.\", \"ranged N/M ft.\", and single \"range N ft.\"; the parser now projects them.",
       "provenance": {
         "auditFinding": "opus:F-31",
         "evidenceBasis": "audit-finding"
@@ -731,6 +736,7 @@
       "aliases": ["opus:F-32"],
       "invariant": "Multi-save entries retain every save",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3 (M1): every printed save clause of a creature entry projects its own save in source order with its own success branch. Evidence: packages/core/test/importers/dnd5e-srd-5.1/creatureLegendaryBudgetSavesRiders.test.ts; packages/core/test/importers/dnd5e-srd-5.1/halfDamageSuccessBranches.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-32",
         "evidenceBasis": "audit-finding"
@@ -742,7 +748,8 @@
       "canonicalId": "creature-statblock-mechanics",
       "aliases": ["sol:CAP-004"],
       "invariant": "Creature stat-block mechanics are complete",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Narrowed under ADR 0020 (no completeness claim: the parser census does not prove complete creature mechanics). The surviving obligation is that emitted creature attack/damage projections agree with the printed stat block, discharged by eshyra-o9bd.19.4.2.1 (importer repair of the creature attack grammar; see its completion notes) together with the existing statline fidelity gate.",
       "provenance": {
         "auditFinding": "sol:CAP-004",
         "evidenceBasis": "audit-finding"
@@ -755,6 +762,7 @@
       "aliases": ["fable:F3"],
       "invariant": "Creature riders and ongoing damage are typed",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3 (R1): printed extra-damage riders project extraDamage (dice, printed average, printed type, once-per-turn frequency), and infernal-wound hit-point loss projects recurringHitPointLoss. Evidence: packages/core/test/importers/dnd5e-srd-5.1/creatureLegendaryBudgetSavesRiders.test.ts.",
       "provenance": {
         "auditFinding": "fable:F3",
         "evidenceBasis": "audit-finding"

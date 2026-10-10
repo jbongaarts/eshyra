@@ -519,6 +519,26 @@ prose(
 namedEntry('creature', '/legendaryActions/entries');
 derived(
   'creature',
+  '/legendaryActions/budget',
+  "the legendary-action count, read from the printed 'can take N legendary actions' sentence of the intro paragraph.",
+);
+derived(
+  'creature',
+  '/legendaryActions/timing',
+  "the printed 'only at the end of another creature's turn' timing sentence, when present.",
+);
+derived(
+  'creature',
+  '/legendaryActions/regain',
+  "the printed 'regains spent legendary actions at the start of its turn' sentence, when present.",
+);
+derived(
+  'creature',
+  '/legendaryActions/oneAtATime',
+  "the printed 'Only one legendary action option can be used at a time' sentence, when present.",
+);
+derived(
+  'creature',
   '/alignment',
   "the creature's alignment, parsed from the stat-block header line.",
 );
