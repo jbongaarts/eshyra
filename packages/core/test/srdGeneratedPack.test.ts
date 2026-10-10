@@ -1331,6 +1331,17 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  // Registry row source-authority-opus-f20 (opus:F-20): the committed
+  // manifest described pack scope by pointing at issue-tracker work ("tracked
+  // under loreweaver-0m9.5 child issues"). eshyra-o9bd.19.2.1.1 only renamed the
+  // prefix to eshyra-0m9.5, a closed bead, so the stale claim survived until
+  // eshyra-o9bd.19.1.8 removed it at the importer source. Pack metadata states
+  // what the pack contains; it never cites tracker IDs, under any prefix.
+  it('carries no issue-tracker claim in the committed manifest (opus:F-20)', () => {
+    const manifestText = readFileSync(join(PACK_DIR, 'manifest.json'), 'utf8');
+    expect(manifestText).not.toMatch(/\b(?:loreweaver|eshyra)-[a-z0-9]/iu);
+  });
+
   describe('magic-item numeric conservation gate', () => {
     it('conserves description dice/DCs and mechanics dice/DCs in both directions', () => {
       const { findings, usedExceptions } = numericConservationFindings(
