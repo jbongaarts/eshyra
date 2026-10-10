@@ -202,7 +202,7 @@ const DICE_AND_RESOLUTION: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('resolve_retained_check', 'bounded-procedure', {
     operation:
-      'Compare an active retained check total with exactly one fresh opposing ability check (search) or a list of passive scores (computed through calc passive_score), record each comparison atomically, and report an observer as noticing only when its total is strictly higher than the retained total.',
+      'Compare an active retained check total with exactly one fresh opposing ability check (search) or a list of passive scores (computed through calc passive_score), record all of the call comparisons in one transaction (an invalid passive entry records none), and report an observer as noticing only when its total is strictly higher than the retained total.',
     requiredInputs: ['retainedCheckId', 'reason'],
     exclusions: [
       'Exactly one of search or passive is required; both or neither is refused.',
@@ -226,7 +226,7 @@ const DICE_AND_RESOLUTION: readonly DeterministicCapabilityInventoryEntry[] = [
       'Mark one active retained check ended with the reason discovered or stopped, in one transaction.',
     requiredInputs: ['retainedCheckId', 'reason'],
     exclusions: [
-      'Never ends a retained check on its own; whether the creature was discovered or stopped hiding is not decided here.',
+      'This tool is the only writer that ends a retained check, and only when called; nothing ends one automatically (combat close included), and whether the creature was discovered or stopped hiding is not decided here.',
       'An unknown or already-ended retained check is refused (not_found_or_ended); there is no idempotent no-op.',
     ],
     residualDmInterpretation: [
@@ -469,12 +469,13 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
     }),
     toolEntry('start_effect', 'bounded-procedure', {
       operation:
-        'Start one durable active effect (concentration or timed spell effect, condition package, curse, ward, summon control, or activated item power) in one transaction. A spell source must resolve to a spell record in the bound rules stack, whose concentration requirement and parseable duration the declaration must match, and instantaneous spells are refused; a new concentration effect deterministically ends the owner previous one; projected conditions, linked actors, zones, and forms are owned by the effect.',
+        'Start one durable active effect (concentration or timed spell effect, condition package, curse, ward, summon control, or activated item power) in one transaction. Source grounding depends on the source form. A spell source must resolve to a spell record in the bound rules stack; when that record carries a duration text, its concentration marker must match the declaration (required or forbidden), and its parsed duration form constrains the declared duration: a timed record (a number of rounds, minutes, hours, or days) requires a timed duration with the same amount and unit; until dispelled requires until-removed; until dispelled or triggered requires until-trigger; and an instantaneous record is refused unless the effect is a summoning whose record mechanics declare a persistent-linked summon with an active initial link (Find Familiar, Find Steed), which is admitted as a bonded summon. A duration text in no recognized form constrains concentration but not the duration, and a record without a duration text constrains neither. A magic-item source that names a ref must resolve to a magic-item record; other source kinds are not grounded in a record. A new concentration effect ends the owner previous live concentration effect in the same transaction; projected conditions, linked actors, zones, and forms are owned by the effect.',
       requiredInputs: ['effectId', 'kind', 'displayName', 'source', 'duration'],
       exclusions: [
-        'An effect id is never reused, and the "<id>:uncontrolled" suffix is reserved.',
+        'An existing effect id (whatever its status) is refused, and an id ending in the reserved "<id>:uncontrolled" suffix is refused.',
         'The kind limits which source kinds, concentration, and projections an effect may declare; structurally meaningless combinations, an owned entity that already has an owning effect, and a condition the target already has are refused before any write.',
-        'A bonded-summon spell requires an until-removed duration, a source actor that is a character or campaign actor, and allows one such bond per caster per spell.',
+        'A bonded summon (the instantaneous persistent-linked case above) requires an until-removed duration, a source actor that is a character or campaign actor (not a combatant), and at least one linked actor (and no more than the record maximum, when it gives one), and is refused while the same caster already holds a live effect from that spell with an active actor link (one bond per caster per spell).',
+        'The timed record check compares amount and unit only, not the anchor; a ruling or item source, and a spell record whose duration is unrecognized or absent, leave the declared duration to the caller.',
         'If projecting a condition cascades back and ends the effect mid-creation, the creation is refused and nothing is committed.',
         'Does not apply the consequences of the effect beyond the condition, actor, zone, and form projections it owns.',
       ],
@@ -494,13 +495,14 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
     }),
     toolEntry('end_effect', 'bounded-procedure', {
       operation:
-        'End one active or suppressed effect with a declared reason and clean up exactly the state it owns (projected conditions, zones, forms, and linked actors under their remove, release, or revert policies) in one transaction. Ending the same effect again with the same reason (and detail, when given) is an unchanged no-op.',
+        'End one active or suppressed effect with a declared reason in one transaction: mark it ended and apply the cleanup policy of each of its active links (the break policy for concentration-broken, otherwise the end policy), so each owned projection is removed, released, or reverted; a linked creature in its pocket dimension is removed whatever the policy. Removing an owned creature can cascade beyond this effect, for example by breaking that creature own concentration. A concentration-broken end of a spell effect whose record declares an uncontrolled removal (Conjure Elemental, Conjure Fey) and whose creatures were released creates the engine-owned "<id>:uncontrolled" successor effect. Ending an already-ended effect again with the same reason (and the same detail, when one is given) is an unchanged no-op.',
       requiredInputs: ['effectId', 'reason'],
       exclusions: [
-        'Ending an already-ended effect with a different reason is refused.',
+        'An unknown effect is refused, and ending an already-ended effect with a different reason, or a different given detail, is refused.',
+        'A live linked creature with a revert-form zero-hit-point rule whose link carries a non-revert policy (recorded before natural forms were) refuses the end instead of guessing its form.',
         'dismissed requires a dismissible effect; concentration-broken requires a concentration effect and a directly declarable cause; ruled requires a note; expired is validated against the declared timer (an until-trigger effect needs its trigger named, and a round timer anchored to a still-active combat instance cannot expire before its deadline).',
         'Damage-triggered concentration saves go through resolve_concentration, not here.',
-        'An effect can also end without this tool, by owned-creature cleanup cascades, combat closure, elapsed-time expiry, and failed concentration.',
+        'An effect can also end without this tool, for example through owned-creature cleanup cascades, combat closure, elapsed-time expiry, replacement by a new concentration effect, its concentration owner leaving the alive state, and a failed concentration save.',
         'Does not decide that the effect ended.',
       ],
       residualDmInterpretation: [
@@ -556,14 +558,16 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
     }),
     toolEntry('refresh_effect', 'state-integrity', {
       operation:
-        'Re-anchor the timer of an active effect (re-validating the duration; a spell-sourced effect with a parseable record duration must keep that duration), recording a refreshed event.',
+        'Re-anchor the timer of an active effect in one transaction and record a refreshed event with the previous and next duration. With no duration supplied, the stored duration (kind, amount, unit, anchor, trigger) is re-validated and re-anchored; with a duration supplied, it replaces the stored one after the shared duration validation. Spell-record grounding is narrower than at creation: only when a duration is supplied, the effect source is a spell, and that record duration parses as timed must the supplied duration be timed with the same amount and unit.',
       requiredInputs: ['effectId'],
       exclusions: [
-        'Only an active effect can be refreshed; a suppressed effect (unsuppress first) and an ended effect (a re-established effect is a new start_effect) are refused.',
+        'Only an active effect can be refreshed; an unknown effect, a suppressed effect (unsuppress first), and an ended effect (a re-established effect is a new start_effect) are refused.',
+        'A supplied duration is not checked against a spell record whose duration is until dispelled, until dispelled or triggered, instantaneous (a bonded summon), unrecognized, or unavailable, and not against a ruling or item source: unlike creation, such a refresh can change the duration form (for example an until-removed Continual Flame effect to a timed one).',
+        'Changes no status, target, link, projection, or concentration owner.',
         'Does not decide that a rule renews the effect.',
       ],
       residualDmInterpretation: [
-        'The DM decides that a rule renews the effect and any new duration.',
+        'The DM decides that a rule renews the effect and whether any new duration fits its source.',
       ],
       runtimeOwner: [
         o('toolRefreshEffect.ts'),
@@ -705,7 +709,7 @@ const COMBAT_AND_TURNS: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('close_combat_instance', 'state-integrity', {
     operation:
-      'Close the active combat instance (or one named active instance) with an inactive status so it cannot become active again, in one transaction, settling live (active or suppressed) effects in this order before the status flips. (1) Every round or participant-turn timer anchored to the instance expires, whatever its owner. (2) Concentration owned by a combatant of the instance breaks (owner-removed). (3) A combatant with a durable identity (a campaign-actor combatant, or one an active actor link claims for a campaign actor) has its current state projected onto that campaign actor, and every remaining live reference to it (actor and condition links, targets, the source-actor pointer) is rebound onto the campaign actor: its ownership, bonds, and conditions continue after combat. (4) Only the remaining instance-only references are cleaned: actor links on instance-only combatants are released, their effect targets are removed (combat-ended, which can cascade and end an effect), leftover condition links on them are removed, and source-actor pointers to them are detached. Effects with no reference to the instance combatants are untouched.',
+      'Close the active combat instance (or one named active instance) with an inactive status so it cannot become active again, in one transaction, settling live (active or suppressed) effects in this order before the status flips. (1) Every round or participant-turn timer anchored to the instance expires, whatever its owner. (2) Concentration owned by a combatant of the instance breaks (owner-removed). (3) A combatant with a durable identity (a campaign-actor combatant, or one an active actor link claims for a campaign actor) has its current state projected onto that campaign actor, and every remaining live reference to it (actor and condition links, targets, the source-actor pointer) is rebound onto the campaign actor: its ownership, bonds, and conditions continue after combat. (4) Only the remaining instance-only references are cleaned: actor links on instance-only combatants are released, their effect targets are removed (combat-ended, which can cascade and end an effect), leftover condition links on them are removed, and source-actor pointers to them are detached. An effect with neither a timer anchored to the instance nor a concentration owner, link, target, or source actor among its combatants is untouched.',
     requiredInputs: ['status'],
     exclusions: [
       'An unknown instance, or no active instance when none is named, is refused, and an instance that is already closed cannot be closed again.',
@@ -1039,7 +1043,7 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
       'A row held by another character, a quarantined row, and an unheld row that is not dropped or not at the current location are refused.',
       'A partial disposition of a row with per-instance state, usage counters, or an attunement is refused.',
       'Dropping, selling, or losing needs a known current world location and is refused for cursed custody the record restricts.',
-      'Only dropped rows become generally claimable; sold and lost rows stay outside player custody.',
+      'Only dropped rows become claimable through claim_item; sold and lost rows return to custody only through reacquire_item.',
       'Does not decide that the player drops, sells, loses, or destroys the item.',
     ],
     residualDmInterpretation: [
@@ -1073,9 +1077,9 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
       'End a character attunement to an item with a declared reason (voluntary, distance, death, replaced, item_destroyed, or other), freeing the slot.',
     requiredInputs: ['itemId', 'reason'],
     exclusions: [
-      'Refused when no such attunement exists. For any reason other than death, a cursed item whose record restricts ending attunement refuses.',
+      'Refused when no such attunement exists. For any reason other than death, the item source-declared curse state is checked and can refuse the end; with reason death it is not checked.',
       'The reason is declared, not verified: the tool does not detect the 100 foot / 24 hour separation or check that a death occurred.',
-      'Death ends attunements automatically through the character death path.',
+      'Death ends attunements automatically: every character hit point write that moves life state into dead deletes all of that character attunements.',
     ],
     residualDmInterpretation: [
       'The DM decides that the ending condition occurred.',
@@ -1156,7 +1160,7 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('flexible_casting', 'bounded-procedure', {
     operation:
-      'Convert between sorcery points and spell slots for a stored sorcerer sheet of level 2 or higher in one transaction: create-slot spends the pack-procedure cost in sorcery points for a new created slot of slotLevel (up to the maximum slot level the pack procedure allows) that vanishes at the next long rest, and convert-slot expends an available slot of slotLevel to regain that many sorcery points, never above the maximum. In an active combat instance it first spends the character bonus action.',
+      'Convert between sorcery points and spell slots for a stored sorcerer sheet of level 2 or higher in one transaction: create-slot spends the pack-procedure cost in sorcery points for a new created slot of slotLevel (up to the maximum slot level the pack procedure allows) that vanishes at the next long rest, and convert-slot expends an available slot of slotLevel to regain that many sorcery points; a conversion that would take the points above the maximum is refused, not clamped. In an active combat instance it first spends the character bonus action.',
     requiredInputs: ['operation', 'slotLevel'],
     exclusions: [
       'A non-sorcerer, a sorcerer below level 2, a binding without the Font of Magic record, a Font of Magic procedure whose sorcery point maximum disagrees with the class table, an unaffordable or illegal level, and an unavailable slot are refused; any refusal, including the bonus-action spend, aborts atomically.',
@@ -1214,7 +1218,7 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('restore_usage', 'bounded-procedure', {
     operation:
-      'Restore a spent counter, found by ability or item (a bound class resource is first reconciled to the active class capacity): with roll, apply a recharge-die result to a recharge-roll counter, recharging it exactly when the natural roll meets the counter threshold and consuming that owner-turn window; with amount, regain that many uses (never below zero spent) on any counter.',
+      'Restore a spent counter, found by ability or item (a bound class resource is first reconciled to the active class capacity): with roll, apply a recharge-die result to a recharge-roll counter, recharging it exactly when the natural roll meets the counter threshold and consuming that owner-turn window; with amount, regain that many uses (never below zero spent) on a counter of any reset kind not refused below.',
     requiredInputs: [
       'ability or itemId (one of)',
       'roll or amount (exactly one)',
@@ -1240,10 +1244,10 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('reset_usage', 'bounded-procedure', {
     operation:
-      'Apply a short rest, long rest, or dawn reset event to spent usage counters: short rest resets recharge-roll, short-rest, and short-or-long counters, long rest also resets long-rest counters, and dawn resets dawn counters, except that a dawn counter with a recharge formula is returned in needsRolledRestore instead. Bound class-resource counters in scope are first reconciled to the active class table; one whose capacity is none is neither refilled nor reported. Without an owner, rests cover every character and the unbound item counters they hold, and dawn covers every owner including combatants.',
+      'Apply a short rest, long rest, or dawn reset event to spent usage counters: short rest resets recharge-roll, short-rest, and short-or-long counters, long rest also resets long-rest counters, and dawn resets dawn counters, except that a dawn counter with a recharge formula is returned in needsRolledRestore instead. Bound class-resource counters in scope are first reconciled to the active class table; one whose capacity is none is neither refilled nor reported. Without an owner, rests cover every character and the counters of the item rows characters hold, and dawn covers every counter owner, including combatants and unheld items.',
     requiredInputs: ['event'],
     exclusions: [
-      'combatantId or character scopes the event to one owner (and, for a character, the items it holds); a dead owner is refused.',
+      'combatantId or character scopes the event to one owner (and, for a character, the items it holds); a dead owner and an absent combatant are refused.',
       'A spent counter in scope that belongs to a pack-bound item row refuses the whole call; canonical item economies belong to the item reset executor, and quarantined item rows are skipped.',
       'Does not complete a rest; the rest tools do.',
     ],
@@ -1266,7 +1270,7 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
     requiredInputs: ['restId', 'participants', 'qualification'],
     exclusions: [
       'Participants are character ids that must exist, be unique, and each have a stored sheet built under the bound pack; unknown qualification properties are refused.',
-      'Refused while combat is active; reusing a restId returns the recorded result only when kind, qualification, label, and participants are identical, and is otherwise refused.',
+      'Reusing a completed restId returns the recorded result, without re-applying anything, only when kind, qualification, label, and participants are identical, and is otherwise refused; this check runs first, so an identical reuse returns even while combat is active. A new rest is refused while combat is active.',
       'Does not restore ordinary Spellcasting slots or hit points.',
       'Does not decide whether the party actually rested.',
     ],
@@ -1286,8 +1290,9 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
       'Complete one group long rest in one transaction, recorded under a unique restId, after validating the qualification (duration at least 480 minutes with at least 360 asleep, at most 120 of light activity, and under 60 of strenuous interruption within the duration): advance the world clock, then for each participant reduce exhaustion by one level when foodAndDrink is true, restore hit points to the effective maximum, expire temporary hit points, restore half the Hit Dice (at least 1, up to what was spent), restore spell slots, and reset usage counters and item resets.',
     requiredInputs: ['restId', 'participants', 'qualification'],
     exclusions: [
-      'Refused while combat is active, for a dead participant or one at 0 hit points, when a participant benefited from a long rest within 24 in-game hours, and for any participant without a stored sheet built under the bound pack.',
-      'Reusing a restId returns the recorded result only when kind, qualification, label, and participants are identical, and is otherwise refused.',
+      'A new rest is refused while combat is active, for a dead participant or one at 0 hit points, when a participant benefited from a long rest within 24 in-game hours, and for any participant without a stored sheet built under the bound pack.',
+      'Reusing a completed restId returns the recorded result, without re-applying anything, only when kind, qualification, label, and participants are identical, and is otherwise refused; this check runs before the combat check.',
+      'A refusal inside a participant benefit (for example a spent counter on a pack-bound item row in the usage reset) aborts the whole rest.',
       'Dawn is not a long rest.',
       'Does not decide whether the party actually rested.',
     ],
@@ -1467,12 +1472,12 @@ const WORLD_AND_RULINGS: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('accept_ambiguity_precedent', 'state-integrity', {
     operation:
-      'Stage, inside an audited campaign turn, one proposed durable precedent for a published ambiguity that is unresolved now and at the next position, naming exactly one of its enumerated interpretations with a reason; nothing persists unless the turn auditor accepts the action and proposal.',
+      'Stage, inside an audited campaign turn, one proposed durable precedent for a published ambiguity that is unresolved now and at the next position, naming exactly one of its enumerated interpretations with a reason. The tool persists nothing: the orchestrator records the staged proposal as a ruling only when the candidate is accepted (an auditor acceptance or a presentation-only repair), and a rejected candidate drops it.',
     requiredInputs: ['ambiguityId', 'matchingInterpretationIds', 'reason'],
     exclusions: [
       'Refused outside an audited candidate turn, without the current persisted turn position, when the ambiguity already has an active, conflicting, or prospective ruling, and when the interpretation is not enumerated by the ambiguity.',
       "Exactly one interpretation id is accepted; the tool description's instruction to supply all matching ids is not reflected in the input schema.",
-      'Never for a question, canonical-rule violation, house rule, or contextual judgment; the tool does not itself persist the precedent.',
+      'The tool cannot tell whether the action is a question, a canonical-rule violation, a house rule, or a contextual judgment (for none of which it is meant); that is not checked, and the tool does not itself persist the precedent.',
     ],
     residualDmInterpretation: [
       'The DM decides that the action accepted at the table unambiguously selects the interpretation.',
@@ -1521,7 +1526,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
     'bounded-procedure',
     {
       operation:
-        'Recompute a guided-creation draft on every change and gate finalization: derive ability modifiers, saving throws, proficiency bonus, hit points, and spellcasting values; validate ability scores (free entry in range, point buy within the 27-point budget, the standard array, or a rolled set assigned by multiplicity from six recorded 4d6-drop-lowest rolls whose roll evidence is validated), background customization, starting equipment or wealth, and the chosen spells against the class list and level-1 reach; classify the spell list against the level-1 counts (level1SpellRequirements), excluding always-prepared spells from the preparation limit; derive the level-1 class-feature choices (deriveCreationClassChoices) and the skill, tool, language, and equipment mechanical choices; and report missing required choices and error diagnostics. toFinalizableDraft returns the draft only when nothing is missing and no error diagnostic remains. The ability-score set and starting-wealth dice are rolled from the caller-supplied RNG by rollAbilityScoreSet and rollStartingWealth (the CLI wizard), and a starting-wealth result is validated against its recorded roll.',
+        'Recompute a guided-creation draft after each engine setter and gate finalization: derive ability modifiers, saving throws, proficiency bonus, hit points, and spellcasting values; validate ability scores (free entry in range, point buy within the 27-point budget, the standard array, or a rolled set assigned by multiplicity from six recorded 4d6-drop-lowest rolls whose roll evidence is validated), background customization, starting equipment or wealth, and the chosen spells against the class list and level-1 reach; classify the spell list against the level-1 counts (level1SpellRequirements), excluding always-prepared spells from the preparation limit; derive the level-1 class-feature choices (deriveCreationClassChoices) and the skill, tool, language, and equipment mechanical choices; and report missing required choices and error diagnostics. toFinalizableDraft returns the draft only when no required choice is missing and the diagnostics recorded on the draft (by its last recompute) include no error. The ability-score set and starting-wealth dice are rolled from the caller-supplied RNG by rollAbilityScoreSet and rollStartingWealth (the CLI wizard), and a starting-wealth result is validated against its recorded roll.',
       requiredInputs: [
         'A rules-pack character resolver (the default is the bundled dnd5e SRD resolver)',
         'The draft selections made through the engine setters',
@@ -1625,7 +1630,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
         'A rules-pack character resolver and creation engine (bundled dnd5e SRD defaults)',
       ],
       exclusions: [
-        'An incomplete draft, an error diagnostic, an unsatisfied mechanical choice, an invalid starting acquisition, or an unresolved duplicate proficiency returns ok:false with the reasons, and a build outside the one-class boundary throws; nothing is guessed.',
+        'An incomplete draft, an error diagnostic, an unsatisfied mechanical choice, an invalid starting acquisition, or an unresolved duplicate proficiency returns ok:false with the reasons, and a build outside the one-class boundary throws.',
         'Ancestry skill grants are applied at creation by srdAncestrySkills.ts, not by the proficiency-grant ledger.',
         'Does not choose the character concept or any player choice.',
       ],
@@ -1752,8 +1757,8 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
         'The grant sources with their source refs',
       ],
       exclusions: [
-        'A grant that cannot be applied or removed without losing state raises ProficiencyGrantError.',
-        'A proficiency held from any other source is never touched; ancestry trait grants are not read here.',
+        'Applying refuses nothing: a proficiency already held is simply not recorded for the source. The only ProficiencyGrantError is the removal refusal below.',
+        'Removal (removeOptionGrants) drops only what that source ledger entry recorded and refuses when a recorded skill has Expertise. A proficiency already held when a source was applied is not recorded for it and is not removed with it; one recorded for a source is removed with it even if another source granted it later. Ancestry trait grants are not read here.',
       ],
       residualDmInterpretation: [
         'The DM adjudicates any feature effect that is not a typed proficiency grant.',
@@ -1874,7 +1879,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
         'characterId (the active character when omitted)',
       ],
       exclusions: [
-        'Does not check level-up eligibility or award experience; getLevelUpEligibility gives the verdict that callers gate on, and the step fails only when the pack has no class row for the target level.',
+        'Does not check level-up eligibility or award experience; getLevelUpEligibility gives the verdict that callers gate on, so an ineligible character is not refused here (a target level with no class row in the pack is).',
         'Records the pick of an option-catalog feature choice only; the option effect is not implemented here.',
         'Multi-level catch-up is the caller looping one step at a time.',
       ],
@@ -2024,7 +2029,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'Refuses a Dolt directory that is the same as, nested with, or shares a remote or the reserved ref namespace with the beads Dolt data.',
-        'A restore destination that already exists and a schema snapshot that is not the current version are refused; a failed restore leaves no database at the destination.',
+        'A restore destination that already exists (checked before the build) and a schema snapshot that is not the current version are refused; a restore that fails before the rename removes its temporary file and creates no database at the destination.',
         'Does not decide when to checkpoint or which checkpoint to restore.',
       ],
       residualDmInterpretation: [
@@ -2146,8 +2151,8 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
         'provenance, sessionId, and at',
       ],
       exclusions: [
-        'Performs no lifecycle reactions; lifecycle-owned fields (hit points, life state, death saves, conditions) are written only through their domain operations.',
-        'Not model-facing: no tool wraps it, and the default registry is pinned to contain no mutate_state tool.',
+        'Performs no lifecycle reactions itself: a write of hit points, life state, death saves, or conditions through it runs no death, concentration, or condition machinery; the domain operations that own those lifecycles call it and add the reactions.',
+        'Not model-facing: no tool exposes it directly (tools reach it only through domain operations), and a test pins the default registry to contain no mutate_state tool.',
       ],
       residualDmInterpretation: [
         'None: callers are trusted domain code, not the DM model.',
@@ -2171,7 +2176,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
     'bounded-procedure',
     {
       operation:
-        'Execute a typed bounded-procedure request against redacted pack record data, failing closed on any request or procedure shape it does not recognize: a hazard save (initial or repeat), a weapon damage mode, selection and applicability of a feature option, creating a spell slot from or converting a slot into sorcery points, and the begin, per-spell, and recovery-day arithmetic of an adjudicated stress procedure, using caller-supplied roll results. Retained and staged: only the create-spell-slot and convert-spell-slot requests have a runtime consumer (state/flexibleCasting.ts); the other request kinds have none yet, and eshyra-4xx6 owns their integration.',
+        'Execute a typed bounded-procedure request against redacted pack record data, refusing (BoundedProcedureError) a request that fails validation or record data that lacks the procedure kind the request needs: a hazard save (initial or repeat), a weapon damage mode, selection and applicability of a feature option, creating a spell slot from or converting a slot into sorcery points, and the begin, per-spell, and recovery-day arithmetic of an adjudicated stress procedure, using caller-supplied roll results. Retained and staged: only the create-spell-slot and convert-spell-slot requests have a runtime consumer (state/flexibleCasting.ts); the other request kinds have none yet, and eshyra-4xx6 owns their integration.',
       requiredInputs: [
         'Record data carrying the typed procedure',
         'A validated request',
@@ -2257,7 +2262,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Persist the cross-campaign character registry in its own database: one head sheet per global character id, a linear append-only revision timeline, and the custody record. appendRevision numbers the next revision (head + 1, or 1 for a new id) and inserts it and updates the head row in one transaction, recording its source (register, sync-back, or fork) and, for a fork, the parent revision. registerNewCharacter appends a register revision; the CLI play flow registers each newly finalized character and each legacy JSON library character it migrates this way. save writes only the head row, without a revision; the standalone create-character command registers this way, and the first checkout then seeds revision 1 from that head. Every write and load re-checks the single-class boundary and the roll evidence, and a load refuses a row whose mirrored schema version, system, or pack id disagrees with its sheet. The custody table holds at most one row per character: setCustody inserts or replaces it, and clearCustody deletes it (a no-op when absent).',
+        'Persist the cross-campaign character registry in its own database: one head sheet per global character id, a linear append-only revision timeline, and the custody record. appendRevision numbers the next revision (head + 1, or 1 for a new id) and inserts it and updates the head row in one transaction, recording its source (register, sync-back, or fork) and, for a fork, the parent revision. registerNewCharacter appends a register revision; the CLI play flow registers each newly finalized character and each legacy JSON library character it migrates this way. save writes only the head row, without a revision; the standalone create-character command registers this way, and the first checkout then seeds revision 1 from that head. Every sheet write (head or revision) and every sheet load re-checks the single-class boundary and the roll evidence, and a load refuses a row whose mirrored schema version, system, or pack id disagrees with its sheet. The custody table holds at most one row per character: setCustody inserts or replaces it, and clearCustody deletes it (a no-op when absent).',
       requiredInputs: [
         'The registry database (schema created by ensureCharacterRegistrySchema)',
         'A non-blank global character id',
@@ -2488,7 +2493,7 @@ const TURNS_AND_SESSIONS: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Run one campaign turn inside a SQLite savepoint, so that any failure (a model or tool error, an exhausted tool-round budget, empty narration, an audit rejection after the allowed retries, a refused precedent) rolls back every write of the turn; only a failure diagnostic is written after the rollback. Before any context assembly or tool call it refuses a turn id that already has an accepted trace, requires a pending disputed replay to be resumed with its exact input and unchanged state, resolves the campaign position, and requires the acting character to be a player character. Every tool call is validated against that tool input schema before it runs (invalid_args), and an exception thrown by a tool becomes a tool_error result. Each candidate response runs in its own nested savepoint: with no auditor the first candidate is accepted; with an auditor a rejected candidate writes are rolled back before a retry (at most three candidates; after the first, a retry only when the verdict raises a new requirement), and a rejection the auditor marks as presentation-only (roll ledger), with no disallowed call, no missing tool other than roll, no failed tool call, and explicit presentation metadata on every roll call including a player-visible one, is accepted as a repair. Ambiguity precedents proposed by the accepted candidate (at most one per ambiguity) are recorded as rulings, and an existing prospective ruling refuses the turn. The accepted turn then summarizes any scenes it closed, appends the player input and the narration to the scene log (opening an untitled scene when none is open), records the validated turn trace with the accepted state delta, retains the replay snapshot, and commits.',
+        'Run one campaign turn inside an outer SQLite savepoint, with three distinct failure boundaries. (1) A failed tool call does not abort the turn: an unknown tool (unknown_tool), arguments that fail the tool input schema (invalid_args, checked before the tool runs), an unparseable tool request (parse_error, never executed), a refusal the tool returns, and an exception thrown inside a tool (caught by the registry as tool_error) are each recorded as a failed result and returned to the model, which continues the turn. Writes made by other successful calls stay in place, and the registry undoes nothing itself; whether a failing tool can leave writes of its own is stated on that tool entry. (2) Each candidate response runs in its own nested savepoint, and only the candidate decision rolls it back. With no auditor the first candidate is accepted whatever its failed calls. With an auditor, an accepted candidate is kept even when some of its calls failed, and a rejected candidate writes are rolled back to the nested savepoint before a retry or before the turn fails; at most three candidates run, and after the first a retry happens only when the verdict raises a requirement not seen before. A rejection the auditor marks as presentation-only (roll ledger) is accepted as a repair only when it has no disallowed call, no missing tool other than roll, no failed tool call, and explicit visibility and category on every successful roll-evidence call, at least one of them player-visible. (3) A failure that escapes the candidate loop aborts the turn: every write of the turn is rolled back to the outer savepoint and runTurn returns ok:false. Such failures are a model, provider, or auditor error, a tool-round budget exhausted without final narration, empty narration, an audit rejection with no retry left, a failure while recording an accepted precedent (including an existing prospective ruling), and any error thrown by the pre-turn checks, context assembly, or the commit steps. Before any context assembly or tool call it refuses a turn id that already has an accepted trace unless a pending dispute replay of exactly that input is being resumed (whose state must be unchanged), resolves the campaign position, and requires the acting character to be a player character. Ambiguity precedents staged by the accepted candidate are recorded as rulings (a second proposal for the same ambiguity within one candidate is a failed tool result). The accepted turn then summarizes any scenes it closed, appends the player input and the narration to the scene log (opening an untitled scene when none is open), records the validated turn trace with the accepted state delta, retains the replay snapshot, and releases the outer savepoint.',
       requiredInputs: [
         'The campaign database, model client, and tool registry',
         'campaignId, sessionId, turnId, playerInput, and at',
@@ -2496,9 +2501,11 @@ const TURNS_AND_SESSIONS: readonly DeterministicCapabilityInventoryEntry[] = [
         'An optional turn auditor and an optional tool-round budget (8 per candidate by default)',
       ],
       exclusions: [
-        'The audit verdict is a model judgment; the engine owns only the rollback, the retry bound, and the presentation-repair rule.',
-        'An accepted turn cannot be overwritten; a dispute goes through dispute-turn-v1.',
-        'Narration that is not a tool call changes no game state; the tools are the only writers of canon.',
+        'A failed tool result is not itself a turn failure or a candidate rejection: the engine rolls back a candidate only on an auditor rejection and the whole turn only on an escaping failure, so a successful write made before or after a failed call survives an accepted candidate.',
+        'The audit verdict is a model judgment; the engine owns only the savepoints, the retry bound, and the presentation-repair rule.',
+        'runTurn refuses to overwrite an accepted turn; a dispute goes through dispute-turn-v1.',
+        'The final narration is stored in the scene log and trace but not parsed into game state: state changes come from tool calls and from the engine bookkeeping listed above (campaign position, accepted precedents, scene summaries and scene log, turn trace, replay snapshot); the roll ledger appended to the narration is rendered from tool results and writes nothing.',
+        'The savepoints cover the campaign database only: after an abort a turn-failure diagnostic row is written to it best-effort, and the optional diagnostics and debug sinks are injected callbacks whose storage runTurn does not manage.',
       ],
       residualDmInterpretation: [
         'The DM model narrates and chooses the tool calls; the auditor model judges each candidate.',
@@ -2532,12 +2539,12 @@ const TURNS_AND_SESSIONS: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Replace any trailing model-written Rolls: block in a candidate narration with an engine-rendered Rolls: ledger built, in call order, only from successful player_visible results of roll, resolve_check, resolve_contest, roll_retained_check, resolve_retained_check, resolve_damage, and spend_rest_hit_die; the dice, kept and dropped dice, natural results, modifiers, totals, and outcomes come from the tool data.',
+        'Cut a candidate narration from the first "Rolls:" (in any case) that is followed by a line break to the end, then, when there is at least one entry, append an engine-rendered Rolls: ledger built, in call order, only from successful player_visible results of roll, resolve_check, resolve_contest, roll_retained_check, resolve_retained_check, resolve_damage, and spend_rest_hit_die; the dice, kept and dropped dice, natural results, modifiers, totals, and outcomes come from the tool data. It runs on every candidate before the audit.',
       requiredInputs: ['The candidate narration', 'The executed tool calls'],
       exclusions: [
         'dm_only results, results without a recognized visibility, and failed calls never appear.',
         'Does not decide visibility; the DM declares it on each roll (spend_rest_hit_die results are always player-visible).',
-        'Model prose and other tools are never read into the ledger.',
+        'Model prose and other tools are never read into the ledger; any model text after such a "Rolls:" is dropped, not preserved.',
       ],
       residualDmInterpretation: [
         'The DM decides which rolls the player sees and narrates around the ledger.',
@@ -2908,7 +2915,8 @@ const NOT_A_DETERMINISTIC_COMMITMENT: Readonly<Record<string, string>> = {
     'rule-bound capability contracts and their model-facing rule bindings (presentation); the operations are the entries that quote them',
   [core('rules/featureChoices.ts')]: PACK_DATA,
   [core('rules/fieldProvenance.ts')]: PACK_DATA,
-  [core('rules/findingRegistry.ts')]: AUDIT,
+  [core('rules/findingRegistry.ts')]:
+    'audit finding registry and its lookups; also read by rule-awareness presentation (ruleKnownLimits.ts), and writes no game state and makes no rules decision',
   [core('rules/inlineFeatureOptions.ts')]: PACK_DATA,
   [core('rules/jsonPointer.ts')]: PACK_DATA,
   [core('rules/kindSchemas.ts')]: PACK_DATA,
