@@ -1107,6 +1107,120 @@ function optLevelLifecycle(
   }
 }
 
+// Rest-reset vocabulary for `mechanics.resources` entries (eshyra-o9bd.19.3.2).
+// 'day' is a per-day use window whose named rest is only the occasion
+// (Wizard Arcane Recovery: "Once per day when you finish a short rest").
+const FEATURE_RESOURCE_RESETS: ReadonlySet<string> = new Set([
+  'short-rest',
+  'long-rest',
+  'short-or-long-rest',
+  'day',
+]);
+const FEATURE_RESOURCE_KEYS: ReadonlySet<string> = new Set([
+  'resource',
+  'uses',
+  'usesMinimum',
+  'usesByLevel',
+  'reset',
+  'appliesTo',
+]);
+// '<ability>-modifier' and '1-plus-<ability>-modifier' use counts.
+const FEATURE_RESOURCE_ABILITY_USES =
+  /^(?:1-plus-)?(?:strength|dexterity|constitution|intelligence|wisdom|charisma)-modifier$/;
+
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1;
+}
+
+// Fail-closed shape check for a feature/trait/background `mechanics.resources`
+// list. Every field is a source-governed reset or use count; anything else is
+// rejected rather than carried as an unchecked resource.
+function validateFeatureResources(resources: Obj[], path: string): void {
+  if (resources.length === 0) {
+    throw new RulesPackError(`${path} must not be empty when present`);
+  }
+  resources.forEach((entry, i) => {
+    const entryPath = `${path}[${i}]`;
+    for (const field of Object.keys(entry)) {
+      if (!FEATURE_RESOURCE_KEYS.has(field)) {
+        throw new RulesPackError(
+          `${entryPath}.${field} is not a resource field`,
+        );
+      }
+    }
+    const reset = reqStr(entry, 'reset', entryPath);
+    if (!FEATURE_RESOURCE_RESETS.has(reset)) {
+      throw new RulesPackError(
+        `${entryPath}.reset must be one of ${[...FEATURE_RESOURCE_RESETS].join(', ')}, got ${JSON.stringify(reset)}`,
+      );
+    }
+    if (entry.resource !== undefined && entry.resource !== 'spell-slots') {
+      throw new RulesPackError(
+        `${entryPath}.resource must be "spell-slots", got ${JSON.stringify(entry.resource)}`,
+      );
+    }
+    const uses = entry.uses;
+    if (uses !== undefined) {
+      const valid =
+        isPositiveInteger(uses) ||
+        (typeof uses === 'string' && FEATURE_RESOURCE_ABILITY_USES.test(uses));
+      if (!valid) {
+        throw new RulesPackError(
+          `${entryPath}.uses must be a positive integer or an ability-modifier string, got ${JSON.stringify(uses)}`,
+        );
+      }
+    }
+    if (entry.usesMinimum !== undefined) {
+      if (!isPositiveInteger(entry.usesMinimum)) {
+        throw new RulesPackError(
+          `${entryPath}.usesMinimum must be a positive integer`,
+        );
+      }
+      if (typeof uses !== 'string' || !uses.endsWith('-modifier')) {
+        throw new RulesPackError(
+          `${entryPath}.usesMinimum requires an ability-modifier uses value`,
+        );
+      }
+    }
+    const usesByLevel = objArray(entry, 'usesByLevel', entryPath);
+    if (usesByLevel !== undefined) {
+      if (uses !== undefined) {
+        throw new RulesPackError(
+          `${entryPath} must not carry both uses and usesByLevel`,
+        );
+      }
+      if (usesByLevel.length === 0) {
+        throw new RulesPackError(`${entryPath}.usesByLevel must not be empty`);
+      }
+      let previousLevel = 0;
+      usesByLevel.forEach((step, j) => {
+        const stepPath = `${entryPath}.usesByLevel[${j}]`;
+        if (!isPositiveInteger(step.level) || !isPositiveInteger(step.uses)) {
+          throw new RulesPackError(
+            `${stepPath} must carry positive integer level and uses`,
+          );
+        }
+        if (step.level <= previousLevel) {
+          throw new RulesPackError(
+            `${stepPath}.level must strictly increase across usesByLevel`,
+          );
+        }
+        previousLevel = step.level;
+      });
+    }
+    if (entry.appliesTo !== undefined) {
+      if (
+        typeof entry.appliesTo !== 'string' ||
+        !entry.appliesTo.startsWith('feature:')
+      ) {
+        throw new RulesPackError(
+          `${entryPath}.appliesTo must be a feature: ref, got ${JSON.stringify(entry.appliesTo)}`,
+        );
+      }
+    }
+  });
+}
+
 function optMechanics(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -1187,7 +1301,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       }
     });
   }
-  for (const arrayKey of ['attacks', 'saves', 'resources']) {
+  for (const arrayKey of ['attacks', 'saves']) {
     const entries = objArray(mechanics, arrayKey, `${path}.${key}`);
     if (entries === undefined) continue;
     if (entries.length === 0) {
@@ -1195,6 +1309,10 @@ function optMechanics(parent: Obj, key: string, path: string): void {
         `${path}.${key}.${arrayKey} must not be empty when present`,
       );
     }
+  }
+  const resources = objArray(mechanics, 'resources', `${path}.${key}`);
+  if (resources !== undefined) {
+    validateFeatureResources(resources, `${path}.${key}.resources`);
   }
   const effects = objArray(mechanics, 'effects', `${path}.${key}`);
   if (effects !== undefined) {

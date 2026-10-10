@@ -4808,6 +4808,12 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
     /\bDC (?:for this saving throw )?(?:equals|is) (\d+) \+ your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier( \+ your proficiency bonus)?/i.exec(
       text,
     );
+  // The printed "<Ki|Spell> save DC = 8 + your proficiency bonus + your
+  // <ability> modifier" form (eshyra-o9bd.19.3.2, F-12).
+  const printedDcFormula =
+    /\bDC = (\d+) \+ your proficiency bonus \+ your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier\b/i.exec(
+      text,
+    );
   if (dcFormula !== null) {
     effects.push(
       compact({
@@ -4817,6 +4823,13 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
         addProficiencyBonus: dcFormula[3] === undefined ? undefined : true,
       }),
     );
+  } else if (printedDcFormula !== null) {
+    effects.push({
+      kind: 'saveDcFormula',
+      base: Number(printedDcFormula[1]),
+      ability: printedDcFormula[2].toLowerCase(),
+      addProficiencyBonus: true,
+    });
   }
   const extraDamage =
     /\b(?:deals?|takes) an extra (\d+d\d+) (?:([a-z]+) )?damage\b/i.exec(text);
@@ -5351,18 +5364,268 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
   return effects;
 }
 
+/**
+ * Feature rest resources (eshyra-o9bd.19.3.2). A `resources` entry is emitted
+ * ONLY when a governing source relation (one of the sentence patterns below)
+ * names the rest that resets the feature's uses or pool. A rest that appears
+ * only as an occasion or trigger ("during a short rest", "at the end of a long
+ * rest", "when you finish a short rest, the DC resets to 10") matches no
+ * relation and yields no resource. The reset is taken from the matched rest,
+ * never from the mere presence of a rest phrase elsewhere in the text.
+ */
+const ARTICLE_REST = '(?:a|an) (short or long|short|long) rests?\\b';
+const REGAIN_SUBJECT = '(?:(?:any|all)(?: of)?(?: your)? |your |the )?';
+const ABILITY_PATTERN =
+  '(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)';
+const RESET_BY_REST_WORD: Readonly<Record<string, string>> = {
+  'short or long': 'short-or-long-rest',
+  short: 'short-rest',
+  long: 'long-rest',
+};
+const COUNT_WORDS: Readonly<Record<string, number>> = {
+  once: 1,
+  twice: 2,
+  'three times': 3,
+};
+
+type GoverningResourceRelation = {
+  // slots: caster spell-slot restoration (resource 'spell-slots').
+  // limit: a use barred until a rest ("you must finish a rest before...").
+  // regain: expended uses restored when a rest is finished.
+  // pool: a table-style pool replenished by a rest (no use count).
+  // day: a per-day use window; the rest named is only the occasion.
+  readonly kind: 'slots' | 'limit' | 'regain' | 'pool' | 'day';
+  readonly pattern: RegExp;
+};
+
+const GOVERNING_RESOURCE_RELATIONS: readonly GoverningResourceRelation[] = [
+  {
+    kind: 'slots',
+    pattern: new RegExp(
+      `\\byou regain all expended spell slots when you finish ${ARTICLE_REST}`,
+      'i',
+    ),
+  },
+  {
+    kind: 'limit',
+    pattern: new RegExp(
+      `\\byou (?:must|can't|cannot)\\b[^.]*?\\b(?:finish|complete)s? ${ARTICLE_REST}`,
+      'i',
+    ),
+  },
+  {
+    kind: 'limit',
+    pattern: new RegExp(
+      `\\byou can use (?:it|this feature|your [\\w ]+?) again after you (?:finish|complete)s? ${ARTICLE_REST}`,
+      'i',
+    ),
+  },
+  {
+    kind: 'regain',
+    pattern: new RegExp(
+      `\\byou regain ${REGAIN_SUBJECT}expended uses\\b[^.]*?\\bwhen(?:ever)? you finish ${ARTICLE_REST}`,
+      'i',
+    ),
+  },
+  {
+    kind: 'regain',
+    pattern: new RegExp(
+      `\\bwhen you finish ${ARTICLE_REST}, you regain ${REGAIN_SUBJECT}expended uses\\b`,
+      'i',
+    ),
+  },
+  {
+    kind: 'regain',
+    pattern: new RegExp(
+      `\\bregain the ability to do so when you finish ${ARTICLE_REST}`,
+      'i',
+    ),
+  },
+  {
+    kind: 'pool',
+    pattern: new RegExp(`\\bunavailable until you finish ${ARTICLE_REST}`, 'i'),
+  },
+  {
+    kind: 'pool',
+    pattern: new RegExp(`\\breplenishes when you take ${ARTICLE_REST}`, 'i'),
+  },
+  {
+    kind: 'day',
+    pattern: new RegExp(`\\bonce per day when you finish ${ARTICLE_REST}`, 'i'),
+  },
+];
+
+export type FeatureResourceContext = {
+  // The feature's own level; anchors the base count of a usesByLevel table.
+  readonly level?: number;
+  // Resolves a feature name printed in the text (for example "Bardic
+  // Inspiration") to its `feature:` record key. Absent: no appliesTo.
+  readonly resolveFeatureKey?: (featureName: string) => string;
+};
+
+type ResourceMatch = {
+  resource?: 'spell-slots';
+  reset: string;
+  usesOne: boolean;
+  expendedOf?: string;
+};
+
+function expendedFeatureName(sentence: string): string | undefined {
+  return /expended uses of ((?:[A-Z][A-Za-z']*)(?: [A-Z][A-Za-z']*)*)/.exec(
+    sentence,
+  )?.[1];
+}
+
+// Scaling sentences of the form "Starting at 17th level, you can use it twice
+// before a rest", "twice between long rests starting at 13th level", and
+// "beginning at 6th level, you can use ... twice between rests".
+function scalingUsesByLevel(
+  text: string,
+): Array<{ level: number; uses: number }> {
+  const found: Array<{ level: number; uses: number }> = [];
+  for (const m of text.matchAll(
+    /\bstarting at (\d+)(?:st|nd|rd|th) level, you can use (?:it|this feature|your [\w ]+?) (once|twice|three times) before a rest\b/gi,
+  )) {
+    found.push({ level: Number(m[1]), uses: COUNT_WORDS[m[2].toLowerCase()] });
+  }
+  for (const m of text.matchAll(
+    /\b(once|twice|three times) between (?:long )?rests starting at (\d+)(?:st|nd|rd|th) level\b/gi,
+  )) {
+    found.push({ level: Number(m[2]), uses: COUNT_WORDS[m[1].toLowerCase()] });
+  }
+  for (const m of text.matchAll(
+    /\bbeginning at (\d+)(?:st|nd|rd|th) level, you can use [^.]*?\b(once|twice|three times) between rests\b/gi,
+  )) {
+    found.push({ level: Number(m[1]), uses: COUNT_WORDS[m[2].toLowerCase()] });
+  }
+  return found;
+}
+
+function deriveFeatureResources(
+  text: string,
+  context: FeatureResourceContext,
+): Record<string, unknown>[] | undefined {
+  const matches: ResourceMatch[] = [];
+  for (const sentence of text.replace(/’/g, "'").split(/(?<=[.!?])\s+/)) {
+    // An "Otherwise" sentence is the alternative branch of a conditional reset
+    // ("... you can't use this feature again for 7 days. Otherwise, ... after
+    // you finish a long rest"). The reset is not flat, so it is not projected.
+    if (/^otherwise\b/i.test(sentence)) continue;
+    for (const relation of GOVERNING_RESOURCE_RELATIONS) {
+      const m = relation.pattern.exec(sentence);
+      if (m === null) continue;
+      matches.push({
+        ...(relation.kind === 'slots'
+          ? { resource: 'spell-slots' as const }
+          : {}),
+        reset:
+          relation.kind === 'day'
+            ? 'day'
+            : RESET_BY_REST_WORD[m[1].toLowerCase()],
+        usesOne:
+          relation.kind === 'day' ||
+          (relation.kind === 'limit' && /\b(?:use|do so)\b/i.test(sentence)),
+        ...(relation.kind === 'regain'
+          ? { expendedOf: expendedFeatureName(sentence) }
+          : {}),
+      });
+      break;
+    }
+  }
+  if (matches.length === 0) return undefined;
+
+  const entries: ResourceMatch[] = [];
+  for (const match of matches) {
+    const existing = entries.find(
+      (entry) =>
+        (entry.resource ?? 'uses') === (match.resource ?? 'uses') &&
+        entry.reset === match.reset,
+    );
+    if (existing === undefined) {
+      entries.push({ ...match });
+    } else {
+      existing.usesOne ||= match.usesOne;
+      existing.expendedOf ??= match.expendedOf;
+    }
+  }
+
+  // Use counts belong to the use-tracking entry (no `resource`), and only when
+  // a governing sentence exists; a table pool (rage, ki) carries no count.
+  const usesEntry = entries.find((entry) => entry.resource === undefined);
+  // "you can use this feature twice between long rests starting at 13th level"
+  // is a scaling clause, not the base count (Indomitable), so it is excluded.
+  const countWord =
+    /\byou can use this feature (once|twice|three times)\b(?! (?:between|before) )/i.exec(
+      text,
+    );
+  const perAbility = new RegExp(
+    `\\ba number of times equal to your ${ABILITY_PATTERN} modifier\\b`,
+    'i',
+  ).exec(text);
+  const plusAbility = new RegExp(
+    `\\bequal to 1 \\+ your ${ABILITY_PATTERN} modifier\\b`,
+    'i',
+  ).exec(text);
+  const minimumOnce = /\(a minimum of once\)/i.test(text);
+  const scaling = scalingUsesByLevel(text);
+  const baseCount: number | string | undefined =
+    countWord !== null
+      ? COUNT_WORDS[countWord[1].toLowerCase()]
+      : perAbility !== null
+        ? `${perAbility[1].toLowerCase()}-modifier`
+        : plusAbility !== null
+          ? `1-plus-${plusAbility[1].toLowerCase()}-modifier`
+          : usesEntry?.usesOne === true
+            ? 1
+            : undefined;
+
+  const resources = entries.map((entry) => {
+    const appliesTo =
+      entry.expendedOf !== undefined && context.resolveFeatureKey !== undefined
+        ? context.resolveFeatureKey(entry.expendedOf)
+        : undefined;
+    if (entry !== usesEntry) {
+      return compact({
+        ...(entry.resource === undefined ? {} : { resource: entry.resource }),
+        reset: entry.reset,
+        appliesTo,
+      });
+    }
+    if (scaling.length > 0) {
+      if (context.level === undefined || typeof baseCount !== 'number') {
+        throw new Error(
+          'feature use scaling requires a feature level and a numeric base count',
+        );
+      }
+      const usesByLevel = [
+        { level: context.level, uses: baseCount },
+        ...scaling,
+      ];
+      usesByLevel.forEach((step, i) => {
+        if (i > 0 && step.level <= usesByLevel[i - 1].level) {
+          throw new Error('feature usesByLevel levels must strictly increase');
+        }
+      });
+      return compact({ usesByLevel, reset: entry.reset, appliesTo });
+    }
+    return compact({
+      uses: baseCount,
+      usesMinimum:
+        perAbility !== null && minimumOnce && typeof baseCount === 'string'
+          ? 1
+          : undefined,
+      reset: entry.reset,
+      appliesTo,
+    });
+  });
+  return resources;
+}
+
 export function deriveFeatureMechanics(
   text: string,
   resolveSpellGrant?: SpellGrantResolver,
+  resourceContext: FeatureResourceContext = {},
 ): Mechanics {
-  const lower = text.toLowerCase();
-  const uses = /\byou can use this feature (once|twice|three times)\b/i.exec(
-    text,
-  );
-  const usesPerAbility =
-    /\ba number of times equal to your (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) modifier\b/i.exec(
-      text,
-    );
   const effects = [...parseFeatureEffects(text)];
   // A permanent always-on spell effect (Oath of Devotion's Purity of
   // Spirit) resolves fail-closed against the emitted spell set, like
@@ -5378,27 +5641,7 @@ export function deriveFeatureMechanics(
   const save = parseSaveWithSuccessBranch(text);
   return compact({
     saves: save === undefined ? undefined : [save],
-    resources: /\b(short or long rest|long rest|short rest)\b/i.test(text)
-      ? [
-          compact({
-            uses:
-              uses === null
-                ? usesPerAbility === null
-                  ? undefined
-                  : `${usesPerAbility[1].toLowerCase()}-modifier`
-                : uses[1] === 'once'
-                  ? 1
-                  : uses[1] === 'twice'
-                    ? 2
-                    : 3,
-            reset: lower.includes('short or long rest')
-              ? 'short-or-long-rest'
-              : lower.includes('short rest')
-                ? 'short-rest'
-                : 'long-rest',
-          }),
-        ]
-      : undefined,
+    resources: deriveFeatureResources(text, resourceContext),
     conditions: parseConditions(text),
     effects: effects.length > 0 ? [...effects] : undefined,
     spellGrants: deriveSpellGrants(text, resolveSpellGrant),
