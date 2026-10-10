@@ -120,6 +120,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'extradimensionalSpace',
   'passage',
   'recurringDamage',
+  'recurringHitPointLoss',
   'rejuvenation',
   'seeInMagicalDarkness',
   'spellReflection',
@@ -1310,6 +1311,24 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       );
     }
   }
+  objArray(mechanics, 'attacks', `${path}.${key}`)?.forEach((attack, i) => {
+    validateAttackAlternatives(attack, `${path}.${key}.attacks[${i}]`);
+  });
+  // Save-governed damage printed outside an alternative-bearing attack's Hit
+  // sentence (eshyra-o9bd.19.4.2.4): a dealt-damage list owned by its save.
+  objArray(mechanics, 'saves', `${path}.${key}`)?.forEach((save, i) => {
+    const damageOnFailure = objArray(
+      save,
+      'damageOnFailure',
+      `${path}.${key}.saves[${i}]`,
+    );
+    damageOnFailure?.forEach((entry, j) => {
+      validateDamageEntry(
+        entry,
+        `${path}.${key}.saves[${i}].damageOnFailure[${j}]`,
+      );
+    });
+  });
   const resources = objArray(mechanics, 'resources', `${path}.${key}`);
   if (resources !== undefined) {
     validateFeatureResources(resources, `${path}.${key}.resources`);
@@ -1392,21 +1411,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       );
     }
     entries.forEach((entry, i) => {
-      const entryPath = `${path}.${key}.${damageKey}[${i}]`;
-      // A damage entry carries a dice expression, or — for the SRD's flat
-      // no-dice prints ("Hit: 1 piercing damage.", the Bat's Bite;
-      // eshyra-o9bd.18.7.3) — a fixed integer `amount`.
-      if (entry.dice === undefined) {
-        reqInt(entry, 'amount', entryPath, 0);
-      } else {
-        reqStr(entry, 'dice', entryPath);
-      }
-      const type = reqStr(entry, 'type', entryPath);
-      if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
-        throw new RulesPackError(
-          `${entryPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
-        );
-      }
+      validateDamageEntry(entry, `${path}.${key}.${damageKey}[${i}]`);
     });
   }
   // A weapon-damage-die MODIFIER (Enlarge/Reduce), not damage dealt directly.
@@ -3372,6 +3377,15 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqInt(effect, 'maxDepthFeet', path, 1);
     reqEnum(effect, 'onEnd', path, new Set(['safe-ejection']));
   },
+  // Infernal wound (fable:F3): the target loses N hit points at the start of
+  // each of its turns. Hit-point loss, not damage, so it carries no damage
+  // type and resistances do not apply.
+  recurringHitPointLoss: (effect, path) => {
+    reqDice(effect, 'dice', path);
+    optInt(effect, 'average', path, 1);
+    reqStr(effect, 'trigger', path);
+    optStr(effect, 'endsWhen', path);
+  },
   recurringDamage: (effect, path) => {
     if ((effect.amount === undefined) === (effect.dice === undefined)) {
       throw new RulesPackError(
@@ -4216,6 +4230,9 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   extraDamage: (effect, path) => {
     reqDice(effect, 'dice', path);
     optStr(effect, 'trigger', path);
+    // Printed rider average and frequency (fable:F3); each only when printed.
+    optInt(effect, 'average', path, 1);
+    optEnum(effect, 'frequency', path, new Set(['once-per-turn']));
     if (effect.type !== undefined) {
       const type = reqStr(effect, 'type', path);
       if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
@@ -4317,6 +4334,56 @@ function validateEffectChoiceGroups(
       );
     }
   }
+}
+
+/**
+ * One dealt-damage entry (`damage`, `hitDamage`, or an alternative's
+ * `hitDamage`). A damage entry carries a dice expression, or — for the SRD's
+ * flat no-dice prints ("Hit: 1 piercing damage.", the Bat's Bite;
+ * eshyra-o9bd.18.7.3) — a fixed integer `amount`.
+ */
+function validateDamageEntry(entry: Obj, entryPath: string): void {
+  if (entry.dice === undefined) {
+    reqInt(entry, 'amount', entryPath, 0);
+  } else {
+    reqStr(entry, 'dice', entryPath);
+  }
+  const type = reqStr(entry, 'type', entryPath);
+  if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+    throw new RulesPackError(
+      `${entryPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+    );
+  }
+}
+
+/**
+ * Mutually exclusive attack modes (eshyra-o9bd.19.4.2). Each alternative
+ * names its printed condition verbatim (non-empty), its complete damage list
+ * for that mode, and an optional mode-specific integer attack bonus. Fail
+ * closed: a malformed alternative throws rather than projecting a partial mode.
+ */
+function validateAttackAlternatives(attack: Obj, attackPath: string): void {
+  const alternatives = objArray(attack, 'alternatives', attackPath);
+  if (alternatives === undefined) return;
+  if (alternatives.length === 0) {
+    throw new RulesPackError(
+      `${attackPath}.alternatives must not be empty when present`,
+    );
+  }
+  alternatives.forEach((alternative, i) => {
+    const altPath = `${attackPath}.alternatives[${i}]`;
+    reqStr(alternative, 'condition', altPath);
+    optInt(alternative, 'attackBonus', altPath);
+    const hitDamage = objArray(alternative, 'hitDamage', altPath);
+    if (hitDamage === undefined || hitDamage.length === 0) {
+      throw new RulesPackError(
+        `${altPath}.hitDamage must be a non-empty array`,
+      );
+    }
+    hitDamage.forEach((entry, j) => {
+      validateDamageEntry(entry, `${altPath}.hitDamage[${j}]`);
+    });
+  });
 }
 
 function validateMechanicsEffect(effect: Obj, path: string): void {
@@ -4922,10 +4989,29 @@ function validateDnd5eCreature(record: RulesRecord, path: string): void {
   optNamedEntryArray(data, 'traits', `${path}.data`);
   optNamedEntryArray(data, 'actions', `${path}.data`);
   optNamedEntryArray(data, 'reactions', `${path}.data`);
+  // Boxed "Variant: ..." sidebars (eshyra-70xr); a variant that prints an
+  // attack lead-in carries the same optional mechanics projection (eshyra-3qrt).
+  optNamedEntryArray(data, 'variants', `${path}.data`);
   const legendary = data.legendaryActions;
   if (legendary !== undefined) {
     const obj = reqObj(data, 'legendaryActions', `${path}.data`);
     optStr(obj, 'description', `${path}.data.legendaryActions`);
+    // Typed legendary economy (opus:F-26): the printed per-round budget and
+    // the timing/regain/one-at-a-time rules, each present only when printed.
+    optInt(obj, 'budget', `${path}.data.legendaryActions`, 1);
+    optEnum(
+      obj,
+      'timing',
+      `${path}.data.legendaryActions`,
+      new Set(['end-of-another-creatures-turn']),
+    );
+    optEnum(
+      obj,
+      'regain',
+      `${path}.data.legendaryActions`,
+      new Set(['start-of-own-turn']),
+    );
+    optBoolTrue(obj, 'oneAtATime', `${path}.data.legendaryActions`);
     optNamedEntryArray(obj, 'entries', `${path}.data.legendaryActions`);
     if (!Array.isArray(obj.entries)) {
       throw new RulesPackError(

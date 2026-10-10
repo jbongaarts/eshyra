@@ -1162,6 +1162,19 @@ export {
   RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID,
 } from './rules/bundledSrdPack.js';
 export type {
+  DeterministicCapabilityCategory,
+  DeterministicCapabilityInventoryEntry,
+  DeterministicCapabilitySurface,
+  MagicItemCapabilityBacklogSummary,
+  ModuleDisposition,
+} from './rules/deterministicCapabilityInventory.js';
+export {
+  DETERMINISTIC_CAPABILITY_INVENTORY,
+  MODULE_DISPOSITIONS,
+  NON_CAPABILITY_TOOLS,
+  summarizeMagicItemCapabilityBacklog,
+} from './rules/deterministicCapabilityInventory.js';
+export type {
   CapabilityLedgerLookup,
   DeterministicCapabilityLedger,
   RuleDeterministicCapabilityContract,

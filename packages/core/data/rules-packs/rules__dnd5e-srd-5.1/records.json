@@ -11145,6 +11145,10 @@
       ],
       "legendaryActions": {
         "description": "The aboleth can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The aboleth regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -11593,6 +11597,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -11895,6 +11903,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -12211,6 +12223,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -12583,6 +12599,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -12893,6 +12913,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -13265,6 +13289,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -13583,6 +13611,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -13885,6 +13917,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -14247,6 +14283,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -14569,6 +14609,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -14761,6 +14805,10 @@
                 "ability": "strength",
                 "dc": 13,
                 "damageOnSuccess": "half"
+              },
+              {
+                "ability": "dexterity",
+                "dc": 13
               }
             ],
             "damage": [
@@ -15045,6 +15093,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -15347,6 +15399,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -15710,6 +15766,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -16082,6 +16142,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -16439,6 +16503,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -16811,6 +16879,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -17129,6 +17201,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -17431,6 +17507,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -17793,6 +17873,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -18115,6 +18199,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -18501,6 +18589,10 @@
       ],
       "legendaryActions": {
         "description": "The sphinx can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The sphinx regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Claw Attack",
@@ -19349,6 +19441,15 @@
                 "condition": "incapacitated",
                 "relation": "advantage"
               }
+            ],
+            "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "4d6",
+                "average": 14,
+                "frequency": "once-per-turn",
+                "trigger": "Once per turn, the assassin deals an extra 14 (4d6) damage when it hits a target with a weapon attack and has advantage on the attack roll, or when the target is within 5 feet of an ally of the assassin that isn’t incapacitated and the assassin doesn’t have disadvantage on the attack roll"
+              }
             ]
           }
         }
@@ -19544,7 +19645,21 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 1,
                 "reachFeet": 5,
-                "target": "one target"
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 1,
+                    "dice": "1d4 - 1",
+                    "type": "slashing"
+                  }
+                ]
+              }
+            ],
+            "damage": [
+              {
+                "average": 1,
+                "dice": "1d4 - 1",
+                "type": "slashing"
               }
             ]
           }
@@ -19830,7 +19945,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "1d6",
+                "average": 3,
+                "type": "fire",
                 "trigger": "When the azer hits with a metal melee weapon"
               }
             ]
@@ -19869,14 +19987,26 @@
                     "type": "bludgeoning"
                   },
                   {
-                    "average": 8,
-                    "dice": "1d10 + 3",
-                    "type": "bludgeoning"
-                  },
-                  {
                     "average": 3,
                     "dice": "1d6",
                     "type": "fire"
+                  }
+                ],
+                "alternatives": [
+                  {
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 8,
+                        "dice": "1d10 + 3",
+                        "type": "bludgeoning"
+                      },
+                      {
+                        "average": 3,
+                        "dice": "1d6",
+                        "type": "fire"
+                      }
+                    ]
                   }
                 ]
               }
@@ -19885,11 +20015,6 @@
               {
                 "average": 7,
                 "dice": "1d8 + 3",
-                "type": "bludgeoning"
-              },
-              {
-                "average": 8,
-                "dice": "1d10 + 3",
                 "type": "bludgeoning"
               },
               {
@@ -19989,7 +20114,21 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 1,
                 "reachFeet": 5,
-                "target": "one target"
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 1,
+                    "dice": "1d4 - 1",
+                    "type": "piercing"
+                  }
+                ]
+              }
+            ],
+            "damage": [
+              {
+                "average": 1,
+                "dice": "1d4 - 1",
+                "type": "piercing"
               }
             ]
           }
@@ -20447,6 +20586,10 @@
               {
                 "attackType": "ranged-weapon",
                 "attackBonus": 3,
+                "rangeFeet": {
+                  "normal": 80,
+                  "long": 320
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -20825,6 +20968,9 @@
               {
                 "attackType": "ranged-spell",
                 "attackBonus": 5,
+                "rangeFeet": {
+                  "normal": 150
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -21281,6 +21427,15 @@
                 "average": 8,
                 "dice": "1d10 + 3",
                 "type": "slashing"
+              }
+            ],
+            "effects": [
+              {
+                "kind": "recurringHitPointLoss",
+                "dice": "1d10",
+                "average": 5,
+                "trigger": "start of each of its turns",
+                "endsWhen": "Any creature can take an action to stanch the wound with a successful DC 12 Wisdom (Medicine) check. The wound also closes if the target receives magical healing."
               }
             ]
           }
@@ -22553,7 +22708,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "1d6",
+                "average": 3,
+                "type": "slashing",
                 "trigger": "If the boar moves at least 20 feet straight toward a target and then hits it with a tusk attack on the same turn"
               }
             ]
@@ -23339,6 +23497,7 @@
               {
                 "kind": "extraDamage",
                 "dice": "2d6",
+                "average": 7,
                 "trigger": "If the bugbear surprises a creature and hits it with an attack during the first round of combat"
               }
             ]
@@ -23393,11 +23552,18 @@
                     "average": 9,
                     "dice": "2d6 + 2",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 5,
-                    "dice": "1d6 + 2",
-                    "type": "piercing"
+                    "condition": "at range",
+                    "hitDamage": [
+                      {
+                        "average": 5,
+                        "dice": "1d6 + 2",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -23406,11 +23572,6 @@
               {
                 "average": 9,
                 "dice": "2d6 + 2",
-                "type": "piercing"
-              },
-              {
-                "average": 5,
-                "dice": "1d6 + 2",
                 "type": "piercing"
               }
             ]
@@ -23814,7 +23975,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "3d6",
+                "average": 10,
+                "type": "piercing",
                 "trigger": "If the centaur moves at least 30 feet straight toward a target and then hits it with a pike attack on the same turn"
               }
             ]
@@ -27484,6 +27648,7 @@
               {
                 "kind": "extraDamage",
                 "dice": "3d6",
+                "average": 10,
                 "trigger": "If the doppelganger surprises a creature and hits it with an attack during the first round of combat"
               }
             ]
@@ -28265,11 +28430,18 @@
                     "average": 7,
                     "dice": "1d8 + 3",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 8,
-                    "dice": "1d10 + 3",
-                    "type": "slashing"
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 8,
+                        "dice": "1d10 + 3",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -28278,11 +28450,6 @@
               {
                 "average": 7,
                 "dice": "1d8 + 3",
-                "type": "slashing"
-              },
-              {
-                "average": 8,
-                "dice": "1d10 + 3",
                 "type": "slashing"
               }
             ]
@@ -28463,20 +28630,48 @@
           "name": "Quarterstaff",
           "text": "Melee Weapon Attack: +2 to hit (+4 to hit with shillelagh), reach 5 ft., one target. Hit: 3 (1d6) bludgeoning damage, 4 (1d8) bludgeoning damage if wielded with two hands, or 6 (1d8 + 2) bludgeoning damage with shillelagh.",
           "mechanics": {
+            "attacks": [
+              {
+                "attackType": "melee-weapon",
+                "attackBonus": 2,
+                "reachFeet": 5,
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 3,
+                    "dice": "1d6",
+                    "type": "bludgeoning"
+                  }
+                ],
+                "alternatives": [
+                  {
+                    "condition": "if wielded with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 4,
+                        "dice": "1d8",
+                        "type": "bludgeoning"
+                      }
+                    ]
+                  },
+                  {
+                    "condition": "with shillelagh",
+                    "hitDamage": [
+                      {
+                        "average": 6,
+                        "dice": "1d8 + 2",
+                        "type": "bludgeoning"
+                      }
+                    ],
+                    "attackBonus": 4
+                  }
+                ]
+              }
+            ],
             "damage": [
               {
                 "average": 3,
                 "dice": "1d6",
-                "type": "bludgeoning"
-              },
-              {
-                "average": 4,
-                "dice": "1d8",
-                "type": "bludgeoning"
-              },
-              {
-                "average": 6,
-                "dice": "1d8 + 2",
                 "type": "bludgeoning"
               }
             ]
@@ -28647,15 +28842,38 @@
           "name": "Club",
           "text": "Melee Weapon Attack: +2 to hit (+6 to hit with shillelagh), reach 5 ft., one target. Hit: 2 (1d4) bludgeoning damage, or 8 (1d8 + 4) bludgeoning damage with shillelagh.",
           "mechanics": {
+            "attacks": [
+              {
+                "attackType": "melee-weapon",
+                "attackBonus": 2,
+                "reachFeet": 5,
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 2,
+                    "dice": "1d4",
+                    "type": "bludgeoning"
+                  }
+                ],
+                "alternatives": [
+                  {
+                    "condition": "with shillelagh",
+                    "hitDamage": [
+                      {
+                        "average": 8,
+                        "dice": "1d8 + 4",
+                        "type": "bludgeoning"
+                      }
+                    ],
+                    "attackBonus": 6
+                  }
+                ]
+              }
+            ],
             "damage": [
               {
                 "average": 2,
                 "dice": "1d4",
-                "type": "bludgeoning"
-              },
-              {
-                "average": 8,
-                "dice": "1d8 + 4",
                 "type": "bludgeoning"
               }
             ]
@@ -28811,11 +29029,18 @@
                     "average": 6,
                     "dice": "1d8 + 2",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 11,
-                    "dice": "2d8 + 2",
-                    "type": "piercing"
+                    "condition": "while enlarged",
+                    "hitDamage": [
+                      {
+                        "average": 11,
+                        "dice": "2d8 + 2",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -28824,11 +29049,6 @@
               {
                 "average": 6,
                 "dice": "1d8 + 2",
-                "type": "piercing"
-              },
-              {
-                "average": 11,
-                "dice": "2d8 + 2",
                 "type": "piercing"
               }
             ]
@@ -28853,11 +29073,18 @@
                     "average": 5,
                     "dice": "1d6 + 2",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 9,
-                    "dice": "2d6 + 2",
-                    "type": "piercing"
+                    "condition": "while enlarged",
+                    "hitDamage": [
+                      {
+                        "average": 9,
+                        "dice": "2d6 + 2",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -28866,11 +29093,6 @@
               {
                 "average": 5,
                 "dice": "1d6 + 2",
-                "type": "piercing"
-              },
-              {
-                "average": 9,
-                "dice": "2d6 + 2",
                 "type": "piercing"
               }
             ]
@@ -29498,6 +29720,9 @@
               {
                 "attackType": "ranged-spell",
                 "attackBonus": 7,
+                "rangeFeet": {
+                  "normal": 120
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -29947,7 +30172,9 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
                 "trigger": "If the elk moves at least 20 feet straight toward a target and then hits it with a ram attack on the same turn"
               }
             ]
@@ -30098,6 +30325,13 @@
             "effects": [
               {
                 "kind": "weaponAttacksMagical"
+              },
+              {
+                "kind": "extraDamage",
+                "dice": "3d8",
+                "average": 13,
+                "type": "poison",
+                "trigger": "The erinyes’s weapon attacks are magical and deal an extra 13 (3d8) poison damage on a hit (included in the attacks)"
               }
             ]
           }
@@ -30146,14 +30380,26 @@
                     "type": "slashing"
                   },
                   {
-                    "average": 9,
-                    "dice": "1d10 + 4",
-                    "type": "slashing"
-                  },
-                  {
                     "average": 13,
                     "dice": "3d8",
                     "type": "poison"
+                  }
+                ],
+                "alternatives": [
+                  {
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 9,
+                        "dice": "1d10 + 4",
+                        "type": "slashing"
+                      },
+                      {
+                        "average": 13,
+                        "dice": "3d8",
+                        "type": "poison"
+                      }
+                    ]
                   }
                 ]
               }
@@ -30162,11 +30408,6 @@
               {
                 "average": 8,
                 "dice": "1d8 + 4",
-                "type": "slashing"
-              },
-              {
-                "average": 9,
-                "dice": "1d10 + 4",
                 "type": "slashing"
               },
               {
@@ -32955,7 +33196,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
+                "type": "slashing",
                 "trigger": "If the boar moves at least 20 feet straight toward a target and then hits it with a tusk attack on the same turn"
               }
             ]
@@ -33502,7 +33746,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 8,
                 "reachFeet": 10,
-                "target": "one target",
+                "target": "one target not grappled by the crocodile",
                 "hitDamage": [
                   {
                     "average": 14,
@@ -33773,7 +34017,9 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
                 "trigger": "If the elk moves at least 20 feet straight toward a target and then hits it with a ram attack on the same turn"
               }
             ]
@@ -33928,7 +34174,21 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 1,
                 "reachFeet": 5,
-                "target": "one target"
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 2,
+                    "dice": "1d6 - 1",
+                    "type": "slashing"
+                  }
+                ]
+              }
+            ],
+            "damage": [
+              {
+                "average": 2,
+                "dice": "1d6 - 1",
+                "type": "slashing"
               }
             ]
           }
@@ -34174,7 +34434,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d4",
+                "average": 5,
+                "type": "bludgeoning",
                 "trigger": "If the goat moves at least 20 feet straight toward a target and then hits it with a ram attack on the same turn"
               }
             ]
@@ -34924,7 +35187,37 @@
       "variants": [
         {
           "name": "Diseased Giant Rats",
-          "text": "Some giant rats carry vile diseases that they spread with their bites. A diseased giant rat has a challenge rating of 1/8 (25 XP) and the following action instead of its normal bite attack. Bite. Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 4 (1d4 + 2) piercing damage. If the target is a creature, it must succeed on a DC 10 Constitution saving throw or contract a disease. Until the disease is cured, the target can’t regain hit points except by magical means, and the target’s hit point maximum decreases by 3 (1d6) every 24 hours. If the target’s hit point maximum drops to 0 as a result of this disease, the target dies."
+          "text": "Some giant rats carry vile diseases that they spread with their bites. A diseased giant rat has a challenge rating of 1/8 (25 XP) and the following action instead of its normal bite attack. Bite. Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 4 (1d4 + 2) piercing damage. If the target is a creature, it must succeed on a DC 10 Constitution saving throw or contract a disease. Until the disease is cured, the target can’t regain hit points except by magical means, and the target’s hit point maximum decreases by 3 (1d6) every 24 hours. If the target’s hit point maximum drops to 0 as a result of this disease, the target dies.",
+          "mechanics": {
+            "attacks": [
+              {
+                "attackType": "melee-weapon",
+                "attackBonus": 4,
+                "reachFeet": 5,
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 4,
+                    "dice": "1d4 + 2",
+                    "type": "piercing"
+                  }
+                ]
+              }
+            ],
+            "saves": [
+              {
+                "ability": "constitution",
+                "dc": 10
+              }
+            ],
+            "damage": [
+              {
+                "average": 4,
+                "dice": "1d4 + 2",
+                "type": "piercing"
+              }
+            ]
+          }
         }
       ]
     },
@@ -35171,7 +35464,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
+                "type": "bludgeoning",
                 "trigger": "If the sea horse moves at least 20 feet straight toward a target and then hits it with a ram attack on the same turn"
               }
             ]
@@ -36738,11 +37034,18 @@
                     "average": 11,
                     "dice": "2d6 + 4",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 13,
-                    "dice": "2d8 + 4",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 13,
+                        "dice": "2d8 + 4",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -36751,11 +37054,6 @@
               {
                 "average": 11,
                 "dice": "2d6 + 4",
-                "type": "piercing"
-              },
-              {
-                "average": 13,
-                "dice": "2d8 + 4",
                 "type": "piercing"
               }
             ]
@@ -36945,11 +37243,18 @@
                     "average": 5,
                     "dice": "1d6 + 2",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 6,
-                    "dice": "1d8 + 2",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 6,
+                        "dice": "1d8 + 2",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -36958,11 +37263,6 @@
               {
                 "average": 5,
                 "dice": "1d6 + 2",
-                "type": "piercing"
-              },
-              {
-                "average": 6,
-                "dice": "1d8 + 2",
                 "type": "piercing"
               }
             ]
@@ -37286,7 +37586,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "1d4",
+                "average": 2,
+                "type": "bludgeoning",
                 "trigger": "If the goat moves at least 20 feet straight toward a target and then hits it with a ram attack on the same turn"
               }
             ]
@@ -38795,11 +39098,18 @@
                     "average": 4,
                     "dice": "1d6 + 1",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 5,
-                    "dice": "1d8 + 1",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 5,
+                        "dice": "1d8 + 1",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -38808,11 +39118,6 @@
               {
                 "average": 4,
                 "dice": "1d6 + 1",
-                "type": "piercing"
-              },
-              {
-                "average": 5,
-                "dice": "1d8 + 1",
                 "type": "piercing"
               }
             ]
@@ -39336,6 +39641,10 @@
       ],
       "legendaryActions": {
         "description": "The sphinx can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The sphinx regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Claw Attack",
@@ -39462,11 +39771,18 @@
                     "average": 7,
                     "dice": "1d8 + 3",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 8,
-                    "dice": "1d10 + 3",
-                    "type": "slashing"
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 8,
+                        "dice": "1d10 + 3",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -39475,11 +39791,6 @@
               {
                 "average": 7,
                 "dice": "1d8 + 3",
-                "type": "slashing"
-              },
-              {
-                "average": 8,
-                "dice": "1d10 + 3",
                 "type": "slashing"
               }
             ]
@@ -40526,6 +40837,15 @@
                 "condition": "incapacitated",
                 "relation": "mention"
               }
+            ],
+            "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
+                "frequency": "once-per-turn",
+                "trigger": "Once per turn, the hobgoblin can deal an extra 7 (2d6) damage to a creature it hits with a weapon attack if that creature is within 5 feet of an ally of the hobgoblin that isn’t incapacitated"
+              }
             ]
           }
         }
@@ -40546,11 +40866,18 @@
                     "average": 5,
                     "dice": "1d8 + 1",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 6,
-                    "dice": "1d10 + 1",
-                    "type": "slashing"
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 6,
+                        "dice": "1d10 + 1",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -40559,11 +40886,6 @@
               {
                 "average": 5,
                 "dice": "1d8 + 1",
-                "type": "slashing"
-              },
-              {
-                "average": 6,
-                "dice": "1d10 + 1",
                 "type": "slashing"
               }
             ]
@@ -40894,6 +41216,15 @@
                 "dice": "1d8 + 6",
                 "type": "piercing"
               }
+            ],
+            "effects": [
+              {
+                "kind": "recurringHitPointLoss",
+                "dice": "3d6",
+                "average": 10,
+                "trigger": "start of each of its turns",
+                "endsWhen": "Any creature can take an action to stanch the wound with a successful DC 12 Wisdom (Medicine) check. The wound also closes if the target receives magical healing."
+              }
             ]
           }
         },
@@ -40905,6 +41236,9 @@
               {
                 "attackType": "ranged-spell",
                 "attackBonus": 7,
+                "rangeFeet": {
+                  "normal": 150
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -41588,6 +41922,11 @@
             "saves": [
               {
                 "ability": "dexterity",
+                "dc": 17,
+                "damageOnSuccess": "half"
+              },
+              {
+                "ability": "constitution",
                 "dc": 17,
                 "damageOnSuccess": "half"
               }
@@ -43208,6 +43547,10 @@
       ],
       "legendaryActions": {
         "description": "The kraken can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The kraken regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Tentacle Attack or Fling",
@@ -43907,6 +44250,10 @@
       ],
       "legendaryActions": {
         "description": "The lich can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The lich regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Cantrip",
@@ -45981,11 +46328,18 @@
                     "average": 3,
                     "dice": "1d6",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 4,
-                    "dice": "1d8",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 4,
+                        "dice": "1d8",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -45994,11 +46348,6 @@
               {
                 "average": 3,
                 "dice": "1d6",
-                "type": "piercing"
-              },
-              {
-                "average": 4,
-                "dice": "1d8",
                 "type": "piercing"
               }
             ]
@@ -46479,7 +46828,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d8",
+                "average": 9,
+                "type": "piercing",
                 "trigger": "If the minotaur moves at least 10 feet straight toward a target and then hits it with a gore attack on the same turn"
               }
             ]
@@ -46671,7 +47023,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d8",
+                "average": 9,
+                "type": "piercing",
                 "trigger": "If the skeleton moves at least 10 feet straight toward a target and then hits it with a gore attack on the same turn"
               }
             ]
@@ -47284,6 +47639,10 @@
       ],
       "legendaryActions": {
         "description": "The mummy lord can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The mummy lord regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Attack",
@@ -48741,11 +49100,18 @@
                     "average": 15,
                     "dice": "2d10 + 4",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 9,
-                    "dice": "1d10 + 4",
-                    "type": "slashing"
+                    "condition": "in Small or Medium form",
+                    "hitDamage": [
+                      {
+                        "average": 9,
+                        "dice": "1d10 + 4",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -48754,11 +49120,6 @@
               {
                 "average": 15,
                 "dice": "2d10 + 4",
-                "type": "slashing"
-              },
-              {
-                "average": 9,
-                "dice": "1d10 + 4",
                 "type": "slashing"
               }
             ]
@@ -50920,6 +51281,15 @@
                 "dice": "3d6",
                 "type": "radiant"
               }
+            ],
+            "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "3d6",
+                "average": 10,
+                "type": "radiant",
+                "trigger": "As a bonus action, the priest can expend a spell slot to cause its melee weapon attacks to magically deal an extra 10 (3d6) radiant damage to a target on a hit"
+              }
             ]
           }
         },
@@ -51330,6 +51700,10 @@
               {
                 "ability": "dexterity",
                 "dc": 19
+              },
+              {
+                "ability": "constitution",
+                "dc": 21
               }
             ],
             "damage": [
@@ -52613,7 +52987,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d8",
+                "average": 9,
+                "type": "bludgeoning",
                 "trigger": "If the rhinoceros moves at least 20 feet straight toward a target and then hits it with a gore attack on the same turn"
               }
             ]
@@ -53726,11 +54103,18 @@
                     "average": 4,
                     "dice": "1d6 + 1",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 5,
-                    "dice": "1d8 + 1",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 5,
+                        "dice": "1d8 + 1",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -53739,11 +54123,6 @@
               {
                 "average": 4,
                 "dice": "1d6 + 1",
-                "type": "piercing"
-              },
-              {
-                "average": 5,
-                "dice": "1d8 + 1",
                 "type": "piercing"
               }
             ]
@@ -53834,6 +54213,15 @@
                 "dice": "1d6",
                 "type": "fire"
               }
+            ],
+            "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "1d6",
+                "average": 3,
+                "type": "fire",
+                "trigger": "Any metal melee weapon the salamander wields deals an extra 3 (1d6) fire damage on a hit (included in the attack)"
+              }
             ]
           }
         }
@@ -53870,6 +54258,10 @@
                 "attackType": "melee-or-ranged-weapon",
                 "attackBonus": 7,
                 "reachFeet": 5,
+                "rangeFeet": {
+                  "normal": 20,
+                  "long": 60
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -53878,14 +54270,26 @@
                     "type": "piercing"
                   },
                   {
-                    "average": 13,
-                    "dice": "2d8 + 4",
-                    "type": "piercing"
-                  },
-                  {
                     "average": 3,
                     "dice": "1d6",
                     "type": "fire"
+                  }
+                ],
+                "alternatives": [
+                  {
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 13,
+                        "dice": "2d8 + 4",
+                        "type": "piercing"
+                      },
+                      {
+                        "average": 3,
+                        "dice": "1d6",
+                        "type": "fire"
+                      }
+                    ]
                   }
                 ]
               }
@@ -53894,11 +54298,6 @@
               {
                 "average": 11,
                 "dice": "2d6 + 4",
-                "type": "piercing"
-              },
-              {
-                "average": 13,
-                "dice": "2d8 + 4",
                 "type": "piercing"
               },
               {
@@ -54342,6 +54741,10 @@
               {
                 "attackType": "ranged-weapon",
                 "attackBonus": 4,
+                "rangeFeet": {
+                  "normal": 150,
+                  "long": 600
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -55727,6 +56130,10 @@
       ],
       "legendaryActions": {
         "description": "The solar can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The solar regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Teleport",
@@ -56505,6 +56912,15 @@
               {
                 "condition": "incapacitated",
                 "relation": "advantage"
+              }
+            ],
+            "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
+                "frequency": "once-per-turn",
+                "trigger": "The spy deals an extra 7 (2d6) damage when it hits a target with a weapon attack and has advantage on the attack roll, or when the target is within 5 feet of an ally of the spy that isn’t incapacitated and the spy doesn’t have disadvantage on the attack roll"
               }
             ]
           }
@@ -57739,17 +58155,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 4,
                 "reachFeet": 0,
-                "target": "one creature",
+                "target": "one creature in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 5,
                     "dice": "2d4",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 2,
-                    "dice": "1d4",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 2,
+                        "dice": "1d4",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -57758,11 +58181,6 @@
               {
                 "average": 5,
                 "dice": "2d4",
-                "type": "piercing"
-              },
-              {
-                "average": 2,
-                "dice": "1d4",
                 "type": "piercing"
               }
             ]
@@ -57855,17 +58273,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 3,
                 "reachFeet": 0,
-                "target": "one target",
+                "target": "one target in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 10,
                     "dice": "4d4",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 5,
-                    "dice": "2d4",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 5,
+                        "dice": "2d4",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -57874,11 +58299,6 @@
               {
                 "average": 10,
                 "dice": "4d4",
-                "type": "piercing"
-              },
-              {
-                "average": 5,
-                "dice": "2d4",
                 "type": "piercing"
               }
             ]
@@ -57976,17 +58396,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 6,
                 "reachFeet": 0,
-                "target": "one creature",
+                "target": "one creature in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 7,
                     "dice": "2d6",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 3,
-                    "dice": "1d6",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 3,
+                        "dice": "1d6",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -57995,7 +58422,14 @@
               {
                 "ability": "constitution",
                 "dc": 10,
-                "damageOnSuccess": "half"
+                "damageOnSuccess": "half",
+                "damageOnFailure": [
+                  {
+                    "average": 14,
+                    "dice": "4d6",
+                    "type": "poison"
+                  }
+                ]
               }
             ],
             "damage": [
@@ -58003,16 +58437,6 @@
                 "average": 7,
                 "dice": "2d6",
                 "type": "piercing"
-              },
-              {
-                "average": 3,
-                "dice": "1d6",
-                "type": "piercing"
-              },
-              {
-                "average": 14,
-                "dice": "4d6",
-                "type": "poison"
               }
             ]
           }
@@ -58132,17 +58556,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 5,
                 "reachFeet": 0,
-                "target": "one creature",
+                "target": "one creature in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 14,
                     "dice": "4d6",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 7,
-                    "dice": "2d6",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 7,
+                        "dice": "2d6",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -58151,11 +58582,6 @@
               {
                 "average": 14,
                 "dice": "4d6",
-                "type": "piercing"
-              },
-              {
-                "average": 7,
-                "dice": "2d6",
                 "type": "piercing"
               }
             ]
@@ -58263,17 +58689,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 2,
                 "reachFeet": 0,
-                "target": "one target",
+                "target": "one target in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 7,
                     "dice": "2d6",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 3,
-                    "dice": "1d6",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 3,
+                        "dice": "1d6",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -58282,11 +58715,6 @@
               {
                 "average": 7,
                 "dice": "2d6",
-                "type": "piercing"
-              },
-              {
-                "average": 3,
-                "dice": "1d6",
                 "type": "piercing"
               }
             ]
@@ -58379,17 +58807,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 4,
                 "reachFeet": 5,
-                "target": "one target",
+                "target": "one target in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 7,
                     "dice": "2d6",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 3,
-                    "dice": "1d6",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 3,
+                        "dice": "1d6",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -58398,11 +58833,6 @@
               {
                 "average": 7,
                 "dice": "2d6",
-                "type": "piercing"
-              },
-              {
-                "average": 3,
-                "dice": "1d6",
                 "type": "piercing"
               }
             ]
@@ -58744,6 +59174,10 @@
       ],
       "legendaryActions": {
         "description": "The tarrasque can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The tarrasque regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Attack",
@@ -59372,11 +59806,18 @@
                     "average": 4,
                     "dice": "1d6 + 1",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 5,
-                    "dice": "1d8 + 1",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 5,
+                        "dice": "1d8 + 1",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -59385,11 +59826,6 @@
               {
                 "average": 4,
                 "dice": "1d6 + 1",
-                "type": "piercing"
-              },
-              {
-                "average": 5,
-                "dice": "1d8 + 1",
                 "type": "piercing"
               }
             ]
@@ -59957,7 +60393,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d8",
+                "average": 9,
+                "type": "piercing",
                 "trigger": "If the unicorn moves at least 20 feet straight toward a target and then hits it with a horn attack on the same turn"
               }
             ]
@@ -60139,6 +60578,10 @@
       ],
       "legendaryActions": {
         "description": "The unicorn can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The unicorn regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Hooves",
@@ -60437,7 +60880,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 9,
                 "reachFeet": 5,
-                "target": "one willing creature",
+                "target": "one willing creature, or a creature that is grappled by the vampire, incapacitated, or restrained",
                 "hitDamage": [
                   {
                     "average": 7,
@@ -60510,6 +60953,10 @@
       ],
       "legendaryActions": {
         "description": "The vampire can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The vampire regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Move",
@@ -60750,7 +61197,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 6,
                 "reachFeet": 5,
-                "target": "one willing creature",
+                "target": "one willing creature, or a creature that is grappled by the vampire, incapacitated, or restrained",
                 "hitDamage": [
                   {
                     "average": 6,
@@ -60881,11 +61328,18 @@
                     "average": 7,
                     "dice": "1d8 + 3",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 8,
-                    "dice": "1d10 + 3",
-                    "type": "slashing"
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 8,
+                        "dice": "1d10 + 3",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -60894,11 +61348,6 @@
               {
                 "average": 7,
                 "dice": "1d8 + 3",
-                "type": "slashing"
-              },
-              {
-                "average": 8,
-                "dice": "1d10 + 3",
                 "type": "slashing"
               }
             ]
@@ -62323,7 +62772,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
+                "type": "slashing",
                 "trigger": "If the wereboar moves at least 15 feet straight toward a target and then hits it with its tusks on the same turn"
               }
             ]
@@ -63191,11 +63643,18 @@
                     "average": 5,
                     "dice": "1d6 + 2",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 6,
-                    "dice": "1d8 + 2",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 6,
+                        "dice": "1d8 + 2",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -63204,11 +63663,6 @@
               {
                 "average": 5,
                 "dice": "1d6 + 2",
-                "type": "piercing"
-              },
-              {
-                "average": 6,
-                "dice": "1d8 + 2",
                 "type": "piercing"
               }
             ]
@@ -63496,11 +63950,18 @@
                     "average": 6,
                     "dice": "1d8 + 2",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 7,
-                    "dice": "1d10 + 2",
-                    "type": "slashing"
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 7,
+                        "dice": "1d10 + 2",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -63509,11 +63970,6 @@
               {
                 "average": 6,
                 "dice": "1d8 + 2",
-                "type": "slashing"
-              },
-              {
-                "average": 7,
-                "dice": "1d10 + 2",
                 "type": "slashing"
               }
             ]

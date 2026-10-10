@@ -768,6 +768,7 @@ describe('creatureExtractionsToRecords — keyed defensive / sense fields', () =
     ]);
     expect(data.legendaryActions).toEqual({
       description: 'It can take 3 legendary actions.',
+      budget: 3,
       entries: [{ name: 'Detect', text: 'It makes a Wisdom check.' }],
     });
     // Narrative sections follow the keyed fields in print order.

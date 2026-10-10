@@ -21,6 +21,7 @@ import {
   createSeededRng,
   formatTurnBudget,
   getActiveCharacterId,
+  getBundledDnd5eSrdPack,
   mutateState,
   readCombatTurnState,
   renderContextMessage,
@@ -2162,6 +2163,42 @@ describe('legendary actions (F5, eshyra-2n1t.7)', () => {
       /not a legendary option/,
     );
     expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
+  it('refuses legendary spends when the record block has no typed budget (fail closed, eshyra-o9bd.19.4.3 A1)', () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+    // The bundled dragon with its typed budget removed: the prose sentence is
+    // still present, but it is no longer the source of the allowance.
+    const bundled = getBundledDnd5eSrdPack();
+    const untyped = {
+      ...bundled,
+      records: bundled.records.map((record) => {
+        if (record.key !== 'creature:adult-red-dragon') return record;
+        const data = record.data as Record<string, unknown>;
+        const legendary = Object.fromEntries(
+          Object.entries(data.legendaryActions as object).filter(
+            ([key]) => key !== 'budget',
+          ),
+        );
+        return { ...record, data: { ...data, legendaryActions: legendary } };
+      }),
+    };
+    expect(() =>
+      spendTurnResource(db, {
+        campaignId: CAMPAIGN,
+        participant: participant(DRAGON),
+        resource: 'legendary_action',
+        activity: 'tail swipe',
+        legendaryActionName: 'Tail Attack',
+        ...CTX,
+        resolveRulesPack: () => untyped as never,
+      }),
+    ).toThrow(/no typed budget/);
   });
 
   it('rejects legendary spends by creatures without legendary actions', () => {

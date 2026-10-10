@@ -459,6 +459,30 @@
     },
     {
       "kind": "creature",
+      "pointerPrefix": "/legendaryActions/budget",
+      "class": "source-derived",
+      "reason": "the legendary-action count, read from the printed 'can take N legendary actions' sentence of the intro paragraph."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/legendaryActions/timing",
+      "class": "source-derived",
+      "reason": "the printed 'only at the end of another creature's turn' timing sentence, when present."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/legendaryActions/regain",
+      "class": "source-derived",
+      "reason": "the printed 'regains spent legendary actions at the start of its turn' sentence, when present."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/legendaryActions/oneAtATime",
+      "class": "source-derived",
+      "reason": "the printed 'Only one legendary action option can be used at a time' sentence, when present."
+    },
+    {
+      "kind": "creature",
       "pointerPrefix": "/alignment",
       "class": "source-derived",
       "reason": "the creature's alignment, parsed from the stat-block header line."
