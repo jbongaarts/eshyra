@@ -22,22 +22,29 @@ export type RuleDeterministicCapabilityContract =
 export const RULE_DETERMINISTIC_CAPABILITY_CONTRACTS: Readonly<
   Record<string, RuleDeterministicCapabilityContract>
 > = Object.freeze({
-  'resolve-check-v1': {
-    revision: 'resolve-check-v1',
+  'resolve-check-v2': {
+    revision: 'resolve-check-v2',
     operationId: 'resolve_check',
     inputSchemaOperation: 'resolve_check',
     operation:
-      'Resolve one declared ability check, saving throw, or attack roll using seeded d20 arithmetic.',
+      'Resolve one ability check, saving throw, or attack roll using seeded d20 arithmetic. For an ability check or saving throw by a character with a stored sheet, when skill or ability is supplied, derive the governing ability modifier and the proficiency, expertise, half-proficiency feature, or saving-throw proficiency term from that sheet, and refuse a caller-declared proficiency or a modifier whose source names the governing ability as a double count.',
     requiredInputs: ['kind', 'reason'],
     exclusions: [
-      'Does not decide which modifiers apply or set the DC/AC.',
+      'Derives nothing unless skill or ability is supplied, and never for attack rolls, monsters or combatants, or an actor without a stored character sheet; the caller declares those modifiers and proficiency.',
+      'Does not derive bonuses beyond the ability modifier and the sheet proficiency, expertise, half-proficiency feature, and saving-throw proficiency terms, and does not set the DC/AC.',
       'Does not adjudicate source semantics outside the declared d20 roll.',
     ],
     residualDmInterpretation: [
-      'The DM selects applicable modifiers, advantage, and the target DC or AC.',
+      'The DM selects situational modifiers and advantage, the target DC or AC, and the modifiers and proficiency for attack rolls and actors without a sheet.',
     ],
-    runtimeOwner: ['packages/core/src/orchestrator/toolResolveCheck.ts'],
-    evidence: ['packages/core/test/resolutionTools.test.ts'],
+    runtimeOwner: [
+      'packages/core/src/orchestrator/toolResolveCheck.ts',
+      'packages/core/src/character/skillBonuses.ts',
+    ],
+    evidence: [
+      'packages/core/test/resolutionTools.test.ts',
+      'packages/core/test/resolveCheckSheetDerivation.test.ts',
+    ],
   },
   'resolve-concentration-v1': {
     revision: 'resolve-concentration-v1',
@@ -88,15 +95,15 @@ export const RULE_DETERMINISTIC_CAPABILITY_CONTRACTS: Readonly<
 });
 
 export const RULE_DETERMINISTIC_CAPABILITY_BINDINGS = Object.freeze([
-  { ruleKey: 'rule:ability-checks', capability: 'resolve-check-v1' },
+  { ruleKey: 'rule:ability-checks', capability: 'resolve-check-v2' },
   {
     ruleKey: 'rule:advantage-and-disadvantage',
-    capability: 'resolve-check-v1',
+    capability: 'resolve-check-v2',
   },
-  { ruleKey: 'rule:attack-rolls', capability: 'resolve-check-v1' },
-  { ruleKey: 'rule:modifiers-to-the-roll', capability: 'resolve-check-v1' },
-  { ruleKey: 'rule:proficiency-bonus', capability: 'resolve-check-v1' },
-  { ruleKey: 'rule:saving-throws', capability: 'resolve-check-v1' },
+  { ruleKey: 'rule:attack-rolls', capability: 'resolve-check-v2' },
+  { ruleKey: 'rule:modifiers-to-the-roll', capability: 'resolve-check-v2' },
+  { ruleKey: 'rule:proficiency-bonus', capability: 'resolve-check-v2' },
+  { ruleKey: 'rule:saving-throws', capability: 'resolve-check-v2' },
   { ruleKey: 'rule:concentration', capability: 'resolve-concentration-v1' },
   {
     ruleKey: 'rule:casting-a-spell-at-a-higher-level',
