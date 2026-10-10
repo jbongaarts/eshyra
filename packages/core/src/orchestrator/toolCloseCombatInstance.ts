@@ -3,6 +3,7 @@ import {
   closeCombatInstance,
   EncounterCombatantError,
 } from '../state/encounterCombatants.js';
+import { effectToolError } from './toolEffectShared.js';
 import type { Tool } from './toolRegistry.js';
 import { asRecord, err, ok } from './toolRegistry.js';
 
@@ -21,7 +22,9 @@ export const closeCombatInstanceTool: Tool = {
     'Atomically applies the F3 effect boundary: concentration owned by ' +
     'combatants of this instance breaks (owner-removed), effect targets/' +
     'condition projections on them are removed (combat-ended), and owned ' +
-    'summon links are released. Character-owned effects survive. args: ' +
+    'summon links are released, except that links to durable (campaign-' +
+    'persistent) actors are rebound to that actor rather than released. ' +
+    'Character-owned effects survive. args: ' +
     '{ status: "completed"|"abandoned"|"fled"|"interrupted", ' +
     'combatInstanceId?: string }.',
   inputSchema: {
@@ -84,7 +87,7 @@ export const closeCombatInstanceTool: Tool = {
       if (e instanceof EncounterCombatantError) {
         return err('combatant_error', e.message);
       }
-      throw e;
+      return effectToolError(e);
     }
   },
 };

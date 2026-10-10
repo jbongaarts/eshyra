@@ -27,6 +27,7 @@ import {
   registerNewCharacter,
   releaseCharacterFromCampaign,
   syncBackCharacterFromCampaign,
+  writeCampaignRulesBinding,
 } from '../src/internal.js';
 
 function makeSheet(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
@@ -969,5 +970,89 @@ describe('forkCharacterTimeline', () => {
         newGlobalCharacterId: 'ghost-alt',
       }),
     ).toThrow(CharacterCustodyError);
+  });
+});
+
+describe('custody repairs (eshyra-o9bd.19.5.15.1)', () => {
+  let registry: CharacterRegistryStore;
+  let campaign: Db;
+
+  beforeEach(() => {
+    registry = freshRegistry().registry;
+    campaign = freshCampaign();
+  });
+
+  it('refuses to register an id that already has a timeline', () => {
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet({ level: 1 }),
+    });
+    registry.appendRevision('mira', makeSheet({ level: 4 }), 'sync-back');
+    expect(() =>
+      registerNewCharacter(registry, {
+        globalCharacterId: 'mira',
+        sheet: makeSheet({ level: 1 }),
+      }),
+    ).toThrow(CharacterCustodyError);
+    expect(registry.headRevision('mira')).toBe(2);
+    expect(registry.load('mira')?.level).toBe(4);
+  });
+
+  it('refuses to fork onto a legacy head-only id', () => {
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet(),
+    });
+    registry.save('legacy', makeSheet({ identity: { name: 'Legacy' } }));
+    expect(() =>
+      forkCharacterTimeline(registry, {
+        sourceGlobalCharacterId: 'mira',
+        newGlobalCharacterId: 'legacy',
+      }),
+    ).toThrow(CharacterCustodyError);
+    expect(registry.load('legacy')?.identity.name).toBe('Legacy');
+  });
+
+  it('does not record custody when the live-row import fails', () => {
+    writeCampaignRulesBinding(campaign, {
+      base: { systemId: 'pathfinder2e', packId: 'pf-pack', version: '1' },
+      addons: [],
+      resolvedAt: '2026-01-01T00:00:00.000Z',
+    });
+    registry.save(
+      'pf',
+      makeSheet({ system: 'pathfinder2e', rulesPackId: 'pf-pack' } as never),
+    );
+    const result = checkoutCharacterIntoCampaign(registry, campaign, {
+      globalCharacterId: 'pf',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 's',
+      at: 'a1',
+    });
+    expect(result.attach.ok).toBe(false);
+    expect(registry.custody('pf')).toBeUndefined();
+  });
+
+  it('re-checkout into the same slot never overwrites unsynced campaign progress', () => {
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet({ level: 1 }),
+    });
+    const input = {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 's',
+      at: 'a1',
+    };
+    checkoutCharacterIntoCampaign(registry, campaign, input);
+    const store = createSqliteCharacterSheetStore(campaign);
+    const played = store.load('pc-1') as CharacterSheet;
+    store.save('pc-1', { ...played, level: 3 });
+    expect(() =>
+      checkoutCharacterIntoCampaign(registry, campaign, input),
+    ).toThrow(CharacterCustodyError);
+    expect(store.load('pc-1')?.level).toBe(3);
   });
 });
