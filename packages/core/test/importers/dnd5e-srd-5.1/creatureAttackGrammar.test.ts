@@ -287,20 +287,31 @@ describe('creature attack grammar over the committed pack', () => {
   });
 
   it('projects the whole printed target phrase, through the sentence boundary', () => {
-    // Independent extraction: the phrase starts at a word quantifier (a digit
-    // is a range, never a quantifier) and runs to the sentence before "Hit:".
-    const quantified =
-      /\b((?:one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:target|creature|willing)[\s\S]*?)\.\s*Hit:/i;
+    // Independent extraction over EVERY attack lead-in: the target phrase is
+    // everything after the LAST reach/range "ft." (the source sometimes omits
+    // the following comma, e.g. aboleth Tail "reach 10 ft. one target") up to the
+    // sentence before "Hit:" (it may carry pre-noun qualifiers such as "one
+    // Large or smaller creature" / "one prone creature", post-noun qualifiers
+    // such as "in the swarm's space", and internal commas such as the vampire's
+    // eligible-target list). A lead-in whose target cannot be extracted fails
+    // instead of shrinking the checked population.
+    const leadIn =
+      /\b(?:Melee|Ranged|Melee or Ranged) (?:Weapon|Spell) Attack:/;
+    const target = /^[\s\S]*\bft\.,?\s+([\s\S]*?)\.\s*Hit:/;
     let checked = 0;
     for (const record of records.filter((r) => r.kind === 'creature')) {
       for (const block of attackBlocks(record)) {
-        const printed = quantified.exec(block.text)?.[1];
-        if (printed === undefined) continue;
+        if (!leadIn.test(block.text)) continue;
+        const printed = target.exec(block.text)?.[1];
+        expect(
+          printed,
+          `${record.key} ${block.name}: target phrase not extractable`,
+        ).toBeDefined();
         const attacks = block.mechanics.attacks as
           | Record<string, unknown>[]
           | undefined;
         expect(attacks?.[0]?.target, `${record.key} ${block.name} target`).toBe(
-          printed.toLowerCase(),
+          printed?.toLowerCase(),
         );
         checked += 1;
       }
