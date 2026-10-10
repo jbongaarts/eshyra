@@ -1758,7 +1758,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'Applying refuses nothing: a proficiency already held is simply not recorded for the source. The only ProficiencyGrantError is the removal refusal below.',
-        'Removal (removeOptionGrants) drops only what that source ledger entry recorded and refuses when a recorded skill has Expertise. A proficiency already held when a source was applied is not recorded for it and is not removed with it; one recorded for a source is removed with it even if another source granted it later. A recorded proficiency that a still-held, already-applied source also confers is not removed: it stays on the sheet and is recorded under that source, so removing that source later removes it (the level-up replacement passes the still-held sources). Ancestry trait grants are not read here.',
+        'Removal (removeOptionGrants) drops only what that source ledger entry recorded and refuses when a recorded skill has Expertise. A proficiency already held when a source was applied is not recorded for it and is not removed with it. A recorded proficiency that a still-held, already-applied source also confers is not removed: it stays on the sheet and is recorded under that source, so removing that source later removes it (the level-up replacement passes the still-held sources). Ancestry trait grants are not read here.',
       ],
       residualDmInterpretation: [
         'The DM adjudicates any feature effect that is not a typed proficiency grant.',
