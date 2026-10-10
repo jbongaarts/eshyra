@@ -46,12 +46,12 @@ describe('finding registry', () => {
   });
 
   it('preserves status reasoning and non-accepted dispositions', () => {
-    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(6);
+    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(9);
     expect(
       real.rows.find((row) => row.canonicalId === 'source-authority-opus-f19')
         ?.statusReasoning,
     ).toBe(
-      'Reviewed empty current membership: the source-backed spellPreparation clause is absent from the current pack; preserve this source identity until the clause IR follow-up lands.',
+      "PR #566 (eshyra-o9bd.19.2.1.2, merge 77b2d475) removed the false verbatim claim: /spellPreparation/sourceText is declared a derived curated composition in the pack's field provenance (field-provenance.json), not a quotation. Checked against the vendored SRD PDF: only class:bard's sourceText is a single verbatim span; the other class values join SRD sentences, or the leading clause of an SRD sentence ended at a period, across separate subsections. The declaration's wording was made exact in the change that carries this reasoning. No clause-IR follow-up is pending; that work was retired (eshyra-r8r3, eshyra-pk7e, 2026-09-22). This reasoning does not claim sourceText is verbatim.",
     );
     expect(
       real.rows
@@ -59,7 +59,9 @@ describe('finding registry', () => {
         .map((row) => row.canonicalId)
         .sort(),
     ).toEqual([
+      'audit-readiness-gate',
       'condition-structure-no-regression',
+      'readiness-integrity',
       'rule-corpus-procedures',
       'rules-prose-readiness',
     ]);

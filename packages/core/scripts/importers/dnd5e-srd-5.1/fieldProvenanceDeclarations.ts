@@ -422,7 +422,7 @@ derived(
 derived(
   'class',
   '/spellPreparation/sourceText',
-  "a curated composition of the class's printed spell-preparation and spellcasting-ability sentences (creationFacts.ts). Each sentence is SRD text, but they are joined across separate subsections, so the whole is not one verbatim quotation.",
+  "a curated composition of the class's printed spell-preparation and spellcasting-ability text (creationFacts.ts): SRD sentences, or the leading clause of an SRD sentence ended at a period, joined across separate subsections, so the whole is not one verbatim quotation.",
 );
 derived(
   'class',
