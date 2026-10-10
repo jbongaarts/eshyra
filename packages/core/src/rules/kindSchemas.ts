@@ -1196,6 +1196,9 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       );
     }
   }
+  objArray(mechanics, 'attacks', `${path}.${key}`)?.forEach((attack, i) => {
+    validateAttackAlternatives(attack, `${path}.${key}.attacks[${i}]`);
+  });
   const effects = objArray(mechanics, 'effects', `${path}.${key}`);
   if (effects !== undefined) {
     if (effects.length === 0) {
@@ -1274,21 +1277,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       );
     }
     entries.forEach((entry, i) => {
-      const entryPath = `${path}.${key}.${damageKey}[${i}]`;
-      // A damage entry carries a dice expression, or — for the SRD's flat
-      // no-dice prints ("Hit: 1 piercing damage.", the Bat's Bite;
-      // eshyra-o9bd.18.7.3) — a fixed integer `amount`.
-      if (entry.dice === undefined) {
-        reqInt(entry, 'amount', entryPath, 0);
-      } else {
-        reqStr(entry, 'dice', entryPath);
-      }
-      const type = reqStr(entry, 'type', entryPath);
-      if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
-        throw new RulesPackError(
-          `${entryPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
-        );
-      }
+      validateDamageEntry(entry, `${path}.${key}.${damageKey}[${i}]`);
     });
   }
   // A weapon-damage-die MODIFIER (Enlarge/Reduce), not damage dealt directly.
@@ -4199,6 +4188,56 @@ function validateEffectChoiceGroups(
       );
     }
   }
+}
+
+/**
+ * One dealt-damage entry (`damage`, `hitDamage`, or an alternative's
+ * `hitDamage`). A damage entry carries a dice expression, or — for the SRD's
+ * flat no-dice prints ("Hit: 1 piercing damage.", the Bat's Bite;
+ * eshyra-o9bd.18.7.3) — a fixed integer `amount`.
+ */
+function validateDamageEntry(entry: Obj, entryPath: string): void {
+  if (entry.dice === undefined) {
+    reqInt(entry, 'amount', entryPath, 0);
+  } else {
+    reqStr(entry, 'dice', entryPath);
+  }
+  const type = reqStr(entry, 'type', entryPath);
+  if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+    throw new RulesPackError(
+      `${entryPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+    );
+  }
+}
+
+/**
+ * Mutually exclusive attack modes (eshyra-o9bd.19.4.2). Each alternative
+ * names its printed condition verbatim (non-empty), its complete damage list
+ * for that mode, and an optional mode-specific integer attack bonus. Fail
+ * closed: a malformed alternative throws rather than projecting a partial mode.
+ */
+function validateAttackAlternatives(attack: Obj, attackPath: string): void {
+  const alternatives = objArray(attack, 'alternatives', attackPath);
+  if (alternatives === undefined) return;
+  if (alternatives.length === 0) {
+    throw new RulesPackError(
+      `${attackPath}.alternatives must not be empty when present`,
+    );
+  }
+  alternatives.forEach((alternative, i) => {
+    const altPath = `${attackPath}.alternatives[${i}]`;
+    reqStr(alternative, 'condition', altPath);
+    optInt(alternative, 'attackBonus', altPath);
+    const hitDamage = objArray(alternative, 'hitDamage', altPath);
+    if (hitDamage === undefined || hitDamage.length === 0) {
+      throw new RulesPackError(
+        `${altPath}.hitDamage must be a non-empty array`,
+      );
+    }
+    hitDamage.forEach((entry, j) => {
+      validateDamageEntry(entry, `${altPath}.hitDamage[${j}]`);
+    });
+  });
 }
 
 function validateMechanicsEffect(effect: Obj, path: string): void {
