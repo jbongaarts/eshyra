@@ -978,6 +978,16 @@ function hasMechanicsProjection(record: RulesRecord): boolean {
   if (hasSubstantiveMechanicsProjection(objectValue(data.feature)?.mechanics)) {
     return true;
   }
+  // A record that prints several named traps projects each one under its own
+  // variant (eshyra-o9bd.19.3.1.1, O2); the variant projection is the record's
+  // mechanics, not an absence of them.
+  if (
+    arrayValue(data.variants).some((variant) =>
+      hasSubstantiveMechanicsProjection(objectValue(variant)?.mechanics),
+    )
+  ) {
+    return true;
+  }
   return hasNestedCreatureMechanicsProjection(data);
 }
 

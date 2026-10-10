@@ -9,11 +9,11 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1892,
+  "rowCount": 1903,
   "dispositionCounts": {
     "complete": 439,
-    "model-adjudicated": 1248,
-    "not-mechanical": 196,
+    "model-adjudicated": 1258,
+    "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
   },
@@ -6327,7 +6327,7 @@
         "strength",
         "charisma"
       ],
-      "population": 202,
+      "population": 201,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -6336,6 +6336,47 @@
       "typedSchemaOrConsumer": "domain-specific mechanics discriminator/scalar contract",
       "retainedProseBoundary": null,
       "owner": "mechanicsProjections.ts and rules/kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
+      "fieldPath": "data.actions[].mechanics.saves[].abilityOptions[]",
+      "representativeValues": [
+        "strength",
+        "dexterity"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.actions[].mechanics.saves[].abilityOptions[]",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
+      "fieldPath": "data.actions[].mechanics.saves[].chosenBy",
+      "representativeValues": [
+        "target"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.actions[].mechanics.saves[].chosenBy",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
       "futureWork": false
     },
     {
@@ -14041,6 +14082,26 @@
       "recordKinds": [
         "feature"
       ],
+      "fieldPath": "data.choices[].options[].mechanics.spellGrants[].spell",
+      "representativeValues": [
+        "spell:find-familiar"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.choices[].options[].mechanics.spellGrants[].spell",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
       "fieldPath": "data.choices[].options[].name",
       "representativeValues": [
         "Archery",
@@ -14426,7 +14487,7 @@
         "unconscious",
         "charmed"
       ],
-      "population": 34,
+      "population": 33,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -14450,7 +14511,7 @@
         "prevents",
         "immune"
       ],
-      "population": 34,
+      "population": 33,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -14726,6 +14787,26 @@
       "recordKinds": [
         "feature"
       ],
+      "fieldPath": "data.mechanics.effects[].chosenFrom",
+      "representativeValues": [
+        "affected-by-the-spell"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].chosenFrom",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
       "fieldPath": "data.mechanics.effects[].condition",
       "representativeValues": [
         "while you aren’t wearing heavy armor",
@@ -14815,7 +14896,7 @@
         "2d8",
         "1d6"
       ],
-      "population": 6,
+      "population": 5,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -14982,7 +15063,7 @@
         "speedBonus",
         "checkMinimum"
       ],
-      "population": 94,
+      "population": 91,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -15254,10 +15335,10 @@
         "ability",
         "strength, dexterity, or constitution",
         "one-damage-roll",
-        "triggering-attack",
-        "all-saving-throws"
+        "all-saving-throws",
+        "unarmed-strikes"
       ],
-      "population": 10,
+      "population": 9,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -15962,7 +16043,7 @@
         "dexterity",
         "strength"
       ],
-      "population": 12,
+      "population": 11,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -15971,26 +16052,6 @@
       "typedSchemaOrConsumer": "domain-specific mechanics discriminator/scalar contract",
       "retainedProseBoundary": null,
       "owner": "mechanicsProjections.ts and rules/kindSchemas.ts",
-      "futureWork": false
-    },
-    {
-      "system": "dnd5e-srd",
-      "recordKinds": [
-        "feature"
-      ],
-      "fieldPath": "data.mechanics.spellGrants[].spell",
-      "representativeValues": [
-        "spell:find-familiar"
-      ],
-      "population": 1,
-      "valueClass": "scalar-like",
-      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
-      "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.spellGrants[].spell",
-      "disposition": "model-adjudicated",
-      "typedSchemaOrConsumer": null,
-      "retainedProseBoundary": null,
-      "owner": null,
       "futureWork": false
     },
     {
@@ -16488,7 +16549,7 @@
         "9d6",
         "1d6"
       ],
-      "population": 16,
+      "population": 14,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -16512,7 +16573,7 @@
         "fire",
         "piercing"
       ],
-      "population": 16,
+      "population": 14,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -16774,7 +16835,7 @@
         "dexterity",
         "strength"
       ],
-      "population": 23,
+      "population": 22,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -16794,7 +16855,7 @@
       "representativeValues": [
         "half"
       ],
-      "population": 9,
+      "population": 8,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -16867,6 +16928,134 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.trapType",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.variants[].mechanics.damage[].dice",
+      "representativeValues": [
+        "2d10",
+        "4d10"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.variants[].mechanics.damage[].dice",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.variants[].mechanics.damage[].type",
+      "representativeValues": [
+        "piercing",
+        "poison"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.variants[].mechanics.damage[].type",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.variants[].mechanics.saves[].ability",
+      "representativeValues": [
+        "constitution"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.variants[].mechanics.saves[].ability",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.variants[].mechanics.saves[].damageOnSuccess",
+      "representativeValues": [
+        "half"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.variants[].mechanics.saves[].damageOnSuccess",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.variants[].name",
+      "representativeValues": [
+        "Simple Pit",
+        "Hidden Pit",
+        "Locking Pit",
+        "Spiked Pit"
+      ],
+      "population": 4,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "display and navigation only",
+      "currentAuditReadiness": "display/source audits only; no deterministic gameplay claim",
+      "disposition": "not-mechanical",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": "record display contract",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.variants[].text",
+      "representativeValues": [
+        "Simple Pit. A simple pit trap is a hole dug in the ground. The hole is covered by a large cloth anchored on the pit’s edge and camouflaged with dirt and debris. The DC to spot the pit is 10. Anyone stepping on the cloth falls through and pulls the cloth down into the pit, taking damage based on the pit’s depth (usually 10 feet, but some pits are deeper).",
+        "Hidden Pit. This pit has a cover constructed from material identical to the floor around it. A successful DC 15 Wisdom (Perception) check discerns an absence of foot traffic over the section of floor that forms the pit’s cover. A successful DC 15 Intelligence (Investigation) check is necessary to confirm that the trapped section of floor is actually the cover of a pit. When a creature steps on the cover, it swings open like a trapdoor, causing the intruder to spill into the pit below. The pit is usually 10 or 20 feet deep but can be deeper. Once the pit trap is detected, an iron spike or similar object can be wedged between the pit’s cover and the surrounding floor in such a way as to prevent the cover from opening, thereby making it safe to cross. The cover can also be magically held shut using the arcane lock spell or similar magic.",
+        "Locking Pit. This pit trap is identical to a hidden pit trap, with one key exception: the trap door that covers the pit is spring-loaded. After a creature falls into the pit, the cover snaps shut to trap its victim inside. A successful DC 20 Strength check is necessary to pry the cover open. The cover can also be smashed open. A character in the pit can also attempt to disable the spring mechanism from the inside with a DC 15 Dexterity check using thieves’ tools, provided that the mechanism can be reached and the character can see. In some cases, a mechanism (usually hidden behind a secret door nearby) opens the pit.",
+        "Spiked Pit. This pit trap is a simple, hidden, or locking pit trap with sharpened wooden or iron spikes at the bottom. A creature falling into the pit takes 11 (2d10) piercing damage from the spikes, in addition to any falling damage. Even nastier versions have poison smeared on the spikes. In that case, anyone taking piercing damage from the spikes must also make a DC 13 Constitution saving throw, taking an 22 (4d10) poison damage on a failed save, or half as much damage on a successful one."
+      ],
+      "population": 4,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "source coverage retains the clause; readiness does not count it as deterministic support",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -24309,7 +24498,7 @@
         "self",
         "one humanoid",
         "creature currently focused on with detect thoughts",
-        "creature native to another plane of existence",
+        "creature native to another plane of existence that you can see",
         "failed controller"
       ],
       "population": 14,
@@ -29677,7 +29866,7 @@
         "4d8",
         "3d10"
       ],
-      "population": 99,
+      "population": 97,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -29701,11 +29890,57 @@
         "bludgeoning",
         "slashing"
       ],
-      "population": 99,
+      "population": 95,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.damage[].type",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.damage[].typeOptions[].condition",
+      "representativeValues": [
+        "from a warm shield",
+        "from a cold shield",
+        "if you are good or neutral",
+        "if you are evil"
+      ],
+      "population": 4,
+      "valueClass": "compound mechanical text",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
+      "currentAuditReadiness": "qualifier remains source/entry prose and is not claimed as typed gameplay support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.damage[].typeOptions[].type",
+      "representativeValues": [
+        "fire",
+        "cold",
+        "radiant",
+        "necrotic"
+      ],
+      "population": 4,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.damage[].typeOptions[].type",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
