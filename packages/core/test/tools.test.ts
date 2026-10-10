@@ -27,6 +27,10 @@ import {
   writeCampaignRulesBinding,
 } from '../src/internal.js';
 import {
+  ROLL_CATEGORIES,
+  ROLL_VISIBILITIES,
+} from '../src/orchestrator/toolRoll.js';
+import {
   bundledDnd5eSrdRecordRelationshipManifestSource,
   getBundledDnd5eSrdPack,
 } from '../src/rules/bundledSrdPack.js';
@@ -326,6 +330,19 @@ describe('ToolRegistry', () => {
 });
 
 describe('roll tool', () => {
+  // eshyra-o9bd.19.5.13: the model-facing description must name every
+  // category and visibility the schema admits (it once omitted hit_die).
+  it('describes every schema-admitted category and visibility', () => {
+    const roll = createDefaultToolRegistry().get('roll');
+    const schema = roll?.inputSchema as {
+      properties: Record<string, { enum?: readonly string[] }>;
+    };
+    expect(schema.properties.category?.enum).toEqual([...ROLL_CATEGORIES]);
+    for (const value of [...ROLL_CATEGORIES, ...ROLL_VISIBILITIES]) {
+      expect(roll?.description).toContain(`"${value}"`);
+    }
+  });
+
   it('rolls reproducibly given a seeded context', () => {
     const registry = createDefaultToolRegistry();
     const a = registry.invoke(
