@@ -43,9 +43,8 @@ export const rollTool: Tool = {
     'resolve_check, which applies that cancellation and the modifier math ' +
     'for you. The result reports every rolled die plus the kept/dropped ' +
     'split and the natural (pre-modifier) total. args: { dice, reason: ' +
-    'string, visibility?: "player_visible"|"dm_only", category?: "attack"|' +
-    '"damage"|"initiative"|"saving_throw"|"death_save"|"ability_check"|' +
-    '"other" }.',
+    `string, visibility?: ${ROLL_VISIBILITIES.map((v) => `"${v}"`).join('|')}, ` +
+    `category?: ${ROLL_CATEGORIES.map((c) => `"${c}"`).join('|')} }.`,
   inputSchema: {
     type: 'object',
     properties: {
