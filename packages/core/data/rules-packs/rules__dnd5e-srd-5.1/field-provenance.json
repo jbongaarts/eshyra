@@ -843,6 +843,12 @@
     },
     {
       "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "feature.choices[].options[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "feature",
       "pointerPrefix": "/choices",
       "class": "source-derived",
       "reason": "structured player-choice facts this feature requires (Fighting Style, subclass selection, Metamagic, spell selection, ...), deterministically derived from the class/feature rules text."
