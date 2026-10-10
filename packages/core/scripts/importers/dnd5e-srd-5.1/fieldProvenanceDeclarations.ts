@@ -933,6 +933,11 @@ derived(
 );
 derived(
   'rule',
+  '/bardingTransformation',
+  'the Barding cost/weight multipliers, parsed from the printed Barding sentence of this rule.',
+);
+derived(
+  'rule',
   '/skillsByAbility',
   'the ability->skills grouping, parsed from the printed skills-by-ability table.',
 );

@@ -45,6 +45,7 @@ import { deriveConditionRecordMechanics } from './conditionMechanics.js';
 import {
   enrichAncestryCreationFacts,
   enrichBackgroundCreationFacts,
+  enrichBardingRule,
   enrichClassToolChoiceDomains,
   enrichSkillsRule,
 } from './creationFacts.js';
@@ -1769,8 +1770,8 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // Attach the p78 skill-to-ability mapping to `rule:skills` (eshyra-erf5.1):
   // the SRD's per-ability bullet captions are excluded from becoming their
   // own prose rules, so the mapping is carried here as structured data.
-  const ruleRecords = enrichSkillsRule(
-    ruleExtractionsToRecords(input.rules ?? []),
+  const ruleRecords = enrichBardingRule(
+    enrichSkillsRule(ruleExtractionsToRecords(input.rules ?? [])),
   );
   // Every emitted table comes from the extractor. The compiler must not author
   // table content here: an emitter-authored row set still inherits this pack's
