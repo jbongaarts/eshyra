@@ -252,7 +252,36 @@ function parseSaveWithSuccessBranch(text: string): Mechanics | undefined {
   return { ...save, damageOnSuccess: 'half' };
 }
 
+/**
+ * A printed alternative-ability save: "DC 16 Strength or Dexterity saving
+ * throw (target's choice)" (creature:bulette, Deadly Leap). The target picks
+ * which of the printed abilities to roll, so the projection carries the exact
+ * printed abilities in printed order instead of one of them (eshyra-o9bd.19.3.1.1).
+ */
+const ALTERNATIVE_SAVE_RE = new RegExp(
+  `\\b((?:${ABILITIES.join('|')})(?:\\s+or\\s+(?:${ABILITIES.join('|')}))+)\\s+saving throw\\b(\\s*\\(target[’']s choice\\))?`,
+  'i',
+);
+
 function parseSave(text: string): Mechanics | undefined {
+  const alternative = ALTERNATIVE_SAVE_RE.exec(text);
+  if (alternative !== null) {
+    const abilityOptions = alternative[1]
+      .split(/\s+or\s+/i)
+      .map((ability) => ability.toLowerCase());
+    if (new Set(abilityOptions).size !== abilityOptions.length) {
+      throw new Error(`save lists a repeated ability: ${alternative[0]}`);
+    }
+    const dc =
+      /\bDC\s+(\d+)\s+(?:[A-Z][a-z]+\s+or\s+)+[A-Z][a-z]+\s+saving throw\b/.exec(
+        text,
+      );
+    return compact({
+      abilityOptions,
+      chosenBy: alternative[2] === undefined ? undefined : 'target',
+      dc: dc === null ? undefined : Number(dc[1]),
+    });
+  }
   const ability = ABILITIES.find((candidate) =>
     new RegExp(`\\b${candidate}\\s+saving throw\\b`, 'i').test(text),
   );
