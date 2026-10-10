@@ -180,7 +180,7 @@ function buildMeta(
   return {
     packId: PACK_ID,
     title: 'D&D 5e SRD 5.1',
-    description: `D&D 5th Edition System Reference Document 5.1, extracted by the deterministic importer at packages/core/scripts/importers/dnd5e-srd-5.1. Included record kinds: ${includedKinds.join(', ')}. Other SRD record kinds are tracked under eshyra-0m9.5 child issues and are not included until their parsers ship.`,
+    description: `D&D 5th Edition System Reference Document 5.1, extracted by the deterministic importer at packages/core/scripts/importers/dnd5e-srd-5.1. Included record kinds: ${includedKinds.join(', ')}.`,
     role: 'base',
     systemId: SYSTEM_ID,
     version: SOURCE_VERSION,

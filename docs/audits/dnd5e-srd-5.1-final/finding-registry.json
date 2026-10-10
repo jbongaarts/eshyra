@@ -27,6 +27,7 @@
       "aliases": ["opus:F-20"],
       "invariant": "Stale manifest provenance is removed",
       "status": "accepted",
+      "statusReasoning": "Repaired at the importer source (emit.ts manifest description) by eshyra-o9bd.19.1.8: the committed manifest no longer cites issue-tracker work for pack scope. The earlier eshyra-o9bd.19.2.1.1 change only renamed loreweaver-0m9.5 to eshyra-0m9.5, a closed bead, so the stale claim had survived. Permanent evidence: srdGeneratedPack.test.ts rejects any loreweaver-* or eshyra-* tracker ID in the committed manifest.",
       "provenance": {
         "auditFinding": "opus:F-20",
         "evidenceBasis": "authoritative-input"
