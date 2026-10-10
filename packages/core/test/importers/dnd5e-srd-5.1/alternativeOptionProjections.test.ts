@@ -103,7 +103,7 @@ const PARENT_EFFECT_WITNESSES: Readonly<
   abilityCheckModifier: () => /\badvantage\b|\bcheck\b/,
   extraDamage: (effect) =>
     typeof effect.dice === 'string'
-      ? new RegExp(effect.dice.replace(/[+]/g, '\\+'))
+      ? new RegExp(effect.dice.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
       : undefined,
   evasion: () => /\bevasion\b/,
   damageReduction: () => /\bhalf\b|\bhalve\b/,
