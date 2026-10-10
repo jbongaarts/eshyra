@@ -1696,7 +1696,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'A cross-pack attach is refused (conversion is not implemented), and the projection supports the dnd5e SRD system only.',
-        'The sheet save and the live-row import are separate writes: an import correction result (a campaign rules system other than dnd5e-srd) leaves the saved sheet in place.',
+        'The sheet save and the live-row import are one transaction: an import correction result (a campaign rules system other than dnd5e-srd) rolls the sheet save back and is returned as ok:false, and a thrown import failure also leaves the campaign sheet and live row unchanged (an existing campaign copy is preserved; a new attachment leaves no saved sheet).',
         'Consults and records no custody; character-checkout-v1 and character-catch-up-v1 call it inside the custody lifecycle.',
       ],
       residualDmInterpretation: [
@@ -2423,7 +2423,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Branch a chosen revision (the source head when none is given) of a registry character into a new global character id as its revision 1, with source fork and parent provenance (source id and revision), deliberately breaking continuity: the source timeline and custody are untouched. Refuses a target id that already has a revision timeline or a head row, a source with no timeline, and a source revision that does not exist. The CLI uses it for the explicit fork-character command (registry only, not attached) and for the resume stale-copy fork choice, which forks this campaign stamped revision and checks the fork into the same slot (character-checkout-v1).',
+        'Branch a chosen revision (the source head when none is given) of a registry character into a new global character id as its revision 1, with source fork and parent provenance (source id and revision), deliberately breaking continuity: the source timeline and custody are untouched. Refuses a target id that already has a revision timeline or a head row, a source with no timeline, and a source revision that does not exist. The CLI uses it for the explicit fork-character command (registry only, not attached) and for the resume stale-copy fork choice, which forks this campaign stamped revision and checks the fork into the same slot (character-checkout-v1); if that checkout returns a correction result or is refused, the resume fork reports failure (the registry fork already created stays), the campaign copy and custody are unchanged, and the resume does not continue.',
       requiredInputs: [
         'The registry store',
         'sourceGlobalCharacterId',

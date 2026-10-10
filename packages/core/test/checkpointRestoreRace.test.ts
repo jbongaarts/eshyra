@@ -27,7 +27,7 @@ vi.mock('node:fs', async (importOriginal) => {
 
 import { readFileSync } from 'node:fs';
 import { materializeSnapshot } from '../src/internal.js';
-import { CheckpointError } from '../src/persistence/checkpoint/doltRepo.js';
+import { CheckpointError } from '../src/persistence/checkpoint/store.js';
 
 it('refuses, without replacing it, a destination created after the check', () => {
   const dir = mkdtempSync(join(tmpdir(), 'restore-race-'));
