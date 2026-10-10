@@ -45,6 +45,7 @@ import type {
   ResolvedBackgroundData,
   ResolvedChoiceSpec,
   ResolvedClassData,
+  ResolvedLanguageChoiceExtension,
   ResolvedLanguageGrant,
 } from './rulesPackResolver.js';
 import {
@@ -100,6 +101,12 @@ export interface Level1RequiredChoice {
   readonly blockingBead?: string;
   /** An empty selection satisfies the choice (eshyra-mdke). */
   readonly optional?: boolean;
+  /**
+   * Language choices only (eshyra-o9bd.19.3.3.1): the source's GM-permission
+   * extension. `from` stays the default domain; a pick outside it is legal only
+   * with an explicit GM-approval input for that language.
+   */
+  readonly extension?: ResolvedLanguageChoiceExtension;
 }
 
 /** Inputs to {@link enumerateLevel1RequiredChoices}. */
@@ -443,6 +450,7 @@ function collectAncestryLanguages(
     choose: grant.choose,
     from: chooseableLanguages(grantedLanguages, grant.from),
     sourceText: grant.sourceText,
+    ...(grant.extension !== undefined ? { extension: grant.extension } : {}),
   });
 }
 
@@ -531,6 +539,7 @@ function collectBackgroundChoices(
     choose: grant.choose,
     from: chooseableLanguages(grantedLanguages, grant.from),
     sourceText: grant.sourceText,
+    ...(grant.extension !== undefined ? { extension: grant.extension } : {}),
   });
 }
 

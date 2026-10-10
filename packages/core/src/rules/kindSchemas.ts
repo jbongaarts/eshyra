@@ -861,6 +861,32 @@ function optStartingEquipment(parent: Obj, key: string, path: string): void {
   });
 }
 
+/**
+ * Validate the optional GM-permission `extension` on an open language choice
+ * (eshyra-o9bd.19.3.3.1): `{ ruleRef, exoticTableRef?, requiresGmApproval: true }`.
+ * It sits beside the unchanged default `from` domain and never widens it; the
+ * flag must be literally `true` so approval can never be defaulted away.
+ */
+function optLanguageChoiceExtension(parent: Obj, path: string): void {
+  const extension = parent.extension;
+  if (extension === undefined) return;
+  if (
+    typeof extension !== 'object' ||
+    extension === null ||
+    Array.isArray(extension)
+  ) {
+    throw new RulesPackError(`${path}.extension must be an object`);
+  }
+  const ext = extension as Obj;
+  reqStr(ext, 'ruleRef', `${path}.extension`);
+  optStr(ext, 'exoticTableRef', `${path}.extension`);
+  if (ext.requiresGmApproval !== true) {
+    throw new RulesPackError(
+      `${path}.extension.requiresGmApproval must be true`,
+    );
+  }
+}
+
 function optLanguageGrantArray(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -883,6 +909,7 @@ function optLanguageGrantArray(parent: Obj, key: string, path: string): void {
         );
       }
     }
+    optLanguageChoiceExtension(entry, `${path}.${key}[${i}]`);
     reqStr(entry, 'sourceText', `${path}.${key}[${i}]`);
   });
 }
@@ -5545,6 +5572,12 @@ function optCreationChoices(parent: Obj, key: string, path: string): void {
     optStrArray(entry, 'from', cpath);
     optStr(entry, 'tableRef', cpath);
     optStr(entry, 'roll', cpath);
+    if (entry.extension !== undefined && category !== 'language') {
+      throw new RulesPackError(
+        `${cpath}.extension is only valid on a language choice`,
+      );
+    }
+    optLanguageChoiceExtension(entry, cpath);
   });
 }
 

@@ -172,6 +172,15 @@ export interface Dnd5eDraftSelections {
    * equipment/proficiency flow (eshyra-b69j.13).
    */
   readonly choices?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * Explicit GM approvals for language picks outside a language choice's
+   * default domain (eshyra-o9bd.19.3.3.1), keyed by the language choice id
+   * (`ancestry.languages`, `background.languages`) to the approved language
+   * names. A selected language outside the choice's `from` list is accepted only
+   * when it appears here AND the choice carries the `rule:languages` GM
+   * extension. Approval is never inferred; absent means none.
+   */
+  readonly gmApprovedLanguages?: Readonly<Record<string, readonly string[]>>;
   readonly startingEquipmentMode?: StartingEquipmentMode;
   readonly startingWealth?: StartingWealthResult;
 }
@@ -306,6 +315,17 @@ export interface CharacterCreationEngine {
     draft: CharacterDraft,
     choiceId: string,
     values: readonly string[] | undefined,
+  ): CharacterDraft;
+  /**
+   * Record (or clear, with `undefined`/empty) the GM-approved languages for a
+   * language choice id. Pure storage: the approval only has effect for a
+   * selected language outside the choice's default domain, on a choice that
+   * carries the source's GM-permission extension.
+   */
+  setGmApprovedLanguages(
+    draft: CharacterDraft,
+    choiceId: string,
+    languages: readonly string[] | undefined,
   ): CharacterDraft;
   setStartingEquipmentMode(
     draft: CharacterDraft,
@@ -775,6 +795,10 @@ export function createCharacterCreationEngine(
       abilityModifiers: draft.derived.abilityModifiers,
     });
     const stored = draft.selections.choices ?? {};
+    const heldLanguages = [
+      ...fixedLanguageGrants(resolveAncestry(draft.selections.ancestry)),
+      ...fixedLanguageGrants(effectiveBackground(draft.selections, resolver)),
+    ];
     const mechanical = all.filter((choice) =>
       MECHANICAL_CHOICE_KINDS.has(choice.kind),
     );
@@ -785,7 +809,11 @@ export function createCharacterCreationEngine(
     ).map((choice) => ({
       choice,
       selected: stored[choice.id] ?? [],
-      satisfied: isChoiceSatisfied(choice, stored[choice.id] ?? []),
+      satisfied: isChoiceSatisfied(
+        choice,
+        stored[choice.id] ?? [],
+        gmApprovedFor(draft, choice, heldLanguages),
+      ),
     }));
     const background = effectiveBackground(draft.selections, resolver);
     const ancestrySkills =
@@ -1546,6 +1574,16 @@ export function createCharacterCreationEngine(
       return withSelections(draft, { choices });
     },
 
+    setGmApprovedLanguages(draft, choiceId, languages): CharacterDraft {
+      const approved = { ...(draft.selections.gmApprovedLanguages ?? {}) };
+      if (languages === undefined || languages.length === 0) {
+        delete approved[choiceId];
+      } else {
+        approved[choiceId] = [...languages];
+      }
+      return withSelections(draft, { gmApprovedLanguages: approved });
+    },
+
     setStartingEquipmentMode(draft, mode): CharacterDraft {
       const choices = { ...(draft.selections.choices ?? {}) };
       if (mode === 'starting-wealth') {
@@ -1589,6 +1627,7 @@ export function createCharacterCreationEngine(
 function isChoiceSatisfied(
   choice: Level1RequiredChoice,
   selected: readonly string[],
+  gmApproved: ReadonlySet<string> = new Set(),
 ): boolean {
   if (choice.choose === undefined) {
     return true;
@@ -1601,7 +1640,37 @@ function isChoiceSatisfied(
     return true;
   }
   const options = new Set(choice.from);
-  return [...distinct].every((value) => options.has(value));
+  return [...distinct].every(
+    (value) => options.has(value) || gmApproved.has(value),
+  );
+}
+
+/**
+ * The languages a draft's explicit GM approval admits OUTSIDE a language
+ * choice's default domain (eshyra-o9bd.19.3.3.1). Empty unless the choice is a
+ * language choice carrying the source's GM-permission extension; a language the
+ * character already holds as a fixed grant is never admitted, and a blank name
+ * never is. Approval is read only from the draft's explicit input.
+ */
+function gmApprovedFor(
+  draft: CharacterDraft,
+  choice: Level1RequiredChoice,
+  heldLanguages: readonly string[],
+): ReadonlySet<string> {
+  if (
+    choice.kind !== 'languages' ||
+    choice.extension?.requiresGmApproval !== true
+  ) {
+    return new Set();
+  }
+  const held = new Set(heldLanguages.map((l) => l.trim().toLowerCase()));
+  const approved = draft.selections.gmApprovedLanguages?.[choice.id] ?? [];
+  return new Set(
+    approved.filter(
+      (language) =>
+        language.trim().length > 0 && !held.has(language.trim().toLowerCase()),
+    ),
+  );
 }
 
 let cachedEngine: CharacterCreationEngine | undefined;

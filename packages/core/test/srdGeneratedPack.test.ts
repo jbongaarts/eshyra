@@ -7135,6 +7135,12 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
             'Orc',
           ],
           sourceText: 'Two of your choice',
+          // rule:languages GM-permission extension (eshyra-o9bd.19.3.3.1).
+          extension: {
+            ruleRef: 'rule:languages',
+            exoticTableRef: 'table:exotic-languages',
+            requiresGmApproval: true,
+          },
         },
       ]);
       expect(acolyteData.equipment).toBe(

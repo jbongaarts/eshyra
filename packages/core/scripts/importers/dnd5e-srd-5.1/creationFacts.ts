@@ -2,7 +2,9 @@ import {
   type CreationChoice,
   getAncestryCreationChoices,
   getBackgroundCreationFacts,
+  type LanguageChoiceExtension,
   SRD_5_1_ARTISAN_TOOLS,
+  SRD_5_1_LANGUAGE_EXTENSION,
   SRD_5_1_MUSICAL_INSTRUMENTS,
   SRD_5_1_SKILL_ABILITIES,
   SRD_5_1_STANDARD_LANGUAGES,
@@ -69,6 +71,8 @@ interface LanguageGrant {
    * (eshyra-8r8f). Present iff `choose` is present. */
   readonly from?: readonly string[];
   readonly sourceText: string;
+  /** GM-permission extension for an open choice (rule:languages). */
+  readonly extension?: LanguageChoiceExtension;
 }
 
 /**
@@ -136,7 +140,13 @@ function choose(
   count: number,
   ...fixed: readonly string[]
 ): LanguageGrant {
-  return { fixed, choose: count, from: SRD_5_1_STANDARD_LANGUAGES, sourceText };
+  return {
+    fixed,
+    choose: count,
+    from: SRD_5_1_STANDARD_LANGUAGES,
+    sourceText,
+    extension: SRD_5_1_LANGUAGE_EXTENSION,
+  };
 }
 
 function choice(
@@ -692,6 +702,9 @@ function cloneLanguageGrant(value: LanguageGrant): LanguageGrant {
     ...(value.choose !== undefined ? { choose: value.choose } : {}),
     ...(value.from !== undefined ? { from: [...value.from] } : {}),
     sourceText: value.sourceText,
+    ...(value.extension !== undefined
+      ? { extension: { ...value.extension } }
+      : {}),
   };
 }
 

@@ -126,7 +126,19 @@ export interface ResolvedLanguageGrant {
   readonly choose?: number;
   /** Enumerable option domain for `choose` (eshyra-8r8f), when the pack has one. */
   readonly from?: readonly string[];
+  /**
+   * Source extension point for an open "of your choice" grant: a GM may approve
+   * a language outside `from` (eshyra-o9bd.19.3.3.1). Never widens `from`.
+   */
+  readonly extension?: ResolvedLanguageChoiceExtension;
   readonly sourceText: string;
+}
+
+/** The `rule:languages` GM-permission extension on an open language choice. */
+export interface ResolvedLanguageChoiceExtension {
+  readonly ruleRef: string;
+  readonly exoticTableRef?: string;
+  readonly requiresGmApproval: true;
 }
 
 /** Structured spellcasting counts on a class's level row (from the progression table). */
@@ -1412,6 +1424,19 @@ function parseLanguageGrants(
       fixed: entry.fixed,
       ...(typeof entry.choose === 'number' ? { choose: entry.choose } : {}),
       ...(isStringArray(entry.from) ? { from: entry.from } : {}),
+      ...(isRecord(entry.extension) &&
+      typeof entry.extension.ruleRef === 'string' &&
+      entry.extension.requiresGmApproval === true
+        ? {
+            extension: {
+              ruleRef: entry.extension.ruleRef,
+              ...(typeof entry.extension.exoticTableRef === 'string'
+                ? { exoticTableRef: entry.extension.exoticTableRef }
+                : {}),
+              requiresGmApproval: true as const,
+            },
+          }
+        : {}),
       sourceText: entry.sourceText,
     });
   }

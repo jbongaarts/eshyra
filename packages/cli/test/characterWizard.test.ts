@@ -596,6 +596,56 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
     ]);
   });
 
+  it('offers an explicit GM-approved "other language" entry and records the approval (indep:011)', async () => {
+    const { deps: d, lines } = deps([
+      ...TO_CLASS_CHOICES,
+      'Athletics',
+      'Perception',
+      '1',
+      '1',
+      '1',
+      '1',
+      'other',
+      'Abyssal',
+      'n', // GM approval not confirmed: nothing recorded
+      'other',
+      'Abyssal',
+      'y', // explicit approval
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    expect(text(lines)).toContain('Other language with GM approval');
+    expect(text(lines)).toContain('needs GM approval');
+    expect(result.draft.selections.choices?.['ancestry.languages']).toEqual([
+      'Abyssal',
+    ]);
+    expect(
+      result.draft.selections.gmApprovedLanguages?.['ancestry.languages'],
+    ).toEqual(['Abyssal']);
+  });
+
+  it('records no approval when a standard language is picked normally', async () => {
+    const { deps: d } = deps([
+      ...TO_CLASS_CHOICES,
+      'Athletics',
+      'Perception',
+      '1',
+      '1',
+      '1',
+      '1',
+      'Dwarvish',
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    expect(result.draft.selections.gmApprovedLanguages).toBeUndefined();
+  });
+
   it('collects the level-1 fighting style after the ordinary groups (eshyra-nnj6.1)', async () => {
     const { deps: d, lines } = deps([
       ...TO_CLASS_CHOICES,
