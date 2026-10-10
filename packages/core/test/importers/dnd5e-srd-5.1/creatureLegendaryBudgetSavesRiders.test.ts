@@ -174,6 +174,16 @@ describe('creature multi-save entries (opus:F-32)', () => {
       { ability: 'strength', dc: 13, damageOnSuccess: 'half' },
       { ability: 'dexterity', dc: 13 },
     ]);
+    // Ice devil Wall of Ice (SRD 5.1): both printed clauses, the DC 17
+    // Dexterity save on creation and the DC 17 Constitution save when moving
+    // through the wall, carry their own half-damage success branch.
+    const wall = entriesOf(dataOf('creature:ice-devil')).find((entry) =>
+      String(entry.name).startsWith('Wall of Ice'),
+    ) as Obj;
+    expect(savesOf(wall)).toEqual([
+      { ability: 'dexterity', dc: 17, damageOnSuccess: 'half' },
+      { ability: 'constitution', dc: 17, damageOnSuccess: 'half' },
+    ]);
   });
 });
 

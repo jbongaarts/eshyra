@@ -186,17 +186,33 @@ export function compact<T extends Record<string, unknown>>(obj: T): T {
   return obj;
 }
 
+/**
+ * One "<avg> (<dice>) <type> damage" term. The sign may be ASCII or the
+ * printed Unicode minus (U+2212, eshyra-o9bd.19.4.2): both normalize to ASCII
+ * so a minus is never silently unmatched.
+ */
+const DAMAGE_TERM_RE =
+  /(?:(\d+)\s*\()?(\d+d\d+(?:\s*[+\u2212-]\s*\d+)?)\)?\s+([a-z]+)\s+damage/gi;
+
+/** Normalize a printed dice expression to ASCII ("1d4 − 1" -> "1d4 - 1"). */
+function normalizeDice(dice: string): string {
+  return dice.replace(/\u2212/g, '-').replace(/\s+/g, ' ');
+}
+
+/** Parse a printed signed integer, accepting the Unicode minus. */
+function signedNumber(text: string): number {
+  return Number(text.replace(/\u2212/g, '-'));
+}
+
 function parseDamage(text: string): readonly Mechanics[] {
   const out: Mechanics[] = [];
-  const damageRe =
-    /(?:(\d+)\s*\()?(\d+d\d+(?:\s*[+-]\s*\d+)?)\)?\s+([a-z]+)\s+damage/gi;
-  for (const match of text.matchAll(damageRe)) {
+  for (const match of text.matchAll(DAMAGE_TERM_RE)) {
     const type = match[3].toLowerCase();
     if (!SRD_5_1_DAMAGE_TYPES.has(type)) continue;
     out.push(
       compact({
         average: match[1] === undefined ? undefined : Number(match[1]),
-        dice: match[2].replace(/\s+/g, ' '),
+        dice: normalizeDice(match[2]),
         type,
       }),
     );
@@ -211,13 +227,13 @@ function parseDamage(text: string): readonly Mechanics[] {
  * creature/effect directly deals.
  */
 const WEAPON_DAMAGE_DELTA_RE =
-  /\battacks with (?:it|them) deal (\d+d\d+(?:\s*[+-]\s*\d+)?) (extra|less) damage/gi;
+  /\battacks with (?:it|them) deal (\d+d\d+(?:\s*[+\u2212-]\s*\d+)?) (extra|less) damage/gi;
 
 function parseWeaponDamageModifiers(text: string): readonly Mechanics[] {
   const out: Mechanics[] = [];
   for (const match of text.matchAll(WEAPON_DAMAGE_DELTA_RE)) {
     out.push({
-      dice: match[1].replace(/\s+/g, ' '),
+      dice: normalizeDice(match[1]),
       operation: match[2].toLowerCase() === 'extra' ? 'increase' : 'decrease',
     });
   }
@@ -475,39 +491,220 @@ const STANDARD_ACTION_MECHANICS: ReadonlyMap<
   ],
 ]);
 
+/**
+ * Attack lead-in and Hit clause (eshyra-o9bd.19.4.2). The optional
+ * parenthetical is a mode-specific bonus printed in the lead-in: "+2 to hit
+ * (+4 to hit with shillelagh)". The sign may be the Unicode minus.
+ */
+const ATTACK_CLAUSE_RE =
+  /\b(Melee|Ranged|Melee or Ranged) (Weapon|Spell) Attack:\s*([+\u2212-]\d+) to hit(?: \(\s*([+\u2212-]\d+) to hit\s+([^)]+?)\s*\))?,\s*(.*?(?:targets?|creatures?).*?)\.\s*Hit:\s*([^.]*)\./i;
+
+/** "range 150 ft.", "range 80 ft./320 ft.", "ranged 150/600 ft.", "range 20/60 ft." */
+const ATTACK_RANGE_RE =
+  /\b(?:range|ranged)\s+(\d+)(?:\s*ft\.?)?(?:\s*\/\s*(\d+)\s*ft\.?)?/i;
+
+/** A damage term that continues the Hit clause after "or" (e.g. "in melee or"). */
+const ALTERNATIVE_LEAD_RE = /(?:^|,)\s*(?:[a-z]+\s+){0,3}or\s*$/i;
+const RIDER_LEAD_RE = /(?:^|,)\s*plus\s*$/i;
+
+/**
+ * Project the Hit clause's damage. A printed "X, or Y if <condition>" makes Y
+ * a MUTUALLY EXCLUSIVE mode of X, not a cumulative term; a comma-only list
+ * ("3 (1d6) ..., 4 (1d8) ... if wielded with two hands, or 6 (...) ...") is
+ * the same shape. A "plus N (XdY) type damage" rider after the modes applies
+ * to every mode (Azer's fire, Erinyes' poison). Each mode's condition is the
+ * printed text verbatim; no condition is interpreted.
+ */
+function projectHitDamage(hit: string):
+  | {
+      readonly hitDamage: readonly Mechanics[];
+      readonly alternatives?: readonly Mechanics[];
+    }
+  | undefined {
+  const terms: { start: number; end: number; damage: Mechanics }[] = [];
+  for (const match of hit.matchAll(DAMAGE_TERM_RE)) {
+    const type = match[3].toLowerCase();
+    if (!SRD_5_1_DAMAGE_TYPES.has(type)) continue;
+    terms.push({
+      start: match.index,
+      end: match.index + match[0].length,
+      damage: compact({
+        average: match[1] === undefined ? undefined : Number(match[1]),
+        dice: normalizeDice(match[2]),
+        type,
+      }),
+    });
+  }
+  if (terms.length === 0) return undefined;
+  // kinds[k]: 'alternative' starts a new mode; 'rider' is shared by all modes.
+  const kinds: ('first' | 'alternative' | 'rider')[] = ['first'];
+  const conditions: string[] = [''];
+  for (let k = 1; k < terms.length; k++) {
+    const lead = hit.slice(terms[k - 1].end, terms[k].start);
+    const orLead = ALTERNATIVE_LEAD_RE.exec(lead);
+    const plusLead = RIDER_LEAD_RE.exec(lead);
+    if (orLead !== null) {
+      kinds.push('alternative');
+      conditions[k - 1] = lead.slice(0, orLead.index).trim();
+    } else if (/^\s*,\s*$/.test(lead)) {
+      kinds.push('alternative');
+      conditions[k - 1] = '';
+    } else if (plusLead !== null) {
+      kinds.push('rider');
+      conditions[k - 1] = lead.slice(0, plusLead.index).trim();
+    } else {
+      if (kinds[k - 1] === 'alternative') {
+        throw new Error(
+          `attack Hit clause has an unrecognized connector after an alternative: ${JSON.stringify(hit)}`,
+        );
+      }
+      kinds.push('rider');
+    }
+  }
+  if (kinds.every((kind) => kind !== 'alternative')) {
+    return { hitDamage: terms.map((term) => term.damage) };
+  }
+  const last = terms.length - 1;
+  if (kinds[last] === 'alternative') {
+    conditions[last] = hit.slice(terms[last].end).trim();
+  }
+  const modeOf = (own: number): Mechanics[] =>
+    terms
+      .map((term, index) => ({ term, index }))
+      .filter(({ index }) => index === own || kinds[index] === 'rider')
+      .map(({ term }) => term.damage);
+  const defaultIndex = 0;
+  return {
+    hitDamage: modeOf(defaultIndex),
+    alternatives: terms.flatMap((_, index) =>
+      kinds[index] === 'alternative'
+        ? [
+            compact({
+              condition: conditions[index],
+              hitDamage: modeOf(index),
+            }),
+          ]
+        : [],
+    ),
+  };
+}
+
 function parseAttack(text: string): Mechanics | undefined {
-  // The middle segment names the target as "one target", "one creature", or
-  // "one Medium or smaller creature" — the bare word "target" is not
-  // guaranteed (Bat's Bite, Lamia's Intoxicating Touch use "one creature";
-  // eshyra-o9bd.18.7.3).
-  const match =
-    /\b(Melee|Ranged|Melee or Ranged) (Weapon|Spell) Attack:\s*([+-]\d+) to hit,\s*(.*?(?:targets?|creatures?).*?)\.\s*Hit:\s*([^.]*)\./i.exec(
-      text,
-    );
+  const match = ATTACK_CLAUSE_RE.exec(text);
   if (match === null) return undefined;
-  const reach = /\breach\s+(\d+)\s*ft\./i.exec(match[4]);
-  const range = /\brange\s+(\d+)\/(\d+)\s*ft\./i.exec(match[4]);
+  const [, kind, weaponOrSpell, bonus, modeBonus, modeCondition, middle, hit] =
+    match;
+  const reach = /\breach\s+(\d+)\s*ft\./i.exec(middle);
+  const range = ATTACK_RANGE_RE.exec(middle);
+  // The target phrase runs from its quantifier to the end of the lead-in
+  // (eshyra-o9bd.19.4.2.4): "one target in the swarm's space", "one creature
+  // not grappled by the crocodile", and the vampire's "one willing creature, or
+  // a creature that is grappled ...". A number followed by "ft"/"feet" is a
+  // range, never the quantifier.
   const target =
-    /\b((?:one|two|three|\d+)[^.]*?(?:targets?|creatures?))\b/i.exec(match[4]);
+    /\b((?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?!(?:ft|feet)\b)[\s\S]*)$/i.exec(
+      middle,
+    );
+  const projected = projectHitDamage(hit);
   // Flat hit damage without a dice expression ("Hit: 1 piercing damage.").
-  const diceDamage = parseDamage(match[5]);
   const flat =
-    diceDamage.length === 0 ? /^\s*(\d+) ([a-z]+) damage/.exec(match[5]) : null;
+    projected === undefined ? /^\s*(\d+) ([a-z]+) damage/.exec(hit) : null;
   const flatDamage =
     flat !== null && SRD_5_1_DAMAGE_TYPES.has(flat[2])
       ? [{ amount: Number(flat[1]), type: flat[2] }]
       : [];
-  return compact({
-    attackType: `${match[1].toLowerCase().replaceAll(' ', '-')}-${match[2].toLowerCase()}`,
-    attackBonus: Number(match[3]),
+  const alternatives = projected?.alternatives?.map((alternative) => ({
+    ...alternative,
+  }));
+  if (modeBonus !== undefined) {
+    // The printed mode bonus must land on the alternative it names; a bonus
+    // with no matching mode is a grammar we do not model, so fail loudly.
+    const wanted = modeCondition.toLowerCase().replace(/\s+/g, ' ');
+    const owner = (alternatives ?? []).find(
+      (alternative) =>
+        String(alternative.condition).toLowerCase().replace(/\s+/g, ' ') ===
+        wanted,
+    );
+    if (owner === undefined) {
+      throw new Error(
+        `attack lead-in mode bonus "${modeCondition}" matches no Hit alternative: ${JSON.stringify(text)}`,
+      );
+    }
+    owner.attackBonus = signedNumber(modeBonus);
+  }
+  const attack = compact({
+    attackType: `${kind.toLowerCase().replaceAll(' ', '-')}-${weaponOrSpell.toLowerCase()}`,
+    attackBonus: signedNumber(bonus),
     reachFeet: reach === null ? undefined : Number(reach[1]),
     rangeFeet:
       range === null
         ? undefined
-        : { normal: Number(range[1]), long: Number(range[2]) },
-    target: target?.[1].toLowerCase(),
-    hitDamage: diceDamage.length > 0 ? diceDamage : flatDamage,
+        : range[2] === undefined
+          ? { normal: Number(range[1]) }
+          : { normal: Number(range[1]), long: Number(range[2]) },
+    target: target?.[1].trim().toLowerCase(),
+    hitDamage: projected?.hitDamage ?? flatDamage,
+    alternatives:
+      alternatives === undefined || alternatives.length === 0
+        ? undefined
+        : alternatives,
   });
+  return attack;
+}
+
+/**
+ * Top-level damage projection for an entry carrying an attack (eshyra-o9bd.
+ * 19.4.2). With mutually exclusive modes, top-level `damage` is the DEFAULT
+ * mode plus the entry's damage outside the attack clause, so nothing reads the
+ * alternatives as cumulative. Entries without alternatives are unchanged.
+ */
+function projectEntryDamage(
+  text: string,
+  attack: Mechanics | undefined,
+): readonly Mechanics[] {
+  if (attack === undefined || attack.alternatives === undefined) {
+    return parseDamage(text);
+  }
+  // Top-level damage is the default hit mode only (eshyra-o9bd.19.4.2 C3).
+  // Damage printed outside the Hit sentence belongs to its own clause and is
+  // carried by projectSaveDamage, never merged into the default mode.
+  return [...(attack.hitDamage as readonly Mechanics[])];
+}
+
+/** Text outside the attack's lead-in + Hit sentence. */
+function outsideAttackClause(text: string): string {
+  const clause = ATTACK_CLAUSE_RE.exec(text);
+  return clause === null
+    ? text
+    : text.slice(0, clause.index) + text.slice(clause.index + clause[0].length);
+}
+
+/**
+ * Damage printed outside the attack clause on an alternative-bearing entry is
+ * save-governed (eshyra-o9bd.19.4.2.4): e.g. Swarm of Poisonous Snakes' "The
+ * target must make a DC 10 Constitution saving throw, taking 14 (4d6) poison
+ * damage on a failed save". It attaches to the entry's save as
+ * `damageOnFailure`. Fail closed: outside damage with no save to own it throws.
+ */
+function projectSaveDamage(
+  save: Mechanics | undefined,
+  text: string,
+  attack: Mechanics | undefined,
+): Mechanics | undefined {
+  if (attack === undefined || attack.alternatives === undefined) return save;
+  const outsideDamage: Mechanics[] = [];
+  for (const sentence of outsideAttackClause(text).split(/(?<=[.!?])\s+/)) {
+    const damage = parseDamage(sentence);
+    if (damage.length === 0) continue;
+    if (save === undefined || !/\bsaving throw\b/i.test(sentence)) {
+      throw new Error(
+        `alternative-bearing attack has save-free damage outside the Hit clause: ${JSON.stringify(sentence)}`,
+      );
+    }
+    outsideDamage.push(...damage);
+  }
+  if (save === undefined || outsideDamage.length === 0) return save;
+  return { ...save, damageOnFailure: outsideDamage };
 }
 
 function parseRecharge(name: string): Mechanics | undefined {
@@ -674,21 +871,23 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
     });
   }
   const attackDamageBonus =
-    /(?<![\w+-])([+-]\d+) bonus to attack rolls and damage rolls\b/.exec(text);
+    /(?<![\w+\u2212-])([+\u2212-]\d+) bonus to attack rolls and damage rolls\b/.exec(
+      text,
+    );
   if (attackDamageBonus !== null) {
     effects.push({
       kind: 'attackAndDamageBonus',
-      amount: Number(attackDamageBonus[1]),
+      amount: signedNumber(attackDamageBonus[1]),
     });
   }
   const checkBonus =
-    /(?<![\w+-])([+-]\d+) bonus to (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) \(([A-Za-z ]+)\) checks\b/.exec(
+    /(?<![\w+\u2212-])([+\u2212-]\d+) bonus to (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) \(([A-Za-z ]+)\) checks\b/.exec(
       text,
     );
   if (checkBonus !== null) {
     effects.push({
       kind: 'checkBonus',
-      amount: Number(checkBonus[1]),
+      amount: signedNumber(checkBonus[1]),
       ability: checkBonus[2].toLowerCase(),
       skill: checkBonus[3].toLowerCase().replaceAll(' ', '-'),
     });
@@ -841,9 +1040,9 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
   }
   // No \b before the sign: "+" is a non-word char, so a word boundary never
   // fires between the preceding space and the "+" (Shield's "a +5 bonus").
-  const acBonus = /(?<![\w+-])([+-]\d+) bonus to AC\b/.exec(text);
+  const acBonus = /(?<![\w+\u2212-])([+\u2212-]\d+) bonus to AC\b/.exec(text);
   if (acBonus !== null) {
-    effects.push({ kind: 'acBonus', amount: Number(acBonus[1]) });
+    effects.push({ kind: 'acBonus', amount: signedNumber(acBonus[1]) });
   }
   const acFormula = /\bbase AC becomes (\d+) \+ its Dexterity modifier\b/.exec(
     text,
@@ -2492,8 +2691,12 @@ export function deriveActionMechanics(action: ActionExtraction): Mechanics {
     action.name.toLowerCase(),
   );
   const attack = parseAttack(action.description);
-  const save = parseSaveWithSuccessBranch(action.description);
-  const damage = parseDamage(action.description);
+  const save = projectSaveDamage(
+    parseSaveWithSuccessBranch(action.description),
+    action.description,
+    attack,
+  );
+  const damage = projectEntryDamage(action.description, attack);
   return compact({
     ...standardAction,
     attacks: attack === undefined ? undefined : [attack],
@@ -3620,12 +3823,14 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
     });
   }
   const healing =
-    /\bregains (\d+) \((\d+d\d+(?:\s*[+-]\s*\d+)?)\) hit points\b/.exec(text);
+    /\bregains (\d+) \((\d+d\d+(?:\s*[+\u2212-]\s*\d+)?)\) hit points\b/.exec(
+      text,
+    );
   if (healing !== null) {
     effects.push({
       kind: 'healing',
       average: Number(healing[1]),
-      dice: healing[2].replace(/\s+/g, ' '),
+      dice: normalizeDice(healing[2]),
     });
   }
   const breathes = /\bcan breathe (only )?([a-z]+(?:,? and [a-z]+)?)\b/.exec(
@@ -4690,14 +4895,33 @@ export function deriveCreatureEntryMechanics(
   resolveSpellRef?: SpellRefResolver,
 ): Mechanics {
   const attack = parseAttack(text);
-  const saves = parseCreatureEntrySaves(text);
+  // Multi-save entries keep one typed save per printed clause (opus:F-32).
+  // Damage printed outside an alternative-bearing attack's Hit clause belongs
+  // to its save (PR #646); that routing is defined for a single save only, so
+  // an alternative-bearing attack with several saves fails closed.
+  const parsedSaves = parseCreatureEntrySaves(text);
+  if (
+    attack?.alternatives !== undefined &&
+    parsedSaves !== undefined &&
+    parsedSaves.length > 1
+  ) {
+    throw new Error(
+      `alternative-bearing attack with ${parsedSaves.length} saves has no defined save-damage routing: ${JSON.stringify(name)}`,
+    );
+  }
+  const saves =
+    parsedSaves === undefined
+      ? undefined
+      : parsedSaves.length === 1
+        ? [projectSaveDamage(parsedSaves[0], text, attack) as Mechanics]
+        : parsedSaves;
   const effects = parseCreatureEntryEffects(name, text);
   return compact({
     attacks: attack === undefined ? undefined : [attack],
     recharge: parseRecharge(name),
     usage: parseUsage(name),
     saves,
-    damage: parseDamage(text),
+    damage: projectEntryDamage(text, attack),
     conditions: parseConditions(text),
     effects: effects.length > 0 ? effects : undefined,
     spellcasting: parseCreatureSpellcasting(name, text, resolveSpellRef),
@@ -4944,11 +5168,10 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
       }),
     );
   }
-  const damageBonus = /(?<![\w+-])([+-]\d+) bonus to the damage roll\b/.exec(
-    text,
-  );
+  const damageBonus =
+    /(?<![\w+\u2212-])([+\u2212-]\d+) bonus to the damage roll\b/.exec(text);
   if (damageBonus !== null) {
-    effects.push({ kind: 'damageBonus', amount: Number(damageBonus[1]) });
+    effects.push({ kind: 'damageBonus', amount: signedNumber(damageBonus[1]) });
   }
   const attackersAgainst =
     /\battack rolls against you have (advantage|disadvantage)\b/i.exec(text);
@@ -5355,13 +5578,13 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
     });
   }
   const checkBonus =
-    /(?<![\w+-])([+-]\d+) bonus to (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) \(([A-Za-z ]+)\) checks\b/.exec(
+    /(?<![\w+\u2212-])([+\u2212-]\d+) bonus to (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) \(([A-Za-z ]+)\) checks\b/.exec(
       text,
     );
   if (checkBonus !== null) {
     effects.push({
       kind: 'checkBonus',
-      amount: Number(checkBonus[1]),
+      amount: signedNumber(checkBonus[1]),
       ability: checkBonus[2].toLowerCase(),
       skill: checkBonus[3].toLowerCase().replaceAll(' ', '-'),
     });

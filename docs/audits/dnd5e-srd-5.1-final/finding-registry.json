@@ -689,6 +689,7 @@
       "aliases": ["opus:F-28"],
       "invariant": "Druid and Dryad attacks have attack objects",
       "status": "accepted",
+      "statusReasoning": "Accepted. Repaired under eshyra-o9bd.19.4.2.1 (importer repair of the creature attack grammar; see its completion notes): creature:druid Quarterstaff and creature:dryad Club now project attacks[] with the printed default damage, the two-hands/shillelagh modes as alternatives, and the mode-specific bonus (+4 for druid, +6 for dryad) on the shillelagh alternative.",
       "provenance": {
         "auditFinding": "opus:F-28",
         "evidenceBasis": "audit-finding"
@@ -701,6 +702,7 @@
       "aliases": ["opus:F-29"],
       "invariant": "Unicode-minus damage is normalized",
       "status": "accepted",
+      "statusReasoning": "Accepted. Repaired under eshyra-o9bd.19.4.2.1 (importer repair of the creature attack grammar; see its completion notes): printed U+2212 in attack Hit-clause dice normalizes to ASCII; baboon, awakened-shrub, and giant-fire-beetle gained hitDamage. The remaining U+2212 dice-like texts (hit-point formulas and magic-item random counts) are not damage projections and are unchanged.",
       "provenance": {
         "auditFinding": "opus:F-29",
         "evidenceBasis": "audit-finding"
@@ -713,6 +715,7 @@
       "aliases": ["opus:F-31"],
       "invariant": "Ranged attacks retain range under alternate notation",
       "status": "accepted",
+      "statusReasoning": "Accepted. Verified under eshyra-o9bd.19.4.2.1 (importer repair of the creature attack grammar; see its completion notes): the premise that no ranged attack lacks rangeFeet was false. Six ranged attacks (bandit, salamander, scout, barbed-devil, efreeti, horned-devil) had lost rangeFeet under the printed notations \"N ft./M ft.\", \"ranged N/M ft.\", and single \"range N ft.\"; the parser now projects them.",
       "provenance": {
         "auditFinding": "opus:F-31",
         "evidenceBasis": "audit-finding"
@@ -737,7 +740,8 @@
       "canonicalId": "creature-statblock-mechanics",
       "aliases": ["sol:CAP-004"],
       "invariant": "Creature stat-block mechanics are complete",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Narrowed under ADR 0020 (no completeness claim: the parser census does not prove complete creature mechanics). The surviving obligation is that emitted creature attack/damage projections agree with the printed stat block, discharged by eshyra-o9bd.19.4.2.1 (importer repair of the creature attack grammar; see its completion notes) together with the existing statline fidelity gate.",
       "provenance": {
         "auditFinding": "sol:CAP-004",
         "evidenceBasis": "audit-finding"

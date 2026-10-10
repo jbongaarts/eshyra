@@ -19645,7 +19645,21 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 1,
                 "reachFeet": 5,
-                "target": "one target"
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 1,
+                    "dice": "1d4 - 1",
+                    "type": "slashing"
+                  }
+                ]
+              }
+            ],
+            "damage": [
+              {
+                "average": 1,
+                "dice": "1d4 - 1",
+                "type": "slashing"
               }
             ]
           }
@@ -19973,14 +19987,26 @@
                     "type": "bludgeoning"
                   },
                   {
-                    "average": 8,
-                    "dice": "1d10 + 3",
-                    "type": "bludgeoning"
-                  },
-                  {
                     "average": 3,
                     "dice": "1d6",
                     "type": "fire"
+                  }
+                ],
+                "alternatives": [
+                  {
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 8,
+                        "dice": "1d10 + 3",
+                        "type": "bludgeoning"
+                      },
+                      {
+                        "average": 3,
+                        "dice": "1d6",
+                        "type": "fire"
+                      }
+                    ]
                   }
                 ]
               }
@@ -19989,11 +20015,6 @@
               {
                 "average": 7,
                 "dice": "1d8 + 3",
-                "type": "bludgeoning"
-              },
-              {
-                "average": 8,
-                "dice": "1d10 + 3",
                 "type": "bludgeoning"
               },
               {
@@ -20093,7 +20114,21 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 1,
                 "reachFeet": 5,
-                "target": "one target"
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 1,
+                    "dice": "1d4 - 1",
+                    "type": "piercing"
+                  }
+                ]
+              }
+            ],
+            "damage": [
+              {
+                "average": 1,
+                "dice": "1d4 - 1",
+                "type": "piercing"
               }
             ]
           }
@@ -20551,6 +20586,10 @@
               {
                 "attackType": "ranged-weapon",
                 "attackBonus": 3,
+                "rangeFeet": {
+                  "normal": 80,
+                  "long": 320
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -20929,6 +20968,9 @@
               {
                 "attackType": "ranged-spell",
                 "attackBonus": 5,
+                "rangeFeet": {
+                  "normal": 150
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -23509,11 +23551,18 @@
                     "average": 9,
                     "dice": "2d6 + 2",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 5,
-                    "dice": "1d6 + 2",
-                    "type": "piercing"
+                    "condition": "at range",
+                    "hitDamage": [
+                      {
+                        "average": 5,
+                        "dice": "1d6 + 2",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -23522,11 +23571,6 @@
               {
                 "average": 9,
                 "dice": "2d6 + 2",
-                "type": "piercing"
-              },
-              {
-                "average": 5,
-                "dice": "1d6 + 2",
                 "type": "piercing"
               }
             ]
@@ -28385,11 +28429,18 @@
                     "average": 7,
                     "dice": "1d8 + 3",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 8,
-                    "dice": "1d10 + 3",
-                    "type": "slashing"
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 8,
+                        "dice": "1d10 + 3",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -28398,11 +28449,6 @@
               {
                 "average": 7,
                 "dice": "1d8 + 3",
-                "type": "slashing"
-              },
-              {
-                "average": 8,
-                "dice": "1d10 + 3",
                 "type": "slashing"
               }
             ]
@@ -28583,20 +28629,48 @@
           "name": "Quarterstaff",
           "text": "Melee Weapon Attack: +2 to hit (+4 to hit with shillelagh), reach 5 ft., one target. Hit: 3 (1d6) bludgeoning damage, 4 (1d8) bludgeoning damage if wielded with two hands, or 6 (1d8 + 2) bludgeoning damage with shillelagh.",
           "mechanics": {
+            "attacks": [
+              {
+                "attackType": "melee-weapon",
+                "attackBonus": 2,
+                "reachFeet": 5,
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 3,
+                    "dice": "1d6",
+                    "type": "bludgeoning"
+                  }
+                ],
+                "alternatives": [
+                  {
+                    "condition": "if wielded with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 4,
+                        "dice": "1d8",
+                        "type": "bludgeoning"
+                      }
+                    ]
+                  },
+                  {
+                    "condition": "with shillelagh",
+                    "hitDamage": [
+                      {
+                        "average": 6,
+                        "dice": "1d8 + 2",
+                        "type": "bludgeoning"
+                      }
+                    ],
+                    "attackBonus": 4
+                  }
+                ]
+              }
+            ],
             "damage": [
               {
                 "average": 3,
                 "dice": "1d6",
-                "type": "bludgeoning"
-              },
-              {
-                "average": 4,
-                "dice": "1d8",
-                "type": "bludgeoning"
-              },
-              {
-                "average": 6,
-                "dice": "1d8 + 2",
                 "type": "bludgeoning"
               }
             ]
@@ -28767,15 +28841,38 @@
           "name": "Club",
           "text": "Melee Weapon Attack: +2 to hit (+6 to hit with shillelagh), reach 5 ft., one target. Hit: 2 (1d4) bludgeoning damage, or 8 (1d8 + 4) bludgeoning damage with shillelagh.",
           "mechanics": {
+            "attacks": [
+              {
+                "attackType": "melee-weapon",
+                "attackBonus": 2,
+                "reachFeet": 5,
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 2,
+                    "dice": "1d4",
+                    "type": "bludgeoning"
+                  }
+                ],
+                "alternatives": [
+                  {
+                    "condition": "with shillelagh",
+                    "hitDamage": [
+                      {
+                        "average": 8,
+                        "dice": "1d8 + 4",
+                        "type": "bludgeoning"
+                      }
+                    ],
+                    "attackBonus": 6
+                  }
+                ]
+              }
+            ],
             "damage": [
               {
                 "average": 2,
                 "dice": "1d4",
-                "type": "bludgeoning"
-              },
-              {
-                "average": 8,
-                "dice": "1d8 + 4",
                 "type": "bludgeoning"
               }
             ]
@@ -28931,11 +29028,18 @@
                     "average": 6,
                     "dice": "1d8 + 2",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 11,
-                    "dice": "2d8 + 2",
-                    "type": "piercing"
+                    "condition": "while enlarged",
+                    "hitDamage": [
+                      {
+                        "average": 11,
+                        "dice": "2d8 + 2",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -28944,11 +29048,6 @@
               {
                 "average": 6,
                 "dice": "1d8 + 2",
-                "type": "piercing"
-              },
-              {
-                "average": 11,
-                "dice": "2d8 + 2",
                 "type": "piercing"
               }
             ]
@@ -28973,11 +29072,18 @@
                     "average": 5,
                     "dice": "1d6 + 2",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 9,
-                    "dice": "2d6 + 2",
-                    "type": "piercing"
+                    "condition": "while enlarged",
+                    "hitDamage": [
+                      {
+                        "average": 9,
+                        "dice": "2d6 + 2",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -28986,11 +29092,6 @@
               {
                 "average": 5,
                 "dice": "1d6 + 2",
-                "type": "piercing"
-              },
-              {
-                "average": 9,
-                "dice": "2d6 + 2",
                 "type": "piercing"
               }
             ]
@@ -29618,6 +29719,9 @@
               {
                 "attackType": "ranged-spell",
                 "attackBonus": 7,
+                "rangeFeet": {
+                  "normal": 120
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -30275,14 +30379,26 @@
                     "type": "slashing"
                   },
                   {
-                    "average": 9,
-                    "dice": "1d10 + 4",
-                    "type": "slashing"
-                  },
-                  {
                     "average": 13,
                     "dice": "3d8",
                     "type": "poison"
+                  }
+                ],
+                "alternatives": [
+                  {
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 9,
+                        "dice": "1d10 + 4",
+                        "type": "slashing"
+                      },
+                      {
+                        "average": 13,
+                        "dice": "3d8",
+                        "type": "poison"
+                      }
+                    ]
                   }
                 ]
               }
@@ -30291,11 +30407,6 @@
               {
                 "average": 8,
                 "dice": "1d8 + 4",
-                "type": "slashing"
-              },
-              {
-                "average": 9,
-                "dice": "1d10 + 4",
                 "type": "slashing"
               },
               {
@@ -33634,7 +33745,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 8,
                 "reachFeet": 10,
-                "target": "one target",
+                "target": "one target not grappled by the crocodile",
                 "hitDamage": [
                   {
                     "average": 14,
@@ -34062,7 +34173,21 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 1,
                 "reachFeet": 5,
-                "target": "one target"
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 2,
+                    "dice": "1d6 - 1",
+                    "type": "slashing"
+                  }
+                ]
+              }
+            ],
+            "damage": [
+              {
+                "average": 2,
+                "dice": "1d6 - 1",
+                "type": "slashing"
               }
             ]
           }
@@ -35061,7 +35186,37 @@
       "variants": [
         {
           "name": "Diseased Giant Rats",
-          "text": "Some giant rats carry vile diseases that they spread with their bites. A diseased giant rat has a challenge rating of 1/8 (25 XP) and the following action instead of its normal bite attack. Bite. Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 4 (1d4 + 2) piercing damage. If the target is a creature, it must succeed on a DC 10 Constitution saving throw or contract a disease. Until the disease is cured, the target can’t regain hit points except by magical means, and the target’s hit point maximum decreases by 3 (1d6) every 24 hours. If the target’s hit point maximum drops to 0 as a result of this disease, the target dies."
+          "text": "Some giant rats carry vile diseases that they spread with their bites. A diseased giant rat has a challenge rating of 1/8 (25 XP) and the following action instead of its normal bite attack. Bite. Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 4 (1d4 + 2) piercing damage. If the target is a creature, it must succeed on a DC 10 Constitution saving throw or contract a disease. Until the disease is cured, the target can’t regain hit points except by magical means, and the target’s hit point maximum decreases by 3 (1d6) every 24 hours. If the target’s hit point maximum drops to 0 as a result of this disease, the target dies.",
+          "mechanics": {
+            "attacks": [
+              {
+                "attackType": "melee-weapon",
+                "attackBonus": 4,
+                "reachFeet": 5,
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 4,
+                    "dice": "1d4 + 2",
+                    "type": "piercing"
+                  }
+                ]
+              }
+            ],
+            "saves": [
+              {
+                "ability": "constitution",
+                "dc": 10
+              }
+            ],
+            "damage": [
+              {
+                "average": 4,
+                "dice": "1d4 + 2",
+                "type": "piercing"
+              }
+            ]
+          }
         }
       ]
     },
@@ -36878,11 +37033,18 @@
                     "average": 11,
                     "dice": "2d6 + 4",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 13,
-                    "dice": "2d8 + 4",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 13,
+                        "dice": "2d8 + 4",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -36891,11 +37053,6 @@
               {
                 "average": 11,
                 "dice": "2d6 + 4",
-                "type": "piercing"
-              },
-              {
-                "average": 13,
-                "dice": "2d8 + 4",
                 "type": "piercing"
               }
             ]
@@ -37085,11 +37242,18 @@
                     "average": 5,
                     "dice": "1d6 + 2",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 6,
-                    "dice": "1d8 + 2",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 6,
+                        "dice": "1d8 + 2",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -37098,11 +37262,6 @@
               {
                 "average": 5,
                 "dice": "1d6 + 2",
-                "type": "piercing"
-              },
-              {
-                "average": 6,
-                "dice": "1d8 + 2",
                 "type": "piercing"
               }
             ]
@@ -38938,11 +39097,18 @@
                     "average": 4,
                     "dice": "1d6 + 1",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 5,
-                    "dice": "1d8 + 1",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 5,
+                        "dice": "1d8 + 1",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -38951,11 +39117,6 @@
               {
                 "average": 4,
                 "dice": "1d6 + 1",
-                "type": "piercing"
-              },
-              {
-                "average": 5,
-                "dice": "1d8 + 1",
                 "type": "piercing"
               }
             ]
@@ -39609,11 +39770,18 @@
                     "average": 7,
                     "dice": "1d8 + 3",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 8,
-                    "dice": "1d10 + 3",
-                    "type": "slashing"
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 8,
+                        "dice": "1d10 + 3",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -39622,11 +39790,6 @@
               {
                 "average": 7,
                 "dice": "1d8 + 3",
-                "type": "slashing"
-              },
-              {
-                "average": 8,
-                "dice": "1d10 + 3",
                 "type": "slashing"
               }
             ]
@@ -40702,11 +40865,18 @@
                     "average": 5,
                     "dice": "1d8 + 1",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 6,
-                    "dice": "1d10 + 1",
-                    "type": "slashing"
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 6,
+                        "dice": "1d10 + 1",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -40715,11 +40885,6 @@
               {
                 "average": 5,
                 "dice": "1d8 + 1",
-                "type": "slashing"
-              },
-              {
-                "average": 6,
-                "dice": "1d10 + 1",
                 "type": "slashing"
               }
             ]
@@ -41069,6 +41234,9 @@
               {
                 "attackType": "ranged-spell",
                 "attackBonus": 7,
+                "rangeFeet": {
+                  "normal": 150
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -46158,11 +46326,18 @@
                     "average": 3,
                     "dice": "1d6",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 4,
-                    "dice": "1d8",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 4,
+                        "dice": "1d8",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -46171,11 +46346,6 @@
               {
                 "average": 3,
                 "dice": "1d6",
-                "type": "piercing"
-              },
-              {
-                "average": 4,
-                "dice": "1d8",
                 "type": "piercing"
               }
             ]
@@ -48928,11 +49098,18 @@
                     "average": 15,
                     "dice": "2d10 + 4",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 9,
-                    "dice": "1d10 + 4",
-                    "type": "slashing"
+                    "condition": "in Small or Medium form",
+                    "hitDamage": [
+                      {
+                        "average": 9,
+                        "dice": "1d10 + 4",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -48941,11 +49118,6 @@
               {
                 "average": 15,
                 "dice": "2d10 + 4",
-                "type": "slashing"
-              },
-              {
-                "average": 9,
-                "dice": "1d10 + 4",
                 "type": "slashing"
               }
             ]
@@ -53929,11 +54101,18 @@
                     "average": 4,
                     "dice": "1d6 + 1",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 5,
-                    "dice": "1d8 + 1",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 5,
+                        "dice": "1d8 + 1",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -53942,11 +54121,6 @@
               {
                 "average": 4,
                 "dice": "1d6 + 1",
-                "type": "piercing"
-              },
-              {
-                "average": 5,
-                "dice": "1d8 + 1",
                 "type": "piercing"
               }
             ]
@@ -54082,6 +54256,10 @@
                 "attackType": "melee-or-ranged-weapon",
                 "attackBonus": 7,
                 "reachFeet": 5,
+                "rangeFeet": {
+                  "normal": 20,
+                  "long": 60
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -54090,14 +54268,26 @@
                     "type": "piercing"
                   },
                   {
-                    "average": 13,
-                    "dice": "2d8 + 4",
-                    "type": "piercing"
-                  },
-                  {
                     "average": 3,
                     "dice": "1d6",
                     "type": "fire"
+                  }
+                ],
+                "alternatives": [
+                  {
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 13,
+                        "dice": "2d8 + 4",
+                        "type": "piercing"
+                      },
+                      {
+                        "average": 3,
+                        "dice": "1d6",
+                        "type": "fire"
+                      }
+                    ]
                   }
                 ]
               }
@@ -54106,11 +54296,6 @@
               {
                 "average": 11,
                 "dice": "2d6 + 4",
-                "type": "piercing"
-              },
-              {
-                "average": 13,
-                "dice": "2d8 + 4",
                 "type": "piercing"
               },
               {
@@ -54554,6 +54739,10 @@
               {
                 "attackType": "ranged-weapon",
                 "attackBonus": 4,
+                "rangeFeet": {
+                  "normal": 150,
+                  "long": 600
+                },
                 "target": "one target",
                 "hitDamage": [
                   {
@@ -57964,17 +58153,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 4,
                 "reachFeet": 0,
-                "target": "one creature",
+                "target": "one creature in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 5,
                     "dice": "2d4",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 2,
-                    "dice": "1d4",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 2,
+                        "dice": "1d4",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -57983,11 +58179,6 @@
               {
                 "average": 5,
                 "dice": "2d4",
-                "type": "piercing"
-              },
-              {
-                "average": 2,
-                "dice": "1d4",
                 "type": "piercing"
               }
             ]
@@ -58080,17 +58271,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 3,
                 "reachFeet": 0,
-                "target": "one target",
+                "target": "one target in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 10,
                     "dice": "4d4",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 5,
-                    "dice": "2d4",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 5,
+                        "dice": "2d4",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -58099,11 +58297,6 @@
               {
                 "average": 10,
                 "dice": "4d4",
-                "type": "piercing"
-              },
-              {
-                "average": 5,
-                "dice": "2d4",
                 "type": "piercing"
               }
             ]
@@ -58201,17 +58394,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 6,
                 "reachFeet": 0,
-                "target": "one creature",
+                "target": "one creature in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 7,
                     "dice": "2d6",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 3,
-                    "dice": "1d6",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 3,
+                        "dice": "1d6",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -58220,7 +58420,14 @@
               {
                 "ability": "constitution",
                 "dc": 10,
-                "damageOnSuccess": "half"
+                "damageOnSuccess": "half",
+                "damageOnFailure": [
+                  {
+                    "average": 14,
+                    "dice": "4d6",
+                    "type": "poison"
+                  }
+                ]
               }
             ],
             "damage": [
@@ -58228,16 +58435,6 @@
                 "average": 7,
                 "dice": "2d6",
                 "type": "piercing"
-              },
-              {
-                "average": 3,
-                "dice": "1d6",
-                "type": "piercing"
-              },
-              {
-                "average": 14,
-                "dice": "4d6",
-                "type": "poison"
               }
             ]
           }
@@ -58357,17 +58554,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 5,
                 "reachFeet": 0,
-                "target": "one creature",
+                "target": "one creature in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 14,
                     "dice": "4d6",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 7,
-                    "dice": "2d6",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 7,
+                        "dice": "2d6",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -58376,11 +58580,6 @@
               {
                 "average": 14,
                 "dice": "4d6",
-                "type": "piercing"
-              },
-              {
-                "average": 7,
-                "dice": "2d6",
                 "type": "piercing"
               }
             ]
@@ -58488,17 +58687,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 2,
                 "reachFeet": 0,
-                "target": "one target",
+                "target": "one target in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 7,
                     "dice": "2d6",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 3,
-                    "dice": "1d6",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 3,
+                        "dice": "1d6",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -58507,11 +58713,6 @@
               {
                 "average": 7,
                 "dice": "2d6",
-                "type": "piercing"
-              },
-              {
-                "average": 3,
-                "dice": "1d6",
                 "type": "piercing"
               }
             ]
@@ -58604,17 +58805,24 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 4,
                 "reachFeet": 5,
-                "target": "one target",
+                "target": "one target in the swarm’s space",
                 "hitDamage": [
                   {
                     "average": 7,
                     "dice": "2d6",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 3,
-                    "dice": "1d6",
-                    "type": "piercing"
+                    "condition": "if the swarm has half of its hit points or fewer",
+                    "hitDamage": [
+                      {
+                        "average": 3,
+                        "dice": "1d6",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -58623,11 +58831,6 @@
               {
                 "average": 7,
                 "dice": "2d6",
-                "type": "piercing"
-              },
-              {
-                "average": 3,
-                "dice": "1d6",
                 "type": "piercing"
               }
             ]
@@ -59601,11 +59804,18 @@
                     "average": 4,
                     "dice": "1d6 + 1",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 5,
-                    "dice": "1d8 + 1",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 5,
+                        "dice": "1d8 + 1",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -59614,11 +59824,6 @@
               {
                 "average": 4,
                 "dice": "1d6 + 1",
-                "type": "piercing"
-              },
-              {
-                "average": 5,
-                "dice": "1d8 + 1",
                 "type": "piercing"
               }
             ]
@@ -60673,7 +60878,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 9,
                 "reachFeet": 5,
-                "target": "one willing creature",
+                "target": "one willing creature, or a creature that is grappled by the vampire, incapacitated, or restrained",
                 "hitDamage": [
                   {
                     "average": 7,
@@ -60990,7 +61195,7 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 6,
                 "reachFeet": 5,
-                "target": "one willing creature",
+                "target": "one willing creature, or a creature that is grappled by the vampire, incapacitated, or restrained",
                 "hitDamage": [
                   {
                     "average": 6,
@@ -61121,11 +61326,18 @@
                     "average": 7,
                     "dice": "1d8 + 3",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 8,
-                    "dice": "1d10 + 3",
-                    "type": "slashing"
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 8,
+                        "dice": "1d10 + 3",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -61134,11 +61346,6 @@
               {
                 "average": 7,
                 "dice": "1d8 + 3",
-                "type": "slashing"
-              },
-              {
-                "average": 8,
-                "dice": "1d10 + 3",
                 "type": "slashing"
               }
             ]
@@ -63434,11 +63641,18 @@
                     "average": 5,
                     "dice": "1d6 + 2",
                     "type": "piercing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 6,
-                    "dice": "1d8 + 2",
-                    "type": "piercing"
+                    "condition": "if used with two hands to make a melee attack",
+                    "hitDamage": [
+                      {
+                        "average": 6,
+                        "dice": "1d8 + 2",
+                        "type": "piercing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -63447,11 +63661,6 @@
               {
                 "average": 5,
                 "dice": "1d6 + 2",
-                "type": "piercing"
-              },
-              {
-                "average": 6,
-                "dice": "1d8 + 2",
                 "type": "piercing"
               }
             ]
@@ -63739,11 +63948,18 @@
                     "average": 6,
                     "dice": "1d8 + 2",
                     "type": "slashing"
-                  },
+                  }
+                ],
+                "alternatives": [
                   {
-                    "average": 7,
-                    "dice": "1d10 + 2",
-                    "type": "slashing"
+                    "condition": "if used with two hands",
+                    "hitDamage": [
+                      {
+                        "average": 7,
+                        "dice": "1d10 + 2",
+                        "type": "slashing"
+                      }
+                    ]
                   }
                 ]
               }
@@ -63752,11 +63968,6 @@
               {
                 "average": 6,
                 "dice": "1d8 + 2",
-                "type": "slashing"
-              },
-              {
-                "average": 7,
-                "dice": "1d10 + 2",
                 "type": "slashing"
               }
             ]
