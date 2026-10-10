@@ -128,7 +128,13 @@ function render(trace: ReturnType<typeof packetFor>): string {
 }
 
 const DRAGON = 'creature:adult-black-dragon';
-const FIREBALL = 'spell:fireball';
+/**
+ * An untyped spell area. Fireball's sphere is typed from its printed sentence
+ * (eshyra-o9bd.19.4.1.1), so the area-note cases use Hypnotic Pattern's
+ * printed 30-foot cube, which has no typed area and no printed origin point.
+ */
+const UNTYPED_AREA_SPELL = 'spell:hypnotic-pattern';
+const UNTYPED_AREA_PHRASE = '30-foot cube';
 const SUCCESS_PHRASE = 'or half as much damage on a successful one';
 const AREA_PHRASE = '20-foot-radius sphere';
 
@@ -176,16 +182,16 @@ describe('projection-limit notes are built from attested prose', () => {
     ).toEqual([]);
   });
 
-  it('still discloses the Dragon success branch and the Fireball area, from attested prose', () => {
+  it('still discloses the Dragon success branch and an untyped spell area, from attested prose', () => {
     // The bundled provenance source attests only the bundled pack object, so
     // the reconstructed pack is given the same manifest explicitly.
     const trace = packetFor(
       withoutDragonSuccessBranch(),
-      [DRAGON, FIREBALL],
+      [DRAGON, UNTYPED_AREA_SPELL],
       getBundledDnd5eSrdFieldProvenanceManifest(),
     );
     const dragon = candidate(trace, DRAGON);
-    const fireball = candidate(trace, FIREBALL);
+    const areaSpell = candidate(trace, UNTYPED_AREA_SPELL);
 
     const success = dragon.projectionLimits.find(
       (note) => note.kind === 'success-branch',
@@ -193,13 +199,15 @@ describe('projection-limit notes are built from attested prose', () => {
     expect(success?.evidence.path).toBe('/data/actions/5/mechanics/saves');
     expect(success?.attestedProse).toContain(SUCCESS_PHRASE);
 
-    const area = fireball.projectionLimits.find((note) => note.kind === 'area');
-    expect(area?.attestedProse).toContain(AREA_PHRASE);
+    const area = areaSpell.projectionLimits.find(
+      (note) => note.kind === 'area',
+    );
+    expect(area?.attestedProse).toContain(UNTYPED_AREA_PHRASE);
 
     // Every note's prose is drawn from the candidate's own attested partition
     // — asserted per line, so a note cannot smuggle in a projection string
     // between two attested ones.
-    for (const item of [dragon, fireball]) {
+    for (const item of [dragon, areaSpell]) {
       const attested = new Set(stringsIn(item.sourceProse));
       for (const note of item.projectionLimits)
         for (const line of note.attestedProse.split('\n'))
@@ -226,7 +234,7 @@ describe('projection-limit notes are built from attested prose', () => {
       '/actions/*/text',
       'compiler-projection',
     );
-    const fireballManifest = reclassified(
+    const areaSpellManifest = reclassified(
       'spell',
       '/description',
       'compiler-projection',
@@ -266,14 +274,20 @@ describe('projection-limit notes are built from attested prose', () => {
     ).toEqual([]);
     expect(render(dragonTrace)).not.toContain(SOURCE_AUTHORITY_CLAIM);
 
-    const fireballTrace = packetFor(base, [FIREBALL], fireballManifest);
-    const fireball = candidate(fireballTrace, FIREBALL);
-    expect(JSON.stringify(fireball.projection)).toContain(AREA_PHRASE);
-    expect(JSON.stringify(fireball.sourceProse)).not.toContain(AREA_PHRASE);
+    const areaSpellTrace = packetFor(
+      base,
+      [UNTYPED_AREA_SPELL],
+      areaSpellManifest,
+    );
+    const areaSpell = candidate(areaSpellTrace, UNTYPED_AREA_SPELL);
+    expect(JSON.stringify(areaSpell.projection)).toContain(UNTYPED_AREA_PHRASE);
+    expect(JSON.stringify(areaSpell.sourceProse)).not.toContain(
+      UNTYPED_AREA_PHRASE,
+    );
     expect(
-      fireball.projectionLimits.filter((note) => note.kind === 'area'),
+      areaSpell.projectionLimits.filter((note) => note.kind === 'area'),
     ).toEqual([]);
-    expect(render(fireballTrace)).not.toContain(AREA_CLAIM);
+    expect(render(areaSpellTrace)).not.toContain(AREA_CLAIM);
   });
 
   /**

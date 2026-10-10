@@ -61,9 +61,9 @@ export const P04_FIREBALL: DiagnosticFixture = {
     {
       kind: 'packet-semantic',
       statement:
-        'The typed projection has no mechanics.area; area geometry and target selection remain outside the upcast capability.',
-      assertionId: 'fireball-area-disclosed',
-      why: 'The claim is that the packet discloses the absent typed area.',
+        'The typed projection carries mechanics.area (sphere, 20 feet, point-within-range) from the printed sentence; area geometry and target selection remain outside the upcast capability.',
+      assertionId: 'fireball-area-typed',
+      why: 'The claim is that the packet carries the typed area printed in the source sentence and raises no area note.',
     },
   ],
   requiredRelationshipExpansion: none(
@@ -99,7 +99,7 @@ export const P04_FIREBALL: DiagnosticFixture = {
         ],
         exclusions: [
           'packages/core/src/orchestrator/spellUpcast.ts and toolSpendSpellSlot.ts do not own area geometry or target selection.',
-          'No typed mechanics.area is present.',
+          'mechanics.area is a description projection of the printed sphere; the upcast capability does not read it.',
         ],
         residualInterpretation:
           'The DM adjudicates the area, targets, and successful-save application around the deterministic upcast arithmetic.',
