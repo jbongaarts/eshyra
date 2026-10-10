@@ -57,12 +57,12 @@ function packetFor(recordKey: string, dataOverride?: unknown) {
 describe('runtime-owned deterministic capability ledger', () => {
   it('R1 resolves every bound rule identity to its exact contract revision', () => {
     const expected = new Map([
-      ['rule:ability-checks', 'resolve-check-v1'],
-      ['rule:advantage-and-disadvantage', 'resolve-check-v1'],
-      ['rule:attack-rolls', 'resolve-check-v1'],
-      ['rule:modifiers-to-the-roll', 'resolve-check-v1'],
-      ['rule:proficiency-bonus', 'resolve-check-v1'],
-      ['rule:saving-throws', 'resolve-check-v1'],
+      ['rule:ability-checks', 'resolve-check-v2'],
+      ['rule:advantage-and-disadvantage', 'resolve-check-v2'],
+      ['rule:attack-rolls', 'resolve-check-v2'],
+      ['rule:modifiers-to-the-roll', 'resolve-check-v2'],
+      ['rule:proficiency-bonus', 'resolve-check-v2'],
+      ['rule:saving-throws', 'resolve-check-v2'],
       ['rule:concentration', 'resolve-concentration-v1'],
       ['rule:casting-a-spell-at-a-higher-level', 'resolve-spell-upcast-v1'],
     ]);
@@ -116,7 +116,7 @@ describe('runtime-owned deterministic capability ledger', () => {
       requireRuleDeterministicCapabilityContract('not-a-real-revision'),
     ).toThrow(RulesPackError);
     const contract =
-      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v1'];
+      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v2'];
     expect(() =>
       createDeterministicCapabilityLedger(
         { ...RULE_DETERMINISTIC_CAPABILITY_CONTRACTS },
@@ -126,8 +126,8 @@ describe('runtime-owned deterministic capability ledger', () => {
     ).toThrow(RulesPackError);
     expect(() =>
       createDeterministicCapabilityLedger(
-        { 'resolve-check-v1': contract },
-        [{ ruleKey: 'same', capability: 'resolve-check-v1' }],
+        { 'resolve-check-v2': contract },
+        [{ ruleKey: 'same', capability: 'resolve-check-v2' }],
         {
           same: {
             ruleKey: 'same',
@@ -149,11 +149,11 @@ describe('runtime-owned deterministic capability ledger', () => {
     // must be enforced by the constructor itself, failing closed before any
     // lookup or packet presentation.
     const contract =
-      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v1'];
+      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v2'];
 
     // A registry key whose own contract.revision names a different identity:
     // a binding through this key would select 'mismatched-key' for lookup
-    // while the packet would advertise 'resolve-check-v1' as the revision.
+    // while the packet would advertise 'resolve-check-v2' as the revision.
     expect(() =>
       createDeterministicCapabilityLedger(
         { 'mismatched-key': contract },
@@ -167,10 +167,10 @@ describe('runtime-owned deterministic capability ledger', () => {
     // context packet.
     expect(() =>
       createDeterministicCapabilityLedger(
-        { 'resolve-check-v1': contract },
+        { 'resolve-check-v2': contract },
         [
-          { ruleKey: 'rule:duplicate', capability: 'resolve-check-v1' },
-          { ruleKey: 'rule:duplicate', capability: 'resolve-check-v1' },
+          { ruleKey: 'rule:duplicate', capability: 'resolve-check-v2' },
+          { ruleKey: 'rule:duplicate', capability: 'resolve-check-v2' },
         ],
         {},
       ),
@@ -261,17 +261,17 @@ describe('runtime-owned deterministic capability ledger', () => {
     // it, so these literals come from the pre-move tree, not from re-reading
     // the current one.
     const PRE_MOVE_CONTRACT_REVISIONS = [
-      'resolve-check-v1',
+      'resolve-check-v2',
       'resolve-concentration-v1',
       'resolve-spell-upcast-v1',
     ];
     const PRE_MOVE_BINDINGS = [
-      ['rule:ability-checks', 'resolve-check-v1'],
-      ['rule:advantage-and-disadvantage', 'resolve-check-v1'],
-      ['rule:attack-rolls', 'resolve-check-v1'],
-      ['rule:modifiers-to-the-roll', 'resolve-check-v1'],
-      ['rule:proficiency-bonus', 'resolve-check-v1'],
-      ['rule:saving-throws', 'resolve-check-v1'],
+      ['rule:ability-checks', 'resolve-check-v2'],
+      ['rule:advantage-and-disadvantage', 'resolve-check-v2'],
+      ['rule:attack-rolls', 'resolve-check-v2'],
+      ['rule:modifiers-to-the-roll', 'resolve-check-v2'],
+      ['rule:proficiency-bonus', 'resolve-check-v2'],
+      ['rule:saving-throws', 'resolve-check-v2'],
       ['rule:concentration', 'resolve-concentration-v1'],
       ['rule:casting-a-spell-at-a-higher-level', 'resolve-spell-upcast-v1'],
     ];
@@ -368,7 +368,7 @@ describe('runtime-owned deterministic capability ledger', () => {
     ).toBe(false);
     expect(Object.keys(AUDIT_CONTRACTS).sort()).toEqual([
       'derived-magic-item-clauses-v1',
-      'resolve-check-v1',
+      'resolve-check-v2',
       'resolve-concentration-v1',
       'resolve-spell-upcast-v1',
     ]);

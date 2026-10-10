@@ -434,13 +434,13 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
 
   it('uses one actual operation for several rule bindings and fails closed on invalid input', () => {
     expect(
-      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v1'],
+      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v2'],
     ).toMatchObject({
       operationId: 'resolve_check',
     });
     expect(
       RULE_DETERMINISTIC_CAPABILITY_BINDINGS.filter(
-        ({ capability }) => capability === 'resolve-check-v1',
+        ({ capability }) => capability === 'resolve-check-v2',
       ).map(({ ruleKey }) => ruleKey),
     ).toEqual([
       'rule:ability-checks',
@@ -454,7 +454,7 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       requireRuleDeterministicCapabilityContract('not-recognized-v1'),
     ).toThrow(/no deterministic capability has been positively selected/);
     expect(
-      validateRuleDeterministicCapabilityInput('resolve-check-v1', {
+      validateRuleDeterministicCapabilityInput('resolve-check-v2', {
         kind: 'initiative',
         reason: 'invalid kind',
         extra: true,
@@ -533,8 +533,8 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       validateRuleDeterministicCapabilityContracts(
         {},
         {
-          'resolve-check-v1': {
-            ...RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v1'],
+          'resolve-check-v2': {
+            ...RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v2'],
             requiredInputs: ['kind'],
           },
         },
@@ -542,7 +542,7 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
         {},
       ),
     ).toContain(
-      "resolve-check-v1: required schema input 'reason' is missing from the contract",
+      "resolve-check-v2: required schema input 'reason' is missing from the contract",
     );
   });
 
