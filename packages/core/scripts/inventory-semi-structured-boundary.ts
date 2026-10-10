@@ -908,6 +908,31 @@ const rules: readonly ClassificationRule[] = [
       ),
   },
   {
+    name: 'feature and option typed proficiency grants',
+    matches: (context) =>
+      context.system === 'dnd5e-srd' &&
+      kindIs('feature')(context) &&
+      exactPath(
+        'data.mechanics.effects[].savingThrows[]',
+        'data.mechanics.effects[].armor[]',
+        'data.mechanics.effects[].skills[]',
+        'data.choices[].options[].mechanics.effects[].kind',
+        'data.choices[].options[].mechanics.effects[].savingThrows[]',
+        'data.choices[].options[].mechanics.effects[].armor[]',
+        'data.choices[].options[].mechanics.effects[].skills[]',
+      )(context),
+    classify: () =>
+      result(
+        'scalar-like',
+        'complete',
+        'rulesPackResolver parseProficiencyGrants feeds proficiencyGrants.ts, which applies the grants to the sheet at creation and level-up',
+        'kind-specific proficiency validator checks the closed ability / SRD skill / armor vocabularies',
+        'sheet save, skill and armor proficiency state is audited through the character sheet',
+        'ProficiencyGrant / CharacterProficiencyGrant ledger',
+        'proficiencyGrants.ts and rulesPackResolver.ts',
+      ),
+  },
+  {
     name: 'mechanics closed scalar contracts',
     matches: ({ fieldPath }) =>
       /^data\.(?:mechanics|traits\[\]\.mechanics|actions\[\]\.mechanics|reactions\[\]\.mechanics|legendaryActions\.entries\[\]\.mechanics)\.(?:actionEconomy\.cost|effects\[\]\.(?:kind|mode|cost|ability|frequency|timing|attackType)|effects\[\]\.(?:creation|identity|placement|statBlockBasis)\.kind|effects\[\]\.(?:creation|creation\.options\[\]|creation\.cardinality|creation\.options\[\]\.cardinality|scaling\[\]|scaling\[\]\.options\[\]\.choices\[\]|transitions\[\]\.operation)\.kind|effects\[\]\.(?:creation\.cardinality|creation\.options\[\]\.cardinality|scaling\[\]\.options\[\]\.choices\[\]\.cardinality|transitions\[\]\.operation\.cardinality)\.mode|saves\[\]\.ability|spellcasting\.(?:ability|mode|componentRequirement)|levels\[\]\.effects\[\]\.(?:kind|mode))$/.test(

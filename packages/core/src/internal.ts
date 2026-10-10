@@ -410,6 +410,18 @@ export {
   normalizeProficiency,
   proficiencyReplacementId,
 } from './character/proficiency.js';
+export type {
+  CharacterProficiencyGrant,
+  ProficiencyGrantSource,
+} from './character/proficiencyGrants.js';
+export {
+  applyProficiencyGrants,
+  collectGrantSources,
+  grantsForSources,
+  ProficiencyGrantError,
+  removeOptionGrants,
+  validateCharacterSheetProficiencyGrants,
+} from './character/proficiencyGrants.js';
 // Character-creation recipe boundary (eshyra-b69j.4): the system-agnostic
 // contract plus the D&D 5e SRD recipe that owns modes, step order, validation,
 // derived values, and finalization. The shared creation shell depends only on

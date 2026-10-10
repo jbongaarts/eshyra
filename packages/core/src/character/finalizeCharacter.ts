@@ -49,6 +49,13 @@ import {
   proficiencyReplacementId,
 } from './proficiency.js';
 import {
+  applyProficiencyGrants,
+  type CharacterProficiencyGrant,
+  collectGrantSources,
+  levelOneFeatureRefs,
+  validateCharacterSheetProficiencyGrants,
+} from './proficiencyGrants.js';
+import {
   getBundledDnd5eCharacterResolver,
   type ResolvedAncestryData,
   type ResolvedBackgroundData,
@@ -380,6 +387,13 @@ export interface CharacterSheet {
    */
   readonly featureChoices?: readonly CharacterFeatureChoice[];
   /**
+   * Provenance of proficiencies added by class/subclass features and chosen
+   * options (eshyra-olc5.7): per source, ONLY what it newly added, so a
+   * replaced option removes exactly its own additions. Legacy sheets omit it
+   * and converge at their next level-up.
+   */
+  readonly proficiencyGrants?: readonly CharacterProficiencyGrant[];
+  /**
    * Structured spell buckets (eshyra-ug4i.2). Optional: absent on sheets that
    * predate it (their flat `spells` list is classified at the first level-up)
    * and on non-casters. When present, `spells` is its derived union.
@@ -396,6 +410,7 @@ export function validateCharacterSheetRollEvidence(
   // Every store/registry path that persists or loads a sheet already calls this
   // validator, so the optional `featureChoices` shape check rides along here.
   validateCharacterSheetFeatureChoices(sheet);
+  validateCharacterSheetProficiencyGrants(sheet);
   validateCharacterSheetSpellcasting(sheet);
   if (sheet.rolledAbilityScores === undefined) return;
   validateRolledAbilityScoreSet(sheet.rolledAbilityScores);
@@ -696,7 +711,16 @@ function buildFinalizedCharacter(
     ...classFeatureState(engine.mechanicalChoices(draft)),
     metadata,
   };
-  return finalized;
+  // Standing proficiencies from level-1 class/subclass features and chosen
+  // options (eshyra-olc5.7); a character with none emits no ledger.
+  const grantSources = collectGrantSources(
+    resolver,
+    levelOneFeatureRefs(resolver, classRef.key, finalized.subclass?.key),
+    finalized.featureChoices,
+  );
+  return grantSources.length === 0
+    ? finalized
+    : applyProficiencyGrants(finalized, grantSources).sheet;
 }
 
 /**

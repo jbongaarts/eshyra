@@ -78,6 +78,7 @@ import {
   assertSheetMatchesPack,
   type CharacterSheetStore,
 } from './characterSheetStore.js';
+import type { AbilityScoreName } from './creation.js';
 import type { SavingThrowDerived } from './derivedValues.js';
 import type {
   CharacterSheet,
@@ -119,6 +120,13 @@ import {
   SUBCLASS_FEATURE_SUFFIXES,
   subclassFeatureRefsForLevel,
 } from './levelUpSubclass.js';
+import {
+  applyProficiencyGrants,
+  type CharacterProficiencyGrant,
+  collectGrantSources,
+  ProficiencyGrantError,
+  removeOptionGrants,
+} from './proficiencyGrants.js';
 import {
   getBundledDnd5eCharacterResolver,
   type ResolvedClassData,
@@ -221,6 +229,25 @@ export interface LevelUpChangeSet {
       LevelUpDelta<SavingThrowDerived>
     >
   >;
+  /**
+   * Proficiencies newly gained from class/subclass features and chosen options
+   * at this level-up (eshyra-olc5.7), including legacy reconciliation.
+   */
+  readonly proficienciesGained?: LevelUpProficiencies;
+  /** Proficiencies removed because their replaceable option was replaced. */
+  readonly proficienciesRemoved?: LevelUpProficiencies;
+  /**
+   * The resulting `CharacterSheet.proficiencyGrants` provenance ledger,
+   * present only when it changes.
+   */
+  readonly proficiencyLedger?: readonly CharacterProficiencyGrant[];
+}
+
+/** A set of typed proficiencies gained or removed by a level-up. */
+export interface LevelUpProficiencies {
+  readonly savingThrows?: readonly import('./creation.js').AbilityScoreName[];
+  readonly skills?: readonly string[];
+  readonly armor?: readonly string[];
 }
 
 /** One class-resource capacity change recorded in the change set. */
@@ -711,6 +738,12 @@ export function previewLevelUpChangeSet(
     spellSelections !== undefined
       ? normalizeSpellSelections(spellSelections, targetAlwaysPrepared)
       : undefined;
+  const proficiencies = levelUpProficiencies(
+    sheet,
+    resolvedChoices.applied,
+    baseChangeSet.proficiencyBonus.to,
+    resolver,
+  );
   return {
     ok: true,
     requiredChoices,
@@ -719,7 +752,17 @@ export function previewLevelUpChangeSet(
         applyResolvedChoicesToChangeSet(baseChangeSet, resolvedChoices.applied),
         sheet,
         resolver,
+        proficiencies?.gained.savingThrows,
       ),
+      ...(proficiencies?.gained.empty === false
+        ? { proficienciesGained: proficiencies.gained.value }
+        : {}),
+      ...(proficiencies?.removed.empty === false
+        ? { proficienciesRemoved: proficiencies.removed.value }
+        : {}),
+      ...(proficiencies?.ledger !== undefined
+        ? { proficiencyLedger: proficiencies.ledger }
+        : {}),
       ...(finalSpellSelections !== undefined
         ? { spellSelections: finalSpellSelections }
         : {}),
@@ -1526,10 +1569,133 @@ function applyResolvedChoicesToChangeSet(
   };
 }
 
+interface LevelUpProficiencyResult {
+  readonly gained: ProficiencySummary;
+  readonly removed: ProficiencySummary;
+  /** Resulting ledger, set only when it differs from the sheet's. */
+  readonly ledger?: readonly CharacterProficiencyGrant[];
+}
+
+interface ProficiencySummary {
+  readonly empty: boolean;
+  readonly value: LevelUpProficiencies;
+  readonly savingThrows: readonly AbilityScoreName[];
+}
+
+function summarizeProficiencies(
+  entries: readonly CharacterProficiencyGrant[],
+): ProficiencySummary {
+  const savingThrows = [
+    ...new Set(entries.flatMap((e) => e.savingThrows ?? [])),
+  ];
+  const skills = [...new Set(entries.flatMap((e) => e.skills ?? []))];
+  const armor = [...new Set(entries.flatMap((e) => e.armor ?? []))];
+  return {
+    empty: savingThrows.length + skills.length + armor.length === 0,
+    savingThrows,
+    value: {
+      ...(savingThrows.length > 0 ? { savingThrows } : {}),
+      ...(skills.length > 0 ? { skills } : {}),
+      ...(armor.length > 0 ? { armor } : {}),
+    },
+  };
+}
+
+/**
+ * Standing proficiencies this level-up gains and loses (eshyra-olc5.7): the
+ * typed grants of every held/target feature and every post-choice option that
+ * has no ledger entry yet (also reconciling legacy sheets), after removing the
+ * exact ledgered additions of any replaced option. A replacement whose recorded
+ * skill has Expertise is refused (fail closed). Undefined when nothing applies.
+ */
+function levelUpProficiencies(
+  sheet: CharacterSheet,
+  applied: readonly LevelUpAppliedChoice[],
+  newProficiencyBonus: number,
+  resolver: RulesPackCharacterResolver,
+): LevelUpProficiencyResult | undefined {
+  const toLevel = sheet.level + 1;
+  const featureChoices = applyFeatureChoicesToSheet(
+    sheet.featureChoices,
+    applied,
+  );
+  const subclassKey =
+    applied.find((choice) => choice.kind === 'subclass')?.value ??
+    sheet.subclass?.key;
+  const featureRefs = new Set<string>();
+  for (let level = 1; level <= toLevel; level += 1) {
+    const row = resolver.resolveClassLevel(sheet.class.key, level);
+    if (row.ok) for (const ref of row.record.featureRefs) featureRefs.add(ref);
+  }
+  const subclass = resolver
+    .listSubclasses()
+    .find((entry) => entry.key === subclassKey);
+  if (subclass !== undefined) {
+    // A subclass picked now only has its target-level features.
+    const from = sheet.subclass?.key === subclass.key ? 1 : toLevel;
+    for (let level = from; level <= toLevel; level += 1) {
+      for (const ref of subclassFeatureRefsForLevel(
+        subclass,
+        level,
+        resolver,
+      )) {
+        featureRefs.add(ref);
+      }
+    }
+  }
+  const sources = collectGrantSources(resolver, featureRefs, featureChoices);
+  const replaced = applied.flatMap((choice) =>
+    choice.featureChoice?.replaces === undefined
+      ? []
+      : [choice.featureChoice.replaces],
+  );
+  if (
+    sources.length === 0 &&
+    !replaced.some((id) => hasLedgerEntry(sheet, id))
+  ) {
+    return undefined;
+  }
+  let working: CharacterSheet = {
+    ...sheet,
+    proficiencyBonus: newProficiencyBonus,
+    featureChoices,
+    skillProficiencies: applySkillProficienciesToSheet(
+      sheet.skillProficiencies,
+      applied,
+    ),
+  };
+  const removedEntries: CharacterProficiencyGrant[] = [];
+  try {
+    for (const id of replaced) {
+      const result = removeOptionGrants(working, id);
+      working = result.sheet;
+      if (result.removed !== undefined) removedEntries.push(result.removed);
+    }
+  } catch (error) {
+    if (error instanceof ProficiencyGrantError) {
+      throw new LevelUpEngineError(error.message);
+    }
+    throw error;
+  }
+  const result = applyProficiencyGrants(working, sources);
+  const ledger = result.sheet.proficiencyGrants;
+  const changed = removedEntries.length > 0 || result.ledgerEntries.length > 0;
+  return {
+    gained: summarizeProficiencies(result.ledgerEntries),
+    removed: summarizeProficiencies(removedEntries),
+    ...(changed ? { ledger: ledger ?? [] } : {}),
+  };
+}
+
+function hasLedgerEntry(sheet: CharacterSheet, sourceRef: string): boolean {
+  return (sheet.proficiencyGrants ?? []).some((e) => e.sourceRef === sourceRef);
+}
+
 function recomputeAfterChoices(
   changeSet: LevelUpChangeSet,
   sheet: CharacterSheet,
   resolver: RulesPackCharacterResolver,
+  gainedSaves: readonly AbilityScoreName[] = [],
 ): LevelUpChangeSet {
   const increases = changeSet.abilityScoreIncreases ?? [];
   const modifiers = {
@@ -1551,7 +1717,8 @@ function recomputeAfterChoices(
   for (const ability of Object.keys(
     sheet.abilityScores,
   ) as import('./creation.js').AbilityScoreName[]) {
-    const isProficient = sheet.savingThrows[ability].proficient;
+    const isProficient =
+      sheet.savingThrows[ability].proficient || gainedSaves.includes(ability);
     const from = sheet.savingThrows[ability];
     const to = {
       modifier:
@@ -1680,14 +1847,32 @@ function applyChangeSetToSheet(
     sheet.featureChoices,
     appliedChoices,
   );
-  const skillProficiencies = applySkillProficienciesToSheet(
-    sheet.skillProficiencies,
-    appliedChoices,
+  const removedSkills = new Set(
+    (changeSet.proficienciesRemoved?.skills ?? []).map((s) => s.toLowerCase()),
   );
+  const removedArmor = new Set(
+    (changeSet.proficienciesRemoved?.armor ?? []).map((a) => a.toLowerCase()),
+  );
+  const skillProficiencies = [
+    ...applySkillProficienciesToSheet(sheet.skillProficiencies, appliedChoices),
+    ...(changeSet.proficienciesGained?.skills ?? []),
+  ].filter((skill) => !removedSkills.has(skill.toLowerCase()));
+  const armorProficiencies = [
+    ...sheet.armorProficiencies,
+    ...(changeSet.proficienciesGained?.armor ?? []),
+  ].filter((armor) => !removedArmor.has(armor.toLowerCase()));
   const languages = applyLanguagesToSheet(sheet.languages, appliedChoices);
   const next: CharacterSheet = {
     ...sheet,
     skillProficiencies: [...skillProficiencies],
+    ...(changeSet.proficienciesGained?.armor !== undefined ||
+    changeSet.proficienciesRemoved?.armor !== undefined
+      ? { armorProficiencies }
+      : {}),
+    ...(changeSet.proficiencyLedger !== undefined &&
+    changeSet.proficiencyLedger.length > 0
+      ? { proficiencyGrants: changeSet.proficiencyLedger }
+      : {}),
     ...(languages.length !== (sheet.languages ?? []).length
       ? { languages }
       : {}),
@@ -1727,6 +1912,10 @@ function applyChangeSetToSheet(
       ? { spellAttackModifier: changeSet.spellAttackModifier.to }
       : {}),
   };
+  if (changeSet.proficiencyLedger?.length === 0) {
+    const { proficiencyGrants: _dropped, ...withoutLedger } = next;
+    return withoutLedger;
+  }
   return next;
 }
 
