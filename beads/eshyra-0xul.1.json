@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0xul.1",
+  "title": "Dispatch: 0xul join_combat (Sonnet 5.5, attempt 1)",
+  "description": "Implement eshyra-0xul per its DESIGN field (bd show eshyra-0xul; settled, do not re-open). Worktree .worktrees/eshyra-0xul.1, branch eshyra-0xul.1 cut from eshyra-0xul.\n\nCODE SURVEY: packages/core/src/state/encounterCombatants.ts — startEncounterInTxn (~L2247; template-creature insertion loop is the model for instance-only creatures: insertCombatant + admitCombatantLifecycle), admitCampaignActorToInstance (~L1962; reuse for actors), activeInstance (~L1634), recallPocketedCampaignActor (its id suffix loop -> extract a shared nextFreeActorCombatantId helper and use it in both places), requireNoActiveInstance, listCombatantsForInstance, StartEncounterInput actor type. packages/core/src/orchestrator/toolStartEncounter.ts — model for the tool file and its actor input validation (copy/share the actor item schema rather than diverging; prefer extracting a shared schema constant). Register the tool where start_encounter is registered (grep 'startEncounterTool' / tools.ts) and update every tool-name inventory test (tools.test.ts etc.) and packages/core/src/orchestrator/auditRetryDiagnostics.ts if it lists mutating combat tools (check what that list means before adding). protocol.ts ~L257: one line about join_combat. Export the state function from internal.ts like startEncounter.\n\nEVIDENCE TESTS (new packages/core/test/joinCombat.test.ts; reuse helpers from existing encounter tests, e.g. grep start_encounter in packages/core/test): instance-only creatures join with record HP/AC, ids continue past existing ordinals, count>1 labels; refused with no active instance; side required; unknown rulesRef refused; actor joins with its stored HP/conditions/lifecycle; actor already present (alive or dead row) refused; actor with only an absent row re-manifests under a -2 id and needs hpCurrent>0; bonded absent refused; pocketed refused naming the recall; a joined instance-only creature can then be linked by start_effect (e.g. spell:conjure-animals with a creature from its form list, or whatever summoning spell existing tests use) and vanishes at 0 HP through update_combatant; a joined creature can begin_turn and spend_turn_resource; mixed batch with one invalid entry writes nothing; recall still uses the shared id helper (existing bondedSummonTransitions tests stay green).\n\nVERIFY: npm ci in the worktree, npm run verify:worktree BEFORE committing. Commit 'eshyra-0xul.1 Admit creatures into the active combat instance with join_combat' ending with 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>'.",
+  "notes": "Dispatched 2026-10-08 as a Claude Agent (Sonnet 5.5) in .worktrees/eshyra-0xul.1 (branch off eshyra-0xul @ 41c395d4). Codex unavailable.\nCompleted. Commit on branch eshyra-0xul.1. Changes: state/encounterCombatants.ts (joinCombat + shared nextFreeActorCombatantId, recall now uses it); orchestrator/toolJoinCombat.ts (new tool); toolStartEncounter.ts (exported parseActors + ACTOR_ITEM_SCHEMA shared; join_combat overrides required to actorId+side); tools.ts registration; auditRetryDiagnostics.ts STATE_TOOLS += join_combat; protocol.ts one line; internal.ts export joinCombat; tools.test.ts inventories; new test/joinCombat.test.ts (10 tests). Deviations: none. Atomicity is via transaction rollback (entries validated as processed, any throw rolls back all). Verify: verify:worktree passed, 5962 passed / 3 skipped.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T01:53:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-08T01:57:59Z",
+  "started_at": "2026-10-08T01:53:26Z",
+  "closed_at": "2026-10-08T01:57:59Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0xul.1",
+      "depends_on_id": "eshyra-0xul",
+      "type": "parent-child",
+      "created_at": "2026-10-07T20:53:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

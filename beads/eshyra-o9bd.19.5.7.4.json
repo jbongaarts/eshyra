@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.7.4",
+  "title": "Gate HP regain and stabilization while a dying character cannot breathe (rule:suffocating)",
+  "description": "Problem. SRD rule:suffocating: the creature 'drops to 0 hit points and is dying, and it can't regain hit points or be stabilized until it can breathe again.' For characters, nothing in hpLifecycle.ts gates recovery on breathing: record_death_save stabilizes on a third success and restores 1 HP on a natural 20; stabilize_character and adjust_hp healing are not blocked. Death saves are engine-owned (never tracked in prose), so the DM cannot avoid the contradiction by skipping the tool. Current disclosure: RULE_KNOWN_LIMITS rule:suffocating with capability gap 'suffocation-recovery-gate'.\n\nRequired capability. Operation: a persisted per-character 'cannot regain hit points / cannot be stabilized' gate entered with the suffocation drop to 0 HP and cleared when the DM records that the character can breathe again; while set, record_death_save does not stabilize or restore HP (three successes and natural 20 handled per the gate), stabilize_character and HP regain are refused, and a stable recovery deadline is not armed. Inputs: character identity; enter/clear events. Exclusions: whether the creature can breathe (DM). Consider the same gate for other sources that forbid regaining HP.\n\nSelection basis: the governing SRD clause requires an engine-owned step (ADR 0020 §3: arithmetic / atomic state mutation / resource accounting / lifecycle), and no registered tool performs it. Under F-09 design amendment A5 (docs/design/rule-record-runtime-statements.md, PR #596) the rule's known limit only DISCLOSES this gap; it does not satisfy or retire the obligation. This bead blocks eshyra-o9bd.19.3.4 (owning rules work for opus:F-09 / sol:CAP-001) until the capability lands or accepted authority explicitly changes the requirement. Do not close it because PR #596 recorded the gap. Enters this engine family by explicit positive selection (the family's out-of-backlog entry clause).",
+  "acceptance_criteria": "- Persisted gate with enter/clear operations; record_death_save, stabilize_character, adjust_hp healing and the stable-recovery deadline respect it atomically.\n- Tests for each gated path and for clearing the gate.\n- rule:suffocating character clause rewritten under R0; gap entry removed from ENGINE_CAPABILITY_GAPS.\n- eshyra-o9bd.19.3.4 dependency resolves only when this lands.",
+  "notes": "2026-10-03: delivered in PR #599 (https://github.com/jbongaarts/eshyra/pull/599), branch eshyra-o9bd.19.3.4.8 @7414d014. Stays in_progress until the PR merges.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-02T01:46:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-04T06:22:10Z",
+  "started_at": "2026-10-02T03:41:51Z",
+  "closed_at": "2026-10-04T06:22:10Z",
+  "close_reason": "Landed on main via PR #599 (merge commit 12cdb1f8)",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.7.4",
+      "depends_on_id": "eshyra-o9bd.19.5.7",
+      "type": "parent-child",
+      "created_at": "2026-10-01T20:46:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.7.4",
+      "depends_on_id": "eshyra-o9bd.19.5.7.4.1",
+      "type": "blocks",
+      "created_at": "2026-10-01T22:43:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

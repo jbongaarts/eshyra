@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jqk",
+  "title": "Reconcile CLI streaming claim with implementation",
+  "description": "Review finding from loreweaver-1ek. ADR 0002 says Stage 1 CLI includes streaming, but ModelClient.complete returns whole responses and CLI writes narration only after completion. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Either streaming support is implemented and tested through the model/client/CLI path, or docs/ADR follow-up clarifies that Stage 1 currently uses whole-response turn output.",
+  "notes": "Resolved via PR #57 (https://github.com/jbongaarts/loreweaver/pull/57). Took the docs path from the acceptance criteria: ADR 0002 Stage 1 now states whole-response turn output explicitly, names token-level streaming as additive ModelClient work behind its own ADR, and the misleading 'Stream the DM's narration' CLI comment is updated. Typecheck and full test suite pass (404 passed, 2 documented skips).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:45:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:20Z",
+  "started_at": "2026-05-24T03:56:02Z",
+  "closed_at": "2026-05-24T04:01:26Z",
+  "close_reason": "Merged via PR #57 (squash 05cff75..e9b0d48 on main). ADR 0002 Stage 1 now states whole-response turn-granular output explicitly; token-level streaming framed as additive ModelClient capability behind its own ADR. Misleading CLI comment updated. Flaky-vitest-timeout follow-up filed as loreweaver-6tn.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

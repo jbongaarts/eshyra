@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r.1.4",
+  "title": "Baseline current SQLite schema as 0001_initial.sql",
+  "description": "Convert the current intended SQLite schema into the new baseline migration.\n\nAcceptance criteria:\n- Add 0001_initial.sql containing the current intended schema.\n- Preserve all tables, indexes, constraints, and default/bootstrap assumptions from the current schema.\n- Empty DB initialization through the new runner produces a working DB equivalent to the current fresh initialization behavior.\n- Do not reconstruct historical schema versions unless needed for the chosen legacy adoption path.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T03:05:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T03:52:26Z",
+  "started_at": "2026-06-26T03:33:07Z",
+  "closed_at": "2026-06-26T03:52:26Z",
+  "close_reason": "0001_initial.sql baseline landed in PR #316 (merged). Encodes current v15 schema + seed rows; proven structurally equivalent to initSchema for fresh init.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4s0r.1.4",
+      "depends_on_id": "eshyra-4s0r.1",
+      "type": "parent-child",
+      "created_at": "2026-06-25T22:05:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

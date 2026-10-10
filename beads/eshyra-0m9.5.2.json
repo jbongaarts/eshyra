@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.2",
+  "title": "SRD 5.1 importer: class parser",
+  "description": "**DESIGN DECISIONS RECORDED — see ADR 0009** (docs/adr/0009-class-subclass-feature-record-kinds.md). HUMAN flag resolved 2026-05-29.\n\n**Scope (narrowed):** This bead now covers **base-class parsing only** — the 12 SRD 5.1 base classes as `class` records. Subclasses and features are split out (see Decisions below).\n\n**Prerequisites (apply to all SRD 5.1 importer child issues):**\n- Vendored SRD 5.1 PDF at packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf — see that directory's README.md.\n- Reference implementation: mirror parseSpells.ts (parser), emit.ts (record builder + manifest description), index.ts (pipeline wiring), and the test layout under packages/core/test/importers/dnd5e-srd-5.1/.\n- Depends on loreweaver-0m9.5.9 (section detection + orchestrator).\n\n---\n\nAdd a class-section parser for SRD 5.1 base classes (kind=class). Extract each base class (hitDie, primaryAbilities, savingThrowProficiencies, armorProficiencies, weaponProficiencies) into RulesRecord shape satisfying validateDnd5eClass. The class record's `key` is the link target subclasses/features reference via data.parentClass / data.source.\n\n**Design decisions (ADR 0009):**\n1. **Subclasses** → their own new `subclass` kind (addressable by name via lookup_rules), linked to parent via data.parentClass. NOT `overrides` (that is pack-layering replacement in stack.ts). Kind infra: loreweaver-0m9.5.16; parser: loreweaver-0m9.5.17.\n2. **Class features** → their own new `feature` kind (distinct from player-selected `feat`), linked to grantor via data.source + level. Kind infra: loreweaver-0m9.5.15; parser: loreweaver-0m9.5.18.\n3. **Class spell lists** → already handled by parseSpells.ts parseSpellClassLists; no class-side duplication.\n\nRationale: the only DM query surface (lookup_rules in toolLookupRules.ts) is name+kind addressed, so subclasses/features must be top-level records to be retrievable by the names players say. Full analysis in ADR 0009.",
+  "acceptance_criteria": "- Parser extracts every SRD 5.1 BASE class (12) into kind=class records.\n- Records satisfy the dnd5e-srd class kindSchema (validateDnd5eClass).\n- Each class record's key is stable and usable as a parentClass/source link target for subclass + feature parsers.\n- Manifest description includes 'class' in Included record kinds.\n- Unit tests cover at least one class with simple progression (fighter) and one with complex features (cleric or wizard) — base-class fields only; feature/subclass extraction is out of scope here.\n- Subclass and feature handling is deferred to 0m9.5.16/0m9.5.17 (subclass) and 0m9.5.15/0m9.5.18 (feature) per ADR 0009.",
+  "notes": "Implemented: parseClasses.ts (Hit Dice signature detection + Armor/Weapons/Saving Throws labeled-line extraction, fail-closed on missing proficiency lines), classes section anchor, emit + index wiring, ClassExtraction type, CLI counts. 8 unit tests + pipeline integration (Fighter). primaryAbilities is best-effort [] per ADR 0007 (SRD Class Features block has no primary-ability line); Multiclassing-table cross-reference tracked in loreweaver-0m9.5.19. New kinds (subclass/feature) + ADR 0009 split to 0m9.5.15-18.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:07:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-30T02:25:56Z",
+  "closed_at": "2026-05-30T03:43:54Z",
+  "close_reason": "Merged to main in PR #108 (commit 059f118): base-class parser with whitespace normalization, wrapped-list continuation, fail-closed class coverage guard, and ADR 0009. Subclass/feature kinds + primaryAbilities sourcing tracked in 0m9.5.15-19.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.2",
+      "depends_on_id": "eshyra-0m9.5.9",
+      "type": "blocks",
+      "created_at": "2026-05-27T18:15:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.2",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:07:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 3,
+  "comment_count": 0
+}

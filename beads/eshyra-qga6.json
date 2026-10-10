@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-qga6",
+  "title": "Bard creation blocked: class skill choice 'Choose any three' (any:true) has no options",
+  "description": "class:bard skillChoices = [{text:'Choose any three', any:true, choose:3}] with no from; requiredChoices.ts structuredProficiencyChoice passes from: undefined, so the wizard offers no options and a Bard cannot finish creation. Found by eshyra-n7ls.1 (Haiku). Fix: an 'any' skill choice offers SRD_5_1_SKILLS (srdCreationChoices.ts, the open 'skills of your choice' universe).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:44:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:51:16Z",
+  "started_at": "2026-10-09T04:44:19Z",
+  "closed_at": "2026-10-09T04:51:16Z",
+  "close_reason": "Merged PR #630",
+  "labels": [
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

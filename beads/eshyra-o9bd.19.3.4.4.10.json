@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.4.10",
+  "title": "Review: Sol confirmation of #596 sibling-arithmetic repair",
+  "description": "READ-ONLY confirmation review of PR #596 commit 8157fe11 on branch eshyra-o9bd.19.3.4.4 (which repairs your findings 1 and 3 from bead eshyra-o9bd.19.3.4.4.9; finding 2 was filed separately as eshyra-o9bd.19.3.4.6 because it is pre-existing on main and needs runtime work). No edits, commits, pushes, or PR comments. Deliverable: `bd update <this-bead> --append-notes` then `bd close`.\n\nCheck, against ADR 0020 §2, the protocol.ts Hybrid Contract, F-09 A4, and the latest PR #596 review comment:\n1. Are findings 1 and 3 closed exactly (truthful disclosure, no model-computed value, no model-held fallback, registered findingId)?\n2. Is the new all-known-limits test meaningful (fails on the old wording; not over-broad against legitimate statements)?\n3. Do the final model-facing texts touched by this PR (the six tool descriptions changed vs origin/main, and all RULE_KNOWN_LIMITS statements) now contain ANY remaining instruction for the model to compute a mechanical value or perform a deterministic comparison? Exclude rulings the tool contract assigns to the DM (choosing modifiers, setting a DC, choosing which rule applies).\n4. Is filing finding 2 separately (pre-existing, untouched by #596) a defensible scope decision?\nOutput OK / FINDING lines with evidence and minimal fix. Don't invent findings.\n",
+  "notes": "Dispatched 2026-10-01T16:32:50-05:00: gpt-6-sol effort=high, read-only, PGID 2203428.\nRead-only review of commit 8157fe11 against ADR 0020 §2, protocol.ts Hybrid Contract, F-09 A4, and latest PR #596 review comment. Reviewed six changed tool descriptions, all RULE_KNOWN_LIMITS statements, relevant tool implementations and tests. No files changed; no npm install or tests run.\n\nFINDING 1 (blocking, newly exposed target-side arithmetic): toolResolveCheck.ts:37 says a bonus to the target's AC or DC, e.g. cover, goes into the single vs integer. SRD rule:cover gives fixed +2/+5 AC; resolve_check has only a final vs integer (toolResolveCheck.ts:63-68), its modifier array is summed on the roller, and calc.ts has no target-AC/DC adjustment formula. For base AC plus cover, the model must therefore add the bonus before passing vs, contrary to ADR 0020 §2, protocol.ts:204-238, and A4 design:290-297. The new exact-description test at tools.test.ts:2119 pins the unsafe sentence. Minimal fix: remove the model-facing instruction to assemble a target bonus into vs; disclose the rule:cover gap with a registered findingId, or provide a deterministic target-side bonus operation and revise evidence. This is a PR-changed sentence, unlike the pre-existing reactionAllowance case.\n\nFINDING 2 (test scope): ruleAwareness.test.ts:241-252 new all-known-limits regex catches both old wordings (action:ready had 'half the damage, whichever is higher'; weapon-properties had 'recover half of those rows'), but it also rejects legitimate disclosures such as 'no tool computes half of the damage' and prohibitions such as 'do not calculate it yourself'. Conversely 'calculate the concentration DC from damage' would pass. It is a lexical guard that overclaims the semantic invariant. Minimal fix: retain targeted old-regression assertions; narrow the blanket patterns to affirmative model instructions and add allowed-disclosure/prohibition examples, or remove the blanket check.\n\nOK: Prior finding 1 is closed: ruleKnownLimits.ts:161 truthfully says the readied-spell save lacks a deterministic path, without offering a model-computed DC or model-held fallback; resolveConcentrationCheck in activeEffects.ts:3601+ requires a tracked effect. Prior finding 3 is closed: ruleKnownLimits.ts:202 says claim_item can claim rows but no tool determines the recoverable count; no model half-count fallback. Both carry registered readiness-integrity findingId (findingRegistry.ts:122); validateRuleKnownLimits checks identities. rule:hiding remains a truthful, finding-backed fixed-total limitation. No other arithmetic/comparison instruction found in the remaining changed tool descriptions or known-limit statements.\n\nOK (scope): update_combatant reactionAllowance at toolUpdateCombatant.ts:35,80-85 still asks for a state-derived total, and actionEconomy.ts:1294+ persists the supplied value without deriving it. The offending text and schema are byte-for-byte present on origin/main; #596 only appends the unrelated 0-HP paragraph. Filing this separately as open eshyra-o9bd.19.3.4.6 is defensible for the PR delta, although the model-facing violation remains open.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-01T21:32:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-01T21:35:25Z",
+  "started_at": "2026-10-01T21:32:47Z",
+  "closed_at": "2026-10-01T21:35:25Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.4.10",
+      "depends_on_id": "eshyra-o9bd.19.3.4.4",
+      "type": "parent-child",
+      "created_at": "2026-10-01T16:32:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

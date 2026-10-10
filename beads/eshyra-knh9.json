@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-knh9",
+  "title": "Tests/scripts leak temp dirs under TMPDIR (verify-dnd5e-srd-pack-*, lw-*, measure-run-*)",
+  "description": "Observed 2026-09-24 on a dev host with TMPDIR=/dev/shm: ~3,400 stale temp dirs from this repo accumulated and, with ~230 vitest ssr caches, filled the 3.9G tmpfs (ENOSPC broke all agent shell output). Repo-owned leakers: verify:dnd5e-srd-pack (verify-dnd5e-srd-pack-* ~12M each, 21 found), test temp dirs lw-camp-*/lw-sep-*/lw-doltroot-*/lw-rs-*/lw-doltbin-*/lw-emptyhome-*/lw-cp-*/lw-root-*/lw-dolt-*/lw-arc-* (thousands, small), and scripts/measure-run.mjs (measure-run-*, ~200). Fix: remove temp dirs in finally/afterEach/afterAll (mkdtemp + rm -rf), and make verify-dnd5e-srd-pack clean its scratch dir on success and failure. Acceptance: a full npm run verify:worktree plus verify:dnd5e-srd-pack leaves no new entries under TMPDIR.",
+  "notes": "PR opened from branch eshyra-knh9 (head b92df4e7, integrated from eshyra-knh9.1 after supervisor review + independent verify with isolated TMPDIR: only node-compile-cache + tsx-1000 remain, 7.3M). Stays in_progress until merge.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-24T21:34:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-24T23:33:00Z",
+  "started_at": "2026-09-24T21:41:34Z",
+  "closed_at": "2026-09-24T23:33:00Z",
+  "close_reason": "PR #575 merged (38a7bcb0)",
+  "labels": [
+    "testing"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-knh9",
+      "depends_on_id": "eshyra-knh9.1",
+      "type": "blocks",
+      "created_at": "2026-09-24T16:41:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

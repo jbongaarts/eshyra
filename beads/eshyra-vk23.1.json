@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vk23.1",
+  "title": "Quarantine invalid SRD mechanics projections",
+  "description": "Fix unsafe machine-readable mechanics projections discovered in the ngcj SRD audit.\n\nProblem:\nSome records expose fields that appear deterministic, such as spellGrants/resources/effects, but the values are clipped prose or regex residue rather than validated refs or typed objects. Deterministic tools should not have to guess whether a mechanics-looking field is trustworthy.\n\nExamples from the audit:\n- Bard Spellcasting includes spellGrants like \"two cantrips of your choice from the bard\".\n- Ranger includes \"and replace it with another\".\n- Warlock Eldritch Invocations includes \"compulsion once using a warlock\".\n- Wizard Spellbook includes \"a wizard\" and questionable long-rest/proficiency mechanics.\n\nWhy this matters:\nMissing structure is acceptable as an explicit gap. Bad structure is worse because deterministic tools may consume it as authoritative gameplay data.\n\nScope:\n- Audit feature records and any importer projections that populate machine-readable mechanics-ish fields from regex/prose.\n- Make projections fail closed unless they produce validated refs or typed objects.\n- Quarantine unresolved extracted prose under an explicitly non-authoritative/evidence/unresolved field, or omit it.\n- Add regression tests/gates for clipped prose fragments in mechanics fields.\n- Ensure fields such as spellGrants do not contain plain natural-language fragments unless the schema explicitly says they are unresolved prose.\n\nAcceptance criteria:\n- No spellGrants/resources/effects/mechanics fields contain clipped natural-language fragments like \"and replace it with another\" or \"two cantrips of your choice from the bard\".\n- Valid spell grants are stable spell refs or typed grant/choice objects.\n- Unresolved prose remains available for DM-model context only in clearly named prose/evidence fields.\n- The audit bundle or a dedicated report exposes any remaining unresolved mechanics projections as warnings, not as trusted data.\n- npm run typecheck passes.\n- npm test passes.\n- npm run check passes.\n- npm run verify:dnd5e-srd-pack passes and regenerated pack output is intentional.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T03:18:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T03:32:36Z",
+  "started_at": "2026-06-30T03:25:13Z",
+  "closed_at": "2026-06-30T03:32:36Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-vk23.1",
+      "depends_on_id": "eshyra-vk23",
+      "type": "parent-child",
+      "created_at": "2026-06-29T22:18:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

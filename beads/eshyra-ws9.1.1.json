@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ws9.1.1",
+  "title": "RED: model evaluation harness reports required metrics",
+  "description": "Write a failing test for an evaluation harness that runs scripted scenarios against a ModelClient/profile and reports quality dimensions, cost, latency, and explicit premium_dm threshold status.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-20T23:39:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-20T23:39:47Z",
+  "closed_at": "2026-05-20T23:40:41Z",
+  "close_reason": "Failing harness test added and verified for missing evaluateModelProfile API.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ws9.1.1",
+      "depends_on_id": "eshyra-ws9.1",
+      "type": "parent-child",
+      "created_at": "2026-05-20T18:39:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "a043f636-5aa0-5c81-bc9f-261f2e972121",
+      "issue_id": "eshyra-ws9.1.1",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run packages/core/test/modelEvaluation.test.ts -> failed for expected reason: evaluateModelProfile is not a function.",
+      "created_at": "2026-05-20T23:40:41Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

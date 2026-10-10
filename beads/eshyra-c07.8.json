@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-c07.8",
+  "title": "Prove mutate_state turn rollback behavior",
+  "description": "Add a simulated mid-turn failure test showing in-flight state changes roll back while last committed state remains intact.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T04:32:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T04:51:41Z",
+  "closed_at": "2026-05-19T04:52:51Z",
+  "close_reason": "Proved mutate_state turn rollback behavior with mutateStateBatch; focused tests and typecheck pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-c07.8",
+      "depends_on_id": "eshyra-c07",
+      "type": "parent-child",
+      "created_at": "2026-05-18T23:32:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "f842a7f9-a950-54cb-8e3c-db9dbcaa8303",
+      "issue_id": "eshyra-c07.8",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/gameState.test.ts -> failed as expected; mutateStateBatch is missing, so turn-level crash rollback API cannot be exercised yet.",
+      "created_at": "2026-05-19T04:52:20Z"
+    },
+    {
+      "id": "6a1a2b01-7e65-586c-844c-426b9356a288",
+      "issue_id": "eshyra-c07.8",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN/REFACTOR verification: npm run test -- packages/core/test/gameState.test.ts -> passed (4 tests); npm run typecheck -> passed. mutateStateBatch rolls back a simulated crash after the first in-flight mutation, preserving the prior committed character row and omitting later plot flag writes.",
+      "created_at": "2026-05-19T04:52:51Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 2
+}

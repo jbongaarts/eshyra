@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3d6h",
+  "title": "Make source-authority sourceText for class spellPreparation verbatim or rename the field",
+  "description": "Found by eshyra-o9bd.19.6.6.1. packages/core/scripts/importers/dnd5e-srd-5.1/creationFacts.ts CLASS_SPELLCASTING composes spellPreparation.sourceText; only class:bard is a single verbatim SRD span. Cleric's sentences are joined across subsections; druid, paladin, ranger, sorcerer, warlock, wizard end a leading clause of a longer SRD sentence with a period. Field is declared derived in field-provenance.json. Decide: emit verbatim spans or rename the field to make the composition explicit, then update the F-19 reasoning in finding-registry.json.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T02:38:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T02:38:25Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

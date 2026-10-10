@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-if0j",
+  "title": "Rest resolves class data from bundled pack instead of campaign binding",
+  "description": "Aggregate review of run #625-#638 (main a23bf6d5): completeShortRest/completeLongRest call restoreSpellSlots without a RulesPackCharacterResolver (falls back to bundled), and rest.ts resolvePool hard-codes getBundledDnd5eCharacterResolver for Hit Dice. An add-on Wizard-5 level-4 slot spent via spend_spell_slot is deleted by short-rest reconciliation and re-inserted full later (recharge); Hit Die overrides are ignored. Sibling: spend_rest_hit_die tool never threads ctx.resolveRulesPack. Fix: memoize the campaign resolver once per rest op, resolve the strict campaign stack once, build one character resolver, pass it to Hit Dice + slot reconciliation and the memoized resolver to usage/item consumers. Evidence: add-on rest regression in rest/spellSlots tests (slot stays spent at add-on capacity across short rest; Hit Die override honored; resolver answer change mid-op does not split the stack).",
+  "notes": "PR #639 https://github.com/jbongaarts/eshyra/pull/639 opened (head 4c523277). verify:worktree green. Stays in_progress until merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T21:38:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T22:49:40Z",
+  "started_at": "2026-10-09T21:38:10Z",
+  "closed_at": "2026-10-09T22:49:40Z",
+  "close_reason": "Merged PR #639 (e2bb2a1e)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

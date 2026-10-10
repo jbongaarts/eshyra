@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ug4i.1",
+  "title": "Level-up: expertise picks from held skill/thieves' tools proficiencies",
+  "description": "Slice 2 of eshyra-ug4i. Rogue 6 and bard 3/10 expertise: choose N from the character's held skill proficiencies (rogue also thieves' tools) per the feature's characterStateFilter, excluding ones already with expertise; persist on the sheet (a durable expertise list) and in the ledger; derived skill bonuses double proficiency. Reuse eshyra-ug4i.3's featureChoices persistence/validation patterns.",
+  "notes": "2026-10-09: child eshyra-ug4i.1.1 (a62e1d5e) reviewed + verify:worktree rerun by supervisor (6050 pass/3 skip), merged into eshyra-ug4i.1 (e1f91074). PR #612 https://github.com/jbongaarts/eshyra/pull/612. Stays in_progress until merge. Follow-up eshyra-b0hg (skill-bonus consumer).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T01:55:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T00:48:17Z",
+  "started_at": "2026-10-09T00:29:00Z",
+  "closed_at": "2026-10-09T00:48:17Z",
+  "close_reason": "PR #612 merged (merge commit ed6bfa62)",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ug4i.1",
+      "depends_on_id": "eshyra-ug4i.3",
+      "type": "blocks",
+      "created_at": "2026-10-07T20:56:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ug4i.1",
+      "depends_on_id": "eshyra-ug4i.1.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T19:29:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ug4i.1",
+      "depends_on_id": "eshyra-ug4i",
+      "type": "parent-child",
+      "created_at": "2026-10-07T20:55:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

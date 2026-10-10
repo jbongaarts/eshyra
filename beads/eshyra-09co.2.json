@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-09co.2",
+  "title": "Review: Sol final review of PR #627 (eshyra-09co @ aea2cb67)",
+  "description": "Final read-only review of PR #627 (branch eshyra-09co, exact head aea2cb6739cd032f55d0f4e5d67c174df4d01d2f) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #627 at exact head aea2cb6739cd032f55d0f4e5d67c174df4d01d2f. Effective profile: rules-clause-complete. Reviewed the complete origin/main...HEAD diff and both commits, live owning/dispatch beads, AGENTS.md, review policy, ADRs 0011/0012/0015/0018/0020, importer protocol applicability, vendored SRD 5.1 pp. 43-44 and generated Font of Magic procedure, slot/usage owners, named tool path, context, rest, progression, trace/rollback and checkpoint consumers. No importer or generated-pack records change. refs/beads/state is stale (2026-09-10) and lacks these beads; live bd records were used as authority. PR head matches the assignment.\n\nS1 — MATERIAL (P2): packages/core/src/state/flexibleCasting.ts:129 (also :197 and :213). The new operation reads only ability:sorcery-points before evaluating conversion, bypassing the usage owner's existing legacy/alias reconciliation. Concrete real-pack scenario reproduced entirely through existing APIs in an in-memory DB: before storing the sheet, spend_usage for Font of Magic with declared maximum 3, long_rest reset and uses=2 produces ability:font-of-magic; store a valid level-3 sorcerer sheet/live level. There is one point left and an available level-2 slot, so converting that slot should restore two points to the maximum of three. flexibleCasting instead treats the absent canonical key as three points and refuses with \"exceeds the resource maximum\". The same state under the canonical Sorcery Points name succeeds. Authority: owning bead's slot-to-point conversion, SRD point accounting, and docs/design/character-progression.md's explicit legacy-alias adoption contract. Sibling inspection: create goes through spendUsage reconciliation later, but convert does not; canonical legacy counters also retain their declared maximum/reset/source because restoreUsage only subtracts uses_used. Suggested fix (owner: Flexible Casting/usage-counter integration): reconcile/read the resource through the counter owner before evaluating either transition, preserving the existing most-spent-alias rule, then spend/restore that same normalized economy atomically. Permanent evidence: a generalized invariant that equivalent canonical, alias-only and duplicate legacy representations yield identical point balance, legality and slot effects, including canonical legacy economy normalization. This is proportionate to a durable resource contract and stronger than separate example tests.\n\nS2 — MATERIAL (P2): packages/core/src/state/flexibleCasting.ts:170 (related :111-122 and :149-156; underlying consumer packages/core/src/state/usageCounters.ts:936). Flexible Casting evaluates against the active campaign stack but spendUsage resolves character resource capacities with getBundledDnd5eCharacterResolver, ignoring the passed resolveRulesPack for that purpose. Concrete scenario reproduced in an in-memory DB through the supported add-on binding: an explicit class:sorcerer override and matching Font of Magic procedure override both set the level-3 maximum to two points, leaving the level-1 slot cost at two. Creating a level-1 slot succeeds but writes/reports maximum 3, remaining 1 instead of maximum 2, remaining 0. A subsequent spendUsage uses=1 succeeds, spending a point the active rules never granted. Varying both bound maxima to four similarly reports remaining 1/max 3 instead of remaining 2/max 4. No alias or stale state is needed. Authority: active rules-pack mechanical truth (ADR 0012), pack-bound class resource contract, and ADR 0020's deterministic resource-accounting boundary. Existing slot consumers already honor the complete base/add-on binding. Suggested fix (owner: shared class-resource counter resolution): thread the already-resolved active class-resource row/resolver into the usage owner, or resolve its capacity from the same exact campaign stack, so evaluation, initialization, reconciliation, restore and Metamagic spending share one economy; do not silently fall back to bundled progression. Permanent evidence: a generalized invariant that an internally consistent bound override's maximum is the maximum persisted/reported by all relevant point operations, with no additional spend possible after exhaustion; vary maxima above/below the bundled value and absent/existing counters. This directly protects state integrity at the producer-consumer seam.\n\nVerification: 11 targeted files passed (294 tests): flexibleCasting, spellSlots, rest, usageCounters, migrationLegacyAdoption, persistence, spellUpcast, tools, contextAssembler, contextAssemblerParty and migrationRunner. Three additional targeted levelUpEngine legacy/class-resource tests passed (32 tests excluded by name filter). Used existing dependencies with native config loading and cache disabled; no install/build/format/verify command. Read-only stdin probes used in-memory databases and created no repository files. git diff --check passed; final repository status clean at the assigned SHA. Automatic bonus-action consumption has no requirement in this PR: the dispatch explicitly leaves it to the existing turn-resource tool. No non-material findings recorded.\n\nVERDICT: MATERIAL FINDINGS (2)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:02:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:08:34Z",
+  "closed_at": "2026-10-09T04:08:34Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-09co.2",
+      "depends_on_id": "eshyra-09co",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:02:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

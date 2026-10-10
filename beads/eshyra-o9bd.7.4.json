@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.7.4",
+  "title": "Add semantic projections for object AC/HP damage-adjudication tables",
+  "description": "Deferred slice from eshyra-o9bd.7. Add typed semantic projections for Object Armor Class and Object Hit Points tables so object damage adjudication can consume material/size thresholds without parsing generic rows.",
+  "design": "Follow docs/importer-fix-protocol.md. Preserve source rows and object rules prose; add projection validator/tests. Add per-child thaw note and refresh freeze-manifest hashes.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T20:00:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-28T20:26:38Z",
+  "started_at": "2026-06-28T20:14:44Z",
+  "closed_at": "2026-06-28T20:26:38Z",
+  "close_reason": "Implemented in PR #357 (eshyra-o9bd.7-children)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.7.4",
+      "depends_on_id": "eshyra-o9bd.7",
+      "type": "parent-child",
+      "created_at": "2026-06-28T15:00:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

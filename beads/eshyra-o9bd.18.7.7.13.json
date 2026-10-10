@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.13",
+  "title": "Close PR #455 holistic re-review integration gaps",
+  "description": "Address six P1 re-review findings: reviewed exact landed magic-item hooks plus bundled E2E playability; complete typed random initial-state ownership; variant-aware attunement identity; atomic attunement cleanup on destruction/removal; identity/state-preserving item transfer with explicit attunement policy; campaign-clock timer replacement/cancellation semantics.",
+  "acceptance_criteria": "Every generated initial-state procedure has a typed deterministic owner or fails grant closed; supported canonical item operations execute and pending hooks refuse before mutation; variant attunement duplicate semantics are correct; every item deletion releases attunement; transfer preserves row/state and handles attunement explicitly; timers reconcile per machine state and use campaign elapsed time; canonical regeneration, full verification, CI, commit and push pass.",
+  "notes": "Implemented all six re-review classes. Exact landed hook registry promotes only F5 duration-budget accounting; all unsupported hooks remain fail-closed. Added typed deterministic ownership for all 13 initial-state procedures (4 table-backed), variant-aware attunement, atomic item-destruction cleanup evidence, identity/state-preserving transfer with explicit attunement policy, and campaign-clock timer replacement/cancellation. Verification: canonical pack byte-exact; 1813 records/0 suspicious; deep audit 0 findings; verify:worktree passes 4567 tests with 19 documented skips.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-18T22:38:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T22:56:46Z",
+  "started_at": "2026-07-18T22:38:56Z",
+  "closed_at": "2026-07-18T22:56:46Z",
+  "close_reason": "All six PR #455 re-review integration gaps implemented, source/runtime/full-worktree verification green, commit b385754 pushed, and all PR checks pass.",
+  "external_ref": "gh-455",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.13",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-18T17:38:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-09co.7",
+  "title": "Fix: Sol pass-3 S1/S2 on PR #627 + sweep (Sonnet 5.5, attempt 1)",
+  "description": "Fix the two MATERIAL findings from the 3rd Sol review of PR #627 (read in full: `bd show eshyra-09co.6`), and close the WHOLE defect class this time. Branch eshyra-09co.7 from origin/eshyra-09co. Deps installed. Do not edit packages/core/src/character/ or packages/cli/.\n\nThe invariant to establish everywhere: for a pack-bound class resource (Rage, Ki, Sorcery Points), the ACTIVE campaign class table (one resolution per operation) is the single authority for maximum/reset/source, and every operation that reads, reports, or mutates the counter reconciles it first (reconcileBoundCounterRows, alias adoption, none/unlimited handling) and reports what it persisted.\n\nS1 (flexibleCasting.ts): the Font of Magic procedure carries its own maximumByLevel that can disagree with the class table under a class-only or feature-only add-on. Before consuming anything, compare the procedure's maximum for the sheet level with the active class-table maximum; if they differ, refuse atomically with a clear \"inconsistent rules binding\" message (nothing changes). Additionally assert after mutation that the persisted point change equals pointDelta (defensive; throw to roll back if not).\n\nS2 (usageCounters.ts resetUsage ~1749/1763, consumers rest.ts ~703-709 and orchestrator/toolResetUsage.ts): resetUsage must reconcile bound class-resource counters of the character owner(s) in scope (resolve the active rules stack once; thread resolveRulesPack from reset_usage tool and the rest callers) BEFORE filtering by reset kind, and report the reconciled max. Preserve item/combatant semantics and event semantics.\n\nSWEEP: grep every other reader/reporter of entity_usage_counter for characters (e.g. readSpentUsageCounters / context assembly, any tool that lists counters) and apply the same rule where it reports a bound resource's max; list in your notes every consumer you checked and the disposition.\n\nEVIDENCE (small generalized invariants, in-memory DB):\n- Flexible Casting under class-only override (max 2 and 4) and feature-only override: refused atomically (slot and points unchanged); with consistent override still works.\n- reset_usage and completeLongRest/completeShortRest report and persist the active maximum for stale canonical and alias counters (Sorcery Points, Ki, Rage) with active maxima 2 and 4.\n- Any swept reader you changed: one assertion.\n- Existing tests green. Run your new tests against the pre-fix code (temporarily) to confirm they fail, and say so in notes.\n\nPROTOCOL: run `npm run verify:worktree` BEFORE committing; commit on eshyra-09co.7; `bd update eshyra-09co.7 --append-notes` with the report; `bd close eshyra-09co.7`. Do not push or open/comment on PRs.",
+  "notes": "Commit 53967f9c. S1: flexibleCasting compares the Font of Magic procedure maximum (new resourceConversionMaximum helper in boundedProcedures.ts) with the active class-table balance max before consuming anything; mismatch throws 'inconsistent rules binding' (atomic); plus assertPointChange after spend/restore throws (rolls back) if persisted delta != pointDelta. S2: resetUsage reconciles bound class-resource counters (canonical+alias, via reconcileBoundCounterRows) for owner scope (named character; none for combatant/item; all characters when unscoped) with one lazily-resolved active stack BEFORE reset-kind filtering; none capacity left alone (as level-up), unlimited deletes. reset_usage tool now threads ctx.resolveRulesPack; rest.ts already spread resolveRulesPack into resetUsage. Sweep: entity_usage_counter consumers: usageCounters spend/restore/readBoundClassResourceBalance (already reconciled), resetUsage (fixed), readSpentUsageCounters via contextAssembler.readStateSnapshot (fixed as read-only overlay: active max, used clamped, resolver threaded; reads do not write), inventoryLifecycle/itemAdoption/domainMutations (item-owned/delete/existence only; no change). Tests: new test/classResourceActiveCapacity.test.ts (resetUsage owner+party, reset_usage tool, completeLongRest/ShortRest, context reader; Sorcery/Ki/Rage, canonical+alias, max 2/4) and flexibleCasting.test.ts inconsistent-binding atomic refusal (class-only/feature-only, up/down, create/convert) + consistent override. Pre-fix (src stashed) 63 of 85 in those two files failed. verify:worktree green (6246 passed).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:43:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:48:21Z",
+  "closed_at": "2026-10-09T04:48:21Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-09co.7",
+      "depends_on_id": "eshyra-09co",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:43:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

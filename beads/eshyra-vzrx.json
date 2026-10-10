@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vzrx",
+  "title": "Fix final SRD audit spell membership and stat-block coverage mappings",
+  "description": "Fix three final-audit findings without updating the final audit report or bundle: normalize apostrophes for spell-list membership so Hunter's Mark maps to Ranger; map Appendix MM-B Acolyte and Druid stat-block inventory entries to creature records; add focused regressions and a general stat-block coverage invariant where practical; regenerate canonical pack/source-coverage artifacts and verify reproducibility.",
+  "acceptance_criteria": "spell:hunters-mark has classes [Ranger]; p395 Acolyte stat-block maps to creature:acolyte; p398 Druid stat-block maps to creature:druid; focused and general regression coverage passes; canonical generated artifacts reproduce; final audit report and bundle are untouched.",
+  "notes": "Implemented on branch bead/eshyra-vzrx-final-audit-fixes. Generated diff: spell:hunters-mark classes [] -> [Ranger]; p395 Acolyte stat-block coverage background:acolyte -> creature:acolyte; p398 Druid stat-block coverage class:druid -> creature:druid; collapsed-source diagnostics 56 -> 54. Added fail-closed source spell-list and stat-block coverage invariants. verify:dnd5e-srd-pack and verify:worktree pass. Final audit report and bundle untouched.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T03:41:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-15T03:49:38Z",
+  "started_at": "2026-06-15T03:41:57Z",
+  "closed_at": "2026-06-15T03:49:38Z",
+  "close_reason": "Importer matching, source-coverage disambiguation, generated artifacts, and regression guards are complete and fully verified.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

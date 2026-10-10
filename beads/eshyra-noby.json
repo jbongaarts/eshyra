@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-noby",
+  "title": "Tighten Claude Agent SDK missing-package detection",
+  "description": "Problem\nPR #254 made the Claude Agent SDK lazy-loaded so installer editions that omit Claude can still import @eshyra/core. That was the right direction, but the missing-SDK detection is too broad.\n\nCurrent suspected issue\nThe helper that detects a missing Claude Agent SDK appears to treat any ERR_MODULE_NOT_FOUND / MODULE_NOT_FOUND as \"Claude SDK is not installed.\" That is only correct when the missing package is actually @anthropic-ai/claude-agent-sdk.\n\nWhy this matters\nIf @anthropic-ai/claude-agent-sdk is installed but one of its own transitive/runtime dependencies is missing or broken, Eshyra may incorrectly show the friendly installer-edition error:\n\n  install the \"claude\" or \"full\" edition\n\ninstead of surfacing the real dependency/runtime failure. That would make a real broken install harder to diagnose.\n\nRelevant PR\n- PR #254: lazy Claude Agent SDK loading / installer edition smoke validation\n\nLikely files\n- packages/core/src/model/agentSdkLoader.ts\n- packages/core/test/model/agentSdkLoader.test.ts or nearby tests\n\nRequested fix\nTighten the missing-package detection so module-resolution errors are converted to the friendly edition error only when the missing module/package is actually @anthropic-ai/claude-agent-sdk.\n\nDo not classify arbitrary ERR_MODULE_NOT_FOUND / MODULE_NOT_FOUND errors as a missing Claude edition.\n\nAcceptance criteria\n- If @anthropic-ai/claude-agent-sdk itself is absent, loading the Claude SDK still produces the existing friendly ModelClientError / installer-edition guidance.\n- If dynamic import fails with ERR_MODULE_NOT_FOUND or MODULE_NOT_FOUND for some other package, for example \"some-sdk-internal-dep\", the original error is rethrown or preserved rather than converted to the friendly edition error.\n- An unrelated runtime error that merely mentions Claude or the SDK name is not misclassified as a missing package.\n- Tests cover all of the above cases.\n- Existing installer-edition validation still passes.\n- Run the normal verification command before opening the PR, preferably:\n    npm run verify:worktree",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-20T21:16:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-20T21:32:04Z",
+  "started_at": "2026-06-20T21:28:27Z",
+  "closed_at": "2026-06-20T21:32:04Z",
+  "close_reason": "Tightened Claude Agent SDK missing-package detection and added regression coverage for SDK-internal failures.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

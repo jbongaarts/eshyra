@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d8ap",
+  "title": "Harden combat runtime and model-tier evaluation after first combat playtest",
+  "description": "Follow-up from the first Claude combat playtest after `eshyra-l3b3`. Combat now executes far enough to reveal the next runtime layer: player-facing roll visibility, first-class monster combatant state, and expensive primary-DM retry churn from audit rejections. This epic should not reopen `l3b3`; it should build on it. It should also replace the informal Claude-vs-Codex comparison with a practical model-tier evaluation harness for primary DM and auditor roles.\n\nAcceptance criteria:\n\n- Child beads exist for player-visible roll display, encounter combatant state, primary-DM retry churn, deterministic combat regression, and model-tier evaluation.\n- Beads distinguish runtime findings from model-style findings.\n- Beads preserve the post-`l3b3` continuity/audit improvements.\n- Model comparison work evaluates model tiers within each provider and role, not just Claude-vs-Codex.\n",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-25T05:21:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-25T05:36:53Z",
+  "closed_at": "2026-06-25T23:55:51Z",
+  "close_reason": "Completed post-combat-playtest hardening epic: roll visibility, combatant state, retry diagnostics, deterministic combat fixture, and model-tier evaluation all merged.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

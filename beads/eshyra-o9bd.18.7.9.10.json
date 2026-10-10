@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.9.10",
+  "title": "C4 — Model Reckless creature behavior",
+  "description": "Model the 2 reviewed Reckless-family refs from classification §1.6.2 as a closed typed two-sided trade: the creature elects advantage on its own melee attacks for the turn, and attacks against it gain advantage until the source-defined boundary. Project both refs fail-closed with schema, source gates, committed-pack tests, exact membership removal, and standard slice verification.",
+  "notes": "Complete exact registry/membership removals and count reconciliation; verify readiness-report delta; regenerate through the importer; add committed-pack assertions; update thaw evidence and freeze hash as appropriate; run verify:dnd5e-srd-pack, verify:dnd5e-srd-freeze, relevant focused tests, full required worktree/check/typecheck tests, and audit-bundle verification where required.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T04:09:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-13T01:33:38Z",
+  "started_at": "2026-07-13T01:15:05Z",
+  "closed_at": "2026-07-13T01:33:38Z",
+  "close_reason": "Implemented schema-validated fail-closed recklessAttack for Berserker and Minotaur; regenerated pack, reconciled readiness, refreshed freeze evidence, and passed verification.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.9.10",
+      "depends_on_id": "eshyra-o9bd.18.7.9",
+      "type": "parent-child",
+      "created_at": "2026-07-10T23:09:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

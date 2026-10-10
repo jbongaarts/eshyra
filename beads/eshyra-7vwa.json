@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7vwa",
+  "title": "Zero effective HP exhaustion clamp for player-character combatants",
+  "description": "S14 of eshyra-o9bd.19.3.4.8.3 exposed a sibling-scope boundary. With hp_max=1, hp_current=1, and player-character death rules, adjust_exhaustion(delta:4) derives effectiveHpMax=0 and calls updateCombatant with hpDelta:-1. updateCombatant currently compares overflow (0) against the zero effective maximum and records status dead; the required existing 0-HP lifecycle is dying, without instant death. Repair encounterCombatants.ts and retain a regression proving player-character combatant clamps at zero become dying while monster combatants follow monster death rules. Do not change the uniform floor(max/2) calculation.",
+  "acceptance_criteria": "A one-HP player-character combatant clamped by level-four exhaustion becomes dying, and a monster combatant follows monster death rules; regression tests exercise both.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-02T06:41:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-02T06:50:33Z",
+  "closed_at": "2026-10-02T06:50:33Z",
+  "close_reason": "Fixed in the integration PR (eshyra-o9bd.19.3.4.8) at e601316c: instant death needs overflow > 0, so a zero effective maximum clamp leaves a player-character combatant dying; regression in exhaustion.test.ts.",
+  "labels": [
+    "exhaustion",
+    "lifecycle"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7vwa",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.3",
+      "type": "discovered-from",
+      "created_at": "2026-10-02T01:41:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

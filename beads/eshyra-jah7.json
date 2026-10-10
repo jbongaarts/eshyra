@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jah7",
+  "title": "Creation: ancestry-granted skill proficiencies are not on the sheet, so level-1 expertise cannot target them",
+  "description": "Found in eshyra-nnj6.1. Decision 3 said expertise options derive from class + background + ancestry skills, but buildFinalizedCharacter stores only background fixed + chosen class skills in sheet.skillProficiencies (ancestry skills such as Half-Orc Menacing / Elf Keen Senses are not recorded). Expertise eligibility follows the sheet (same as level-up), so ancestry skills are not offered. Decide whether ancestry skill grants belong on the sheet.",
+  "design": "Ancestry skill grants belong on CharacterSheet.skillProficiencies: SRD Keen Senses (Elf/High Elf) grants Perception, Menacing (Half-Orc) grants Intimidation, Skill Versatility (Half-Elf) grants two chosen skills. Use a narrow source-cited consumer overlay for fixed grants and the existing creation-choice metadata for Half-Elf. Apply grants consistently to duplicate replacements, finalization, and creation expertise eligibility/staleness; exclude conditional Stonecunning/Artificers Lore from unconditional skill grants. No generated pack edits or existing-sheet migration. Branch began from refreshed origin/main and includes pending PR #618 as an implementation dependency; PR targets main and must follow #618.",
+  "notes": "Implemented and handed off in PR https://github.com/jbongaarts/eshyra/pull/621 (commit 8142a1f2, branch eshyra-jah7). Ancestry skill proficiencies now belong on the finalized sheet and feed expertise eligibility and duplicate replacements: Elf/High Elf Keen Senses, Half-Orc Menacing, Half-Elf Skill Versatility choices. Expertise becomes stale when the held ancestry skill disappears. Conditional History traits stay excluded. No generated pack edits or saved-sheet migration. Evidence: source-backed resolver checks; creation -> SQLite -> level-up; ancestry/choice changes; triple overlapping ancestry/background/class grants. npm run verify:worktree passed (6149 passed, 3 documented skips), formatting/check/forced typecheck passed; hidden-Unicode check repeated after staging new file. Worktree clean and feature branch pushed. Includes dependency PR #618 commit 78c5a881 and must merge after #618; dependency recorded on eshyra-nnj6. Leave in_progress until PR #621 merges.\nDependency reconciliation at handoff: PR #618 merged at 2026-10-09T03:12:23Z during this session; its reviewed commit 78c5a881 is an ancestor of current origin/main. eshyra-nnj6 is now closed, so the dependency is satisfied. PR #621 description updated accordingly; no code changes since successful verification.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T02:53:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T03:32:57Z",
+  "started_at": "2026-10-09T03:06:02Z",
+  "closed_at": "2026-10-09T03:32:57Z",
+  "close_reason": "PR #621 merged after approval and green required checks; merge commit 0ba3b91e6480d01bba6bf58dbfcc6dd96565d681 preserves reviewed commit 8142a1f2.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jah7",
+      "depends_on_id": "eshyra-nnj6",
+      "type": "blocks",
+      "created_at": "2026-10-08T22:10:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jah7",
+      "depends_on_id": "eshyra-nnj6.1",
+      "type": "discovered-from",
+      "created_at": "2026-10-08T21:53:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

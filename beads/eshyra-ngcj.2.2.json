@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.2.2",
+  "title": "Model Fighting Style, Metamagic, and Hunter option features",
+  "description": "Problem:\nSeveral high-use option families are prose-only or generic-choice-only:\n- Fighting Style options such as Archery, Defense, Dueling, Great Weapon Fighting, Protection, and Two-Weapon Fighting.\n- feature:sorcerer:metamagic options.\n- Hunter subclass options:\n  - Hunter's Prey: Colossus Slayer, Giant Killer, Horde Breaker.\n  - Defensive Tactics: Escape the Horde, Multiattack Defense, Steel Will.\n  - Multiattack: Volley, Whirlwind Attack.\n  - Superior Hunter's Defense: Evasion, Stand Against the Tide, Uncanny Dodge.\n\nImplement:\n- Emit structured option catalogs for each family.\n- Link parent feature choices to those catalogs.\n- Include source text, source locations, and stable ids for each option.\n- Model prerequisites only where the SRD has explicit prerequisites.\n- Keep option effects prose-backed unless deterministic projection is straightforward and separately tested.\n\nAcceptance criteria:\n- Character creation can enumerate and persist Fighting Style selections.\n- Character creation can enumerate and persist Metamagic selections.\n- Character creation can enumerate and persist Hunter subclass feature choices at levels 3, 7, 11, and 15.\n- The choice-bearing prose audit no longer flags these records.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-29T23:02:05Z",
+  "started_at": "2026-06-29T22:48:19Z",
+  "closed_at": "2026-06-29T23:02:05Z",
+  "close_reason": "Implemented Fighting Style, Metamagic, Champion additional style, and Hunter option catalogs",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.2.2",
+      "depends_on_id": "eshyra-ngcj.2",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

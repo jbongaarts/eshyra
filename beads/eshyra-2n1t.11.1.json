@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.11.1",
+  "title": "F9 follow-up: upcast scaling transform from structured spell scaling data",
+  "description": "Close the one F9 clause left open by eshyra-2n1t.11: casting-a-spell-at-a-higher-level's upcast scaling transform (extra dice/targets per slot level above base). Needs the structured spell 'scaling' payload plumbed into a typed transform — either a calc formula producing the scaled dice expression consumed by resolve_damage, or an upcastLevel input on resolve_damage packets resolved from the spell record. Deliberately NOT registered half-typed in calc.ts (fail-closed policy in docs/dice-and-resolution.md). The slot-level legality gate is F4's (eshyra-2n1t.6); land this with or after F4 so legality and scaling arrive together. On completion flip rule:casting-a-spell-at-a-higher-level's remaining F9 clause in ENGINE_PROCEDURE_COVERAGE (its F4 clause note stays until F4 lands).",
+  "acceptance_criteria": "Typed upcast transform over structured scaling data with fail-closed validation; adversarial tests; ENGINE_PROCEDURE_COVERAGE row + census updated in the same reviewed diff.",
+  "notes": "PR #454 review follow-up: fix campaign-stack-derived slot capacities, choice-qualified threshold axes, explicit Animal Friendship reviewed correction provenance, and owning-pack/structured lookup provenance in source bindings; perform holistic adjacent-contract review and full verification before re-closing.\nPR #454 review remediation complete: spend_spell_slot now derives both spell semantics and character slot progression from one exact resolved campaign stack; threshold selection uses the shared semantic/choice axis; Animal Friendship carries retained-extraction hash, reviewed text, correction ID/note; source bindings carry owning pack/version/sourceRef/locator and complete ordered override identity; structured provenance owns page validation. Holistic hardening also makes upcast resolution consume one lookup result and enforces the documented exactly-one pack source identity. Verification: npm run verify:worktree (4,353 passed, 19 documented skips), verify:dnd5e-srd-pack, verify:dnd5e-srd-freeze -- --base origin/main, and inventory --check all pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T20:48:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T05:16:28Z",
+  "started_at": "2026-07-15T00:56:33Z",
+  "closed_at": "2026-07-18T05:16:28Z",
+  "close_reason": "PR #454 review blockers resolved; holistic review and all repository/importer/freeze gates pass.",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.11.1",
+      "depends_on_id": "eshyra-2n1t.11",
+      "type": "parent-child",
+      "created_at": "2026-07-11T15:48:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-2n1t.11.1",
+      "depends_on_id": "eshyra-2n1t.6",
+      "type": "blocks",
+      "created_at": "2026-07-11T15:48:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

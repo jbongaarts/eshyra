@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.13.1",
+  "title": "Review: Sol final review of PR #647 (eshyra-o9bd.19.5.13 @ f6bd2819)",
+  "description": "Final read-only review of PR #647 (branch eshyra-o9bd.19.5.13, exact head f6bd2819d73df312062f8511626324cce6311ada) by GPT-6.1-Sol, full review, profile standard (model-facing tool contract) - also check the bead's triage dispositions in its notes for any item wrongly marked 'no requirement'. Findings in notes; ends with a VERDICT line.",
+  "notes": "Dispatched gpt-6.1-sol effort high; PGID 2041752\nFresh full read-only FINAL REVIEW of PR #647 at f6bd2819d73df312062f8511626324cce6311ada. Reviewed the complete origin/main...HEAD diff and origin/main..HEAD log (one commit, toolRoll.ts and tools.test.ts), both assigned beads including live owning scope/notes and child dispatch, AGENTS.md, design-and-pr-review-policy.md, importer-fix-protocol.md, ADR 0020, and ADR 0004. Standard profile for the description repair; semantic-system for all nine triage dispositions, with source-backed examination of the rules-facing boundaries. refs/beads/state is stale (2026-09-09) and lacks this owning bead; current authoritative bd show --json was used to reconcile it.\n\nRepair/evidence: packages/core/src/orchestrator/toolRoll.ts:46-47 derives category and visibility clauses from the same constants admitted by its schema. The registered tool reaches buildSystemPrompt, ToolRegistry.definitions(), Anthropic/OpenAI native adapters, Agent SDK MCP, and Codex MCP without dropping the description. The ledger accepts hit_die and labels it Hit Die. Sibling analysis includes both enum lists, registry schema admission, roll result metadata, resolution/rest roll producers, and ledger consumers. Existing literal schema tests independently preserve the expected enum membership; the new tools.test.ts:334 generalized invariant protects every category/visibility against description omission, including the original hit_die case, at proportionate cost. No existing regression or source expectation was weakened.\n\nIndependent read-only in-memory TypeScript evaluation passed: each description clause exactly equals its schema enum; both enums equal the base enums; the sole description difference is insertion of \"hit_die\"; the base description lacks it. Local Vitest was not run because this worktree has no local node_modules; no dependencies were installed or repository files created. PR head matches the assignment and GitHub reports successful CI build-test, install smoke, and CodeQL checks. Git status remains clean.\n\nNine-item disposition:\n1. NOT A FINDING — no requirement for deterministic roll-token binding under current authority: seeded roll owns RNG; released CLI wires the mechanics auditor, which receives this turn's call arguments/results and rejects absent/contradictory dice evidence, with rejected mutations rolled back; record_death_save and restore_usage are the scalar-roll siblings, while validateDiceRollEvidence validates consistency rather than seeded provenance.\n2. NOT A FINDING — no requirement for an additional campaignId guard in memory_drilldown under ADR 0004's per-campaign SQLite boundary and the actual CLI database selection; retrieval stays on ctx.db.\n3. NOT A FINDING — the required model-facing hit_die/schema parity repair is complete, including visibility parity and generalized permanent evidence.\n4. NOT A FINDING — no requirement to admit multiple interpretations: the description requires an unambiguous single interpretation, and schema/runtime intentionally refuse other arities before audited precedent persistence.\n5. NOT A FINDING — no requirement for tool-owned delayed scheduling: set_suffocation instructs the DM to invoke drop at the start of the next turn after the survival interval, matching rule:suffocating and vendored SRD p.86.\n6. NOT A FINDING — no requirement for deterministic ammunition-type adjudication: the DM supplies the held ammunition item; expenditure deterministically enforces custody, quantity, active combat, location and accounting, consistent with the declared boundary and SRD p.65.\n7. NOT A FINDING — no requirement for partial success on reset_usage: pack-bound item refusal before counter writes preserves the atomic generic-counter boundary; canonical item resets have their separate semantic owner.\n8. NOT A FINDING — no requirement that a refused concentration call preserve RNG position: no concentration event/state is persisted on refusal, and the seeded stream remains reproducible for an identical ordered call sequence.\n9. NOT A FINDING — no requirement for applyLevelUp to duplicate eligibility admission: it is internal, guidedLevelUpFlow gates eligibility and confirmation, and the actual CLI progression consumer uses that flow.\n\nRelevant pack passages and vendored PDF were independently inspected for suffocation, death saves (p.98), ammunition (p.65), and recharge (p.259). No pack/importer/generated output changes occur in this PR. All declared scope and triage dispositions are resolved; no S-series blocking findings.\nVERDICT: APPROVED at exact head f6bd2819d73df312062f8511626324cce6311ada",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T07:22:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T07:26:06Z",
+  "closed_at": "2026-10-10T07:26:06Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.13.1",
+      "depends_on_id": "eshyra-o9bd.19.5.13",
+      "type": "parent-child",
+      "created_at": "2026-10-10T02:22:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

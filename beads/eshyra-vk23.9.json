@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vk23.9",
+  "title": "Structured Warlock invocation prerequisite modeling",
+  "description": "Follow-on to eshyra-vk23.3. The invocation prerequisite STRINGS are now correct, but tools still parse prose like '12th level, Pact of the Blade feature'. Add a structured 'prerequisites' clause array on invocation options, preserving the original 'prerequisite' prose. Model: class-level (scoped to class:warlock), pact-boon option refs (pact-of-the-blade/chain/tome), and cantrip refs (eldritch blast cantrip -> spell:eldritch-blast). Tests for Book of Ancient Secrets, Chains of Carceri, Lifedrinker, Thirsting Blade, Voice of the Chain Master, and a cantrip prereq.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T04:26:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T04:33:51Z",
+  "started_at": "2026-06-30T04:27:22Z",
+  "closed_at": "2026-06-30T04:33:51Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-vk23.9",
+      "depends_on_id": "eshyra-vk23",
+      "type": "parent-child",
+      "created_at": "2026-06-29T23:26:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

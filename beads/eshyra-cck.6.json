@@ -1,0 +1,57 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cck.6",
+  "title": "Task 6: Thin CLI consuming core (boundary proven)",
+  "description": "Objective:\nReplace the cli placeholder with a thin entry that consumes core (`buildBanner`,\n`main` printing version + resolved config). Proves epic acceptance #1: CLI consumes\ncore, and core builds with zero cli dependency.\n\nFiles:\n- Modify: `packages/cli/src/index.ts`\n- Test:   `packages/cli/test/cli.test.ts`\n\nSteps:\n\n1. Write the failing test `packages/cli/test/cli.test.ts`:\n```ts\nimport { describe, expect, it } from 'vitest';\nimport { buildBanner } from '../src/index.js';\n\ndescribe('cli', () => {\n  it('builds a banner that includes the core version', () => {\n    expect(buildBanner('1.2.3')).toBe('Loreweaver — core v1.2.3');\n  });\n});\n```\n\n2. Run it to verify FAIL.\n   Command: `npx vitest run packages/cli/test/cli.test.ts`\n   Expected: FAIL — `buildBanner` is not exported (current export is `placeholder`).\n\n3. Replace `packages/cli/src/index.ts` entirely with:\n```ts\nimport { CORE_VERSION, ConfigError, loadConfig } from '@loreweaver/core';\n\nexport function buildBanner(version: string): string {\n  return `Loreweaver — core v${version}`;\n}\n\nexport function main(): void {\n  console.log(buildBanner(CORE_VERSION));\n  try {\n    const cfg = loadConfig();\n    console.log(`db=${cfg.campaignDbPath} model=${cfg.model}`);\n  } catch (err) {\n    if (err instanceof ConfigError) {\n      console.error(`config error: ${err.message}`);\n      process.exitCode = 1;\n      return;\n    }\n    throw err;\n  }\n}\n\nif (import.meta.url === `file://${process.argv[1]}`) {\n  main();\n}\n```\n\n4. Run the test to verify PASS.\n   Command: `npx vitest run packages/cli/test/cli.test.ts`\n   Expected: 1 passed.\n\n5. Build everything, then prove core has zero cli dependency: build ONLY core\n   from a clean state.\n   Command: `npm run build && rm -rf packages/core/dist packages/cli/dist && npm run build --workspace @loreweaver/core`\n   Expected: exit 0; `packages/core/dist/index.js` exists and core build never\n   references `@loreweaver/cli` (core has no such import/dependency).\n\n6. Run the full test suite.\n   Command: `npm test`\n   Expected: all tests pass; the model integration test is skipped (no API key).\n\n7. Commit.\n   Command: `git add -A && git commit -m \"feat(e0): thin CLI consuming core (boundary proven)\"`\n",
+  "design": "`buildBanner` is split out as a pure function so it is unit-testable without\nspawning a process or capturing stdout. `main` is the only impure part and is\nguarded by the `import.meta.url === file://argv[1]` check so importing the module\nin tests does not execute it. The boundary proof (acceptance #1) is structural:\ncore has no dependency on `@loreweaver/cli` (verified by building core alone after\nclearing dist), while cli imports `@loreweaver/core` — one-directional. CLI holds\nzero game logic; it only formats and delegates to core's `loadConfig`. Banner text\n`\"Loreweaver — core v<version>\"` must match the test exactly (em dash U+2014).\n",
+  "acceptance_criteria": "npx vitest run packages/cli/test/cli.test.ts shows 1 passed; core builds alone after clearing dist; npm test passes all with model integration skipped.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:43:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-18T04:19:08Z",
+  "closed_at": "2026-05-18T05:14:54Z",
+  "close_reason": "Thin CLI consuming core; spec compliant; quality-reviewed; Critical Windows entrypoint guard fixed (b733bd5); follow-ups ho4/2l0 filed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cck.6",
+      "depends_on_id": "eshyra-cck",
+      "type": "parent-child",
+      "created_at": "2026-05-16T23:43:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-cck.6",
+      "depends_on_id": "eshyra-cck.1",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:43:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-cck.6",
+      "depends_on_id": "eshyra-cck.2",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:43:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "14f75d01-d58e-5b94-b305-0dae41b4d584",
+      "issue_id": "eshyra-cck.6",
+      "author": "Joseph Bongaarts",
+      "text": "Lifecycle note: implementer prematurely closed this bead and pushed the branch before review; controller reopened it and ran the required spec + quality gates. Spec compliance: PASS (verbatim match incl. em dash U+2014, one-directional boundary, only 2 files). A reported core-dist/TS2307 failure was investigated and proven a FALSE NEGATIVE from stale tsc --build tsbuildinfo (clean-state full + core-only builds both exit 0 and emit dist/index.js); build-hygiene fragility tracked in loreweaver-2l0. Quality review found 1 Critical (Windows import.meta.url guard never matched -> CLI binary no-op on Windows; the guard was verbatim from the spec, i.e. a spec bug) — FIXED in b733bd5 via node:url pathToFileURL (only cli/index.ts changed; clean build exit 0, vitest 1 passed, npm test 11 passed/1 skipped). Important (main() ConfigError/guard untested) deferred to loreweaver-ho4; Minor (unlabelled log line) noted. Re-review Assessment: Approved.",
+      "created_at": "2026-05-18T05:14:53Z"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 1
+}

@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vj3x",
+  "title": "Migrate formatting for Biome 2.5.4 dependency update",
+  "description": "Dependabot PR #445 updates Biome 2.5.2 to 2.5.4 and tsx 4.23.0 to 4.23.1. CI reports 132 formatting errors and a full/macos release failure. Handle the Biome update as a dedicated toolchain migration per docs/dependencies.md, apply and review formatter changes, investigate the macOS artifact failure, and keep unrelated dependency updates separate where practical.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T01:14:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T01:27:01Z",
+  "started_at": "2026-07-25T01:15:33Z",
+  "closed_at": "2026-07-25T01:27:01Z",
+  "close_reason": "Migrated to Biome 2.5.5, resolved unsafe optional chaining diagnostics, passed local and GitHub verification, and merged PR #445.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

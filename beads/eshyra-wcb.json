@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wcb",
+  "title": "Type the mark_scene tool result instead of structural casting",
+  "description": "Tech-debt review finding. orchestrator.ts isClosedSceneResult inspects the mark_scene result via a hand-written cast of ToolResult.data with no compile-time link to what markSceneTool.run returns. A shape change silently stops scenes being summarized. Export a typed mark_scene result shape or detect closed scenes from typed call args. Parent context: loreweaver-d4r.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T21:25:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:19Z",
+  "started_at": "2026-05-22T22:20:21Z",
+  "closed_at": "2026-05-22T22:24:02Z",
+  "close_reason": "Typed mark_scene result data via MarkSceneToolData, linked markSceneTool returns with satisfies, and replaced orchestrator structural cast with isMarkSceneToolData. Verification: focused Vitest passed (40 tests), core tsc build passed; npm run typecheck remains blocked by unrelated CLI TS errors recorded in comments. PR: https://github.com/jbongaarts/loreweaver/pull/43",
+  "comments": [
+    {
+      "id": "fd0ece55-c817-5da2-a66b-8bd771b9df38",
+      "issue_id": "eshyra-wcb",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: direct tsc check for tools.test.ts failed as expected on missing MarkSceneToolData export before implementation, alongside unrelated ad hoc compile noise. GREEN: npx vitest run packages/core/test/orchestrator.test.ts packages/core/test/tools.test.ts packages/core/test/sessionClose.test.ts -> passed (40 tests). Core build: npx tsc --build packages/core/tsconfig.json --force -> passed.",
+      "created_at": "2026-05-22T22:23:02Z"
+    },
+    {
+      "id": "d9bfb68b-d9cb-5e43-b10e-0474c905e03c",
+      "issue_id": "eshyra-wcb",
+      "author": "Joseph Bongaarts",
+      "text": "Verification caveat: npm run typecheck -> failed on unrelated packages/cli/src/index.ts:111 TS2554/TS2339. Focused verification: npx vitest run packages/core/test/orchestrator.test.ts packages/core/test/tools.test.ts packages/core/test/sessionClose.test.ts -> passed (40 tests); npx tsc --build packages/core/tsconfig.json --force -> passed.",
+      "created_at": "2026-05-22T22:23:25Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

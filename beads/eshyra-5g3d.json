@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5g3d",
+  "title": "Flaky CLI packaging test times out under full-suite load",
+  "description": "`packages/cli/test/cli.test.ts > package smoke > packs publishable tarballs with\ndist output and no source/test files` intermittently fails with\n`Test timed out in 10000ms` when run as part of the full Vitest suite, and\npasses reliably when its file is run alone.\n\nOBSERVED\n2026-09-10/11, on `eshyra-o9bd.19.12` and on `eshyra-o9bd.19.12.2` (a branch\ntouching only `packages/core/src/discovery` and its tests). Three of five\n`npm run verify:worktree` runs failed on it; a plain `npm run test` on the same\ntree passed at 5295 passed / 20 skipped, and `npx vitest run\npackages/cli/test/cli.test.ts` passed 15/15.\n\nWHY IT MATTERS\nIt is a false red on the pre-commit gate. An agent that takes it at face value\neither burns a cycle chasing an unrelated change or, worse, learns to ignore a\nfailing gate.\n\nLIKELY CAUSE (unverified)\nThe test shells out to `npm pack` for both workspaces. Vitest spawns one worker\nper file (296 workers observed), so under that load a real `npm pack` can\nexceed the declared `timeout: 10_000`. The timeout was presumably sized against\nan unloaded run.\n\nCANDIDATE FIXES, in preference order\n1. Raise the declared timeout to something that reflects packing two workspaces\n   on a loaded machine. Cheapest, and the assertion is about tarball CONTENT,\n   not speed — the timeout was never the thing under test.\n2. Pack once per suite rather than once per test, if more than one case needs\n   the tarball.\n3. Only if neither holds: mark the file as needing a dedicated pool.\n\nDo NOT fix it by deleting the assertion or by skipping the test: it guards the\npublished tarball against shipping source and test files, which is a real\nrelease property.\n",
+  "notes": "2026-09-22 RE-EXAMINED under the 6-worker cap (eshyra-9l5s.2 / PR #552) by eshyra-9l5s.5. VERIFIED CAUSE: worker fan-out contention (default maxWorkers = 20 on this host), per audit docs/audits/test-suite-and-verification/2026-09-14-test-suite-and-verification-audit.md section 2.6. The '296 workers observed' reading was Vitest's per-file spawn count under isolate:true, not concurrency; the over-subscription it inferred was real. EVIDENCE (measured, not 'did not reproduce'): 'packs publishable tarballs...' took 1.43 / 1.55 / 1.55 / 1.45 s in four capped full-suite runs, against its 10 s budget: >=6.4x headroom. Nine capped full-suite runs this session were green. Latest main CI (4-worker cap) passed. DISPOSITION: fixed at the cause by the cap. Candidate fix 1 (raise the timeout) was NOT taken and is not needed; no code change.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-11T04:02:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-22T22:47:32Z",
+  "closed_at": "2026-09-22T22:47:32Z",
+  "close_reason": "Cause verified (uncapped worker fan-out) and fixed by the worker cap from eshyra-9l5s.2; pack test measured at 1.43-1.55 s under the capped full suite vs 10 s budget. Evidence in notes (eshyra-9l5s.5).",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

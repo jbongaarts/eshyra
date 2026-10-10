@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4r.2",
+  "title": "Design config-file and campaign registry storage defaults",
+  "description": "Follow-up to ADR 0003. The first CLI release intentionally keeps LOREWEAVER_DB_PATH required, but future work should design per-platform app-data roots, a config file, and a campaign registry/picker before introducing implicit campaign database locations.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-22T03:09:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-22T21:17:36Z",
+  "closed_at": "2026-05-22T21:57:09Z",
+  "close_reason": "ADR 0004 (config file + campaign registry storage) authored, accepted, and merged in PR #36. Follow-up implementation tracked by loreweaver-d4r.3/.4/.5.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d4r.2",
+      "depends_on_id": "eshyra-d4r",
+      "type": "parent-child",
+      "created_at": "2026-05-21T22:09:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "4db46ad7-a07e-5179-8704-c5d9421a5237",
+      "issue_id": "eshyra-d4r.2",
+      "author": "Joseph Bongaarts",
+      "text": "Design delivered as ADR 0004 (docs/adr/0004-config-file-and-campaign-registry.md): per-user data root with LOREWEAVER_HOME + per-platform defaults, non-secret config.json with documented precedence, JSON campaign registry + picker. LOREWEAVER_DB_PATH explicit-path mode is preserved (ADR 0003 unchanged when set). Follow-up implementation filed as loreweaver-d4r.3/.4/.5. Docs-only change; no code quality gates apply.",
+      "created_at": "2026-05-22T21:20:28Z"
+    },
+    {
+      "id": "17ceac79-b12d-587b-ada6-a379823dc878",
+      "issue_id": "eshyra-d4r.2",
+      "author": "Joseph Bongaarts",
+      "text": "Revised ADR 0004: removed backward-compat/migration framing since Loreweaver has no released installations. The managed per-user model is now specified directly and supersedes ADR 0003 outright when implemented (no migration step). LOREWEAVER_DB_PATH is kept as a deliberate explicit-path feature, not a compat shim.",
+      "created_at": "2026-05-22T21:34:17Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 2
+}

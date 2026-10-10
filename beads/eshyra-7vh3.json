@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7vh3",
+  "title": "Conjure Elemental/Conjure Fey: cast-anchored absolute-time removal (1 hour after summoning)",
+  "description": "SRD: an uncontrolled elemental/fey 'disappears 1 hour after you summoned it' (transition absolute-time-reached, presence->absent). Released creatures after a concentration break are not yet removed at cast+1h. Discovered during eshyra-o9bd.19.3.4.8.17; Animate Objects/Giant Insect reversion is eshyra-ysr3.",
+  "notes": "PR https://github.com/jbongaarts/eshyra/pull/600 opened 2026-10-04 (head 27d013e2); stays in_progress until it merges.\nMerged to main via PR #600 (approved head c3b9ffc0, merge commit c24fea21) on 2026-10-07.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-04T03:22:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-07T23:48:56Z",
+  "started_at": "2026-10-04T17:16:37Z",
+  "closed_at": "2026-10-07T23:48:56Z",
+  "close_reason": "Delivered by PR #600, merged as c24fea21",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

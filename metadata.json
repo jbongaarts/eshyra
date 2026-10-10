@@ -1,0 +1,12 @@
+{
+  "projectionSchemaVersion": 1,
+  "generatedAtUtc": "2026-10-10T21:32:35.914Z",
+  "repository": "https://github.com/jbongaarts/eshyra",
+  "sourceRef": "refs/dolt/data",
+  "sourceDoltGitSha": "e5fee1c2f0f32c1c4c9fb1d84f2e9898d1d59770",
+  "projectionRef": "refs/beads/state",
+  "beadsVersion": "bd version 1.1.0 (8e4e59d39)",
+  "exportMechanism": "bd export (JSONL; regular issue records, including labels, dependencies, and comments)",
+  "exportedBeadCount": 1371,
+  "rawExportSha256": "327ff345b008fde3af8e47537d77545ca0d93568e1296d832046e3c528225c69"
+}

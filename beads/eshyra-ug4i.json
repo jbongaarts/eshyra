@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ug4i",
+  "title": "Level-up: accept and persist the choices it now fail-closed blocks (fighting style, expertise, option-catalog features incl. pact boon, spell selection)",
+  "description": "Found 2026-10-08 while tracing eshyra-olv1. detectLevelUpRequiredChoices (packages/core/src/character/levelUpEngine.ts) marks only 'subclass' and 'ability-score-improvement' as supported. Every other detected choice is status 'unsupported' and applyLevelUp refuses to advance: 'fighting-style' (paladin/ranger 2), 'expertise' (rogue 6, bard 3), 'class-feature-choice' (warlock eldritch-invocations at 2 and pact-boon at 3, sorcerer metamagic at 3, plus feature improvements), and 'spell-selection' (any caster gaining cantrips/known spells/a new spell level/spellbook growth: in practice nearly every caster level). eshyra-lupf (closed) built the descriptors and the fail-closed block; the pack side now models these option catalogs (eshyra-ngcj.2.2/.2.3, eshyra-o9bd.9.5/.9.6). No open bead owns accepting the choice inputs and persisting the result on the sheet. Scope: accepted choice inputs keyed by the generated descriptor ids (mirror character-creation requiredChoices), validation against the pack's option catalogs and prerequisites, persistence on the character sheet (a durable record of the chosen pact boon is what eshyra-olv1 needs), ledger rows, and the guided flow. Probably decompose per choice kind; spell selection is the largest and most player-visible.",
+  "design": "Decomposed 2026-10-08 (Claude Captain). Slice 1 eshyra-ug4i.3 (dispatch): option-catalog/list feature choices (fighting style, metamagic, invocations + growth + replacement, pact boon, hunter options, favored enemy/natural explorer growth) persisted on a new optional sheet field featureChoices; conditional choices (Tome cantrips, Book of Ancient Secrets) stay unsupported and only when triggered. Slice 2 eshyra-ug4i.1: expertise (characterStateFilter over held skill/tool proficiencies). Slice 3 eshyra-ug4i.2: spell selection at level-up (known casters' new spells + one optional replacement, cantrips, wizard spellbook +2, mystic arcanum, magical secrets, tome cantrips/rituals; prepared casters' daily preparation is NOT a level-up choice — re-derive what the current detector flags for them) — needs its own design pass before dispatch. Fighting-style/metamagic/invocation MECHANICAL effects are out of scope (DM-adjudicated) unless a later bead selects them as deterministic capabilities. Creation-time level-1 choices are eshyra-nnj6.",
+  "notes": "2026-10-08: slice 1 (eshyra-ug4i.3) in PR #609 https://github.com/jbongaarts/eshyra/pull/609. eshyra-ug4i.1 (expertise), eshyra-ug4i.2 (spell selection, design recorded) and eshyra-nnj6 wait on it.\n2026-10-08: PR #609 merged (merge commit 03a7c4d9, head 3b3de803): slice 1 landed. Remaining slices eshyra-ug4i.1 (expertise) and eshyra-ug4i.2 (spell selection) keep this bead open.\n2026-10-08 (Claude Captain reconciliation): typed featureImprovement rows (incl. Ranger 6/10/14 growth left unsupported by ug4i.3) are owned by eshyra-ghzh, NOT this epic; ug4i's accepted slices are unchanged and it still closes on ug4i.1.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T01:33:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T00:48:24Z",
+  "started_at": "2026-10-08T01:55:35Z",
+  "closed_at": "2026-10-09T00:48:24Z",
+  "close_reason": "All slices merged: ug4i.3 (PR #609), ug4i.2 (PR #610), ug4i.1 (PR #612, ed6bfa62)",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ug4i",
+      "depends_on_id": "eshyra-ghzh",
+      "type": "relates-to",
+      "created_at": "2026-10-08T16:46:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0xul",
+  "title": "Admit creatures into an active combat instance (mid-combat summons and arrivals)",
+  "description": "Discovered while designing eshyra-82uk (2026-10-08). start_encounter only opens a NEW combat instance, and only one instance may be active per campaign (turnAuditor). Nothing adds a combatant to the running instance, so a summon cast mid-combat (Conjure Animals in round 3, Animate Dead, Find Familiar recall from its pocket) or a reinforcement cannot become a combatant, and start_effect's actors entries need an existing combatantId. eshyra-82uk factors an internal seam that projects a campaign actor into the active instance (used by the pocket recall). This bead owns the model-facing capability: a tool (e.g. join_combat { actors: [...] , encounter creatures? }) with the same admission rules as start_encounter (absent/bonded/pocketed refusals, 0-HP rules, lifecycle carry-over), instance-only creatures as well as campaign actors, and the turn/round consequences (initiative is model-narrated; begin_turn boundaries). Design the instance-only case: combatant ids, side, and start_effect linking afterwards.",
+  "design": "DESIGN (Claude Captain, 2026-10-08)\n\nTool join_combat { creatures?: [...], actors?: [...] } admits creatures into the campaign's ACTIVE combat instance. At least one entry is required. It is refused when no instance is active (\"start_encounter opens one\"). One transaction: every entry is validated before any row is written, and a refusal leaves state unchanged.\n\n- creatures[] (instance-only, identity encounter_instance): { rulesRef (required, must resolve as a creature record), count? (int >= 1, default 1), side (REQUIRED), faction?, displayLabel?, placement? }. HP/AC/heads come from the creature record exactly as start_encounter's template creatures do (readCreatureHp, readCreatureAc, initialHeadCount; admitCombatantLifecycle). Row id: `${instance}-${slug(rulesRef)}-${n}` with n the next free ordinal for that prefix (existence check loop, as the recall's suffix loop). Label: displayLabel ?? record name, numbered \" 1\"..\" n\" when count > 1.\n- actors[] (persistent campaign actors): same schema and admission rules as start_encounter actors (reuse admitCampaignActorToInstance; refuse state.combatLifecycle as start_encounter does) with `side` REQUIRED. Extra rules: refuse an actor that already has a non-absent row in this instance (it is already in this combat, alive, dead or otherwise); an actor whose only rows here are absent is admitted under the existing absent rules (new manifestation with hpCurrent > 0; bonded absent refused; pocketed refused -> recall). Row id via ONE shared helper used by both join_combat and recallPocketedCampaignActor: `${instance}-${slug(actorId)}`, else -2, -3...\n- Initiative and turn order stay model-narrated (actionEconomy.ts); a joiner's turn budget row is created by its first begin_turn. The tool description says so, and says a summon's effect is recorded afterwards with start_effect using the returned combatant ids (actors[].combatantId; campaignActorId for durable summons).\n- Result: { combatInstance, joined: [combatant views of the new rows] }.\n- protocol.ts (system prompt) mentions start_encounter for starting combat; add one line that creatures arriving mid-combat (summons, reinforcements, a recalled familiar is automatic) join with join_combat.\nNot in scope: authored encounter template reinforcement waves (encounterId), placement/geometry.",
+  "notes": "2026-10-08: eshyra-0xul.1 (Sonnet 5.5, 7096f3ca) reviewed by the supervisor, verify:worktree rerun independently (328 files/5962 tests pass, 3 documented skips), merged into eshyra-0xul. PR #608: https://github.com/jbongaarts/eshyra/pull/608. In progress until merged.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T01:31:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-08T02:07:29Z",
+  "started_at": "2026-10-08T01:53:08Z",
+  "closed_at": "2026-10-08T02:07:29Z",
+  "close_reason": "PR #608 merged (merge commit 728798fb, head 958fcdab).",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0xul",
+      "depends_on_id": "eshyra-82uk",
+      "type": "discovered-from",
+      "created_at": "2026-10-07T20:31:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0xul",
+      "depends_on_id": "eshyra-0xul.1",
+      "type": "blocks",
+      "created_at": "2026-10-07T20:53:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

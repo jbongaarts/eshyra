@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vil",
+  "title": "E8 separation guard: remote-URL + ref-namespace collision check not enforced at runtime",
+  "description": "Epic loreweaver-7wc acceptance #5 requires the separation guard to reject a Dolt dir 'sharing remote or refs with the beads Dolt repo'. As implemented in Task 1 (separation.ts), assertSeparateFromBeads only checks filesystem nesting/equality; BEADS_RESERVED_REF is exported as a constant for callers but is NOT checked, and there is no remote-URL collision check. This is currently NON-REACHABLE: the campaign DoltRepo (Task 3) configures no git remote and writes no refs/dolt/* namespace, so there is no live violation surface in the MVP. Follow-up: when E8 gains remote/sync wiring (or before any campaign Dolt remote is configured), add a runtime check that rejects a campaign Dolt dir sharing a remote URL or the refs/dolt/* namespace with the beads repo, to fully satisfy epic acceptance #5.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T02:55:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:10Z",
+  "closed_at": "2026-05-19T03:55:34Z",
+  "close_reason": "Implemented: assertSeparateFromBeads now enforces all three halves of acceptance #5 — filesystem nesting/equality + shared normalized remote-URL + refs/dolt/* namespace — via pure offline repo_state.json reads. 12 separation tests pass; full suite 63 passed/1 skipped; typecheck 0.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

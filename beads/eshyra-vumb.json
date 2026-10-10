@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vumb",
+  "title": "Type and own restored C2 magic-item payload qualifiers",
+  "description": "The eshyra-yfeb importer fix restores source-exact C2 payloads for ten magic items. The generated pack intentionally leaves irregular qualifier fields (such as hit-point thresholds, save alternatives, immunity/eligibility, and triggered-effect outcomes) in the existing model-adjudicated boundary. Review whether these fields should gain typed schema and deterministic F-family consumers; do not alter the source-grounded payloads without item-description evidence. Affected records: cloak-of-arachnida, dagger-of-venom, giant-slayer, hammer-of-thunderbolts, iron-flask, mace-of-disruption, mirror-of-life-trapping, nine-lives-stealer, oathbow, robe-of-eyes. Follow the importer-fix protocol and preserve generated-output verification.",
+  "notes": "Supervisor review complete (2026-07-19, eshyra-fe3t phase): enumerated the full effect-qualifier vocabulary across all 240 magic items (~250 distinct keys, e.g. hitPointThreshold, saves[], onSuccessfulSave, immuneTypes, chargeCost, targetTypes). Decision: do NOT type these into strict schemas now. Rationale: (1) the payloads are source-anchored via family sourcePhrases assertions and their numeric content is enforced by the desc-mechanics numeric-conservation gate (eshyra-efg5); (2) their deterministic consumers are the F8/F9 engine hooks that are tracked per-clause as engine-pending in the readiness registry — typed schemas should be designed WITH those consumers, not before them; (3) the state-contract design explicitly warns against forcing rulings into enums. Typed-schema work belongs to whichever bead lands the first deterministic F8/F9 consumer; the readiness registry durably prevents these clauses from counting green until then.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T07:24:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T07:53:01Z",
+  "closed_at": "2026-07-19T07:53:01Z",
+  "close_reason": "Review complete: typed qualifier schemas deliberately deferred to the first deterministic F8/F9 consumer; payloads remain source-anchored and numerically gated; readiness registry tracks engine-pending status durably",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

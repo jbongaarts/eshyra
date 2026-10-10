@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-t8gw",
+  "title": "Duplicate rule:* records for the ten combat actions",
+  "description": "Found during eshyra-o9bd.19.2.2.5 survey (2026-09-26): the pack emits both action:<x> and rule:<x> with the same p93-94 'Actions in Combat' text for attack, cast-a-spell, dash, disengage, dodge, help, hide, ready, search, use-an-object (e.g. action:dash.data.description == rule:dash.data.text). One printed heading, two records. .5 assigns heading ownership to action:*; this bead decides the fate of the rule:* duplicates (retire with aliases, or document a distinct role) under docs/importer-fix-protocol.md. The dispatched .5.1 child may also file this; dedupe if so.",
+  "notes": "PR #580 opened 2026-09-26 (https://github.com/jbongaarts/eshyra/pull/580). Child t8gw.1 (Sonnet) merged in; supervisor review added retired-alias fallback for by-name lookups and dropped the recordNameCollisions count. verify:worktree 5528 pass/3 skip; verify:dnd5e-srd-pack exit 0. Stays in_progress until merge.\n2026-09-26: review at db68c5c1 (F1 alias ignored requested kind) fixed in 87f46264 with generalized alias/kind test; PR comment posted.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-26T23:20:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-27T05:17:42Z",
+  "started_at": "2026-09-27T02:12:19Z",
+  "closed_at": "2026-09-27T05:17:42Z",
+  "close_reason": "Merged in PR #580 (e2a14d9c).",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-t8gw",
+      "depends_on_id": "eshyra-t8gw.1",
+      "type": "blocks",
+      "created_at": "2026-09-26T21:14:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

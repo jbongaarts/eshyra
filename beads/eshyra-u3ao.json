@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-u3ao",
+  "title": "Reconcile Grappled exclusion occurrence count in condition relationship design",
+  "description": "Reconcile docs/design/condition-condition-relationships.md with the committed Grappled mechanics shape. The design says one conditionEndsWhen condition leaf on condition:grappled is excluded, but the importer emits two conditionEndsWhen effects (grappler-incapacitated and removed-from-grappler-reach), each with condition: grappled. Both correctly resolve to excluded under the approved relation table. Update the design evidence/count wording and ensure the permanent committed-pack test continues to assert both self-reference leaves without changing relationship semantics.",
+  "notes": "Discovered while implementing eshyra-o9bd.19.3.4.3.1; implementation commit 12b32c18 covers both emitted occurrences and asserts their self-reference.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T22:00:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-29T22:01:22Z",
+  "closed_at": "2026-09-29T22:01:22Z",
+  "close_reason": "Duplicate of eshyra-0p5j; retain eshyra-0p5j as the design wording follow-up.",
+  "labels": [
+    "design",
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

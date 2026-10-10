@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.11",
+  "title": "CLI/session commands: view progression and apply level-up",
+  "description": "Wire progression into the CLI play session: a command to view progression (current XP/level, advancement mode, eligibility, recent ledger events) and a command to apply/start a level-up via the guided flow. Mirrors existing playCharacter/playParty command wiring.",
+  "acceptance_criteria": "Players can view progression and trigger level-up from the play session; commands surface eligibility and block unsupported level-ups clearly; CLI wiring is covered by tests.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:21:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T02:35:27Z",
+  "closed_at": "2026-06-28T02:40:55Z",
+  "close_reason": "Added play-session /progression and /levelup commands backed by the guided level-up flow, with CLI coverage for viewing, applying, and unsupported blockers.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.11",
+      "depends_on_id": "eshyra-lupf.7",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.11",
+      "depends_on_id": "eshyra-lupf.10",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.11",
+      "depends_on_id": "eshyra-lupf.6",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.11",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:21:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

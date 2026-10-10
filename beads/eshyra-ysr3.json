@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ysr3",
+  "title": "Animate Objects / Giant Insect: 0 HP must revert the creature, not kill it (SRD)",
+  "description": "SRD contradiction (pre-existing on main; hard blocker class per bd memory srd-fidelity-hard-blocker): a creature animated by Animate Objects or enlarged by Giant Insect that drops to 0 HP is killed by the engine (monster death rules => status dead). The source says it reverts instead.\n\nSOURCE (packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json):\n- spell:animate-objects: \"Each target animates and becomes a creature under your control until the spell ends or until reduced to 0 hit points.\" / \"When the animated object drops to 0 hit points, it reverts to its original object form, and any remaining damage carries over to its original object form.\" Transitions: zero-hp-reversion {trigger zero-hit-points, when effect=active form=manifested, changes effect->ended, form->original}; spell-end-reversion likewise.\n- spell:giant-insect: \"A creature remains in its giant size for the duration, until it drops to 0 hit points, or until you use an action to dismiss the effect on it.\" Transitions: zero-hp-reversion, spell-end-reversion, action-dismissal-reversion (effect->ended, form->original). Identity existing-targets; contextual rulings gm-may-map-analogous-targets, gm-resolves-actions-and-movement.\n- S1 design: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-9-s1-summoning-contract-design.md rows 130 and 140.\n\nCONTEXT: eshyra-o9bd.19.3.4.8.17 (PR #599, S44 repair) adds a durable zero_hp_rule on combatants ('vanish' | 'revert'), derived at start_effect from the spell record's zero-hit-points transition. It implements only 'vanish' (presence->absent / integrity->destroyed). 'revert' is used there only to refuse player-character death rules and the nonlethal knockout. This bead owns the 'revert' runtime.\n\nTO DESIGN AND IMPLEMENT:\n1. Animate Objects at 0 HP: the creature leaves play as a creature (the object is not a combatant). The remaining damage beyond 0 must carry over to the original object form. Decide how the object's HP or damage is represented, or report the carry-over amount truthfully if objects are not tracked. That creature's part of the effect ends.\n2. Giant Insect at 0 HP: the target reverts to its normal size and is still a creature. Establish from the source what its state is after reversion (the normal form's statistics are GM-held per gm-resolves-actions-and-movement). If the source does not determine it, record an explicit ambiguity rather than inventing state. Do NOT remove the creature from play or kill it.\n3. The same reversion applies on spell end, and for Giant Insect on per-target action dismissal. Check that F3 cleanup policies for these links do not contradict that (remove would take a reverted insect out of play).\n4. Model-facing tool text and docs/active-effect-lifecycle.md updated to match.\n5. Registry-level evidence for each source sentence above.",
+  "notes": "PR https://github.com/jbongaarts/eshyra/pull/600 opened 2026-10-04 (head 27d013e2); stays in_progress until it merges.\nMerged to main via PR #600 (approved head c3b9ffc0, merge commit c24fea21) on 2026-10-07.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-04T03:17:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-07T23:48:54Z",
+  "started_at": "2026-10-04T16:36:32Z",
+  "closed_at": "2026-10-07T23:48:54Z",
+  "close_reason": "Delivered by PR #600, merged as c24fea21",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ysr3",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.17",
+      "type": "discovered-from",
+      "created_at": "2026-10-03T22:17:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

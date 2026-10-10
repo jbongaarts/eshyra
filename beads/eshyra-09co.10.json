@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-09co.10",
+  "title": "Review: final review of PR #627 (Opus 5.5 fallback; Sol usage-limited)",
+  "description": "Final read-only review of PR #627 (branch eshyra-09co, exact head 865354d4b2ea820c8f7ca2f8e0c4aaaf3a7a0110) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Sol run aborted: Codex usage limit hit (until 02:43). Review re-run by an adversarial Opus 5.5 agent in the same worktree/head.\nFinal adversarial read-only review (Opus 5.5 fallback) of PR #627 at exact head 865354d4. Reviewed the full origin/main...HEAD diff (18 files), the owning bead and the prior review/fix chain (09co.2/.4/.6/.8 -> .3/.5/.7/.9), AGENTS.md, and the SRD Font of Magic text. Traced the real consumers: flexible_casting tool and registry, spend/restore/reset_usage tools, toolRest -> completeRest (restoreSpellSlots + resetUsage, resolver threaded via ...input), orchestrator assemble_context (memoized resolver now forwarded to readStateSnapshot -> readSpentUsageCounters), levelUpEngine syncSpellSlots/reconcileClassResourceCounters. No other readStateSnapshot/readSpentUsageCounters/readSpellSlots consumers; no table-enumerating checkpoint/export code needs the new table; migration 0043 does not collide with origin/main (unchanged since merge).\n\nPrior fixes hold: alias/legacy adoption through the counter owner (readBoundClassResourceBalance); one memoized rules resolution per Flexible Casting operation; atomic refusal on a class/procedure maximum disagreement plus a persisted-delta assertion; restore_usage reconciles to the active capacity and refuses none/unlimited; reset_usage and rests reconcile in-scope bound counters before the reset-kind filter and exclude none-capacity rows (history kept); assembleContext forwards the resolver; the read projection shares mostSpentUsed and the canonical key/name/reset/source normalization with reconcileBoundCounterRows, and omits none/unlimited.\n\nIndependent in-memory probes (scratchpad, bundled pack): level-11 sorcerer converts a level-6 slot (+6, 1->7 of 11), then a level-1 slot; level-20 sorcerer creates two level-5 slots (7 points each), a third is refused at 6 points; converting a created level-5 slot gives +5 and uses the created slot before the ordinary one; level-2 create then double convert returns to 2/2, using the created slot first; spend_spell_slot priority is lowest level first, then created before ordinary at the same level; a short rest keeps created slots, a long rest restores ordinary slots and deletes created ones (expiredCreated reported); real assembleContext renders 'Sorcery Points 3/5 used' and 'created (until long rest) level 2: 0/1'. Targeted vitest: 14 files, 483 tests passed (flexibleCasting, classResourceActiveCapacity, spellSlots, usageCounters, rest, contextAssembler, tools, persistence, migrationLegacyAdoption, migrationRunner, contextAssemblerParty, spellUpcast, levelUpEngine, orchestrator). git diff --check clean; worktree status clean.\n\nNON-MATERIAL:\nN1 (packages/core/src/state/rest.ts:697-701, unchanged by PR): completeLongRest keeps only restoreSpellSlots(...).restored, so the rest result never tells the DM which created slots vanished. Context on the next turn is correct and state is right. Optional follow-up: show expiredCreated in slotsRestored/benefits.\nN2 (contextAssembler.ts:572/1010): an unspent created slot shows under the 'Spell slots spent' heading as '0/1'. The format matches the other entries and the label is unambiguous, so this is cosmetic.\nN3: convert-slot refuses Pact Magic slots. That is only relevant to multiclassing, which the single-class slot model does not support.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:06:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:17:04Z",
+  "closed_at": "2026-10-09T05:17:04Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-09co.10",
+      "depends_on_id": "eshyra-09co",
+      "type": "parent-child",
+      "created_at": "2026-10-09T00:06:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

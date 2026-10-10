@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.7",
+  "title": "Brainstorm x3w: User reviews epic",
+  "description": "Show the updated epic and wait for user approval before implementation planning.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:36:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T04:59:52Z",
+  "closed_at": "2026-05-23T05:02:02Z",
+  "close_reason": "User approved the reviewed epic and authorized implementation planning.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.7",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-22T23:36:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.7",
+      "depends_on_id": "eshyra-x3w.6",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:37:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

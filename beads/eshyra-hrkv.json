@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-hrkv",
+  "title": "Optionally emit Appendix MM-A intro prose as a rule record (parity with MM-B)",
+  "description": "The Appendix MM-A (Miscellaneous Creatures) intro prose ('This appendix contains statistics for various animals, vermin, and other critters. The stat blocks are organized alphabetically by creature name.') is currently unrepresented in the generated pack. eshyra-76b7 stopped it bleeding into creature:ogre-zombie's Morningstar action and accounted for it via code comments, a regression test, and an audit guard, but did not emit it as a record. For parity with the MM-B 'Customizing NPCs' intro (rule:customizing-npcs), consider emitting the MM-A intro as a rule record. Likely files: index.ts orchestrator (carve the intro off the front of the misc-creatures slice like the NPC appendix), EXPECTED_SRD_5_1_RULE_KEYS, README. Out of scope for eshyra-76b7 (minimal boundary fix).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T05:08:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-15T15:08:56Z",
+  "closed_at": "2026-06-15T15:08:56Z",
+  "close_reason": "Completed/overtaken by merged PR #220: current main emits rule:appendix-mm-a-miscellaneous-creatures and has generated-pack regression coverage for the Appendix MM-A intro prose. The PR body still mentions this as a follow-up, but the PR had two commits and current main includes the rule.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

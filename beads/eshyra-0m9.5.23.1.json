@@ -1,0 +1,107 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.23.1",
+  "title": "Task 1: Parse Classes-chapter callouts",
+  "description": "Objective:\nAdd the focused structural parser that turns Classes-chapter gray callout boxes into deterministic `RuleExtraction` values without changing feature or subclass parsing.\n\nFiles:\n- Create: `packages/core/scripts/importers/dnd5e-srd-5.1/parseClassCallouts.ts`\n- Create: `packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts`\n\nSteps:\n1. Write a failing Vitest suite that imports `parseClassCallouts` and constructs `PageText` fixtures with `lineHeights`. Include Druid with two consecutive callouts, Paladin, Warlock, and Wizard; use regular heading heights above 11.5, callout headings at 10.8, normal body at 8.88/9.84, and following class headings to close bodies.\n2. Assert the parser returns these sorted `(name, keySlug)` pairs: `Breaking Your Oath` / `paladin-breaking-your-oath`, `Druids and the Gods` / `druid-druids-and-the-gods`, `Sacred Plants and Wood` / `druid-sacred-plants-and-wood`, `Your Pact Boon` / `warlock-your-pact-boon`, `Your Spellbook` / `wizard-your-spellbook`.\n3. Assert each body contains its own representative prose but excludes the next callout/class/feature text. Specifically ensure `Sacred Plants and Wood` excludes `Druids and the Gods`, while `Druids and the Gods` excludes the next class heading.\n4. Assert source pages come from each callout heading and a uniform-font/no-height fixture emits no callouts, preserving fixture behavior.\n5. Run `npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts`. Expected RED: the new parser module/export does not exist.\n6. Implement `parseClassCallouts(pages: readonly PageText[]): RuleExtraction[]`. Flatten normalized lines with page/height; return empty unless `hasHeadingTiers` passes; update current class on normalized names in `PARENT_CLASS_NAMES`; identify headings with `isCalloutBoxHeading`; collect following lines only while their defined height is lower than the detected callout heading height, so a same-tier callout or any larger feature/subclass/class heading closes the body without duplicating a font threshold; join trimmed lines into paragraph-preserving text; emit `keySlug` as `<class-slug>-<title-slug>`; sort by name.\n7. Run the focused test again. Expected GREEN: all parser tests pass.\n8. Run `npx biome check packages/core/scripts/importers/dnd5e-srd-5.1/parseClassCallouts.ts packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts`. Expected: no diagnostics.\n9. Commit with `git add packages/core/scripts/importers/dnd5e-srd-5.1/parseClassCallouts.ts packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts && git commit -m \"feat(srd): parse class callout boxes\"`.",
+  "design": "Use existing structural helpers from `parseSubclasses.ts`: `hasHeadingTiers`, `isCalloutBoxHeading`, and `PARENT_CLASS_NAMES`. Do not key behavior on the five title strings; the exact title/key set is enforced later by importer coverage. Suggested public signature:\n\n```ts\nexport function parseClassCallouts(\n  pages: readonly PageText[],\n): RuleExtraction[]\n```\n\nThe parser owns only headings accepted by `isCalloutBoxHeading`. For each accepted heading, body lines continue while their height is lower than that heading’s height; a same-tier callout or any larger heading closes the body. Undefined heights are allowed only after the slice has passed `hasHeadingTiers`, and should be treated as body for defensive compatibility. This avoids exporting or duplicating the font-band constants. Inline prose lead-ins such as `Copying a Spell into the Book.` remain body. Prefixing keys with the current class prevents collisions and preserves lookup context without adding schema fields.",
+  "acceptance_criteria": "Focused parser tests pass; exactly five real-shaped callouts have class-qualified keys, correct pages, isolated text, deterministic ordering; uniform-font fixtures emit none; no title whitelist; changed files pass Biome; commit created.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "estimated_minutes": 35,
+  "created_at": "2026-06-07T00:18:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-07T00:21:41Z",
+  "closed_at": "2026-06-07T00:44:39Z",
+  "close_reason": "Focused structural class-callout parser and regression tests implemented; spec and quality reviews approved; focused/nearby tests and Biome passed.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd",
+    "tdd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.23.1",
+      "depends_on_id": "eshyra-0m9.5.23",
+      "type": "parent-child",
+      "created_at": "2026-06-06T19:17:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "9b95381e-a55a-5518-8023-661ad67732d9",
+      "issue_id": "eshyra-0m9.5.23.1",
+      "author": "Joseph Bongaarts",
+      "text": "Debug evidence: npm run verify:worktree reproducibly reaches npm run typecheck and fails at parseClassCallouts.ts:79 with TS18048 because heading.height is optional. The runtime isCalloutBoxHeading boolean rejects undefined, but its return type is not a TypeScript type predicate, so control-flow analysis cannot narrow heading.height. Existing parsers avoid relying on that narrowing. Hypothesis: capture heading.height and explicitly reject undefined before the predicate; this preserves runtime behavior and gives the comparison a number type.",
+      "created_at": "2026-06-07T00:26:40Z"
+    },
+    {
+      "id": "00bd6ee7-62fb-5c24-9a1f-54c9be26376d",
+      "issue_id": "eshyra-0m9.5.23.1",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED \npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts exited 1 because parseClassCallouts.js did not exist. GREEN the same command passed 4/4 after the minimal parser implementation. REFACTOR the focused suite remained 4/4, the nearby parseSubclasses/parseFeatures/callout suites passed 57/57, and focused Biome reported no diagnostics after deterministic lexical sorting. Type gate: the first \npm run verify:worktree exposed TS18048 on optional heading.height; an explicit undefined guard fixed the type boundary, after which \npm run typecheck passed. Final verification: \npm run verify:worktree exited 0; format/check/typecheck passed and Vitest reported 93 files passed, 2 skipped, 1269 tests passed, 3 skipped.",
+      "created_at": "2026-06-07T00:28:08Z"
+    },
+    {
+      "id": "bdf1a1e3-a577-5145-b23a-41b9d038f183",
+      "issue_id": "eshyra-0m9.5.23.1",
+      "author": "Joseph Bongaarts",
+      "text": "Corrected TDD evidence: RED command npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts exited 1 because parseClassCallouts.js did not exist. GREEN: the same command passed 4/4 after the minimal parser implementation. REFACTOR: focused suite remained 4/4; nearby parseSubclasses, parseFeatures, and callout suites passed 57/57; focused Biome reported no diagnostics after deterministic lexical sorting. Type gate: the first npm run verify:worktree exposed TS18048 on optional heading.height; an explicit undefined guard fixed the type boundary, after which npm run typecheck passed. Final verification: npm run verify:worktree exited 0; format, check, and typecheck passed; Vitest reported 93 files passed, 2 skipped, 1269 tests passed, 3 skipped.",
+      "created_at": "2026-06-07T00:28:59Z"
+    },
+    {
+      "id": "090cfba0-3d65-5385-8d58-2d25f2f9fd42",
+      "issue_id": "eshyra-0m9.5.23.1",
+      "author": "Joseph Bongaarts",
+      "text": "Spec review item 1 accepted: parseClassCallouts.ts changes class context on any exact base-class name, while PR #163 added isParentClassHeading to reject low-height table/body occurrences such as the Oath spell-table 'Paladin' cell. Fix required: add a failing regression fixture proving a low-height class-name line does not reattribute the next callout, then use isParentClassHeading(line, height, tiersPresent).",
+      "created_at": "2026-06-07T00:35:33Z"
+    },
+    {
+      "id": "9cdfb635-7345-5a62-8b18-4905265ac3d4",
+      "issue_id": "eshyra-0m9.5.23.1",
+      "author": "Joseph Bongaarts",
+      "text": "Review evaluation: accepted. parseClassCallouts currently uses PARENT_CLASS_NAMES.has for context changes, unlike parseSubclasses and parseFeatures, so multi-tier extraction can treat a body/table cell at height 8.88 as a class chapter heading. Regression target: a real chapter heading followed by a low-height Paladin cell and then a callout must retain the real chapter context.",
+      "created_at": "2026-06-07T00:36:18Z"
+    },
+    {
+      "id": "b1df1773-1320-5ea8-b9e9-34073b1a2c07",
+      "issue_id": "eshyra-0m9.5.23.1",
+      "author": "Joseph Bongaarts",
+      "text": "Review-fix RED evidence: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts exited 1 with 1 failed, 4 passed. The new body-font class-name regression expected wizard-your-spellbook but received paladin-your-spellbook after a height-8.88 Paladin table cell, confirming raw PARENT_CLASS_NAMES membership incorrectly changes context.",
+      "created_at": "2026-06-07T00:37:00Z"
+    },
+    {
+      "id": "bdeac283-3bb2-5795-b05f-6b88db07877f",
+      "issue_id": "eshyra-0m9.5.23.1",
+      "author": "Joseph Bongaarts",
+      "text": "Review-fix TDD evidence: RED focused Vitest exited 1 with 1 failed and 4 passed, receiving paladin-your-spellbook instead of wizard-your-spellbook after a height-8.88 Paladin table cell. GREEN after replacing raw PARENT_CLASS_NAMES context changes with isParentClassHeading(line, height, tiersPresent): focused Vitest passed 5/5. REFACTOR/nearby verification: parseClassCallouts, parseSubclasses, and parseFeatures passed 58/58; focused Biome had no diagnostics; npm run typecheck passed. Final verification: npm run verify:worktree exited 0; format, hidden-Unicode/Biome check, typecheck, and tests passed; Vitest reported 93 files passed, 2 skipped, 1270 tests passed, 3 skipped.",
+      "created_at": "2026-06-07T00:38:27Z"
+    },
+    {
+      "id": "da7fcbda-c535-5869-b928-4815e0e2213e",
+      "issue_id": "eshyra-0m9.5.23.1",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 6925de8..60a8f80: Assessment: Ready to merge. Critical: none. Important: none. Minor: local slugging differs from parseRules for apostrophes, though no current callout title is affected; mixed optional-height body lines and blank-line paragraph preservation lack direct fixtures. Follow-up: non-blocking; exact current keys and body behavior are covered by this task and Task 2's canonical-pack tests.",
+      "created_at": "2026-06-07T00:44:26Z"
+    },
+    {
+      "id": "0f7d1fa8-052c-5a52-bf74-c28fb639ec84",
+      "issue_id": "eshyra-0m9.5.23.1",
+      "author": "Joseph Bongaarts",
+      "text": "Verification before close: npx vitest run parseClassCallouts.test.ts parseSubclasses.test.ts parseFeatures.test.ts -> exit 0, 3 files and 58 tests passed; npx biome check parser + test -> exit 0, no diagnostics; branch clean and up to date with origin/work/loreweaver-0m9.5.23 at 60a8f80.",
+      "created_at": "2026-06-07T00:44:38Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 9
+}

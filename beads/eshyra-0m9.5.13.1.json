@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.13.1",
+  "title": "RED: advanced treasure table reconstruction",
+  "description": "Write failing parser tests for SRD 5.1 treasure tables whose PDF text is emitted as interleaved column blocks.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T21:49:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T21:49:32Z",
+  "closed_at": "2026-05-28T21:52:28Z",
+  "close_reason": "Failing treasure table reconstruction test added and verified red.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.13.1",
+      "depends_on_id": "eshyra-0m9.5.13",
+      "type": "parent-child",
+      "created_at": "2026-05-28T16:49:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "c1246cb6-e6a2-53ff-ad3d-23a88a6f1bf9",
+      "issue_id": "eshyra-0m9.5.13.1",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseTables.test.ts -> failed for expected reason: treasure table fixture returned [] because parser only recognizes Difficulty Classes and XP Thresholds anchors.",
+      "created_at": "2026-05-28T21:52:28Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

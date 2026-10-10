@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5.2",
+  "title": "Add explicit SRD spell-list parity coverage gate",
+  "description": "ChatGPT audit finding.\n\nThe class spell-list pages are correctly represented in spell.data.classes in the current pack, but source-region accounting classifies most spell-list prose as intentionally ignored spell-list headers. That makes spell-list completeness under-proved: a future regression in class spell membership could pass the source-region ledger even if the generated records no longer match the source spell lists.\n\nAcceptance criteria:\n- Add an explicit deterministic parity check that reconstructs each class spell list from the SRD spell-list source pages and compares it to generated spell.data.classes.\n- Check Bard, Cleric, Druid, Paladin, Ranger, Sorcerer, Warlock, and Wizard.\n- The check should fail closed on missing spell names, extra spell names, wrong spell level grouping, or wrong class membership.\n- The source-region ledger/report should stop describing actual spell-list content as merely ignored header prose, or should clearly point to the explicit spell-list parity check as the owning proof.\n- Add regression tests or a generated audit artifact that makes spell-list coverage reviewable without relying on hotspot sampling.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T05:58:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T13:47:15Z",
+  "started_at": "2026-07-01T13:36:52Z",
+  "closed_at": "2026-07-01T13:47:15Z",
+  "close_reason": "Added spellListParityAudit: re-scans the class spell-list source pages independently of applyClassLists and cross-checks against emitted spell records (missing/extra class membership + wrong level), wired as a fail-closed import-time gate. Zero findings against the committed pack.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-erf5.2",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

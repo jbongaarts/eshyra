@@ -1,0 +1,59 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ghzh",
+  "title": "Level-up: disposition every typed featureImprovement row (Cleric 20, Druid 4/8, Monk 9, Paladin 18, Ranger 6/10/14) instead of blocking advancement",
+  "description": "Source: 2026-10-08 targeted engine integration audit (result A), verified by Claude Captain against main f7d70b64.\n\nDEFECT: levelUpEngine.ts featureImprovementChoices() emits status 'unsupported' for EVERY ResolvedFeatureImprovement; detectLevelUpRequiredChoices() includes them and applyLevelUp() refuses to advance while any unsupported choice remains. Ordinary characters cannot level through these milestones. (eshyra-ug4i.3 deliberately left the Ranger rows unsupported; levelUpFeatureChoices.ts header and docs/design/character-progression.md record that. This bead does NOT reopen ug4i's accepted slices.)\n\nSCOPE MEMBERSHIP (deterministic query, not a hand list): every class progression row whose typed advancement[] carries kind 'featureImprovement' in the generated pack, as resolved by RulesPackCharacterResolver.resolveClassLevel. At records.json @ f7d70b64 that is 8 rows / 5 classes, pinned by EXPECTED_IMPROVEMENT_ROWS in packages/core/test/rulesPackCharacterResolver.test.ts:\n  Cleric 20 Divine Intervention improvement; Druid 4 and 8 Wild Shape improvement; Monk 9 Unarmored Movement improvement; Paladin 18 Aura improvements; Ranger 6 Favored Enemy and Natural Explorer improvements; Ranger 10 Natural Explorer improvement; Ranger 14 Favored Enemy improvement.\nRe-derive membership from the pack at implementation time; the query, not this list, is the boundary.\n\nREQUIRED WORK: reconcile each row against the SRD 5.1 text of its target feature, the source-backed pack data, existing sheet/state/capability owners, and the real level-up consumers (preview, apply, store, ledger, CLI flow). Classify each row as exactly one of:\n  (1) automatic change with no player decision (record it in the change set/ledger; no fail-closed block);\n  (2) player decision (e.g. the Ranger additional favored enemy / favored terrain picks, if the SRD text confirms) — collect, validate and persist via the existing featureChoices machinery (eshyra-ug4i.3); any missing structured option data goes through docs/importer-fix-protocol.md, never invented in the engine;\n  (3) model-adjudicated feature effect (e.g. range/limit text whose effect no deterministic capability consumes) — acknowledged at level-up, effect stays DM-adjudicated, discoverable via lookup_rules.\nLeads to verify, not decisions: no engine consumer exists today for Wild Shape limits, Paladin auras, Divine Intervention or Monk movement; Monk 9's improvement is distinct from the unarmoredMovement resourceProgression speed column (eshyra-2llo).\nImplement the minimum positively justified behavior. A genuinely unsupported requirement stays an explicit fail-closed blocker with a reason, never a silent skip.\n\nEXCLUSIONS: no universal mechanics implementation for the improved features; no change to ug4i.1/ug4i.2/ug4i.3 scope; level-1 favored enemy/natural explorer recording is eshyra-nnj6 (coordinate: a level-6/14 'additional' pick should validate against a recorded level-1 pick when present, and must define behavior for legacy sheets without one).\n",
+  "acceptance_criteria": "- Pack-derived inventory (from the deterministic query) of every featureImprovement row with its justified disposition (automatic / player decision / model-adjudicated / explicit blocker) and SRD source citation, recorded in docs/design/character-progression.md.\n- Preview/apply/store/ledger behavior for each disposition class that actually occurs; player decisions persist on the sheet and in the ledger change set.\n- Representative successful level-ups through previously blocked milestones (at least one per disposition class, including a Ranger 5->6 and a Druid 3->4), using the real generated pack.\n- Any remaining fail-closed descriptor names the specific unmet requirement.\n- No requirement for broader deterministic implementation of the improved features.",
+  "notes": "PR #614 (head 4454a0ac) opened 2026-10-09; supervisor reviewed diff + reran verify:worktree green. Stays in_progress until merge. Follow-up eshyra-mdke (pack gap: humanoid races/language).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T21:46:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T01:33:55Z",
+  "started_at": "2026-10-09T01:20:49Z",
+  "closed_at": "2026-10-09T01:33:55Z",
+  "close_reason": "Merged PR #614",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ghzh",
+      "depends_on_id": "eshyra-nnj6",
+      "type": "relates-to",
+      "created_at": "2026-10-08T16:46:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ghzh",
+      "depends_on_id": "eshyra-ghzh.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T20:21:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ghzh",
+      "depends_on_id": "eshyra-ug4i",
+      "type": "relates-to",
+      "created_at": "2026-10-08T16:46:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ghzh",
+      "depends_on_id": "eshyra-2llo",
+      "type": "relates-to",
+      "created_at": "2026-10-08T16:46:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

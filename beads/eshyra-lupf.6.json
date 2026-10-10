@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.6",
+  "title": "Record XP/milestone awards as auditable state mutations",
+  "description": "Add domain mutations (mutateState.ts / domainMutations.ts) to award XP or grant a milestone, writing append-only rows to the progression-event ledger and updating current XP/advancement state. Awards are deterministic, validated, and replayable — no LLM involvement in the math. Consults the advancement policy.",
+  "acceptance_criteria": "award-XP and grant-milestone mutations exist; each writes an auditable ledger row and updates state atomically; invalid awards are rejected; tests cover both modes and ledger integrity.",
+  "notes": "Award API implemented in domainMutations.ts (awardXp + grantMilestone), policy-aware/fail-closed, atomic ledger+state writes. PR #338 open for review. 8 new tests in progressionAwards.test.ts; full verify green.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:21:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T00:43:22Z",
+  "closed_at": "2026-06-28T00:51:01Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.6",
+      "depends_on_id": "eshyra-lupf.4",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.6",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:21:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.6",
+      "depends_on_id": "eshyra-lupf.2",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b0hg.4",
+  "title": "Review: Sol final review of PR #634 (eshyra-b0hg @ c0d6e1f1)",
+  "description": "Final read-only review of PR #634 (branch eshyra-b0hg, exact head c0d6e1f165d44259f1e32cc49061e383b9d56e97) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #634 at exact head c0d6e1f165d44259f1e32cc49061e383b9d56e97. GitHub headRefOid matches. Reviewed the complete origin/main...HEAD diff and origin/main..HEAD history; AGENTS.md; docs/design-and-pr-review-policy.md; owning eshyra-b0hg and implementation dispatch eshyra-b0hg.1; prior review eshyra-b0hg.2 and repair eshyra-b0hg.3; ADRs 0011 (canonical sheet), 0018 and 0020. Effective profile: rules-clause-complete for the bounded skill derivation and model-context path. No importer, audit, source, or generated-pack files change, so importer-fix protocol is not triggered. refs/beads/state resolves to 9e4bb40c789e3364b1605e7321c1537117a4ca02, generated 2026-09-10 and missing these beads; scope, dependencies and status reconciled against live bd.\n\nInspected creation and level-up expertise admission/persistence, characterExpertise identity handling, canonical sheet save/load and single-class/subclass guard, proficiency/ability updates at level-up, all 18 skill mappings, active-character snapshot selection, context rendering and provider-neutral model/auditor consumers, internal export boundary, and resolve_check description/schema/arithmetic. Independently checked governing clauses and identities against the vendored SRD_CC_v5.1.pdf (pp.12,13,25,39,77-78) and generated pack. Scope is base skill bonuses and passive Perception plus feature guidance; applicability, situational modifiers and check declarations remain DM-owned. Server-side check derivation remains explicitly excluded, with follow-up eshyra-r8en present.\n\nPrior findings disposition: eshyra-b0hg.2 S1 is FIXED. Shared class/subclass-and-level predicates now govern both arithmetic and feature-note availability, independent of named-skill proficiency coverage. Checked every subset of the four physical skills, acquisition boundaries and later levels, and Bard empty/partial/all-skill proficiency coverage. The new permanent parameterized rendering tests protect the generalized omission invariant. Prior S2 is FIXED: Jack of All Trades cites printed SRD p.12 and matches pack provenance. No new MATERIAL or NON-MATERIAL findings.\n\nVerification: git diff --check passed; worktree status remains clean. node_modules is absent, so no Vitest run or dependency installation. Read-only Node 24 evaluation of the actual TypeScript source in memory passed 2,075 assertions: all 18 skills across PB 2-6 and none/proficient/expertise states; half-proficiency rounding and physical-skill scope; passive Perception; feature notes across proficiency coverage and acquisition levels; duplicate/repeated expertise picks; case normalization; tool/skill identity separation; and compact rendering. These checks supplement source and consumer inspection, not a claim of full integration-suite execution. Repair bead reports full verify:worktree green (6319 passed); that is reported evidence, not rerun here. No repository edits, formatting, file creation, commits, pushes, GitHub comments or merge performed. Only this review bead is updated/closed; owning eshyra-b0hg is untouched.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T07:56:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T08:00:26Z",
+  "closed_at": "2026-10-09T08:00:26Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b0hg.4",
+      "depends_on_id": "eshyra-b0hg",
+      "type": "parent-child",
+      "created_at": "2026-10-09T02:56:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.5",
+  "title": "Declare or disposition undeclared condition-name reference leaves outside condition records",
+  "description": "Found while designing condition->condition relationships (docs/design/condition-condition-relationships.md C6, eshyra-o9bd.19.3.4.2). Condition-name leaves with the same fail-open shape (no relationship declaration, so discovery never follows them) exist outside condition records. Snapshot at de7df402 (membership must come from a generated query, not these counts): creature /actions|legendaryActions|reactions|traits/*/mechanics/conditions/*/condition (~359 leaves) -> owner eshyra-o9bd.19.4.2/.3; ancestry /traits/*/mechanics/conditions/*/condition (5) -> eshyra-o9bd.19.3.1; magic-item /mechanics/effects/*/conditions/* (18, includes non-condition values suffocating/any-disease) and /mechanics/effects/*/failedSaveCondition (9, includes 'one exhaustion level') -> eshyra-o9bd.19.4.5. Also: (a) whether /mechanics/effects/*/condition belongs in LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES (it is overloaded: prose preconditions in magic-item/creature/feature/action/spell, condition names in condition records) with explicit not-a-reference declarations per kind; (b) the five existing mechanics.conditions record-name declarations carry a placeholder relation 'condition' always overridden by the sibling (required-field-filled-mechanically idiom) - migrate them to relationByFieldValue or a declared vocabulary once C1 lands. Uses the C1/C2 resolver generalization from the condition design.",
+  "notes": "2026-10-09 bounded review (Claude Captain, main a961fb0b; requested by the resume campaign). QUESTION: do the undeclared condition-name leaves violate an operative live-discovery invariant, or are they a bounded limitation ADR 0020 permits to remain disclosed? FINDINGS: (1) Producer/gate: the only coverage gate over relationship-bearing leaves, assertRecordRelationshipDeclarationsCoverBoundedShapes (packages/core/src/rules/recordRelationships.ts ~L574-623), covers exactly seven top-level pointer shapes incl. '/mechanics/conditions/*/condition'; the nested creature '/actions|legendaryActions|reactions|traits/*/mechanics/conditions/*/condition', ancestry '/traits/*/...', and magic-item '/mechanics/effects/*/conditions/*' and failedSaveCondition leaves are outside it, and its own doc forbids widening it into a coverage claim over RulesRecord.data (ADR 0020 section 6). The manifest rule 'every declared reference yields exactly one typed outcome' binds declared references only. No violation of either. (2) Accepted authority: docs/design/condition-condition-relationships.md C6 and section 7 explicitly scope these leaves OUT of the condition repair and record them here; no domain bead AC (19.4.2, 19.4.3, 19.3.1, 19.4.5) requires them (19.4.3 and 19.4.5 notes defer them to this bead). (3) Consumer/consequence: expansion is one hop (expandTypedRelationships), so a creature/ancestry/item record seeded by state-ref does not pull in the condition record it may impose; the condition is still reachable by name-mention signals (signals.ts ~L150-190, player input), by DM lookup_rules on the condition, and the imposing record's verbatim text names the condition. Consequence is reduced discoverability of condition text in creature-driven situations, not a wrong rule, wrong state, or false provenance. DISPOSITION: legitimate bounded discovery limitation under ADR 0020 (no universal discovery completeness); retain independent ownership here; NOT re-freeze-blocking; it must be disclosed as an explicit unresolved discovery limit (re-freeze bar #9) in the candidate bundle (eshyra-o9bd.19.6.3). Item (b) (placeholder relation 'condition' always overridden by sibling) produces no wrong edge; it is a representation-quality item kept here, not a live defect. No dependency change.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T03:58:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T02:30:46Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.5",
+      "depends_on_id": "eshyra-o9bd.19.3",
+      "type": "parent-child",
+      "created_at": "2026-09-28T22:58:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

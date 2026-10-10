@@ -1,0 +1,68 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.3",
+  "title": "Repair ancestry, background, equipment-grant, and proficiency projections",
+  "description": "Repair known source-fidelity defects in ancestry traits, background/equipment grants,\nlanguage/proficiency grants, material constraints, and represented variants. Use typed\ndata where source structure is stable or a real discovery/state/capability consumer needs\nit; do not require every ancestry mechanic to become a deterministic procedure.",
+  "design": "2026-10-10 DESIGN (Claude Captain, main 4d344bd1). Lane A + a bounded creation consumer change. Profile: rules-clause-complete (pack) + semantic-system (creation validation, durable sheet languages).\nL1 LANGUAGE EXTENSION POINT (indep:011, LIVE): ancestry/background language choices emit choose/from with from = the 8 Standard Languages (e.g. background:acolyte 'Two of your choice'), but rule:languages says: 'Choose your languages from the Standard Languages table, or choose one that is common in your campaign. With your GM's permission, you can instead choose a language from the Exotic Languages table or a secret language, such as thieves' cant or the tongue of druids.' Pack: every language choice whose source text is an open 'of your choice' grant gains extension: {ruleRef: 'rule:languages', exoticTableRef: <the Exotic Languages table record key, if one exists; else omit>, requiresGmApproval: true} beside the unchanged default from list (the default domain stays the Standard table; nothing is silently widened). Validate in kindSchemas. Creation (characterDraft language choice validation + finalize): a selected language outside `from` is accepted ONLY when the selection carries an explicit GM-approval marker for that language (design a minimal typed input, e.g. the choice selection value { language, gmApproved: true } or a parallel approvedLanguages list on the draft selections - pick the smallest change consistent with existing selection shapes and document it); without the marker it is refused exactly as today. Never infer approval. CLI: in the interactive language choice, offer the default options plus an explicit 'other language with GM approval' entry that asks for the language name and records the approval marker. Persisted sheet languages unchanged in shape. Tests: refused without approval; accepted with approval (exotic and campaign-common examples); default domain unchanged; pack invariant that every open 'of your choice' language grant carries the extension marker.\nF-18 (background-equipment, 'Background equipment is structured'): verify against the committed pack and creation consumer (backgrounds carry structured equipment grants; walletForDraft credits background gp). If fully satisfied, record accepted reasoning with evidence (test names); if a gap exists, repair it here.\nindep:004 (ancestry-omissions, 'Ancestry deterministic semantics are complete'): narrowed under ADR 0020 (surviving obligation: ancestry projections consumed by creation are source-faithful - fixed skills, languages, ASI, traits; prose stays verbatim).\nindep:012 (equipment-report): read its row and any source of its meaning; disposition with evidence or report that it cannot be evaluated.\nEXCLUSIONS: no new languages invented; no change to the Standard default domain; no thaw/freeze changes.",
+  "acceptance_criteria": "- Known ancestry/background/equipment/proficiency findings are repaired against source evidence.\n- Structured choices and grants preserve source alternatives, quantities, currency, and ownership.\n- Typed identities are stable where referenced by runtime consumers.\n- Pack data consumed by a capability in force is source-faithful; that capability's contract, execution, and state evidence belong to the capability lane (eshyra-o9bd.19.5 / eshyra-olc5).\n- Typed projection coverage is not treated as whole-record deterministic support.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F1, F2, F5, F8, F10.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\nADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): RESHAPED. This bead is now LANE A (importer/source-fidelity and projection repair) only. The '*** PACK/ENGINE PAIRING (2026-07-25) ***' note above is SUPERSEDED: the reference engine is not the validator of this bead's representation, and this bead does not coordinate decomposition with engine:F epics. Capability-execution acceptance items were moved to the capability lane (eshyra-o9bd.19.5 family epics / eshyra-olc5.1-.2). Order of work: source -> capture -> identity/provenance -> emitted pack; attach generalized evidence per repaired defect class and search meaningful siblings (no bulk regression program). Every finding-registry row owned here stays owned here.\n2026-09-23: registry row equipment-report (indep:012 equipment/material/potion/report issues; plan C3/B3/A5) re-owned here from eshyra-o9bd.19.2.2 by user decision.\n2026-10-09 rebaseline: KEEP. No longer blocked by retired eshyra-o9bd.19.1.2. Engine-side application of feature/option proficiency grants is eshyra-olc5.7 (relates to proficiency-grants opus:F-13 typing, owned by eshyra-o9bd.19.2.3).\n2026-10-10 (from 19.3.1 dispositions): indep:011 language-universe-policy is re-owned here and is LIVE. Background/ancestry language choices emit from: the 8 Standard Languages only (e.g. background:acolyte 'Two of your choice'), but rule:languages also permits a language common in the campaign and, with GM permission, Exotic or secret languages. Repair: represent the source extension point in the pack (e.g. an extension marker referencing rule:languages naming the Exotic Languages table) and let creation accept a GM-approved language outside the default domain only through an explicit approval input; never silently widen or close. Check consumers (characterDraft language validation, srdLanguages oracle tests).",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T16:39:21Z",
+  "started_at": "2026-10-10T16:39:21Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.3",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.3",
+      "depends_on_id": "eshyra-o9bd.19.3",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.3",
+      "depends_on_id": "eshyra-o9bd.19.3.3.1",
+      "type": "blocks",
+      "created_at": "2026-10-10T11:39:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.3",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.3",
+      "depends_on_id": "eshyra-o9bd.19.1.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-69en",
+  "title": "Refresh final SRD audit after follow-up fixes",
+  "description": "After PR #218 merges, regenerate the final SRD audit bundle and update docs/audits/srd-5.1-final-source-completeness.md with the merged source commit, new bundle checksum, any changed totals, and confirmation that Hunter's Mark Ranger membership plus the Acolyte and Druid MM-B stat-block mappings are fixed. Run audit bundle, pack reproducibility, and full worktree verification; open a ready-for-review audit-only PR.",
+  "acceptance_criteria": "Final audit bundle is freshly generated from updated main; report contains new source commit/checksum/totals and confirms all three findings fixed; verify:dnd5e-srd-pack and verify:worktree pass; audit-only PR is open and non-draft.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T03:55:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-15T04:00:57Z",
+  "started_at": "2026-06-15T03:55:25Z",
+  "closed_at": "2026-06-15T04:00:57Z",
+  "close_reason": "Merged fix PR #218, regenerated the final audit bundle from main, updated the audit report, and opened ready-for-review PR #219. Bundle SHA-256: 7ecc2c4eded7683390cd7f6c964f9b3baeb1fbbb755fbf63f54304cb692847f7. verify:dnd5e-srd-pack and verify:worktree passed.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

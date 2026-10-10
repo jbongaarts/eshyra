@@ -1,0 +1,63 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7wc",
+  "title": "E8 Dolt checkpoint/history/branching subsystem",
+  "description": "Goal: the Dolt-backed checkpoint / history / branching subsystem. SQLite stays the\nauthoritative live operational store; this subsystem makes Dolt the authoritative\ncheckpoint/history/branching store, OFF the per-turn hot path.\n\nMVP must include (all in scope, none deferred):\n- Deterministic SQLite -> Dolt checkpoint export (same SQLite state => identical bytes).\n- A Dolt commit per meaningful checkpoint (session close; arc roll-up).\n- List checkpoints.\n- Restore a checkpoint into a NEW SQLite working copy.\n- Fork a campaign from a checkpoint into a NEW Dolt branch (+ materialized SQLite copy).\n- Explicit, verified separation from the beads Dolt storage / remotes / ref-namespace.\n\nHard constraints: Dolt is NEVER invoked in the per-turn write path; SQLite is the\nsingle live truth (Dolt trails to last checkpoint, like a git working tree vs last\ncommit); there are NOT two independent live truths.\n\nUser-visible outcome: a player can checkpoint a campaign, list past checkpoints,\nrestore an old checkpoint into a fresh working copy, and fork a campaign timeline.\n",
+  "design": "## Architecture\n\nDolt is invoked via the `dolt` CLI ONLY at checkpoint time (no long-running\n`dolt sql-server`, no per-turn calls) — this is what keeps it off the hot path and\navoids server-lifecycle complexity. Each campaign has its own Dolt repo directory,\ncreated/located independently of the beads Dolt repo.\n\nA `CheckpointStore` in core composes three lower units:\n1. `serialize` — pure SQLite -> canonical snapshot (deterministic, no Dolt, offline-testable).\n2. `doltRepo` — thin wrapper over the `dolt` CLI for one repo dir (the ONLY file that shells to `dolt`).\n3. `separation` — guard proving the Loreweaver Dolt location/remote/ref-namespace is disjoint from beads.\n\n## Determinism contract\n\n`serialize(db)` reads every user table (excludes sqlite internal + any\n`sqlite_%`), and emits a single canonical `snapshot.sql` string:\n- tables ordered by name (ASCII);\n- columns in `PRAGMA table_info` ordinal order;\n- rows ordered by full-row tuple (stable total order);\n- fixed value formatting (NULL as `NULL`, integers bare, text single-quoted with\n  `''` escaping, blobs as `X'..'`).\nSame SQLite content => byte-identical string (acceptance #8). This artifact is what\ngets loaded into Dolt and committed, so `dolt_diff`/`AS OF` are meaningful.\n\n## File map\n\n- `packages/core/src/persistence/checkpoint/separation.ts` — `assertSeparateFromBeads(doltDir, beadsDir)`.\n- `packages/core/src/persistence/checkpoint/serialize.ts` — `serializeCampaign(db): string`.\n- `packages/core/src/persistence/checkpoint/doltRepo.ts` — `DoltRepo` (init, applySnapshot, commit, log, branch, checkoutInto).\n- `packages/core/src/persistence/checkpoint/store.ts` — `CheckpointStore` (checkpoint, list, restoreToNewWorkingCopy, forkFromCheckpoint).\n- `packages/core/src/index.ts` — barrel exports.\n- `packages/core/test/checkpoint.*.test.ts` — one suite per unit.\n\n## Hot-path / separation constraints\n\n- `CheckpointStore` is invoked only by E6 session-close and E4 arc roll-up — never\n  from `mutate_state` / the turn loop. This is a design rule enforced by where the\n  call sites are (not by code in this epic).\n- SQLite remains single live truth; restore/fork always materialize a NEW `.db`\n  working copy and never mutate the live campaign DB in place.\n- `separation` rejects any Dolt dir that is inside, equal to, or shares a remote\n  URL / `refs/dolt/*` namespace with the beads Dolt repo.\n\n## Test gating\n\n`serialize` and `separation` are pure and run offline (no Dolt). `doltRepo` and\n`CheckpointStore` suites use `describe.skipIf(!doltAvailable)` (probe `dolt version`)\nso CI without the `dolt` binary stays green while the capability is proven where\n`dolt` exists.\n\n## Tradeoffs\n\nThe serializer is the deterministic export-mapping component Dolt-only would avoid;\naccepted because it keeps the per-turn path embedded/zero-ops and yields a\ndiffable, byte-stable history at session granularity (the campaign's natural\nversioning unit).\n",
+  "acceptance_criteria": "1. serializeCampaign is deterministic (same SQLite => byte-identical snapshot), proven offline. 2. A checkpoint creates a dolt commit; list returns it. 3. Restore materializes a NEW SQLite working copy round-trip-identical to the source. 4. Fork creates a NEW dolt branch + isolated SQLite copy; changes in fork do not affect origin. 5. Separation guard rejects any Dolt dir nested in/equal to/sharing remote or refs with the beads Dolt repo. 6. No checkpoint code path is reachable from the per-turn loop. All E8 child tasks closed.",
+  "notes": "SYNTHESIS UPDATE 2026-05-17: Checkpoint/restore/fork remains a core text-first product differentiator and future demo surface. Keep Dolt checkpointing separate from both the per-turn path and beads storage; this supports restore/fork/history without early VTT/native-mobile scope.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T05:36:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T02:46:58Z",
+  "closed_at": "2026-05-19T03:55:36Z",
+  "close_reason": "E8 COMPLETE. All 6 child tasks closed. Acceptance: #1 serializer determinism (offline tests); #2-#4 checkpoint/list/restore/fork VERIFIED live vs real dolt v2.0.3 (loreweaver-d7y); #5 separation guard now rejects nested/equal/shared-remote/shared-refs (loreweaver-vil); #6 children closed + checkpoint code off per-turn path by design. Follow-ups delivered: dolt resolver seam + opt-in 'loreweaver dolt install' provisioner. Full suite 63 passed/1 skipped, typecheck 0.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7wc",
+      "depends_on_id": "eshyra-cck",
+      "type": "blocks",
+      "created_at": "2026-05-17T00:41:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "2e9f205a-2302-5ad9-8058-4801010d5a50",
+      "issue_id": "eshyra-7wc",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install, npm run build (exit 0), npm run test (20 passed / 1 skipped). Clean baseline on Node v24.14.1; better-sqlite3 prebuilt resolved OK.",
+      "created_at": "2026-05-19T02:48:23Z"
+    },
+    {
+      "id": "dc6d283e-1992-5a49-8745-7b2d4ec88f8c",
+      "issue_id": "eshyra-7wc",
+      "author": "Joseph Bongaarts",
+      "text": "E8 EXECUTION SUMMARY: all 6 child tasks (7wc.1-7wc.6) closed. Checkpoint suite: 10 passed / 4 dolt-gated skipped (no dolt binary on this host). Full project suite: 30 passed / 5 skipped; typecheck exit 0. Acceptance #1-#4 + #6 met (note: #1-#4 are dolt-gated and SKIP on this host — proven by construction/offline parts, not executed against a live dolt). Acceptance #5 PARTIALLY met: filesystem nesting/equality guard + BEADS_RESERVED_REF export done, but no runtime remote-URL/ref-namespace collision check; filed as follow-up loreweaver-vil (non-reachable in MVP since campaign DoltRepo configures no remote). HUMAN DECISION NEEDED: (a) close 7wc as MVP-complete with #5 tracked via loreweaver-vil and dolt-path verification deferred to a dolt-equipped host, or (b) keep 7wc open until verified with the dolt binary present.",
+      "created_at": "2026-05-19T02:56:27Z"
+    },
+    {
+      "id": "f33c4dfe-fb41-5271-9c7b-a006456827d8",
+      "issue_id": "eshyra-7wc",
+      "author": "Joseph Bongaarts",
+      "text": "RESOLUTION (per user decision): Epic stays OPEN/in_progress. All 6 child tasks implemented & closed; offline acceptance proven. Epic must NOT be closed until loreweaver-d7y (run Dolt-gated suite green on a dolt-equipped host) is done. Acceptance #5 remote/ref-namespace runtime check left as P2 follow-up loreweaver-vil (non-reachable in MVP). Note: bd cannot make an epic structurally depend on a task ('epics can only block other epics') so loreweaver-d7y is a tracked-but-unlinked close gate.",
+      "created_at": "2026-05-19T03:01:03Z"
+    },
+    {
+      "id": "fdc271b0-2b4b-5d18-b84e-408055e4e964",
+      "issue_id": "eshyra-7wc",
+      "author": "Joseph Bongaarts",
+      "text": "DECISION RESOLVED (user): #5 is a HARD close requirement. d7y verified & closed (acceptance #1-#4 pass vs real dolt). Epic stays open until loreweaver-vil (remote-URL + refs/dolt/* runtime collision guard) is implemented; then close.",
+      "created_at": "2026-05-19T03:52:58Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 4
+}

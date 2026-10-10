@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.1.2",
+  "title": "Review: Sol final review of PR #651 (eshyra-o9bd.19.4.1 @ dc52067c)",
+  "description": "Final read-only review of PR #651 (branch eshyra-o9bd.19.4.1, exact head dc52067cd85b9891bd7f92166dcefef44cc6f94c) by GPT-6.1-Sol, full review. Findings in notes; ends with a VERDICT line.",
+  "notes": "Dispatched gpt-6.1-sol effort high; PGID 2554866",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T21:32:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T21:32:18Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.1.2",
+      "depends_on_id": "eshyra-o9bd.19.4.1",
+      "type": "parent-child",
+      "created_at": "2026-10-10T16:32:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

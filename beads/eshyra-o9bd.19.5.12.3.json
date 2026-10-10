@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.12.3",
+  "title": "Reconcile bootstrap obligation identities at the cross-PR ledger boundary",
+  "description": "Join bootstrap evidence identities with the source-clause and readiness identities emitted by the adjacent ledger work. Verify the four non-empty obl::: segments and preserve sourceRef, locator, and semantic-facet identity across the authoritative reconciliation.",
+  "acceptance_criteria": "Cross-PR reconciliation consumes the four-segment obligation identity structurally; empty segments, duplicate bindings, and mismatched source anchors fail; no local bootstrap-only identity format remains at the join.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T03:52:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-08T00:56:39Z",
+  "closed_at": "2026-09-08T00:56:39Z",
+  "close_reason": "Duplicate of eshyra-o9bd.19.5.12.2, which remains open and carries the work. Verified 2026-09-08 on main 84e8e79: title, description, acceptance criteria, labels, parent (eshyra-o9bd.19.5.12) and full dependency tree are byte-identical between the two, and both were created 2026-07-26. No dependent references only this id. Closing the later-numbered twin only; the scope itself is untouched and still owned by .12.2.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.12.3",
+      "depends_on_id": "eshyra-o9bd.19.5.12",
+      "type": "parent-child",
+      "created_at": "2026-07-25T22:52:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

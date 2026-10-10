@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-n01v",
+  "title": "Stop requiring memory_drilldown for inventory reads when state snapshot is sufficient",
+  "description": "Discovered during the eshyra-eh54 adventure-module/equipment playtest.\n\nThe read-only turn 'What equipment do I have?' was handled correctly by the DM — it answered from the current (empty) inventory with NO mutation — but an audit apparently required a memory_drilldown call for inventory/equipment state and produced a false-positive rejection.\n\nWhen the bounded current game-state context already contains the inventory/equipment state, the auditor should NOT require memory_drilldown just because the player asked about inventory. Drilldown should only be required when the answer depends on absent / archived / older state not present in the current snapshot.",
+  "design": "Investigate where the auditor decides a turn 'missing required tool(s)' that includes memory_drilldown for inventory/equipment questions (turnAuditor.ts buildAuditSystemPrompt / required-call logic, and the bounded state context fed to the auditor). The audit should treat inventory/equipment questions as answerable from the current state snapshot when that snapshot includes the inventory state. Preserve the requirement to drill down when the question depends on data NOT in the current bounded context (archived/older/absent state). Confirm the bounded context actually carries inventory state to both the DM and the auditor; if it does not, that gap is part of this fix.\n\nReference tool: packages/core/src/orchestrator/toolMemoryDrilldown.ts.",
+  "acceptance_criteria": "- An empty-inventory answer with no mutation is ACCEPTED when the current state snapshot says inventory is empty (no memory_drilldown required).\n- The audit still REJECTS unsupported inventory claims that are not present in current state or tool evidence.\n- memory_drilldown is still required when the answer depends on state absent from the current bounded context.\n- Regression test covers the exact 'What equipment do I have?' turn against an empty inventory, asserting acceptance without a required drilldown.",
+  "notes": "Likely files: packages/core/src/orchestrator/turnAuditor.ts (required-tool logic, buildAuditSystemPrompt, buildAuditUserMessage), packages/core/src/orchestrator/orchestrator.ts (bounded state context assembly fed to auditor), packages/core/src/orchestrator/toolMemoryDrilldown.ts. Tests: packages/core/test/turnAuditor.test.ts, packages/core/test/orchestrator.test.ts, packages/core/test/inventoryQueryGuard.test.ts (query-vs-action discrimination already exists here). Related: eshyra-hlte (same auditor evidence/decision surface). Discovered-from: eshyra-eh54 equipment playtest.\nRULES-PACK RECONCILIATION (re: eshyra-t2ra / ADR 0013): This false-positive audit rejection is INDEPENDENT of the placeholder/generated SRD pack discovery. Inventory read-only questions should be answerable from the current campaign/session state when that state is bounded and present; the audit must not require memory_drilldown merely because the player asked about equipment if the current state snapshot already establishes inventory state. This bead does NOT depend on generated SRD runtime adoption (eshyra-t2ra) and remains independently workable.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-21T06:46:58Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-22T02:32:29Z",
+  "started_at": "2026-06-22T02:28:09Z",
+  "closed_at": "2026-06-22T02:32:29Z",
+  "close_reason": "Passed the current bounded state snapshot to the turn auditor, made empty inventory explicit to the DM, and added regression coverage for accepting empty-inventory reads without memory_drilldown while preserving rejection policy for unsupported or absent-state claims.",
+  "labels": [
+    "campaign-runtime",
+    "inventory",
+    "mechanics-audit"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

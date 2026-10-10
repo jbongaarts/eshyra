@@ -1,0 +1,70 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.9",
+  "title": "Task 1: Add rules-pack metadata and license validation",
+  "description": "Objective:\nCreate the provider-neutral rules-pack type model and validation boundary used by every later task.\n\nFiles:\n- Create: `packages/core/src/rules/types.ts`\n- Create: `packages/core/src/rules/validate.ts`\n- Create: `packages/core/src/rules/license.ts`\n- Modify: `packages/core/src/index.ts`\n- Test: `packages/core/test/rulesPack.test.ts`\n\nSteps:\n1. Write failing tests in `packages/core/test/rulesPack.test.ts` for valid base pack metadata, invalid blank `systemId`, invalid addon without compatibility, duplicate record keys within one pack, explicit license fields, and user-private policy rejection at shippable boundaries.\n2. Run `npx vitest run packages/core/test/rulesPack.test.ts`; expected: FAIL because `validateRulesPack` and related exports do not exist.\n3. Add `RulesPack`, `RulesPackMeta`, `RulesPackRole`, `RulesRecord`, `RulesRecordKind`, `RulesPackLicense`, and `RulesPackError` in `packages/core/src/rules/types.ts`.\n4. Implement `validateRulesPack(value)` in `packages/core/src/rules/validate.ts` using the existing `world/validate.ts` style: structural checks, non-empty strings, role enum, license checks, unique record keys per pack, addon compatibility declarations.\n5. Implement `evaluateRulesPackPolicy` and `assertShippableRulesPack` in `packages/core/src/rules/license.ts`, reusing the same policy semantics as `world/license.ts`.\n6. Export the new rules APIs from `packages/core/src/index.ts`.\n7. Run `npx vitest run packages/core/test/rulesPack.test.ts`; expected: PASS.\n8. Commit with `git add packages/core/src/rules packages/core/src/index.ts packages/core/test/rulesPack.test.ts` and `git commit -m feat-rules-pack-validation-model`.",
+  "design": "Use provider-neutral rules records shaped like `{ systemId, kind, key, name, data, source, license, overrides? }`. Keep `data` as `unknown` at this layer; system-specific validators interpret it later. Addon packs must declare compatible base systems and versions in metadata. The license type should either wrap or structurally mirror the existing world `PackLicense`, but this task must not move world code unless that is the smallest clean change.\n\nInitial test sketch:\n```ts\nimport { describe, expect, it } from 'vitest';\nimport { assertShippableRulesPack, validateRulesPack, RulesPackError } from '../src/index.js';\n\nit('validates a base D&D rules pack with license metadata', () => {\n  const pack = validateRulesPack(validRulesPack({ role: 'base', systemId: 'dnd5e-srd' }));\n  expect(pack.meta.systemId).toBe('dnd5e-srd');\n});\n\nit('rejects duplicate record keys in one pack', () => {\n  const pack = validRulesPack({ records: [record('creature:goblin'), record('creature:goblin')] });\n  expect(() => validateRulesPack(pack)).toThrow(RulesPackError);\n});\n\nit('rejects user-private packs at shippable boundaries', () => {\n  const pack = validateRulesPack(validRulesPack({ licenseClass: 'user-private' }));\n  expect(() => assertShippableRulesPack(pack.meta.license)).toThrow(RulesPackError);\n});\n```",
+  "acceptance_criteria": "`npx vitest run packages/core/test/rulesPack.test.ts` passes. New rules-pack APIs are exported from the package barrel. Validation rejects malformed metadata, duplicate keys, addon packs without compatibility declarations, and unshippable licenses at shippable boundaries.",
+  "notes": "Spec review found a required fix after premature close: validateRulesPack must reject rules records missing required data, and rulesPack tests must cover that case before code-quality review.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T05:04:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T05:15:51Z",
+  "closed_at": "2026-05-23T15:42:45Z",
+  "close_reason": "Implemented rules-pack metadata, validation, license wrappers, exports, and focused tests; spec and code-quality reviews passed; verification: focused vitest and forced tsc passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.9",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-23T00:04:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "00e73a31-574f-5ea0-a165-000977a59d1d",
+      "issue_id": "eshyra-x3w.9",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED npx vitest run packages/core/test/rulesPack.test.ts -> failed as expected because validateRulesPack was not a function; GREEN npx vitest run packages/core/test/rulesPack.test.ts -> 6 passed; verification npm run test -> exit 0, 45 files passed, 340 tests passed, 2 skipped.",
+      "created_at": "2026-05-23T05:21:06Z"
+    },
+    {
+      "id": "b047c9bd-0933-59bb-97c9-3fe7d754a867",
+      "issue_id": "eshyra-x3w.9",
+      "author": "Joseph Bongaarts",
+      "text": "Spec review item: validateRulesPack allowed records without required data. Evaluation: accepted. Evidence: packages/core/src/rules/validate.ts returned data: o.data without a presence check, and RED npx vitest run packages/core/test/rulesPack.test.ts failed 1/7 because the new missing-data test did not throw. GREEN verification: npx vitest run packages/core/test/rulesPack.test.ts -> exit 0, 7 passed; npx tsc --build --force -> exit 0.",
+      "created_at": "2026-05-23T15:37:04Z"
+    },
+    {
+      "id": "64300c99-0014-55bf-be42-7ed2176b059d",
+      "issue_id": "eshyra-x3w.9",
+      "author": "Joseph Bongaarts",
+      "text": "Spec compliance review for d07505e..8764237: approved after fix. Reviewer verified the requested metadata/types/validation/license/export/tests scope, including required record data validation.",
+      "created_at": "2026-05-23T15:39:38Z"
+    },
+    {
+      "id": "23ef8bc6-fdf4-5a9c-80ea-1613151d67fe",
+      "issue_id": "eshyra-x3w.9",
+      "author": "Joseph Bongaarts",
+      "text": "Controller verification: npx vitest run packages/core/test/rulesPack.test.ts -> exit 0, 1 file passed, 7 tests passed; npx tsc --build --force -> exit 0.",
+      "created_at": "2026-05-23T15:42:39Z"
+    },
+    {
+      "id": "e66d4de0-ee41-5948-b810-c0a2e5cfd68e",
+      "issue_id": "eshyra-x3w.9",
+      "author": "Joseph Bongaarts",
+      "text": "Code quality review for d07505e..8764237: Ready to merge; Critical none, Important none, Minor none. Reviewer noted clean provider-neutral model, validation boundary consistent with world validation style, license policy reuse, and tests covering requested acceptance cases including required data.",
+      "created_at": "2026-05-23T15:42:39Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 5
+}

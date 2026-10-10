@@ -1,0 +1,70 @@
+{
+  "_type": "issue",
+  "id": "eshyra-qcr9",
+  "title": "Harden ignored:document-structure coverage guard",
+  "description": "Audit found ignored:document-structure can hide meaningful prose attached to chapter/appendix/category headings. Add guard in sourceInventoryCoverage.ts / source-coverage tests. Minimum: generated-record sentinel tests for all new intro phrases (findings 1-5). Prefer general guard: source-inventory enhancement distinguishing empty structural headings from headings with body prose before first child section, and/or source-coverage assertions that high-risk headings with prose do not resolve only to ignored:document-structure (Feats, Appendix PH-A: Conditions, Using Ability Scores, subclass categories, Appendix MM-B). Keep ignored:document-structure valid for truly structural headings with no gameplay prose - do not force every chapter heading into a rule record. Depends on findings 1-5. Commit 3.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T15:34:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-15T15:54:53Z",
+  "started_at": "2026-06-15T15:51:40Z",
+  "closed_at": "2026-06-15T15:54:53Z",
+  "close_reason": "Implemented in PR #227 (branch eshyra-g9im-intro-prose). 12 new rule records (rule:feats, rule:conditions, rule:using-ability-scores, rule:appendix-mm-b-nonplayer-characters, 8 subclass overviews); all 12 headings reclassified from ignored:document-structure to record. Sentinels + coverage assertions added. verify:dnd5e-srd-pack + verify:worktree green.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-qcr9",
+      "depends_on_id": "eshyra-9uhb",
+      "type": "blocks",
+      "created_at": "2026-06-15T10:34:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-qcr9",
+      "depends_on_id": "eshyra-g9im",
+      "type": "parent-child",
+      "created_at": "2026-06-15T10:35:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-qcr9",
+      "depends_on_id": "eshyra-i2v4",
+      "type": "blocks",
+      "created_at": "2026-06-15T10:34:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-qcr9",
+      "depends_on_id": "eshyra-o0uo",
+      "type": "blocks",
+      "created_at": "2026-06-15T10:34:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-qcr9",
+      "depends_on_id": "eshyra-ssmf",
+      "type": "blocks",
+      "created_at": "2026-06-15T10:34:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-qcr9",
+      "depends_on_id": "eshyra-29uo",
+      "type": "blocks",
+      "created_at": "2026-06-15T10:34:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 5,
+  "dependent_count": 0,
+  "comment_count": 0
+}

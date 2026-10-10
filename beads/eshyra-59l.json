@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-59l",
+  "title": "Fix demo rerun session id collision after PR rebase",
+  "description": "During rebase of PR 25 onto origin/main, npm run test failed in packages/cli/test/play.test.ts: runDemo > reuses an existing demo campaign on a later run. Symptom: SessionError session 'session-2' already exists in campaign 'campaign-1'. Investigate whether the rebase integration introduced or exposed a demo rerun id-generation bug, then fix with verification. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Root cause is recorded; an automated test covers demo rerun without duplicate session ids; npm run typecheck and npm run test pass after the fix.",
+  "notes": "Evidence: after rebasing PR 25 onto origin/main, npm run test fails reproducibly in packages/cli/test/play.test.ts runDemo > reuses an existing demo campaign on a later run. Stack points to packages/cli/src/play.ts:149 createDemoCampaign, then core startSession rejects duplicate session 'session-2' in campaign 'campaign-1'. Recent change on main added runDemo and a test using baseDeps() twice; baseDeps resets deterministic IDs for each call, so a second demo run can generate IDs already used by the first run.\nPattern analysis: runPlay/runDemo expect PlayDeps.nextId to produce unique ids within the target DB. Production buildPlayDeps uses timestamp plus randomness, but packages/cli/test/play.test.ts baseDeps starts ids at 0 for each call. The failing demo rerun test uses a new baseDeps against the same in-memory DB, so the second run can reuse closed-session ids from the first run. Working pattern is to keep one ID source for multiple invocations against the same DB, or otherwise seed a unique offset.\nHypothesis: the implementation path is valid; the failing test fixture violates the nextId uniqueness contract by resetting the deterministic ID generator between demo runs against the same DB. Minimal test: reuse the same PlayDeps/id source for both runDemo calls while swapping the IO object for the second run. Expected result: second run takes the existing-campaign branch and starts a unique later session.\nResult: changed packages/cli/test/play.test.ts demo rerun test to reuse the same PlayDeps/id source while swapping only IO for the second run. Targeted verification npm run test -- packages/cli/test/play.test.ts passed with 12 tests. Full verification npm run typecheck passed; npm run test passed with 35 files passed / 1 skipped and 223 tests passed / 1 skipped.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-22T02:25:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:44Z",
+  "started_at": "2026-05-22T02:26:02Z",
+  "closed_at": "2026-05-22T02:28:35Z",
+  "close_reason": "Root cause was a test fixture resetting deterministic IDs across two demo runs against one DB; fixed the fixture to reuse the same ID source. Verification: npm run typecheck and npm run test passed.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

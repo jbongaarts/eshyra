@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.9",
+  "title": "Give finding-registry capability targets qualified engine ownership",
+  "description": "Decomposed out of eshyra-o9bd.19.1.6 (PR #476) 2026-07-26 under the churn stop\nrule. Review of f75acb2 found this as a NEW DEFECT CLASS.\n\nDEFECT: a target may be LABELLED target.kind='capability', but the identity\nunion can only express a record, clause, path or artifact. There is no\nengine:F1..F10 family, no primitive, no hook, and no qualified capability owner.\nSo a capability target names something other than a capability.\n\nCONSEQUENCE: engine findings cannot be joined to the capability ledger\n(eshyra-o9bd.19.5.1) or to the engine:F* family epics under eshyra-olc5. The\ncross-surface link the audit program depends on does not exist.\n\nSCOPE: extend the identity union so a capability target names a qualified\nengine:F1..engine:F10 identity, its primitive, the relevant hook where one\nexists, and its owning bead — and validate all of it. Align with the capability\nidentity shape the bootstrap ledger uses so the two are mechanically joinable.\n\nDEPENDENCY: coordinate with eshyra-o9bd.19.5.1, which owns the ledger-side\nidentity. Do not invent a third shape.",
+  "acceptance_criteria": "\n• A capability target names a qualified engine:F1..F10 identity, primitive, hook where applicable, and owning bead, all validated.\n• The identity shape is mechanically joinable with the bootstrap capability ledger.\n• Engine findings resolve to their family epic under eshyra-olc5.\n• No third competing capability identity shape is introduced.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T15:08:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T00:28:39Z",
+  "started_at": "2026-07-28T00:07:23Z",
+  "closed_at": "2026-07-28T00:28:39Z",
+  "close_reason": "Implemented in c73f6bc on PR #476 branch; supervisor-verified 4726 passed, 19 skipped.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.9",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-26T10:08:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.9",
+      "depends_on_id": "eshyra-o9bd.19.1.9.1",
+      "type": "blocks",
+      "created_at": "2026-07-27T19:07:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

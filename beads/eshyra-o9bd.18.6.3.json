@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.6.3",
+  "title": "Model creature form-specific speeds, AC, and hover semantics",
+  "description": "Scope:\n- Preserve statline data that depends on form or condition rather than flattening it into base speed/AC.\n- Fable examples: Werewolf/Wereboar/Werebear beast-form AC, four lycanthrope form speeds, Werebear climb 30 only in bear/hybrid form, Mage/Druid spell-adjusted AC, Ankheg prone AC, and hover semantics.\n\nAcceptance criteria:\n- Creature speed/AC model can represent form-specific and condition-specific variants.\n- Werebear no longer exposes climb 30 as unconditional base speed.\n- Lycanthrope humanoid vs hybrid/beast speed/AC differences are represented.\n- Hover is represented in a deterministic field.\n- Add tests for Werebear, another lycanthrope, Mage or Druid, Ankheg, and a hover creature.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-03T02:39:00Z",
+  "closed_at": "2026-07-03T03:02:36Z",
+  "close_reason": "Implemented in PR #394: speed map now carries only unconditional modes; hover emitted as literal-true field (7 creatures); lycanthrope form parentheticals emitted as speedVariants [{condition, speed}]; Werebear no longer exposes unconditional climb 30 (now {walk:30} + variant {walk:40, climb:30} in bear or hybrid form); verbatim speedSourceText kept; tests for Werebear, Werewolf, Mage, Ankheg, Ghost (hover).",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.6.3",
+      "depends_on_id": "eshyra-o9bd.18.6",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 3,
+  "comment_count": 0
+}

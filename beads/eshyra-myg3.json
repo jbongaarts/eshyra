@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-myg3",
+  "title": "Provide reproducible source input for bootstrap query reconciliation",
+  "description": "Follow-up from eshyra-o9bd.19.5.1.3. The bootstrap ledger now emits stable recordKey/clauseId/path/sourceSpan identities and explicitly marks source-negative rows as second-input-unavailable. Supply a machine-readable source-clause inventory, then join it with the bootstrap queries and authoritative ledger so negative/source-comparison claims are reproducible.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T01:20:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T01:06:28Z",
+  "closed_at": "2026-10-10T01:06:28Z",
+  "close_reason": "RETIRE/SUPERSEDE (2026-10-09 rebaseline, verified on main a961fb0b): obsolete target. The bootstrap ledger whose queries it would join (PR #477) never merged, and ADR 0020 withdrew the corpus-wide negative claims those source-negative rows existed to prove. The seven source-negative rows were dispositioned to live owners by eshyra-olc5.3 with no absence claim retained. No defect hidden.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

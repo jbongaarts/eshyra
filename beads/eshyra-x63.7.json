@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x63.7",
+  "title": "Task 7: CLI integration tests for multi-arc rollover",
+  "description": "## Objective\n\nReplace the CLI integration tests that task 6 temporarily skipped with\nmulti-arc-aware versions. Add new integration tests covering the\nrollover lifecycle and its failure mode, end-to-end through `runPlay`.\n\n## Files\n\n- Modify: `packages/cli/test/play.test.ts`\n\n## Design notes\n\n### Tests to rewrite\n\nEach test that was `.skip`-marked in task 6 was assuming the old\nsingle-arc behavior (one session close produces an `arc-1` summary). The\nnew semantics: N=5 session closes produce one closed arc; the (N=5+1)th\nsession opens a new arc.\n\nThe simplest way to drive 5 closed sessions in a play test is to invoke\n`runPlay` five times in sequence (each `/quit` closes the session and\nthe next `runPlay` opens a fresh one in the same campaign).\n\n### New tests to add\n\n1. **`rolls over at the Nth session close`** — drive 5 `runPlay`\n   invocations against the same DB, then assert:\n   - `getCampaignArc(db, { campaignId, arcId: 'arc-1' })` row exists\n     with `status='closed'`.\n   - `getArcSummary(db, { campaignId, arcId: 'arc-1' })` row exists with\n     `sourceSessionIds` of length 5.\n   - `getCampaignArc(db, { campaignId, arcId: 'arc-2' })` exists with\n     `status='open'`.\n   - The 5th `runPlay`'s output contains\n     `Arc arc-1 closed; opened arc-2.`\n\n   You may need a small helper exported from internal — e.g.\n   `getCampaignArc(db, { campaignId, arcId })` — if such a query helper\n   doesn't already exist in the lifecycle module. If it doesn't, prefer\n   reading via the existing `listClosedArcSummaries` and direct prepared\n   statements in the test rather than expanding the public surface.\n\n2. **`does not roll over before the Nth session`** — drive 4 `runPlay`\n   invocations, assert:\n   - No `arc_summary` row exists.\n   - `getCampaignArc(db, { ..., arcId: 'arc-1' })` is `status='open'`.\n   - All 4 sessions have `arc_id='arc-1'` stamped on them.\n\n3. **`rolls over again at 2*N sessions`** — drive 10 `runPlay`\n   invocations, assert:\n   - Two `arc_summary` rows: arc-1 and arc-2, each `sourceSessionIds`\n     length 5.\n   - `getCampaignArc` for arc-1 and arc-2 both `status='closed'`.\n   - `getCampaignArc` for arc-3 is `status='open'` with no stamped\n     sessions yet.\n\n4. **`skips rollover and warns when the model errors during rollover`** —\n   drive 4 successful `runPlay` invocations using the routed fake model\n   from existing tests, then drive a 5th `runPlay` with a model that\n   throws on the bible call. Assert:\n   - The 5th session is fully closed and recapped (existing atomic-skip\n     contract).\n   - No `arc_summary` row for arc-1 exists.\n   - `getCampaignArc(db, ..., arcId: 'arc-1')` is still `status='open'`.\n   - The 5th session is stamped with `arc_id='arc-1'`.\n   - Output contains\n     `Arc rollup skipped (bible extraction failed): provider down.`\n   - No `Arc arc-1 closed; opened arc-2.` line was written.\n\n### Helper to add (if needed)\n\nIf running `runPlay` 10 times in one test is too slow, add a\n`drivenSessions(deps, count)` helper at the top of the test file that\nwraps the loop. Each `runPlay` call uses the same `dbPath` and the same\nDB instance.\n\n### memoryConfig in tests\n\nUse `{ ...DEFAULT_MEMORY_CONFIG }` for the baseline; if a test needs a\ncustom N (e.g. to test rollover faster), override on a per-test basis:\n```typescript\nconst deps: PlayDeps = {\n  ...baseDeps(db, io),\n  memoryConfig: { arcRolloverThreshold: 2, recapWindowSize: 5 },\n};\n```\n\nFor the four happy-path tests above use the default N=5. The CLI\nmessaging assertion exercises real-world N.\n\n## Steps\n\n1. **Delete the `.skip` annotations** added in task 6. Read each\n   formerly-skipped test, then rewrite its body for multi-arc semantics\n   based on the patterns above. Keep the test's original `it(...)`\n   description if it still applies; rename if not.\n\n2. **Add the four new tests** (1-4 above) immediately after the\n   rewritten ones.\n\n3. **Run the CLI test suite.**\n   Command: `npm run test -- packages/cli/test/play.test.ts`\n   Expected: all tests PASS.\n\n4. **Run the full gate.**\n   Command: `npm run typecheck && npm run test`\n   Expected: PASS.\n\n5. **Commit.**\n   ```\n   git add packages/cli/test/play.test.ts\n   git commit -m \"CLI integration tests for multi-arc rollover (loreweaver-x63)\"\n   ```\n\n## Acceptance\n\n- All four new tests pass.\n- No `.skip` remains in `play.test.ts` from the task-6 deferral.\n- The CLI now has end-to-end coverage of: rollover-at-N,\n  no-rollover-below-N, rollover-again-at-2N, and model-failure-leaves-\n  arc-open.\n- The full `npm run typecheck && npm run test` gate is green.\n\n## Notes\n\n- The K-recap-window-spans-arc-boundary case is already covered by the\n  contextAssembler test added in task 5; no additional integration test\n  needed here for that scenario.\n- If `runPlay` × 10 is slow enough to push test runtime past the\n  existing vitest budget, lower N via `memoryConfig.arcRolloverThreshold`\n  in the multi-rollover test (e.g. N=3 so 6 runs cover 2 rollovers).\n  Document the override in the test.\n",
+  "acceptance_criteria": "npm run typecheck && npm run test pass. No .skip remains in play.test.ts; 4 new tests cover: rollover at N, no rollover below N, rollover at 2*N, model failure leaves open arc intact.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-24T21:11:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:17Z",
+  "started_at": "2026-05-24T22:53:10Z",
+  "closed_at": "2026-05-24T23:08:33Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x63.7",
+      "depends_on_id": "eshyra-x63",
+      "type": "parent-child",
+      "created_at": "2026-05-24T16:11:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x63.7",
+      "depends_on_id": "eshyra-x63.6",
+      "type": "blocks",
+      "created_at": "2026-05-24T16:11:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x63.7",
+      "depends_on_id": "eshyra-x63.5",
+      "type": "blocks",
+      "created_at": "2026-05-24T16:11:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "cd7b28be-fde8-5d9a-a5af-f891421b3de2",
+      "issue_id": "eshyra-x63.7",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for `d619d37..9e77fc2`:\n\nAssessment: Ready to merge (with minor fix recommended)\n\nCritical:\n- none\n\nImportant:\n- `packages/cli/test/play.test.ts` line 453 and line 740: Both the rewritten \"skips arc rollup and warns when the model errors at the Nth session close\" and the new \"skips rollover and warns when the model errors during rollover\" dropped the explicit DB-level session-closure verification (`getOpenSession == undefined`, `getSessionRecap defined`). The old test verified this at the DB level; the rewrites rely solely on the string `out.toContain('closed and recapped')`. The plan note \"existing atomic-skip contract\" implies this invariant should be confirmed in state, not just output. The \"skips the rollup and warns when bible extraction fails twice\" rewrite (line 540) correctly retains these DB checks; the broken-model test (line 453) and the duplicate plan test 4 (line 740) should be brought to the same standard. Suggested fix: add `expect(getOpenSession(db, { campaignId: cid })).toBeUndefined()` and a `getSessionRecap` defined check in each.\n\nMinor:\n- Tests at line 414 (\"rolls the campaign arc up after N session closes\", rewrite) and line 624 (\"rolls over at the Nth session close\", plan test 1) both run 5 sessions and assert arc-1 rollover at N. The test descriptions are similar; the coverage overlap is real (both assert `sourceSessionIds.length == 5` and the rollover message). The distinction — line 414 focuses on summary content and bible, line 624 focuses on arc row status and arc-2 open — is not called out in comments. A brief comment in one of the two tests pointing to the complementary coverage would help future readers understand why both exist.\n- The `sharedDeps` pattern uses `scriptedIO([]).io` as the dummy initial io for `baseDeps(...)`. The `io` is immediately overridden on every `runPlay` call, so this is harmless, but a comment like `// io is overridden per invocation below` would make the intent obvious to a reader unfamiliar with the pattern.\n\nFollow-up:\n- none required; all four plan scenarios (rollover-at-N, no-rollover-below-N, rollover-at-2N, model-failure-leaves-arc-open) are covered and the full gate is green.",
+      "created_at": "2026-05-24T23:04:40Z"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 1
+}

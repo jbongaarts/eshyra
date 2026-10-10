@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.8.22",
+  "title": "Repair S50 from PR review 5404411821 (captain inline)",
+  "description": "S50 (S1 invariant 8 + lifecycle matrix rows 138-139): (1) 'vanish-bonded' requires a durable campaign-actor identity (explicit campaignActorId or an existing campaign_actor projection); start_effect refuses it otherwise, because combat closure releases instance-only links. (2) start_encounter must not restore an absent actor still held by an active actor link: presence returns only through the source recast (Find Familiar cast / Find Steed recast to max HP), which is not executable yet, so refuse and disclose. Remove the re-manifestation keep-rule path (06cbb44f/S48), now unreachable. Ending the effect frees the actor for a fresh manifestation (no link => new creature, as S1 says). Follow-up bead for recast restoration. Evidence: instance-only refusal; durable familiar stays absent+linked across combat close; plain admission refused; after ending the effect, admission gives a fresh creature.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-04T05:09:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-04T05:14:11Z",
+  "started_at": "2026-10-04T05:09:36Z",
+  "closed_at": "2026-10-04T05:14:11Z",
+  "close_reason": "Repaired on eshyra-o9bd.19.3.4.8 (pushed); negative-proved; verify green",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8.22",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8",
+      "type": "parent-child",
+      "created_at": "2026-10-04T00:09:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

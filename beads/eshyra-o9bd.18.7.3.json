@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.3",
+  "title": "Project nested creature trait/action mechanics beyond basic attacks",
+  "description": "Finding sources:\n- ChatGPT found roughly 110 creature records with mechanical traits/actions still prose-only.\n- Examples included Magic Resistance, Innate Spellcasting, Legendary Resistance, Spellcasting, Regeneration, Healing Touch, triggered traits, bat Bite, and lamia Intoxicating Touch.\n- Fable verified all creature text and numeric values are accurate, so the issue is modeling/projection rather than dropped creature source text.\n\nAcceptance criteria:\n- Inventory all creature traits/actions/reactions/legendaryActions with gameplay effects not represented in typed mechanics.\n- Add typed projections by bounded category; split child beads if the inventory is large.\n- At minimum cover resistance/advantage traits, spellcasting/innate spellcasting metadata, regeneration/healing, condition-inflicting actions, save DC effects, recharge/limited-use effects, and triggered traits.\n- Readiness reporting must distinguish modeled nested mechanics from prose-only or intentionally unsupported mechanics.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-05T15:26:44Z",
+  "started_at": "2026-07-03T16:51:51Z",
+  "closed_at": "2026-07-05T15:26:44Z",
+  "close_reason": "Implemented in PR #396: typed nested creature-entry mechanics (usage economies, modifier/regeneration/multiattack/healing/immunity/trigger grammars, structured fail-closed spellcasting projections), wrapped-spell-list trait-split fix (night-hag/oni/unicorn), ledger emission-index mechanics exclusion, nested readiness dispositions; 317/317 creatures and 1270/1480 entries typed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.3",
+      "depends_on_id": "eshyra-o9bd.18.7",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

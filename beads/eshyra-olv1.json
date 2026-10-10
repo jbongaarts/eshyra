@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olv1",
+  "title": "Pact of the Chain: accept the imp/pseudodragon/quasit/sprite familiar forms (needs pact-boon persistence + curated form grant)",
+  "description": "Split from eshyra-qxnc (2026-10-07). feature:warlock:pact-boon option pact-boon:pact-of-the-chain (SRD 5.1 p. 47): \"When you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: imp, pseudodragon, quasit, or sprite.\" The creature records creature:imp, creature:pseudodragon, creature:quasit and creature:sprite exist. recast_bonded_summon only accepts spell:find-familiar creation.forms, so a chain warlock cannot restore or reform a familiar as, or into, a special form. That refuses legal SRD play.\n\nBLOCKED ON TWO MISSING PIECES:\n(a) The engine never records a character's chosen pact boon. levelUpEngine classifies 'pact-boon' as an unsupported 'class-feature-choice' and blocks the level-up, and no bead owns applying it.\n(b) The pack carries the form extension only as option prose. The pact-boon mechanics hold just spellGrants: spell:find-familiar. A curated structured extension is needed (e.g. a familiar-form grant on the option that names the four creature refs), under docs/importer-fix-protocol.md and the compiler protocols.\nThen recast_bonded_summon (and any creation-time form validation) must accept the extended forms only when the bond's caster (the effect's source actor, durable after eshyra-qxnc) has Pact of the Chain. Its Attack-action clause (\"forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction\") also sits against the familiar's cannot-attack modification. Design that interaction too.",
+  "notes": "2026-10-08: blocker (a) is now owned by eshyra-ug4i (level-up accepts and persists class-feature choices incl. pact boon); dependency wired. Blocker (b), the curated familiar-form grant on pact-boon:pact-of-the-chain, stays in this bead.\n2026-10-08 (Claude Captain reconciliation): blocker (a) is DONE — eshyra-ug4i.3 (PR #609, merge 03a7c4d9) persists the chosen pact boon on CharacterSheet.featureChoices (feature:warlock:pact-boon, option pact-boon:pact-of-the-chain). The dependency on the whole eshyra-ug4i epic was stale (its only open child, ug4i.1 expertise, is irrelevant here) and is replaced by a dependency on the closed eshyra-ug4i.3. Remaining scope unchanged: (b) curated structured familiar-form grant for imp/pseudodragon/quasit/sprite under docs/importer-fix-protocol.md; recast/creation form validation gated on the bond caster's recorded Pact of the Chain; and the design of the Attack-action 'forgo one attack so the familiar attacks with its reaction' clause against the familiar's cannot-attack modification.\nPR opened 2026-10-09; supervisor reviewed, reclassified the 3 inventory rows as complete, verify green. Stays in_progress until merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T00:12:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T02:39:48Z",
+  "started_at": "2026-10-09T01:50:22Z",
+  "closed_at": "2026-10-09T02:39:48Z",
+  "close_reason": "Merged PR #617",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olv1",
+      "depends_on_id": "eshyra-ug4i.3",
+      "type": "blocks",
+      "created_at": "2026-10-08T16:46:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olv1",
+      "depends_on_id": "eshyra-olv1.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T20:50:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olv1",
+      "depends_on_id": "eshyra-qxnc",
+      "type": "discovered-from",
+      "created_at": "2026-10-07T19:12:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

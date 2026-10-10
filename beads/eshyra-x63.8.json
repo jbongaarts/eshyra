@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x63.8",
+  "title": "x63 follow-up: defensive assert + zero-arc-rows coverage on closeOpenArcAndOpenNext",
+  "description": "Two non-blocking hardening items surfaced in the code review of loreweaver-x63.3 (commit c92c3f1):\n\n1. packages/core/src/memory/campaignArc.ts:291 - the UPDATE that closes the arc does not assert info.changes === 1. Within the current transaction the open-arc verification at step 1 guarantees the row exists, so it can never silently no-op today. Add the assert as a defensive guard against future refactors that move the open-arc verification outside the transaction.\n\n2. packages/core/test/campaignArc.test.ts - there is a test for 'caller passes a wrong arcId when an open arc exists' but no test for 'campaign has zero arc rows at all.' Both paths hit the same openArc === undefined branch in the implementation, but the contract should be documented for both inputs. Add a focused test.\n\nNo production risk. Pure hardening + coverage.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-24T21:39:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:21Z",
+  "started_at": "2026-05-25T04:18:44Z",
+  "closed_at": "2026-05-25T04:24:37Z",
+  "close_reason": "Shipped in PR #61 (branch loreweaver-x63-followups)",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x63.8",
+      "depends_on_id": "eshyra-x63",
+      "type": "parent-child",
+      "created_at": "2026-05-24T16:39:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

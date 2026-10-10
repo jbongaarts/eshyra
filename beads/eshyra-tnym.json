@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-tnym",
+  "title": "Wire guided character creation into play flow",
+  "description": "Problem:\nThe b69j guided character creation flow is complete as `eshyra create-character`, but `eshyra play` still invokes the legacy `promptCharacterDraft` flow in `packages/cli/src/playCharacter.ts`. Playtest users therefore see the brittle manual-HP creator instead of the new rules-pack-backed wizard/finalized-character flow.\n\nRequired behavior:\n- When no canonical PC exists, `play` must not use `promptCharacterDraft` for D&D 5e SRD.\n- For D&D 5e SRD, `play` should either offer to run the new guided wizard inline and import the finalized character into the campaign DB, or offer to select/import an existing finalized character from `<dataRoot>/characters`.\n- `/addpc` should use the same guided/import path.\n- Retain the old `completeCharacterCreation` path only for Pathfinder or explicitly legacy/test paths until replaced.\n- Preserve current `/defer` behavior if desired.\n\nImplementation notes:\n- Add a projection/import function from `FinalizedCharacter` into campaign character DB mutations.\n- Reuse existing finalized record fields instead of asking for manual HP.\n- Prefer sharing the import/projection path between session-zero startup and `/addpc`.",
+  "acceptance_criteria": "- D&D 5e SRD `eshyra play` session-zero flow no longer prompts with `Level-1 max HP:` when no canonical PC exists.\n- `/addpc` uses the same finalized-character wizard/import path as initial play/session-zero.\n- A finalized character can be imported into a campaign and becomes the active `pc-1`.\n- Imported `pc-1` has name, class, ancestry, HP, and ability scores populated from the finalized character record.\n- Legacy `completeCharacterCreation` remains available only for Pathfinder or explicit legacy/test paths.\n- Tests cover the no-manual-HP D&D 5e SRD play/session-zero transcript and finalized-character import into campaign DB.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T06:35:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T06:45:16Z",
+  "started_at": "2026-06-26T06:37:08Z",
+  "closed_at": "2026-06-26T06:45:16Z",
+  "close_reason": "Implemented guided/finalized character setup for D&D play and /addpc; added finalized-character campaign import and tests.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

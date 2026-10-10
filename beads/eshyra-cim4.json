@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cim4",
+  "title": "Flexible Casting: bonus-action economy not enforced by flexible_casting",
+  "description": "flexible_casting does not consume the bonus action (DM tracks via turn-resource tool). Consider wiring combat turn budget consumption. Follow-up from eshyra-09co.1.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T03:58:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:31:49Z",
+  "started_at": "2026-10-09T05:20:20Z",
+  "closed_at": "2026-10-09T05:31:49Z",
+  "close_reason": "Merged PR #633",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cim4",
+      "depends_on_id": "eshyra-cim4.1",
+      "type": "blocks",
+      "created_at": "2026-10-09T00:20:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

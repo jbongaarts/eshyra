@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cuxm",
+  "title": "Add model usage tracking for gameplay and maintenance calls",
+  "description": "Add structured model usage tracking so Eshyra can measure the real cost and context footprint of gameplay. The v0.1.1 native Windows smoke used about 3% of a Claude session for a short deferred-character run with one visible model turn and session close/recap, but it is unclear how much came from turn generation, session recap, prompt/context size, cache misses, or other maintenance calls. Track each model call with purpose, model/profile, provider/auth mode label, input token count, output token count, cache read/write token counts if exposed by the SDK/provider, elapsed time, success/failure, and a safe request/correlation id. Purposes should distinguish at least gameplay turn, session recap, campaign bible extraction, arc rollup, live test, and other maintenance calls. Persist usage in a local diagnostics/telemetry store under the data root and expose a CLI command to summarize usage by campaign/session/model/purpose. Do not log prompts, secrets, raw credentials, or player-private text by default. Acceptance: after a play session, the user can see how many model calls occurred, which purposes consumed tokens, and whether cache usage was observed. Add tests with fake model usage metadata and ensure failures are recorded without leaking secrets.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T03:41:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-19T05:32:55Z",
+  "started_at": "2026-06-19T04:35:36Z",
+  "closed_at": "2026-06-19T05:32:55Z",
+  "close_reason": "Model usage tracking with best-effort sink complete. PR #243 open for review.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

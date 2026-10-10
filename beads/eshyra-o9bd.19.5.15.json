@@ -1,0 +1,59 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.15",
+  "title": "Verify suspected in-force state-integrity defects found by the capability inventory citation pass (custody, combat close)",
+  "description": "Reported (unverified) by the eshyra-o9bd.19.5.12.8 citation pass, 2026-10-10. Profile: semantic-system (durable state, ADR 0012 custody). Triage each against code + authority (operative invariant or 'no requirement'), then repair the confirmed ones with proportionate evidence. (1) close_combat_instance MODEL-FACING description says owned summon links are released, but durable bonds are rebound to the campaign actor (activeEffects.ts ~6736/7139) - contract mismatch. (2) close_combat_instance catches only EncounterCombatantError; a conflicting-claim ActiveEffectError surfaces as generic tool_error (rollback correct). (3) checkoutCharacterIntoCampaign records custody even when the live-row import returns ok:false (non-dnd5e campaign). (4) re-checkout into the SAME campaign+slot re-attaches the registry copy over the campaign copy, losing unsynced progress, though comments call it idempotent (ADR 0012 single-writer / no silent loss). (5) registerNewCharacter has no existing-id guard; appends another 'register' revision. (6) forkCharacterTimeline refuses only targets with revisions; a legacy head-only id would be overwritten. (7) CLI resume flow: a failed later stale-copy choice leaves earlier catch-ups/forks applied (non-atomic multi-step). (8) release: chronicle append and custody clear are separate writes, not one transaction. (9) createDemoCampaign uses two transactions (campaign, then session). Prior items already dispositioned under eshyra-o9bd.19.5.13 are not repeated here.",
+  "design": "2026-10-10 (Claude Captain). METHOD: for each of the nine items, first TRIAGE per docs/design-and-pr-review-policy.md 'From observation to finding': (1) governing invariant, (2) authority (ADR 0012 docs/adr/0012-character-continuity-and-custody.md for custody/revisions/single writer/no silent loss; ADR 0020 section 3 + tool contract truthfulness for model-facing descriptions; transactional atomicity where an accepted doc or the function's own contract promises it), (3) owner/consumer boundary, (4) reachability from real production callers (packages/cli/src/play*.ts, orchestrator tools) - reachability is a SEVERITY axis, not an admission gate, (5) consequence, (6) closure, (7) proportionate evidence. Items without an operative invariant + authority are dispositioned 'no requirement' in one line. Captain's partial triage: #4 confirmed in code (characterCustody.ts ~L175-209: same campaign + same slot proceeds to attachCharacterSheetToCampaign, which overwrites the campaign sheet with the registry head via createSqliteCharacterSheetStore.save); reachability via packages/cli/src/playCharacter.ts importSelectedFinalizedCharacter (~L163-199) depends on whether that flow can target an occupied slot - establish it. #3: attachCharacterSheetToCampaign saves the sheet then importFinalizedCharacter may return ok:false; custody is still recorded (~L201-209) - establish when ok:false is reachable after assertSheetMatchesPack passes. REPAIR every confirmed defect with the smallest change that restores the invariant (fail closed; atomic where promised; model-facing description corrected to the real behavior for #1), with proportionate tests that distinguish the defective state. No new features, no behavior change beyond the repairs. Update the capability inventory (packages/core/src/rules/deterministicCapabilityInventory.ts) ONLY if PR #643 has merged by the time you finish; otherwise list the inventory statements your repairs change in your report.",
+  "notes": "SCOPE ADDITION 2026-10-10 (from the 19.5.12.10 guarantee audit, unverified; triage with the same method): (10) refresh_effect MODEL-FACING description claims more spell-duration fidelity than refreshEffect enforces (activeEffects.ts ~6219-6245: record checked only when a duration is supplied, the source is a spell, and the record duration is timed). (11) roll-ledger strip regex lacks a line-start anchor and drops all model prose from the first 'Rolls:' followed by a newline to the end of narration (playerVisibleRollLedger.ts ~326-328) - player-visible narration loss. (12) proficiencyGrants removal (eshyra-olc5.7, PR #642): the ledger records only newly-added items, so if option A added Deception and a later source B also confers Deception (recording nothing because already held), replacing A removes Deception although B still confers it (proficiencyGrants.ts ~84-210) - ADR 0012-style no-silent-loss / SRD fidelity. (13) checkpoint restore checks destination then renames over it (store.ts ~74-78,129) - low-risk race; (14) long rest heals via adjustHp so a refusal aborts the whole group rest - currently unreachable.\nPR #650 at 6c3f4dea; Sol review eshyra-o9bd.19.5.15.2.\nSol review .2 at 6c3f4dea: CHANGES REQUESTED (5), all to be repaired (details in .2 notes): S1 same-slot re-checkout still destroys live campaign state (sheet-equality guard misses live-row progress); S2 failed-attach custody acquisition survives in the catch-up path; S3 checkpoint no-clobber falls back to a clobbering rename; S4 proficiency inventory overstates the Expertise refusal (A then B both granting Deception); S5 close_combat_instance model description still misstates the F3 boundary. Repair cycle 1 = attempt .3 (same child branch, resumed implementer).\nRepair .3 integrated at 466e7ff6f0eddcbdf0da8c6859b3c779be1d288c; fresh full review follows.\nReview .4 at 466e7ff6: CHANGES REQUESTED (2) accepted - S1 playFork resume-fork ignores a failed checkout (second cycle of the failed-attach class -> full caller sweep required), S2 attach inventory statement stale. Attempt eshyra-o9bd.19.5.15.5.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T07:57:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T17:26:34Z",
+  "started_at": "2026-10-10T08:00:44Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.15",
+      "depends_on_id": "eshyra-o9bd.19.5.15.5",
+      "type": "blocks",
+      "created_at": "2026-10-10T12:26:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.15",
+      "depends_on_id": "eshyra-o9bd.19.5.15.1",
+      "type": "blocks",
+      "created_at": "2026-10-10T03:00:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.15",
+      "depends_on_id": "eshyra-o9bd.19.5.15.3",
+      "type": "blocks",
+      "created_at": "2026-10-10T12:10:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.15",
+      "depends_on_id": "eshyra-o9bd.19.5",
+      "type": "parent-child",
+      "created_at": "2026-10-10T02:57:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 0,
+  "comment_count": 0
+}

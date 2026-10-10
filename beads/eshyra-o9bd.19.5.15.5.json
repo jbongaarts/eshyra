@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.15.5",
+  "title": "Dispatch: 19.5.15 repair after Sol S1-S2 of review .4 (attempt 3)",
+  "description": "Repair PR #650 per Sol review eshyra-o9bd.19.5.15.4 (read S1, S2 in full). This is the SECOND repair cycle of the 'failed attach must never be treated as success / custody only after successful attach' class, so search its full state space: enumerate EVERY consumer (core and CLI: playCharacter.ts, playFork.ts, playClose.ts, resume flows, guided flows, any other caller) of checkoutCharacterIntoCampaign, attachCharacterSheetToCampaign, catchUpCharacterToHead, forkCharacterTimeline and acquireCustodyOnResume results, and make each one propagate a failed attach (attach.ok false or thrown refusal) as failure: no success narration, no continuation into success paths, campaign copy and custody preserved. Record the consumer table (caller file:line, result handling before/after) in notes. S2: correct the attach-capability inventory statement (deterministicCapabilityInventory.ts ~1699) to the transactional behavior, and re-check every other inventory statement that describes attach/checkout/catch-up/fork failure behavior. Evidence: a generalized caller failure-result test varying success, correction result, and thrown refusal for the resume-fork caller (real store), plus any other caller you repair. Host memory wait with pgrep -fc '^node .*verify-current-worktree'; verify:worktree then commit with &&; notes; close. No push/PR.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T17:26:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T21:11:55Z",
+  "started_at": "2026-10-10T21:11:55Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.15.5",
+      "depends_on_id": "eshyra-o9bd.19.5.15",
+      "type": "parent-child",
+      "created_at": "2026-10-10T12:26:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

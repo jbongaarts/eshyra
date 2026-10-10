@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-aiq8",
+  "title": "Wire a runtime consumer for recordAdventureRunProgress",
+  "description": "recordAdventureRunProgress (packages/core/src/campaign/adventureRun.ts) validates and atomically merges adventure-run progress deltas (visited locations, scenes, secrets, objectives, encounter outcomes, treasure, clocks, deviations), but no tool or CLI path calls it (tests only); startAdventureRun is consumed by packages/cli/src/playModuleSelector.ts and start_encounter reads encounters from active runs. The deterministic capability inventory (eshyra-o9bd.19.5.12.8) records progress recording as retained and staged. This bead owns deciding how progress reaches play (model tool, CLI command, or both) or demoting it. Found while dispositioning the inventory module population.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T07:44:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T07:44:57Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

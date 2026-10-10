@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.25",
+  "title": "Audit native ModelClient tool-call seam and document runtime support level",
+  "description": "Resolve or explicitly document the mismatch between the future-ready ModelClient contract and the current fenced-text tool protocol runtime.\r\n\r\nThis bead should either implement support for native toolCalls if already practical, or make the current fenced-text-only behavior explicit in tests/docs so agents do not assume native tool calls work.\n\n## Context\nObserved gap:\r\n- The model contract appears to carry native tool definitions / response hints / optional native toolCalls.\r\n- Runtime behavior appears centered on parsing fenced text tool calls from model text.\r\n- Adapter(s) may flatten messages and ignore native tool channels, response-format hints, profile, or trace metadata.\r\n- This is a seam clarity issue that can cause future agents to build against a contract path that is not actually active.\r\n\r\nParallel-safety:\r\n- Does not overlap SRD importer parser beads.\r\n- Avoid running in parallel with major orchestrator/model refactors.\r\n- Keep scope to support-level audit, tests, and small targeted implementation if straightforward.",
+  "design": "Suggested files to inspect:\r\n- packages/core/src/model/client.ts\r\n- packages/core/src/model/*\r\n- packages/core/src/orchestrator/orchestrator.ts\r\n- provider adapter files\r\n- tests around model loop, tool protocol parsing, and adapter behavior\r\n- docs describing model/tool protocol, if present\r\n\r\nImplementation options:\r\nA. Document/defer native tool calls:\r\n   - Add explicit docs/comments saying fenced-text tool protocol is the only supported runtime path.\r\n   - Add tests proving ignored native fields are intentionally ignored or unsupported.\r\n   - Make unsupported native toolCalls fail loudly or be ignored with clear trace metadata.\r\nB. Implement native toolCalls:\r\n   - Teach runModelLoop to consume result.toolCalls.\r\n   - Preserve fenced-text compatibility.\r\n   - Add tests covering both native and fenced tool-call paths.\r\n   - Update adapter capability docs.\r\n\r\nRecommendation:\r\n- Prefer option A unless native toolCalls can be implemented without destabilizing the orchestrator.",
+  "acceptance_criteria": "- Runtime support level is explicit: fenced-text-only for now, or native toolCalls supported.\r\n- Tests cover the chosen behavior.\r\n- Adapter behavior for native tool definitions/toolCalls/response hints is not accidental or undocumented.\r\n- Public/internal docs do not imply native tool calls work unless they actually do.\r\n- Existing fenced-text tool protocol continues to pass tests.\r\n- No SRD importer parser files are modified.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "estimated_minutes": 180,
+  "created_at": "2026-05-28T23:17:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T18:25:36Z",
+  "started_at": "2026-06-07T18:18:35Z",
+  "closed_at": "2026-06-07T18:25:36Z",
+  "close_reason": "Audited the native ModelClient tool-call seam (PR #169). Runtime support level is now explicit and enforced: runModelLoop rejects native toolCalls/stopReason=tool_use with OrchestratorError (fenced-text protocol only). Contract docs updated; orchestrator tests + existing adapter test cover the behavior.",
+  "labels": [
+    "architecture",
+    "model-client",
+    "orchestrator",
+    "parallel-caution",
+    "refactor",
+    "tech-debt",
+    "technical-debt",
+    "tools"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.25",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-28T18:17:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4r.5",
+  "title": "Implement campaign registry and picker (registry.json + campaigns CLI commands)",
+  "description": "Per ADR 0004. Maintain <root>/registry.json (id, display name, db path, created/last-played timestamps, module/rules-pack identity; pointers only, no content/secrets; atomic temp+rename writes). When LOREWEAVER_DB_PATH is unset: 'new' creates campaigns/<slug>.db and registers it; 'play' with no arg uses empty->offer-create, single->open, multiple->picker honoring defaultCampaignId; add 'campaigns list|rename|remove|add <path>'. When LOREWEAVER_DB_PATH is set, bypass the registry entirely (ADR 0003 behavior preserved).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-22T21:20:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:01Z",
+  "started_at": "2026-05-22T22:16:19Z",
+  "closed_at": "2026-05-22T22:20:44Z",
+  "close_reason": "Implemented and merged in PR #40 (ADR 0004 managed storage model).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d4r.5",
+      "depends_on_id": "eshyra-d4r.3",
+      "type": "blocks",
+      "created_at": "2026-05-22T16:20:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d4r.5",
+      "depends_on_id": "eshyra-d4r",
+      "type": "parent-child",
+      "created_at": "2026-05-22T16:20:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "2d6cd1c3-5e18-5f95-8828-b580e7a264b2",
+      "issue_id": "eshyra-d4r.5",
+      "author": "Joseph Bongaarts",
+      "text": "Implemented in PR #40 — packages/cli/src/registry.ts + campaigns.ts, index.ts wiring + tests. Pending review.",
+      "created_at": "2026-05-22T22:17:26Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

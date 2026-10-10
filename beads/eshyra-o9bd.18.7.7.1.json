@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.1",
+  "title": "Model magic item charge, recharge, and use economies",
+  "description": "Scope:\n- Add typed projections for charges, maximum charges, expenditure costs, recharge timing, recharge dice/formulas, depletion/destruction clauses, command words, and per-day/use limits.\n- Fable explicitly called out charge/recharge prose as a remaining deterministic gap.\n\nAcceptance criteria:\n- Inventory all magic items with charges/recharge/use economies.\n- Model representative items with \"regains 1d6 + 1\" and similar recharge formulas.\n- Add tests that deterministic tools can inspect charges and recharge without parsing prose.",
+  "notes": "Exact worklist now exists (2026-07-06): the C1 tags in the 18.7.7.3 inventory artifact (PR #407) — 105 of 240 items carry C1 clauses. Hard economy cases named there: boots-of-speed cumulative 10-min budget, winged-boots 4h/12h-regain pool, candle-of-invocation burn-minutes, goat-of-traveling 24 hour-charges, last-charge-d20 destruction rolls (wands/staffs), no-recharge depleting items (luck-blade wish, ring-of-three-wishes, nine-lives-stealer). Implement against the shared state contract (PR #408): pack-side useEconomy block + tool-enforced live state; reset events engine-driven (F5/F7). Do not count an item done here if it has non-C1 clauses (split-owner rule).\nPR #408 final contract (7090d6c): this bead owns the keyed multi-economy pack schema (economies: Record<EconomyId, ItemEconomy> — NOT the earlier singular useEconomy) plus the operations list binding costs to stable economy ids, importer projection of charge/per-day/cooldown/budget/dose data, and economy live-state transitions over the parent-owned item_state/use_item surface. Golden cases: staff-of-fire (shared pool), rod-of-lordly-might (3 independent 1/dawn pools), staff-of-thunder-and-lightning (doesNotExpend combined use), winged-boots (budget + onlyIfUnused regain). Reset events come from F5/F7 bus, not this bead.\n2026-07-08 ADR 0017 adjustment: Model economies as source-grounded pack semantics plus operation/economy ids and F5/F7 hook bindings. Do not treat a recharge/reset/live-counter implementation as compiler-owned unless the runtime owner is explicitly in this bead's accepted scope; otherwise leave the clause represented but engine-pending with the owning family named.\nImplemented the source-grounded family projector, strict schema validation, clause registry bindings, generated pack projection, and representative/exhaustive tests. The exact 240-row owner-tag conservation census passes; all magic items now carry reviewed executable mechanics.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:23Z",
+  "started_at": "2026-07-18T16:34:26Z",
+  "closed_at": "2026-07-18T20:23:23Z",
+  "close_reason": "Source-faithful executable magic-item family complete; canonical regeneration, conservation gates, deep audit, and full worktree verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.1",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

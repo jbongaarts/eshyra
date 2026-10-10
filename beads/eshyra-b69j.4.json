@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.4",
+  "title": "Define D&D 5e character creation recipe boundary",
+  "description": "Introduce the recipe boundary for rule-pack-specific character creation and add the D&D 5e SRD recipe as the first implementation.\n\nDesign constraints\n- Use one shared CLI shell with rule-pack-specific recipes.\n- Do not design a full universal cross-system character schema. Use a minimal draft envelope and D&D-specific typed selections internally.\n- Keep Pathfinder future-compatible without implementing Pathfinder now.\n\nThe D&D recipe should expose the canonical modes:\n- Concept-first — I know what I want to play\n- Ability-first — let the dice inspire me\n\nAcceptance criteria\n- A CharacterCreationRecipe contract or equivalent seam exists.\n- The D&D 5e SRD recipe declares supported modes and step order.\n- Recipe code owns D&D terminology, validation hooks, derived-stat hooks, and finalization rules.\n- Shared CLI code does not need to know what Fighter, ancestry boosts, hit dice, or spell slots mean.\n- Tests prove the D&D recipe can produce the expected step order for both modes.",
+  "notes": "PR #285 (open for review): https://github.com/jbongaarts/eshyra/pull/285 — recipe boundary + D&D 5e SRD recipe. Internal-only exports; consumed by later slices.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T04:02:09Z",
+  "started_at": "2026-06-24T03:35:13Z",
+  "closed_at": "2026-06-24T04:02:09Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.4",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

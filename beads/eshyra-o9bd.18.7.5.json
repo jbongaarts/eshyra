@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.5",
+  "title": "Add runtime effect projections for SRD feature records",
+  "description": "Finding source:\n- Codex readiness review reported 69 feature records still prose-only or mechanically shallow.\n- ChatGPT noted feature choice modeling does not imply runtime feature effects are deterministic.\n- Examples include effects like Barbarian Unarmored Defense and other class/subclass features that affect AC, resources, damage, movement, senses, resistances, checks, saves, or spellcasting.\n\nAcceptance criteria:\n- Inventory all feature records with runtime gameplay effects missing from data.mechanics/projection.\n- Preserve existing structured character-creation/level-up choice modeling.\n- Add projections for AC formulas, usage resources, damage/bonus effects, movement/senses, resistances/immunities, save/check modifiers, spellcasting/runtime effects, and other high-impact categories.\n- Create implementation child beads if the inventory is too broad.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-05T20:28:41Z",
+  "started_at": "2026-07-05T15:43:12Z",
+  "closed_at": "2026-07-05T20:28:41Z",
+  "close_reason": "Review findings addressed in PR #398 commit 3cb4f36: classifier fixes (Persistent Rage/Danger Sense/Grappler + Wild Shape/Channel Divinity), complete projections (shield eligibility, Reckless constraint split, Aura minimum/range, Smite max+rider, Brutal Critical & Extra Attack progressions, structured Stonecunning, weaponAttacksMagical scope), unified acFormula contract + per-kind payload validators, exact feature membership gates + committed-pack depth assertions. CI green (14/14); PR open for re-review.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.5",
+      "depends_on_id": "eshyra-o9bd.18.7",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

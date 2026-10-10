@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.1.3",
+  "title": "Composed-across-sections text at source-prose pointers: flattened subrace ability scores and merged option-list feature bodies",
+  "description": "Residual members of the eshyra-o9bd.19.2.1 item 5 defect class (value emitted at a pointer field-provenance-v1 declares source-prose, but not one verbatim source span), found by the eshyra-o9bd.19.2.1.2 failure-map probe and deliberately left out of that PR because each is a by-design parser composition whose fix changes a representation other code consumes.\n\nMEMBERS (verified on main fb310b8 + PR for eshyra-o9bd.19.2.1.2):\n- Flattened subrace ability scores: ancestry:high-elf, ancestry:hill-dwarf, ancestry:lightfoot-halfling, ancestry:rock-gnome. Both /traits/0/text and /abilityScoreIncreases/0/sourceText join the parent race's printed ASI sentence (e.g. 'Your Dexterity score increases by 2.') with the subrace's own (e.g. 'Your Intelligence score increases by 1.'); the two sentences are printed in different sections. parseAncestries deliberately 'merges the additive ability score increase into one trait'; consumers include the ancestry ASI oracle and character creation.\n- ancestry:rock-gnome /traits/0/text additionally carries the following 'Artificer's Lore.' trait text (overlaps registry row rock-gnome-boundary, owned by eshyra-o9bd.19.2.2).\n- feature:warlock:eldritch-invocations /description: parseFeatures merges the end-of-chapter Eldritch Invocations option list (about 3,000 characters later in the source) into the feature body.\n\nNOT MEMBERS: descriptions that skip roughly 100-400 characters where an embedded table was stripped (spells animate-objects/confusion/creation/reincarnate/scrying/teleport, several magic items and rules). That is verbatim text with a table elided, not composition.\n\nEXPECTED BEHAVIOR: each value is either one verbatim span per source-prose field (e.g. separate verbatim ASI entries/traits for parent and subrace) or is emitted at a pointer truthfully classified source-derived. Decide per member; do not demote whole-kind trait text to source-derived to fix four records.\n\nMETHOD: probe values against extractPdfText of the pinned PDF, sentence by sentence (normalize whitespace/hyphen clusters/quotes), recording missing sentences and the source gap between consecutive sentences; extraction interleaving (a table header splitting a sentence) produces false misses and must be confirmed by locating the fragment.\n\nLIKELY FILES: scripts/importers/dnd5e-srd-5.1/parseAncestries.ts, parseFeatures.ts, fieldProvenanceDeclarations.ts; tests parseAncestries.test.ts, srdAncestryAbilityScoreIncreases.test.ts, fieldProvenanceGate.test.ts.",
+  "notes": "2026-09-23: PR #569 https://github.com/jbongaarts/eshyra/pull/569 (head 5a1818eb). Child eshyra-o9bd.19.2.1.3.1 (bea9456f) merged into this branch after supervisor review; supervisor added rock-gnome-boundary regression tests (5a1818eb). All three members split into verbatim spans; Invocations feature-level mechanics dropped as misattributed (follow-up eshyra-x49h). Stays in_progress until merge.\n2026-09-23: PR #569 merged (ddc231be, reviewed head 5a1818eb, all checks green). Branch and worktree deleted.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-23T01:52:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-23T05:59:31Z",
+  "started_at": "2026-09-23T05:03:49Z",
+  "closed_at": "2026-09-23T05:59:31Z",
+  "close_reason": "PR #569 merged (ddc231be)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.1.3",
+      "depends_on_id": "eshyra-o9bd.19.2.1.3.1",
+      "type": "blocks",
+      "created_at": "2026-09-23T00:09:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.1.3",
+      "depends_on_id": "eshyra-o9bd.19.2.1",
+      "type": "parent-child",
+      "created_at": "2026-09-22T20:52:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

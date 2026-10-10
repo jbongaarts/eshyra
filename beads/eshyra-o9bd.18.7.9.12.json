@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.9.12",
+  "title": "C6 — Model damage-absorption behavior",
+  "description": "Model the 4 reviewed damage-absorption refs from classification §1.6.4 with a closed damageAbsorption-style contract covering source-grounded damage type, conversion/result, caps, or healing behavior as applicable. Use uniform source grammar where appropriate but fail closed on drift; cover all refs and complete standard reconciliation.",
+  "notes": "Complete exact registry/membership removals and count reconciliation; verify readiness-report delta; regenerate through the importer; add committed-pack assertions; update thaw evidence and freeze hash as appropriate; run verify:dnd5e-srd-pack, verify:dnd5e-srd-freeze, relevant focused tests, full required worktree/check/typecheck tests, and audit-bundle verification where required.\nSlice C1 implemented on branch eshyra-o9bd-18-7-9-12-c1: added closed damageAbsorption schema/projection for all four C6 refs, fail-closed drift coverage, committed-pack assertions, exact membership/readiness reconciliation, thaw note, regenerated pack, and updated freeze hash. verify:dnd5e-srd-pack, verify:dnd5e-srd-freeze, check, typecheck, audit-bundle wrapper, and verify:worktree passed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T04:09:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-11T16:26:52Z",
+  "started_at": "2026-07-11T05:08:44Z",
+  "closed_at": "2026-07-11T16:26:52Z",
+  "close_reason": "Verified complete on main: PR #424 merged as 47b2e5c; exact four-ref damageAbsorption projection/schema/pack/tests are present, all C6 refs are absent from the reviewed-disposition registry, and focused verification passes.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.9.12",
+      "depends_on_id": "eshyra-o9bd.18.7.9",
+      "type": "parent-child",
+      "created_at": "2026-07-10T23:09:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

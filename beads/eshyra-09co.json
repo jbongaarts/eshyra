@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-09co",
+  "title": "Flexible Casting: deterministic sorcery-point <-> spell-slot conversion",
+  "description": "Implement deterministic Flexible Casting (SRD sorcerer): convert sorcery points to spell slots and back per the Creating Spell Slots table. Slot owner: packages/core/src/state/spellSlots.ts. Counter owner: packages/core/src/state/usageCounters.ts (sorcery-points counter, ability:sorcery-points, long_rest reset). Metamagic costs stay DM-adjudicated via spend_usage uses=cost. Discovered from eshyra-fa54 (rest engine confirmation, eshyra-fa54.1).",
+  "notes": "PR #627 opened; supervisor merged main, verify green; Sol review eshyra-09co.2 running. Follow-up eshyra-cim4.\nSol review eshyra-09co.2 (b41787a9 merged w/ main): S1 alias/legacy counter bypass, S2 bundled resolver ignores campaign binding (pre-existing in usageCounters from #616). Fix dispatched as eshyra-09co.3 (Sonnet).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T03:47:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:19:29Z",
+  "started_at": "2026-10-09T03:50:49Z",
+  "closed_at": "2026-10-09T05:19:29Z",
+  "close_reason": "Merged PR #627",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-09co",
+      "depends_on_id": "eshyra-09co.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T22:50:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

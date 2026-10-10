@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.2.4",
+  "title": "Dispatch: 19.4.2 repair after Sol S1-S2 (attempt 2)",
+  "description": "Repair PR #646 per Sol review eshyra-o9bd.19.4.2.3 (read S1 and S2 in full in its notes: invariant, scenario, siblings, required closure, evidence). S1: preserve the ENTIRE source target phrase through the pre-Hit sentence boundary in parseAttack (target qualifiers after the target noun: 'one target in the swarm's space', 'one creature not grappled by the crocodile', vampire Bite's alternative eligible targets); regenerate; every attack whose target text changes must be in the sibling set Sol enumerated or explained against its source. Evidence: generalized invariant over every creature attack lead-in that attacks[].target equals the printed target phrase (independent extraction in the test) + one exact vendored-source case. S2: for an alternative-bearing entry, mechanics.damage must equal the default hit mode only; damage printed OUTSIDE the Hit sentence (Swarm of Poisonous Snakes' save-governed poison) stays represented with its save (saves[]/its own projection), never merged into the default mode or treated as a shared rider; add the exact Poisonous Snakes assertion. Keep shared in-Hit riders (Azer/Erinyes/Salamander) in every mode. Class sweep: check every alternative-bearing entry for damage outside the Hit sentence. Regenerate pack + inventory; verify:dnd5e-srd-pack; verify:worktree before commit; commit on this branch; bd notes with before/after per changed record; close this bead. No push.",
+  "notes": "COMPLETION (commit f5f0b179 on eshyra-o9bd.19.4.2.4; not pushed).\nS1 (target phrase): parseAttack target now runs from the printed quantifier to the sentence boundary before Hit (quantifier must not be followed by ft/feet, so ranges are never the quantifier). Changed records (before -> after target):\n- creature:giant-crocodile Tail: 'one target' -> 'one target not grappled by the crocodile'\n- creature:swarm-of-bats Bites: 'one creature' -> 'one creature in the swarm’s space'\n- creature:swarm-of-insects Bites: 'one target' -> 'one target in the swarm’s space'\n- creature:swarm-of-poisonous-snakes Bites: 'one creature' -> 'one creature in the swarm’s space'\n- creature:swarm-of-quippers Bites: 'one creature' -> 'one creature in the swarm’s space'\n- creature:swarm-of-rats Bites: 'one target' -> 'one target in the swarm’s space'\n- creature:swarm-of-ravens Beaks: 'one target' -> 'one target in the swarm’s space'\n- creature:vampire Bite (Bat or Vampire Form Only): 'one willing creature' -> 'one willing creature, or a creature that is grappled by the vampire, incapacitated, or restrained'\n- creature:vampire-spawn Bite: same as vampire.\nSibling check: a phrase-vs-projection scan over all 515 lead-ins found exactly these 9 plus creature:giant-rat's variants-section entry (not projected; filed as follow-up bead).\nS2 (save-governed outside damage): alternative-bearing entries' mechanics.damage is now the default hitDamage only (projectEntryDamage). Outside damage attaches to its save as saves[].damageOnFailure, fail-closed if no save owns it.\n- creature:swarm-of-poisonous-snakes: mechanics.damage [2d6 piercing, 4d6 poison] -> [2d6 piercing]; saves[0] gains damageOnFailure [{average 14, dice 4d6, type poison}] (saves now {ability constitution, dc 10, damageOnSuccess half, damageOnFailure [...]}). Default alternative 1d6 unchanged.\n- No other alternative-bearing entry had outside damage (build would have thrown otherwise; the sweep changed no other damage).\nShared in-Hit riders (azer, erinyes, salamander) unchanged in every mode.\nTotals: 9 changed records, no added/removed keys. Inventory regenerated (1881 rows).\nEvidence: creatureAttackGrammar.test.ts adds a generalized target-phrase invariant (independent quantifier-based extraction over every creature attack lead-in), default-mode-equals-damage invariant over alternative-bearing attacks, and exact Poisonous Snakes, crocodile, and vampire-spawn assertions (9 tests pass).\nCommands: import:dnd5e-srd canonical and default OK; verify:dnd5e-srd-pack exit 0 (before and after commit); verify:worktree EXIT 0 (345 files passed, 2 skipped; 6410 tests passed, 3 skipped).\nFollow-up filed: variants-section attack projection (creature:giant-rat). Not pushed; beads:sync not run.\nVARIANTS (absorbed eshyra-3qrt): creature variants[] entries whose text prints an attack lead-in now get the action-entry mechanics projection; others unchanged. Only changed record: creature:giant-rat (variants[0] gains mechanics: attacks [melee-weapon, attackBonus 4, reachFeet 5, target 'one target', hitDamage 4 (1d4 + 2) piercing], saves [constitution DC 10], damage [4 (1d4 + 2) piercing]). creature:swarm-of-insects unchanged (no variant attack). kindSchemas validates variants as named entries with optional mechanics. Invariant covers variants; exact giant-rat case added (10 tests pass). Verification: verify:dnd5e-srd-pack exit 0; verify:worktree EXIT 0 (345 files passed, 2 skipped; 6411 tests passed, 3 skipped). Not pushed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T03:45:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T07:30:11Z",
+  "started_at": "2026-10-10T07:26:41Z",
+  "closed_at": "2026-10-10T07:30:11Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.2.4",
+      "depends_on_id": "eshyra-o9bd.19.4.2",
+      "type": "parent-child",
+      "created_at": "2026-10-09T22:45:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

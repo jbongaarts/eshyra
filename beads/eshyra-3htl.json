@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3htl",
+  "title": "Agent config: open supervisor workflow to Opus, resolve AGENTS.md push-policy contradiction, compress",
+  "description": "The Codex-subagent supervisor workflow hook gated on /fable/i, so Opus main-agent sessions silently received no dispatch/worktree/integration policy. Also audited CLAUDE.md/AGENTS.md/session-start hooks for contradictory rules and bloat.\n\nChanges: (1) hook gates on fable|opus, renamed fable-supervisor-context.mjs -> supervisor-context.mjs; (2) AGENTS.md Session Completion block (a stale bd-generated 'MANDATORY git push' artifact, marker v:1 hash:7510c1e2) contradicted both the repo PR workflow and bd prime's conservative default - replaced with an explicit standing-authority-for-feature-branches rule; (3) compression pass, keeping imperatives and moving rationale to existing docs/ADRs/tests.",
+  "notes": "PR #468 opened: https://github.com/jbongaarts/eshyra/pull/468 (branch eshyra-3htl). Leave in_progress until merged, per the Git & PR Workflow section this PR rewrites.\n2nd commit 2bcf089: folded supervisor-reviews-codex-writes + codex-orphans-outlive-harness into .claude/hooks/codex-subagent-workflow.md (supervisor-only, must not reach subagents); scoped the AGENTS.md memory rule; retired 4 harness memory files after verifying o9bd.2 and the o9bd re-audit findings against main. Workflow lesson preserved as bd memory o9bd-reverify-pack-before-implementing-children.\nReview round 1 addressed in 6f08cbc: (1) verify:worktree moved ahead of commit in Git & PR Workflow (gate mutates the tree); (2) restored 7 AGENTS.md strings guarded by nodeRuntimePolicy.test.ts rather than relaxing the test - CI green; (3) replaced machine-wide 'pgrep -af codex' kill with PGID recorded at dispatch launch. All CI checks pass.\nReview round 2 addressed in c6485bc: (1) precedence rule scoped to generated boilerplate only, so it can no longer override the session-injected supervisor workflow; (2) PGID capture corrected - $! after setsid is the transient parent (measured: $!=1455608 dead, real leader 1455610), leader now records own PID via exec, registry under gitignored .worktrees/.dispatch/; (3) model gate fails closed on absent/unrecognized model. PR body refreshed. All CI green.\nReview round 3 addressed in 2d7cdc2: (1) launch recipe now cds into the child worktree before exec (verified /proc/<pgid>/cwd); (2) child PR authority revoked in the thin launch prompt AND scoped in AGENTS.md standing-authority paragraph; (3) $! wording corrected to 'not guaranteed to be the session leader' per setsid(1) fork-only-if-group-leader semantics. CI green.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-22T00:44:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-22T04:10:33Z",
+  "started_at": "2026-07-22T00:45:18Z",
+  "closed_at": "2026-07-22T04:10:33Z",
+  "close_reason": "Merged to main via PR #468 (merge commit 0d7965d) after three review rounds. Supervisor hook gates on fable|opus and fails closed; AGENTS.md push-policy contradiction resolved and compressed; memory rule scoped; PID-scoped dispatch cleanup replaces machine-wide pgrep kill.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

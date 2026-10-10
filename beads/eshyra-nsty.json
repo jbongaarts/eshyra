@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-nsty",
+  "title": "Expose manifest projection as a finding membership record",
+  "description": "Add the manifest projection to the rules-pack identity surface so opus:F-20 can enumerate a stable recordKey and source locator instead of relying on its explicit zeroMemberPolicy. Preserve the source-authority boundary and update the registry query and regression.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T01:04:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T01:06:25Z",
+  "closed_at": "2026-10-10T01:06:25Z",
+  "close_reason": "RETIRE/SUPERSEDE (2026-10-09 rebaseline, verified on main a961fb0b): obsolete target. opus:F-20's zeroMemberPolicy and registry queries no longer exist; registry v2 makes no membership claim (explicitNonClaims). F-20 is a source-authority row owned by closed eshyra-o9bd.19.2.1, whose repairs (PR #566/#569) carry their own evidence; any stale reasoning in that row is eshyra-o9bd.19.6.6's. No defect hidden.",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

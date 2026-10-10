@@ -1,0 +1,51 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ug4i.2",
+  "title": "Level-up: spell selection (design first)",
+  "description": "Slice 3 of eshyra-ug4i. Design before dispatch: what spell choices a level-up really carries per caster type (known casters: new spells from the class list up to the castable level plus one optional replacement; cantrips; wizard +2 spellbook spells; warlock mystic arcanum; bard magical secrets; pact-of-the-tome cantrips and Book of Ancient Secrets rituals when those options are held), how sheet.spells distinguishes known/spellbook/prepared, and whether prepared casters (cleric/druid/paladin) should be blocked at all at level-up (preparation is a long-rest action, not a level-up choice). Re-derive spellSelectionChoices in levelUpEngine.ts against that.",
+  "design": "DESIGN (Claude Captain, 2026-10-08). Dispatch after eshyra-ug4i.3 merges into eshyra-ug4i (same files; reuse its featureChoices/validation patterns).\n\nFACTS (main @ 41c395d4): CharacterSheet.spells is one flat list of names/refs mixing cantrips and leveled spells, with no known/spellbook/prepared distinction. Creation validates only that each spell resolves and is on the class list. No runtime tool reads sheet.spells to gate casting; it feeds DM context. spellSelectionChoices (levelUpEngine.ts) emits ONE unsupported blocker when cantripsKnown or spellsKnown grows, a new slot level appears, or the class keeps a spellbook. Prepared casters are therefore blocked at every new spell level, though SRD preparation happens after a long rest (\"You can change your list of prepared spells when you finish a long rest\"), not at level-up.\n\n1. SHEET. Add optional `spellcasting?: { cantrips: string[]; known?: string[]; spellbook?: string[]; prepared?: string[]; mysticArcanum?: { level: number; spellRef: string }[] }`, all canonical `spell:<slug>` refs. `sheet.spells` stays as the derived union, so existing consumers are unchanged. Legacy sheets (no `spellcasting`) are classified deterministically on their first level-up: every entry must resolve; level 0 goes to cantrips; leveled spells go to known (bard/sorcerer/ranger/warlock), spellbook (wizard) or prepared (cleric/druid/paladin). Refuse the level-up, naming the entry, if any entry fails to resolve. Never guess.\n2. LEVEL-UP DESCRIPTORS (supported, one per need, ids stable):\n   - cantrips: cantripsKnown delta; class list, level 0, not held.\n   - known casters: spellsKnown delta; class list, levels 1..highest castable at the new level (warlock: pact slot level), not held. Optional non-blocking replacement [oldRef, newRef] (SRD: when you gain a level, replace one known spell with another of a level you can cast).\n   - bard Magical Secrets (10/14/18; College of Lore Additional Magical Secrets at 6): choose per the feature's spellFilter (any class list, incl. cantrips, up to castable level). These count as known spells.\n   - warlock Mystic Arcanum (11/13/15/17): 1 warlock spell of exactly that level, into mysticArcanum.\n   - wizard: +2 wizard spells of a castable level into the spellbook every level.\n   - Pact of the Tome cantrips (3, any class list) when Tome is held or picked; Book of Ancient Secrets (2 first-level rituals, any class) when that invocation is held or picked. These replace ug4i.3's unsupported conditional descriptors.\n   - prepared casters (cleric, druid, paladin; wizard's preparation): NO blocker. Offer one OPTIONAL non-blocking 'prepare' descriptor that sets `prepared` up to the class limit (paladin: half level, rounded down + CHA mod, min 1; cleric/druid: level + WIS mod, min 1; wizard: level + INT mod, from its spellbook). Use the pack's structured prepared-count data (eshyra-b69j.12.2) rather than hard-coding.\n3. VALIDATION: resolves, on the allowed list(s), level bound, not already held (any bucket), exact counts, a replacement's old ref held. Fail closed on anything unresolved.\n4. APPLY: update `spellcasting` and the `spells` union; ledger change set lists added/replaced refs per bucket; syncSpellSlots is unchanged.\n5. FOLLOW-UP (file at dispatch): long-rest spell preparation as a model tool/lifecycle (prepare after a long rest), which owns `prepared` outside level-up.\nEvidence: bard 2 (+1 known; replacement), sorcerer 4 (+1 cantrip, +1 known), warlock 3 Tome (3 any-list cantrips), warlock 11 arcanum, wizard 2 (+2 spellbook, castable level only), cleric 3 (new spell level: no blocker; optional prepare within the limit), paladin 2 (optional prepare), ranger 2 (2 known), a legacy flat-list sheet classified and leveled, and an unresolved legacy entry refused.",
+  "notes": "2026-10-08: eshyra-ug4i.2.1 (Sonnet 5.5, ba48403e) reviewed by the supervisor (classification, filter evaluator, Magical Secrets accounting, prepare limits, designations, sibling distinctness, edits to 4 pre-existing tests), verify:worktree rerun independently (330 files / 6039 tests pass, 3 documented skips), merged into eshyra-ug4i.2. PR #610 https://github.com/jbongaarts/eshyra/pull/610. Known fail-closed gap: Land druid level 2 (eshyra-91o0, widened to the subclass choice-coverage class).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T01:55:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-08T21:37:06Z",
+  "started_at": "2026-10-08T02:28:35Z",
+  "closed_at": "2026-10-08T21:37:06Z",
+  "close_reason": "PR #610 merged (merge commit f7d70b64)",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ug4i.2",
+      "depends_on_id": "eshyra-ug4i",
+      "type": "parent-child",
+      "created_at": "2026-10-07T20:55:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ug4i.2",
+      "depends_on_id": "eshyra-ug4i.2.1",
+      "type": "blocks",
+      "created_at": "2026-10-07T21:28:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ug4i.2",
+      "depends_on_id": "eshyra-ug4i.3",
+      "type": "blocks",
+      "created_at": "2026-10-07T20:58:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}
