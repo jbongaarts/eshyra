@@ -774,7 +774,13 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // `mechanics`. The 8 Spellcasting/Pact Magic records keep exactly the
   // mechanics they had (see the mechanics-stability test in the "class
   // Spellcasting/Pact Magic sections" describe).
-  { kind: 'feature', field: 'mechanics', missingCount: 48, totalInKind: 179 },
+  // 48 -> 50 (eshyra-o9bd.19.3.2): six feature records whose only mechanics
+  // was a keyword rest resource (Song of Rest, Divine Intervention,
+  // Overchannel, Sorcerous Restoration, Fiendish Resilience, Tranquility) lose
+  // it and carry no mechanics; the four casters without a prior projection
+  // (cleric, druid, sorcerer, wizard spellcasting) gain the spell-slot
+  // resource and the printed Spell save DC formula.
+  { kind: 'feature', field: 'mechanics', missingCount: 50, totalInKind: 179 },
   // eshyra-o9bd.19.2.1.3.1: the end-of-chapter option-list section a feature
   // body points to, kept apart from `description` as one verbatim span. Only
   // feature:warlock:eldritch-invocations has one in SRD 5.1 (Cleric's Destroy
@@ -1323,6 +1329,17 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       });
       expect(claimants.map((record) => record.key)).toEqual([]);
     });
+  });
+
+  // Registry row source-authority-opus-f20 (opus:F-20): the committed
+  // manifest described pack scope by pointing at issue-tracker work ("tracked
+  // under loreweaver-0m9.5 child issues"). eshyra-o9bd.19.2.1.1 only renamed the
+  // prefix to eshyra-0m9.5, a closed bead, so the stale claim survived until
+  // eshyra-o9bd.19.1.8 removed it at the importer source. Pack metadata states
+  // what the pack contains; it never cites tracker IDs, under any prefix.
+  it('carries no issue-tracker claim in the committed manifest (opus:F-20)', () => {
+    const manifestText = readFileSync(join(PACK_DIR, 'manifest.json'), 'utf8');
+    expect(manifestText).not.toMatch(/\b(?:loreweaver|eshyra)-[a-z0-9]/iu);
   });
 
   describe('magic-item numeric conservation gate', () => {
@@ -2792,30 +2809,36 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     ];
 
     // Splitting the body into sections must not create or drop a typed
-    // mechanics claim. The long-rest `resources` projection the retired
-    // artifact records carried is not re-homed: whether a spell-slot rest
-    // clause is a resource reset is opus:F-05, owned by eshyra-o9bd.19.3.2.
-    it("keeps every Spellcasting/Pact Magic record's mechanics unchanged", () => {
-      const LONG_REST = { resources: [{ reset: 'long-rest' }] };
+    // mechanics claim. The spell-slot rest clause ("You regain all expended
+    // spell slots when you finish a long rest") is the governing source
+    // relation for every caster's resource reset, projected uniformly
+    // (opus:F-05, eshyra-o9bd.19.3.2).
+    it('projects the spell-slot reset on every Spellcasting/Pact Magic record', () => {
+      const SPELL_SLOTS_LONG_REST = [
+        { resource: 'spell-slots', reset: 'long-rest' },
+      ];
       const expected: Readonly<Record<string, unknown>> = {
-        'feature:bard:spellcasting': LONG_REST,
-        'feature:cleric:spellcasting': undefined,
-        'feature:druid:spellcasting': undefined,
-        'feature:paladin:spellcasting': LONG_REST,
-        'feature:ranger:spellcasting': LONG_REST,
-        'feature:sorcerer:spellcasting': undefined,
-        'feature:warlock:pact-magic': {
-          resources: [{ reset: 'short-or-long-rest' }],
-        },
-        'feature:wizard:spellcasting': undefined,
+        'feature:bard:spellcasting': SPELL_SLOTS_LONG_REST,
+        'feature:cleric:spellcasting': SPELL_SLOTS_LONG_REST,
+        'feature:druid:spellcasting': SPELL_SLOTS_LONG_REST,
+        'feature:paladin:spellcasting': SPELL_SLOTS_LONG_REST,
+        'feature:ranger:spellcasting': SPELL_SLOTS_LONG_REST,
+        'feature:sorcerer:spellcasting': SPELL_SLOTS_LONG_REST,
+        'feature:warlock:pact-magic': [
+          { resource: 'spell-slots', reset: 'short-or-long-rest' },
+        ],
+        'feature:wizard:spellcasting': SPELL_SLOTS_LONG_REST,
       };
-      for (const [key, mechanics] of Object.entries(expected)) {
+      for (const [key, resources] of Object.entries(expected)) {
         expect(byKey.has(key), key).toBe(true);
         expect(
-          (byKey.get(key)?.data as { mechanics?: unknown } | undefined)
-            ?.mechanics,
+          (
+            byKey.get(key)?.data as
+              | { mechanics?: { resources?: unknown } }
+              | undefined
+          )?.mechanics?.resources,
           key,
-        ).toEqual(mechanics);
+        ).toEqual(resources);
       }
     });
 

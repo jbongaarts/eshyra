@@ -1255,6 +1255,13 @@ export const ACCEPTED_PROSE_RECORD_KEYS: Readonly<
 > = Object.freeze({
   'feature#partial-structure': ['feature:cleric:destroy-undead'],
   'feature#prose-only': [
+    // eshyra-o9bd.19.3.2.1: six features lost a keyword-derived rest resource
+    // (F-06 phantom) and are prose-only by design. Each names a rest only as an
+    // occasion, a counter, or a conditional reset that no governed resource
+    // models: Song of Rest, Divine Intervention, Overchannel, Sorcerous
+    // Restoration, Fiendish Resilience, Tranquility. Their text stays verbatim.
+    'feature:bard:song-of-rest',
+    'feature:cleric:divine-intervention',
     'feature:college-of-lore:peerless-skill',
     'feature:druid:archdruid',
     'feature:druid:beast-spells',
@@ -1263,7 +1270,11 @@ export const ACCEPTED_PROSE_RECORD_KEYS: Readonly<
     'feature:ranger:primeval-awareness',
     'feature:rogue:thieves-cant',
     'feature:school-of-evocation:evocation-savant',
+    'feature:school-of-evocation:overchannel',
+    'feature:sorcerer:sorcerous-restoration',
+    'feature:the-fiend:fiendish-resilience',
     'feature:thief:use-magic-device',
+    'feature:way-of-the-open-hand:tranquility',
     // feature:wizard:cantrips removed (eshyra-o9bd.19.2.2.4): the record is
     // retired — its text is now the "Cantrips" entry of
     // feature:wizard:spellcasting's `data.sections`, not a standalone

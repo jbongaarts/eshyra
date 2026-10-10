@@ -180,7 +180,7 @@ function buildMeta(
   return {
     packId: PACK_ID,
     title: 'D&D 5e SRD 5.1',
-    description: `D&D 5th Edition System Reference Document 5.1, extracted by the deterministic importer at packages/core/scripts/importers/dnd5e-srd-5.1. Included record kinds: ${includedKinds.join(', ')}. Other SRD record kinds are tracked under eshyra-0m9.5 child issues and are not included until their parsers ship.`,
+    description: `D&D 5th Edition System Reference Document 5.1, extracted by the deterministic importer at packages/core/scripts/importers/dnd5e-srd-5.1. Included record kinds: ${includedKinds.join(', ')}.`,
     role: 'base',
     systemId: SYSTEM_ID,
     version: SOURCE_VERSION,
@@ -867,36 +867,6 @@ export function subclassExtractionsToRecords(
  * never drops or changes a mechanics fact that lived in its text (design
  * decision D4).
  */
-/**
- * Class Spellcasting features whose `mechanics.resources` rest-reset
- * projection is withheld to keep their typed mechanics identical to what they
- * carried before eshyra-o9bd.19.2.2.4. Their printed spell-slot text ("You
- * regain all expended spell slots when you finish a long rest") used to be
- * parsed into the retired `feature:<class>:cantrips` / `feature:wizard:
- * spellbook` artifact records, which carried the keyword-derived
- * `resources: [{ reset: 'long-rest' }]` projection; the owners never did. The
- * owning design (decision 5) retires that projection with the artifact records
- * rather than re-homing it: whether a spell-slot rest clause is a resource
- * reset at all is opus:F-05, owned by eshyra-o9bd.19.3.2. Staged: that bead
- * decides the projection for all 8 caster records uniformly and removes this
- * list.
- */
-const RESOURCE_PROJECTION_WITHHELD_PENDING_F05: ReadonlySet<string> = new Set([
-  'feature:cleric:spellcasting',
-  'feature:druid:spellcasting',
-  'feature:sorcerer:spellcasting',
-  'feature:wizard:spellcasting',
-]);
-
-function withheldResources(
-  key: string,
-  mechanics: Record<string, unknown>,
-): Record<string, unknown> {
-  if (!RESOURCE_PROJECTION_WITHHELD_PENDING_F05.has(key)) return mechanics;
-  const { resources: _withheld, ...rest } = mechanics;
-  return rest;
-}
-
 function buildFeatureData(
   feature: FeatureExtraction,
   resolveSpellGrant?: SpellGrantResolver,
@@ -905,12 +875,14 @@ function buildFeatureData(
     feature.grantorKind === 'class'
       ? classKey(feature.grantorName)
       : subclassKey(feature.grantorName);
-  const mechanics = withheldResources(
-    `feature:${slug(feature.grantorName)}:${slug(feature.name)}`,
-    deriveFeatureMechanics(
-      reconstructFeatureText(feature.description, feature.sections),
-      resolveSpellGrant,
-    ),
+  const mechanics = deriveFeatureMechanics(
+    reconstructFeatureText(feature.description, feature.sections),
+    resolveSpellGrant,
+    {
+      level: feature.level,
+      resolveFeatureKey: (name) =>
+        `feature:${slug(feature.grantorName)}:${slug(name)}`,
+    },
   );
   return {
     source,

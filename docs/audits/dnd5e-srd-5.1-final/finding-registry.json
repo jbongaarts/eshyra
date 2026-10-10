@@ -27,6 +27,7 @@
       "aliases": ["opus:F-20"],
       "invariant": "Stale manifest provenance is removed",
       "status": "accepted",
+      "statusReasoning": "Repaired at the importer source (emit.ts manifest description) by eshyra-o9bd.19.1.8: the committed manifest no longer cites issue-tracker work for pack scope. The earlier eshyra-o9bd.19.2.1.1 change only renamed loreweaver-0m9.5 to eshyra-0m9.5, a closed bead, so the stale claim had survived. Permanent evidence: srdGeneratedPack.test.ts rejects any loreweaver-* or eshyra-* tracker ID in the committed manifest.",
       "provenance": {
         "auditFinding": "opus:F-20",
         "evidenceBasis": "authoritative-input"
@@ -353,6 +354,7 @@
       "aliases": ["opus:F-06"],
       "invariant": "Phantom feature resources are not emitted",
       "status": "accepted",
+      "statusReasoning": "eshyra-o9bd.19.3.2.1 removed the keyword-derived phantom resources (F-06): Relentless Rage (DC counter), Song of Rest (occasion), Overchannel (escalating-damage counter), Sorcerous Restoration (partial 4-point regain), Fiendish Resilience (occasion), Pact Boon (ritual occasion), Tranquility (occasion), and Divine Intervention (conditional 7-day or long-rest reset, left to prose). Evidence: the REMOVE table and generalized governing-relation invariant in packages/core/test/importers/dnd5e-srd-5.1/featureResourceProjection.test.ts; the regenerated committed pack.",
       "provenance": {
         "auditFinding": "opus:F-06",
         "evidenceBasis": "audit-finding"
@@ -448,7 +450,8 @@
       "canonicalId": "class-feature-completeness",
       "aliases": ["indep:003"],
       "invariant": "Class features and feats retain complete procedures",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "ADR 0020 withdraws the clause-complete procedure requirement for class features and feats (indep:003). The surviving obligation is that emitted structured feature data is source-faithful (eshyra-o9bd.19.3.2.1 repaired the resource projection for the feature records it covers) and that feature prose remains verbatim and discoverable. Evidence: packages/core/test/importers/dnd5e-srd-5.1/featureResourceProjection.test.ts.",
       "provenance": {
         "auditFinding": "indep:003",
         "evidenceBasis": "audit-finding"
@@ -461,6 +464,7 @@
       "aliases": ["opus:F-03"],
       "invariant": "Indomitable use scaling is correct",
       "status": "accepted",
+      "statusReasoning": "eshyra-o9bd.19.3.2.1 replaced the flat uses:2 on feature:fighter:indomitable with usesByLevel [{level:9,uses:1},{level:13,uses:2},{level:17,uses:3}] and reset long-rest, from the SRD sentences \"Beginning at 9th level ... you can't use this feature again until you finish a long rest\" and \"twice between long rests starting at 13th level and three times between long rests starting at 17th level\" (F-03). Evidence: EXPECTED table in packages/core/test/importers/dnd5e-srd-5.1/featureResourceProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-03",
         "evidenceBasis": "audit-finding"
@@ -473,6 +477,7 @@
       "aliases": ["opus:F-04"],
       "invariant": "Arcane Recovery reset is correct",
       "status": "accepted",
+      "statusReasoning": "eshyra-o9bd.19.3.2.1 changed feature:wizard:arcane-recovery from reset short-rest to {uses:1, reset:'day'}: the SRD sentence is \"Once per day when you finish a short rest\", so the use window is per day and the short rest is only the occasion (F-04). 'day' is part of the validated reset vocabulary. Evidence: EXPECTED table in packages/core/test/importers/dnd5e-srd-5.1/featureResourceProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-04",
         "evidenceBasis": "audit-finding"
@@ -485,6 +490,7 @@
       "aliases": ["opus:F-05"],
       "invariant": "Natural Recovery reset is correct",
       "status": "accepted",
+      "statusReasoning": "eshyra-o9bd.19.3.2.1 changed feature:circle-of-the-land:natural-recovery from reset short-rest to {uses:1, reset:long-rest}: the SRD sentence is \"You can't use this feature again until you finish a long rest\"; the short rest is only the occasion for the recovery itself (F-05). Evidence: EXPECTED table in packages/core/test/importers/dnd5e-srd-5.1/featureResourceProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-05",
         "evidenceBasis": "audit-finding"
@@ -496,7 +502,8 @@
       "canonicalId": "ki-abilities",
       "aliases": ["opus:F-12"],
       "invariant": "Ki abilities and save DC are structured",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "eshyra-o9bd.19.3.2.1 projects only the printed ki save DC (saveDcFormula base 8, wisdom, proficiency bonus) through the extended printed-form grammar (F-12). The per-ability ki costs (Flurry of Blows, Patient Defense, Step of the Wind) stay verbatim prose: no capability consumes them, and ki pool accounting is classResources' table pool with DM-declared spend. The same printed \"Spell save DC = 8 + your proficiency bonus + your <ability> modifier\" line in the caster spellcasting features now also projects saveDcFormula (incidental, verified against the record text). Evidence: packages/core/test/importers/dnd5e-srd-5.1/featureResourceProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-12",
         "evidenceBasis": "audit-finding"
@@ -509,6 +516,7 @@
       "aliases": ["opus:F-24"],
       "invariant": "Divine Sense use count is explicit",
       "status": "accepted",
+      "statusReasoning": "eshyra-o9bd.19.3.2.1 added the printed use count to feature:paladin:divine-sense: uses \"1-plus-charisma-modifier\" from \"a number of times equal to 1 + your Charisma modifier\" (F-24). Evidence: EXPECTED table in packages/core/test/importers/dnd5e-srd-5.1/featureResourceProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-24",
         "evidenceBasis": "audit-finding"
