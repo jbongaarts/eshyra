@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1888,
+  "rowCount": 1889,
   "dispositionCounts": {
     "complete": 438,
-    "model-adjudicated": 1245,
+    "model-adjudicated": 1246,
     "not-mechanical": 196,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -29472,9 +29472,10 @@
       ],
       "fieldPath": "data.mechanics.area.origin",
       "representativeValues": [
-        "self"
+        "self",
+        "point-within-range"
       ],
-      "population": 16,
+      "population": 42,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -29495,10 +29496,10 @@
         "radius",
         "sphere",
         "cone",
-        "line",
-        "cube"
+        "cylinder",
+        "line"
       ],
-      "population": 16,
+      "population": 42,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -29519,7 +29520,7 @@
         "foot",
         "mile"
       ],
-      "population": 16,
+      "population": 42,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -34312,6 +34313,28 @@
       "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
       "retainedProseBoundary": null,
       "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.projectiles.noun",
+      "representativeValues": [
+        "dart",
+        "ray",
+        "bolt"
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.projectiles.noun",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
       "futureWork": false
     },
     {

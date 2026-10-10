@@ -590,7 +590,8 @@
       "canonicalId": "spell-completeness",
       "aliases": ["indep:005"],
       "invariant": "Spell procedures are complete",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "ADR 0020 withdraws clause-complete spell procedures as a requirement (indep:005). The surviving obligation is that emitted spell projections agree with the source: typed areas and projectile counts are projected only from the printed sentence (eshyra-o9bd.19.4.1.1), and every unprojected spell semantic stays verbatim and model-adjudicated, never implied complete. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellAreaProjection.test.ts.",
       "provenance": {
         "auditFinding": "indep:005",
         "evidenceBasis": "audit-finding"
@@ -603,6 +604,7 @@
       "aliases": ["opus:F-08", "fable:F2"],
       "invariant": "Point-origin spell areas are represented",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.1.1: a spell description's single printed shape over a chosen point within range (sphere, cylinder, cube, cone, line, or radius) projects as mechanics.area with origin point-within-range; areas anchored only by 'within range', 'no larger than', object or image size, or several origin points stay unprojected and are reviewed with reasons. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellAreaProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-08",
         "evidenceBasis": "audit-finding"
@@ -615,6 +617,7 @@
       "aliases": ["opus:F-11"],
       "invariant": "Magic Missile base projectile count is explicit",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.1.1: the printed creation sentence projects mechanics.projectiles {count: 3, noun: 'dart'}; sibling printed counts (Scorching Ray three rays, Storm of Vengeance six bolts) project the same way, while a singular beam and level-scaled Eldritch Blast beams stay unprojected. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellAreaProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-11",
         "evidenceBasis": "audit-finding"
@@ -626,7 +629,8 @@
       "canonicalId": "spell-mechanics-depth",
       "aliases": ["sol:CAP-003"],
       "invariant": "Spell mechanics are projected to source depth",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "ADR 0020 narrows source-depth projection to a surviving obligation: emitted spell projections agree with source, and unprojected semantics stay verbatim and discoverable rather than engine-pending or implied complete. Repaired areas and projectile counts (eshyra-o9bd.19.4.1.1) are source-faithful; remaining spell semantics are owned by eshyra-o9bd.19.4.1 and the capability lane. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellAreaProjection.test.ts.",
       "provenance": {
         "auditFinding": "sol:CAP-003",
         "evidenceBasis": "audit-finding"

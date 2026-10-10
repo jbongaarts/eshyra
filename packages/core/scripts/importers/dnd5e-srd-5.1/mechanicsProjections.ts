@@ -6,6 +6,7 @@ import {
   parseCreatureSpellcasting,
   type SpellRefResolver,
 } from './creatureSpellcasting.js';
+import { normalizePdfHyphenCluster } from './extract.js';
 import { projectS1SummoningMechanics } from './s1SummoningSpecs.js';
 import type {
   ActionExtraction,
@@ -765,6 +766,145 @@ function parseSpellArea(range: string): Mechanics | undefined {
     unit: match[2],
     origin: 'self',
   });
+}
+
+/**
+ * Area of effect printed in a spell's description (eshyra-o9bd.19.4.1.1).
+ *
+ * Projects a typed `area` only when a description sentence that carries an
+ * explicit N-foot shape defines the spell's effect area over a single printed
+ * point. Every projected value is read from that sentence; the origin is
+ * `point-within-range` only when the description also prints a chosen point
+ * within range. Anything else returns undefined and stays verbatim prose.
+ */
+const SPELL_DESCRIPTION_SHAPE_RE =
+  /\b\d+-foot(?:-radius)?(?:,? \d+-foot[- ](?:tall|high))?[ -](?:sphere|cube|cone|cylinder|hemisphere)\b|\b\d+-foot-tall cylinder with a \d+-foot radius\b|\b\d+-foot-radius circle\b|\b\d+-foot-radius\b|\bline (?:of [a-z ]+ )?\d+ feet long\b|\b\d+-foot-wide, \d+-foot-long line\b/i;
+const SPELL_POINT_ANCHOR_RE = /\bpoint\b[^.]{0,80}?\bwithin range\b/i;
+
+function parseSpellShapeSentence(sentence: string):
+  | {
+      readonly shape: string;
+      readonly size: number;
+      readonly height?: number;
+      readonly width?: number;
+    }
+  | undefined {
+  const sphere = /\b(\d+)-foot-radius (sphere|hemisphere)\b/i.exec(sentence);
+  if (sphere !== null)
+    return { shape: sphere[2].toLowerCase(), size: Number(sphere[1]) };
+  const cube = /\b(\d+)-foot (cube|cone)\b/i.exec(sentence);
+  if (cube !== null)
+    return { shape: cube[2].toLowerCase(), size: Number(cube[1]) };
+  const cylinder =
+    /\b(\d+)-foot-radius,? (\d+)-foot[- ](?:high|tall) cylinder\b/i.exec(
+      sentence,
+    );
+  if (cylinder !== null)
+    return {
+      shape: 'cylinder',
+      size: Number(cylinder[1]),
+      height: Number(cylinder[2]),
+    };
+  const tallCylinder =
+    /\b(\d+)-foot-tall cylinder with a (\d+)-foot radius\b/i.exec(sentence);
+  if (tallCylinder !== null)
+    return {
+      shape: 'cylinder',
+      size: Number(tallCylinder[2]),
+      height: Number(tallCylinder[1]),
+    };
+  const circle = /\b(\d+)-foot-radius circle\b/i.exec(sentence);
+  if (circle !== null) return { shape: 'radius', size: Number(circle[1]) };
+  const wideLine = /\b(\d+)-foot-wide, (\d+)-foot-long line\b/i.exec(sentence);
+  if (wideLine !== null)
+    return {
+      shape: 'line',
+      size: Number(wideLine[2]),
+      width: Number(wideLine[1]),
+    };
+  const longLine =
+    /\bline (?:of [a-z ]+ )?(\d+) feet long and (\d+) feet wide\b/i.exec(
+      sentence,
+    );
+  if (longLine !== null)
+    return {
+      shape: 'line',
+      size: Number(longLine[1]),
+      width: Number(longLine[2]),
+    };
+  return undefined;
+}
+
+/**
+ * Description-printed area (eshyra-o9bd.19.4.1.1). Undefined unless every
+ * shape-bearing sentence parses to one identical shape, names one chosen
+ * point, and the description prints a point-within-range anchor. "each point"
+ * (several origins) is never a single area.
+ */
+function parseSpellDescriptionArea(
+  rawDescription: string,
+): Mechanics | undefined {
+  // Raw extraction text can carry the PDF hyphen-space cluster ("20- foot-
+  // radius") that the emitted record text later joins, so match the same
+  // normalized text the record prints.
+  const description = normalizePdfHyphenCluster(rawDescription);
+  const sentences = description
+    .split(/(?<=\.)\s+/)
+    .filter((sentence) => SPELL_DESCRIPTION_SHAPE_RE.test(sentence));
+  if (sentences.length === 0) return undefined;
+  if (!SPELL_POINT_ANCHOR_RE.test(description)) return undefined;
+  let shape: ReturnType<typeof parseSpellShapeSentence>;
+  for (const sentence of sentences) {
+    if (!/\bpoint\b/i.test(sentence) || /\beach point\b/i.test(sentence))
+      return undefined;
+    const parsed = parseSpellShapeSentence(sentence);
+    if (parsed === undefined) return undefined;
+    if (shape !== undefined && JSON.stringify(shape) !== JSON.stringify(parsed))
+      return undefined;
+    shape = parsed;
+  }
+  if (shape === undefined) return undefined;
+  return compact({
+    shape: shape.shape,
+    size: shape.size,
+    height: shape.height,
+    width: shape.width,
+    unit: 'foot',
+    origin: 'point-within-range',
+  });
+}
+
+/**
+ * Magic Missile's printed base count (eshyra-o9bd.19.4.1.1). Only the printed
+ * creation/call sentence with an explicit count word projects; a singular
+ * "a beam" or a level-scaled count is left to the source text.
+ */
+const SPELL_PROJECTILE_COUNT_RE =
+  /\b(?:create|creates|call|calls) (two|three|four|five|six|seven|eight|nine|ten) (?:glowing )?(darts?|rays?|bolts?)\b/gi;
+const SPELL_COUNT_WORDS: ReadonlyMap<string, number> = new Map([
+  ['two', 2],
+  ['three', 3],
+  ['four', 4],
+  ['five', 5],
+  ['six', 6],
+  ['seven', 7],
+  ['eight', 8],
+  ['nine', 9],
+  ['ten', 10],
+]);
+
+function parseSpellProjectiles(description: string): Mechanics | undefined {
+  const matches = [
+    ...normalizePdfHyphenCluster(description).matchAll(
+      SPELL_PROJECTILE_COUNT_RE,
+    ),
+  ];
+  if (matches.length !== 1) return undefined;
+  const [, count, noun] = matches[0];
+  return {
+    count: SPELL_COUNT_WORDS.get(count.toLowerCase()),
+    noun: noun.toLowerCase().replace(/s$/, ''),
+  };
 }
 
 /**
@@ -2675,7 +2815,10 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
     concentration: /^Concentration,? up to\b/i.test(spell.duration),
     spellAttack: /\b(?:ranged|melee) spell attack\b/i.test(text),
     duration: parseSpellDuration(spell.duration),
-    area: parseSpellArea(spell.range),
+    area:
+      parseSpellArea(spell.range) ??
+      parseSpellDescriptionArea(spell.description),
+    projectiles: parseSpellProjectiles(spell.description),
     saves: save === undefined ? undefined : [save],
     damage: damage.length > 0 ? damage : equalToDamage,
     weaponDamageModifiers,

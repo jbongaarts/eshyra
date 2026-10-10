@@ -1574,10 +1574,37 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       );
     }
     const origin = reqStr(areaObj, 'origin', areaPath);
-    if (origin !== 'self') {
+    if (!SPELL_AREA_ORIGINS.has(origin)) {
       throw new RulesPackError(
-        `${areaPath}.origin must be "self", got ${JSON.stringify(origin)}`,
+        `${areaPath}.origin must be one of ${[...SPELL_AREA_ORIGINS].join(', ')}, got ${JSON.stringify(origin)}`,
       );
+    }
+    // Dimensions beyond size exist only where the printed shape has them, so
+    // a stray height or width fails closed instead of riding along.
+    if (shape === 'cylinder') optInt(areaObj, 'height', areaPath, 1);
+    else if (areaObj.height !== undefined)
+      throw new RulesPackError(
+        `${areaPath}.height is only valid on cylinder areas`,
+      );
+    if (shape === 'line') optInt(areaObj, 'width', areaPath, 1);
+    else if (areaObj.width !== undefined)
+      throw new RulesPackError(`${areaPath}.width is only valid on line areas`);
+  }
+  const projectiles = mechanics.projectiles;
+  if (projectiles !== undefined) {
+    if (
+      typeof projectiles !== 'object' ||
+      projectiles === null ||
+      Array.isArray(projectiles)
+    ) {
+      throw new RulesPackError(`${path}.${key}.projectiles must be an object`);
+    }
+    const projectilesObj = projectiles as Obj;
+    const projectilesPath = `${path}.${key}.projectiles`;
+    reqInt(projectilesObj, 'count', projectilesPath, 1);
+    const noun = reqStr(projectilesObj, 'noun', projectilesPath);
+    if (noun.length === 0) {
+      throw new RulesPackError(`${projectilesPath}.noun must not be empty`);
     }
   }
   const recharge = mechanics.recharge;
@@ -1738,9 +1765,18 @@ const SPELL_AREA_SHAPES: ReadonlySet<string> = new Set([
   'cone',
   'line',
   'cube',
+  'cylinder',
   'sphere',
   'hemisphere',
   'radius',
+]);
+
+/** Where a typed spell area is anchored: the caster, or the chosen point. */
+const SPELL_AREA_ORIGINS: ReadonlySet<string> = new Set([
+  'self',
+  'point-within-range',
+  'creature',
+  'object',
 ]);
 
 const USAGE_RECHARGE_RESTS: ReadonlySet<string> = new Set([

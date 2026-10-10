@@ -519,17 +519,12 @@ describe('context-packet message renderer', () => {
       'The source describes an area, but no typed mechanics.area projection exists.',
     );
 
+    // Fireball's sphere is typed from its printed sentence
+    // (eshyra-o9bd.19.4.1.1), so it draws no area note; the area note itself
+    // is exercised on an untyped area in projectionLimitProvenance.test.ts.
     const fireballSpan = candidateSpan(render('P4').text, 'spell:fireball');
-    expect(fireballSpan).toContain(
+    expect(fireballSpan).not.toContain(
       'The source describes an area, but no typed mechanics.area projection exists.',
-    );
-    // ... and the note sits beside the projection it qualifies, not after the
-    // capability contract at the end of the block.
-    expect(fireballSpan.indexOf('### Projection limit')).toBeGreaterThan(
-      fireballSpan.indexOf('### Typed projection'),
-    );
-    expect(fireballSpan.indexOf('### Projection limit')).toBeLessThan(
-      fireballSpan.indexOf('### Deterministic capability'),
     );
   });
 
