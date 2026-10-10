@@ -1,4 +1,6 @@
+import { SRD_5_1_SKILLS } from '../../../src/character/srdCreationChoices.js';
 import { deriveConditionMechanics } from '../../../src/rules/conditionRelations.js';
+import type { ProficiencyGrantEffect } from '../../../src/rules/featureChoices.js';
 import { camelCase } from './classProgression.js';
 import {
   parseCreatureSpellcasting,
@@ -63,6 +65,109 @@ const SRD_5_1_DAMAGE_TYPES: ReadonlySet<string> = new Set([
   'slashing',
   'thunder',
 ]);
+
+/**
+ * Typed proficiency grants (eshyra-olc5.7.1). A proficiency effect keeps its
+ * verbatim `grant` text and gains OPTIONAL typed fields only when the WHOLE
+ * grant phrase parses into a closed vocabulary: saving throws (one ability),
+ * SRD skills (canonical Title Case names), or armor categories. Anything else
+ * (weapons, tools, languages, "three skills of your choice", conditional
+ * grants) stays free text only, so no proficiency is ever invented.
+ */
+const TYPED_ABILITY_NAMES: readonly string[] = [
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma',
+];
+const TYPED_ARMOR_CATEGORIES: readonly string[] = [
+  'light armor',
+  'medium armor',
+  'heavy armor',
+  'shields',
+];
+
+export interface TypedProficiencyFields {
+  readonly savingThrows?: readonly string[];
+  readonly skills?: readonly string[];
+  readonly armor?: readonly string[];
+}
+
+/** Split an "A, B, and C" / "A and B" list; returns undefined when empty. */
+function splitGrantList(list: string): string[] | undefined {
+  const items = list
+    .split(/\s*,\s*(?:and\s+)?|\s+and\s+/)
+    .map((item) => item.trim());
+  if (items.some((item) => item.length === 0)) return undefined;
+  return items;
+}
+
+/**
+ * Type a verbatim proficiency grant phrase (the text after "proficiency
+ * with/in", or "proficiency in all ..."). Returns typed fields only when the
+ * entire phrase is in the closed vocabulary; otherwise `{}`.
+ */
+export function typeProficiencyGrant(grant: string): TypedProficiencyFields {
+  const phrase = grant
+    .trim()
+    .replace(/^the\s+/i, '')
+    .trim();
+
+  const save = /^(\w+) saving throws$/i.exec(phrase);
+  if (save !== null) {
+    const ability = save[1].toLowerCase();
+    return TYPED_ABILITY_NAMES.includes(ability)
+      ? { savingThrows: [ability] }
+      : {};
+  }
+
+  const skillPhrase = /^(.+?) skills?$/i.exec(phrase);
+  if (skillPhrase !== null) {
+    const names = splitGrantList(skillPhrase[1]);
+    if (names === undefined) return {};
+    const canonical: string[] = [];
+    for (const name of names) {
+      const match = SRD_5_1_SKILLS.find(
+        (skill) => skill.toLowerCase() === name.toLowerCase(),
+      );
+      if (match === undefined || canonical.includes(match)) return {};
+      canonical.push(match);
+    }
+    return { skills: canonical };
+  }
+
+  const armorItems = splitGrantList(phrase.toLowerCase());
+  if (
+    armorItems !== undefined &&
+    armorItems.length > 0 &&
+    armorItems.every((item) => TYPED_ARMOR_CATEGORIES.includes(item)) &&
+    new Set(armorItems).size === armorItems.length
+  ) {
+    return { armor: armorItems };
+  }
+  return {};
+}
+
+/**
+ * The typed proficiency effect an option's own prose grants (eshyra-olc5.7.1),
+ * or undefined when no grant phrase types. Runs only the proficiency grammar
+ * (no other projector), so unrelated option prose never gains mechanics.
+ */
+export function typedProficiencyEffectFromText(
+  text: string,
+): ProficiencyGrantEffect | undefined {
+  const match =
+    /\b[Yy]ou (?:have|gain) proficiency (with|in) ([^.]+)\.|\b[Yy]ou are considered proficient in ([^.]+)\./.exec(
+      text,
+    );
+  if (match === null) return undefined;
+  const grant = (match[2] ?? match[3]).trim();
+  const typed = typeProficiencyGrant(grant);
+  if (Object.keys(typed).length === 0) return undefined;
+  return { kind: 'proficiency', grant, ...typed };
+}
 
 export function compact<T extends Record<string, unknown>>(obj: T): T {
   for (const key of Object.keys(obj)) {
@@ -4653,9 +4758,11 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
         )
       : /\b[Yy]ou (?:have|gain) proficiency (with|in) ([^.]+)\./.exec(text);
   if (proficiency !== null) {
+    const grant = (proficiency[2] ?? proficiency[3]).trim();
     effects.push({
       kind: 'proficiency',
-      grant: (proficiency[2] ?? proficiency[3]).trim(),
+      grant,
+      ...typeProficiencyGrant(grant),
     });
   }
   if (/\bresistance to all damage\b/.test(text)) {
@@ -4836,7 +4943,18 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
     effects.push({ kind: 'stopsAging' });
   }
   if (/\b(?:gain|grants you) proficiency in all saving throws\b/i.test(text)) {
-    effects.push({ kind: 'proficiency', scope: 'all-saving-throws' });
+    effects.push({
+      kind: 'proficiency',
+      scope: 'all-saving-throws',
+      savingThrows: [
+        'strength',
+        'dexterity',
+        'constitution',
+        'intelligence',
+        'wisdom',
+        'charisma',
+      ],
+    });
   }
   const rollFloor = /\btreat a d20 roll of (\d+) or lower as an? (\d+)\b/i.exec(
     text,

@@ -2577,9 +2577,16 @@ describe('feature runtime-effect projections (eshyra-o9bd.18.7.5)', () => {
   });
 
   it('projects typed proficiency grants and expertise', () => {
+    // The verbatim grant is kept; the typed skill is added (eshyra-olc5.7.1).
     expect(
       derive('You have proficiency in the Perception skill.').effects,
-    ).toEqual([{ kind: 'proficiency', grant: 'the Perception skill' }]);
+    ).toEqual([
+      {
+        kind: 'proficiency',
+        grant: 'the Perception skill',
+        skills: ['Perception'],
+      },
+    ]);
     expect(
       derive(
         'Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies.',

@@ -22,8 +22,12 @@
  */
 
 import { SRD_5_1_SKILLS } from '../../../src/character/srdCreationChoices.js';
-import type { FeatureChoiceCategory } from '../../../src/rules/featureChoices.js';
+import type {
+  FeatureChoiceCategory,
+  ProficiencyGrantEffect,
+} from '../../../src/rules/featureChoices.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
+import { typedProficiencyEffectFromText } from './mechanicsProjections.js';
 import { reconstructFeatureText } from './parseFeatures.js';
 
 /**
@@ -125,6 +129,8 @@ interface DerivedChoiceOption {
   /** Curated extra creation forms this option grants a summoning spell
    * (eshyra-olv1). */
   readonly summonFormExtensions?: readonly SummonFormExtension[];
+  /** Typed proficiency effect derived from the option's own text (eshyra-olc5.7.1). */
+  readonly mechanics?: { readonly effects: readonly ProficiencyGrantEffect[] };
   readonly source: string;
 }
 
@@ -158,6 +164,19 @@ export const CURATED_SUMMON_FORM_EXTENSIONS: Readonly<
     },
   ],
 };
+
+/**
+ * Attach the typed proficiency effect an option's own text grants, when one
+ * types (eshyra-olc5.7.1). Options without a typed grant are unchanged.
+ */
+function withProficiencyMechanics<T extends { readonly text: string }>(
+  option: T,
+): T | (T & { mechanics: { effects: readonly ProficiencyGrantEffect[] } }) {
+  const effect = typedProficiencyEffectFromText(option.text);
+  return effect === undefined
+    ? option
+    : { ...option, mechanics: { effects: [effect] } };
+}
 
 /**
  * Attach curated summon-form extensions to matching options, failing closed
@@ -1492,7 +1511,7 @@ function deriveOptionListChoices(
           catalogSpec,
         ),
         input.creatureKeys,
-      );
+      ).map(withProficiencyMechanics);
       out.set(feature.key, [
         {
           id: catalogSpec.id,
