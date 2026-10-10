@@ -837,7 +837,10 @@
             "effects": [
               {
                 "kind": "proficiency",
-                "grant": "the Perception skill"
+                "grant": "the Perception skill",
+                "skills": [
+                  "Perception"
+                ]
               }
             ]
           }
@@ -1213,7 +1216,10 @@
             "effects": [
               {
                 "kind": "proficiency",
-                "grant": "the Intimidation skill"
+                "grant": "the Intimidation skill",
+                "skills": [
+                  "Intimidation"
+                ]
               }
             ]
           }
@@ -1429,7 +1435,10 @@
             "effects": [
               {
                 "kind": "proficiency",
-                "grant": "the Perception skill"
+                "grant": "the Perception skill",
+                "skills": [
+                  "Perception"
+                ]
               }
             ]
           }
@@ -80089,7 +80098,10 @@
         "effects": [
           {
             "kind": "proficiency",
-            "grant": "heavy armor"
+            "grant": "heavy armor",
+            "armor": [
+              "heavy armor"
+            ]
           }
         ]
       }
@@ -80401,7 +80413,15 @@
         "effects": [
           {
             "kind": "proficiency",
-            "scope": "all-saving-throws"
+            "scope": "all-saving-throws",
+            "savingThrows": [
+              "strength",
+              "dexterity",
+              "constitution",
+              "intelligence",
+              "wisdom",
+              "charisma"
+            ]
           }
         ]
       }
@@ -83230,7 +83250,10 @@
         "effects": [
           {
             "kind": "proficiency",
-            "grant": "Wisdom saving throws"
+            "grant": "Wisdom saving throws",
+            "savingThrows": [
+              "wisdom"
+            ]
           }
         ]
       }
@@ -84633,7 +84656,19 @@
               "id": "eldritch-invocation:beguiling-influence",
               "name": "Beguiling Influence",
               "text": "You gain proficiency in the Deception and Persuasion skills.",
-              "source": "SRD 5.1 p. 48"
+              "source": "SRD 5.1 p. 48",
+              "mechanics": {
+                "effects": [
+                  {
+                    "kind": "proficiency",
+                    "grant": "the Deception and Persuasion skills",
+                    "skills": [
+                      "Deception",
+                      "Persuasion"
+                    ]
+                  }
+                ]
+              }
             },
             {
               "id": "eldritch-invocation:bewitching-whispers",

@@ -33,6 +33,7 @@ import { getFixedAncestrySkills } from './srdAncestrySkills.js';
 import {
   type BackgroundEquipmentGrant,
   getAncestryCreationChoices,
+  SRD_5_1_SKILLS,
   SRD_5_1_VEHICLE_PROFICIENCIES,
   SRD_5_1_VEHICLES_TOOL_ROW_KEY,
 } from './srdCreationChoices.js';
@@ -287,6 +288,94 @@ export interface ResolvedFeatureData {
    * the record carries none.
    */
   readonly choices?: readonly FeatureChoice[];
+  /**
+   * Typed proficiency grants unioned over the feature's
+   * `mechanics.effects[kind='proficiency']` typed fields (eshyra-olc5.7).
+   * Absent when no proficiency effect carries a typed field.
+   */
+  readonly proficiencyGrants?: ProficiencyGrant;
+}
+
+/** Armor categories a typed proficiency grant may name (closed vocabulary). */
+export const PROFICIENCY_ARMOR_VOCABULARY: readonly string[] = [
+  'light armor',
+  'medium armor',
+  'heavy armor',
+  'shields',
+];
+
+/**
+ * Typed standing proficiencies a feature or feature-choice option grants
+ * (eshyra-olc5.7): lowercase ability saves, canonical SRD skill names, and
+ * armor categories. Weapons, tools and languages are not typed.
+ */
+export interface ProficiencyGrant {
+  readonly savingThrows?: readonly AbilityScoreName[];
+  readonly skills?: readonly string[];
+  readonly armor?: readonly string[];
+}
+
+/**
+ * Parse the typed proficiency fields out of a record's `mechanics.effects`
+ * (feature records) or an option's `mechanics.effects`, unioned in order.
+ * Fail closed: a proficiency effect whose typed field is malformed or names a
+ * value outside the closed vocabulary contributes nothing.
+ */
+export function parseProficiencyGrants(
+  mechanics: unknown,
+): ProficiencyGrant | undefined {
+  if (!isRecord(mechanics) || !Array.isArray(mechanics.effects)) {
+    return undefined;
+  }
+  const savingThrows: AbilityScoreName[] = [];
+  const skills: string[] = [];
+  const armor: string[] = [];
+  const collect = <T extends string>(
+    value: unknown,
+    allowed: (item: string) => boolean,
+    into: T[],
+  ): boolean => {
+    if (value === undefined) return true;
+    if (!isStringArray(value) || value.length === 0 || !value.every(allowed)) {
+      return false;
+    }
+    for (const item of value)
+      if (!into.includes(item as T)) into.push(item as T);
+    return true;
+  };
+  for (const effect of mechanics.effects) {
+    if (!isRecord(effect) || effect.kind !== 'proficiency') continue;
+    const s: AbilityScoreName[] = [];
+    const k: string[] = [];
+    const a: string[] = [];
+    if (
+      !collect(
+        effect.savingThrows,
+        (item) => ABILITY_SCORE_NAMES.has(item),
+        s,
+      ) ||
+      !collect(effect.skills, (item) => SRD_5_1_SKILLS.includes(item), k) ||
+      !collect(
+        effect.armor,
+        (item) => PROFICIENCY_ARMOR_VOCABULARY.includes(item),
+        a,
+      )
+    ) {
+      continue;
+    }
+    for (const item of s)
+      if (!savingThrows.includes(item)) savingThrows.push(item);
+    for (const item of k) if (!skills.includes(item)) skills.push(item);
+    for (const item of a) if (!armor.includes(item)) armor.push(item);
+  }
+  if (savingThrows.length + skills.length + armor.length === 0) {
+    return undefined;
+  }
+  return {
+    ...(savingThrows.length > 0 ? { savingThrows } : {}),
+    ...(skills.length > 0 ? { skills } : {}),
+    ...(armor.length > 0 ? { armor } : {}),
+  };
 }
 
 /** Player-selected feat fields consumed by the optional ASI/feat rule. */
@@ -1141,6 +1230,7 @@ function resolveFeature(
       ...(Array.isArray(data.choices)
         ? { choices: data.choices as readonly FeatureChoice[] }
         : {}),
+      ...optProficiencyGrants(data.mechanics),
     },
   };
 }
@@ -1645,6 +1735,14 @@ interface GeneratedFeatureData {
   readonly source: string;
   readonly level: number;
   readonly choices?: unknown;
+  readonly mechanics?: unknown;
+}
+
+function optProficiencyGrants(
+  mechanics: unknown,
+): { readonly proficiencyGrants: ProficiencyGrant } | Record<string, never> {
+  const grants = parseProficiencyGrants(mechanics);
+  return grants === undefined ? {} : { proficiencyGrants: grants };
 }
 
 function isGeneratedFeatureData(data: unknown): data is GeneratedFeatureData {
