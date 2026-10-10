@@ -1033,6 +1033,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       {
         kind: 'extraDamage',
         dice: '2d6',
+        average: 7,
         trigger:
           'If the bugbear surprises a creature and hits it with an attack during the first round of combat',
       },
@@ -1044,6 +1045,7 @@ describe('corrected creature accepted-prose entries (eshyra-o9bd.18.7.9)', () =>
       {
         kind: 'extraDamage',
         dice: '3d6',
+        average: 10,
         trigger:
           'If the doppelganger surprises a creature and hits it with an attack during the first round of combat',
       },

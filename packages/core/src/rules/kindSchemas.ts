@@ -120,6 +120,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'extradimensionalSpace',
   'passage',
   'recurringDamage',
+  'recurringHitPointLoss',
   'rejuvenation',
   'seeInMagicalDarkness',
   'spellReflection',
@@ -3376,6 +3377,15 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqInt(effect, 'maxDepthFeet', path, 1);
     reqEnum(effect, 'onEnd', path, new Set(['safe-ejection']));
   },
+  // Infernal wound (fable:F3): the target loses N hit points at the start of
+  // each of its turns. Hit-point loss, not damage, so it carries no damage
+  // type and resistances do not apply.
+  recurringHitPointLoss: (effect, path) => {
+    reqDice(effect, 'dice', path);
+    optInt(effect, 'average', path, 1);
+    reqStr(effect, 'trigger', path);
+    optStr(effect, 'endsWhen', path);
+  },
   recurringDamage: (effect, path) => {
     if ((effect.amount === undefined) === (effect.dice === undefined)) {
       throw new RulesPackError(
@@ -4220,6 +4230,9 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   extraDamage: (effect, path) => {
     reqDice(effect, 'dice', path);
     optStr(effect, 'trigger', path);
+    // Printed rider average and frequency (fable:F3); each only when printed.
+    optInt(effect, 'average', path, 1);
+    optEnum(effect, 'frequency', path, new Set(['once-per-turn']));
     if (effect.type !== undefined) {
       const type = reqStr(effect, 'type', path);
       if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
@@ -4983,6 +4996,22 @@ function validateDnd5eCreature(record: RulesRecord, path: string): void {
   if (legendary !== undefined) {
     const obj = reqObj(data, 'legendaryActions', `${path}.data`);
     optStr(obj, 'description', `${path}.data.legendaryActions`);
+    // Typed legendary economy (opus:F-26): the printed per-round budget and
+    // the timing/regain/one-at-a-time rules, each present only when printed.
+    optInt(obj, 'budget', `${path}.data.legendaryActions`, 1);
+    optEnum(
+      obj,
+      'timing',
+      `${path}.data.legendaryActions`,
+      new Set(['end-of-another-creatures-turn']),
+    );
+    optEnum(
+      obj,
+      'regain',
+      `${path}.data.legendaryActions`,
+      new Set(['start-of-own-turn']),
+    );
+    optBoolTrue(obj, 'oneAtATime', `${path}.data.legendaryActions`);
     optNamedEntryArray(obj, 'entries', `${path}.data.legendaryActions`);
     if (!Array.isArray(obj.entries)) {
       throw new RulesPackError(

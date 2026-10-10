@@ -451,21 +451,13 @@ function combatantHeadCount(
 interface LegendaryProfile {
   readonly allowance: number;
   readonly options: readonly { name: string; cost: number }[];
+  /** The record has a `legendaryActions` block but no typed `budget`. The
+   *  allowance is then unknown, so legendary_action spends are refused rather
+   *  than defaulted (fail closed; eshyra-o9bd.19.4.3 A1). */
+  readonly budgetUntyped?: boolean;
 }
 
 const NO_LEGENDARY_PROFILE: LegendaryProfile = { allowance: 0, options: [] };
-
-/** The SRD states the allowance in the block's boilerplate ("The dragon can
- *  take 3 legendary actions..."); every SRD legendary creature says 3, so 3
- *  is also the fallback when the sentence is absent. */
-const LEGENDARY_COUNT_RE = /take (\d+|one|two|three|four|five) legendary/i;
-const COUNT_WORDS: Readonly<Record<string, number>> = {
-  one: 1,
-  two: 2,
-  three: 3,
-  four: 4,
-  five: 5,
-};
 
 /** Normalize a legendary option name for matching: the "(Costs 2 Actions)"
  *  suffix is cost metadata, not identity. */
@@ -494,13 +486,6 @@ function legendaryProfileFor(
     return NO_LEGENDARY_PROFILE;
   }
   const blockRecord = block as Record<string, unknown>;
-  const description =
-    typeof blockRecord.description === 'string' ? blockRecord.description : '';
-  const countMatch = LEGENDARY_COUNT_RE.exec(description);
-  const allowance =
-    countMatch === null
-      ? 3
-      : (COUNT_WORDS[countMatch[1].toLowerCase()] ?? Number(countMatch[1]));
   const options: { name: string; cost: number }[] = [];
   if (Array.isArray(blockRecord.entries)) {
     for (const entryValue of blockRecord.entries) {
@@ -527,7 +512,11 @@ function legendaryProfileFor(
       options.push({ name: entry.name, cost });
     }
   }
-  return { allowance, options };
+  const budget = blockRecord.budget;
+  if (typeof budget !== 'number' || !Number.isInteger(budget) || budget < 1) {
+    return { allowance: 0, options, budgetUntyped: true };
+  }
+  return { allowance: budget, options };
 }
 
 /**
@@ -1250,6 +1239,11 @@ export function spendTurnResource(
         break;
       }
       case 'legendary_action': {
+        if (legendaryProfile.budgetUntyped === true) {
+          throw new ActionEconomyError(
+            `${displayLabel}'s rules record has a legendary actions block with no typed budget, so Eshyra cannot tell how many legendary actions it has; refusing the legendary_action spend`,
+          );
+        }
         if (row.legendary_action_allowance === 0) {
           throw new ActionEconomyError(
             `${displayLabel} has no legendary actions in its rules record`,

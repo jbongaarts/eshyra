@@ -131,12 +131,30 @@ describe('successful-save half-damage branches over the source census', () => {
       const container = containerAt(item.recordKey, item.pointer);
       const saves = savesOf(container);
       switch (item.representation) {
-        case 'typed-save':
-          // Single-save containers only (multi-save entries are a separate
-          // finding); the one save carries the source's success branch.
-          if (saves.length !== 1 || saves[0].damageOnSuccess !== 'half')
+        case 'typed-save': {
+          // Multi-save containers (air elemental, ice devil) now carry one
+          // typed save per printed DC clause (opus:F-32), so the stronger
+          // invariant is: clause count matches the printed text, and the
+          // census-joined branch is carried by a save. Replaces the earlier
+          // single-save-only assertion (eshyra-o9bd.19.4.3).
+          // Spells keep the single-save invariant (their multi-clause prose
+          // is not a creature finding); creatures must match the printed clause
+          // count.
+          if (item.recordKey.startsWith('creature:')) {
+            const printedClauses = (
+              prose(containerAt(item.recordKey, item.pointer)).match(
+                /\b(?:Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw\b/g,
+              ) ?? []
+            ).length;
+            if (
+              saves.length !== printedClauses ||
+              !saves.some((save) => save.damageOnSuccess === 'half')
+            )
+              wrong.push(`${at}: ${JSON.stringify(saves)}`);
+          } else if (saves.length !== 1 || saves[0].damageOnSuccess !== 'half')
             wrong.push(`${at}: ${JSON.stringify(saves)}`);
           break;
+        }
         case 'magic-item-effect': {
           const mechanics = containerAt(item.recordKey, '/data').mechanics;
           const effects =
