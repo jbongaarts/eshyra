@@ -58,10 +58,11 @@ function attackBlocks(record: RulesRecord): {
     }[]) {
       if (
         typeof entry.text === 'string' &&
+        // Admission is by attack lead-in alone: a lead-in without its Hit: must
+        // reach the target-fidelity grammar and fail there, never drop out.
         /(?:Melee|Ranged|Melee or Ranged) (?:Weapon|Spell) Attack:/.test(
           entry.text,
-        ) &&
-        /Hit:/.test(entry.text)
+        )
       ) {
         out.push({
           name: entry.name,
@@ -287,42 +288,40 @@ describe('creature attack grammar over the committed pack', () => {
   });
 
   it('projects the whole printed target phrase, through the sentence boundary', () => {
-    // Independent extraction over EVERY attack lead-in, bound to that lead-in's
-    // own header: the text from the lead-in to its FIRST "Hit:". Inside that
-    // header the target is everything after the LAST reach/range "ft." (the
-    // source sometimes omits the following comma, e.g. aboleth Tail "reach 10
-    // ft. one target") up to the sentence end. It may carry pre-noun qualifiers
-    // ("one Large or smaller creature", "one prone creature"), post-noun
-    // qualifiers ("in the swarm's space"), and internal commas (the vampire's
-    // eligible-target list). Later "ft." or "Hit:" text can never supply the
-    // expectation, and a header lacking either delimiter fails.
-    const leadIn =
-      /\b(?:Melee|Ranged|Melee or Ranged) (?:Weapon|Spell) Attack:/;
+    // Independent, anchored lead-in grammar over EVERY attack lead-in. The
+    // header is the lead-in, its bonus (with an optional parenthetical
+    // alternate bonus), the reach/range field in one of the printed forms, an
+    // optional comma (the source omits it for aboleth Tail), the target phrase,
+    // and the sentence end immediately followed by "Hit:". The target phrase
+    // contains no sentence break, so an intervening sentence, a second lead-in,
+    // a missing Hit:, or a missing reach/range field fails the grammar instead
+    // of shrinking the population or re-anchoring on later text. A block with
+    // more than one lead-in is rejected as ambiguous.
+    const lead = String.raw`(?:Melee|Ranged|Melee or Ranged) (?:Weapon|Spell) Attack:`;
+    const bonus = String.raw`[+\-\u2212]\d+ to hit(?: \([+\-\u2212]\d+ to hit [^)]*\))?`;
+    const distance = String.raw`\d+(?:\/\d+| ft\.\/\d+)? ft\.`;
+    const field = String.raw`(?:reach \d+ ft\.(?: (?:or|and) range ${distance})?|ranged? ${distance})`;
+    const header = new RegExp(
+      String.raw`${lead} ${bonus}, ${field},? ([^.]+)\. Hit:`,
+      'y',
+    );
+    const leadIns = new RegExp(lead, 'g');
     let checked = 0;
     for (const record of records.filter((r) => r.kind === 'creature')) {
       for (const block of attackBlocks(record)) {
-        const start = leadIn.exec(block.text);
-        if (start === null) continue;
         const where = `${record.key} ${block.name}`;
-        const afterLeadIn = block.text.slice(start.index);
-        const hitAt = afterLeadIn.indexOf('Hit:');
-        expect(hitAt, `${where}: no Hit: after the lead-in`).toBeGreaterThan(0);
-        const header = afterLeadIn.slice(0, hitAt);
-        const ftAt = header.lastIndexOf('ft.');
-        expect(
-          ftAt,
-          `${where}: no reach/range ft. in the header`,
-        ).toBeGreaterThan(0);
-        const printed = /^,?\s+([\s\S]*?)\.\s*$/.exec(
-          header.slice(ftAt + 'ft.'.length),
-        )?.[1];
+        const starts = [...block.text.matchAll(leadIns)];
+        expect(starts, `${where}: exactly one attack lead-in`).toHaveLength(1);
+        header.lastIndex = starts[0]?.index ?? 0;
+        const printed = header.exec(block.text)?.[1];
         expect(
           printed,
-          `${where}: target phrase not extractable`,
+          `${where}: lead-in header does not match the printed grammar`,
         ).toBeDefined();
         const attacks = block.mechanics.attacks as
           | Record<string, unknown>[]
           | undefined;
+        expect(attacks, `${where}: one projected attack`).toHaveLength(1);
         expect(attacks?.[0]?.target, `${where} target`).toBe(
           printed?.toLowerCase(),
         );
