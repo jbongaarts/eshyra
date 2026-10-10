@@ -14,7 +14,7 @@
       "aliases": ["opus:F-19"],
       "invariant": "Composed spellPreparation source text is not presented as quotation",
       "status": "accepted",
-      "statusReasoning": "Reviewed empty current membership: the source-backed spellPreparation clause is absent from the current pack; preserve this source identity until the clause IR follow-up lands.",
+      "statusReasoning": "PR #566 (eshyra-o9bd.19.2.1.2, merge 77b2d475) removed the false verbatim claim: /spellPreparation/sourceText is declared a derived curated composition in the pack's field provenance (field-provenance.json), not a quotation. Checked against the vendored SRD PDF: only class:bard's sourceText is a single verbatim span; the other class values join SRD sentences, or the leading clause of an SRD sentence ended at a period, across separate subsections. The declaration's wording was made exact in the change that carries this reasoning. No clause-IR follow-up is pending; that work was retired (eshyra-r8r3, eshyra-pk7e, 2026-09-22). This reasoning does not claim sourceText is verbatim.",
       "provenance": {
         "auditFinding": "opus:F-19",
         "evidenceBasis": "known-missing-source-clause"
@@ -326,13 +326,14 @@
       "canonicalId": "audit-readiness-gate",
       "aliases": ["indep:001"],
       "invariant": "Readiness gates require clause-complete procedures",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "ADR 0020 section 6 (No replacement global closure claim) withdrew clause-complete closure as a requirement for readiness gates. The surviving responsibility is re-freeze bar #4 (truthful in-band scope of every audit and readiness artifact; integrated transition design section 5.9): every automated gate states its bounded denominator and fails rather than false-greening unrecognized required input. eshyra-o9bd.19.6.3 checks that for the candidate bundle. The previous owner, eshyra-o9bd.19.1.5, closed as superseded without repairing this, so the finding stays open under the new owner.",
       "provenance": {
         "auditFinding": "indep:001",
         "evidenceBasis": "code"
       },
       "scopeKind": "record",
-      "owningBead": "eshyra-o9bd.19.1.5"
+      "owningBead": "eshyra-o9bd.19.6.3"
     },
     {
       "canonicalId": "rule-corpus-procedures",
@@ -798,38 +799,40 @@
       "canonicalId": "readiness-integrity",
       "aliases": ["opus:F-21"],
       "invariant": "Readiness metadata reflects semantic completeness",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Under ADR 0020 readiness metadata is not required to reflect semantic completeness, and no corpus-wide completeness claim exists (ADR 0020 section 6). The surviving obligation is that readiness metadata claims no more than it measures: re-freeze bar #4 (integrated transition design section 5.9), checked by eshyra-o9bd.19.6.3 under its acceptance criterion that no bundle field claims universal clause, mechanic, deterministic, or discovery completeness. The previous owner, eshyra-o9bd.19.1.5, closed as superseded.",
       "provenance": {
         "auditFinding": "opus:F-21",
         "evidenceBasis": "code"
       },
       "scopeKind": "record",
-      "owningBead": "eshyra-o9bd.19.1.5"
+      "owningBead": "eshyra-o9bd.19.6.3"
     },
     {
       "canonicalId": "engine-capability-ownership",
       "aliases": ["sol:CAP-007"],
       "invariant": "Required engine capabilities have qualified ownership",
       "status": "disclosed-dependency",
-      "statusReasoning": "Capability membership is generated from the pack and completion is owned by the engine capability family beads; the registry records the dependency until those families certify.",
+      "statusReasoning": "Ownership of deterministic capabilities actually in force is the single authoritative inventory, eshyra-o9bd.19.5.12, and this dependency closes when it lands. The per-family certification tasks were retired without certifying anything, and eshyra-olc5.2 was retired and superseded at the 2026-10-09 rebaseline, so nothing waits on family certification. The generated magic-item executionReadiness/engine:F1-F10 backlog is an unselected candidate backlog, disclosed separately; an unselected capability is not an ownership gap (ADR 0020 section 3).",
       "provenance": {
         "auditFinding": "sol:CAP-007",
         "evidenceBasis": "code"
       },
       "scopeKind": "capability",
-      "owningBead": "eshyra-o9bd.19.5"
+      "owningBead": "eshyra-o9bd.19.5.12"
     },
     {
       "canonicalId": "readiness-artifacts",
       "aliases": ["sol:CAP-014"],
       "invariant": "Readiness artifacts agree with the corpus",
       "status": "accepted",
+      "statusReasoning": "Still valid as stated under ADR 0020. Re-owned from superseded eshyra-o9bd.19.1.5. Agreement between the candidate readiness artifacts and the candidate corpus is checked by eshyra-o9bd.19.6.3, which produces a reproducible bundle identifying the exact inputs.",
       "provenance": {
         "auditFinding": "sol:CAP-014",
         "evidenceBasis": "code"
       },
       "scopeKind": "record",
-      "owningBead": "eshyra-o9bd.19.1.5"
+      "owningBead": "eshyra-o9bd.19.6.3"
     }
   ]
 }
