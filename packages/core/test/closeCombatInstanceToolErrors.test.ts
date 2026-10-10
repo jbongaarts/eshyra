@@ -33,8 +33,16 @@ describe('close_combat_instance tool contract', () => {
     expect(result).toMatchObject({ ok: false, code: 'effect_error' });
   });
 
-  it('does not claim durable-actor summon links are released', () => {
-    expect(closeCombatInstanceTool.description).toMatch(/durable[^.]*rebound/);
+  it('describes the ordered F3 boundary without unconditional removal claims', () => {
+    const d = closeCombatInstanceTool.description;
+    expect(d).toMatch(
+      /timer anchored to this instance expires[^;]*character-owned/,
+    );
+    expect(d).toMatch(/durable campaign actor[^;]*rebound/);
+    expect(d).toMatch(
+      /only references to instance-only combatants are cleaned/,
+    );
+    expect(d).not.toMatch(/Character-owned effects survive\./);
   });
 });
 

@@ -1758,7 +1758,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'Applying refuses nothing: a proficiency already held is simply not recorded for the source. The only ProficiencyGrantError is the removal refusal below.',
-        'Removal (removeOptionGrants) drops only what that source ledger entry recorded and refuses when a recorded skill has Expertise. A proficiency already held when a source was applied is not recorded for it and is not removed with it. A recorded proficiency that a still-held, already-applied source also confers is not removed: it stays on the sheet and is recorded under that source, so removing that source later removes it (the level-up replacement passes the still-held sources). Ancestry trait grants are not read here.',
+        'Removal (removeOptionGrants) drops only what that source ledger entry recorded, minus any item a still-held, already-applied source also confers (those stay, recorded under that source), and refuses only when a skill it would actually drop has Expertise; a shared skill that survives under another source does not trigger the refusal. A proficiency already held when a source was applied is not recorded for it and is not removed with it. A recorded proficiency that a still-held, already-applied source also confers is not removed: it stays on the sheet and is recorded under that source, so removing that source later removes it (the level-up replacement passes the still-held sources). Ancestry trait grants are not read here.',
       ],
       residualDmInterpretation: [
         'The DM adjudicates any feature effect that is not a typed proficiency grant.',
@@ -2021,7 +2021,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Serialize the live campaign database (schema, indexes, triggers, and canonical rows) into a Dolt-backed checkpoint, list checkpoints, restore one into a new working-copy database file, and fork a branch from a checkpoint, off the per-turn path. A restore builds into a sibling temporary file and renames it into place only after every record applies, with foreign keys checked at commit.',
+        'Serialize the live campaign database (schema, indexes, triggers, and canonical rows) into a Dolt-backed checkpoint, list checkpoints, restore one into a new working-copy database file, and fork a branch from a checkpoint, off the per-turn path. A restore builds into a sibling temporary file and publishes it to the destination only after every record applies, with foreign keys checked at commit, by hard-linking it so an existing destination is never replaced; a filesystem without hard-link support fails the restore rather than falling back to a replacing rename.',
       requiredInputs: [
         'A Dolt directory',
         'A beads directory',
@@ -2305,8 +2305,8 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'A rejected attach (a sheet built under another rules pack, or a build outside the single-class boundary) throws before custody is recorded.',
-        'When the attach returns a correction result (ok:false, for a campaign whose rules system is not dnd5e-srd and so has no live-row import), no custody is recorded and the result is returned to the caller.',
-        'Re-checkout into the same campaign and slot is idempotent (it re-attaches the head and rewrites custody) only when the campaign copy, once its attachment provenance is stripped, equals the registry head; a campaign copy with unsynced changes is refused so they are never overwritten. Resuming a campaign uses character-resume-custody-v1 instead.',
+        'When the attach returns a correction result (ok:false, for a campaign whose rules system is not dnd5e-srd and so has no live-row import), nothing is persisted (the sheet save and import are one transaction), no custody is recorded, and the result is returned to the caller.',
+        'Re-checkout into the same campaign and slot is idempotent (it re-attaches the head and rewrites custody) only when it changes nothing: the campaign sheet, once its attachment provenance is stripped, equals the registry head, and the re-projected live character row and active character are unchanged (hit points, conditions, and every other live field); otherwise the attach is rolled back and the checkout refused so neither unsynced sheet progress nor live state is overwritten. Resuming a campaign uses character-resume-custody-v1 instead.',
         'The campaign writes and the registry custody write are ordered, not one transaction.',
       ],
       residualDmInterpretation: [
@@ -2394,7 +2394,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Adopt the registry head into a campaign whose character copy is stale: refuse a campaign character with no registry link, one whose custody another campaign or slot holds, and a character with no registry timeline; re-attach the head sheet over the campaign copy (stamped with the head as its source revision and re-projected into the live row); and record custody at the head revision. The stale campaign copy is replaced wholesale, not merged, and no registry revision is appended. The CLI runs it only as an explicit resume choice, confirmed again when a combat or scene is open.',
+        'Adopt the registry head into a campaign whose character copy is stale: refuse a campaign character with no registry link, one whose custody another campaign or slot holds, and a character with no registry timeline; re-attach the head sheet over the campaign copy (stamped with the head as its source revision and re-projected into the live row); and record custody at the head revision only after that attach succeeds; a correction result (ok:false) persists nothing, records no custody, and is raised as a custody error, which the CLI reports as a failed catch-up. The stale campaign copy is replaced wholesale, not merged, and no registry revision is appended. The CLI runs it only as an explicit resume choice, confirmed again when a combat or scene is open.',
       requiredInputs: [
         'The registry store',
         'The campaign database',
@@ -2402,7 +2402,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
         'sessionId and at',
       ],
       exclusions: [
-        'The re-attach and the custody write are ordered, not one transaction.',
+        'The re-attach and the custody write are ordered, not one transaction; a failed re-attach leaves the stale campaign copy and the custody record unchanged.',
         'An in-fiction continuity bridge is optional and composed separately; the mechanical catch-up does not depend on it.',
       ],
       residualDmInterpretation: [

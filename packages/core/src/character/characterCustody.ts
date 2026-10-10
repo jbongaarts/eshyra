@@ -31,6 +31,8 @@
  */
 
 import type { Db } from '../persistence/db.js';
+import { withTransaction } from '../persistence/db.js';
+import { tryGetActiveCharacterId } from '../state/activeCharacter.js';
 import {
   type AttachCharacterSheetInput,
   attachCharacterSheetToCampaign,
@@ -224,7 +226,23 @@ export function checkoutCharacterIntoCampaign(
     sessionId: input.sessionId,
     at: input.at,
   };
-  const attach = attachCharacterSheetToCampaign(campaignDb, attachInput);
+  // A same-slot re-checkout must also leave every campaign-owned live field
+  // (HP, conditions, the whole live character row, the active character)
+  // exactly as it was: the attach runs in a savepoint and is rolled back if the
+  // live projection would change anything (ADR 0011 §4: hp_current and
+  // conditions_json are authoritative live state; ADR 0012: no silent loss).
+  const attach = withTransaction(campaignDb, (txn) => {
+    const before = sameSlotHeld ? liveStateSnapshot(txn, characterId) : '';
+    const result = attachCharacterSheetToCampaign(txn, attachInput);
+    if (sameSlotHeld && liveStateSnapshot(txn, characterId) !== before) {
+      throw new CharacterCustodyError(
+        `character "${input.globalCharacterId}" is already checked out in this campaign as ${characterId} ` +
+          'with live state (hit points, conditions, or other campaign-owned fields) that re-checkout would overwrite; ' +
+          'resume the campaign or release the character instead',
+      );
+    }
+    return result;
+  });
   if (!attach.ok) {
     // The live character was not projected (e.g. an unsupported rules system):
     // the campaign is not a valid writer, so do not take the lock.
@@ -240,6 +258,22 @@ export function checkoutCharacterIntoCampaign(
   });
 
   return { attach, revision, characterId };
+}
+
+/** Campaign-owned live state a re-attach could overwrite, as comparable text. */
+function liveStateSnapshot(db: Db, characterId: string): string {
+  const row = db
+    .prepare('SELECT * FROM character WHERE id = ?')
+    .get(characterId) as Record<string, unknown> | undefined;
+  const live =
+    row === undefined
+      ? null
+      : Object.fromEntries(
+          Object.entries(row).filter(
+            ([key]) => !/provenance|session_id|_at$/.test(key),
+          ),
+        );
+  return JSON.stringify({ live, active: tryGetActiveCharacterId(db) ?? null });
 }
 
 /**
@@ -711,6 +745,13 @@ export function catchUpCharacterToHead(
     sessionId: input.sessionId,
     at: input.at,
   });
+  if (!attach.ok) {
+    // Same rule as checkout: custody only after a successful attach. The
+    // failed attach persisted nothing (see attachCharacterSheetToCampaign).
+    throw new CharacterCustodyError(
+      `cannot catch up character "${globalCharacterId}": ${attach.errors.join('; ')}`,
+    );
+  }
 
   // Acquire custody at the adopted revision. No registry revision is appended —
   // catch-up consumes the head, it does not advance it.

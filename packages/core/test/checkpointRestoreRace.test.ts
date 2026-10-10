@@ -1,14 +1,25 @@
 /** eshyra-o9bd.19.5.15.1: restore must not clobber a destination that appears after the existence check. */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it, vi } from 'vitest';
 
-const racing = vi.hoisted(() => ({ dest: '' }));
+const racing = vi.hoisted(() => ({
+  dest: '',
+  linkError: undefined as string | undefined,
+}));
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
   return {
     ...actual,
+    linkSync: (a: string, b: string) => {
+      if (racing.linkError !== undefined) {
+        throw Object.assign(new Error('link refused'), {
+          code: racing.linkError,
+        });
+      }
+      return actual.linkSync(a, b);
+    },
     existsSync: (p: string) =>
       p === racing.dest ? false : actual.existsSync(p),
   };
@@ -16,6 +27,7 @@ vi.mock('node:fs', async (importOriginal) => {
 
 import { readFileSync } from 'node:fs';
 import { materializeSnapshot } from '../src/internal.js';
+import { CheckpointError } from '../src/persistence/checkpoint/doltRepo.js';
 
 it('refuses, without replacing it, a destination created after the check', () => {
   const dir = mkdtempSync(join(tmpdir(), 'restore-race-'));
@@ -29,3 +41,22 @@ it('refuses, without replacing it, a destination created after the check', () =>
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+it.each(['EPERM', 'ENOTSUP', 'EOPNOTSUPP', 'EEXIST'])(
+  'fails closed, preserving the destination and cleaning up, when linking yields %s',
+  (code) => {
+    const dir = mkdtempSync(join(tmpdir(), 'restore-race-'));
+    try {
+      const dest = join(dir, 'campaign.db');
+      writeFileSync(dest, 'precious');
+      racing.dest = dest;
+      racing.linkError = code;
+      expect(() => materializeSnapshot([], dest)).toThrow(CheckpointError);
+      expect(readFileSync(dest, 'utf8')).toBe('precious');
+      expect(readdirSync(dir)).toEqual(['campaign.db']);
+    } finally {
+      racing.linkError = undefined;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);

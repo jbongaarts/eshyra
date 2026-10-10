@@ -1055,4 +1055,70 @@ describe('custody repairs (eshyra-o9bd.19.5.15.1)', () => {
     ).toThrow(CharacterCustodyError);
     expect(store.load('pc-1')?.level).toBe(3);
   });
+
+  it('re-checkout into the same slot never resets live HP or conditions', () => {
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet({ level: 1 }),
+    });
+    const input = {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 's',
+      at: 'a1',
+    };
+    checkoutCharacterIntoCampaign(registry, campaign, input);
+    campaign
+      .prepare(
+        "UPDATE character SET hp_current = 3, conditions_json = '[\"poisoned\"]' WHERE id = 'pc-1'",
+      )
+      .run();
+    expect(() =>
+      checkoutCharacterIntoCampaign(registry, campaign, input),
+    ).toThrow(CharacterCustodyError);
+    expect(
+      campaign
+        .prepare(
+          'SELECT hp_current, conditions_json FROM character WHERE id = ?',
+        )
+        .get('pc-1'),
+    ).toEqual({ hp_current: 3, conditions_json: '["poisoned"]' });
+  });
+
+  it('catch-up with a failed live import records no custody and keeps the campaign copy', () => {
+    writeCampaignRulesBinding(campaign, {
+      base: { systemId: 'pathfinder2e', packId: 'pf-pack', version: '1' },
+      addons: [],
+      resolvedAt: '2026-01-01T00:00:00.000Z',
+    });
+    const pf = (level: number) =>
+      makeSheet({
+        system: 'pathfinder2e',
+        rulesPackId: 'pf-pack',
+        level,
+      } as never);
+    registry.appendRevision('pf', pf(1), 'register');
+    registry.appendRevision('pf', pf(2), 'sync-back');
+    const store = createSqliteCharacterSheetStore(campaign);
+    const stale = {
+      ...pf(1),
+      metadata: {
+        ...pf(1).metadata,
+        globalCharacterId: 'pf',
+        sourceRevision: 1,
+      },
+    };
+    store.save('pc-1', stale);
+    expect(() =>
+      catchUpCharacterToHead(registry, campaign, {
+        campaignId: 'camp-a',
+        characterId: 'pc-1',
+        sessionId: 's',
+        at: 'a1',
+      }),
+    ).toThrow(CharacterCustodyError);
+    expect(registry.custody('pf')).toBeUndefined();
+    expect(store.load('pc-1')?.metadata.sourceRevision).toBe(1);
+  });
 });
