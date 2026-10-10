@@ -307,6 +307,11 @@ describe('re-audited action-economy and numeric features (eshyra-o9bd.18.7.5 re-
         // Printed "other creatures that you can see" (eshyra-o9bd.19.3.1.3, S1):
         // the sight restriction is part of the target set.
         requiresSight: true,
+        // Printed "affects other creatures ... choose a number of them": the
+        // pool is the other creatures the spell affects; the caster is never
+        // eligible, even inside the area (eshyra-o9bd.19.3.1.4 S1).
+        mustBeOtherThanYou: true,
+        chosenFrom: 'affected-by-the-spell',
         countFormula: '1 + spell-level',
         noDamageInsteadOfHalf: true,
       },

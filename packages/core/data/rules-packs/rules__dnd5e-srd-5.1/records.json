@@ -84123,6 +84123,8 @@
             "kind": "autoSucceedSave",
             "targets": "chosen-creatures",
             "requiresSight": true,
+            "mustBeOtherThanYou": true,
+            "chosenFrom": "affected-by-the-spell",
             "countFormula": "1 + spell-level",
             "noDamageInsteadOfHalf": true
           }

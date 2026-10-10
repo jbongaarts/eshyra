@@ -3760,6 +3760,15 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqStr(effect, 'countFormula', path);
     optBool(effect, 'noDamageInsteadOfHalf', path);
     optBool(effect, 'requiresSight', path);
+    optBool(effect, 'mustBeOtherThanYou', path);
+    if (
+      effect.chosenFrom !== undefined &&
+      reqStr(effect, 'chosenFrom', path) !== 'affected-by-the-spell'
+    ) {
+      throw new RulesPackError(
+        `${path}.chosenFrom must be "affected-by-the-spell" when present`,
+      );
+    }
   },
   climbWithoutExtraMovement: markerOnly,
   evasion: markerOnly,

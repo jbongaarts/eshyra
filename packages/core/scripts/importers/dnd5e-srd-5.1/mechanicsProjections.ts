@@ -5608,6 +5608,13 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
       requiresSight: /\bother creatures that you can see\b/.test(text)
         ? true
         : undefined,
+      // "an evocation spell that affects other creatures ... you can choose a
+      // number of them": the pool is the OTHER creatures the spell affects, so
+      // the caster is never eligible even when in the area (SRD p. 54).
+      mustBeOtherThanYou: /\bother creatures\b/.test(text) ? true : undefined,
+      chosenFrom: /\bspell that affects other creatures\b/.test(text)
+        ? 'affected-by-the-spell'
+        : undefined,
       countFormula: `${sculpt[1]} + spell-level`,
       noDamageInsteadOfHalf:
         /take no damage if they would normally take half damage on a successful save/.test(
