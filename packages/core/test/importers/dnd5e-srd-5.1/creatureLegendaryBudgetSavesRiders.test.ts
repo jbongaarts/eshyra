@@ -240,11 +240,19 @@ describe('creature rider and ongoing damage (fable:F3)', () => {
         const effect = effectsOf(entry).find(
           (candidate) => candidate.kind === 'recurringHitPointLoss',
         );
+        // Both printed termination routes (stanch with a Medicine check;
+        // magical healing) must survive verbatim in endsWhen.
+        const printedEnd =
+          /Any creature can take an action to stanch the wound[^.]*\.\s*The wound also closes if the target receives magical healing\./.exec(
+            text,
+          )?.[0];
         if (
           effect?.dice !== match[2] ||
           effect?.average !== Number(match[1]) ||
           effect?.type !== undefined ||
-          effect?.trigger !== 'start of each of its turns'
+          effect?.trigger !== 'start of each of its turns' ||
+          printedEnd === undefined ||
+          effect?.endsWhen !== printedEnd
         )
           mismatched.push(`${record.key} ${entry.name}`);
       }

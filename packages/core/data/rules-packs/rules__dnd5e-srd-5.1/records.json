@@ -21434,7 +21434,8 @@
                 "kind": "recurringHitPointLoss",
                 "dice": "1d10",
                 "average": 5,
-                "trigger": "start of each of its turns"
+                "trigger": "start of each of its turns",
+                "endsWhen": "Any creature can take an action to stanch the wound with a successful DC 12 Wisdom (Medicine) check. The wound also closes if the target receives magical healing."
               }
             ]
           }
@@ -41221,7 +41222,8 @@
                 "kind": "recurringHitPointLoss",
                 "dice": "3d6",
                 "average": 10,
-                "trigger": "start of each of its turns"
+                "trigger": "start of each of its turns",
+                "endsWhen": "Any creature can take an action to stanch the wound with a successful DC 12 Wisdom (Medicine) check. The wound also closes if the target receives magical healing."
               }
             ]
           }

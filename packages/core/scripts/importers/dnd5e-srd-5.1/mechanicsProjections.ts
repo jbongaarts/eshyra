@@ -4207,19 +4207,31 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   }
   // Infernal wound (bearded/horned devil): the source says the target loses
   // N hit points each turn, which is hit-point loss, not damage, so resistances
-  // do not apply and it is not modeled as recurringDamage. The source prints no
-  // end condition, so none is emitted.
+  // do not apply and it is not modeled as recurringDamage. Both entries print
+  // two termination routes (an action with a DC 12 Wisdom (Medicine) check to
+  // stanch the wound, and magical healing); they are kept verbatim as endsWhen.
+  // A wound whose termination sentences are missing fails closed.
   const infernalWound =
     /\blose (\d+) \((\d+d\d+)\) hit points at the start of each of its turns due to an infernal wound\b/.exec(
       text,
     );
   if (infernalWound !== null) {
+    const termination =
+      /\bAny creature can take an action to stanch the wound with a successful DC \d+ Wisdom \(Medicine\) check\. The wound also closes if the target receives magical healing\./.exec(
+        text,
+      );
+    if (termination === null) {
+      throw new Error(
+        `infernal wound without its printed termination routes: ${JSON.stringify(name)}`,
+      );
+    }
     effects.push(
       compact({
         kind: 'recurringHitPointLoss',
         dice: infernalWound[2],
         average: Number(infernalWound[1]),
         trigger: 'start of each of its turns',
+        endsWhen: termination[0],
       }),
     );
   }
