@@ -404,6 +404,15 @@ export interface ResolvedBackgroundFeature {
   readonly text: string;
 }
 
+/** An ancestry `choices[]` entry of category `language`. */
+export interface ResolvedAncestryLanguageChoice {
+  readonly id: string;
+  readonly choose: number;
+  readonly from?: readonly string[];
+  readonly extension?: ResolvedLanguageChoiceExtension;
+  readonly sourceText: string;
+}
+
 /** A racial trait as stored on an ancestry record: a name and verbatim prose. */
 export interface ResolvedAncestryTrait {
   readonly name: string;
@@ -423,6 +432,12 @@ export interface ResolvedAncestryData {
   readonly abilityScoreIncreases?: readonly ResolvedAncestryAbilityScoreIncrease[];
   /** Structured ancestry language grants. */
   readonly languages?: readonly ResolvedLanguageGrant[];
+  /**
+   * Open language picks the pack emits as ancestry creation choices (High Elf
+   * "Extra Language"), each shaped like a language grant's free-choice part so
+   * creation prompts for it (eshyra-o9bd.19.3.3.1).
+   */
+  readonly languageChoices?: readonly ResolvedAncestryLanguageChoice[];
   /** Fixed, unconditional skill grants from ancestry traits. */
   readonly skillProficiencies?: readonly string[];
   readonly skillChoices?: readonly ResolvedChoiceSpec[];
@@ -1292,6 +1307,7 @@ function resolveAncestry(
         raw.abilityScoreIncreases,
       ),
       languages: parseLanguageGrants(raw.languages),
+      languageChoices: parseAncestryLanguageChoices(raw.choices),
       traits: parseAncestryTraits(raw.traits),
       skillProficiencies: getFixedAncestrySkills(result.record.key),
       skillChoices: getAncestryCreationChoices(result.record.key, {
@@ -1314,6 +1330,35 @@ function resolveAncestry(
         })),
     },
   };
+}
+
+function parseAncestryLanguageChoices(
+  value: unknown,
+): readonly ResolvedAncestryLanguageChoice[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: ResolvedAncestryLanguageChoice[] = [];
+  for (const entry of value) {
+    if (
+      !isRecord(entry) ||
+      entry.category !== 'language' ||
+      typeof entry.id !== 'string' ||
+      typeof entry.choose !== 'number' ||
+      typeof entry.sourceText !== 'string'
+    ) {
+      continue;
+    }
+    const grant = parseLanguageGrants([
+      { fixed: [], extension: entry.extension, sourceText: entry.sourceText },
+    ])?.[0];
+    out.push({
+      id: entry.id,
+      choose: entry.choose,
+      ...(isStringArray(entry.from) ? { from: entry.from } : {}),
+      ...(grant?.extension !== undefined ? { extension: grant.extension } : {}),
+      sourceText: entry.sourceText,
+    });
+  }
+  return out.length > 0 ? out : undefined;
 }
 
 function parseAncestryTraits(

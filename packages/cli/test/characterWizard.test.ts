@@ -200,6 +200,7 @@ describe('character wizard — concept-first happy path', () => {
       '1', // equipment.0 → a quarterstaff
       '2', // equipment.1 → an arcane focus
       'scholar', // equipment.2 → a scholar's pack (prefix)
+      'Dwarvish', // High Elf extra language (required choice)
       // Fewer than the required counts stays on the step and says why.
       'Fire Bolt, Magic Missile',
       WIZARD_SPELLS.join(', '), // 3 cantrips + 6 spellbook spells
@@ -442,6 +443,7 @@ describe('character wizard — ability-first flow', () => {
       '1', // a quarterstaff
       '1', // a component pouch
       '1', // a scholar's pack
+      'Dwarvish', // High Elf extra language (required choice)
       WIZARD_SPELLS.join(', '), // spells
       WIZARD_PREPARED.join(', '), // prepared
       '', // review finish
@@ -625,6 +627,35 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
     expect(
       result.draft.selections.gmApprovedLanguages?.['ancestry.languages'],
     ).toEqual(['Abyssal']);
+  });
+
+  it('prompts for the High Elf extra language and accepts a GM-approved one', async () => {
+    const { deps: d, lines } = deps([
+      ...TO_CLASS_CHOICES.map((a) => (a === 'Human' ? 'High Elf' : a)),
+      'Athletics',
+      'Perception',
+      '1',
+      '1',
+      '1',
+      '1',
+      'other',
+      'Sylvan',
+      'y',
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    expect(text(lines)).toContain('Other language with GM approval');
+    expect(
+      result.draft.selections.choices?.['ancestry.languages.extra-language'],
+    ).toEqual(['Sylvan']);
+    expect(
+      result.draft.selections.gmApprovedLanguages?.[
+        'ancestry.languages.extra-language'
+      ],
+    ).toEqual(['Sylvan']);
   });
 
   it('records no approval when a standard language is picked normally', async () => {

@@ -217,3 +217,69 @@ describe('background equipment is structured and credited (opus:F-18)', () => {
     expect(result.character.equipment).toContain('holy symbol');
   });
 });
+
+describe('High Elf extra language reaches creation as a language choice', () => {
+  const EXTRA = 'ancestry.languages.extra-language';
+
+  function highElfDraft(): CharacterDraft {
+    let draft = engine.createDraft({ id: 'hero', mode: 'concept-first' });
+    draft = engine.setIdentity(draft, { name: 'Aelar', concept: 'scout' });
+    draft = engine.setClass(draft, 'Fighter');
+    draft = engine.setAncestry(draft, 'High Elf');
+    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
+    draft = engine.setAbilityScores(draft, {
+      strength: 15,
+      dexterity: 14,
+      constitution: 13,
+      intelligence: 12,
+      wisdom: 10,
+      charisma: 8,
+    });
+    for (const entry of engine.mechanicalChoices(draft)) {
+      if (entry.choice.id === EXTRA) continue;
+      const picks = (entry.choice.from ?? []).slice(
+        0,
+        entry.choice.choose ?? 0,
+      );
+      draft = engine.setChoice(draft, entry.choice.id, picks);
+    }
+    return draft;
+  }
+
+  const state = (draft: CharacterDraft) =>
+    engine.mechanicalChoices(draft).find((e) => e.choice.id === EXTRA);
+
+  it('requires the extra language, with the default domain and extension', () => {
+    const draft = highElfDraft();
+    const entry = state(draft);
+    expect(entry?.satisfied).toBe(false);
+    expect(entry?.choice.extension).toEqual(EXTENSION);
+    expect(entry?.choice.from).toEqual(
+      SRD_5_1_STANDARD_LANGUAGES.filter(
+        (l) => l !== 'Common' && l !== 'Elvish',
+      ),
+    );
+    expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+  });
+
+  it('records a standard pick', () => {
+    const draft = engine.setChoice(highElfDraft(), EXTRA, ['Giant']);
+    const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.character.languages).toEqual(
+      expect.arrayContaining(['Common', 'Elvish', 'Giant']),
+    );
+  });
+
+  it('refuses an outside language without approval and accepts it with approval', () => {
+    let draft = engine.setChoice(highElfDraft(), EXTRA, ['Sylvan']);
+    expect(state(draft)?.satisfied).toBe(false);
+    expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+    draft = engine.setGmApprovedLanguages(draft, EXTRA, ['Sylvan']);
+    const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.character.languages).toContain('Sylvan');
+  });
+});

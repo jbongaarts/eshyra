@@ -401,6 +401,19 @@ function collectAncestryChoices(
   });
   collectAncestryAbilityIncrease(ancestry, choices);
   collectAncestryLanguages(ancestry, grantedLanguages, choices);
+  (ancestry.languageChoices ?? []).forEach((spec) => {
+    choices.push({
+      id: `ancestry.languages.${spec.id}`,
+      kind: 'languages',
+      source: 'ancestry',
+      status: 'structured',
+      label: `Choose ${spec.choose} language(s)`,
+      choose: spec.choose,
+      from: chooseableLanguages(grantedLanguages, spec.from),
+      sourceText: spec.sourceText,
+      ...(spec.extension !== undefined ? { extension: spec.extension } : {}),
+    });
+  });
 }
 
 /**
