@@ -46,7 +46,7 @@ describe('finding registry', () => {
   });
 
   it('preserves status reasoning and non-accepted dispositions', () => {
-    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(25);
+    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(37);
     expect(
       real.rows.find((row) => row.canonicalId === 'source-authority-opus-f19')
         ?.statusReasoning,
@@ -62,8 +62,10 @@ describe('finding registry', () => {
       'audit-readiness-gate',
       'class-feature-completeness',
       'condition-structure-no-regression',
+      'creature-completeness',
       'creature-statblock-mechanics',
       'ki-abilities',
+      'option-losses',
       'readiness-integrity',
       'rule-corpus-procedures',
       'rules-prose-readiness',
@@ -83,7 +85,7 @@ describe('finding registry', () => {
         .filter((row) => row.status === 'disclosed-dependency')
         .map((row) => row.canonicalId)
         .sort(),
-    ).toEqual(['engine-capability-ownership', 'magic-item-effects']);
+    ).toEqual(['magic-item-effects']);
     // F-09 (design §8 step 4): the ADR 0020 reading is in place and every
     // A5 blocking gap has landed, so the finding is narrowed, not open.
     expect(

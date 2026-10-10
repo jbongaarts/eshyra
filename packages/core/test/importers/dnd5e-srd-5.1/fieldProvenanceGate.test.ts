@@ -194,6 +194,39 @@ describe('field-provenance coverage over the real regenerated pack (E2)', () => 
   });
 });
 
+describe('projection containers classify as compiler-projection at any depth', () => {
+  // Every leaf under a mechanics/upcast/executionReadiness/useProfile/
+  // projection segment is compiler-authored typed material. A relocation or
+  // nesting (e.g. option-scoped mechanics under /choices, eshyra-o9bd.19.3.1)
+  // must not let it inherit a parent prefix's source-derived class, which the
+  // discovery packet would present as a deterministic source fact.
+  const pack = loadRulesPackFromDirectory(PACK_DIR);
+  const manifest = loadFieldProvenanceManifest(PACK_DIR);
+  const containers = new Set([
+    'mechanics',
+    'upcast',
+    'executionReadiness',
+    'useProfile',
+    'projection',
+  ]);
+  it('no leaf under a projection container resolves to another class', () => {
+    const wrong: string[] = [];
+    let checked = 0;
+    for (const record of pack.records) {
+      walkFieldPointers(record.data, (pointer) => {
+        if (!pointer.split('/').some((segment) => containers.has(segment)))
+          return;
+        checked += 1;
+        const cls = classifyFieldPointer(manifest, record.kind, pointer);
+        if (cls !== 'compiler-projection')
+          wrong.push(`${record.key} ${pointer} -> ${cls}`);
+      });
+    }
+    expect(wrong).toEqual([]);
+    expect(checked).toBeGreaterThan(0);
+  });
+});
+
 describe('creature:adult-black-dragon classification (E3)', () => {
   const pack = loadRulesPackFromDirectory(PACK_DIR);
   const manifest = loadFieldProvenanceManifest(PACK_DIR);

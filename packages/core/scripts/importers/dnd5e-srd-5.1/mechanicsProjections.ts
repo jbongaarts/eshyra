@@ -222,6 +222,73 @@ function parseDamage(text: string): readonly Mechanics[] {
 }
 
 /**
+ * A single damage roll whose damage TYPE is one of two printed alternatives,
+ * each with its own verbatim condition: "2d8 fire damage from a warm shield, or
+ * 2d8 cold damage from a cold shield" (spell:fire-shield) and "3d8 radiant
+ * damage (if you are good or neutral) or 3d8 necrotic damage (if you are
+ * evil)" (spell:spirit-guardians). Only one of the two types applies, so they
+ * are one damage entry with `typeOptions`, not two cumulative entries
+ * (eshyra-o9bd.19.3.1.1, O3b). Requires identical dice on both sides.
+ */
+const ALTERNATIVE_TYPE_DAMAGE_RE =
+  /\b(\d+d\d+(?:\s*[+-]\s*\d+)?) ([a-z]+) damage( (?:from|if|when|while) [^,.;()]+| \((?:if|when|while) [^)]+\))?,? or \1 ([a-z]+) damage( (?:from|if|when|while) [^,.;()]+| \((?:if|when|while) [^)]+\))?/gi;
+
+function alternativeTypeCondition(raw: string): string {
+  const trimmed = raw.trim();
+  return trimmed.startsWith('(') && trimmed.endsWith(')')
+    ? trimmed.slice(1, -1)
+    : trimmed;
+}
+
+/**
+ * Spell damage: the `parseDamage` entries, with each printed alternative-type
+ * pair folded into one `typeOptions` entry at the first member's position.
+ */
+function parseSpellDamage(text: string): Mechanics[] {
+  const out: Mechanics[] = [...parseDamage(text)];
+  for (const match of text.matchAll(ALTERNATIVE_TYPE_DAMAGE_RE)) {
+    const [, rawDice, firstType, firstCondition, secondType, secondCondition] =
+      match;
+    const first = firstType.toLowerCase();
+    const second = secondType.toLowerCase();
+    if (
+      firstCondition === undefined ||
+      secondCondition === undefined ||
+      first === second ||
+      !SRD_5_1_DAMAGE_TYPES.has(first) ||
+      !SRD_5_1_DAMAGE_TYPES.has(second)
+    ) {
+      continue;
+    }
+    const dice = rawDice.replace(/\s+/g, ' ');
+    const firstIndex = out.findIndex(
+      (entry) => entry.dice === dice && entry.type === first,
+    );
+    const secondIndex = out.findIndex(
+      (entry) => entry.dice === dice && entry.type === second,
+    );
+    if (firstIndex < 0 || secondIndex < 0) {
+      throw new Error(
+        `alternative damage ${dice} ${first}/${second} unmatched`,
+      );
+    }
+    const merged: Mechanics = {
+      dice,
+      typeOptions: [
+        { type: first, condition: alternativeTypeCondition(firstCondition) },
+        { type: second, condition: alternativeTypeCondition(secondCondition) },
+      ],
+    };
+    const kept = out.filter(
+      (_, index) => index !== firstIndex && index !== secondIndex,
+    );
+    kept.splice(Math.min(firstIndex, secondIndex), 0, merged);
+    out.splice(0, out.length, ...kept);
+  }
+  return out;
+}
+
+/**
  * A weapon-damage-die MODIFIER, not dealt damage itself — e.g. Enlarge's
  * "attacks with them deal 1d4 extra damage" / Reduce's "deal 1d4 less damage"
  * (eshyra-erf5.4). Distinct from `mechanics.damage`, which is always damage a
@@ -269,7 +336,36 @@ function parseSaveWithSuccessBranch(text: string): Mechanics | undefined {
   return { ...save, damageOnSuccess: 'half' };
 }
 
+/**
+ * A printed alternative-ability save: "DC 16 Strength or Dexterity saving
+ * throw (target's choice)" (creature:bulette, Deadly Leap). The target picks
+ * which of the printed abilities to roll, so the projection carries the exact
+ * printed abilities in printed order instead of one of them (eshyra-o9bd.19.3.1.1).
+ */
+const ALTERNATIVE_SAVE_RE = new RegExp(
+  `\\b((?:${ABILITIES.join('|')})(?:\\s+or\\s+(?:${ABILITIES.join('|')}))+)\\s+saving throw\\b(\\s*\\(target[’']s choice\\))?`,
+  'i',
+);
+
 function parseSave(text: string): Mechanics | undefined {
+  const alternative = ALTERNATIVE_SAVE_RE.exec(text);
+  if (alternative !== null) {
+    const abilityOptions = alternative[1]
+      .split(/\s+or\s+/i)
+      .map((ability) => ability.toLowerCase());
+    if (new Set(abilityOptions).size !== abilityOptions.length) {
+      throw new Error(`save lists a repeated ability: ${alternative[0]}`);
+    }
+    const dc =
+      /\bDC\s+(\d+)\s+(?:[A-Z][a-z]+\s+or\s+)+[A-Z][a-z]+\s+saving throw\b/.exec(
+        text,
+      );
+    return compact({
+      abilityOptions,
+      chosenBy: alternative[2] === undefined ? undefined : 'target',
+      dc: dc === null ? undefined : Number(dc[1]),
+    });
+  }
   const ability = ABILITIES.find((candidate) =>
     new RegExp(`\\b${candidate}\\s+saving throw\\b`, 'i').test(text),
   );
@@ -2777,7 +2873,7 @@ function parseSpellScaling(
 
 export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
   const text = `${spell.description} ${spell.higherLevels ?? ''}`;
-  const damage = parseDamage(text);
+  const damage = parseSpellDamage(text);
   const weaponDamageModifiers = parseWeaponDamageModifiers(text);
   const save = parseSaveWithSuccessBranch(text);
   const conditions = parseConditions(text);
@@ -4295,18 +4391,88 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   // Surprise Attack (bugbear, doppelganger): flat extra damage dice on a
   // successful surprise hit during the first round of combat.
   const surpriseAttackExtraDamage =
-    /\bIf the [\w'’ ]+ surprises a creature and hits it with an attack during the first round of combat, the target takes an extra \d+ \((\d+d\d+)\) damage from the attack\b/.exec(
+    /\bIf the [\w'’ ]+ surprises a creature and hits it with an attack during the first round of combat, the target takes an extra (\d+) \((\d+d\d+)\) damage from the attack\b/.exec(
       text,
     );
   if (surpriseAttackExtraDamage !== null) {
     effects.push(
       compact({
         kind: 'extraDamage',
-        dice: surpriseAttackExtraDamage[1],
+        dice: surpriseAttackExtraDamage[2],
+        average: Number(surpriseAttackExtraDamage[1]),
         trigger: genericTriggerText,
       }),
     );
     suppressGenericTrigger = true;
+  }
+  // Rider extra damage (fable:F3): "takes/deals an extra N (XdY)[ type]
+  // damage" on a hit (Charge, Heated/Hellish Weapons, Sneak Attack, Martial
+  // Advantage, Divine Eminence). The type is kept only when printed. The
+  // trigger is the verbatim generic trigger clause when one exists (the
+  // Charge/azer form, which also suppresses the bare marker), otherwise the
+  // verbatim rider sentence.
+  if (surpriseAttackExtraDamage === null) {
+    const rider =
+      /\b(?:takes|deals?|deal) an extra (\d+) \((\d+d\d+)\)(?: (\w+))? damage\b/.exec(
+        text,
+      );
+    if (rider !== null) {
+      const sentence = text
+        .split(/(?<=[.!?])\s+/)
+        .find((candidate) => candidate.includes(rider[0]));
+      const trigger =
+        genericTriggerText ?? sentence?.replace(/[.!?]+$/, '').trim();
+      const type =
+        rider[3] !== undefined && SRD_5_1_DAMAGE_TYPES.has(rider[3])
+          ? rider[3]
+          : undefined;
+      effects.push(
+        compact({
+          kind: 'extraDamage',
+          dice: rider[2],
+          average: Number(rider[1]),
+          type,
+          frequency:
+            /\bOnce per turn\b/.test(text) || /\(1\/Turn\)/.test(name)
+              ? 'once-per-turn'
+              : undefined,
+          trigger,
+        }),
+      );
+      if (genericTriggerText !== undefined) {
+        suppressGenericTrigger = true;
+      }
+    }
+  }
+  // Infernal wound (bearded/horned devil): the source says the target loses
+  // N hit points each turn, which is hit-point loss, not damage, so resistances
+  // do not apply and it is not modeled as recurringDamage. Both entries print
+  // two termination routes (an action with a DC 12 Wisdom (Medicine) check to
+  // stanch the wound, and magical healing); they are kept verbatim as endsWhen.
+  // A wound whose termination sentences are missing fails closed.
+  const infernalWound =
+    /\blose (\d+) \((\d+d\d+)\) hit points at the start of each of its turns due to an infernal wound\b/.exec(
+      text,
+    );
+  if (infernalWound !== null) {
+    const termination =
+      /\bAny creature can take an action to stanch the wound with a successful DC \d+ Wisdom \(Medicine\) check\. The wound also closes if the target receives magical healing\./.exec(
+        text,
+      );
+    if (termination === null) {
+      throw new Error(
+        `infernal wound without its printed termination routes: ${JSON.stringify(name)}`,
+      );
+    }
+    effects.push(
+      compact({
+        kind: 'recurringHitPointLoss',
+        dice: infernalWound[2],
+        average: Number(infernalWound[1]),
+        trigger: 'start of each of its turns',
+        endsWhen: termination[0],
+      }),
+    );
   }
   // Freeze (water elemental): deterministic speed reduction on taking cold
   // damage, expiring at the end of its next turn.
@@ -4933,23 +5099,79 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   return effects;
 }
 
+const CREATURE_SAVE_CLAUSE_RE = /\bDC\s+\d+\s+[A-Z][a-z]+\s+saving throw\b/g;
+
+/**
+ * Every printed save of a creature entry, in source order (opus:F-32). An
+ * entry printing one save clause keeps the single-save projection unchanged.
+ * An entry printing two or more clauses projects each clause with its own
+ * DC/ability. A success-branch sentence belongs to the clause whose DC it
+ * shares a sentence with; a success-branch sentence naming no DC (air
+ * elemental's "If the saving throw is successful, ...") belongs to the first
+ * clause, as the census (halfDamageSuccessCensus) already attributes it.
+ */
+function parseCreatureEntrySaves(text: string): Mechanics[] | undefined {
+  const starts = [...text.matchAll(CREATURE_SAVE_CLAUSE_RE)].map(
+    (match) => match.index,
+  );
+  if (starts.length < 2) {
+    const save = parseSaveWithSuccessBranch(text);
+    return save === undefined ? undefined : [save];
+  }
+  const saves = starts.map((start, i) =>
+    parseSave(text.slice(start, starts[i + 1] ?? text.length)),
+  );
+  const halved = starts.map(() => false);
+  for (const sentence of text.matchAll(/[^.!?]+[.!?]+|[^.!?]+$/g)) {
+    const sentenceStart = sentence.index;
+    const sentenceText = sentence[0];
+    const owned = starts.findIndex(
+      (start) =>
+        start >= sentenceStart && start < sentenceStart + sentenceText.length,
+    );
+    const owner = owned === -1 ? 0 : owned;
+    if (hasHalfDamageOnSuccess(sentenceText)) halved[owner] = true;
+  }
+  return saves.map((save, i) => {
+    if (save === undefined) {
+      throw new Error(`creature save clause ${i} did not parse`);
+    }
+    return halved[i] ? { ...save, damageOnSuccess: 'half' } : save;
+  });
+}
+
 export function deriveCreatureEntryMechanics(
   name: string,
   text: string,
   resolveSpellRef?: SpellRefResolver,
 ): Mechanics {
   const attack = parseAttack(text);
-  const save = projectSaveDamage(
-    parseSaveWithSuccessBranch(text),
-    text,
-    attack,
-  );
+  // Multi-save entries keep one typed save per printed clause (opus:F-32).
+  // Damage printed outside an alternative-bearing attack's Hit clause belongs
+  // to its save (PR #646); that routing is defined for a single save only, so
+  // an alternative-bearing attack with several saves fails closed.
+  const parsedSaves = parseCreatureEntrySaves(text);
+  if (
+    attack?.alternatives !== undefined &&
+    parsedSaves !== undefined &&
+    parsedSaves.length > 1
+  ) {
+    throw new Error(
+      `alternative-bearing attack with ${parsedSaves.length} saves has no defined save-damage routing: ${JSON.stringify(name)}`,
+    );
+  }
+  const saves =
+    parsedSaves === undefined
+      ? undefined
+      : parsedSaves.length === 1
+        ? [projectSaveDamage(parsedSaves[0], text, attack) as Mechanics]
+        : parsedSaves;
   const effects = parseCreatureEntryEffects(name, text);
   return compact({
     attacks: attack === undefined ? undefined : [attack],
     recharge: parseRecharge(name),
     usage: parseUsage(name),
-    saves: save === undefined ? undefined : [save],
+    saves,
     damage: projectEntryDamage(text, attack),
     conditions: parseConditions(text),
     effects: effects.length > 0 ? effects : undefined,
@@ -5524,6 +5746,18 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
     effects.push({
       kind: 'autoSucceedSave',
       targets: 'chosen-creatures',
+      // Printed on the same feature: "other creatures that you can see"
+      // (SRD p. 54). Sight is part of the target set, not only the picks.
+      requiresSight: /\bother creatures that you can see\b/.test(text)
+        ? true
+        : undefined,
+      // "an evocation spell that affects other creatures ... you can choose a
+      // number of them": the pool is the OTHER creatures the spell affects, so
+      // the caster is never eligible even when in the area (SRD p. 54).
+      mustBeOtherThanYou: /\bother creatures\b/.test(text) ? true : undefined,
+      chosenFrom: /\bspell that affects other creatures\b/.test(text)
+        ? 'affected-by-the-spell'
+        : undefined,
       countFormula: `${sculpt[1]} + spell-level`,
       noDamageInsteadOfHalf:
         /take no damage if they would normally take half damage on a successful save/.test(

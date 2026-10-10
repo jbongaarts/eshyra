@@ -519,6 +519,26 @@ prose(
 namedEntry('creature', '/legendaryActions/entries');
 derived(
   'creature',
+  '/legendaryActions/budget',
+  "the legendary-action count, read from the printed 'can take N legendary actions' sentence of the intro paragraph.",
+);
+derived(
+  'creature',
+  '/legendaryActions/timing',
+  "the printed 'only at the end of another creature's turn' timing sentence, when present.",
+);
+derived(
+  'creature',
+  '/legendaryActions/regain',
+  "the printed 'regains spent legendary actions at the start of its turn' sentence, when present.",
+);
+derived(
+  'creature',
+  '/legendaryActions/oneAtATime',
+  "the printed 'Only one legendary action option can be used at a time' sentence, when present.",
+);
+derived(
+  'creature',
   '/alignment',
   "the creature's alignment, parsed from the stat-block header line.",
 );
@@ -790,6 +810,16 @@ derived(
   'a list of linked `table:` record-key references, not source text.',
 );
 mechanicsSubtree('feature', '/mechanics', 'feature.mechanics');
+// Option-scoped mechanics (Beguiling Influence's typed proficiency grant,
+// eshyra-olc5.7.1; Pact of the Chain's spell grant moved off the parent,
+// eshyra-o9bd.19.3.1) are compiler projections like every other mechanics
+// subtree; without this more specific prefix they would inherit the
+// source-derived class of /choices.
+mechanicsSubtree(
+  'feature',
+  '/choices/*/options/*/mechanics',
+  'feature.choices[].options[].mechanics',
+);
 derived(
   'feature',
   '/choices',
@@ -845,6 +875,10 @@ derived(
   'the trap category (mechanical/magic), parsed from the printed trap description.',
 );
 mechanicsSubtree('hazard', '/mechanics', 'hazard.mechanics');
+// Printed sub-traps of one record (eshyra-o9bd.19.3.1.1, O2): each variant's
+// name and text are literal source spans; its mechanics are the compiler's
+// projection of that span alone.
+namedEntry('hazard', '/variants');
 
 // ---------------------------------------------------------------------------
 // magic-item — the 240 SRD magic items (parseMagicItems.ts / magicItem*.ts)
