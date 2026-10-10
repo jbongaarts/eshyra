@@ -843,6 +843,12 @@
     },
     {
       "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "feature.choices[].options[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "feature",
       "pointerPrefix": "/choices",
       "class": "source-derived",
       "reason": "structured player-choice facts this feature requires (Fighting Style, subclass selection, Metamagic, spell selection, ...), deterministically derived from the class/feature rules text."
@@ -906,6 +912,24 @@
       "pointerPrefix": "/mechanics",
       "class": "compiler-projection",
       "reason": "hazard.mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/variants/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/variants/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/variants/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "/variants[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
     },
     {
       "kind": "magic-item",

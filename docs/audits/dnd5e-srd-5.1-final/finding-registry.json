@@ -94,7 +94,7 @@
         "evidenceBasis": "audit-finding"
       },
       "scopeKind": "record",
-      "owningBead": "eshyra-o9bd.19.3.1"
+      "owningBead": "eshyra-o9bd.19.3.3"
     },
     {
       "canonicalId": "locator-completeness",
@@ -369,6 +369,7 @@
       "aliases": ["opus:F-27"],
       "invariant": "Mutually exclusive damage alternatives remain distinct",
       "status": "accepted",
+      "statusReasoning": "Creature attack alternatives (versatile, shillelagh, enlarged, form, swarm half hit points, at range) are represented as attacks[].alternatives with a default-mode damage summary by eshyra-o9bd.19.4.2 (PR #646). Cross-kind repair by eshyra-o9bd.19.3.1: spell:fire-shield and spell:spirit-guardians project one damage roll with typeOptions instead of cumulative types; magic-item and equipment alternatives were already typed (Mace of Smiting replaces, equipment Versatile).",
       "provenance": {
         "auditFinding": "opus:F-27",
         "evidenceBasis": "audit-finding"
@@ -381,6 +382,7 @@
       "aliases": ["indep:002"],
       "invariant": "Choice behavior remains local to its option",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.3.1 (O5): parent feature mechanics no longer carry projections derived only from option prose (Pact Boon find familiar moved to Pact of the Chain; Hunter Defensive Tactics, Hunter's Prey, Superior Hunter's Defense option effects removed from the parent); option-keyed procedures such as the fighter fighting-style feature-options procedure remain option-local. Evidence: alternativeOptionProjections.test.ts.",
       "provenance": {
         "auditFinding": "indep:002",
         "evidenceBasis": "audit-finding"
@@ -393,6 +395,7 @@
       "aliases": ["opus:F-02"],
       "invariant": "Pit variants remain separate procedures",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.3.1: hazard:pits carries the four printed traps (Simple, Hidden, Locking, Spiked Pit) as separate variants; only the Spiked Pit carries the spike and poison projections, which no longer read as applying to every pit. Evidence: alternativeOptionProjections.test.ts; half-damage census pointer moved to the Spiked Pit variant.",
       "provenance": {
         "auditFinding": "opus:F-02",
         "evidenceBasis": "audit-finding"
@@ -405,6 +408,7 @@
       "aliases": ["opus:F-07"],
       "invariant": "Eldritch Invocation effects remain option-local",
       "status": "accepted",
+      "statusReasoning": "Repaired: feature:warlock:eldritch-invocations carries no parent mechanics (hoisting removed by eshyra-o9bd.19.2.1.3.1, PR #569); the only option-level mechanics are Beguiling Influence's typed proficiency grant (eshyra-olc5.7, PR #642). Generalized evidence: the non-option-prose invariant in alternativeOptionProjections.test.ts (eshyra-o9bd.19.3.1).",
       "provenance": {
         "auditFinding": "opus:F-07",
         "evidenceBasis": "audit-finding"
@@ -417,6 +421,7 @@
       "aliases": ["opus:F-33"],
       "invariant": "Bulette ability alternatives and DC remain explicit",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.3.1: creature:bulette Deadly Leap projects its printed alternative-ability save as abilityOptions [strength, dexterity] chosen by the target at DC 16 with the half-damage success branch (previously Dexterity only, no DC). Generalized evidence: every printed 'A or B saving throw' clause projects both abilities (alternativeOptionProjections.test.ts).",
       "provenance": {
         "auditFinding": "opus:F-33",
         "evidenceBasis": "audit-finding"
@@ -429,6 +434,7 @@
       "aliases": ["opus:F-35"],
       "invariant": "Targeting qualifiers are complete",
       "status": "accepted",
+      "statusReasoning": "Creature attack target phrases are projected whole, including pre-noun and post-noun qualifiers, by eshyra-o9bd.19.4.2 (PR #646), with a header-bound generalized invariant over every attack lead-in. The eshyra-o9bd.19.3.1 cross-kind sweep of non-creature target fields found two dropped printed sight restrictions, Iron Flask (\"that you can see\") and Sculpt Spells (\"other creatures that you can see\"); both are repaired by eshyra-o9bd.19.3.1.3 with requiresSight projections, and a generalized visibility-cohort invariant (nine records) now pins the remaining sight-bearing projections. No other sight-restriction loss was found; non-sight target qualifiers were checked only by a token-level audit, not a per-record proof.",
       "provenance": {
         "auditFinding": "opus:F-35",
         "evidenceBasis": "audit-finding"
@@ -440,7 +446,8 @@
       "canonicalId": "option-losses",
       "aliases": ["sol:CAP-005"],
       "invariant": "Ancestry, feature, progression, and choice losses are repaired",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "The original example list is not recorded in the repository. Under ADR 0020 the surviving obligation is that no source option, choice, or progression region is dropped: the source-region ledger coverage gates and the level-up choice coverage invariant (levelUpChoiceCoverage.ts) enforce it, and the October instances were repaired by PRs #569, #613, #617 and #631. A newly found loss is a new finding, not covered by this row.",
       "provenance": {
         "auditFinding": "sol:CAP-005",
         "evidenceBasis": "audit-finding"
@@ -832,8 +839,8 @@
       "canonicalId": "engine-capability-ownership",
       "aliases": ["sol:CAP-007"],
       "invariant": "Required engine capabilities have qualified ownership",
-      "status": "disclosed-dependency",
-      "statusReasoning": "Ownership of deterministic capabilities actually in force is the single authoritative inventory, eshyra-o9bd.19.5.12, and this dependency closes when it lands. The per-family certification tasks were retired in the 2026-09 ADR 0020 disposition passes, and eshyra-olc5.2 was retired and superseded at the 2026-10-09 rebaseline, so nothing waits on family certification. The generated magic-item executionReadiness/engine:F1-F10 backlog is an unselected candidate backlog, disclosed separately; an unselected capability is not an ownership gap (ADR 0020 section 3).",
+      "status": "accepted",
+      "statusReasoning": "Ownership of the deterministic capabilities actually in force is stated by one inventory, DETERMINISTIC_CAPABILITY_INVENTORY in packages/core/src/rules/deterministicCapabilityInventory.ts (eshyra-o9bd.19.5.12). Its closure test (packages/core/test/deterministicCapabilityInventory.test.ts) proves two bounded closures: every tool registered by createDefaultToolRegistry() appears exactly once, either as an inventory entry or in NON_CAPABILITY_TOOLS with a reason; and every module file under packages/core/src (except the index.ts and internal.ts barrels) has exactly one disposition in MODULE_DISPOSITIONS, either covered by the entries that name it as a runtime owner or not a deterministic commitment with its reason. It also proves that every rule-bound ledger contract revision and the magic-item readiness contract is referenced exactly once and that every runtime owner and evidence path exists. Engine (non-tool) entries carry existing evidence pointers and cover character creation, finalization, and sheet persistence; ADR 0012 character continuity and custody (registry revisions, checkout, sync-back and release, guarded resume, catch-up, explicit fork, chronicle); advancement eligibility, awards, and level-up; class resources, rests, and campaign binding resolution; campaign creation, sessions, the demo campaign, and adventure runs; the turn transaction boundaries (failed tool results returned to the model without rollback, audited candidate rollback and retry, and whole-turn abort), the player-visible roll ledger, and character targeting; and checkpoint, replay, dispute, and migration paths. The XP and milestone awards, adventure-run progress recording, and part of the bounded-procedure executor are retained as staged with named successor beads (eshyra-menn, eshyra-aiq8, eshyra-4xx6). The generated magic-item executionReadiness/engine:F1-F10 backlog is reported separately by summarizeMagicItemCapabilityBacklog as an unselected candidate backlog, never counted as implemented or absent; an unselected capability is not an ownership gap (ADR 0020 section 3). The module closure is file-level, not a symbol census; neither closure proves that a statement is accurate, which rests on per-entry review of each guarantee against every branch of the cited code (eshyra-o9bd.19.5.12.10). This reasoning does not claim the rules pack is deterministically complete.",
       "provenance": {
         "auditFinding": "sol:CAP-007",
         "evidenceBasis": "code"

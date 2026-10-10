@@ -550,13 +550,33 @@ function optOptionMechanics(parent: Obj, key: string, path: string): void {
     throw new RulesPackError(`${at} must be an object when present`);
   }
   for (const field of Object.keys(mechanics)) {
-    if (field !== 'effects') {
+    if (field !== 'effects' && field !== 'spellGrants') {
       throw new RulesPackError(
         `${at} has unexpected key ${JSON.stringify(field)}`,
       );
     }
   }
+  const spellGrants = (mechanics as Obj).spellGrants;
+  if (spellGrants !== undefined) {
+    // Option-scoped spell grant (eshyra-o9bd.19.3.1.1, O5): the same validated
+    // `{ spell: 'spell:<slug>' }` list a parent feature carries, attached only
+    // to the option whose own printed text grants it.
+    const grants = objArray(mechanics as Obj, 'spellGrants', at);
+    if (grants === undefined || grants.length === 0) {
+      throw new RulesPackError(`${at}.spellGrants must be a non-empty array`);
+    }
+    grants.forEach((grant, i) => {
+      const grantAt = `${at}.spellGrants[${i}]`;
+      const ref = reqStr(grant, 'spell', grantAt);
+      if (!ref.startsWith('spell:')) {
+        throw new RulesPackError(
+          `${grantAt}.spell must be a 'spell:' ref, got ${JSON.stringify(ref)}`,
+        );
+      }
+    });
+  }
   const effects = objArray(mechanics as Obj, 'effects', at);
+  if (spellGrants !== undefined && effects === undefined) return;
   if (effects === undefined || effects.length === 0) {
     throw new RulesPackError(`${at}.effects must be a non-empty array`);
   }
@@ -1249,6 +1269,111 @@ function validateFeatureResources(resources: Obj[], path: string): void {
   });
 }
 
+/**
+ * One projected save (`mechanics.saves[]`). Exactly one of `ability` (a single
+ * printed save) or `abilityOptions` (a printed "A or B saving throw" whose
+ * ability the target chooses, eshyra-o9bd.19.3.1.1) names the ability. The
+ * alternative list is the printed abilities, distinct, at least two.
+ */
+function validateMechanicsSave(entry: Obj, path: string): void {
+  const hasAbility = entry.ability !== undefined;
+  const hasOptions = entry.abilityOptions !== undefined;
+  if (hasAbility === hasOptions) {
+    throw new RulesPackError(
+      `${path} must carry exactly one of ability or abilityOptions`,
+    );
+  }
+  if (hasAbility) {
+    const ability = reqStr(entry, 'ability', path);
+    if (!ABILITY_SCORE_KEYS.has(ability)) {
+      throw new RulesPackError(
+        `${path}.ability must be a lowercase ability score name`,
+      );
+    }
+  } else {
+    const options = entry.abilityOptions;
+    if (!Array.isArray(options) || options.length < 2) {
+      throw new RulesPackError(
+        `${path}.abilityOptions must list at least two abilities`,
+      );
+    }
+    const seen = new Set<string>();
+    options.forEach((option) => {
+      if (typeof option !== 'string' || !ABILITY_SCORE_KEYS.has(option)) {
+        throw new RulesPackError(
+          `${path}.abilityOptions must contain lowercase ability score names`,
+        );
+      }
+      seen.add(option);
+    });
+    if (seen.size !== options.length) {
+      throw new RulesPackError(`${path}.abilityOptions must be distinct`);
+    }
+    if (entry.chosenBy !== undefined && entry.chosenBy !== 'target') {
+      throw new RulesPackError(
+        `${path}.chosenBy must be "target" when present`,
+      );
+    }
+  }
+  if (entry.chosenBy !== undefined && !hasOptions) {
+    throw new RulesPackError(
+      `${path}.chosenBy is only valid with abilityOptions`,
+    );
+  }
+  optInt(entry, 'dc', path, 0);
+  if (entry.damageOnSuccess !== undefined && entry.damageOnSuccess !== 'half') {
+    throw new RulesPackError(
+      `${path}.damageOnSuccess must be "half" when present`,
+    );
+  }
+}
+
+/**
+ * A damage entry names one canonical type, or (eshyra-o9bd.19.3.1.1, O3b) one
+ * roll whose type is one of several printed alternatives, each with its own
+ * verbatim condition. Exactly one of `type` | `typeOptions`; options are at
+ * least two distinct canonical types.
+ */
+function validateDamageEntryType(entry: Obj, entryPath: string): void {
+  if ((entry.type === undefined) === (entry.typeOptions === undefined)) {
+    throw new RulesPackError(
+      `${entryPath} must carry exactly one of type or typeOptions`,
+    );
+  }
+  if (entry.type !== undefined) {
+    const type = reqStr(entry, 'type', entryPath);
+    if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+      throw new RulesPackError(
+        `${entryPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+      );
+    }
+    return;
+  }
+  const options = objArray(entry, 'typeOptions', entryPath) ?? [];
+  if (options.length < 2) {
+    throw new RulesPackError(
+      `${entryPath}.typeOptions must list at least two damage types`,
+    );
+  }
+  const seen = new Set<string>();
+  options.forEach((option, i) => {
+    const optionPath = `${entryPath}.typeOptions[${i}]`;
+    const type = reqStr(option, 'type', optionPath);
+    if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+      throw new RulesPackError(
+        `${optionPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+      );
+    }
+    reqStr(option, 'condition', optionPath);
+    seen.add(type);
+  });
+  if (seen.size !== options.length) {
+    throw new RulesPackError(
+      `${entryPath}.typeOptions must name distinct damage types`,
+    );
+  }
+}
+
 function optMechanics(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -1336,6 +1461,11 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       throw new RulesPackError(
         `${path}.${key}.${arrayKey} must not be empty when present`,
       );
+    }
+    if (arrayKey === 'saves') {
+      entries.forEach((entry, i) => {
+        validateMechanicsSave(entry, `${path}.${key}.saves[${i}]`);
+      });
     }
   }
   objArray(mechanics, 'attacks', `${path}.${key}`)?.forEach((attack, i) => {
@@ -3656,6 +3786,16 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqStr(effect, 'targets', path);
     reqStr(effect, 'countFormula', path);
     optBool(effect, 'noDamageInsteadOfHalf', path);
+    optBool(effect, 'requiresSight', path);
+    optBool(effect, 'mustBeOtherThanYou', path);
+    if (
+      effect.chosenFrom !== undefined &&
+      reqStr(effect, 'chosenFrom', path) !== 'affected-by-the-spell'
+    ) {
+      throw new RulesPackError(
+        `${path}.chosenFrom must be "affected-by-the-spell" when present`,
+      );
+    }
   },
   climbWithoutExtraMovement: markerOnly,
   evasion: markerOnly,
@@ -4370,17 +4510,16 @@ function validateEffectChoiceGroups(
  * eshyra-o9bd.18.7.3) — a fixed integer `amount`.
  */
 function validateDamageEntry(entry: Obj, entryPath: string): void {
+  // A damage entry carries a dice expression, or — for the SRD's flat no-dice
+  // prints ("Hit: 1 piercing damage.", the Bat's Bite; eshyra-o9bd.18.7.3) — a
+  // fixed integer `amount`; its type is one canonical type or, for one roll
+  // whose type is a printed alternative (eshyra-o9bd.19.3.1), typeOptions.
   if (entry.dice === undefined) {
     reqInt(entry, 'amount', entryPath, 0);
   } else {
     reqStr(entry, 'dice', entryPath);
   }
-  const type = reqStr(entry, 'type', entryPath);
-  if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
-    throw new RulesPackError(
-      `${entryPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
-    );
-  }
+  validateDamageEntryType(entry, entryPath);
 }
 
 /**
@@ -5730,6 +5869,9 @@ function validateDnd5eHazard(record: RulesRecord, path: string): void {
     );
   }
   optMechanics(data, 'mechanics', `${path}.data`);
+  // Printed sub-traps of one record (eshyra-o9bd.19.3.1.1): the creature
+  // variant shape {name, text, mechanics?}, one per printed trap.
+  optNamedEntryArray(data, 'variants', `${path}.data`);
 }
 
 function validateDnd5eAction(record: RulesRecord, path: string): void {
