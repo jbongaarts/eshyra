@@ -30,8 +30,15 @@ export const P06_ACTION_SURGE: DiagnosticFixture = {
     {
       targetRef: 'feature:fighter:action-surge',
       typedPath: '/data/mechanics/resources/0',
-      expectedValue: { reset: 'short-or-long-rest' },
-      statement: 'The typed reset projection is retained.',
+      expectedValue: {
+        usesByLevel: [
+          { level: 2, uses: 1 },
+          { level: 17, uses: 2 },
+        ],
+        reset: 'short-or-long-rest',
+      },
+      statement:
+        'The typed reset and use progression projection is retained (eshyra-o9bd.19.3.2.1).',
     },
     {
       targetRef: 'feature:fighter:action-surge',
