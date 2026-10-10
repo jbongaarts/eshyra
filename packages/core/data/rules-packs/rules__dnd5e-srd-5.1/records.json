@@ -11145,6 +11145,10 @@
       ],
       "legendaryActions": {
         "description": "The aboleth can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The aboleth regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -11593,6 +11597,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -11895,6 +11903,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -12211,6 +12223,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -12583,6 +12599,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -12893,6 +12913,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -13265,6 +13289,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -13583,6 +13611,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -13885,6 +13917,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -14247,6 +14283,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -14569,6 +14609,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -14761,6 +14805,10 @@
                 "ability": "strength",
                 "dc": 13,
                 "damageOnSuccess": "half"
+              },
+              {
+                "ability": "dexterity",
+                "dc": 13
               }
             ],
             "damage": [
@@ -15045,6 +15093,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -15347,6 +15399,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -15710,6 +15766,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -16082,6 +16142,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -16439,6 +16503,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -16811,6 +16879,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -17129,6 +17201,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -17431,6 +17507,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -17793,6 +17873,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -18115,6 +18199,10 @@
       ],
       "legendaryActions": {
         "description": "The dragon can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The dragon regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Detect",
@@ -18501,6 +18589,10 @@
       ],
       "legendaryActions": {
         "description": "The sphinx can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The sphinx regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Claw Attack",
@@ -19349,6 +19441,15 @@
                 "condition": "incapacitated",
                 "relation": "advantage"
               }
+            ],
+            "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "4d6",
+                "average": 14,
+                "frequency": "once-per-turn",
+                "trigger": "Once per turn, the assassin deals an extra 14 (4d6) damage when it hits a target with a weapon attack and has advantage on the attack roll, or when the target is within 5 feet of an ally of the assassin that isn’t incapacitated and the assassin doesn’t have disadvantage on the attack roll"
+              }
             ]
           }
         }
@@ -19830,7 +19931,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "1d6",
+                "average": 3,
+                "type": "fire",
                 "trigger": "When the azer hits with a metal melee weapon"
               }
             ]
@@ -21282,6 +21386,14 @@
                 "dice": "1d10 + 3",
                 "type": "slashing"
               }
+            ],
+            "effects": [
+              {
+                "kind": "recurringHitPointLoss",
+                "dice": "1d10",
+                "average": 5,
+                "trigger": "start of each of its turns"
+              }
             ]
           }
         }
@@ -22553,7 +22665,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "1d6",
+                "average": 3,
+                "type": "slashing",
                 "trigger": "If the boar moves at least 20 feet straight toward a target and then hits it with a tusk attack on the same turn"
               }
             ]
@@ -23339,6 +23454,7 @@
               {
                 "kind": "extraDamage",
                 "dice": "2d6",
+                "average": 7,
                 "trigger": "If the bugbear surprises a creature and hits it with an attack during the first round of combat"
               }
             ]
@@ -23814,7 +23930,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "3d6",
+                "average": 10,
+                "type": "piercing",
                 "trigger": "If the centaur moves at least 30 feet straight toward a target and then hits it with a pike attack on the same turn"
               }
             ]
@@ -27484,6 +27603,7 @@
               {
                 "kind": "extraDamage",
                 "dice": "3d6",
+                "average": 10,
                 "trigger": "If the doppelganger surprises a creature and hits it with an attack during the first round of combat"
               }
             ]
@@ -29947,7 +30067,9 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
                 "trigger": "If the elk moves at least 20 feet straight toward a target and then hits it with a ram attack on the same turn"
               }
             ]
@@ -30098,6 +30220,13 @@
             "effects": [
               {
                 "kind": "weaponAttacksMagical"
+              },
+              {
+                "kind": "extraDamage",
+                "dice": "3d8",
+                "average": 13,
+                "type": "poison",
+                "trigger": "The erinyes’s weapon attacks are magical and deal an extra 13 (3d8) poison damage on a hit (included in the attacks)"
               }
             ]
           }
@@ -32955,7 +33084,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
+                "type": "slashing",
                 "trigger": "If the boar moves at least 20 feet straight toward a target and then hits it with a tusk attack on the same turn"
               }
             ]
@@ -33773,7 +33905,9 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
                 "trigger": "If the elk moves at least 20 feet straight toward a target and then hits it with a ram attack on the same turn"
               }
             ]
@@ -34174,7 +34308,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d4",
+                "average": 5,
+                "type": "bludgeoning",
                 "trigger": "If the goat moves at least 20 feet straight toward a target and then hits it with a ram attack on the same turn"
               }
             ]
@@ -35171,7 +35308,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
+                "type": "bludgeoning",
                 "trigger": "If the sea horse moves at least 20 feet straight toward a target and then hits it with a ram attack on the same turn"
               }
             ]
@@ -37286,7 +37426,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "1d4",
+                "average": 2,
+                "type": "bludgeoning",
                 "trigger": "If the goat moves at least 20 feet straight toward a target and then hits it with a ram attack on the same turn"
               }
             ]
@@ -39336,6 +39479,10 @@
       ],
       "legendaryActions": {
         "description": "The sphinx can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The sphinx regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Claw Attack",
@@ -40526,6 +40673,15 @@
                 "condition": "incapacitated",
                 "relation": "mention"
               }
+            ],
+            "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
+                "frequency": "once-per-turn",
+                "trigger": "Once per turn, the hobgoblin can deal an extra 7 (2d6) damage to a creature it hits with a weapon attack if that creature is within 5 feet of an ally of the hobgoblin that isn’t incapacitated"
+              }
             ]
           }
         }
@@ -40893,6 +41049,14 @@
                 "average": 10,
                 "dice": "1d8 + 6",
                 "type": "piercing"
+              }
+            ],
+            "effects": [
+              {
+                "kind": "recurringHitPointLoss",
+                "dice": "3d6",
+                "average": 10,
+                "trigger": "start of each of its turns"
               }
             ]
           }
@@ -41588,6 +41752,11 @@
             "saves": [
               {
                 "ability": "dexterity",
+                "dc": 17,
+                "damageOnSuccess": "half"
+              },
+              {
+                "ability": "constitution",
                 "dc": 17,
                 "damageOnSuccess": "half"
               }
@@ -43208,6 +43377,10 @@
       ],
       "legendaryActions": {
         "description": "The kraken can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The kraken regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Tentacle Attack or Fling",
@@ -43907,6 +44080,10 @@
       ],
       "legendaryActions": {
         "description": "The lich can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The lich regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Cantrip",
@@ -46479,7 +46656,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d8",
+                "average": 9,
+                "type": "piercing",
                 "trigger": "If the minotaur moves at least 10 feet straight toward a target and then hits it with a gore attack on the same turn"
               }
             ]
@@ -46671,7 +46851,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d8",
+                "average": 9,
+                "type": "piercing",
                 "trigger": "If the skeleton moves at least 10 feet straight toward a target and then hits it with a gore attack on the same turn"
               }
             ]
@@ -47284,6 +47467,10 @@
       ],
       "legendaryActions": {
         "description": "The mummy lord can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The mummy lord regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Attack",
@@ -50920,6 +51107,15 @@
                 "dice": "3d6",
                 "type": "radiant"
               }
+            ],
+            "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "3d6",
+                "average": 10,
+                "type": "radiant",
+                "trigger": "As a bonus action, the priest can expend a spell slot to cause its melee weapon attacks to magically deal an extra 10 (3d6) radiant damage to a target on a hit"
+              }
             ]
           }
         },
@@ -51330,6 +51526,10 @@
               {
                 "ability": "dexterity",
                 "dc": 19
+              },
+              {
+                "ability": "constitution",
+                "dc": 21
               }
             ],
             "damage": [
@@ -52613,7 +52813,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d8",
+                "average": 9,
+                "type": "bludgeoning",
                 "trigger": "If the rhinoceros moves at least 20 feet straight toward a target and then hits it with a gore attack on the same turn"
               }
             ]
@@ -53833,6 +54036,15 @@
                 "average": 3,
                 "dice": "1d6",
                 "type": "fire"
+              }
+            ],
+            "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "1d6",
+                "average": 3,
+                "type": "fire",
+                "trigger": "Any metal melee weapon the salamander wields deals an extra 3 (1d6) fire damage on a hit (included in the attack)"
               }
             ]
           }
@@ -55727,6 +55939,10 @@
       ],
       "legendaryActions": {
         "description": "The solar can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The solar regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Teleport",
@@ -56505,6 +56721,15 @@
               {
                 "condition": "incapacitated",
                 "relation": "advantage"
+              }
+            ],
+            "effects": [
+              {
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
+                "frequency": "once-per-turn",
+                "trigger": "The spy deals an extra 7 (2d6) damage when it hits a target with a weapon attack and has advantage on the attack roll, or when the target is within 5 feet of an ally of the spy that isn’t incapacitated and the spy doesn’t have disadvantage on the attack roll"
               }
             ]
           }
@@ -58744,6 +58969,10 @@
       ],
       "legendaryActions": {
         "description": "The tarrasque can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The tarrasque regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Attack",
@@ -59957,7 +60186,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d8",
+                "average": 9,
+                "type": "piercing",
                 "trigger": "If the unicorn moves at least 20 feet straight toward a target and then hits it with a horn attack on the same turn"
               }
             ]
@@ -60139,6 +60371,10 @@
       ],
       "legendaryActions": {
         "description": "The unicorn can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The unicorn regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Hooves",
@@ -60510,6 +60746,10 @@
       ],
       "legendaryActions": {
         "description": "The vampire can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature’s turn. The vampire regains spent legendary actions at the start of its turn.",
+        "budget": 3,
+        "timing": "end-of-another-creatures-turn",
+        "regain": "start-of-own-turn",
+        "oneAtATime": true,
         "entries": [
           {
             "name": "Move",
@@ -62323,7 +62563,10 @@
             ],
             "effects": [
               {
-                "kind": "triggeredEffect",
+                "kind": "extraDamage",
+                "dice": "2d6",
+                "average": 7,
+                "type": "slashing",
                 "trigger": "If the wereboar moves at least 15 feet straight toward a target and then hits it with its tusks on the same turn"
               }
             ]

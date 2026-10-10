@@ -3947,18 +3947,76 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   // Surprise Attack (bugbear, doppelganger): flat extra damage dice on a
   // successful surprise hit during the first round of combat.
   const surpriseAttackExtraDamage =
-    /\bIf the [\w'’ ]+ surprises a creature and hits it with an attack during the first round of combat, the target takes an extra \d+ \((\d+d\d+)\) damage from the attack\b/.exec(
+    /\bIf the [\w'’ ]+ surprises a creature and hits it with an attack during the first round of combat, the target takes an extra (\d+) \((\d+d\d+)\) damage from the attack\b/.exec(
       text,
     );
   if (surpriseAttackExtraDamage !== null) {
     effects.push(
       compact({
         kind: 'extraDamage',
-        dice: surpriseAttackExtraDamage[1],
+        dice: surpriseAttackExtraDamage[2],
+        average: Number(surpriseAttackExtraDamage[1]),
         trigger: genericTriggerText,
       }),
     );
     suppressGenericTrigger = true;
+  }
+  // Rider extra damage (fable:F3): "takes/deals an extra N (XdY)[ type]
+  // damage" on a hit (Charge, Heated/Hellish Weapons, Sneak Attack, Martial
+  // Advantage, Divine Eminence). The type is kept only when printed. The
+  // trigger is the verbatim generic trigger clause when one exists (the
+  // Charge/azer form, which also suppresses the bare marker), otherwise the
+  // verbatim rider sentence.
+  if (surpriseAttackExtraDamage === null) {
+    const rider =
+      /\b(?:takes|deals?|deal) an extra (\d+) \((\d+d\d+)\)(?: (\w+))? damage\b/.exec(
+        text,
+      );
+    if (rider !== null) {
+      const sentence = text
+        .split(/(?<=[.!?])\s+/)
+        .find((candidate) => candidate.includes(rider[0]));
+      const trigger =
+        genericTriggerText ?? sentence?.replace(/[.!?]+$/, '').trim();
+      const type =
+        rider[3] !== undefined && SRD_5_1_DAMAGE_TYPES.has(rider[3])
+          ? rider[3]
+          : undefined;
+      effects.push(
+        compact({
+          kind: 'extraDamage',
+          dice: rider[2],
+          average: Number(rider[1]),
+          type,
+          frequency:
+            /\bOnce per turn\b/.test(text) || /\(1\/Turn\)/.test(name)
+              ? 'once-per-turn'
+              : undefined,
+          trigger,
+        }),
+      );
+      if (genericTriggerText !== undefined) {
+        suppressGenericTrigger = true;
+      }
+    }
+  }
+  // Infernal wound (bearded/horned devil): the source says the target loses
+  // N hit points each turn, which is hit-point loss, not damage, so resistances
+  // do not apply and it is not modeled as recurringDamage. The source prints no
+  // end condition, so none is emitted.
+  const infernalWound =
+    /\blose (\d+) \((\d+d\d+)\) hit points at the start of each of its turns due to an infernal wound\b/.exec(
+      text,
+    );
+  if (infernalWound !== null) {
+    effects.push(
+      compact({
+        kind: 'recurringHitPointLoss',
+        dice: infernalWound[2],
+        average: Number(infernalWound[1]),
+        trigger: 'start of each of its turns',
+      }),
+    );
   }
   // Freeze (water elemental): deterministic speed reduction on taking cold
   // damage, expiring at the end of its next turn.
@@ -4585,19 +4643,60 @@ function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   return effects;
 }
 
+const CREATURE_SAVE_CLAUSE_RE = /\bDC\s+\d+\s+[A-Z][a-z]+\s+saving throw\b/g;
+
+/**
+ * Every printed save of a creature entry, in source order (opus:F-32). An
+ * entry printing one save clause keeps the single-save projection unchanged.
+ * An entry printing two or more clauses projects each clause with its own
+ * DC/ability. A success-branch sentence belongs to the clause whose DC it
+ * shares a sentence with; a success-branch sentence naming no DC (air
+ * elemental's "If the saving throw is successful, ...") belongs to the first
+ * clause, as the census (halfDamageSuccessCensus) already attributes it.
+ */
+function parseCreatureEntrySaves(text: string): Mechanics[] | undefined {
+  const starts = [...text.matchAll(CREATURE_SAVE_CLAUSE_RE)].map(
+    (match) => match.index,
+  );
+  if (starts.length < 2) {
+    const save = parseSaveWithSuccessBranch(text);
+    return save === undefined ? undefined : [save];
+  }
+  const saves = starts.map((start, i) =>
+    parseSave(text.slice(start, starts[i + 1] ?? text.length)),
+  );
+  const halved = starts.map(() => false);
+  for (const sentence of text.matchAll(/[^.!?]+[.!?]+|[^.!?]+$/g)) {
+    const sentenceStart = sentence.index;
+    const sentenceText = sentence[0];
+    const owned = starts.findIndex(
+      (start) =>
+        start >= sentenceStart && start < sentenceStart + sentenceText.length,
+    );
+    const owner = owned === -1 ? 0 : owned;
+    if (hasHalfDamageOnSuccess(sentenceText)) halved[owner] = true;
+  }
+  return saves.map((save, i) => {
+    if (save === undefined) {
+      throw new Error(`creature save clause ${i} did not parse`);
+    }
+    return halved[i] ? { ...save, damageOnSuccess: 'half' } : save;
+  });
+}
+
 export function deriveCreatureEntryMechanics(
   name: string,
   text: string,
   resolveSpellRef?: SpellRefResolver,
 ): Mechanics {
   const attack = parseAttack(text);
-  const save = parseSaveWithSuccessBranch(text);
+  const saves = parseCreatureEntrySaves(text);
   const effects = parseCreatureEntryEffects(name, text);
   return compact({
     attacks: attack === undefined ? undefined : [attack],
     recharge: parseRecharge(name),
     usage: parseUsage(name),
-    saves: save === undefined ? undefined : [save],
+    saves,
     damage: parseDamage(text),
     conditions: parseConditions(text),
     effects: effects.length > 0 ? effects : undefined,

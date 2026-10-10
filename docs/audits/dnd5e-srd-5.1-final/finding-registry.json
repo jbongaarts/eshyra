@@ -650,7 +650,8 @@
       "canonicalId": "creature-completeness",
       "aliases": ["indep:006"],
       "invariant": "Creature triggers, branches, timing, and lifecycle are complete",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Narrowed under ADR 0020 by eshyra-o9bd.19.4.3 (amendment): the surviving obligation is that emitted creature projections agree with the printed stat block (statline gate, attack grammar gate, and the saves, legendary-budget, and rider repairs above). Evidence: packages/core/test/importers/dnd5e-srd-5.1/creatureLegendaryBudgetSavesRiders.test.ts.",
       "provenance": {
         "auditFinding": "indep:006",
         "evidenceBasis": "audit-finding"
@@ -675,6 +676,7 @@
       "aliases": ["opus:F-26"],
       "invariant": "Legendary budgets and action costs are modeled",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3 (A1/L1): the importer types legendaryActions.budget, timing, regain, and oneAtATime from the printed intro sentences, and actionEconomy allowances read the typed budget and refuse legendary_action spends when it is absent. Evidence: packages/core/test/importers/dnd5e-srd-5.1/creatureLegendaryBudgetSavesRiders.test.ts; packages/core/test/actionEconomy.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-26",
         "evidenceBasis": "audit-finding"
@@ -723,6 +725,7 @@
       "aliases": ["opus:F-32"],
       "invariant": "Multi-save entries retain every save",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3 (M1): every printed save clause of a creature entry projects its own save in source order with its own success branch. Evidence: packages/core/test/importers/dnd5e-srd-5.1/creatureLegendaryBudgetSavesRiders.test.ts; packages/core/test/importers/dnd5e-srd-5.1/halfDamageSuccessBranches.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-32",
         "evidenceBasis": "audit-finding"
@@ -747,6 +750,7 @@
       "aliases": ["fable:F3"],
       "invariant": "Creature riders and ongoing damage are typed",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3 (R1): printed extra-damage riders project extraDamage (dice, printed average, printed type, once-per-turn frequency), and infernal-wound hit-point loss projects recurringHitPointLoss. Evidence: packages/core/test/importers/dnd5e-srd-5.1/creatureLegendaryBudgetSavesRiders.test.ts.",
       "provenance": {
         "auditFinding": "fable:F3",
         "evidenceBasis": "audit-finding"

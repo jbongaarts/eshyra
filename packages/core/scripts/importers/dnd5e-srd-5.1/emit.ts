@@ -376,6 +376,49 @@ function buildSpellData(
   return base;
 }
 
+/**
+ * Typed legendary-economy fields read from the printed intro paragraph
+ * (opus:F-26). Each is emitted only when its own sentence is printed; a
+ * paragraph without the budget sentence yields no budget (fail closed).
+ */
+const LEGENDARY_COUNT_WORDS: Readonly<Record<string, number>> = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+};
+
+function deriveLegendaryBudget(description: string): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const count =
+    /\bcan take (\d+|one|two|three|four|five) legendary actions\b/i.exec(
+      description,
+    );
+  if (count !== null) {
+    const word = count[1].toLowerCase();
+    out.budget = LEGENDARY_COUNT_WORDS[word] ?? Number(word);
+  }
+  if (/\bonly at the end of another creature[’']s turn\b/.test(description)) {
+    out.timing = 'end-of-another-creatures-turn';
+  }
+  if (
+    /\bregains spent legendary actions at the start of its turn\b/.test(
+      description,
+    )
+  ) {
+    out.regain = 'start-of-own-turn';
+  }
+  if (
+    /\bOnly one legendary action option can be used at a time\b/.test(
+      description,
+    )
+  ) {
+    out.oneAtATime = true;
+  }
+  return out;
+}
+
 function creatureKey(name: string): string {
   return `creature:${slug(name)}`;
 }
@@ -570,6 +613,10 @@ function buildCreatureData(
     const legendary: Record<string, unknown> = {};
     if (creature.legendaryActions.description !== undefined) {
       legendary.description = creature.legendaryActions.description;
+      Object.assign(
+        legendary,
+        deriveLegendaryBudget(creature.legendaryActions.description),
+      );
     }
     legendary.entries = creature.legendaryActions.entries.map((e) => {
       const mechanics = deriveCreatureEntryMechanics(

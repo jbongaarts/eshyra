@@ -46,7 +46,9 @@ describe('finding registry', () => {
   });
 
   it('preserves status reasoning and non-accepted dispositions', () => {
-    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(17);
+    // Four rows gained reasoning in eshyra-o9bd.19.4.3 (legendary-economy,
+    // multi-save-entries, creature-ongoing-riders, creature-completeness).
+    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(21);
     expect(
       real.rows.find((row) => row.canonicalId === 'source-authority-opus-f19')
         ?.statusReasoning,
@@ -62,6 +64,7 @@ describe('finding registry', () => {
       'audit-readiness-gate',
       'class-feature-completeness',
       'condition-structure-no-regression',
+      'creature-completeness',
       'ki-abilities',
       'readiness-integrity',
       'rule-corpus-procedures',
