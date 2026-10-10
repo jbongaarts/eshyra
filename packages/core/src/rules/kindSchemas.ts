@@ -7,6 +7,7 @@
 // baseline check, so a new importer can ship records before its deeper schemas
 // exist.
 
+import { SRD_5_1_SKILLS } from '../character/srdCreationChoices.js';
 import { validateBoundedProceduresForPack } from './boundedProcedures.js';
 import { CONDITION_RELATION_VALUES } from './conditionRelations.js';
 import {
@@ -533,7 +534,40 @@ function optFeatureChoiceOptions(entry: Obj, key: string, path: string): void {
     optStr(option, 'prerequisite', at);
     optPrerequisiteClauses(option, 'prerequisites', at);
     optSummonFormExtensions(option, 'summonFormExtensions', at);
+    optOptionMechanics(option, 'mechanics', at);
     reqStr(option, 'source', at);
+  });
+}
+
+// Option-level mechanics (eshyra-olc5.7.1) carry ONLY proficiency effects
+// derived from the option's own text; any other effect kind fails closed.
+function optOptionMechanics(parent: Obj, key: string, path: string): void {
+  const mechanics = parent[key];
+  if (mechanics === undefined) return;
+  const at = `${path}.${key}`;
+  if (mechanics === null || typeof mechanics !== 'object') {
+    throw new RulesPackError(`${at} must be an object when present`);
+  }
+  for (const field of Object.keys(mechanics)) {
+    if (field !== 'effects') {
+      throw new RulesPackError(
+        `${at} has unexpected key ${JSON.stringify(field)}`,
+      );
+    }
+  }
+  const effects = objArray(mechanics as Obj, 'effects', at);
+  if (effects === undefined || effects.length === 0) {
+    throw new RulesPackError(`${at}.effects must be a non-empty array`);
+  }
+  effects.forEach((effect, i) => {
+    const effectAt = `${at}.effects[${i}]`;
+    const kind = reqStr(effect, 'kind', effectAt);
+    if (kind !== 'proficiency') {
+      throw new RulesPackError(
+        `${effectAt}.kind must be 'proficiency' on an option, got ${JSON.stringify(kind)}`,
+      );
+    }
+    validateMechanicsEffect(effect, effectAt);
   });
 }
 
@@ -1733,6 +1767,34 @@ const ABILITY_NAMES: ReadonlySet<string> = new Set([
   'charisma',
 ]);
 
+// An optional, non-empty, duplicate-free list drawn from a closed vocabulary.
+function optClosedStrArray(
+  parent: Obj,
+  key: string,
+  path: string,
+  allowed: readonly string[],
+): void {
+  const values = parent[key];
+  if (values === undefined) return;
+  if (!Array.isArray(values) || values.length === 0) {
+    throw new RulesPackError(`${path}.${key} must be a non-empty array`);
+  }
+  const seen = new Set<string>();
+  values.forEach((value, i) => {
+    if (typeof value !== 'string' || !allowed.includes(value)) {
+      throw new RulesPackError(
+        `${path}.${key}[${i}] must be one of ${allowed.join(', ')}, got ${JSON.stringify(value)}`,
+      );
+    }
+    if (seen.has(value)) {
+      throw new RulesPackError(
+        `${path}.${key} repeats ${JSON.stringify(value)}`,
+      );
+    }
+    seen.add(value);
+  });
+}
+
 function reqAbility(parent: Obj, key: string, path: string): void {
   const value = reqStr(parent, key, path);
   if (!ABILITY_NAMES.has(value)) {
@@ -1890,6 +1952,20 @@ function optActionCost(effect: Obj, key: string, path: string): void {
 const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   Record<string, (effect: Obj, path: string) => void>
 > = {
+  // Typed proficiency fields (eshyra-olc5.7.1) are OPTIONAL alongside the
+  // verbatim `grant`; each present field must be a closed-vocabulary, non-
+  // empty, duplicate-free list. Other keys keep their existing contract.
+  proficiency: (effect, path) => {
+    optEnum(effect, 'scope', path, new Set(['all-saving-throws']));
+    optClosedStrArray(effect, 'savingThrows', path, [...ABILITY_NAMES]);
+    optClosedStrArray(effect, 'skills', path, SRD_5_1_SKILLS);
+    optClosedStrArray(effect, 'armor', path, [
+      'light armor',
+      'medium armor',
+      'heavy armor',
+      'shields',
+    ]);
+  },
   abilitySubstitution: (effect, path) => {
     // Shillelagh substitutes the caster's spellcasting ability rather than a
     // named ability score.

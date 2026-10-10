@@ -50,6 +50,21 @@ export interface FeatureChoiceUnsupported {
   readonly reason: string;
 }
 
+/**
+ * A proficiency grant (eshyra-olc5.7.1). `grant` is the verbatim SRD phrase;
+ * the typed fields are present only when the whole phrase parses into the
+ * closed vocabulary (lowercase ability names, canonical SRD skill names,
+ * armor categories). `scope: 'all-saving-throws'` marks Diamond Soul.
+ */
+export interface ProficiencyGrantEffect {
+  readonly kind: 'proficiency';
+  readonly grant: string;
+  readonly scope?: 'all-saving-throws';
+  readonly savingThrows?: readonly string[];
+  readonly skills?: readonly string[];
+  readonly armor?: readonly string[];
+}
+
 /** One source-backed option in an inline feature option catalog. */
 export interface FeatureChoiceOption {
   /** Stable option id, suitable for persistence as the selected value. */
@@ -88,6 +103,14 @@ export interface FeatureChoiceOption {
       readonly creatureRef: string;
     }[];
   }[];
+  /**
+   * Typed mechanics this option grants, limited to proficiency effects
+   * derived from its own text (eshyra-olc5.7.1). Engine consumption is
+   * owned by eshyra-olc5.7.2.
+   */
+  readonly mechanics?: {
+    readonly effects: readonly ProficiencyGrantEffect[];
+  };
   /** Human-readable source label for this option's source text. */
   readonly source: string;
 }
