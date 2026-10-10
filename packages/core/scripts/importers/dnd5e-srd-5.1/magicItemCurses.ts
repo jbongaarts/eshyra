@@ -478,8 +478,6 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
       effects: [
         effect('mind-ring-soul-telepathy', 'telepathy', {
           audience: 'any creature wearing the soul-housing ring',
-          oneWay: true,
-          requiresLanguage: false,
         }),
       ],
       operations: [

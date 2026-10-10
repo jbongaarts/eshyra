@@ -65,6 +65,7 @@ describe('finding registry', () => {
       'creature-completeness',
       'creature-statblock-mechanics',
       'ki-abilities',
+      'magic-item-effects',
       'readiness-integrity',
       'rule-corpus-procedures',
       'rules-prose-readiness',
@@ -77,12 +78,12 @@ describe('finding registry', () => {
         'neither creates nor discharges an engine obligation',
       ),
     });
+    // magic-item-effects was the only disclosed-dependency row; it is now a
+    // source-agreement invariant (eshyra-o9bd.19.4.5.1) with no engine-family
+    // dependency, so no real row carries the status.
     expect(
-      real.rows
-        .filter((row) => row.status === 'disclosed-dependency')
-        .map((row) => row.canonicalId)
-        .sort(),
-    ).toEqual(['magic-item-effects']);
+      real.rows.filter((row) => row.status === 'disclosed-dependency'),
+    ).toEqual([]);
     // F-09 (design §8 step 4): the ADR 0020 reading is in place and every
     // A5 blocking gap has landed, so the finding is narrowed, not open.
     expect(

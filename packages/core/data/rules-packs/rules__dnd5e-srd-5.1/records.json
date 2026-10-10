@@ -89007,7 +89007,7 @@
             "kind": "damageResistance",
             "types": "all",
             "excludes": [
-              "damage from magical weapons"
+              "magical damage"
             ]
           }
         ]
@@ -89500,8 +89500,7 @@
             "id": "c2-residual-redirect-ranged-attack",
             "kind": "reaction",
             "trigger": "ranged attack targets a creature within 5 feet of wielder",
-            "action": "redirect attack to wielder",
-            "requirement": "wielder is visible to attacker and not behind total cover"
+            "action": "redirect attack to wielder"
           },
           {
             "id": "c2-static-arrow-catching-shield-ac",
@@ -100658,11 +100657,11 @@
             "id": "c2-residual-whip-attack",
             "kind": "triggeredEffect",
             "trigger": "whip token attacks",
-            "result": "resolve +9 attack for 1d6+5 slashing damage",
+            "result": "resolve +9 attack for 1d6+5 force damage",
             "attackModifier": 9,
             "damage": {
               "dice": "1d6+5",
-              "type": "slashing"
+              "type": "force"
             }
           },
           {
@@ -105589,7 +105588,7 @@
             "id": "c2-residual-holy-avenger-aura-saves",
             "kind": "advantage",
             "roll": "saving throws",
-            "condition": "friendly creature in drawn-sword aura; 10 feet, or 30 feet for level 17+ paladin"
+            "condition": "against spells and other magical effects; friendly creature in drawn-sword aura; 10 feet, or 30 feet for level 17+ paladin"
           },
           {
             "id": "c2-static-holy-avenger-attack-damage",
@@ -115095,8 +115094,7 @@
           {
             "id": "c2-drink",
             "kind": "castSpell",
-            "spellRef": "spell:clairvoyance",
-            "concentrationRequired": false
+            "spellRef": "spell:clairvoyance"
           },
           {
             "id": "clairvoyance",
@@ -121253,9 +121251,7 @@
           {
             "id": "m7-mind-ring-soul-telepathy",
             "kind": "telepathy",
-            "audience": "any creature wearing the soul-housing ring",
-            "oneWay": true,
-            "requiresLanguage": false
+            "audience": "any creature wearing the soul-housing ring"
           }
         ]
       },
@@ -137436,7 +137432,7 @@
             "id": "c2-static-luckstone-saves",
             "kind": "rollModifier",
             "amount": 1,
-            "appliesTo": "saving throws"
+            "appliesTo": "ability checks and saving throws"
           }
         ]
       },

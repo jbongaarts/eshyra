@@ -413,10 +413,15 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
     {
       sourcePhrases: ['gain the effect of the clairvoyance spell'],
       effects: [
-        spell('drink', 'spell:clairvoyance', noConcentration, {
-          cost: 'consume',
-          target: 'self',
-        }),
+        spell(
+          'drink',
+          'spell:clairvoyance',
+          {},
+          {
+            cost: 'consume',
+            target: 'self',
+          },
+        ),
       ],
     },
   ],

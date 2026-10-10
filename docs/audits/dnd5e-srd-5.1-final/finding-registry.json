@@ -801,9 +801,9 @@
     {
       "canonicalId": "magic-item-effects",
       "aliases": ["opus:residual-unverified-effects-semantics"],
-      "invariant": "Magic-item effects have an honest execution boundary",
-      "status": "disclosed-dependency",
-      "statusReasoning": "Pack projection can enumerate item clauses, but complete execution remains dependent on the engine capability families and their owning beads.",
+      "invariant": "Each structured magic-item effect agrees with its item's printed source text: no added, dropped, or altered quantity, vocabulary value, target, condition, duration, trigger, or scope",
+      "status": "narrowed",
+      "statusReasoning": "Narrowed under ADR 0020 to source agreement, with no dependency on engine-family completion (eshyra-o9bd.19.4.5.1). Over every magic-item record whose mechanics.effects is non-empty (enumerated by query), a mechanical screen requires every emitted quantity, damage type, ability, condition, skill, duration unit, spell name, dice expression, and explicit no-concentration override to occur in the item's printed text or the table the effect references (packages/core/test/importers/dnd5e-srd-5.1/magicItemEffectSourceAgreement.test.ts; one reviewed exception). A one-time semantic review read each effect beside its source sentence. The disagreements it found were repaired in the importer and the pack regenerated: Feather Token whip damage type, Potion of Clairvoyance concentration override, Holy Avenger save scope, Stone of Good Luck ability-check scope, Armor of Invulnerability carve-out, Arrow-Catching Shield added requirement, Ring of Mind Shielding added telepathy flags. This is not a claim of whole-item clause completeness or of engine execution: an effect no engine executes, and any engine-pending executionReadiness entry, is disclosed unselected backlog, not a defect of this row. The Opus amended pass proved only that effect references resolve; this row now also carries source agreement for what the effects say. The screen cannot see added or dropped scope; that class rests on the one-time review plus the representative scope assertions in the same test.",
       "provenance": {
         "auditFinding": "opus:residual-unverified-effects-semantics",
         "evidenceBasis": "audit-finding"
