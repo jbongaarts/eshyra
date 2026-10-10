@@ -46,7 +46,7 @@ describe('finding registry', () => {
   });
 
   it('preserves status reasoning and non-accepted dispositions', () => {
-    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(25);
+    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(33);
     expect(
       real.rows.find((row) => row.canonicalId === 'source-authority-opus-f19')
         ?.statusReasoning,
@@ -65,6 +65,7 @@ describe('finding registry', () => {
       'creature-completeness',
       'creature-statblock-mechanics',
       'ki-abilities',
+      'option-losses',
       'readiness-integrity',
       'rule-corpus-procedures',
       'rules-prose-readiness',

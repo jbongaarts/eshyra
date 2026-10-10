@@ -48,7 +48,10 @@ import {
   enrichClassToolChoiceDomains,
   enrichSkillsRule,
 } from './creationFacts.js';
-import { deriveFeatureChoices } from './deriveFeatureChoices.js';
+import {
+  deriveFeatureChoices,
+  scopeOptionFeatureMechanics,
+} from './deriveFeatureChoices.js';
 import { equipmentMechanicsFor } from './equipmentMechanics.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
 import { DND5E_FIELD_PROVENANCE_DECLARATIONS } from './fieldProvenanceDeclarations.js';
@@ -1097,6 +1100,43 @@ export function hazardExtractionsToRecords(
 }
 
 /**
+ * Printed sub-traps of one trap record, in printed order, keyed by record key
+ * (eshyra-o9bd.19.3.1.1). SRD 5.1 "Pits" prints four traps under one heading,
+ * each opening with its own "Name. " sentence. Each name must occur exactly
+ * once in the description, in printed order, or the split fails closed.
+ */
+const PRINTED_TRAP_VARIANT_NAMES: Readonly<Record<string, readonly string[]>> =
+  {
+    'hazard:pits': ['Simple Pit', 'Hidden Pit', 'Locking Pit', 'Spiked Pit'],
+  };
+
+function printedTrapVariants(
+  key: string,
+  description: string,
+): { name: string; text: string }[] | undefined {
+  const names = PRINTED_TRAP_VARIANT_NAMES[key];
+  if (names === undefined) return undefined;
+  let cursor = 0;
+  const starts = names.map((name) => {
+    const marker = `${name}. `;
+    const at = description.indexOf(marker);
+    if (at < cursor || description.indexOf(marker, at + 1) !== -1) {
+      throw new Error(
+        `${key}: printed trap "${name}" must appear once, in printed order`,
+      );
+    }
+    cursor = at;
+    return at;
+  });
+  return names.map((name, i) => ({
+    name,
+    text: description
+      .slice(starts[i], starts[i + 1] ?? description.length)
+      .trim(),
+  }));
+}
+
+/**
  * Sample traps emit under the `hazard` record kind (loreweaver-hvp). Schema
  * fit: the SRD's "Traps" section sits in the gamemastering chapter alongside
  * Diseases/Madness/Poisons, and a trap is — like an environmental hazard — a
@@ -1113,19 +1153,39 @@ export function trapExtractionsToRecords(
   traps: readonly TrapExtraction[],
 ): RulesRecord[] {
   const out: RulesRecord[] = traps.map((trap) => {
-    const mechanics = deriveHazardMechanics(trap);
+    const key = hazardKey(trap.name);
+    const printed = printedTrapVariants(key, trap.description);
     const data: Record<string, unknown> = {
       category: 'trap',
       trapType: trap.trapType,
       description: trap.description,
     };
-    if (Object.keys(mechanics).length > 0) {
-      data.mechanics = mechanics;
+    if (printed !== undefined) {
+      // A record printing several named traps keeps each trap's own text and
+      // projections; the record-level mechanics would otherwise read every
+      // trap's save and damage as if it applied to all of them
+      // (eshyra-o9bd.19.3.1.1, opus:F-02).
+      data.variants = printed.map((variant) => {
+        const mechanics = deriveHazardMechanics({
+          ...trap,
+          description: variant.text,
+        });
+        return {
+          name: variant.name,
+          text: variant.text,
+          ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
+        };
+      });
+    } else {
+      const mechanics = deriveHazardMechanics(trap);
+      if (Object.keys(mechanics).length > 0) {
+        data.mechanics = mechanics;
+      }
     }
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'hazard',
-      key: hazardKey(trap.name),
+      key,
       name: trap.name,
       data,
       source: sourceLabelFor(trap.sourcePage),
@@ -1829,7 +1889,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // Metamagic, ASI-vs-feat, …) to the feature records they hang off
   // (eshyra-o9bd.9). Runs after enrichment so the class progression graph and
   // subclass links the derivers read are already present.
-  const featureRecordsWithChoices = deriveFeatureChoices({
+  const featureRecordsWithChoicesUnscoped = deriveFeatureChoices({
     classRecords: enriched.classRecords,
     subclassRecords: enriched.subclassRecords,
     featureRecords: enriched.featureRecords,
@@ -1841,6 +1901,12 @@ export function buildPack(input: BuildPackInput): RulesPack {
       input.features ?? [],
     ),
   });
+  // Option prose stays with its option: parent mechanics are re-derived from
+  // the body without option text (eshyra-o9bd.19.3.1.1, O5).
+  const featureRecordsWithChoices = scopeOptionFeatureMechanics(
+    featureRecordsWithChoicesUnscoped,
+    resolveSpellGrant,
+  );
   // Remove embedded-table linearizations the prose joiners absorbed into owner
   // descriptions/text, leaving the structured `table:*` records as the sole
   // representation (eshyra-3anh). The assertion fails the build closed if any

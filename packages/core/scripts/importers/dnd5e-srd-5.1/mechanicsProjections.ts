@@ -221,6 +221,73 @@ function parseDamage(text: string): readonly Mechanics[] {
 }
 
 /**
+ * A single damage roll whose damage TYPE is one of two printed alternatives,
+ * each with its own verbatim condition: "2d8 fire damage from a warm shield, or
+ * 2d8 cold damage from a cold shield" (spell:fire-shield) and "3d8 radiant
+ * damage (if you are good or neutral) or 3d8 necrotic damage (if you are
+ * evil)" (spell:spirit-guardians). Only one of the two types applies, so they
+ * are one damage entry with `typeOptions`, not two cumulative entries
+ * (eshyra-o9bd.19.3.1.1, O3b). Requires identical dice on both sides.
+ */
+const ALTERNATIVE_TYPE_DAMAGE_RE =
+  /\b(\d+d\d+(?:\s*[+-]\s*\d+)?) ([a-z]+) damage( (?:from|if|when|while) [^,.;()]+| \((?:if|when|while) [^)]+\))?,? or \1 ([a-z]+) damage( (?:from|if|when|while) [^,.;()]+| \((?:if|when|while) [^)]+\))?/gi;
+
+function alternativeTypeCondition(raw: string): string {
+  const trimmed = raw.trim();
+  return trimmed.startsWith('(') && trimmed.endsWith(')')
+    ? trimmed.slice(1, -1)
+    : trimmed;
+}
+
+/**
+ * Spell damage: the `parseDamage` entries, with each printed alternative-type
+ * pair folded into one `typeOptions` entry at the first member's position.
+ */
+function parseSpellDamage(text: string): Mechanics[] {
+  const out: Mechanics[] = [...parseDamage(text)];
+  for (const match of text.matchAll(ALTERNATIVE_TYPE_DAMAGE_RE)) {
+    const [, rawDice, firstType, firstCondition, secondType, secondCondition] =
+      match;
+    const first = firstType.toLowerCase();
+    const second = secondType.toLowerCase();
+    if (
+      firstCondition === undefined ||
+      secondCondition === undefined ||
+      first === second ||
+      !SRD_5_1_DAMAGE_TYPES.has(first) ||
+      !SRD_5_1_DAMAGE_TYPES.has(second)
+    ) {
+      continue;
+    }
+    const dice = rawDice.replace(/\s+/g, ' ');
+    const firstIndex = out.findIndex(
+      (entry) => entry.dice === dice && entry.type === first,
+    );
+    const secondIndex = out.findIndex(
+      (entry) => entry.dice === dice && entry.type === second,
+    );
+    if (firstIndex < 0 || secondIndex < 0) {
+      throw new Error(
+        `alternative damage ${dice} ${first}/${second} unmatched`,
+      );
+    }
+    const merged: Mechanics = {
+      dice,
+      typeOptions: [
+        { type: first, condition: alternativeTypeCondition(firstCondition) },
+        { type: second, condition: alternativeTypeCondition(secondCondition) },
+      ],
+    };
+    const kept = out.filter(
+      (_, index) => index !== firstIndex && index !== secondIndex,
+    );
+    kept.splice(Math.min(firstIndex, secondIndex), 0, merged);
+    out.splice(0, out.length, ...kept);
+  }
+  return out;
+}
+
+/**
  * A weapon-damage-die MODIFIER, not dealt damage itself — e.g. Enlarge's
  * "attacks with them deal 1d4 extra damage" / Reduce's "deal 1d4 less damage"
  * (eshyra-erf5.4). Distinct from `mechanics.damage`, which is always damage a
@@ -268,7 +335,36 @@ function parseSaveWithSuccessBranch(text: string): Mechanics | undefined {
   return { ...save, damageOnSuccess: 'half' };
 }
 
+/**
+ * A printed alternative-ability save: "DC 16 Strength or Dexterity saving
+ * throw (target's choice)" (creature:bulette, Deadly Leap). The target picks
+ * which of the printed abilities to roll, so the projection carries the exact
+ * printed abilities in printed order instead of one of them (eshyra-o9bd.19.3.1.1).
+ */
+const ALTERNATIVE_SAVE_RE = new RegExp(
+  `\\b((?:${ABILITIES.join('|')})(?:\\s+or\\s+(?:${ABILITIES.join('|')}))+)\\s+saving throw\\b(\\s*\\(target[’']s choice\\))?`,
+  'i',
+);
+
 function parseSave(text: string): Mechanics | undefined {
+  const alternative = ALTERNATIVE_SAVE_RE.exec(text);
+  if (alternative !== null) {
+    const abilityOptions = alternative[1]
+      .split(/\s+or\s+/i)
+      .map((ability) => ability.toLowerCase());
+    if (new Set(abilityOptions).size !== abilityOptions.length) {
+      throw new Error(`save lists a repeated ability: ${alternative[0]}`);
+    }
+    const dc =
+      /\bDC\s+(\d+)\s+(?:[A-Z][a-z]+\s+or\s+)+[A-Z][a-z]+\s+saving throw\b/.exec(
+        text,
+      );
+    return compact({
+      abilityOptions,
+      chosenBy: alternative[2] === undefined ? undefined : 'target',
+      dc: dc === null ? undefined : Number(dc[1]),
+    });
+  }
   const ability = ABILITIES.find((candidate) =>
     new RegExp(`\\b${candidate}\\s+saving throw\\b`, 'i').test(text),
   );
@@ -2637,7 +2733,7 @@ function parseSpellScaling(
 
 export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
   const text = `${spell.description} ${spell.higherLevels ?? ''}`;
-  const damage = parseDamage(text);
+  const damage = parseSpellDamage(text);
   const weaponDamageModifiers = parseWeaponDamageModifiers(text);
   const save = parseSaveWithSuccessBranch(text);
   const conditions = parseConditions(text);
@@ -5507,6 +5603,18 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
     effects.push({
       kind: 'autoSucceedSave',
       targets: 'chosen-creatures',
+      // Printed on the same feature: "other creatures that you can see"
+      // (SRD p. 54). Sight is part of the target set, not only the picks.
+      requiresSight: /\bother creatures that you can see\b/.test(text)
+        ? true
+        : undefined,
+      // "an evocation spell that affects other creatures ... you can choose a
+      // number of them": the pool is the OTHER creatures the spell affects, so
+      // the caster is never eligible even when in the area (SRD p. 54).
+      mustBeOtherThanYou: /\bother creatures\b/.test(text) ? true : undefined,
+      chosenFrom: /\bspell that affects other creatures\b/.test(text)
+        ? 'affected-by-the-spell'
+        : undefined,
       countFormula: `${sculpt[1]} + spell-level`,
       noDamageInsteadOfHalf:
         /take no damage if they would normally take half damage on a successful save/.test(

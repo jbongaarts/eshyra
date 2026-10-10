@@ -88,12 +88,13 @@
       "aliases": ["indep:011"],
       "invariant": "Language universe keeps its source-defined extension point",
       "status": "accepted",
+      "statusReasoning": "Still open and re-owned to eshyra-o9bd.19.3.3 (the July defect map assigns indep:011 there): background and ancestry language choices emit only the eight Standard Languages as their domain (e.g. background:acolyte, 'Two of your choice'), while rule:languages also allows a language common in the campaign and, with GM permission, an Exotic or secret language. The source extension point must be represented without silently widening or closing the choice.",
       "provenance": {
         "auditFinding": "indep:011",
         "evidenceBasis": "audit-finding"
       },
       "scopeKind": "record",
-      "owningBead": "eshyra-o9bd.19.3.1"
+      "owningBead": "eshyra-o9bd.19.3.3"
     },
     {
       "canonicalId": "locator-completeness",
@@ -367,6 +368,7 @@
       "aliases": ["opus:F-27"],
       "invariant": "Mutually exclusive damage alternatives remain distinct",
       "status": "accepted",
+      "statusReasoning": "Creature attack alternatives (versatile, shillelagh, enlarged, form, swarm half hit points, at range) are represented as attacks[].alternatives with a default-mode damage summary by eshyra-o9bd.19.4.2 (PR #646). Cross-kind repair by eshyra-o9bd.19.3.1: spell:fire-shield and spell:spirit-guardians project one damage roll with typeOptions instead of cumulative types; magic-item and equipment alternatives were already typed (Mace of Smiting replaces, equipment Versatile).",
       "provenance": {
         "auditFinding": "opus:F-27",
         "evidenceBasis": "audit-finding"
@@ -379,6 +381,7 @@
       "aliases": ["indep:002"],
       "invariant": "Choice behavior remains local to its option",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.3.1 (O5): parent feature mechanics no longer carry projections derived only from option prose (Pact Boon find familiar moved to Pact of the Chain; Hunter Defensive Tactics, Hunter's Prey, Superior Hunter's Defense option effects removed from the parent); option-keyed procedures such as the fighter fighting-style feature-options procedure remain option-local. Evidence: alternativeOptionProjections.test.ts.",
       "provenance": {
         "auditFinding": "indep:002",
         "evidenceBasis": "audit-finding"
@@ -391,6 +394,7 @@
       "aliases": ["opus:F-02"],
       "invariant": "Pit variants remain separate procedures",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.3.1: hazard:pits carries the four printed traps (Simple, Hidden, Locking, Spiked Pit) as separate variants; only the Spiked Pit carries the spike and poison projections, which no longer read as applying to every pit. Evidence: alternativeOptionProjections.test.ts; half-damage census pointer moved to the Spiked Pit variant.",
       "provenance": {
         "auditFinding": "opus:F-02",
         "evidenceBasis": "audit-finding"
@@ -403,6 +407,7 @@
       "aliases": ["opus:F-07"],
       "invariant": "Eldritch Invocation effects remain option-local",
       "status": "accepted",
+      "statusReasoning": "Repaired: feature:warlock:eldritch-invocations carries no parent mechanics (hoisting removed by eshyra-o9bd.19.2.1.3.1, PR #569); the only option-level mechanics are Beguiling Influence's typed proficiency grant (eshyra-olc5.7, PR #642). Generalized evidence: the non-option-prose invariant in alternativeOptionProjections.test.ts (eshyra-o9bd.19.3.1).",
       "provenance": {
         "auditFinding": "opus:F-07",
         "evidenceBasis": "audit-finding"
@@ -415,6 +420,7 @@
       "aliases": ["opus:F-33"],
       "invariant": "Bulette ability alternatives and DC remain explicit",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.3.1: creature:bulette Deadly Leap projects its printed alternative-ability save as abilityOptions [strength, dexterity] chosen by the target at DC 16 with the half-damage success branch (previously Dexterity only, no DC). Generalized evidence: every printed 'A or B saving throw' clause projects both abilities (alternativeOptionProjections.test.ts).",
       "provenance": {
         "auditFinding": "opus:F-33",
         "evidenceBasis": "audit-finding"
@@ -427,6 +433,7 @@
       "aliases": ["opus:F-35"],
       "invariant": "Targeting qualifiers are complete",
       "status": "accepted",
+      "statusReasoning": "Creature attack target phrases are projected whole, including pre-noun and post-noun qualifiers, by eshyra-o9bd.19.4.2 (PR #646), with a header-bound generalized invariant over every attack lead-in. The eshyra-o9bd.19.3.1 cross-kind sweep of non-creature target fields found two dropped printed sight restrictions, Iron Flask (\"that you can see\") and Sculpt Spells (\"other creatures that you can see\"); both are repaired by eshyra-o9bd.19.3.1.3 with requiresSight projections, and a generalized visibility-cohort invariant (nine records) now pins the remaining sight-bearing projections. No other sight-restriction loss was found; non-sight target qualifiers were checked only by a token-level audit, not a per-record proof.",
       "provenance": {
         "auditFinding": "opus:F-35",
         "evidenceBasis": "audit-finding"
@@ -438,7 +445,8 @@
       "canonicalId": "option-losses",
       "aliases": ["sol:CAP-005"],
       "invariant": "Ancestry, feature, progression, and choice losses are repaired",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "The original example list is not recorded in the repository. Under ADR 0020 the surviving obligation is that no source option, choice, or progression region is dropped: the source-region ledger coverage gates and the level-up choice coverage invariant (levelUpChoiceCoverage.ts) enforce it, and the October instances were repaired by PRs #569, #613, #617 and #631. A newly found loss is a new finding, not covered by this row.",
       "provenance": {
         "auditFinding": "sol:CAP-005",
         "evidenceBasis": "audit-finding"
