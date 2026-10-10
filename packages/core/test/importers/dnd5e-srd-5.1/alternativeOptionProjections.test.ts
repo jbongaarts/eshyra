@@ -228,3 +228,66 @@ describe('O5: option prose does not hoist into the parent feature', () => {
     expect(checked).toContain('feature:fighter:fighting-style');
   });
 });
+
+describe('O3b: alternative damage types in one roll', () => {
+  it('projects fire-shield as one roll whose type is warm-fire or cold by its shield', () => {
+    expect(byKey('spell:fire-shield').data.mechanics).toMatchObject({
+      damage: [
+        {
+          dice: '2d8',
+          typeOptions: [
+            { type: 'fire', condition: 'from a warm shield' },
+            { type: 'cold', condition: 'from a cold shield' },
+          ],
+        },
+      ],
+    });
+  });
+
+  it('projects spirit-guardians as one roll whose type depends on the caster alignment', () => {
+    expect(byKey('spell:spirit-guardians').data.mechanics).toMatchObject({
+      damage: [
+        {
+          dice: '3d8',
+          typeOptions: [
+            { type: 'radiant', condition: 'if you are good or neutral' },
+            { type: 'necrotic', condition: 'if you are evil' },
+          ],
+        },
+      ],
+    });
+  });
+
+  it('never projects two cumulative damage entries for one printed alternative-type pair', () => {
+    const grammar =
+      /(\d+d\d+(?: [+-] \d+)?) ([a-z]+) damage(?: \([^)]*\)| from [^,.;]+)?,? or \1 ([a-z]+) damage/i;
+    const checked: string[] = [];
+    for (const record of records) {
+      if (record.kind !== 'spell' && record.kind !== 'magic-item') continue;
+      const text = JSON.stringify(record.data).replace(/\\"/g, '"');
+      const match = grammar.exec(text);
+      if (match === null) continue;
+      checked.push(record.key);
+      const damage = ((record.data.mechanics as Record<string, unknown>)
+        ?.damage ?? []) as Record<string, unknown>[];
+      const cumulative = damage.filter(
+        (entry) =>
+          entry.dice === match[1] &&
+          (entry.type === match[2].toLowerCase() ||
+            entry.type === match[3].toLowerCase()),
+      );
+      expect(
+        cumulative.length,
+        `${record.key} projects both alternatives cumulatively`,
+      ).toBeLessThanOrEqual(1);
+      expect(
+        damage.some((entry) => Array.isArray(entry.typeOptions)),
+        `${record.key} prints "${match[0]}" without a typeOptions entry`,
+      ).toBe(true);
+    }
+    expect(checked.sort()).toEqual([
+      'spell:fire-shield',
+      'spell:spirit-guardians',
+    ]);
+  });
+});

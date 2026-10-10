@@ -205,6 +205,73 @@ function parseDamage(text: string): readonly Mechanics[] {
 }
 
 /**
+ * A single damage roll whose damage TYPE is one of two printed alternatives,
+ * each with its own verbatim condition: "2d8 fire damage from a warm shield, or
+ * 2d8 cold damage from a cold shield" (spell:fire-shield) and "3d8 radiant
+ * damage (if you are good or neutral) or 3d8 necrotic damage (if you are
+ * evil)" (spell:spirit-guardians). Only one of the two types applies, so they
+ * are one damage entry with `typeOptions`, not two cumulative entries
+ * (eshyra-o9bd.19.3.1.1, O3b). Requires identical dice on both sides.
+ */
+const ALTERNATIVE_TYPE_DAMAGE_RE =
+  /\b(\d+d\d+(?:\s*[+-]\s*\d+)?) ([a-z]+) damage( (?:from|if|when|while) [^,.;()]+| \((?:if|when|while) [^)]+\))?,? or \1 ([a-z]+) damage( (?:from|if|when|while) [^,.;()]+| \((?:if|when|while) [^)]+\))?/gi;
+
+function alternativeTypeCondition(raw: string): string {
+  const trimmed = raw.trim();
+  return trimmed.startsWith('(') && trimmed.endsWith(')')
+    ? trimmed.slice(1, -1)
+    : trimmed;
+}
+
+/**
+ * Spell damage: the `parseDamage` entries, with each printed alternative-type
+ * pair folded into one `typeOptions` entry at the first member's position.
+ */
+function parseSpellDamage(text: string): Mechanics[] {
+  const out: Mechanics[] = [...parseDamage(text)];
+  for (const match of text.matchAll(ALTERNATIVE_TYPE_DAMAGE_RE)) {
+    const [, rawDice, firstType, firstCondition, secondType, secondCondition] =
+      match;
+    const first = firstType.toLowerCase();
+    const second = secondType.toLowerCase();
+    if (
+      firstCondition === undefined ||
+      secondCondition === undefined ||
+      first === second ||
+      !SRD_5_1_DAMAGE_TYPES.has(first) ||
+      !SRD_5_1_DAMAGE_TYPES.has(second)
+    ) {
+      continue;
+    }
+    const dice = rawDice.replace(/\s+/g, ' ');
+    const firstIndex = out.findIndex(
+      (entry) => entry.dice === dice && entry.type === first,
+    );
+    const secondIndex = out.findIndex(
+      (entry) => entry.dice === dice && entry.type === second,
+    );
+    if (firstIndex < 0 || secondIndex < 0) {
+      throw new Error(
+        `alternative damage ${dice} ${first}/${second} unmatched`,
+      );
+    }
+    const merged: Mechanics = {
+      dice,
+      typeOptions: [
+        { type: first, condition: alternativeTypeCondition(firstCondition) },
+        { type: second, condition: alternativeTypeCondition(secondCondition) },
+      ],
+    };
+    const kept = out.filter(
+      (_, index) => index !== firstIndex && index !== secondIndex,
+    );
+    kept.splice(Math.min(firstIndex, secondIndex), 0, merged);
+    out.splice(0, out.length, ...kept);
+  }
+  return out;
+}
+
+/**
  * A weapon-damage-die MODIFIER, not dealt damage itself — e.g. Enlarge's
  * "attacks with them deal 1d4 extra damage" / Reduce's "deal 1d4 less damage"
  * (eshyra-erf5.4). Distinct from `mechanics.damage`, which is always damage a
@@ -2467,7 +2534,7 @@ function parseSpellScaling(
 
 export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
   const text = `${spell.description} ${spell.higherLevels ?? ''}`;
-  const damage = parseDamage(text);
+  const damage = parseSpellDamage(text);
   const weaponDamageModifiers = parseWeaponDamageModifiers(text);
   const save = parseSaveWithSuccessBranch(text);
   const conditions = parseConditions(text);

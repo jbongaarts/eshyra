@@ -1300,6 +1300,52 @@ function validateMechanicsSave(entry: Obj, path: string): void {
   }
 }
 
+/**
+ * A damage entry names one canonical type, or (eshyra-o9bd.19.3.1.1, O3b) one
+ * roll whose type is one of several printed alternatives, each with its own
+ * verbatim condition. Exactly one of `type` | `typeOptions`; options are at
+ * least two distinct canonical types.
+ */
+function validateDamageEntryType(entry: Obj, entryPath: string): void {
+  if ((entry.type === undefined) === (entry.typeOptions === undefined)) {
+    throw new RulesPackError(
+      `${entryPath} must carry exactly one of type or typeOptions`,
+    );
+  }
+  if (entry.type !== undefined) {
+    const type = reqStr(entry, 'type', entryPath);
+    if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+      throw new RulesPackError(
+        `${entryPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+      );
+    }
+    return;
+  }
+  const options = objArray(entry, 'typeOptions', entryPath) ?? [];
+  if (options.length < 2) {
+    throw new RulesPackError(
+      `${entryPath}.typeOptions must list at least two damage types`,
+    );
+  }
+  const seen = new Set<string>();
+  options.forEach((option, i) => {
+    const optionPath = `${entryPath}.typeOptions[${i}]`;
+    const type = reqStr(option, 'type', optionPath);
+    if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
+      throw new RulesPackError(
+        `${optionPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
+      );
+    }
+    reqStr(option, 'condition', optionPath);
+    seen.add(type);
+  });
+  if (seen.size !== options.length) {
+    throw new RulesPackError(
+      `${entryPath}.typeOptions must name distinct damage types`,
+    );
+  }
+}
+
 function optMechanics(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -1485,12 +1531,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       } else {
         reqStr(entry, 'dice', entryPath);
       }
-      const type = reqStr(entry, 'type', entryPath);
-      if (!SRD_5_1_DAMAGE_TYPES.has(type)) {
-        throw new RulesPackError(
-          `${entryPath}.type must be a canonical SRD damage type, got ${JSON.stringify(type)}`,
-        );
-      }
+      validateDamageEntryType(entry, entryPath);
     });
   }
   // A weapon-damage-die MODIFIER (Enlarge/Reduce), not damage dealt directly.

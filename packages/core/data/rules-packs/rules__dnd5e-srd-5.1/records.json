@@ -164507,11 +164507,16 @@
         "damage": [
           {
             "dice": "2d8",
-            "type": "fire"
-          },
-          {
-            "dice": "2d8",
-            "type": "cold"
+            "typeOptions": [
+              {
+                "type": "fire",
+                "condition": "from a warm shield"
+              },
+              {
+                "type": "cold",
+                "condition": "from a cold shield"
+              }
+            ]
           }
         ]
       },
@@ -177205,11 +177210,16 @@
         "damage": [
           {
             "dice": "3d8",
-            "type": "radiant"
-          },
-          {
-            "dice": "3d8",
-            "type": "necrotic"
+            "typeOptions": [
+              {
+                "type": "radiant",
+                "condition": "if you are good or neutral"
+              },
+              {
+                "type": "necrotic",
+                "condition": "if you are evil"
+              }
+            ]
           }
         ],
         "effects": [
