@@ -323,7 +323,9 @@ const ENTRY_READERS: Record<
 };
 
 function stripTrailingModelRollLedger(narration: string): string {
-  return narration.replace(/(?:\n{2,}|\n)?Rolls:\s*\n[\s\S]*$/i, '').trimEnd();
+  return narration
+    .replace(/(?:^|\n)[ \t]*Rolls:[ \t\r]*\n[\s\S]*$/i, '')
+    .trimEnd();
 }
 
 export function playerVisibleRollEntries(

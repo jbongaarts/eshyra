@@ -37,3 +37,15 @@ describe('close_combat_instance tool contract', () => {
     expect(closeCombatInstanceTool.description).toMatch(/durable[^.]*rebound/);
   });
 });
+
+describe('refresh_effect description', () => {
+  it('states the duration check is limited to timed spell records', async () => {
+    const { refreshEffectTool } = await import(
+      '../src/orchestrator/toolRefreshEffect.js'
+    );
+    expect(refreshEffectTool.description).not.toMatch(
+      /keeps its record duration/,
+    );
+    expect(refreshEffectTool.description).toMatch(/timed duration/);
+  });
+});

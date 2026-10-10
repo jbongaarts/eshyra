@@ -225,6 +225,26 @@ describe('pure grant functions', () => {
     );
   });
 
+  it('keeps a proficiency a still-held source also confers, moving its provenance', () => {
+    const a = source('opt:a', { skills: ['Deception'] });
+    const b = source('feat:b', { skills: ['Deception'] });
+    const both = applyProficiencyGrants(rogueAt(15, { skills: [] }), [
+      a,
+      b,
+    ]).sheet;
+    expect(both.proficiencyGrants).toEqual([
+      { sourceRef: 'opt:a', skills: ['Deception'] },
+      { sourceRef: 'feat:b' },
+    ]);
+    const afterA = removeOptionGrants(both, 'opt:a', [b]).sheet;
+    expect(afterA.skillProficiencies).toEqual(['Deception']);
+    expect(afterA.proficiencyGrants).toEqual([
+      { sourceRef: 'feat:b', skills: ['Deception'] },
+    ]);
+    const afterB = removeOptionGrants(afterA, 'feat:b').sheet;
+    expect(afterB.skillProficiencies).toEqual([]);
+  });
+
   it('validator rejects a duplicate sourceRef and an unknown skill', () => {
     expect(() =>
       validateCharacterSheetProficiencyGrants({

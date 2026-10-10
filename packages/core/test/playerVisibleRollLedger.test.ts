@@ -187,6 +187,16 @@ describe('player-visible roll ledger', () => {
     expect(narration).not.toContain('99 (wrong)');
   });
 
+  it('keeps narration when "Rolls:" appears mid-line before a newline', () => {
+    const narration = appendPlayerVisibleRollLedger(
+      ['The dice-wright mutters: Rolls:', 'and the bones clatter on.'].join(
+        '\n',
+      ),
+      [],
+    );
+    expect(narration).toContain('and the bones clatter on.');
+  });
+
   it('removes a trailing model-authored Rolls section when no roll is engine-visible', () => {
     const narration = appendPlayerVisibleRollLedger(
       ['The brush stirs.', '', 'Rolls:', '- Hidden check: 18'].join('\n'),

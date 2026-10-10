@@ -1,4 +1,4 @@
-import { existsSync, renameSync, rmSync } from 'node:fs';
+import { existsSync, linkSync, renameSync, rmSync } from 'node:fs';
 import { openDatabase, withTransaction } from '../db.js';
 import { quoteIdent } from '../sql.js';
 import { type Checkpoint, DoltRepo } from './doltRepo.js';
@@ -127,9 +127,32 @@ export function materializeSnapshot(
     } finally {
       db.close();
     }
-    renameSync(tmpDbPath, destDbPath);
+    publishWithoutClobber(tmpDbPath, destDbPath);
+    removeDbFiles(tmpDbPath);
   } catch (e) {
     removeDbFiles(tmpDbPath);
+    throw e;
+  }
+}
+
+/**
+ * Atomically place `tmp` at `dest` only if `dest` does not exist. A hard link
+ * fails with EEXIST where `rename` would silently replace a destination that
+ * appeared after the earlier existence check. Filesystems without hard links
+ * fall back to the check-then-rename behavior.
+ */
+function publishWithoutClobber(tmp: string, dest: string): void {
+  try {
+    linkSync(tmp, dest);
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === 'EEXIST') {
+      throw new CheckpointError(`restore destination already exists: ${dest}`);
+    }
+    if (code === 'EPERM' || code === 'ENOTSUP' || code === 'EOPNOTSUPP') {
+      renameSync(tmp, dest);
+      return;
+    }
     throw e;
   }
 }

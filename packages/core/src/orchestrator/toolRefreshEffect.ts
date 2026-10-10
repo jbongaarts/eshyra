@@ -17,8 +17,10 @@ export const refreshEffectTool: Tool = {
     'Animate Dead reasserted before the 24-hour control window lapses. ' +
     'Only an active (not suppressed, never ended) effect can refresh; a ' +
     'rule that re-establishes an ended effect creates a NEW effect via ' +
-    'start_effect. A spell-grounded effect keeps its record duration; ' +
-    'omit duration to re-anchor the existing one from now.',
+    'start_effect. When the effect comes from a spell whose record has a ' +
+    'timed duration, a supplied duration must equal it; other effects ' +
+    'accept the supplied duration unchecked. Omit duration to re-anchor ' +
+    'the existing one from now.',
   inputSchema: {
     type: 'object',
     properties: {
