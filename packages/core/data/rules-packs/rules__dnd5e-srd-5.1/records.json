@@ -546,6 +546,7 @@
           "mechanics": {
             "resources": [
               {
+                "uses": 1,
                 "reset": "short-or-long-rest"
               }
             ],
@@ -1230,6 +1231,7 @@
           "mechanics": {
             "resources": [
               {
+                "uses": 1,
                 "reset": "long-rest"
               }
             ]
@@ -77062,11 +77064,6 @@
             "ability": "constitution",
             "dc": 10
           }
-        ],
-        "resources": [
-          {
-            "reset": "short-or-long-rest"
-          }
         ]
       }
     },
@@ -77252,6 +77249,7 @@
         "resources": [
           {
             "uses": "charisma-modifier",
+            "usesMinimum": 1,
             "reset": "long-rest"
           }
         ]
@@ -77400,7 +77398,8 @@
       "mechanics": {
         "resources": [
           {
-            "reset": "short-or-long-rest"
+            "reset": "short-or-long-rest",
+            "appliesTo": "feature:bard:bardic-inspiration"
           }
         ]
       }
@@ -77528,14 +77527,7 @@
     "data": {
       "source": "class:bard",
       "level": 2,
-      "description": "Beginning at 2nd level, you can use soothing music or oration to help revitalize your wounded allies during a short rest. If you or any friendly creatures who can hear your performance regain hit points at the end of the short rest by spending one or more Hit Dice, each of those creatures regains an extra 1d6 hit points. The extra hit points increase when you reach certain levels in this class: to 1d8 at 9th level, to 1d10 at 13th level, and to 1d12 at 17th level.",
-      "mechanics": {
-        "resources": [
-          {
-            "reset": "short-rest"
-          }
-        ]
-      }
+      "description": "Beginning at 2nd level, you can use soothing music or oration to help revitalize your wounded allies during a short rest. If you or any friendly creatures who can hear your performance regain hit points at the end of the short rest by spending one or more Hit Dice, each of those creatures regains an extra 1d6 hit points. The extra hit points increase when you reach certain levels in this class: to 1d8 at 9th level, to 1d10 at 13th level, and to 1d12 at 17th level."
     },
     "source": "SRD 5.1 p. 12",
     "license": {
@@ -77597,7 +77589,16 @@
       "mechanics": {
         "resources": [
           {
+            "resource": "spell-slots",
             "reset": "long-rest"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "saveDcFormula",
+            "base": 8,
+            "ability": "charisma",
+            "addProficiencyBonus": true
           }
         ]
       },
@@ -78168,7 +78169,8 @@
       "mechanics": {
         "resources": [
           {
-            "reset": "short-rest"
+            "uses": 1,
+            "reset": "long-rest"
           }
         ]
       }
@@ -78359,6 +78361,20 @@
         ],
         "resources": [
           {
+            "usesByLevel": [
+              {
+                "level": 2,
+                "uses": 1
+              },
+              {
+                "level": 6,
+                "uses": 2
+              },
+              {
+                "level": 18,
+                "uses": 3
+              }
+            ],
             "reset": "short-or-long-rest"
           }
         ]
@@ -78493,14 +78509,7 @@
     "data": {
       "source": "class:cleric",
       "level": 10,
-      "description": "Beginning at 10th level, you can call on your deity to intervene on your behalf when your need is great. Imploring your deity’s aid requires you to use your action. Describe the assistance you seek, and roll percentile dice. If you roll a number equal to or lower than your cleric level, your deity intervenes. The GM chooses the nature of the intervention; the effect of any cleric spell or cleric domain spell would be appropriate. If your deity intervenes, you can’t use this feature again for 7 days. Otherwise, you can use it again after you finish a long rest. At 20th level, your call for intervention succeeds automatically, no roll required.",
-      "mechanics": {
-        "resources": [
-          {
-            "reset": "long-rest"
-          }
-        ]
-      }
+      "description": "Beginning at 10th level, you can call on your deity to intervene on your behalf when your need is great. Imploring your deity’s aid requires you to use your action. Describe the assistance you seek, and roll percentile dice. If you roll a number equal to or lower than your cleric level, your deity intervenes. The GM chooses the nature of the intervention; the effect of any cleric spell or cleric domain spell would be appropriate. If your deity intervenes, you can’t use this feature again for 7 days. Otherwise, you can use it again after you finish a long rest. At 20th level, your call for intervention succeeds automatically, no roll required."
     },
     "source": "SRD 5.1 p. 17",
     "license": {
@@ -78555,6 +78564,22 @@
           "text": "You can use a holy symbol (see “Equipment”) as a spellcasting focus for your cleric spells."
         }
       ],
+      "mechanics": {
+        "resources": [
+          {
+            "resource": "spell-slots",
+            "reset": "long-rest"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "saveDcFormula",
+            "base": 8,
+            "ability": "wisdom",
+            "addProficiencyBonus": true
+          }
+        ]
+      },
       "choices": [
         {
           "id": "cantrips",
@@ -79346,6 +79371,22 @@
           "text": "You can use a druidic focus (see “Equipment”) as a spellcasting focus for your druid spells."
         }
       ],
+      "mechanics": {
+        "resources": [
+          {
+            "resource": "spell-slots",
+            "reset": "long-rest"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "saveDcFormula",
+            "base": 8,
+            "ability": "wisdom",
+            "addProficiencyBonus": true
+          }
+        ]
+      },
       "choices": [
         {
           "id": "cantrips",
@@ -79567,6 +79608,16 @@
       "mechanics": {
         "resources": [
           {
+            "usesByLevel": [
+              {
+                "level": 2,
+                "uses": 1
+              },
+              {
+                "level": 17,
+                "uses": 2
+              }
+            ],
             "reset": "short-or-long-rest"
           }
         ]
@@ -79823,7 +79874,20 @@
       "mechanics": {
         "resources": [
           {
-            "uses": 2,
+            "usesByLevel": [
+              {
+                "level": 9,
+                "uses": 1
+              },
+              {
+                "level": 13,
+                "uses": 2
+              },
+              {
+                "level": 17,
+                "uses": 3
+              }
+            ],
             "reset": "long-rest"
           }
         ]
@@ -79907,6 +79971,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 1,
             "reset": "short-or-long-rest"
           }
         ]
@@ -80771,6 +80836,14 @@
           {
             "reset": "short-or-long-rest"
           }
+        ],
+        "effects": [
+          {
+            "kind": "saveDcFormula",
+            "base": 8,
+            "ability": "wisdom",
+            "addProficiencyBonus": true
+          }
         ]
       }
     },
@@ -81433,6 +81506,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 1,
             "reset": "long-rest"
           }
         ],
@@ -81661,6 +81735,7 @@
         "resources": [
           {
             "uses": "charisma-modifier",
+            "usesMinimum": 1,
             "reset": "long-rest"
           }
         ]
@@ -81740,6 +81815,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": "1-plus-charisma-modifier",
             "reset": "long-rest"
           }
         ]
@@ -82015,6 +82091,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 1,
             "reset": "short-or-long-rest"
           }
         ]
@@ -82089,7 +82166,16 @@
       "mechanics": {
         "resources": [
           {
+            "resource": "spell-slots",
             "reset": "long-rest"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "saveDcFormula",
+            "base": 8,
+            "ability": "charisma",
+            "addProficiencyBonus": true
           }
         ]
       },
@@ -82941,7 +83027,16 @@
       "mechanics": {
         "resources": [
           {
+            "resource": "spell-slots",
             "reset": "long-rest"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "saveDcFormula",
+            "base": 8,
+            "ability": "wisdom",
+            "addProficiencyBonus": true
           }
         ]
       },
@@ -83517,6 +83612,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 1,
             "reset": "short-or-long-rest"
           }
         ]
@@ -83698,14 +83794,7 @@
     "data": {
       "source": "subclass:school-of-evocation",
       "level": 14,
-      "description": "Starting at 14th level, you can increase the power of your simpler spells. When you cast a wizard spell of 1st through 5th level that deals damage, you can deal maximum damage with that spell. The first time you do so, you suffer no adverse effect. If you use this feature again before you finish a long rest, you take 2d12 necrotic damage for each level of the spell, immediately after you cast it. Each time you use this feature again before finishing a long rest, the necrotic damage per spell level increases by 1d12. This damage ignores resistance and immunity.",
-      "mechanics": {
-        "resources": [
-          {
-            "reset": "long-rest"
-          }
-        ]
-      }
+      "description": "Starting at 14th level, you can increase the power of your simpler spells. When you cast a wizard spell of 1st through 5th level that deals damage, you can deal maximum damage with that spell. The first time you do so, you suffer no adverse effect. If you use this feature again before you finish a long rest, you take 2d12 necrotic damage for each level of the spell, immediately after you cast it. Each time you use this feature again before finishing a long rest, the necrotic damage per spell level increases by 1d12. This damage ignores resistance and immunity."
     },
     "source": "SRD 5.1 p. 54",
     "license": {
@@ -83879,6 +83968,9 @@
       "source": "class:sorcerer",
       "level": 2,
       "description": "At 2nd level, you tap into a deep wellspring of magic within yourself. This wellspring is represented by sorcery points, which allow you to create a variety of magical effects. Sorcery Points You have 2 sorcery points, and you gain more as you reach higher levels, as shown in the Sorcery Points column of the Sorcerer table. You can never have more sorcery points than shown on the table for your level. You regain all spent sorcery points when you finish a long rest. Flexible Casting You can use your sorcery points to gain additional spell slots, or sacrifice spell slots to gain additional sorcery points. You learn other ways to use your sorcery points as you reach higher levels. Creating Spell Slots. You can transform unexpended sorcery points into one spell slot as a bonus action on your turn. The Creating Spell Slots table shows the cost of creating a spell slot of a given level. You can create spell slots no higher in level than 5th. Any spell slot you create with this feature vanishes when you finish a long rest. Converting a Spell Slot to Sorcery Points. As a bonus action on your turn, you can expend one spell slot and gain a number of sorcery points equal to the slot’s level.",
+      "tableRefs": [
+        "table:creating-spell-slots"
+      ],
       "mechanics": {
         "procedures": [
           {
@@ -84002,10 +84094,7 @@
             }
           }
         ]
-      },
-      "tableRefs": [
-        "table:creating-spell-slots"
-      ]
+      }
     },
     "source": "SRD 5.1 pp. 43, 44",
     "license": {
@@ -84182,14 +84271,7 @@
     "data": {
       "source": "class:sorcerer",
       "level": 20,
-      "description": "At 20th level, you regain 4 expended sorcery points whenever you finish a short rest.",
-      "mechanics": {
-        "resources": [
-          {
-            "reset": "short-rest"
-          }
-        ]
-      }
+      "description": "At 20th level, you regain 4 expended sorcery points whenever you finish a short rest."
     },
     "source": "SRD 5.1 p. 44",
     "license": {
@@ -84244,6 +84326,22 @@
           "text": "You can use an arcane focus as a spellcasting focus for your sorcerer spells."
         }
       ],
+      "mechanics": {
+        "resources": [
+          {
+            "resource": "spell-slots",
+            "reset": "long-rest"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "saveDcFormula",
+            "base": 8,
+            "ability": "charisma",
+            "addProficiencyBonus": true
+          }
+        ]
+      },
       "choices": [
         {
           "id": "cantrips",
@@ -84373,6 +84471,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 1,
             "reset": "short-or-long-rest"
           }
         ]
@@ -84408,14 +84507,7 @@
     "data": {
       "source": "subclass:the-fiend",
       "level": 10,
-      "description": "Starting at 10th level, you can choose one damage type when you finish a short or long rest. You gain resistance to that damage type until you choose a different one with this feature. Damage from magical weapons or silver weapons ignores this resistance.",
-      "mechanics": {
-        "resources": [
-          {
-            "reset": "short-or-long-rest"
-          }
-        ]
-      }
+      "description": "Starting at 10th level, you can choose one damage type when you finish a short or long rest. You gain resistance to that damage type until you choose a different one with this feature. Damage from magical weapons or silver weapons ignores this resistance."
     },
     "source": "SRD 5.1 p. 51",
     "license": {
@@ -84451,6 +84543,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 1,
             "reset": "long-rest"
           }
         ]
@@ -85231,6 +85324,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 1,
             "reset": "long-rest"
           }
         ]
@@ -85270,6 +85364,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 1,
             "reset": "long-rest"
           }
         ]
@@ -85417,11 +85512,6 @@
       "level": 3,
       "description": "At 3rd level, your otherworldly patron bestows a gift upon you for your loyal service. You gain one of the following features of your choice. Pact of the Chain You learn the find familiar spell and can cast it as a ritual. The spell doesn’t count against your number of spells known. When you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: imp, pseudodragon, quasit, or sprite. Additionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction. Pact of the Blade You can use your action to create a pact weapon in your empty hand. You can choose the form that this melee weapon takes each time you create it. You are proficient with it while you wield it. This weapon counts as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage. Your pact weapon disappears if it is more than 5 feet away from you for 1 minute or more. It also disappears if you use this feature again, if you dismiss the weapon (no action required), or if you die. You can transform one magic weapon into your pact weapon by performing a special ritual while you hold the weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. You can then dismiss the weapon, shunting it into an extradimensional space, and it appears whenever you create your pact weapon thereafter. You can’t affect an artifact or a sentient weapon in this way. The weapon ceases being your pact weapon if you die, if you perform the 1-hour ritual on a different weapon, or if you use a 1-hour ritual to break your bond to it. The weapon appears at your feet if it is in the extradimensional space when the bond breaks. Pact of the Tome Your patron gives you a grimoire called a Book of Shadows. When you gain this feature, choose three cantrips from any class’s spell list (the three needn’t be from the same list). While the book is on your person, you can cast those cantrips at will. They don’t count against your number of cantrips known. If they don’t appear on the warlock spell list, they are nonetheless warlock spells for you. If you lose your Book of Shadows, you can perform a 1-hour ceremony to receive a replacement from your patron. This ceremony can be performed during a short or long rest, and it destroys the previous book. The book turns to ash when you die.",
       "mechanics": {
-        "resources": [
-          {
-            "reset": "short-or-long-rest"
-          }
-        ],
         "spellGrants": [
           {
             "spell": "spell:find-familiar"
@@ -85560,7 +85650,16 @@
       "mechanics": {
         "resources": [
           {
+            "resource": "spell-slots",
             "reset": "short-or-long-rest"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "saveDcFormula",
+            "base": 8,
+            "ability": "charisma",
+            "addProficiencyBonus": true
           }
         ]
       },
@@ -85732,14 +85831,7 @@
     "data": {
       "source": "subclass:way-of-the-open-hand",
       "level": 11,
-      "description": "Beginning at 11th level, you can enter a special meditation that surrounds you with an aura of peace. At the end of a long rest, you gain the effect of a sanctuary spell that lasts until the start of your next long rest (the spell can end early as normal). The saving throw DC for the spell equals 8 + your Wisdom modifier + your proficiency bonus.",
-      "mechanics": {
-        "resources": [
-          {
-            "reset": "long-rest"
-          }
-        ]
-      }
+      "description": "Beginning at 11th level, you can enter a special meditation that surrounds you with an aura of peace. At the end of a long rest, you gain the effect of a sanctuary spell that lasts until the start of your next long rest (the spell can end early as normal). The saving throw DC for the spell equals 8 + your Wisdom modifier + your proficiency bonus."
     },
     "source": "SRD 5.1 p. 29",
     "license": {
@@ -85775,6 +85867,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 1,
             "reset": "long-rest"
           }
         ]
@@ -85872,7 +85965,8 @@
       "mechanics": {
         "resources": [
           {
-            "reset": "short-rest"
+            "uses": 1,
+            "reset": "day"
           }
         ]
       }
@@ -85955,6 +86049,7 @@
       "mechanics": {
         "resources": [
           {
+            "uses": 1,
             "reset": "short-or-long-rest"
           }
         ]
@@ -86111,6 +86206,22 @@
           "text": "Each time you gain a wizard level, you can add two wizard spells of your choice to your spellbook for free. Each of these spells must be of a level for which you have spell slots, as shown on the Wizard table. On your adventures, you might find other spells that you can add to your spellbook (see the “Your Spellbook” sidebar)."
         }
       ],
+      "mechanics": {
+        "resources": [
+          {
+            "resource": "spell-slots",
+            "reset": "long-rest"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "saveDcFormula",
+            "base": 8,
+            "ability": "intelligence",
+            "addProficiencyBonus": true
+          }
+        ]
+      },
       "choices": [
         {
           "id": "cantrips",

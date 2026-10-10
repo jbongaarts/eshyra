@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1877,
+  "rowCount": 1879,
   "dispositionCounts": {
     "complete": 438,
-    "model-adjudicated": 1234,
+    "model-adjudicated": 1236,
     "not-mechanical": 196,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -14226,10 +14226,12 @@
       "fieldPath": "data.mechanics.effects[].ability",
       "representativeValues": [
         "strength",
+        "charisma",
         "wisdom",
-        "dexterity"
+        "dexterity",
+        "intelligence"
       ],
-      "population": 5,
+      "population": 14,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -14714,7 +14716,7 @@
         "speedBonus",
         "checkMinimum"
       ],
-      "population": 85,
+      "population": 94,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -15604,13 +15606,33 @@
       "recordKinds": [
         "feature"
       ],
+      "fieldPath": "data.mechanics.resources[].appliesTo",
+      "representativeValues": [
+        "feature:bard:bardic-inspiration"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.resources[].appliesTo",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
       "fieldPath": "data.mechanics.resources[].reset",
       "representativeValues": [
         "long-rest",
         "short-or-long-rest",
-        "short-rest"
+        "day"
       ],
-      "population": 35,
+      "population": 31,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -15626,11 +15648,32 @@
       "recordKinds": [
         "feature"
       ],
+      "fieldPath": "data.mechanics.resources[].resource",
+      "representativeValues": [
+        "spell-slots"
+      ],
+      "population": 8,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.resources[].resource",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
       "fieldPath": "data.mechanics.resources[].uses",
       "representativeValues": [
-        "charisma-modifier"
+        "charisma-modifier",
+        "1-plus-charisma-modifier"
       ],
-      "population": 2,
+      "population": 3,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
