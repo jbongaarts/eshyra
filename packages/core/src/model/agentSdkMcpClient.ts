@@ -25,7 +25,11 @@ import type {
   ModelToolExecutor,
   ProviderExecutedToolCall,
 } from './client.js';
-import { ModelClientError, ModelRateLimitError } from './client.js';
+import {
+  ModelClientError,
+  ModelRateLimitError,
+  toToolResultPayload,
+} from './client.js';
 import { toolInputSchemaToZodShape } from './jsonSchemaToZod.js';
 import type { ModelToolDefinition } from './toolSchema.js';
 
@@ -160,9 +164,7 @@ interface McpToolResult {
 function toResultPayload(
   result: ModelToolExecutionResult,
 ): Record<string, unknown> {
-  return result.ok
-    ? { ok: true, data: result.data }
-    : { ok: false, code: result.code, message: result.message };
+  return toToolResultPayload(result);
 }
 
 /** Render a deterministic tool result as an MCP `CallToolResult`. */

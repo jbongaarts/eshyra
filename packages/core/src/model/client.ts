@@ -253,6 +253,31 @@ export interface ModelToolResult {
         readonly ok: false;
         readonly code: string;
         readonly message: string;
+        /**
+         * Optional structured failure data (for example qualified ambiguous
+         * lookup candidates). Mirrors the orchestrator's `ToolResult`; every
+         * provider serializer delivers it via {@link toToolResultPayload}.
+         */
+        readonly data?: unknown;
+      };
+}
+
+/**
+ * The one provider-facing serialization of a deterministic tool outcome.
+ * Success and error-without-data keep their historical shapes; an error that
+ * carries `data` delivers it so the DM sees it. Every transport (Anthropic,
+ * OpenAI, Agent SDK MCP, Codex MCP) must render results through this.
+ */
+export function toToolResultPayload(
+  result: ModelToolResult['result'],
+): Record<string, unknown> {
+  return result.ok
+    ? { ok: true, data: result.data }
+    : {
+        ok: false,
+        code: result.code,
+        message: result.message,
+        ...(result.data !== undefined ? { data: result.data } : {}),
       };
 }
 

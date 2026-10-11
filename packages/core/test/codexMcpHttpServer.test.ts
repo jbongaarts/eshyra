@@ -11,6 +11,11 @@ import {
   startEshyraMcpHttpServer,
 } from '../src/model/codexMcpHttpServer.js';
 import type { ModelToolDefinition } from '../src/model/toolSchema.js';
+import {
+  AMBIGUOUS_LOOKUP_CASES,
+  expectProviderPayloadQualified,
+  realAmbiguousLookup,
+} from './support/ambiguousLookup.js';
 
 const restrictedSandbox = process.env.ESHYRA_TEST_SANDBOX === '1';
 
@@ -140,6 +145,29 @@ describe.skipIf(restrictedSandbox)('startEshyraMcpHttpServer', () => {
       message: 'bad dice',
     });
   });
+
+  it.each(AMBIGUOUS_LOOKUP_CASES)(
+    'delivers qualified ambiguous $name candidates over MCP text and structuredContent',
+    async ({ kind, name }) => {
+      const lookup = realAmbiguousLookup(kind, name);
+      server = await startEshyraMcpHttpServer(
+        [rollDef],
+        executorReturning(lookup.result),
+        [],
+      );
+      client = await connect(server);
+
+      const result = await client.callTool({
+        name: 'roll',
+        arguments: { dice: '1d20' },
+      });
+
+      expect(result.isError).toBe(true);
+      const content = result.content as { type: string; text: string }[];
+      expectProviderPayloadQualified(JSON.parse(content[0].text), lookup);
+      expectProviderPayloadQualified(result.structuredContent, lookup);
+    },
+  );
 
   it('rejects a request whose bearer token does not match', async () => {
     server = await startEshyraMcpHttpServer(
