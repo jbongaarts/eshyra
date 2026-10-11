@@ -14,115 +14,412 @@ import { getBundledDnd5eSrdPack } from '../../../src/rules/bundledSrdPack.js';
 import { validateRecordKindSchema } from '../../../src/rules/kindSchemas.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 
-const SHAPE_PHRASE =
-  /\b\d+-foot(?:-radius)?(?:,? \d+-foot[- ](?:tall|high))?[ -](?:sphere|cube|cone|cylinder|hemisphere)\b|\b\d+-foot-tall cylinder with a \d+-foot radius\b|\b\d+-foot-radius circle\b|\b\d+-foot-radius\b|\bline (?:of [a-z ]+ )?\d+ feet long\b|\b\d+-foot-wide, \d+-foot-long line\b/i;
+/**
+ * INDEPENDENT source-phrase reader (eshyra-o9bd.19.4.1.3). It shares no
+ * regular expression or code with the importer: it tokenizes each description
+ * sentence and walks the tokens, so a grammatical family the importer's
+ * recognizer misses is still seen here.
+ */
+interface Dimension {
+  readonly shape: string;
+  readonly size: number;
+  readonly height?: number;
+  readonly width?: number;
+}
 
-const SHAPE_NOUNS: Readonly<Record<string, RegExp>> = {
-  sphere: /sphere/,
-  cube: /cube/,
-  cone: /cone/,
-  cylinder: /cylinder/,
-  hemisphere: /hemisphere/,
-  line: /line/,
-  radius: /radius|circle/,
-};
+const isNumber = (token: string | undefined): boolean =>
+  token !== undefined && /^\d+$/.test(token);
 
-const ORIGINS = new Set(['self', 'point-within-range', 'creature', 'object']);
+function tokenize(sentence: string): string[] {
+  return sentence
+    .toLowerCase()
+    .replace(/[\u00ad‐-―-]/g, ' ')
+    .replace(/,/g, ' , ')
+    .replace(/[.()“”]/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length > 0);
+}
+
+function dimensionsOf(sentence: string): Dimension[] {
+  const t = tokenize(sentence);
+  const found: Dimension[] = [];
+  for (let i = 0; i < t.length; i++) {
+    if (t[i] === 'mile' && t[i + 1] === 'radius') {
+      found.push({ shape: 'mile-radius', size: 0 });
+      continue;
+    }
+    if (!isNumber(t[i])) continue;
+    const n = Number(t[i]);
+    if (t[i + 1] === 'feet') {
+      if (t[i - 1] === 'of' && t[i - 2] === 'radius')
+        found.push({ shape: 'radius', size: n });
+      else if (
+        t[i + 2] === 'long' &&
+        t[i + 3] === 'and' &&
+        isNumber(t[i + 4]) &&
+        t[i + 6] === 'wide' &&
+        t.slice(Math.max(0, i - 6), i).includes('line')
+      )
+        found.push({ shape: 'line', size: n, width: Number(t[i + 4]) });
+      continue;
+    }
+    if (t[i + 1] !== 'foot') continue;
+    const word = t[i + 2];
+    if (word === 'radius') {
+      let k = i + 3;
+      if (t[k] === ',') k++;
+      if (
+        isNumber(t[k]) &&
+        t[k + 1] === 'foot' &&
+        (t[k + 2] === 'high' || t[k + 2] === 'tall') &&
+        t[k + 3] === 'cylinder'
+      ) {
+        found.push({ shape: 'cylinder', size: n, height: Number(t[k]) });
+        i = k + 3;
+      } else if (t[k] === 'sphere' || t[k] === 'hemisphere') {
+        found.push({ shape: t[k], size: n });
+      } else {
+        found.push({ shape: 'radius', size: n });
+      }
+    } else if (word === 'cube' || word === 'cone') {
+      found.push({ shape: word, size: n });
+    } else if (
+      (word === 'tall' || word === 'high') &&
+      t[i + 3] === 'cylinder' &&
+      t[i + 4] === 'with' &&
+      isNumber(t[i + 6]) &&
+      t[i + 7] === 'foot' &&
+      t[i + 8] === 'radius'
+    ) {
+      found.push({ shape: 'cylinder', size: Number(t[i + 6]), height: n });
+      i += 8;
+    } else if (
+      word === 'wide' &&
+      t[i + 3] === ',' &&
+      isNumber(t[i + 4]) &&
+      t[i + 5] === 'foot' &&
+      t[i + 6] === 'long' &&
+      t[i + 7] === 'line'
+    ) {
+      found.push({ shape: 'line', size: Number(t[i + 4]), width: n });
+    }
+  }
+  return found;
+}
+
+function sentencesOf(description: string): string[] {
+  return description
+    .replace(/- foot/g, '-foot')
+    .split(/(?<=[.!?])\s+/)
+    .filter((sentence) => sentence.length > 0);
+}
+
+type Expectation =
+  | { readonly kind: 'projected'; readonly area: Mechanics }
+  | { readonly kind: 'unprojected'; readonly reason: string };
 
 /**
- * Population members with no typed area, each with the reason it is not one
- * defined effect area or has no printed origin. Reviewed against the source
- * sentence; an entry is never a silent skip.
+ * What the printed text says the area is: a sentence DEFINES the effect area
+ * only when it prints exactly one supported dimension phrase together with an
+ * anchor (a point within range, or the caster). Dimensions without an anchor
+ * are subordinate and ignored; competing definitions are unprojected.
+ */
+function expectedAreaOf(description: string, range: string): Expectation {
+  const sentences = sentencesOf(description);
+  const pointPrinted = sentences.some((sentence) => {
+    const lower = sentence.toLowerCase();
+    const at = lower.indexOf('point');
+    return at >= 0 && lower.indexOf('within range', at) > at;
+  });
+  const defining: { dim: Dimension; origin: string }[] = [];
+  for (const sentence of sentences) {
+    const dims = dimensionsOf(sentence);
+    if (dims.length === 0) continue;
+    const lower = sentence.toLowerCase();
+    let origin: string | undefined;
+    if (/\beach point\b/.test(lower))
+      return { kind: 'unprojected', reason: 'several origin points' };
+    const at = lower.indexOf('point');
+    if (
+      (at >= 0 && lower.indexOf('within range', at) > at) ||
+      (pointPrinted && lower.includes('that point'))
+    )
+      origin = 'point-within-range';
+    else if (lower.includes('around you') || lower.includes('centered on you'))
+      origin = 'self';
+    if (origin === undefined) continue;
+    if (dims.length !== 1)
+      return { kind: 'unprojected', reason: 'two shapes in one clause' };
+    defining.push({ dim: dims[0], origin });
+  }
+  const rangeMatch = /^Self \((\d+)-(foot|mile)/.exec(range);
+  if (rangeMatch !== null) {
+    // Range-printed self area: shape/size/unit from the parenthetical; a
+    // line's width comes from the description's matching "N feet long and M
+    // feet wide".
+    const size = Number(rangeMatch[1]);
+    const noun = ['sphere', 'hemisphere', 'cone', 'line', 'cube'].find((word) =>
+      range.includes(word),
+    );
+    const lineWidth =
+      noun === 'line'
+        ? sentences
+            .flatMap(dimensionsOf)
+            .find((dim) => dim.shape === 'line' && dim.size === size)?.width
+        : undefined;
+    return {
+      kind: 'projected',
+      area: {
+        shape:
+          noun === 'sphere' && range.includes('hemisphere')
+            ? 'hemisphere'
+            : (noun ?? 'radius'),
+        size,
+        ...(lineWidth === undefined ? {} : { width: lineWidth }),
+        unit: rangeMatch[2],
+        origin: 'self',
+      },
+    };
+  }
+  if (defining.length === 0)
+    return { kind: 'unprojected', reason: 'no defining clause' };
+  const first = JSON.stringify(defining[0]);
+  if (defining.some((item) => JSON.stringify(item) !== first))
+    return { kind: 'unprojected', reason: 'competing definitions' };
+  const { dim, origin } = defining[0];
+  if (dim.shape === 'mile-radius')
+    return { kind: 'unprojected', reason: 'mile-scale alternative' };
+  return {
+    kind: 'projected',
+    area: {
+      shape: dim.shape,
+      size: dim.size,
+      ...(dim.height === undefined ? {} : { height: dim.height }),
+      ...(dim.width === undefined ? {} : { width: dim.width }),
+      unit: 'foot',
+      origin,
+    },
+  };
+}
+
+/** Loose population: any sentence printing N feet beside a shape noun. */
+function printsDimensionFamily(description: string): boolean {
+  return sentencesOf(description).some(
+    (sentence) =>
+      /\d+[\s\u00ad‐-―-]*(?:foot|feet)/i.test(sentence) &&
+      /\b(?:radius|cubes?|cones?|cylinder|sphere|hemisphere|line)\b/i.test(
+        sentence,
+      ),
+  );
+}
+
+/**
+ * Population members whose source does NOT define one supported effect area,
+ * each with the clause-level reason (checked against the SRD 5.1 PDF text).
+ * Every entry must be unprojected by the importer AND by the independent
+ * reader; a member that becomes projectable must leave this list.
  */
 const REVIEWED_UNPROJECTED: Readonly<Record<string, string>> = {
   'spell:alarm':
-    'Warded area chosen within range and bounded by a maximum size; no printed origin point.',
+    '"an area within range that is no larger than a 20-foot cube": a maximum bound with no printed origin point.',
+  'spell:animate-objects':
+    '"blindsight with a radius of 30 feet": a sense radius of the animated object, not an effect area.',
   'spell:antipathy-sympathy':
-    'Target alternatives (object, creature, or area no larger than a 200-foot cube); no printed origin point.',
+    'Target is an object, a creature, or "an area no larger than a 200-foot cube": alternatives and a maximum bound, no origin point.',
+  'spell:branding-smite':
+    '"sheds dim light in a 5-foot radius": a light radius of the marked target, not the spell\'s effect area.',
+  'spell:call-lightning':
+    'Cloud is a cylinder "centered on a point you can see 100 feet directly above you": not a point within range, and bolts strike at separate points.',
+  'spell:commune-with-nature':
+    '"the radius is limited to 300 feet": a knowledge-range limit, not an effect area.',
   'spell:conjure-elemental':
-    'Elemental area that fills a 10-foot cube within range; no printed origin point.',
+    '"an area ... that fills a 10-foot cube within range": the elemental source area, no printed origin point.',
+  'spell:control-water':
+    '"a cube up to 100 feet on a side": a maximum bound across four alternative uses, no origin point.',
   'spell:create-or-destroy-water':
-    'Two alternative modes (rain in a 30-foot cube; fog destruction in a 30-foot cube); no single area.',
+    'Two alternative modes (rain in a 30-foot cube; fog destruction in a 30-foot cube): no single area, no origin point.',
   'spell:creation':
-    'Object-size bound (no larger than a 5-foot cube), not an effect area.',
+    '"no larger than a 5-foot cube": an object-size bound, not an effect area.',
+  'spell:dancing-lights':
+    '"each light sheds dim light in a 10-foot radius": a light radius, not an effect area.',
   'spell:disintegrate':
-    'Portion of a target object (a 10-foot-cube portion), not an effect area.',
+    '"a 10-foot-cube portion" of a target object: a portion of the target, not an effect area.',
   'spell:druidcraft':
-    'Effect size bound (must fit in a 5-foot cube), not an effect area.',
+    '"must fit in a 5-foot cube": an effect-size bound, not an effect area.',
   'spell:fabricate':
-    'Object size bound (contained within a 10-foot cube), not an effect area.',
+    '"contained within a 10-foot cube": an object-size bound, not an effect area.',
   'spell:faerie-fire':
-    'Objects in a 20-foot cube within range; no printed origin point.',
+    '"Each object in a 20-foot cube within range": no printed origin point (the 10-foot radius is a light radius).',
+  'spell:fire-shield':
+    '"shedding bright light in a 10-foot radius": a light radius, not an effect area.',
+  'spell:fire-storm':
+    '"up to ten 10-foot cubes, which you can arrange as you wish": several arranged cubes, not one area.',
+  'spell:flame-blade':
+    '"sheds bright light in a 10-foot radius": a light radius, not an effect area.',
+  'spell:flaming-sphere':
+    'A "5-foot-diameter sphere" object that moves, with a 5-foot reach and a 20-foot light radius: object bounds, not an effect area.',
   'spell:glyph-of-warding':
-    'Explosive-runes mode centered on the glyph, with no printed point within range, and a second spell-glyph mode; no single projected origin.',
+    'Explosive-runes mode "centered on the glyph" (not a point within range) beside a second spell-glyph mode: no single projected origin.',
+  'spell:hallow':
+    '"The area can have a radius up to 60 feet": a maximum bound around a touched point, not a fixed area.',
   'spell:hallucinatory-terrain':
-    'Natural terrain in a 150-foot cube in range; no printed origin point.',
+    '"terrain in a 150-foot cube in range": no printed origin point.',
   'spell:hypnotic-pattern':
-    'Pattern inside a 30-foot cube within range; no printed origin point.',
+    '"inside a 30-foot cube within range": no printed origin point.',
+  'spell:light':
+    '"sheds bright light in a 20-foot radius": a light radius of the object, not an effect area.',
+  'spell:magnificent-mansion':
+    '"the space can\'t exceed 50 cubes, each cube being 10 feet on each side": capacity of an extradimensional space, not an effect area.',
   'spell:major-image':
-    'Image size bound (no larger than a 20-foot cube), not an effect area.',
+    '"no larger than a 20-foot cube": an image-size bound, not an effect area.',
   'spell:meteor-swarm':
-    'Four printed origin points (each point you choose); several origins are not one area.',
+    '"centered on each point you choose": four origin points, not one area.',
   'spell:minor-illusion':
-    'Image size bound (no larger than a 5-foot cube), not an effect area.',
+    '"no larger than a 5-foot cube": an image-size bound, not an effect area.',
+  'spell:plant-growth':
+    'Two alternative uses: a 100-foot radius (1 action) or a half-mile radius (8 hours): the foot-unit area cannot represent both.',
+  'spell:private-sanctum':
+    '"a cube that can be as small as 5 feet to as large as 100 feet on each side": a variable size, no fixed area.',
+  'spell:produce-flame':
+    '"sheds bright light in a 10-foot radius": a light radius, not an effect area.',
   'spell:programmed-illusion':
-    'Illusion size bound (no larger than a 30-foot cube), not an effect area.',
+    '"no larger than a 30-foot cube": an illusion-size bound, not an effect area.',
   'spell:silent-image':
-    'Image size bound (no larger than a 15-foot cube), not an effect area.',
+    '"no larger than a 15-foot cube": an image-size bound, not an effect area.',
   'spell:slow':
-    'Creatures altered within a 40-foot cube within range; no printed origin point.',
+    '"six creatures of your choice in a 40-foot cube within range": no printed origin point.',
+  'spell:storm-of-vengeance':
+    '"centered on a point you can see and spreading to a radius of 360 feet": the origin is a point you can see (range Sight), not a point within range.',
   'spell:symbol':
-    'Dim-light sphere and mode-based effects; no printed origin point.',
+    '"filling a 60-foot-radius sphere with dim light" on trigger within mode-based effects: no printed origin point.',
   'spell:teleport':
-    'Object size bound (must fit inside a 10-foot cube), not an effect area.',
-  'spell:web':
-    'A 20-foot cube from a chosen point, but a second shape sentence (a 5-foot cube of webs) makes the single-area rule fail closed.',
+    '"able to fit entirely inside a 10-foot cube": an object-size bound, not an effect area.',
+  'spell:wall-of-force':
+    '"a hemispherical dome or a sphere with a radius of up to 10 feet": a shape alternative of a wall with a maximum bound.',
+  'spell:wall-of-ice':
+    '"a hemispherical dome or a sphere with a radius of up to 10 feet": a shape alternative of a wall with a maximum bound.',
+  'spell:prismatic-wall':
+    '"a sphere up to 30 feet in diameter": an alternative shape of a wall, with no radius phrase to project.',
 };
 
 type Mechanics = Record<string, unknown>;
 
 const pack = getBundledDnd5eSrdPack();
 const spells = pack.records.filter((record) => record.kind === 'spell');
-const population = spells.filter((record) =>
-  SHAPE_PHRASE.test(String(record.data.description)),
+const population = spells.filter(
+  (record) =>
+    printsDimensionFamily(String(record.data.description)) ||
+    /^Self \(/.test(String(record.data.range)),
 );
 
 function mechanicsOf(record: RulesRecord): Mechanics {
   return (record.data.mechanics ?? {}) as Mechanics;
 }
 
-describe('spell area population (eshyra-o9bd.19.4.1.1)', () => {
-  it('types or reviews every spell whose description prints a shape phrase', () => {
-    const untyped = population
-      .filter((record) => mechanicsOf(record).area === undefined)
-      .map((record) => record.key)
-      .sort();
-    expect(untyped).toEqual(Object.keys(REVIEWED_UNPROJECTED).sort());
+/**
+ * Compare the COMPLETE typed projection of every population member with the
+ * independently read source: deep equality on shape, size, height, width,
+ * unit and origin (so a swapped radius/height or a self-for-point origin
+ * disagrees), and exact membership of the reviewed-unprojected list.
+ */
+function areaDisagreements(records: readonly RulesRecord[]): string[] {
+  const problems: string[] = [];
+  const reviewedKeys = new Set(Object.keys(REVIEWED_UNPROJECTED));
+  for (const record of records) {
+    const expected = expectedAreaOf(
+      String(record.data.description),
+      String(record.data.range),
+    );
+    const actual = mechanicsOf(record).area;
+    if (expected.kind === 'projected') {
+      if (
+        JSON.stringify(sortKeys(actual)) !==
+        JSON.stringify(sortKeys(expected.area))
+      )
+        problems.push(
+          `${record.key}: area ${JSON.stringify(actual)} != source ${JSON.stringify(expected.area)}`,
+        );
+      if (reviewedKeys.has(record.key))
+        problems.push(`${record.key}: reviewed-unprojected but projectable`);
+    } else {
+      if (actual !== undefined)
+        problems.push(
+          `${record.key}: area ${JSON.stringify(actual)} but source is ${expected.reason}`,
+        );
+      if (!reviewedKeys.has(record.key))
+        problems.push(`${record.key}: unprojected without a reviewed reason`);
+    }
+  }
+  return problems;
+}
+
+function sortKeys(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).sort(([x], [y]) =>
+      x.localeCompare(y),
+    ),
+  );
+}
+
+describe('spell area population (eshyra-o9bd.19.4.1.3)', () => {
+  it('projects exactly what the independently read defining clause prints, or reviews the spell', () => {
+    expect(population.length).toBeGreaterThan(0);
+    expect(areaDisagreements(population)).toEqual([]);
     for (const reason of Object.values(REVIEWED_UNPROJECTED))
       expect(reason.length).toBeGreaterThan(0);
+    const populationKeys = new Set(population.map((record) => record.key));
+    for (const key of Object.keys(REVIEWED_UNPROJECTED))
+      expect(populationKeys.has(key)).toBe(true);
   });
 
-  it('projects only dimensions the printed phrase carries, with an allowed origin', () => {
-    const typed = population.filter(
-      (record) => mechanicsOf(record).area !== undefined,
-    );
-    expect(typed.length).toBeGreaterThan(0);
-    for (const record of typed) {
-      const area = mechanicsOf(record).area as Record<string, unknown>;
-      const text = String(record.data.description);
-      const range = String(record.data.range);
-      expect(ORIGINS.has(String(area.origin))).toBe(true);
-      expect(area.unit).toBe('foot');
-      expect(SHAPE_NOUNS[String(area.shape)]).toBeDefined();
-      expect(`${text} ${range}`).toMatch(SHAPE_NOUNS[String(area.shape)]);
-      expect(`${text} ${range}`).toContain(`${area.size}-foot`);
-      if (area.height !== undefined)
-        expect(text).toContain(`${area.height}-foot`);
-      if (area.width !== undefined)
-        expect(text).toContain(`${area.width}-foot`);
-      if (area.origin === 'point-within-range')
-        expect(text).toMatch(/\bpoint\b/);
-    }
+  it('rejects the Moonbeam mutants: self origin, and swapped radius/height', () => {
+    const moonbeam = spells.find(
+      (record) => record.key === 'spell:moonbeam',
+    ) as RulesRecord;
+    expect(areaDisagreements([moonbeam])).toEqual([]);
+    const mutate = (area: Mechanics): RulesRecord => {
+      const copy = structuredClone(moonbeam);
+      (copy.data.mechanics as Mechanics).area = area;
+      return copy;
+    };
+    const original = mechanicsOf(moonbeam).area as Mechanics;
+    expect(
+      areaDisagreements([mutate({ ...original, origin: 'self' })]),
+    ).not.toEqual([]);
+    expect(
+      areaDisagreements([mutate({ ...original, size: 40, height: 5 })]),
+    ).not.toEqual([]);
+  });
+
+  it('keeps an identified main area when subordinate dimensions follow (Web, Holy Aura)', () => {
+    const areaOf = (key: string) =>
+      mechanicsOf(spells.find((record) => record.key === key) as RulesRecord)
+        .area;
+    expect(areaOf('spell:web')).toEqual({
+      shape: 'cube',
+      size: 20,
+      unit: 'foot',
+      origin: 'point-within-range',
+    });
+    expect(areaOf('spell:holy-aura')).toEqual({
+      shape: 'radius',
+      size: 30,
+      unit: 'foot',
+      origin: 'self',
+    });
+    expect(areaOf('spell:spike-growth')).toEqual({
+      shape: 'radius',
+      size: 20,
+      unit: 'foot',
+      origin: 'point-within-range',
+    });
+    expect(areaOf('spell:sunburst')).toEqual({
+      shape: 'radius',
+      size: 60,
+      unit: 'foot',
+      origin: 'point-within-range',
+    });
   });
 
   it('projects the printed fireball, cloudkill, and sleet storm areas exactly', () => {
@@ -150,13 +447,20 @@ describe('spell area population (eshyra-o9bd.19.4.1.1)', () => {
     });
   });
 
-  it('keeps the range-printed self area and does not overwrite it', () => {
-    const burningHands = spells.find(
-      (record) => record.key === 'spell:burning-hands',
-    ) as RulesRecord;
-    expect(mechanicsOf(burningHands).area).toEqual({
+  it('keeps the range-printed self area and adds the printed line width', () => {
+    const areaOf = (key: string) =>
+      mechanicsOf(spells.find((record) => record.key === key) as RulesRecord)
+        .area;
+    expect(areaOf('spell:burning-hands')).toEqual({
       shape: 'cone',
       size: 15,
+      unit: 'foot',
+      origin: 'self',
+    });
+    expect(areaOf('spell:lightning-bolt')).toEqual({
+      shape: 'line',
+      size: 100,
+      width: 5,
       unit: 'foot',
       origin: 'self',
     });
@@ -212,11 +516,23 @@ describe('description-printed area derivation (eshyra-o9bd.19.4.1.1)', () => {
     ).toBeUndefined();
   });
 
-  it('refuses conflicting shape sentences rather than picking one', () => {
+  it('keeps the defining area over an unanchored subordinate dimension but refuses competing anchored areas', () => {
     expect(
       deriveSpellMechanics(
         extraction(
           'A cloud forms a 20-foot-radius sphere centered on a point within range. A 5-foot cube of it burns.',
+        ),
+      ).area,
+    ).toEqual({
+      shape: 'sphere',
+      size: 20,
+      unit: 'foot',
+      origin: 'point-within-range',
+    });
+    expect(
+      deriveSpellMechanics(
+        extraction(
+          'A cloud forms a 20-foot-radius sphere centered on a point within range. A 10-foot cube centered on that point burns.',
         ),
       ).area,
     ).toBeUndefined();

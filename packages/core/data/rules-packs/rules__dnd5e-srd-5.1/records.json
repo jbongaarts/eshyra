@@ -167669,7 +167669,8 @@
           "shape": "line",
           "size": 60,
           "unit": "foot",
-          "origin": "self"
+          "origin": "self",
+          "width": 10
         },
         "saves": [
           {
@@ -168872,6 +168873,12 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "radius",
+          "size": 30,
+          "unit": "foot",
+          "origin": "self"
         },
         "saves": [
           {
@@ -170337,7 +170344,8 @@
           "shape": "line",
           "size": 100,
           "unit": "foot",
-          "origin": "self"
+          "origin": "self",
+          "width": 5
         },
         "saves": [
           {
@@ -177743,6 +177751,12 @@
           "upTo": true,
           "concentration": true
         },
+        "area": {
+          "shape": "radius",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "damage": [
           {
             "dice": "2d4",
@@ -178404,7 +178418,8 @@
           "shape": "line",
           "size": 60,
           "unit": "foot",
-          "origin": "self"
+          "origin": "self",
+          "width": 5
         },
         "saves": [
           {
@@ -178487,6 +178502,12 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
+        },
+        "area": {
+          "shape": "radius",
+          "size": 60,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -180606,6 +180627,12 @@
           "unit": "hour",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "cube",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {

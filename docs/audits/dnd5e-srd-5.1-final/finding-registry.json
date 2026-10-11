@@ -612,7 +612,7 @@
       "aliases": ["opus:F-08", "fable:F2"],
       "invariant": "Point-origin spell areas are represented",
       "status": "accepted",
-      "statusReasoning": "Repaired by eshyra-o9bd.19.4.1.1: a spell description's single printed shape over a chosen point within range (sphere, cylinder, cube, cone, line, or radius) projects as mechanics.area with origin point-within-range; areas anchored only by 'within range', 'no larger than', object or image size, or several origin points stay unprojected and are reviewed with reasons. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellAreaProjection.test.ts.",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.1.1 and eshyra-o9bd.19.4.1.3: the description sentence that DEFINES a spell's effect area (one printed shape with its printed anchor) projects as mechanics.area: sphere, hemisphere, cylinder, cube, cone, line, or radius, with origin point-within-range (a chosen point within range) or self (around or centered on the caster); a Self-range line also carries its printed width. Dimensions with no anchor (secondary light radii, burning sub-cubes) never veto an identified area; light, sense and object or image bounds, alternative uses (Plant Growth), a point you can see (Call Lightning, Storm of Vengeance) and several origin points stay unprojected and are reviewed with clause-level reasons. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellAreaProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-08",
         "evidenceBasis": "audit-finding"
