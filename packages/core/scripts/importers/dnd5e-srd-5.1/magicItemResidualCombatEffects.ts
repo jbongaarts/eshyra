@@ -124,7 +124,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       reaction(
         'redirect-ranged-attack',
         'use your reaction to become the target of the attack instead',
-        'ranged attack targets a creature within 5 feet of wielder',
+        'ranged attack made against a target within 5 feet of wielder',
         'redirect attack to wielder',
       ),
     ],
@@ -209,7 +209,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'elvenkind-stealth',
         'advantage on Dexterity (Stealth) checks made to hide',
         'Dexterity (Stealth) checks',
-        'hood is up',
+        'made to hide while hood is up',
       ),
     ],
   ],
@@ -258,7 +258,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'minute-investigation',
         'advantage on Intelligence (Investigation) checks that rely on sight',
         'Intelligence (Investigation) checks',
-        'object or area no more than 1 foot away',
+        'rely on sight while searching an area or studying an object within 1 foot',
       ),
     ],
   ],
@@ -279,15 +279,14 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       reaction(
         'snare-missile',
         'use your reaction to reduce the damage by 1d10 + your Dexterity modifier',
-        'wearer is hit by a ranged weapon attack',
+        'wearer is hit by a ranged weapon attack and has a free hand',
         'reduce damage and catch missile if damage becomes 0',
         {
           reductionDice: '1d10',
           addAbilityModifier: 'dexterity',
           catchRequirements: [
             'damage reduced to 0',
-            'missile small enough to hold',
-            'wearer has a free hand',
+            'missile small enough to hold in that hand',
           ],
         },
       ),
@@ -474,8 +473,8 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'rat-indifference',
         'ordinary rats and giant rats are indifferent toward you',
-        'rat encounters pipe wearer',
-        'ordinary and giant rats begin indifferent unless threatened or commanded otherwise',
+        'wearer is attuned to the pipes and is near an ordinary rat or giant rat',
+        'rat is indifferent toward wearer and will not attack wearer unless wearer threatens or harms it',
       ),
     ],
   ],
@@ -576,7 +575,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'robe-eyes-light-blindness',
         'causes you to be blinded for 1 minute',
-        'light or daylight is cast on or within 5 feet of the robe',
+        'light spell cast on the robe or daylight spell cast within 5 feet of the robe',
         'impose blindness and allow an end-of-turn Constitution save to end it',
         {
           conditions: ['blinded'],
@@ -714,7 +713,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'slaying-damage',
         'taking an extra 6d10 piercing damage on a failed save, or half as much extra damage on a successful one',
-        'slaying arrow hits eligible target',
+        'eligible creature takes damage from slaying arrow',
         'resolve DC 17 Constitution save and extra damage',
         {
           save: { ability: 'constitution', dc: 17 },
@@ -724,6 +723,10 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         [F1, F8, F9],
         {
           id: 'deal-extra-damage',
+          activation: {
+            cost: 'free',
+            trigger: 'eligible creature takes damage from slaying arrow',
+          },
           effects: ['c2-residual-slaying-damage'],
         },
       ),
@@ -933,7 +936,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'goat-terror-aura',
         'succeed on a DC 15 Wisdom saving throw or be frightened of the goat',
-        'hostile creature starts turn within 30 feet of goat of terror',
+        'hostile creature starts turn within 30 feet of goat of terror while wearer is riding it',
         'resolve frightened save and duration',
         {
           save: { ability: 'wisdom', dc: 15 },
@@ -967,7 +970,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
           save: { ability: 'dexterity', dc: 15 },
           failedSaveDamage: { dice: '10d10', type: 'bludgeoning' },
           successfulSaveDamage: 'half',
-          pushToNearestUnoccupied: true,
+          pushTo: 'unoccupied space outside but next to the fortress',
         },
       ),
     ],

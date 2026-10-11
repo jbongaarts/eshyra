@@ -89481,7 +89481,7 @@
             "id": "redirect-ranged-attack",
             "activation": {
               "cost": "reaction",
-              "trigger": "ranged attack targets a creature within 5 feet of wielder"
+              "trigger": "ranged attack made against a target within 5 feet of wielder"
             },
             "effects": [
               "c2-residual-redirect-ranged-attack"
@@ -89492,7 +89492,7 @@
           {
             "id": "c2-residual-redirect-ranged-attack",
             "kind": "reaction",
-            "trigger": "ranged attack targets a creature within 5 feet of wielder",
+            "trigger": "ranged attack made against a target within 5 feet of wielder",
             "action": "redirect attack to wielder"
           },
           {
@@ -89626,6 +89626,10 @@
         "operations": [
           {
             "id": "deal-extra-damage",
+            "activation": {
+              "cost": "free",
+              "trigger": "eligible creature takes damage from slaying arrow"
+            },
             "cost": [
               {
                 "economy": "use",
@@ -89641,7 +89645,7 @@
           {
             "id": "c2-residual-slaying-damage",
             "kind": "triggeredEffect",
-            "trigger": "slaying arrow hits eligible target",
+            "trigger": "eligible creature takes damage from slaying arrow",
             "result": "resolve DC 17 Constitution save and extra damage",
             "save": {
               "ability": "constitution",
@@ -94236,7 +94240,7 @@
             "id": "c2-residual-elvenkind-stealth",
             "kind": "advantage",
             "roll": "Dexterity (Stealth) checks",
-            "condition": "hood is up"
+            "condition": "made to hide while hood is up"
           }
         ]
       },
@@ -100329,7 +100333,7 @@
             "id": "c2-residual-minute-investigation",
             "kind": "advantage",
             "roll": "Intelligence (Investigation) checks",
-            "condition": "object or area no more than 1 foot away"
+            "condition": "rely on sight while searching an area or studying an object within 1 foot"
           }
         ]
       },
@@ -101297,7 +101301,7 @@
           {
             "id": "c2-residual-goat-terror-aura",
             "kind": "triggeredEffect",
-            "trigger": "hostile creature starts turn within 30 feet of goat of terror",
+            "trigger": "hostile creature starts turn within 30 feet of goat of terror while wearer is riding it",
             "result": "resolve frightened save and duration",
             "save": {
               "ability": "wisdom",
@@ -103159,7 +103163,7 @@
             "id": "snare-missile",
             "activation": {
               "cost": "reaction",
-              "trigger": "wearer is hit by a ranged weapon attack"
+              "trigger": "wearer is hit by a ranged weapon attack and has a free hand"
             },
             "effects": [
               "c2-residual-snare-missile"
@@ -103170,14 +103174,13 @@
           {
             "id": "c2-residual-snare-missile",
             "kind": "reaction",
-            "trigger": "wearer is hit by a ranged weapon attack",
+            "trigger": "wearer is hit by a ranged weapon attack and has a free hand",
             "action": "reduce damage and catch missile if damage becomes 0",
             "reductionDice": "1d10",
             "addAbilityModifier": "dexterity",
             "catchRequirements": [
               "damage reduced to 0",
-              "missile small enough to hold",
-              "wearer has a free hand"
+              "missile small enough to hold in that hand"
             ]
           }
         ]
@@ -106543,7 +106546,7 @@
               "type": "bludgeoning"
             },
             "successfulSaveDamage": "half",
-            "pushToNearestUnoccupied": true
+            "pushTo": "unoccupied space outside but next to the fortress"
           }
         ]
       },
@@ -108229,7 +108232,8 @@
             "trigger": "javelin is hurled and command word spoken",
             "line": {
               "widthFeet": 5,
-              "lengthFeet": 120
+              "from": "user",
+              "to": "target within 120 feet"
             },
             "excludes": [
               "user",
@@ -109029,7 +109033,7 @@
             "kind": "extraDamage",
             "dice": "2d6",
             "type": "bludgeoning",
-            "trigger": "critical hit",
+            "trigger": "attack roll 20",
             "targetTypeOverride": {
               "types": [
                 "construct"
@@ -114363,8 +114367,8 @@
           {
             "id": "c2-residual-rat-indifference",
             "kind": "triggeredEffect",
-            "trigger": "rat encounters pipe wearer",
-            "result": "ordinary and giant rats begin indifferent unless threatened or commanded otherwise"
+            "trigger": "wearer is attuned to the pipes and is near an ordinary rat or giant rat",
+            "result": "rat is indifferent toward wearer and will not attack wearer unless wearer threatens or harms it"
           }
         ]
       },
@@ -123842,7 +123846,7 @@
           {
             "id": "c2-residual-robe-eyes-light-blindness",
             "kind": "triggeredEffect",
-            "trigger": "light or daylight is cast on or within 5 feet of the robe",
+            "trigger": "light spell cast on the robe or daylight spell cast within 5 feet of the robe",
             "result": "impose blindness and allow an end-of-turn Constitution save to end it",
             "conditions": [
               "blinded"
@@ -137801,7 +137805,7 @@
             "kind": "extraDamage",
             "dice": "3d6",
             "type": "necrotic",
-            "trigger": "critical hit",
+            "trigger": "attack roll 20",
             "excludesTargetTypes": [
               "construct",
               "undead"
@@ -138525,7 +138529,7 @@
             "id": "c2-static-pure-good-spell-attacks",
             "kind": "attackRollModifier",
             "amount": 2,
-            "appliesTo": "good cleric or paladin wearing the talisman"
+            "appliesTo": "good cleric or paladin wearing or holding the talisman"
           },
           {
             "id": "m7-pure-good-alignment-contact",
@@ -139062,7 +139066,7 @@
             "id": "c2-static-ultimate-evil-spell-attacks",
             "kind": "attackRollModifier",
             "amount": 2,
-            "appliesTo": "evil cleric or paladin wearing the talisman"
+            "appliesTo": "evil cleric or paladin wearing or holding the talisman"
           },
           {
             "id": "m7-ultimate-evil-alignment-contact",

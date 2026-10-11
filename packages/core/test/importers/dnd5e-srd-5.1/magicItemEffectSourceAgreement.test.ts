@@ -67,16 +67,85 @@ const CONDITIONS = [
   'unconscious',
   'suffocating',
 ];
+/** The eighteen canonical skills (hyphens stand for spaces). */
 const SKILLS = [
   'acrobatics',
+  'animal handling',
   'arcana',
   'athletics',
+  'deception',
+  'history',
+  'insight',
+  'intimidation',
   'investigation',
   'medicine',
+  'nature',
   'perception',
+  'performance',
   'persuasion',
+  'religion',
+  'sleight of hand',
   'stealth',
+  'survival',
 ];
+/** The canonical senses an effect's `sense` field may carry. */
+const SENSES = ['blindsight', 'darkvision', 'tremorsense', 'truesight'];
+/**
+ * `sense` values that are not canonical senses but descriptive labels of a
+ * printed sensory power. Each is individually tied to the printed phrase it
+ * summarizes; there is no blanket allowance, and an unlisted non-canonical
+ * label is a violation.
+ */
+const DERIVED_SENSE_LABELS: Readonly<
+  Record<string, { readonly label: string; readonly printed: string }>
+> = Object.fromEntries(
+  [
+    [
+      'magic-item:dragon-scale-mail',
+      'nearest-dragon-of-matching-type',
+      'discern the distance and direction to the closest dragon',
+    ],
+    [
+      'magic-item:lantern-of-revealing',
+      'reveal-invisible-in-bright-light',
+      'Invisible creatures and objects are visible',
+    ],
+    [
+      'magic-item:ring-of-x-ray-vision',
+      'x-ray-vision',
+      'see into and through solid matter',
+    ],
+    ['magic-item:robe-of-eyes', 'all-around-vision', 'see in all directions'],
+    [
+      'magic-item:robe-of-eyes',
+      'see-invisible-and-ethereal',
+      'see invisible creatures and objects, as well as see into the Ethereal Plane',
+    ],
+    [
+      'magic-item:rod-of-alertness',
+      'invisible-hostile-location',
+      'sense the location of any invisible hostile creature',
+    ],
+    [
+      'magic-item:rod-of-lordly-might',
+      'magnetic-north-and-depth',
+      'indicates magnetic north',
+    ],
+    [
+      'magic-item:wand-of-enemy-detection',
+      'nearest-hostile-direction',
+      'know the direction of the nearest creature hostile to you',
+    ],
+    [
+      'magic-item:wand-of-secrets',
+      'nearest-secret-door-or-trap',
+      'points at the one nearest to you',
+    ],
+  ].map(([item, label, printed]) => [
+    `${item}|${label}`,
+    { label: label as string, printed: printed as string },
+  ]),
+);
 const VOCABULARY_BY_KEY: Readonly<Record<string, readonly string[]>> = {
   type: DAMAGE_TYPES,
   types: DAMAGE_TYPES,
@@ -92,6 +161,9 @@ const VOCABULARY_BY_KEY: Readonly<Record<string, readonly string[]>> = {
   failedSaveCondition: CONDITIONS,
   condition: CONDITIONS,
   skill: SKILLS,
+  skills: SKILLS,
+  sense: SENSES,
+  senses: SENSES,
 };
 
 const ONES = [
@@ -245,8 +317,35 @@ function screenEffect(
     }
     if (/^(table|magic-item|creature):/.test(value)) return;
     const vocabulary = VOCABULARY_BY_KEY[key];
-    if (vocabulary?.includes(lower) && !hasPhrase(haystack, lower))
+    const spacedLower = lower.replace(/-/g, ' ');
+    if (
+      vocabulary?.includes(spacedLower) &&
+      !hasPhrase(haystack, tokens(spacedLower).trim())
+    )
       flag(path, 'vocabulary', value);
+    if (key === 'sense' && !SENSES.includes(lower)) {
+      const derived = DERIVED_SENSE_LABELS[`${itemKey}|${lower}`];
+      if (
+        derived === undefined ||
+        !hasPhrase(haystack, tokens(derived.printed).trim())
+      )
+        flag(path, 'sense-label', value);
+    }
+    if (key === 'trigger') {
+      // A natural-20 trigger is not a critical-hit trigger (a hit on a
+      // paralyzed creature in reach is a critical hit on any die result), so
+      // each trigger form needs its own printed form.
+      if (
+        /\bcritical hit\b/.test(lower) &&
+        !hasPhrase(haystack, 'critical hit')
+      )
+        flag(path, 'trigger', value);
+      if (
+        /\b(?:natural 20|attack roll 20)\b/.test(lower) &&
+        !/\broll(?:s|ed)? an? (?:natural )?20\b/i.test(itemText)
+      )
+        flag(path, 'trigger', value);
+    }
     if (key === 'unit' && !hasPhrase(haystack, lower))
       if (!hasPhrase(haystack, `${lower}s`)) flag(path, 'unit', value);
     for (const dice of value.match(/\b\d*d\d+\b/g) ?? []) {
@@ -366,9 +465,73 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
     ).toEqual(['boolean']);
   });
 
+  it('discriminates canonical sense and skill substitutions and trigger forms', () => {
+    const probe = (itemKey: string, id: string, patch: Obj) => {
+      const record = recordsByKey.get(itemKey);
+      if (record === undefined) throw new Error(itemKey);
+      const found = effectsOf(record as never).find((candidate) =>
+        String(candidate.id).endsWith(id),
+      );
+      if (found === undefined) throw new Error(`${itemKey} ${id}`);
+      return {
+        clean: screenEffect(
+          itemKey,
+          itemText(record as never),
+          found,
+          tableText,
+        ),
+        altered: screenEffect(
+          itemKey,
+          itemText(record as never),
+          { ...found, ...patch },
+          tableText,
+        ).map((violation) => violation.kind),
+      };
+    };
+    // Truesight -> blindsight (a canonical sense the item never prints).
+    const gem = probe('magic-item:gem-of-seeing', 'sense-truesight', {
+      sense: 'blindsight',
+    });
+    expect(gem.clean).toEqual([]);
+    expect(gem.altered).toEqual(['vocabulary']);
+    // Arcana -> survival (one of the eighteen canonical skills, unprinted).
+    const scroll = probe(
+      'magic-item:spell-scroll',
+      'scroll-copying-procedure',
+      {
+        skill: 'survival',
+      },
+    );
+    expect(scroll.clean).toEqual([]);
+    expect(scroll.altered).toEqual(['vocabulary']);
+    // A non-canonical sense label is not silently skipped.
+    expect(
+      probe('magic-item:gem-of-seeing', 'sense-truesight', {
+        sense: 'echolocation',
+      }).altered,
+    ).toEqual(['sense-label']);
+    // A natural-20 rider widened to "critical hit" is caught; a true
+    // critical-hit clause (Nine Lives Stealer) is not.
+    const mace = probe(
+      'magic-item:mace-of-smiting',
+      'mace-smiting-critical-rider',
+      { trigger: 'critical hit' },
+    );
+    expect(mace.clean).toEqual([]);
+    expect(mace.altered).toEqual(['trigger']);
+    expect(
+      probe('magic-item:nine-lives-stealer', 'slay-on-critical-payload', {})
+        .clean,
+    ).toEqual([]);
+  });
+
   // Dropped or added SCOPE is invisible to the screen above. These are the
   // repaired scope disagreements, asserted against the printed clause.
   it('keeps the scope the printed clause states (no dropped or added scope)', () => {
+    const recordMechanics = (itemKey: string) =>
+      ((recordsByKey.get(itemKey) as { data: Obj }).data as Obj).mechanics as {
+        operations?: { activation?: { trigger?: string } }[];
+      };
     const effect = (itemKey: string, id: string): Obj => {
       const found = effectsOf(recordsByKey.get(itemKey) as never).find(
         (candidate) => String(candidate.id).endsWith(id),
@@ -403,6 +566,109 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
       'requirement' in
         effect('magic-item:arrow-catching-shield', 'redirect-ranged-attack'),
     ).toBe(false);
+    // "a target within 5 feet" (an object may be the target, not only a
+    // creature).
+    expect(
+      String(
+        effect('magic-item:arrow-catching-shield', 'redirect-ranged-attack')
+          .trigger,
+      ),
+    ).not.toContain('creature');
+    // "made to hide" / "rely on sight" / "provided that you have a free
+    // hand": the qualifier stays on the stage it governs.
+    expect(
+      String(
+        effect('magic-item:cloak-of-elvenkind', 'elvenkind-stealth').condition,
+      ),
+    ).toContain('made to hide');
+    expect(
+      String(
+        effect('magic-item:eyes-of-minute-seeing', 'minute-investigation')
+          .condition,
+      ),
+    ).toContain('rely on sight');
+    const snare = effect(
+      'magic-item:gloves-of-missile-snaring',
+      'snare-missile',
+    );
+    expect(String(snare.trigger)).toContain('free hand');
+    expect(
+      recordMechanics('magic-item:gloves-of-missile-snaring').operations?.[0]
+        ?.activation?.trigger,
+    ).toContain('free hand');
+    // "while you are riding it": the goat's aura is conditional on riding.
+    expect(
+      String(
+        effect('magic-item:figurine-of-wondrous-power', 'goat-terror-aura')
+          .trigger,
+      ),
+    ).toContain('riding');
+    // "takes damage from the arrow" (not merely a hit), on effect and operation.
+    expect(
+      String(effect('magic-item:arrow-of-slaying', 'slaying-damage').trigger),
+    ).toContain('takes damage');
+    expect(
+      recordMechanics('magic-item:arrow-of-slaying').operations?.[0]?.activation
+        ?.trigger,
+    ).toContain('takes damage');
+    // "light spell cast on the robe or daylight spell cast within 5 feet".
+    expect(
+      String(
+        effect('magic-item:robe-of-eyes', 'robe-eyes-light-blindness').trigger,
+      ),
+    ).toBe(
+      'light spell cast on the robe or daylight spell cast within 5 feet of the robe',
+    );
+    // "while you wear or hold it" (both alignment talismans).
+    for (const [item, id] of [
+      ['magic-item:talisman-of-pure-good', 'pure-good-spell-attacks'],
+      ['magic-item:talisman-of-ultimate-evil', 'ultimate-evil-spell-attacks'],
+    ] as const)
+      expect(String(effect(item, id).appliesTo)).toContain(
+        'wearing or holding',
+      );
+    // Printed spatial relationships. Javelin of Lightning: a line "from you to
+    // a target within 120 feet" has no fixed length; Staff of Thunder and
+    // Lightning prints a 120-foot-long line, which stays fixed.
+    const javelinLine = effect(
+      'magic-item:javelin-of-lightning',
+      'hurl-lightning-payload',
+    ).line as Obj;
+    expect('lengthFeet' in javelinLine).toBe(false);
+    expect(javelinLine.from).toBe('user');
+    expect(String(javelinLine.to)).toContain('target');
+    expect(
+      (
+        effect(
+          'magic-item:staff-of-thunder-and-lightning',
+          'lightning-strike-payload',
+        ).line as Obj
+      ).lengthFeet,
+    ).toBe(120);
+    // Instant Fortress: "an unoccupied space outside but next to the
+    // fortress"; no nearest-space tie-break is printed.
+    const fortress = effect(
+      'magic-item:instant-fortress',
+      'fortress-appearance-damage',
+    );
+    expect('pushToNearestUnoccupied' in fortress).toBe(false);
+    expect(fortress.pushTo).toBe(
+      'unoccupied space outside but next to the fortress',
+    );
+    // Pipes of the Sewers: the printed ordinary/giant-rat protection (no
+    // attack unless threatened or harmed), without an invented command
+    // exception; the swarm-control contest is a separate procedure.
+    const rats = effect('magic-item:pipes-of-the-sewers', 'rat-indifference');
+    expect(String(rats.result)).toContain(
+      'unless wearer threatens or harms it',
+    );
+    expect(JSON.stringify(rats)).not.toMatch(/command/);
+    // Natural-20 riders keep the printed die-result trigger.
+    for (const [item, id] of [
+      ['magic-item:mace-of-smiting', 'mace-smiting-critical-rider'],
+      ['magic-item:sword-of-life-stealing', 'life-stealing-critical-rider'],
+    ] as const)
+      expect(effect(item, id).trigger).toBe('attack roll 20');
     // "you can telepathically communicate with any creature wearing it": no
     // added directionality or language flags.
     const telepathy = effect(

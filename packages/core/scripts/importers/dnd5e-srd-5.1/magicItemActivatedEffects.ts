@@ -1170,7 +1170,11 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'triggeredEffect',
           {
             trigger: 'javelin is hurled and command word spoken',
-            line: { widthFeet: 5, lengthFeet: 120 },
+            line: {
+              widthFeet: 5,
+              from: 'user',
+              to: 'target within 120 feet',
+            },
             excludes: ['user', 'attack-target'],
             save: { ability: 'dexterity', dc: 13 },
             failedSaveDamage: { dice: '4d6', type: 'lightning' },
