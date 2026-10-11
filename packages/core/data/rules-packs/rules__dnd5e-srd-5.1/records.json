@@ -8157,6 +8157,11 @@
               "name": "Sorcerous Origin"
             },
             {
+              "kind": "resourceProgression",
+              "resource": "sorceryPoints",
+              "value": "—"
+            },
+            {
               "kind": "spellcastingProgression",
               "cantripsKnown": 4,
               "spellsKnown": 2,
@@ -67911,7 +67916,8 @@
     "data": {
       "category": "gear",
       "cost": "2 gp",
-      "weight": "1 lb."
+      "weight": "1 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -68640,7 +68646,8 @@
     "data": {
       "category": "gear",
       "cost": "100 gp",
-      "weight": "600 lb."
+      "weight": "600 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -68672,7 +68679,8 @@
     "data": {
       "category": "gear",
       "cost": "15 gp",
-      "weight": "200 lb."
+      "weight": "200 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -69021,7 +69029,8 @@
     "data": {
       "category": "gear",
       "cost": "250 gp",
-      "weight": "100 lb."
+      "weight": "100 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -70362,7 +70371,8 @@
     "data": {
       "category": "gear",
       "cost": "5 cp",
-      "weight": "10 lb."
+      "weight": "10 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -74531,7 +74541,8 @@
     "data": {
       "category": "gear",
       "cost": "60 gp",
-      "weight": "40 lb."
+      "weight": "40 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -74563,7 +74574,8 @@
     "data": {
       "category": "gear",
       "cost": "20 gp",
-      "weight": "30 lb."
+      "weight": "30 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -74595,7 +74607,8 @@
     "data": {
       "category": "gear",
       "cost": "5 gp",
-      "weight": "15 lb."
+      "weight": "15 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -74627,7 +74640,8 @@
     "data": {
       "category": "gear",
       "cost": "10 gp",
-      "weight": "25 lb."
+      "weight": "25 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -74659,7 +74673,8 @@
     "data": {
       "category": "gear",
       "cost": "4 gp",
-      "weight": "8 lb."
+      "weight": "8 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -75277,7 +75292,8 @@
     "data": {
       "category": "gear",
       "cost": "20 gp",
-      "weight": "300 lb."
+      "weight": "300 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -75709,7 +75725,8 @@
     "name": "Stabling (per day)",
     "data": {
       "category": "gear",
-      "cost": "5 sp"
+      "cost": "5 sp",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -76247,7 +76264,8 @@
     "data": {
       "category": "gear",
       "cost": "35 gp",
-      "weight": "400 lb."
+      "weight": "400 lb.",
+      "equipmentGroup": "tack-harness-drawn-vehicles"
     },
     "source": "SRD 5.1 p. 72",
     "license": {
@@ -149590,7 +149608,13 @@
     "key": "rule:mounts-and-vehicles",
     "name": "Mounts and Vehicles",
     "data": {
-      "text": "A good mount can help you move more quickly through the wilderness, but its primary purpose is to carry the gear that would otherwise slow you down. The Mounts and Other Animals table shows each animal’s speed and base carrying capacity. An animal pulling a carriage, cart, chariot, sled, or wagon can move weight up to five times its base carrying capacity, including the weight of the vehicle. If multiple animals pull the same vehicle, they can add their carrying capacity together. Mounts other than those listed here are available in fantasy gaming worlds, but they are rare and not normally available for purchase. These include flying mounts (pegasi, griffons, hippogriffs, and similar animals) and even aquatic mounts (giant sea horses, for example). Acquiring such a mount often means securing an egg and raising the creature yourself, making a bargain with a powerful entity, or negotiating with the mount itself. Barding. Barding is armor designed to protect an animal’s head, neck, chest, and body. Any type of armor shown on the Armor table can be purchased as barding. The cost is four times the equivalent armor made for humanoids, and it weighs twice as much. Saddles. A military saddle braces the rider, helping you keep your seat on an active mount in battle. It gives you advantage on any check you make to remain mounted. An exotic saddle is required for riding any aquatic or flying mount. Vehicle Proficiency. If you have proficiency with a certain kind of vehicle (land or water), you can add your proficiency bonus to any check you make to control that kind of vehicle in difficult circumstances. Rowed Vessels. Keelboats and rowboats are used on lakes and rivers. If going downstream, add the speed of the current (typically 3 miles per hour) to the speed of the vehicle. These vehicles can’t be rowed against any significant current, but they can be pulled upstream by draft animals on the shores. A rowboat weighs 100 pounds, in case adventurers carry it over land."
+      "text": "A good mount can help you move more quickly through the wilderness, but its primary purpose is to carry the gear that would otherwise slow you down. The Mounts and Other Animals table shows each animal’s speed and base carrying capacity. An animal pulling a carriage, cart, chariot, sled, or wagon can move weight up to five times its base carrying capacity, including the weight of the vehicle. If multiple animals pull the same vehicle, they can add their carrying capacity together. Mounts other than those listed here are available in fantasy gaming worlds, but they are rare and not normally available for purchase. These include flying mounts (pegasi, griffons, hippogriffs, and similar animals) and even aquatic mounts (giant sea horses, for example). Acquiring such a mount often means securing an egg and raising the creature yourself, making a bargain with a powerful entity, or negotiating with the mount itself. Barding. Barding is armor designed to protect an animal’s head, neck, chest, and body. Any type of armor shown on the Armor table can be purchased as barding. The cost is four times the equivalent armor made for humanoids, and it weighs twice as much. Saddles. A military saddle braces the rider, helping you keep your seat on an active mount in battle. It gives you advantage on any check you make to remain mounted. An exotic saddle is required for riding any aquatic or flying mount. Vehicle Proficiency. If you have proficiency with a certain kind of vehicle (land or water), you can add your proficiency bonus to any check you make to control that kind of vehicle in difficult circumstances. Rowed Vessels. Keelboats and rowboats are used on lakes and rivers. If going downstream, add the speed of the current (typically 3 miles per hour) to the speed of the vehicle. These vehicles can’t be rowed against any significant current, but they can be pulled upstream by draft animals on the shores. A rowboat weighs 100 pounds, in case adventurers carry it over land.",
+      "bardingTransformation": {
+        "costMultiplier": 4,
+        "weightMultiplier": 2,
+        "appliesTo": "armor-table",
+        "sourceText": "Any type of armor shown on the Armor table can be purchased as barding. The cost is four times the equivalent armor made for humanoids, and it weighs twice as much."
+      }
     },
     "source": "SRD 5.1 p. 71",
     "license": {
@@ -186403,7 +186427,15 @@
           "96–100",
           "“I’ve discovered that I really like killing people.”"
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "madnessDuration",
+        "duration": {
+          "kind": "until-cured"
+        },
+        "sourceRuleRef": "rule:madness-effects",
+        "sourceText": "from the Indefinite Madness table that lasts until cured"
+      }
     },
     "source": "SRD 5.1 p. 202",
     "license": {
@@ -186806,7 +186838,17 @@
           "96–100",
           "The character falls unconscious. No amount of jostling or damage can wake the character."
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "madnessDuration",
+        "duration": {
+          "dice": "1d10",
+          "multiplier": 10,
+          "unit": "hour"
+        },
+        "sourceRuleRef": "rule:madness-effects",
+        "sourceText": "from the Long-Term Madness table for 1d10 × 10 hours"
+      }
     },
     "source": "SRD 5.1 p. 201",
     "license": {
@@ -189189,7 +189231,16 @@
           "91–100",
           "The character falls unconscious."
         ]
-      ]
+      ],
+      "projection": {
+        "kind": "madnessDuration",
+        "duration": {
+          "dice": "1d10",
+          "unit": "minute"
+        },
+        "sourceRuleRef": "rule:madness-effects",
+        "sourceText": "from the Short-Term Madness table for 1d10 minutes"
+      }
     },
     "source": "SRD 5.1 p. 201",
     "license": {
@@ -190171,14 +190222,14 @@
           "2",
           "4",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "2nd",
@@ -190187,14 +190238,14 @@
           "2",
           "5",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "3rd",
@@ -190204,13 +190255,13 @@
           "6",
           "4",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "4th",
@@ -190220,13 +190271,13 @@
           "7",
           "4",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "5th",
@@ -190237,12 +190288,12 @@
           "4",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "6th",
@@ -190253,28 +190304,28 @@
           "4",
           "3",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "7th",
           "+3",
-          "",
+          "—",
           "3",
           "10",
           "4",
           "3",
           "3",
           "1",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "8th",
@@ -190286,11 +190337,11 @@
           "3",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "9th",
@@ -190303,10 +190354,10 @@
           "3",
           "3",
           "1",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "10th",
@@ -190319,15 +190370,15 @@
           "3",
           "3",
           "2",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "11th",
           "+4",
-          "",
+          "—",
           "4",
           "15",
           "4",
@@ -190336,9 +190387,9 @@
           "3",
           "2",
           "1",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "12th",
@@ -190352,9 +190403,9 @@
           "3",
           "2",
           "1",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "13th",
@@ -190369,8 +190420,8 @@
           "2",
           "1",
           "1",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "14th",
@@ -190385,8 +190436,8 @@
           "2",
           "1",
           "1",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "15th",
@@ -190402,7 +190453,7 @@
           "1",
           "1",
           "1",
-          ""
+          "—"
         ],
         [
           "16th",
@@ -190418,7 +190469,7 @@
           "1",
           "1",
           "1",
-          ""
+          "—"
         ],
         [
           "17th",
@@ -190536,14 +190587,14 @@
           "Spellcasting, Divine Domain",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "2nd",
@@ -190551,29 +190602,29 @@
           "Channel Divinity (1/rest), Divine Domain feature",
           "3",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "3rd",
           "+2",
-          "",
+          "—",
           "3",
           "4",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "4th",
@@ -190582,13 +190633,13 @@
           "4",
           "4",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "5th",
@@ -190598,12 +190649,12 @@
           "4",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "6th",
@@ -190613,27 +190664,27 @@
           "4",
           "3",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "7th",
           "+3",
-          "",
+          "—",
           "4",
           "4",
           "3",
           "3",
           "1",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "8th",
@@ -190644,26 +190695,26 @@
           "3",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "9th",
           "+4",
-          "",
+          "—",
           "4",
           "4",
           "3",
           "3",
           "3",
           "1",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "10th",
@@ -190675,10 +190726,10 @@
           "3",
           "3",
           "2",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "11th",
@@ -190691,9 +190742,9 @@
           "3",
           "2",
           "1",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "12th",
@@ -190706,14 +190757,14 @@
           "3",
           "2",
           "1",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "13th",
           "+5",
-          "",
+          "—",
           "5",
           "4",
           "3",
@@ -190722,8 +190773,8 @@
           "2",
           "1",
           "1",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "14th",
@@ -190737,13 +190788,13 @@
           "2",
           "1",
           "1",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "15th",
           "+5",
-          "",
+          "—",
           "5",
           "4",
           "3",
@@ -190753,7 +190804,7 @@
           "1",
           "1",
           "1",
-          ""
+          "—"
         ],
         [
           "16th",
@@ -190768,7 +190819,7 @@
           "1",
           "1",
           "1",
-          ""
+          "—"
         ],
         [
           "17th",
@@ -190882,14 +190933,14 @@
           "Druidic, Spellcasting",
           "2",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "2nd",
@@ -190897,29 +190948,29 @@
           "Wild Shape, Druid Circle",
           "2",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "3rd",
           "+2",
-          "",
+          "—",
           "2",
           "4",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "4th",
@@ -190928,28 +190979,28 @@
           "3",
           "4",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "5th",
           "+3",
-          "",
+          "—",
           "3",
           "4",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "6th",
@@ -190959,27 +191010,27 @@
           "4",
           "3",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "7th",
           "+3",
-          "",
+          "—",
           "3",
           "4",
           "3",
           "3",
           "1",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "8th",
@@ -190990,26 +191041,26 @@
           "3",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "9th",
           "+4",
-          "",
+          "—",
           "3",
           "4",
           "3",
           "3",
           "3",
           "1",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "10th",
@@ -191021,15 +191072,15 @@
           "3",
           "3",
           "2",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "11th",
           "+4",
-          "",
+          "—",
           "4",
           "4",
           "3",
@@ -191037,9 +191088,9 @@
           "3",
           "2",
           "1",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "12th",
@@ -191052,14 +191103,14 @@
           "3",
           "2",
           "1",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "13th",
           "+5",
-          "",
+          "—",
           "4",
           "4",
           "3",
@@ -191068,8 +191119,8 @@
           "2",
           "1",
           "1",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "14th",
@@ -191083,13 +191134,13 @@
           "2",
           "1",
           "1",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "15th",
           "+5",
-          "",
+          "—",
           "4",
           "4",
           "3",
@@ -191099,7 +191150,7 @@
           "1",
           "1",
           "1",
-          ""
+          "—"
         ],
         [
           "16th",
@@ -191114,12 +191165,12 @@
           "1",
           "1",
           "1",
-          ""
+          "—"
         ],
         [
           "17th",
           "+6",
-          "",
+          "—",
           "4",
           "4",
           "3",
@@ -191556,41 +191607,41 @@
           "1st",
           "+2",
           "Divine Sense, Lay on Hands",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "2nd",
           "+2",
           "Fighting Style, Spellcasting, Divine Smite",
           "2",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "3rd",
           "+2",
           "Divine Health, Sacred Oath",
           "3",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "4th",
           "+2",
           "Ability Score Improvement",
           "3",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "5th",
@@ -191598,9 +191649,9 @@
           "Extra Attack",
           "4",
           "2",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "6th",
@@ -191608,9 +191659,9 @@
           "Aura of Protection",
           "4",
           "2",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "7th",
@@ -191618,9 +191669,9 @@
           "Sacred Oath feature",
           "4",
           "3",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "8th",
@@ -191628,19 +191679,19 @@
           "Ability Score Improvement",
           "4",
           "3",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "9th",
           "+4",
-          "",
+          "—",
           "4",
           "3",
           "2",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "10th",
@@ -191649,8 +191700,8 @@
           "4",
           "3",
           "2",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "11th",
@@ -191659,8 +191710,8 @@
           "4",
           "3",
           "3",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "12th",
@@ -191669,18 +191720,18 @@
           "4",
           "3",
           "3",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "13th",
           "+5",
-          "",
+          "—",
           "4",
           "3",
           "3",
           "1",
-          ""
+          "—"
         ],
         [
           "14th",
@@ -191690,7 +191741,7 @@
           "3",
           "3",
           "1",
-          ""
+          "—"
         ],
         [
           "15th",
@@ -191700,7 +191751,7 @@
           "3",
           "3",
           "2",
-          ""
+          "—"
         ],
         [
           "16th",
@@ -191710,12 +191761,12 @@
           "3",
           "3",
           "2",
-          ""
+          "—"
         ],
         [
           "17th",
           "+6",
-          "",
+          "—",
           "4",
           "3",
           "3",
@@ -191798,12 +191849,12 @@
           "1st",
           "+2",
           "Favored Enemy, Natural Explorer",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "2nd",
@@ -191811,10 +191862,10 @@
           "Fighting Style, Spellcasting",
           "2",
           "2",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "3rd",
@@ -191822,10 +191873,10 @@
           "Ranger Archetype, Primeval Awareness",
           "3",
           "3",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "4th",
@@ -191833,10 +191884,10 @@
           "Ability Score Improvement",
           "3",
           "3",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "5th",
@@ -191845,9 +191896,9 @@
           "4",
           "4",
           "2",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "6th",
@@ -191856,9 +191907,9 @@
           "4",
           "4",
           "2",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "7th",
@@ -191867,9 +191918,9 @@
           "5",
           "4",
           "3",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "8th",
@@ -191878,20 +191929,20 @@
           "5",
           "4",
           "3",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "9th",
           "+4",
-          "",
+          "—",
           "6",
           "4",
           "3",
           "2",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "10th",
@@ -191901,8 +191952,8 @@
           "4",
           "3",
           "2",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "11th",
@@ -191912,8 +191963,8 @@
           "4",
           "3",
           "3",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "12th",
@@ -191923,19 +191974,19 @@
           "4",
           "3",
           "3",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "13th",
           "+5",
-          "",
+          "—",
           "8",
           "4",
           "3",
           "3",
           "1",
-          ""
+          "—"
         ],
         [
           "14th",
@@ -191946,7 +191997,7 @@
           "3",
           "3",
           "1",
-          ""
+          "—"
         ],
         [
           "15th",
@@ -191957,7 +192008,7 @@
           "3",
           "3",
           "2",
-          ""
+          "—"
         ],
         [
           "16th",
@@ -191968,12 +192019,12 @@
           "3",
           "3",
           "2",
-          ""
+          "—"
         ],
         [
           "17th",
           "+6",
-          "",
+          "—",
           "10",
           "4",
           "3",
@@ -192222,19 +192273,19 @@
         [
           "1st",
           "+2",
-          "",
+          "—",
           "Spellcasting, Sorcerous Origin",
           "4",
           "2",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "2nd",
@@ -192244,14 +192295,14 @@
           "4",
           "3",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "3rd",
@@ -192262,13 +192313,13 @@
           "4",
           "4",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "4th",
@@ -192279,30 +192330,30 @@
           "5",
           "4",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "5th",
           "+3",
           "5",
-          "",
+          "—",
           "5",
           "6",
           "4",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "6th",
@@ -192314,29 +192365,29 @@
           "4",
           "3",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "7th",
           "+3",
           "7",
-          "",
+          "—",
           "5",
           "8",
           "4",
           "3",
           "3",
           "1",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "8th",
@@ -192349,17 +192400,17 @@
           "3",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "9th",
           "+4",
           "9",
-          "",
+          "—",
           "5",
           "10",
           "4",
@@ -192367,10 +192418,10 @@
           "3",
           "3",
           "1",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "10th",
@@ -192384,16 +192435,16 @@
           "3",
           "3",
           "2",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "11th",
           "+4",
           "11",
-          "",
+          "—",
           "6",
           "12",
           "4",
@@ -192402,9 +192453,9 @@
           "3",
           "2",
           "1",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "12th",
@@ -192419,15 +192470,15 @@
           "3",
           "2",
           "1",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "13th",
           "+5",
           "13",
-          "",
+          "—",
           "6",
           "13",
           "4",
@@ -192437,8 +192488,8 @@
           "2",
           "1",
           "1",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "14th",
@@ -192454,14 +192505,14 @@
           "2",
           "1",
           "1",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "15th",
           "+5",
           "15",
-          "",
+          "—",
           "6",
           "14",
           "4",
@@ -192472,7 +192523,7 @@
           "1",
           "1",
           "1",
-          ""
+          "—"
         ],
         [
           "16th",
@@ -192489,7 +192540,7 @@
           "1",
           "1",
           "1",
-          ""
+          "—"
         ],
         [
           "17th",
@@ -192608,7 +192659,7 @@
           "2",
           "1",
           "1st",
-          ""
+          "—"
         ],
         [
           "2nd",
@@ -192643,7 +192694,7 @@
         [
           "5th",
           "+3",
-          "",
+          "—",
           "3",
           "6",
           "2",
@@ -192663,7 +192714,7 @@
         [
           "7th",
           "+3",
-          "",
+          "—",
           "3",
           "8",
           "2",
@@ -192683,7 +192734,7 @@
         [
           "9th",
           "+4",
-          "",
+          "—",
           "3",
           "10",
           "2",
@@ -192773,7 +192824,7 @@
         [
           "18th",
           "+6",
-          "",
+          "—",
           "4",
           "14",
           "4",
@@ -192852,14 +192903,14 @@
           "Spellcasting, Arcane Recovery",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "2nd",
@@ -192867,29 +192918,29 @@
           "Arcane Tradition",
           "3",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "3rd",
           "+2",
-          "",
+          "—",
           "3",
           "4",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "4th",
@@ -192898,28 +192949,28 @@
           "4",
           "4",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "5th",
           "+3",
-          "",
+          "—",
           "4",
           "4",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "6th",
@@ -192929,27 +192980,27 @@
           "4",
           "3",
           "3",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "7th",
           "+3",
-          "",
+          "—",
           "4",
           "4",
           "3",
           "3",
           "1",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "8th",
@@ -192960,26 +193011,26 @@
           "3",
           "3",
           "2",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "9th",
           "+4",
-          "",
+          "—",
           "4",
           "4",
           "3",
           "3",
           "3",
           "1",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "10th",
@@ -192991,15 +193042,15 @@
           "3",
           "3",
           "2",
-          "",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—",
+          "—"
         ],
         [
           "11th",
           "+4",
-          "",
+          "—",
           "5",
           "4",
           "3",
@@ -193007,9 +193058,9 @@
           "3",
           "2",
           "1",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "12th",
@@ -193022,14 +193073,14 @@
           "3",
           "2",
           "1",
-          "",
-          "",
-          ""
+          "—",
+          "—",
+          "—"
         ],
         [
           "13th",
           "+5",
-          "",
+          "—",
           "5",
           "4",
           "3",
@@ -193038,8 +193089,8 @@
           "2",
           "1",
           "1",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "14th",
@@ -193053,13 +193104,13 @@
           "2",
           "1",
           "1",
-          "",
-          ""
+          "—",
+          "—"
         ],
         [
           "15th",
           "+5",
-          "",
+          "—",
           "5",
           "4",
           "3",
@@ -193069,7 +193120,7 @@
           "1",
           "1",
           "1",
-          ""
+          "—"
         ],
         [
           "16th",
@@ -193084,12 +193135,12 @@
           "1",
           "1",
           "1",
-          ""
+          "—"
         ],
         [
           "17th",
           "+6",
-          "",
+          "—",
           "5",
           "4",
           "3",

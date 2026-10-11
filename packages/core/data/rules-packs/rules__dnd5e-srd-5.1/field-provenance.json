@@ -1029,6 +1029,12 @@
     },
     {
       "kind": "rule",
+      "pointerPrefix": "/bardingTransformation",
+      "class": "source-derived",
+      "reason": "the Barding cost/weight multipliers, parsed from the printed Barding sentence of this rule."
+    },
+    {
+      "kind": "rule",
       "pointerPrefix": "/skillsByAbility",
       "class": "source-derived",
       "reason": "the ability->skills grouping, parsed from the printed skills-by-ability table."

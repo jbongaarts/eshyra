@@ -667,7 +667,7 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'equipment',
     field: 'equipmentGroup',
-    missingCount: 178,
+    missingCount: 165,
     totalInKind: 219,
   },
   // Foundation 1 models Longsword's mutually exclusive one- and two-handed
@@ -887,6 +887,14 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // 335 -> 325 (eshyra-t8gw.1): the ten retired "Actions in Combat"
   // standard-action `rule:*` records carried neither `skillsByAbility` nor
   // `tableRefs`, so both missingCount and totalInKind drop by exactly 10.
+  // eshyra-o9bd.19.2.3.1: only rule:mounts-and-vehicles carries the typed
+  // Barding transformation.
+  {
+    kind: 'rule',
+    field: 'bardingTransformation',
+    missingCount: 324,
+    totalInKind: 325,
+  },
   {
     kind: 'rule',
     field: 'skillsByAbility',
@@ -1004,7 +1012,7 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'table',
     field: 'projection',
-    missingCount: 87,
+    missingCount: 84,
     totalInKind: 109,
   },
 ];
@@ -4274,6 +4282,24 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           'equipment:shawm',
           'equipment:viol',
         ],
+        // The printed rows of the Tack, Harness, and Drawn Vehicles table
+        // (eshyra-o9bd.19.2.3.1; membership asserted in
+        // srdTaxonomyDurations.test.ts).
+        'tack-harness-drawn-vehicles': [
+          'equipment:bit-and-bridle',
+          'equipment:carriage',
+          'equipment:cart',
+          'equipment:chariot',
+          'equipment:feed-per-day',
+          'equipment:saddle-exotic',
+          'equipment:saddle-military',
+          'equipment:saddle-pack',
+          'equipment:saddle-riding',
+          'equipment:saddlebags',
+          'equipment:sled',
+          'equipment:stabling-per-day',
+          'equipment:wagon',
+        ],
       });
       // Unrelated shared-description labels ("rope", "tent") must not leak
       // into equipmentGroup — they describe why two items share prose, not a
@@ -5887,14 +5913,14 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'Spellcasting, Arcane Recovery',
         '3',
         '2',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
       ]);
       // L20: 5 cantrips known, the full 4/3/3/3/3/2/2/1/1 slot row.
       expect(data.rows[19]).toEqual([
@@ -5931,7 +5957,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       ]);
       expect(data.rows).toHaveLength(20);
       // L1: Pact Magic feature, 2 cantrips/2 spells, 1 slot at slot level 1st,
-      // no invocations yet (blank).
+      // no invocations yet (printed dash).
       expect(data.rows[0]).toEqual([
         '1st',
         '+2',
@@ -5940,7 +5966,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         '2',
         '1',
         '1st',
-        '',
+        '—',
       ]);
       // L20: 4 slots at slot level 5th, 8 invocations known.
       expect(data.rows[19]).toEqual([
@@ -5993,8 +6019,8 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         '8th',
         '9th',
       ]);
-      // L1 has no Sorcery Points (blank); L2 grants 2.
-      expect(sData.rows[0][2]).toBe('');
+      // L1 has no Sorcery Points (printed dash); L2 grants 2.
+      expect(sData.rows[0][2]).toBe('—');
       expect(sData.rows[1][2]).toBe('2');
       expect(sData.rows[19][2]).toBe('20');
 
@@ -6225,16 +6251,15 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       ).toEqual({ level: 1, spells: ['bless', 'cure wounds'] });
     });
 
-    it('distinguishes source-blank cells from genuine em-dash cells (eshyra-4a7.6)', () => {
-      // SRD 5.1 leaves an unavailable cell BLANK; it does NOT print a dash
-      // there. Verified against the source text layer: across the whole
-      // Classes chapter the only genuine table-cell em dashes are Monk L1
-      // (Ki Points / Unarmored Movement) and Beast Shapes L8 (Limitations).
-      // Every unavailable spell-slot cell and empty Features row carries no
-      // glyph in the source, so it is emitted as "" — emitting "—" there would
-      // fabricate a token the source does not print (ADR 0007). This test pins
-      // both conventions so a future change that fabricates or drops a dash
-      // fails loudly. (Raised in PR #205 review.)
+    it('emits every unavailable class-table cell as the printed dash (eshyra-4a7.6, eshyra-o9bd.19.2.3.1)', () => {
+      // SRD 5.1 prints a dash in every unavailable class-table cell (spell
+      // slots, empty Features rows, Warlock level-1 Invocations Known). The
+      // PDF text layer encodes it as a lone U+0336 combining stroke that
+      // extraction dropped, which earlier made these cells look blank and
+      // emit "" (a wrong expectation pinned here by PR #205). Verified against
+      // the vendored PDF: per-page U+0336 counts over the class-table rows
+      // equal the formerly empty cells exactly (484), and the rendered Bard
+      // page shows the dashes. Pinned so a dropped dash fails loudly.
       const rowsOf = (key: string) =>
         (table(key)?.data as { rows: string[][] })?.rows;
 
@@ -6256,41 +6281,59 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'Giant eagle',
       ]);
 
-      // --- source-blank cells are emitted as "" (NOT "—") ---
+      // --- formerly blank cells are the printed dash ---
       // Bard empty Features rows (L7 index 6, L11 index 10) and the unavailable
       // high-level spell-slot columns at L1.
       const bard = rowsOf('table:the-bard');
-      expect(bard[6][2]).toBe(''); // L7 Features: blank in source
-      expect(bard[10][2]).toBe(''); // L11 Features: blank in source
-      expect(bard[0].slice(6)).toEqual(['', '', '', '', '', '', '', '']); // L1 2nd–9th slots blank
+      expect(bard[6][2]).toBe('—'); // L7 Features: printed dash
+      expect(bard[10][2]).toBe('—'); // L11 Features: printed dash
+      expect(bard[0].slice(6)).toEqual([
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+      ]); // L1 2nd–9th slots printed dashes
       // Cleric L3 (index 2) Features blank; trailing slot columns blank.
       const cleric = rowsOf('table:the-cleric');
-      expect(cleric[2][2]).toBe('');
-      expect(cleric[0].slice(5)).toEqual(['', '', '', '', '', '', '', '']); // L1 2nd–9th slots blank
+      expect(cleric[2][2]).toBe('—');
+      expect(cleric[0].slice(5)).toEqual([
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+      ]); // L1 2nd–9th slots printed dashes
       // Half-casters: Paladin L1 (no spells at all) and Ranger L1 (no Spells
-      // Known and no slots) leave those cells blank, not dashed.
+      // Known and no slots) print dashes in those cells.
       const paladin = rowsOf('table:the-paladin');
       expect(paladin[0]).toEqual([
         '1st',
         '+2',
         'Divine Sense, Lay on Hands',
-        '',
-        '',
-        '',
-        '',
-        '',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
       ]);
       const ranger = rowsOf('table:the-ranger');
       expect(ranger[0]).toEqual([
         '1st',
         '+2',
         'Favored Enemy, Natural Explorer',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
+        '—',
       ]);
     });
 

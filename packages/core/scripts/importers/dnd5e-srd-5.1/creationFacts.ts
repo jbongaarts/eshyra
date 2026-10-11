@@ -833,6 +833,46 @@ export function enrichSkillsRule(
   });
 }
 
+const BARDING_SENTENCE =
+  /Any type of armor shown on the Armor table can be purchased as barding\. The cost is four times the equivalent armor made for humanoids, and it weighs twice as much\./;
+
+/**
+ * Project the Barding rule printed in `rule:mounts-and-vehicles` as a typed
+ * transformation (eshyra-o9bd.19.2.3.1, sol:CAP-013). The Tack, Harness, and
+ * Drawn Vehicles table prints "Barding x4 x2" with no absolute price, so there
+ * is no barding item record: the multipliers apply to any Armor-table item.
+ * Fails loudly if the rule exists but the printed sentence drifted.
+ */
+export function enrichBardingRule(
+  records: readonly RulesRecord[],
+): RulesRecord[] {
+  return records.map((record) => {
+    if (record.key !== 'rule:mounts-and-vehicles') return record;
+    const text = String(dataObject(record).text ?? '');
+    const match = BARDING_SENTENCE.exec(text);
+    // A reduced source with no Barding text carries no transformation; a source
+    // that mentions barding but no longer prints the sentence drifted.
+    if (match === null && !/\bbarding\b/i.test(text)) return record;
+    if (match === null) {
+      throw new Error(
+        'rule:mounts-and-vehicles no longer prints the Barding cost/weight sentence.',
+      );
+    }
+    return {
+      ...record,
+      data: {
+        ...dataObject(record),
+        bardingTransformation: {
+          costMultiplier: 4,
+          weightMultiplier: 2,
+          appliesTo: 'armor-table',
+          sourceText: match[0],
+        },
+      },
+    };
+  });
+}
+
 // The class-level "toolProficiencyChoices" entries this domain applies to,
 // keyed by class key (eshyra-8r8f). Both are the only SRD 5.1 base-class Tools
 // lines that name an open musical-instrument/artisan-tool choice; see
