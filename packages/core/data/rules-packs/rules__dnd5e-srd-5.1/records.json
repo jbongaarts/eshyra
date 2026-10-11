@@ -157189,6 +157189,12 @@
           "upTo": true,
           "concentration": true
         },
+        "area": {
+          "shape": "sphere",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "saves": [
           {
             "ability": "charisma"
@@ -157533,6 +157539,12 @@
         "duration": {
           "kind": "instantaneous"
         },
+        "area": {
+          "shape": "sphere",
+          "size": 60,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "saves": [
           {
             "ability": "constitution",
@@ -157761,6 +157773,12 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "sphere",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -158428,6 +158446,12 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "sphere",
+          "size": 10,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -161128,6 +161152,12 @@
           "upTo": true,
           "concentration": true
         },
+        "area": {
+          "shape": "sphere",
+          "size": 15,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "effects": [
           {
             "kind": "obscurement",
@@ -161262,6 +161292,12 @@
           "amount": 1,
           "unit": "hour"
         },
+        "area": {
+          "shape": "sphere",
+          "size": 60,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "effects": [
           {
             "kind": "light",
@@ -161394,6 +161430,12 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "sphere",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -162913,6 +162955,12 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "radius",
+          "size": 100,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -165124,6 +165172,12 @@
         "duration": {
           "kind": "instantaneous"
         },
+        "area": {
+          "shape": "sphere",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "saves": [
           {
             "ability": "dexterity",
@@ -165320,6 +165374,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
+        },
+        "area": {
+          "shape": "cylinder",
+          "size": 10,
+          "height": 40,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -165779,6 +165840,12 @@
           "upTo": true,
           "concentration": true
         },
+        "area": {
+          "shape": "sphere",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "effects": [
           {
             "kind": "obscurement",
@@ -166145,6 +166212,12 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
+        },
+        "area": {
+          "shape": "sphere",
+          "size": 60,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -167620,7 +167693,8 @@
           "shape": "line",
           "size": 60,
           "unit": "foot",
-          "origin": "self"
+          "origin": "self",
+          "width": 10
         },
         "saves": [
           {
@@ -168824,6 +168898,12 @@
           "upTo": true,
           "concentration": true
         },
+        "area": {
+          "shape": "radius",
+          "size": 30,
+          "unit": "foot",
+          "origin": "self"
+        },
         "saves": [
           {
             "ability": "constitution"
@@ -169088,6 +169168,13 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
+        },
+        "area": {
+          "shape": "cylinder",
+          "size": 20,
+          "height": 40,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -169370,6 +169457,12 @@
           "upTo": true,
           "concentration": true
         },
+        "area": {
+          "shape": "sphere",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "saves": [
           {
             "ability": "dexterity",
@@ -169536,6 +169629,12 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "sphere",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -170269,7 +170368,8 @@
           "shape": "line",
           "size": 100,
           "unit": "foot",
-          "origin": "self"
+          "origin": "self",
+          "width": 5
         },
         "saves": [
           {
@@ -170810,6 +170910,13 @@
           "amount": 1,
           "unit": "hour"
         },
+        "area": {
+          "shape": "cylinder",
+          "size": 10,
+          "height": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "saves": [
           {
             "ability": "charisma"
@@ -170971,6 +171078,10 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
+        },
+        "projectiles": {
+          "count": 3,
+          "noun": "dart"
         },
         "damage": [
           {
@@ -171386,6 +171497,12 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
+        },
+        "area": {
+          "shape": "sphere",
+          "size": 30,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "effects": [
           {
@@ -172669,6 +172786,13 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "cylinder",
+          "size": 5,
+          "height": 40,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -174822,6 +174946,12 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
+        },
+        "area": {
+          "shape": "sphere",
+          "size": 5,
+          "unit": "foot",
+          "origin": "point-within-range"
         }
       },
       "ritual": true
@@ -175460,6 +175590,13 @@
           "upTo": true,
           "concentration": true
         },
+        "area": {
+          "shape": "cylinder",
+          "size": 50,
+          "height": 100,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "saves": [
           {
             "ability": "dexterity"
@@ -175774,6 +175911,10 @@
         "spellAttack": true,
         "duration": {
           "kind": "instantaneous"
+        },
+        "projectiles": {
+          "count": 3,
+          "noun": "ray"
         },
         "damage": [
           {
@@ -176330,6 +176471,12 @@
         "duration": {
           "kind": "instantaneous"
         },
+        "area": {
+          "shape": "sphere",
+          "size": 10,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "saves": [
           {
             "ability": "constitution",
@@ -176717,6 +176864,12 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "sphere",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "conditions": [
           {
@@ -177128,6 +177281,13 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "cylinder",
+          "size": 40,
+          "height": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -177615,6 +177775,12 @@
           "upTo": true,
           "concentration": true
         },
+        "area": {
+          "shape": "radius",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "damage": [
           {
             "dice": "2d4",
@@ -177896,6 +178062,12 @@
           "upTo": true,
           "concentration": true
         },
+        "area": {
+          "shape": "sphere",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "saves": [
           {
             "ability": "constitution"
@@ -178092,6 +178264,10 @@
           "upTo": true,
           "concentration": true
         },
+        "projectiles": {
+          "count": 6,
+          "noun": "bolt"
+        },
         "saves": [
           {
             "ability": "dexterity",
@@ -178266,7 +178442,8 @@
           "shape": "line",
           "size": 60,
           "unit": "foot",
-          "origin": "self"
+          "origin": "self",
+          "width": 5
         },
         "saves": [
           {
@@ -178349,6 +178526,12 @@
         "spellAttack": false,
         "duration": {
           "kind": "instantaneous"
+        },
+        "area": {
+          "shape": "radius",
+          "size": 60,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -180469,6 +180652,12 @@
           "upTo": true,
           "concentration": true
         },
+        "area": {
+          "shape": "cube",
+          "size": 20,
+          "unit": "foot",
+          "origin": "point-within-range"
+        },
         "saves": [
           {
             "ability": "dexterity"
@@ -180542,6 +180731,12 @@
           "unit": "minute",
           "upTo": true,
           "concentration": true
+        },
+        "area": {
+          "shape": "sphere",
+          "size": 30,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {
@@ -180892,6 +181087,12 @@
           "kind": "timed",
           "amount": 10,
           "unit": "minute"
+        },
+        "area": {
+          "shape": "sphere",
+          "size": 15,
+          "unit": "foot",
+          "origin": "point-within-range"
         },
         "saves": [
           {

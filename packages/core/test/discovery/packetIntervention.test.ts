@@ -849,16 +849,12 @@ describe('context-packet intervention (ADR 0020 Phase 3, W10, eshyra-o9bd.19.12.
               'The source describes an area, but no typed mechanics.area projection exists.',
             );
           }
+          // E6 (eshyra-o9bd.19.4.1.1) — Fireball's sphere is typed from its
+          // printed sentence, so the area note must NOT be delivered for it.
           if (label === 'P4/default') {
             const span = candidateSpan(intervention.message, 'spell:fireball');
-            expect(span).toContain(
+            expect(span).not.toContain(
               'The source describes an area, but no typed mechanics.area projection exists.',
-            );
-            expect(span.indexOf('### Projection limit')).toBeGreaterThan(
-              span.indexOf('### Typed projection'),
-            );
-            expect(span.indexOf('### Projection limit')).toBeLessThan(
-              span.indexOf('### Deterministic capability'),
             );
           }
 

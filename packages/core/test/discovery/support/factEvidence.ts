@@ -67,13 +67,17 @@ export const ASSERTIONS: Readonly<
       'or half as much damage on a successful one',
     );
   },
-  'fireball-area-disclosed': ({ candidate }) => {
+  // eshyra-o9bd.19.4.1.1: Fireball's sphere is typed from its printed sentence,
+  // so the packet carries the typed area, raises no area note, and the source
+  // prose still prints the sphere.
+  'fireball-area-typed': ({ candidate }) => {
     const fireball = candidate('spell:fireball');
-    const note = fireball?.projectionLimits.find(
-      (item) => item.kind === 'area',
+    expect(JSON.stringify(fireball?.projection)).toContain(
+      '"shape":"sphere","size":20,"unit":"foot","origin":"point-within-range"',
     );
-    expect(note).toBeDefined();
-    expect(note?.attestedProse).toContain('20-foot-radius sphere');
+    expect(
+      fireball?.projectionLimits.filter((item) => item.kind === 'area'),
+    ).toEqual([]);
     expect(JSON.stringify(fireball?.sourceProse)).toContain(
       '20-foot-radius sphere',
     );
