@@ -293,6 +293,7 @@
       "aliases": ["opus:F-22"],
       "invariant": "Duplicate display names are qualified",
       "status": "accepted",
+      "statusReasoning": "eshyra-o9bd.19.2.4.1: qualification lives in presentation, not a pack field (a pack-side qualified name would invent display text absent from the SRD). Every consumer that shows a colliding name to the DM already carries kind and source with it: lookup_rules candidate summaries are RulesRecordCard {key, kind, name, source, locator, parent} (rules/recordCard.ts, used by orchestrator/toolLookupRules.ts for ambiguous results); the discovery packet candidate block prints key, kind=, name=, sourceRef, locator and source (discovery/packetMessage.ts candidateBlock), and name-mention route evidence now prints ambiguousWith sibling keys. No consumer renders a bare colliding name. Permanent evidence: discoverySignals.test.ts ambiguity-reason cases.",
       "provenance": {
         "auditFinding": "opus:F-22",
         "evidenceBasis": "audit-finding"
@@ -305,6 +306,7 @@
       "aliases": ["sol:CAP-011"],
       "invariant": "Canonical relationships and DM discovery are durable",
       "status": "accepted",
+      "statusReasoning": "eshyra-o9bd.19.2.4.1: the demonstrated discovery defect was that a name shared by several records within one kind (12 feature:*:ability-score-improvement keys) emitted no name-mention signal at all; only an ambiguousNames trace observation remained, so player input naming it surfaced nothing. Repaired in discovery/signals.ts: every matching key now emits a name-mention signal carrying evidence.ambiguousWith (sibling keys) as a retrieval reason, ambiguity being computed across kinds; candidate routes stay explicit-name-or-alias/must-consider, no kind ranking, retention budgets unchanged. Cross-kind collisions (hide, shield, acolyte) already surfaced both keys but without the reason; they now carry it. No universal retrieval-completeness claim; no alias table was invented. Sense pairs (rule:darkvision vs rule:senses-darkvision, blindsight pair) are distinct texts: no relation is emitted and they are not aliased; a name mention surfaces both. Permanent evidence: discoverySignals.test.ts (ASI, I hide, unique name, darkvision), discoveryProbes M1/M3 unchanged green.",
       "provenance": {
         "auditFinding": "sol:CAP-011",
         "evidenceBasis": "audit-finding"
@@ -317,6 +319,7 @@
       "aliases": ["fable:F8"],
       "invariant": "Rule keying and duplication hygiene are explicit",
       "status": "accepted",
+      "statusReasoning": "eshyra-o9bd.19.2.4.1: 325 rule records were checked at records.json; 26 display names are shared by more than one rule record (e.g. spellcasting ability x3, saving throws x3, speed x3, hit points x3) and every group is distinct keys at distinct page locators with distinct text; the keys are parent/chapter-qualified (rule:spellcasting pp.57-58 multiclass spell slots, rule:spellcasting-chapter p.100 casting rules, rule:special-traits-spellcasting p.258 monster trait). A pairwise body comparison found no identical or wholly-contained rule texts, so no true duplicate exists to repair. Permanent evidence: test/discovery/ruleKeyDuplication.test.ts asserts no identical or contained rule body text.",
       "provenance": {
         "auditFinding": "fable:F8",
         "evidenceBasis": "audit-finding"

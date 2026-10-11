@@ -154,6 +154,21 @@ function nameSignals(
   const signals: DiscoverySignal[] = [];
   const ambiguous: AmbiguousNameObservation[] = [];
   const seen = new Set<string>();
+  // Every key a matched name resolves to, across ALL kinds. A name shared by
+  // several records (within one kind or across kinds) is ambiguous: ADR 0020
+  // many-to-many means every matching key is surfaced with the ambiguity as a
+  // retrieval reason, never silently dropped and never ranked by kind.
+  const keysByName = new Map<string, Set<string>>();
+  for (const kind of RULES_RECORD_KINDS) {
+    const names = byKind.get(kind)?.byName;
+    if (names === undefined) continue;
+    for (const [rawName, entries] of names) {
+      const bucket = keysByName.get(rawName) ?? new Set<string>();
+      for (const entry of entries) bucket.add(entry.record.key);
+      keysByName.set(rawName, bucket);
+    }
+  }
+  const observed = new Set<string>();
   for (const kind of RULES_RECORD_KINDS) {
     const names = byKind.get(kind)?.byName;
     if (names === undefined) continue;
@@ -169,19 +184,32 @@ function nameSignals(
       const keys = [
         ...new Set(entries.map((entry) => entry.record.key)),
       ].sort();
+      const allKeys = [...(keysByName.get(rawName) ?? keys)].sort();
       const evidence = {
         input: scenario.playerInput,
         matchedName: rawName,
         kind,
       };
-      if (keys.length === 1) {
-        const key = keys[0];
-        if (!seen.has(key)) {
-          signals.push(signal('name-mention', key, evidence, index++));
-          seen.add(key);
-        }
-      } else {
-        ambiguous.push({ name: rawName, keys, evidence });
+      if (allKeys.length > 1 && !observed.has(rawName)) {
+        observed.add(rawName);
+        ambiguous.push({ name: rawName, keys: allKeys, evidence });
+      }
+      for (const key of keys) {
+        if (seen.has(key)) continue;
+        seen.add(key);
+        signals.push(
+          signal(
+            'name-mention',
+            key,
+            allKeys.length > 1
+              ? {
+                  ...evidence,
+                  ambiguousWith: allKeys.filter((other) => other !== key),
+                }
+              : evidence,
+            index++,
+          ),
+        );
       }
     }
   }
