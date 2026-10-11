@@ -162,6 +162,15 @@ function levelNumber(ordinal: string): number {
 }
 
 /**
+ * The printed dash the SRD class tables use for a not-applicable cell
+ * (eshyra-o9bd.19.2.3.1: it was previously emitted as a blank cell). A
+ * resource column keeps it verbatim (`resourceProgression` value "—", which
+ * the runtime reads as "none", e.g. the Monk's level-1 Ki Points); spell-named
+ * and Features cells treat it as not applicable, exactly as a blank was.
+ */
+const NOT_APPLICABLE_CELL = '—';
+
+/**
  * Normalize a source cell to a queryable scalar: blank -> null (not
  * applicable), a pure integer -> number, everything else (dice, "1/2",
  * "+10 ft.", "1st", "Unlimited", "+2") -> the verbatim string.
@@ -214,7 +223,7 @@ function parseFeatureAdvancement(
   featureKeyByName: ReadonlyMap<string, string>,
 ): AdvancementEntry[] {
   const text = cell.trim();
-  if (text.length === 0) return [];
+  if (text.length === 0 || text === NOT_APPLICABLE_CELL) return [];
   const entries: AdvancementEntry[] = [];
   for (const raw of splitTopLevelCommas(text)) {
     const segment = raw.trim();
@@ -380,7 +389,7 @@ export function deriveClassProgression(
           });
         }
       } else if (SPELL_NAMED_COLUMNS.has(col)) {
-        named[camelCase(col)] = value;
+        named[camelCase(col)] = value === NOT_APPLICABLE_CELL ? null : value;
       } else if (SLOT_COLUMNS.has(col)) {
         if (typeof value === 'number') {
           slots[String(SLOT_COLUMNS.get(col))] = value;

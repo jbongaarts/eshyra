@@ -389,7 +389,8 @@ function fontOfMagicProcedure(
   }
   const maximumByLevel = progression.rows.flatMap((row, index) => {
     const rawMaximum = row[pointsIndex];
-    if (rawMaximum === '') return [];
+    // The printed dash marks a level with no Sorcery Points (SRD p. 42).
+    if (rawMaximum === '—') return [];
     const maximum =
       typeof rawMaximum === 'number' ? rawMaximum : Number(rawMaximum);
     if (!Number.isInteger(maximum) || maximum < 1) {

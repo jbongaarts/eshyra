@@ -372,11 +372,75 @@ function projectionFor(
   }
 }
 
+// eshyra-o9bd.19.2.3.1 (R1, opus:F-16) — the three madness tables print only a
+// d100 + effect column; the duration of each is printed in the Madness Effects
+// rule sentence that introduces the table ("... from the Short-Term Madness
+// table for 1d10 minutes", "... Long-Term Madness table for 1d10 × 10 hours",
+// "... Indefinite Madness table that lasts until cured"). The projection is
+// derived from that sentence and fails loudly if the sentence drifts.
+
+const MADNESS_TABLE_NAMES: ReadonlySet<string> = new Set([
+  'Short-Term Madness',
+  'Long-Term Madness',
+  'Indefinite Madness',
+]);
+
+export const MADNESS_EFFECTS_RULE_REF = 'rule:madness-effects';
+
+const DURATION_UNITS: Readonly<Record<string, string>> = {
+  minutes: 'minute',
+  hours: 'hour',
+  days: 'day',
+};
+
+function projectMadnessDuration(
+  table: TableExtraction,
+  ruleText: string,
+): Record<string, unknown> | undefined {
+  const escaped = table.name;
+  const timed = new RegExp(
+    `from the ${escaped} table for (\\d+d\\d+)(?: \u00d7 (\\d+))? (minutes|hours|days)\\b`,
+  ).exec(ruleText);
+  if (timed !== null) {
+    const duration: Record<string, unknown> = { dice: timed[1] };
+    if (timed[2] !== undefined) duration.multiplier = Number(timed[2]);
+    duration.unit = DURATION_UNITS[timed[3]];
+    return {
+      kind: 'madnessDuration',
+      duration,
+      sourceRuleRef: MADNESS_EFFECTS_RULE_REF,
+      sourceText: timed[0],
+    };
+  }
+  const untilCured = new RegExp(
+    `from the ${escaped} table that lasts until cured`,
+  ).exec(ruleText);
+  if (untilCured !== null) {
+    return {
+      kind: 'madnessDuration',
+      duration: { kind: 'until-cured' },
+      sourceRuleRef: MADNESS_EFFECTS_RULE_REF,
+      sourceText: untilCured[0],
+    };
+  }
+  // A reduced source whose rule never introduces this table by name carries no
+  // duration; a rule that does name it but is unparseable has drifted.
+  if (!ruleText.includes(`from the ${table.name} table`)) return undefined;
+  throw new Error(
+    `Cannot find the printed duration of ${table.name} in the Madness Effects rule.`,
+  );
+}
+
 export function addSemanticTableProjections(
   tables: readonly TableExtraction[],
+  context: { readonly madnessEffectsText?: string } = {},
 ): TableExtraction[] {
   return tables.map((table) => {
-    const projection = projectionFor(table);
+    const projection =
+      MADNESS_TABLE_NAMES.has(table.name) &&
+      context.madnessEffectsText !== undefined
+        ? projectMadnessDuration(table, context.madnessEffectsText)
+        : projectionFor(table);
     return projection === undefined ? table : { ...table, projection };
   });
 }
