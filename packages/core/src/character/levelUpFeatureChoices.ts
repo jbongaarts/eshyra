@@ -41,6 +41,7 @@ import type {
   CharacterFeatureChoice,
   CharacterSheet,
 } from './finalizeCharacter.js';
+import { languageKey } from './languageIdentity.js';
 import {
   choiceInstanceKey,
   descriptorId,
@@ -449,12 +450,13 @@ function listDescriptor(
       held.add(language);
     }
   }
+  const heldLanguageKeys = new Set([...held].map(languageKey));
   const options = optionsOf(choice).filter(
     (option) =>
       !held.has(option.id) &&
       !(
         choice.category === 'language' &&
-        [...held].some((h) => h.toLowerCase() === option.id.toLowerCase())
+        heldLanguageKeys.has(languageKey(option.id))
       ),
   );
   return {
@@ -610,10 +612,8 @@ export function resolveFeatureChoiceSelection(
     }
   }
   if (choice.languageChoice === true) {
-    const known = new Set(
-      (sheet.languages ?? []).map((language) => language.toLowerCase()),
-    );
-    const duplicate = picks.find((id) => known.has(id.toLowerCase()));
+    const known = new Set((sheet.languages ?? []).map(languageKey));
+    const duplicate = picks.find((id) => known.has(languageKey(id)));
     if (duplicate !== undefined) {
       return {
         ok: false,
@@ -726,11 +726,11 @@ export function applyLanguagesToSheet(
   applied: readonly LevelUpAppliedChoice[],
 ): readonly string[] {
   const next = [...(existing ?? [])];
-  const seen = new Set(next.map((language) => language.toLowerCase()));
+  const seen = new Set(next.map(languageKey));
   for (const choice of applied) {
     for (const language of choice.languages ?? []) {
-      if (seen.has(language.toLowerCase())) continue;
-      seen.add(language.toLowerCase());
+      if (seen.has(languageKey(language))) continue;
+      seen.add(languageKey(language));
       next.push(language);
     }
   }

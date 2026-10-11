@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { applyLanguagesToSheet } from '../src/character/levelUpFeatureChoices.js';
 import {
   type CharacterCreationEngine,
   type CharacterDraft,
   createCharacterCreationEngine,
   createRulesPackCharacterResolver,
+  detectLevelUpRequiredChoices,
   finalizeCharacterDraft,
   getBundledDnd5eSrdPack,
   getDnd5eCharacterCreationEngine,
@@ -305,10 +307,11 @@ describe('language choice identity, exhausted domains and custom backgrounds', (
     eng: CharacterCreationEngine,
     ancestry: string,
     background = 'Acolyte',
+    className = 'Fighter',
   ): CharacterDraft {
     let draft = eng.createDraft({ id: 'hero', mode: 'concept-first' });
     draft = eng.setIdentity(draft, { name: 'Grok', concept: 'guard' });
-    draft = eng.setClass(draft, 'Fighter');
+    draft = eng.setClass(draft, className);
     draft = eng.setAncestry(draft, ancestry);
     draft = eng.setBackground(draft, background);
     draft = eng.setAbilityScoreMethod(draft, 'point_buy');
@@ -560,5 +563,144 @@ describe('language choice identity, exhausted domains and custom backgrounds', (
         expect.arrayContaining(languages),
       );
     }
+  });
+
+  // Identity closure (eshyra-o9bd.19.3.3.5): one languageKey identity from
+  // creation producers through the class-feature pick, finalization and the
+  // durable-sheet level-up consumer.
+  describe('language identity reaches class-feature and durable-sheet consumers', () => {
+    const LANG1 = 'class.feature.ranger-favored-enemy.favored-enemy-language';
+    const ENEMY1 = 'class.feature.ranger-favored-enemy.favored-enemy';
+    const LANG6 = 'level.6.feature.ranger-favored-enemy.favored-enemy-language';
+    const SPELLINGS = [
+      'Deep Speech',
+      'deep speech',
+      'Deep  Speech',
+      '  DEEP\tSPEECH ',
+    ];
+    // Ranger skills avoid the Acolyte's (no duplicate-proficiency replacement).
+    const rangerBase = (): CharacterDraft =>
+      engine.setChoice(
+        engine.setChoice(
+          build(engine, 'Human', 'Acolyte', 'Ranger'),
+          'class.skills',
+          ['Animal Handling', 'Athletics', 'Nature'],
+        ),
+        ENEMY1,
+        ['aberrations'],
+      );
+    const rangerDraft = (
+      producer: 'ordinary' | 'custom',
+      spelling: string,
+    ): CharacterDraft => {
+      let draft = rangerBase();
+      if (producer === 'ordinary') {
+        draft = apply(
+          engine,
+          draft,
+          {
+            'ancestry.languages': [spelling],
+            'background.languages': ['Giant', 'Orc'],
+          },
+          { 'ancestry.languages': [spelling] },
+        );
+      } else {
+        draft = engine.setGmApprovedLanguages(draft, 'background.languages', [
+          spelling,
+        ]);
+        draft = engine.setBackgroundCustomization(draft, {
+          name: 'Temple Archivist',
+          skillProficiencies: ['Arcana', 'History'],
+          toolProficiencies: [],
+          languages: [spelling, 'Giant'],
+          feature: 'background:acolyte#feature:shelter-of-the-faithful',
+        });
+        draft = engine.setChoice(draft, 'ancestry.languages', ['Orc']);
+      }
+      return draft;
+    };
+    const deepSpeechCount = (languages: readonly string[]) =>
+      languages.filter((l) => /^deep\s+speech$/i.test(l.trim())).length;
+
+    it.each(
+      SPELLINGS.flatMap((spelling) =>
+        (['ordinary', 'custom'] as const).map(
+          (producer) => [producer, spelling] as const,
+        ),
+      ),
+    )(
+      '%s producer %j: held language is neither offered nor learned again',
+      (producer, spelling) => {
+        const draft = rangerDraft(producer, spelling);
+        const offered = engine
+          .mechanicalChoices(draft)
+          .find((e) => e.choice.id === LANG1);
+        expect(offered?.choice.from).not.toContain('Deep Speech');
+        // Forcing the pick through stored input is still refused.
+        const forced = engine.setChoice(draft, LANG1, ['Deep Speech']);
+        expect(finalizeCharacterDraft(forced, META).ok).toBe(false);
+        // Without the pick the sheet persists exactly one canonical spelling.
+        const result = finalizeCharacterDraft(draft, META);
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expect(result.character.languages).toContain('Deep Speech');
+        expect(deepSpeechCount(result.character.languages)).toBe(1);
+        // Durable consumer: the finalized sheet never re-offers it at level 6.
+        const sheet = { ...result.character, level: 5 };
+        const next = detectLevelUpRequiredChoices(sheet).find(
+          (c) => c.id === LANG6,
+        );
+        expect(next?.from ?? []).not.toContain('Deep Speech');
+      },
+    );
+
+    it.each(SPELLINGS)(
+      'durable sheet holding raw spelling %j excludes it and dedupes learning',
+      (spelling) => {
+        const base = finalizeCharacterDraft(
+          rangerDraft('ordinary', 'Deep Speech'),
+          META,
+        );
+        expect(base.ok).toBe(true);
+        if (!base.ok) return;
+        const languages = ['Common', spelling];
+        const sheet = { ...base.character, level: 5, languages };
+        const offered = detectLevelUpRequiredChoices(sheet).find(
+          (c) => c.id === LANG6,
+        );
+        expect(offered?.from ?? []).not.toContain('Deep Speech');
+        expect(
+          applyLanguagesToSheet(languages, [
+            { languages: ['Deep Speech'] } as never,
+          ]),
+        ).toEqual(languages);
+      },
+    );
+
+    it('control: a distinct favored-enemy language is learned once', () => {
+      let draft = rangerBase();
+      draft = apply(
+        engine,
+        draft,
+        {
+          'ancestry.languages': ['Giant'],
+          'background.languages': ['Orc', 'Gnomish'],
+          [LANG1]: ['Deep Speech'],
+        },
+        {},
+      );
+      const result = finalizeCharacterDraft(draft, META);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(deepSpeechCount(result.character.languages)).toBe(1);
+      expect(result.character.languages).toEqual(
+        expect.arrayContaining(['Giant', 'Orc', 'Gnomish', 'Deep Speech']),
+      );
+      expect(
+        detectLevelUpRequiredChoices({ ...result.character, level: 5 }).find(
+          (c) => c.id === LANG6,
+        )?.from ?? [],
+      ).not.toContain('Deep Speech');
+    });
   });
 });

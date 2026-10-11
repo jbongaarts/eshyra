@@ -36,7 +36,6 @@ import {
   type CharacterDraft,
   effectiveBackground,
   getDnd5eCharacterCreationEngine,
-  languageKey,
   type MechanicalChoiceState,
   parseStartingEquipmentMode,
   type RequiredChoice,
@@ -44,6 +43,11 @@ import {
 } from './characterDraft.js';
 import type { AbilityScoreName, CharacterCreationDraft } from './creation.js';
 import type { SavingThrowDerived } from './derivedValues.js';
+import {
+  canonicalLanguageName,
+  languageKey,
+  SRD_5_1_EXOTIC_LANGUAGES,
+} from './languageIdentity.js';
 import { effectiveSpellcasting, spellsUnion } from './levelUpSpells.js';
 import {
   normalizeProficiency,
@@ -66,6 +70,7 @@ import {
   STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './rulesPackResolver.js';
 import { computeAlwaysPrepared } from './spellPreparation.js';
+import { SRD_5_1_STANDARD_LANGUAGES } from './srdCreationChoices.js';
 import type { StartingWealthResult } from './srdStartingWealth.js';
 import { validateStartingWealthResult } from './srdStartingWealth.js';
 
@@ -1052,44 +1057,58 @@ function collectLanguages(
   ancestryLanguages: readonly ResolvedLanguageGrant[] | undefined,
   backgroundLanguages: string | readonly ResolvedLanguageGrant[] | undefined,
 ): readonly string[] {
-  const languages = new Set<string>();
-  const identities = new Set<string>();
-  for (const language of [
+  const entries = engine.mechanicalChoices(draft);
+  const fixed = [
     ...fixedLanguages(ancestryLanguages),
     ...fixedLanguages(backgroundLanguages),
-  ]) {
-    identities.add(languageKey(language));
-    languages.add(language);
+  ];
+  // Canonical spellings: fixed grants, default domains, SRD standard languages
+  // and the languages class-feature picks teach.
+  const known = [
+    ...SRD_5_1_STANDARD_LANGUAGES,
+    ...SRD_5_1_EXOTIC_LANGUAGES,
+    ...fixed,
+    ...entries.flatMap((entry) => entry.choice.from ?? []),
+    ...entries.flatMap((entry) =>
+      entry.application?.kind === 'feature-choice'
+        ? (entry.application.languages ?? [])
+        : [],
+    ),
+  ];
+  // One sheet entry per language identity (`languageKey`).
+  const languages = new Map<string, string>();
+  for (const language of fixed) {
+    const key = languageKey(language);
+    if (!languages.has(key)) {
+      languages.set(key, canonicalLanguageName(language, known));
+    }
   }
-  for (const entry of engine.mechanicalChoices(draft)) {
+  for (const entry of entries) {
     if (entry.choice.kind === 'languages') {
       for (const language of entry.selected) {
         // Validation guarantees distinct identities; a collision here would
         // silently drop a required language grant, so fail loudly instead.
-        if (identities.has(languageKey(language))) {
+        const key = languageKey(language);
+        if (languages.has(key)) {
           throw new Error(
             `language choice ${entry.choice.id} repeats an already granted language: ${language}`,
           );
         }
-        identities.add(languageKey(language));
-        languages.add(language);
+        languages.set(key, canonicalLanguageName(language, known));
       }
     }
     // A class-feature pick that teaches a language (Favored Enemy; eshyra-mdke).
     const application = entry.application;
     if (application?.kind === 'feature-choice') {
       for (const language of application.languages ?? []) {
-        if (
-          ![...languages].some(
-            (l) => l.toLowerCase() === language.toLowerCase(),
-          )
-        ) {
-          languages.add(language);
+        const key = languageKey(language);
+        if (!languages.has(key)) {
+          languages.set(key, canonicalLanguageName(language, known));
         }
       }
     }
   }
-  return [...languages];
+  return [...languages.values()];
 }
 
 function fixedLanguages(

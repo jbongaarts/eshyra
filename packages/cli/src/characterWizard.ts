@@ -1163,7 +1163,9 @@ class Wizard {
       this.write(`${name} is a standard option — pick it from the list.`);
       return undefined;
     }
-    if (selected.some((s) => s.toLowerCase() === name.toLowerCase())) {
+    const identity = (value: string) =>
+      value.trim().replace(/\s+/g, ' ').toLowerCase();
+    if (selected.some((s) => identity(s) === identity(name))) {
       this.write(`${name} is already selected.`);
       return undefined;
     }

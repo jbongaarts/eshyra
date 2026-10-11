@@ -1541,6 +1541,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       runtimeOwner: [
         c('characterDraft.ts'),
+        c('languageIdentity.ts'),
         c('creationSpellCounts.ts'),
         c('creationClassChoices.ts'),
         c('requiredChoices.ts'),

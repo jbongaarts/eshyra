@@ -59,6 +59,11 @@ import {
 } from './derivedValues.js';
 import type { CharacterFeatureChoice } from './finalizeCharacter.js';
 import {
+  canonicalLanguageName,
+  languageKey,
+  SRD_5_1_EXOTIC_LANGUAGES,
+} from './languageIdentity.js';
+import {
   normalizeProficiency,
   proficiencyReplacementId,
 } from './proficiency.js';
@@ -77,7 +82,10 @@ import {
   STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './rulesPackResolver.js';
 import { computeAlwaysPrepared } from './spellPreparation.js';
-import { SRD_5_1_SKILLS } from './srdCreationChoices.js';
+import {
+  SRD_5_1_SKILLS,
+  SRD_5_1_STANDARD_LANGUAGES,
+} from './srdCreationChoices.js';
 import {
   type StartingWealthResult,
   validateStartingWealthResult,
@@ -887,15 +895,13 @@ export function createCharacterCreationEngine(
           ...held('tools'),
         ]),
       ],
-      languages: [
-        ...new Set([
+      languages: canonicalHeldLanguages(
+        [
           ...fixedLanguageGrants(resolveAncestry(draft.selections.ancestry)),
           ...fixedLanguageGrants(background),
-          ...withReplacements
-            .filter((entry) => entry.choice.kind === 'languages')
-            .flatMap((entry) => entry.selected),
-        ]),
-      ],
+        ],
+        withReplacements.filter((entry) => entry.choice.kind === 'languages'),
+      ),
     });
     return [
       ...withReplacements.filter(
@@ -1681,10 +1687,7 @@ function isChoiceSatisfied(
   );
 }
 
-/** One bounded identity normalization for language names (case, whitespace). */
-export function languageKey(language: string): string {
-  return language.trim().replace(/\s+/g, ' ').toLowerCase();
-}
+export { languageKey };
 
 /**
  * Whether a language choice is satisfied. Unlike other kinds, an empty `from`
@@ -1744,6 +1747,37 @@ function approvedLanguageKeys(
   return new Set(
     (approved ?? []).map(languageKey).filter((key) => key.length > 0),
   );
+}
+
+/**
+ * The languages held at creation as one identity-distinct list in canonical
+ * spelling (fixed grants first), so class-feature language choices exclude every
+ * language already held under the shared `languageKey` identity.
+ */
+export function canonicalHeldLanguages(
+  fixed: readonly string[],
+  languageChoices: readonly {
+    readonly choice: Level1RequiredChoice;
+    readonly selected: readonly string[];
+  }[],
+): readonly string[] {
+  const known = [
+    ...SRD_5_1_STANDARD_LANGUAGES,
+    ...SRD_5_1_EXOTIC_LANGUAGES,
+    ...fixed,
+    ...languageChoices.flatMap((entry) => entry.choice.from ?? []),
+  ];
+  const held = new Map<string, string>();
+  for (const language of [
+    ...fixed,
+    ...languageChoices.flatMap((entry) => entry.selected),
+  ]) {
+    const key = languageKey(language);
+    if (key.length > 0 && !held.has(key)) {
+      held.set(key, canonicalLanguageName(language, known));
+    }
+  }
+  return [...held.values()];
 }
 
 let cachedEngine: CharacterCreationEngine | undefined;
