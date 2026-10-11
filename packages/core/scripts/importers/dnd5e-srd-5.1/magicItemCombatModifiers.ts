@@ -466,12 +466,16 @@ const ITEM_SPECS: ReadonlyMap<string, readonly EffectSpec[]> = new Map([
         'attackAndDamageBonus',
         1,
       ),
-      bonus(
+      effect(
         'luck-blade-saves',
         '+1 bonus to saving throws',
-        'rollModifier',
-        1,
-        'saving throws',
+        {
+          kind: 'rollModifier',
+          amount: 1,
+          appliesTo: 'saving throws',
+          condition: 'while the sword is on your person',
+        },
+        F8,
       ),
     ],
   ],
@@ -825,12 +829,16 @@ const ITEM_SPECS: ReadonlyMap<string, readonly EffectSpec[]> = new Map([
   [
     'Stone of Good Luck (Luckstone)',
     [
-      bonus(
+      effect(
         'luckstone-saves',
         '+1 bonus to ability checks and saving throws',
-        'rollModifier',
-        1,
-        'ability checks and saving throws',
+        {
+          kind: 'rollModifier',
+          amount: 1,
+          appliesTo: 'ability checks and saving throws',
+          condition: 'while the agate is on your person',
+        },
+        F8,
       ),
     ],
   ],
@@ -861,7 +869,7 @@ const ITEM_SPECS: ReadonlyMap<string, readonly EffectSpec[]> = new Map([
         'magic longsword has the finesse property',
         {
           kind: 'triggeredEffect',
-          trigger: 'weapon statistics are derived',
+          trigger: 'weapon statistics are derived while the blade exists',
           result: 'grant finesse property',
           property: 'finesse',
           value: true,
@@ -886,7 +894,7 @@ const ITEM_SPECS: ReadonlyMap<string, readonly EffectSpec[]> = new Map([
         '3d6',
         'necrotic',
         {
-          trigger: 'attack roll 20',
+          trigger: 'attack roll 20 against a creature',
           excludesTargetTypes: ['construct', 'undead'],
         },
       ),
@@ -911,7 +919,7 @@ const ITEM_SPECS: ReadonlyMap<string, readonly EffectSpec[]> = new Map([
         'extra 4d6 slashing damage',
         '4d6',
         'slashing',
-        { trigger: 'attack roll 20' },
+        { trigger: 'attack roll 20 against a creature' },
       ),
     ],
   ],

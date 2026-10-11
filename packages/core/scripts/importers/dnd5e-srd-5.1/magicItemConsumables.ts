@@ -170,23 +170,17 @@ const specs: ReadonlyMap<string, ConsumableSpec> = new Map([
       operations: [
         operation('sprinkle-dust', 'doses', ['absorb-water'], {
           cost: 'action',
-          target: 'water or a water-composed elemental',
+          target: 'water',
         }),
       ],
       effects: [
         effect('absorb-water', 'triggeredEffect', {
-          trigger:
-            'a pinch is sprinkled over water or exposed to a water-composed elemental',
+          trigger: 'a pinch is sprinkled over water',
           waterCubeFeetPerSide: 15,
           becomes: 'marble-sized pellet',
           pelletRelease: {
             activation: 'action',
             method: 'smash against a hard surface',
-          },
-          waterElemental: {
-            save: { ability: 'constitution', dc: 13 },
-            failedSaveDamage: { dice: '10d6', type: 'necrotic' },
-            successfulSaveDamage: 'half',
           },
         }),
       ],

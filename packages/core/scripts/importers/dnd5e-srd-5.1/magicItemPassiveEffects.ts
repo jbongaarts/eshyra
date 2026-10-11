@@ -742,7 +742,14 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
     'Boots of Speed',
     (text, name) => {
       must(text, /boots double your walking speed/, name);
-      return [{ kind: 'speedMultiplier', multiplier: 2 }];
+      return [
+        {
+          kind: 'speedMultiplier',
+          multiplier: 2,
+          condition:
+            'while the boots are activated by clicking the heels together as a bonus action, until clicked again',
+        },
+      ];
     },
   ],
   [

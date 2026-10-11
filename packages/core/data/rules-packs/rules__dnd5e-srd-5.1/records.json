@@ -88259,7 +88259,7 @@
           {
             "id": "c2-residual-plane-shift-check",
             "kind": "triggeredEffect",
-            "trigger": "wearer names destination and uses an action",
+            "trigger": "wearer uses an action to name a location familiar to wearer on another plane of existence",
             "result": "cast plane shift on success; invoke source mishap procedure on failure",
             "check": {
               "ability": "intelligence",
@@ -91635,6 +91635,7 @@
           {
             "kind": "speedMultiplier",
             "multiplier": 2,
+            "condition": "while the boots are activated by clicking the heels together as a bonus action, until clicked again",
             "id": "m3-boots-of-speed-speed-multiplier"
           }
         ]
@@ -94872,10 +94873,11 @@
           {
             "id": "c2-residual-crystal-scrying",
             "kind": "triggeredEffect",
-            "trigger": "user uses an action",
-            "result": "cast scrying with fixed DC",
+            "trigger": "user is touching the crystal ball",
+            "result": "cast scrying at its normal casting time with fixed DC",
             "spellRef": "spell:scrying",
-            "saveDc": 17
+            "saveDc": 17,
+            "castingTime": "spell-normal"
           }
         ]
       },
@@ -95820,7 +95822,8 @@
           {
             "id": "cast-gate",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "press one side of the cube"
             },
             "cost": [
               {
@@ -95835,7 +95838,8 @@
           {
             "id": "cast-plane-shift",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "press the same side of the cube twice"
             },
             "cost": [
               {
@@ -96655,8 +96659,8 @@
           {
             "id": "c2-residual-geyser-impact",
             "kind": "triggeredEffect",
-            "trigger": "geyser targets creature",
-            "result": "resolve save, damage, and prone rider",
+            "trigger": "geyser is aimed with a bonus action at a creature within 30 feet, or at an object that is not worn or carried and weighs no more than 200 pounds",
+            "result": "creature: resolve save, damage, and prone rider; object: knocked over or pushed up to 15 feet away",
             "save": {
               "ability": "strength",
               "dc": 13
@@ -97903,6 +97907,9 @@
             "examples": [
               "teleportation",
               "travel to another plane"
+            ],
+            "exceptions": [
+              "passing through an interdimensional portal"
             ]
           }
         ]
@@ -98613,7 +98620,7 @@
             "id": "sprinkle-dust",
             "activation": {
               "cost": "action",
-              "target": "water or a water-composed elemental"
+              "target": "water"
             },
             "cost": [
               {
@@ -98636,7 +98643,7 @@
           {
             "id": "c2-residual-water-elemental-damage",
             "kind": "triggeredEffect",
-            "trigger": "pinch is thrown at water-composed elemental",
+            "trigger": "elemental composed mostly of water is exposed to a pinch of the dust",
             "result": "resolve DC 13 Constitution save and necrotic damage",
             "save": {
               "ability": "constitution",
@@ -98651,23 +98658,12 @@
           {
             "id": "absorb-water",
             "kind": "triggeredEffect",
-            "trigger": "a pinch is sprinkled over water or exposed to a water-composed elemental",
+            "trigger": "a pinch is sprinkled over water",
             "waterCubeFeetPerSide": 15,
             "becomes": "marble-sized pellet",
             "pelletRelease": {
               "activation": "action",
               "method": "smash against a hard surface"
-            },
-            "waterElemental": {
-              "save": {
-                "ability": "constitution",
-                "dc": 13
-              },
-              "failedSaveDamage": {
-                "dice": "10d6",
-                "type": "necrotic"
-              },
-              "successfulSaveDamage": "half"
             }
           }
         ]
@@ -103291,8 +103287,8 @@
           {
             "id": "c2-residual-athletics-bonus",
             "kind": "triggeredEffect",
-            "trigger": "wearer makes qualifying check",
-            "result": "add +5 to climb or swim Athletics check",
+            "trigger": "wearer makes a Strength (Athletics) check to climb or swim",
+            "result": "add +5 to the check",
             "amount": 5
           },
           {
@@ -107063,7 +107059,8 @@
             "id": "c2-residual-awareness-no-surprise",
             "kind": "immunity",
             "to": "surprised condition",
-            "variant": "Awareness"
+            "variant": "Awareness",
+            "condition": "while the stone orbits the user’s head"
           }
         ]
       },
@@ -108574,7 +108571,8 @@
             "id": "c2-static-luck-blade-saves",
             "kind": "rollModifier",
             "amount": 1,
-            "appliesTo": "saving throws"
+            "appliesTo": "saving throws",
+            "condition": "while the sword is on your person"
           }
         ]
       },
@@ -114607,7 +114605,11 @@
             "duration": {
               "amount": 10,
               "unit": "minute"
-            }
+            },
+            "endsOn": [
+              "armor-removed",
+              "command-word-spoken-again-as-action"
+            ]
           }
         ]
       },
@@ -120916,8 +120918,9 @@
             "id": "c2-residual-invisibility",
             "kind": "triggeredEffect",
             "trigger": "wearer uses an action",
-            "result": "make wearer and worn/carried objects invisible until attack, spell cast, or deactivation",
+            "result": "make wearer and worn/carried objects invisible until ring removed, attack, spell cast, or deactivation",
             "endsOn": [
+              "ring-removed",
               "attack",
               "cast-spell",
               "bonus-action-deactivate"
@@ -127420,7 +127423,7 @@
             "id": "c2-residual-scarab-spell-saves",
             "kind": "advantage",
             "roll": "saving throws",
-            "condition": "against spells"
+            "condition": "against spells while the scarab is on your person"
           }
         ]
       },
@@ -137448,7 +137451,8 @@
             "id": "c2-static-luckstone-saves",
             "kind": "rollModifier",
             "amount": 1,
-            "appliesTo": "ability checks and saving throws"
+            "appliesTo": "ability checks and saving throws",
+            "condition": "while the agate is on your person"
           }
         ]
       },
@@ -137574,7 +137578,7 @@
           {
             "id": "c2-static-sun-blade-finesse",
             "kind": "triggeredEffect",
-            "trigger": "weapon statistics are derived",
+            "trigger": "weapon statistics are derived while the blade exists",
             "result": "grant finesse property",
             "property": "finesse",
             "value": true
@@ -137823,7 +137827,7 @@
             "kind": "extraDamage",
             "dice": "3d6",
             "type": "necrotic",
-            "trigger": "attack roll 20",
+            "trigger": "attack roll 20 against a creature",
             "excludesTargetTypes": [
               "construct",
               "undead"
@@ -137973,7 +137977,7 @@
             "kind": "extraDamage",
             "dice": "4d6",
             "type": "slashing",
-            "trigger": "attack roll 20"
+            "trigger": "attack roll 20 against a creature"
           }
         ]
       },
@@ -138888,7 +138892,7 @@
           {
             "id": "c2-residual-enhanced-sphere-levitation",
             "kind": "triggeredEffect",
-            "trigger": "wearer controls sphere of annihilation",
+            "trigger": "user starts turn controlling a sphere of annihilation and uses an action to levitate it",
             "result": "increase sphere movement using source formula",
             "additionalFeetFormula": "10 + 10 × intelligence-modifier"
           }
@@ -142632,7 +142636,7 @@
           {
             "id": "c2-residual-ignore-half-cover",
             "kind": "triggeredEffect",
-            "trigger": "wearer makes spell attack",
+            "trigger": "holder of the wand makes spell attack",
             "result": "ignore target half cover"
           },
           {

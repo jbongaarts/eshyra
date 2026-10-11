@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1913,
+  "rowCount": 1910,
   "dispositionCounts": {
     "complete": 439,
-    "model-adjudicated": 1268,
+    "model-adjudicated": 1265,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -22017,7 +22017,7 @@
       "representativeValues": [
         "spell-normal"
       ],
-      "population": 1,
+      "population": 2,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -22122,7 +22122,7 @@
         "if you aren’t a dwarf",
         "rely on moving silently"
       ],
-      "population": 76,
+      "population": 80,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -22587,7 +22587,7 @@
         "successful-repeat-save",
         "spell:lesser-restoration"
       ],
-      "population": 19,
+      "population": 20,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -22714,6 +22714,26 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].exception",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].exceptions[]",
+      "representativeValues": [
+        "passing through an interdimensional portal"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].exceptions[]",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -24794,7 +24814,7 @@
       "fieldPath": "data.mechanics.effects[].trigger",
       "representativeValues": [
         "critical hit against wearer",
-        "wearer names destination and uses an action",
+        "wearer uses an action to name a location familiar to wearer on another plane of existence",
         "shield is animated",
         "a lever changes position",
         "ranged attack made against a target within 5 feet of wielder"
@@ -25234,86 +25254,6 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].variants.whip.endsOn[]",
-      "disposition": "model-adjudicated",
-      "typedSchemaOrConsumer": null,
-      "retainedProseBoundary": null,
-      "owner": null,
-      "futureWork": false
-    },
-    {
-      "system": "dnd5e-srd",
-      "recordKinds": [
-        "magic-item"
-      ],
-      "fieldPath": "data.mechanics.effects[].waterElemental.failedSaveDamage.dice",
-      "representativeValues": [
-        "10d6"
-      ],
-      "population": 1,
-      "valueClass": "scalar-like",
-      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
-      "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].waterElemental.failedSaveDamage.dice",
-      "disposition": "model-adjudicated",
-      "typedSchemaOrConsumer": null,
-      "retainedProseBoundary": null,
-      "owner": null,
-      "futureWork": false
-    },
-    {
-      "system": "dnd5e-srd",
-      "recordKinds": [
-        "magic-item"
-      ],
-      "fieldPath": "data.mechanics.effects[].waterElemental.failedSaveDamage.type",
-      "representativeValues": [
-        "necrotic"
-      ],
-      "population": 1,
-      "valueClass": "scalar-like",
-      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
-      "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].waterElemental.failedSaveDamage.type",
-      "disposition": "model-adjudicated",
-      "typedSchemaOrConsumer": null,
-      "retainedProseBoundary": null,
-      "owner": null,
-      "futureWork": false
-    },
-    {
-      "system": "dnd5e-srd",
-      "recordKinds": [
-        "magic-item"
-      ],
-      "fieldPath": "data.mechanics.effects[].waterElemental.save.ability",
-      "representativeValues": [
-        "constitution"
-      ],
-      "population": 1,
-      "valueClass": "scalar-like",
-      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
-      "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].waterElemental.save.ability",
-      "disposition": "model-adjudicated",
-      "typedSchemaOrConsumer": null,
-      "retainedProseBoundary": null,
-      "owner": null,
-      "futureWork": false
-    },
-    {
-      "system": "dnd5e-srd",
-      "recordKinds": [
-        "magic-item"
-      ],
-      "fieldPath": "data.mechanics.effects[].waterElemental.successfulSaveDamage",
-      "representativeValues": [
-        "half"
-      ],
-      "population": 1,
-      "valueClass": "scalar-like",
-      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
-      "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].waterElemental.successfulSaveDamage",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -26052,10 +25992,10 @@
         "wearing the armor",
         "eligible matching-alignment cleric or druid in candle light",
         "wearing the cloak",
-        "dagger is coated",
-        "wearing the lenses"
+        "press one side of the cube",
+        "press the same side of the cube twice"
       ],
-      "population": 54,
+      "population": 56,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -26076,7 +26016,7 @@
         "self",
         "point within 60 feet",
         "self, creatures, and objects within 10 feet",
-        "water or a water-composed elemental",
+        "water",
         "self and breathing creatures within 30 feet"
       ],
       "population": 42,

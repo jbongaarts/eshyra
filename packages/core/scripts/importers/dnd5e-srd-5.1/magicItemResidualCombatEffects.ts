@@ -608,7 +608,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'scarab-spell-saves',
         'advantage on saving throws against spells',
         'saving throws',
-        'against spells',
+        'against spells while the scarab is on your person',
       ),
     ],
   ],
@@ -676,7 +676,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'ignore-half-cover',
         'ignore half cover when making a spell attack',
-        'wearer makes spell attack',
+        'holder of the wand makes spell attack',
         'ignore target half cover',
       ),
     ],
@@ -687,7 +687,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'plane-shift-check',
         'make a DC 15 Intelligence check',
-        'wearer names destination and uses an action',
+        'wearer uses an action to name a location familiar to wearer on another plane of existence',
         'cast plane shift on success; invoke source mishap procedure on failure',
         {
           check: { ability: 'intelligence', dc: 15 },
@@ -811,9 +811,13 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'crystal-scrying',
         'cast the scrying spell (save DC 17)',
-        'user uses an action',
-        'cast scrying with fixed DC',
-        { spellRef: 'spell:scrying', saveDc: 17 },
+        'user is touching the crystal ball',
+        'cast scrying at its normal casting time with fixed DC',
+        {
+          spellRef: 'spell:scrying',
+          saveDc: 17,
+          castingTime: 'spell-normal',
+        },
         [F2, F8],
       ),
     ],
@@ -835,8 +839,8 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'geyser-impact',
         'must succeed on a DC 13 Strength saving throw or take 1d4 bludgeoning damage and fall prone',
-        'geyser targets creature',
-        'resolve save, damage, and prone rider',
+        'geyser is aimed with a bonus action at a creature within 30 feet, or at an object that is not worn or carried and weighs no more than 200 pounds',
+        'creature: resolve save, damage, and prone rider; object: knocked over or pushed up to 15 feet away',
         {
           save: { ability: 'strength', dc: 13 },
           failedSaveDamage: { dice: '1d4', type: 'bludgeoning' },
@@ -865,7 +869,10 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'dimensional-movement-block',
         'prevent a creature bound by them from using any method of extradimensional movement',
         'extradimensional movement',
-        { examples: ['teleportation', 'travel to another plane'] },
+        {
+          examples: ['teleportation', 'travel to another plane'],
+          exceptions: ['passing through an interdimensional portal'],
+        },
       ),
     ],
   ],
@@ -891,7 +898,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'water-elemental-damage',
         'taking 10d6 necrotic damage on a failed save, or half as much damage on a successful one',
-        'pinch is thrown at water-composed elemental',
+        'elemental composed mostly of water is exposed to a pinch of the dust',
         'resolve DC 13 Constitution save and necrotic damage',
         {
           save: { ability: 'constitution', dc: 13 },
@@ -952,8 +959,8 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'athletics-bonus',
         '+5 bonus to Strength (Athletics) checks made to climb or swim',
-        'wearer makes qualifying check',
-        'add +5 to climb or swim Athletics check',
+        'wearer makes a Strength (Athletics) check to climb or swim',
+        'add +5 to the check',
         { amount: 5 },
       ),
     ],
@@ -982,7 +989,10 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'awareness-no-surprise',
         'can’t be surprised',
         'surprised condition',
-        { variant: 'Awareness' },
+        {
+          variant: 'Awareness',
+          condition: 'while the stone orbits the user’s head',
+        },
       ),
     ],
   ],
@@ -1077,6 +1087,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         {
           spellRef: 'spell:etherealness',
           duration: { amount: 10, unit: 'minute' },
+          endsOn: ['armor-removed', 'command-word-spoken-again-as-action'],
         },
       ),
     ],
@@ -1115,8 +1126,15 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'invisibility',
         'turn invisible as an action',
         'wearer uses an action',
-        'make wearer and worn/carried objects invisible until attack, spell cast, or deactivation',
-        { endsOn: ['attack', 'cast-spell', 'bonus-action-deactivate'] },
+        'make wearer and worn/carried objects invisible until ring removed, attack, spell cast, or deactivation',
+        {
+          endsOn: [
+            'ring-removed',
+            'attack',
+            'cast-spell',
+            'bonus-action-deactivate',
+          ],
+        },
       ),
     ],
   ],
@@ -1173,7 +1191,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'enhanced-sphere-levitation',
         'levitate it 10 feet plus a number of additional feet equal to 10 × your Intelligence modifier',
-        'wearer controls sphere of annihilation',
+        'user starts turn controlling a sphere of annihilation and uses an action to levitate it',
         'increase sphere movement using source formula',
         { additionalFeetFormula: '10 + 10 × intelligence-modifier' },
       ),

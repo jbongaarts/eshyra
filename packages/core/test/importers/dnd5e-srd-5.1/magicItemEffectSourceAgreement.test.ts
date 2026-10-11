@@ -668,7 +668,141 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
       ['magic-item:mace-of-smiting', 'mace-smiting-critical-rider'],
       ['magic-item:sword-of-life-stealing', 'life-stealing-critical-rider'],
     ] as const)
-      expect(effect(item, id).trigger).toBe('attack roll 20');
+      expect(String(effect(item, id).trigger)).toMatch(/^attack roll 20\b/);
+    // "attack a creature ... and roll a 20": a creature-only rider, whereas
+    // the Mace of Smiting prints no target class.
+    for (const [item, id] of [
+      ['magic-item:sword-of-life-stealing', 'life-stealing-critical-rider'],
+      ['magic-item:sword-of-sharpness', 'sharpness-natural-twenty-rider'],
+    ] as const)
+      expect(effect(item, id).trigger).toBe(
+        'attack roll 20 against a creature',
+      );
+    expect(
+      effect('magic-item:mace-of-smiting', 'mace-smiting-critical-rider')
+        .trigger,
+    ).toBe('attack roll 20');
+
+    // Prerequisite, exception and delivery forms (eshyra-o9bd.19.4.5.5).
+    // Crystal Ball: "While touching it, you can cast the scrying spell"; no
+    // action-speed permission (Scrying keeps its normal casting time), unlike
+    // the Orb of Dragonkind, which prints "use an action ... scrying".
+    const ball = effect('magic-item:crystal-ball', 'crystal-scrying');
+    expect(String(ball.trigger)).toContain('touching');
+    expect(String(ball.trigger)).not.toContain('action');
+    expect(ball.castingTime).toBe('spell-normal');
+    const operation = (itemKey: string, id: string) =>
+      (
+        recordMechanics(itemKey) as {
+          operations?: { id?: string; activation?: Obj }[];
+        }
+      ).operations?.find((candidate) => candidate.id === id);
+    expect(
+      operation('magic-item:orb-of-dragonkind', 'cast-scrying')?.activation,
+    ).toMatchObject({
+      cost: 'action',
+      requirement: 'control the orb',
+    });
+    expect(
+      effect('magic-item:spell-scroll', 'scroll-casting-procedure').castingTime,
+    ).toBe('spell-normal');
+    // Dimensional Shackles: "They don't prevent the creature from passing
+    // through an interdimensional portal."
+    expect(
+      effect('magic-item:dimensional-shackles', 'dimensional-movement-block')
+        .exceptions,
+    ).toEqual(['passing through an interdimensional portal']);
+    // Dust of Dryness: the elemental is EXPOSED to a pinch (no throwing is
+    // printed); the damage clause has one account, while the throwing
+    // deliveries belong to Disappearance and Sneezing and Choking only.
+    const dryness = effect(
+      'magic-item:dust-of-dryness',
+      'water-elemental-damage',
+    );
+    expect(String(dryness.trigger)).toContain('exposed');
+    expect(String(dryness.trigger)).not.toMatch(/thrown|throw/);
+    const absorb = effect('magic-item:dust-of-dryness', 'absorb-water');
+    expect(String(absorb.trigger)).not.toMatch(/thrown|throw|elemental/);
+    expect('waterElemental' in absorb).toBe(false);
+    expect(
+      operation('magic-item:dust-of-dryness', 'sprinkle-dust')?.activation
+        ?.target,
+    ).toBe('water');
+    for (const item of [
+      'magic-item:dust-of-disappearance',
+      'magic-item:dust-of-sneezing-and-choking',
+    ])
+      expect(
+        String(effectsOf(recordsByKey.get(item) as never)[0]?.trigger),
+      ).toContain('thrown into air');
+    // Touching vs merely carrying/wearing/holding, per the printed state.
+    expect(
+      String(effect('magic-item:luck-blade', 'luck-blade-saves').condition),
+    ).toContain('on your person');
+    expect(
+      String(
+        effect('magic-item:stone-of-good-luck-luckstone', 'luckstone-saves')
+          .condition,
+      ),
+    ).toContain('on your person');
+    expect(
+      String(
+        effect('magic-item:scarab-of-protection', 'scarab-spell-saves')
+          .condition,
+      ),
+    ).toContain('on your person');
+    expect(
+      String(
+        effect('magic-item:ioun-stone', 'awareness-no-surprise').condition,
+      ),
+    ).toContain('orbits');
+    expect(
+      String(
+        effect('magic-item:wand-of-the-war-mage-1-2-or-3', 'ignore-half-cover')
+          .trigger,
+      ),
+    ).toContain('holder of the wand');
+    expect(
+      String(effect('magic-item:sun-blade', 'sun-blade-finesse').trigger),
+    ).toContain('while the blade exists');
+    expect(
+      String(effect('magic-item:boots-of-speed', 'speed-multiplier').condition),
+    ).toContain('activated');
+    // Action economy / target class / exceptions printed beside the effect.
+    expect(
+      String(
+        effect('magic-item:amulet-of-the-planes', 'plane-shift-check').trigger,
+      ),
+    ).toContain('familiar');
+    expect(
+      String(
+        effect('magic-item:decanter-of-endless-water', 'geyser-impact').trigger,
+      ),
+    ).toContain('object');
+    expect(
+      String(
+        effect('magic-item:gloves-of-swimming-and-climbing', 'athletics-bonus')
+          .trigger,
+      ),
+    ).toContain('Strength (Athletics)');
+    expect(
+      String(
+        effect(
+          'magic-item:talisman-of-the-sphere',
+          'enhanced-sphere-levitation',
+        ).trigger,
+      ),
+    ).not.toContain('wearer');
+    expect(
+      effect('magic-item:ring-of-invisibility', 'invisibility').endsOn,
+    ).toContain('ring-removed');
+    expect(
+      effect('magic-item:plate-armor-of-etherealness', 'etherealness').endsOn,
+    ).toContain('armor-removed');
+    expect(
+      operation('magic-item:cubic-gate', 'cast-plane-shift')?.activation
+        ?.requirement,
+    ).toContain('twice');
     // "you can telepathically communicate with any creature wearing it": no
     // added directionality or language flags.
     const telepathy = effect(

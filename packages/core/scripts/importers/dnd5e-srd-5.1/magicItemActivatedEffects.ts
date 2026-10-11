@@ -162,13 +162,21 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
         'cast the plane shift spell (save DC 17)',
       ],
       effects: [
-        spell('cast-gate', 'spell:gate', {
-          targetPlane: 'plane keyed to pressed side',
-        }),
-        spell('cast-plane-shift', 'spell:plane-shift', {
-          ...fixedDc(17),
-          targetPlane: 'plane keyed to pressed side',
-        }),
+        spell(
+          'cast-gate',
+          'spell:gate',
+          { targetPlane: 'plane keyed to pressed side' },
+          action('press one side of the cube'),
+        ),
+        spell(
+          'cast-plane-shift',
+          'spell:plane-shift',
+          {
+            ...fixedDc(17),
+            targetPlane: 'plane keyed to pressed side',
+          },
+          action('press the same side of the cube twice'),
+        ),
       ],
     },
   ],

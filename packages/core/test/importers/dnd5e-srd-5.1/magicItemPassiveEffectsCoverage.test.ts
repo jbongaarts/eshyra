@@ -107,6 +107,8 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
         {
           kind: 'speedMultiplier',
           multiplier: 2,
+          condition:
+            'while the boots are activated by clicking the heels together as a bonus action, until clicked again',
         },
       ],
     },
