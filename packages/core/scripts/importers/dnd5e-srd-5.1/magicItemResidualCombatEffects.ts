@@ -319,7 +319,11 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         {
           save: { ability: 'wisdom', dc: 17 },
           rangeFeet: 60,
-          target: 'creature native to another plane of existence',
+          // Printed: "targeting a creature that you can see within 60 feet"
+          // (SRD p. 228). The sight restriction is part of the target.
+          target:
+            'creature native to another plane of existence that you can see',
+          requiresSight: true,
           failedSaveEffect: 'trapped in the flask',
         },
         [F1, F8, F9],

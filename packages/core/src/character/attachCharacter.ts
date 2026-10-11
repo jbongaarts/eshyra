@@ -9,7 +9,7 @@
  * continuing character into a campaign.
  */
 
-import type { Db } from '../persistence/db.js';
+import { type Db, withTransaction } from '../persistence/db.js';
 import {
   DEFAULT_DND5E_SRD_BINDING,
   readCampaignRulesBinding,
@@ -74,16 +74,33 @@ export function attachCharacterSheetToCampaign(
     },
   };
 
-  createSqliteCharacterSheetStore(db).save(
-    input.characterId ?? 'pc-1',
-    attached,
-  );
-  return importFinalizedCharacter(db, {
-    character: attached,
-    sessionId: input.sessionId,
-    at: input.at,
-    ...(input.characterId !== undefined
-      ? { characterId: input.characterId }
-      : {}),
-  });
+  // The sheet save and the live-row import are one unit: a correction result
+  // (ok:false, e.g. an unsupported rules system) must not leave a stamped
+  // campaign sheet behind with no live character.
+  let result: CompleteCharacterCreationResult | undefined;
+  try {
+    withTransaction(db, (txn) => {
+      createSqliteCharacterSheetStore(txn).save(
+        input.characterId ?? 'pc-1',
+        attached,
+      );
+      result = importFinalizedCharacter(txn, {
+        character: attached,
+        sessionId: input.sessionId,
+        at: input.at,
+        ...(input.characterId !== undefined
+          ? { characterId: input.characterId }
+          : {}),
+      });
+      if (!result.ok) throw new AttachRolledBack();
+    });
+  } catch (error) {
+    if (error instanceof AttachRolledBack && result !== undefined) {
+      return result;
+    }
+    throw error;
+  }
+  return result as CompleteCharacterCreationResult;
 }
+
+class AttachRolledBack extends Error {}

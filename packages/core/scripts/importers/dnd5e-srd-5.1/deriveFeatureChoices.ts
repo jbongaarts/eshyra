@@ -27,7 +27,11 @@ import type {
   ProficiencyGrantEffect,
 } from '../../../src/rules/featureChoices.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
-import { typedProficiencyEffectFromText } from './mechanicsProjections.js';
+import {
+  deriveFeatureMechanics,
+  type SpellGrantResolver,
+  typedProficiencyEffectFromText,
+} from './mechanicsProjections.js';
 import { reconstructFeatureText } from './parseFeatures.js';
 
 /**
@@ -1874,4 +1878,114 @@ export function deriveFeatureChoices(
         : { ...rest, tableRefs, choices };
     return { ...feature, data: nextData };
   });
+}
+
+/**
+ * Parent-level projections keys re-derived from a feature's own non-option
+ * prose (eshyra-o9bd.19.3.1.1, O5). `resources` and the option-catalog
+ * `procedures` keep their existing derivation.
+ */
+const OPTION_SCOPED_MECHANICS_KEYS = [
+  'saves',
+  'conditions',
+  'effects',
+  'spellGrants',
+] as const;
+
+/**
+ * Option prose must not hoist into its parent (opus:F-07 class). A feature
+ * whose printed body includes option text had its parent mechanics derived
+ * from the full body, so one option's save, condition, effect, or spell grant
+ * applied to every option. This pass re-derives those parent keys from the
+ * body with each option's verbatim text removed, then moves a spell grant that
+ * only one option's own text prints onto that option (`option.mechanics`).
+ */
+export function scopeOptionFeatureMechanics(
+  records: readonly RulesRecord[],
+  resolveSpellGrant: SpellGrantResolver | undefined,
+): RulesRecord[] {
+  return records.map((record) => {
+    if (record.kind !== 'feature') return record;
+    const data = dataOf(record);
+    const description = data.description;
+    const choices = data.choices;
+    if (typeof description !== 'string' || !Array.isArray(choices)) {
+      return record;
+    }
+    const options = choices.flatMap((choice) =>
+      isRecordValue(choice) && Array.isArray(choice.options)
+        ? (choice.options as Record<string, unknown>[])
+        : [],
+    );
+    const optionTexts = options
+      .map((option) => option.text)
+      .filter(
+        (text): text is string =>
+          typeof text === 'string' && description.includes(text),
+      );
+    if (optionTexts.length === 0) return record;
+    if (data.sections !== undefined) {
+      throw new FeatureChoiceDerivationError(
+        `${record.key}: option scoping assumes no subsection body; add sections handling before relying on it`,
+      );
+    }
+    let body = description;
+    for (const text of optionTexts) body = body.replace(text, ' ');
+    const rederived = deriveFeatureMechanics(body, resolveSpellGrant);
+    const previous = isRecordValue(data.mechanics) ? data.mechanics : {};
+    const parentGrants = Array.isArray(previous.spellGrants)
+      ? (previous.spellGrants as { spell: string }[])
+      : [];
+    const nextOptions = options.map((option) => {
+      if (typeof option.text !== 'string' || parentGrants.length === 0) {
+        return option;
+      }
+      const grants = deriveFeatureMechanics(option.text, resolveSpellGrant)
+        .spellGrants as { spell: string }[] | undefined;
+      const moved = (grants ?? []).filter((grant) =>
+        parentGrants.some((parent) => parent.spell === grant.spell),
+      );
+      if (moved.length === 0) return option;
+      return {
+        ...option,
+        mechanics: {
+          ...(isRecordValue(option.mechanics) ? option.mechanics : {}),
+          spellGrants: moved,
+        },
+      };
+    });
+    const mechanics: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(previous)) {
+      if (!(OPTION_SCOPED_MECHANICS_KEYS as readonly string[]).includes(key)) {
+        mechanics[key] = value;
+      }
+    }
+    for (const key of OPTION_SCOPED_MECHANICS_KEYS) {
+      const value = (rederived as Record<string, unknown>)[key];
+      if (value !== undefined) mechanics[key] = value;
+    }
+    const nextChoices = choices.map((choice) => {
+      if (!isRecordValue(choice) || !Array.isArray(choice.options))
+        return choice;
+      return {
+        ...choice,
+        options: choice.options.map((option: Record<string, unknown>) => {
+          const next = nextOptions.find(
+            (candidate) => candidate.id === option.id,
+          );
+          return next ?? option;
+        }),
+      };
+    });
+    const { mechanics: _previous, ...rest } = data;
+    const nextData: Record<string, unknown> =
+      Object.keys(mechanics).length > 0
+        ? { ...rest, choices: nextChoices, mechanics }
+        : { ...rest, choices: nextChoices };
+    return { ...record, data: nextData };
+  });
+}
+
+function isRecordValue(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

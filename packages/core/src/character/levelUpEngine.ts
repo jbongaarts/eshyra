@@ -1668,7 +1668,7 @@ function levelUpProficiencies(
   const removedEntries: CharacterProficiencyGrant[] = [];
   try {
     for (const id of replaced) {
-      const result = removeOptionGrants(working, id);
+      const result = removeOptionGrants(working, id, sources);
       working = result.sheet;
       if (result.removed !== undefined) removedEntries.push(result.removed);
     }

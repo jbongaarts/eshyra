@@ -810,6 +810,16 @@ derived(
   'a list of linked `table:` record-key references, not source text.',
 );
 mechanicsSubtree('feature', '/mechanics', 'feature.mechanics');
+// Option-scoped mechanics (Beguiling Influence's typed proficiency grant,
+// eshyra-olc5.7.1; Pact of the Chain's spell grant moved off the parent,
+// eshyra-o9bd.19.3.1) are compiler projections like every other mechanics
+// subtree; without this more specific prefix they would inherit the
+// source-derived class of /choices.
+mechanicsSubtree(
+  'feature',
+  '/choices/*/options/*/mechanics',
+  'feature.choices[].options[].mechanics',
+);
 derived(
   'feature',
   '/choices',
@@ -865,6 +875,10 @@ derived(
   'the trap category (mechanical/magic), parsed from the printed trap description.',
 );
 mechanicsSubtree('hazard', '/mechanics', 'hazard.mechanics');
+// Printed sub-traps of one record (eshyra-o9bd.19.3.1.1, O2): each variant's
+// name and text are literal source spans; its mechanics are the compiler's
+// projection of that span alone.
+namedEntry('hazard', '/variants');
 
 // ---------------------------------------------------------------------------
 // magic-item — the 240 SRD magic items (parseMagicItems.ts / magicItem*.ts)

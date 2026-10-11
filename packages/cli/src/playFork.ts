@@ -75,13 +75,22 @@ export function forkConflictedCharacterIntoCampaign(
     // Attach the fork (revision 1) into the same party slot: this re-links the
     // campaign sheet to the new identity, re-projects the live row, and takes
     // custody of the fork. The source character stays idle and unchanged.
-    checkoutCharacterIntoCampaign(deps.characterRegistry, db, {
+    const checkout = checkoutCharacterIntoCampaign(deps.characterRegistry, db, {
       globalCharacterId: newGlobalCharacterId,
       campaignId,
       characterId,
       sessionId: 'resume-fork',
       at: deps.now(),
     });
+    if (!checkout.attach.ok) {
+      // A correction result means the slot did not adopt the fork and no
+      // custody was taken: report failure, never "this campaign plays the fork".
+      deps.io.write(
+        `The fork "${fork.globalCharacterId}" was created in the registry but could not be attached to this campaign; ` +
+          `the campaign's character is unchanged: ${checkout.attach.errors.join('; ')}`,
+      );
+      return false;
+    }
     deps.io.write(
       `Forked "${source.globalCharacterId}"@${source.fromRevision} into a new, separate ` +
         `character "${fork.globalCharacterId}" (revision 1). Continuity with the original is ` +
