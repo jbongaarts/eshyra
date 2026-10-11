@@ -114367,7 +114367,7 @@
           {
             "id": "c2-residual-rat-indifference",
             "kind": "triggeredEffect",
-            "trigger": "wearer is attuned to the pipes and is near an ordinary rat or giant rat",
+            "trigger": "while wearer is attuned to the pipes",
             "result": "rat is indifferent toward wearer and will not attack wearer unless wearer threatens or harms it"
           }
         ]

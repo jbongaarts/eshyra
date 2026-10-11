@@ -473,7 +473,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'rat-indifference',
         'ordinary rats and giant rats are indifferent toward you',
-        'wearer is attuned to the pipes and is near an ordinary rat or giant rat',
+        'while wearer is attuned to the pipes',
         'rat is indifferent toward wearer and will not attack wearer unless wearer threatens or harms it',
       ),
     ],
