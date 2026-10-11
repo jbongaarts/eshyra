@@ -16,7 +16,11 @@ import type {
   ModelToolResult,
   ModelUsage,
 } from './client.js';
-import { ModelClientError, ModelRateLimitError } from './client.js';
+import {
+  ModelClientError,
+  ModelRateLimitError,
+  toToolResultPayload,
+} from './client.js';
 import type { ModelToolDefinition } from './toolSchema.js';
 
 /** Debug label reported for OpenAI's native function-tool channel. */
@@ -105,9 +109,7 @@ function toNativeTools(
 }
 
 function toResultPayload(result: ModelToolResult['result']): unknown {
-  return result.ok
-    ? { ok: true, data: result.data }
-    : { ok: false, code: result.code, message: result.message };
+  return toToolResultPayload(result);
 }
 
 function toNativeMessages(message: ModelMessage): OpenAiMessage[] {
