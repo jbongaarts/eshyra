@@ -1705,10 +1705,37 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       );
     }
     const origin = reqStr(areaObj, 'origin', areaPath);
-    if (origin !== 'self') {
+    if (!SPELL_AREA_ORIGINS.has(origin)) {
       throw new RulesPackError(
-        `${areaPath}.origin must be "self", got ${JSON.stringify(origin)}`,
+        `${areaPath}.origin must be one of ${[...SPELL_AREA_ORIGINS].join(', ')}, got ${JSON.stringify(origin)}`,
       );
+    }
+    // Dimensions beyond size exist only where the printed shape has them, so
+    // a stray height or width fails closed instead of riding along.
+    if (shape === 'cylinder') optInt(areaObj, 'height', areaPath, 1);
+    else if (areaObj.height !== undefined)
+      throw new RulesPackError(
+        `${areaPath}.height is only valid on cylinder areas`,
+      );
+    if (shape === 'line') optInt(areaObj, 'width', areaPath, 1);
+    else if (areaObj.width !== undefined)
+      throw new RulesPackError(`${areaPath}.width is only valid on line areas`);
+  }
+  const projectiles = mechanics.projectiles;
+  if (projectiles !== undefined) {
+    if (
+      typeof projectiles !== 'object' ||
+      projectiles === null ||
+      Array.isArray(projectiles)
+    ) {
+      throw new RulesPackError(`${path}.${key}.projectiles must be an object`);
+    }
+    const projectilesObj = projectiles as Obj;
+    const projectilesPath = `${path}.${key}.projectiles`;
+    reqInt(projectilesObj, 'count', projectilesPath, 1);
+    const noun = reqStr(projectilesObj, 'noun', projectilesPath);
+    if (noun.length === 0) {
+      throw new RulesPackError(`${projectilesPath}.noun must not be empty`);
     }
   }
   const recharge = mechanics.recharge;
@@ -1869,9 +1896,18 @@ const SPELL_AREA_SHAPES: ReadonlySet<string> = new Set([
   'cone',
   'line',
   'cube',
+  'cylinder',
   'sphere',
   'hemisphere',
   'radius',
+]);
+
+/** Where a typed spell area is anchored: the caster, or the chosen point. */
+const SPELL_AREA_ORIGINS: ReadonlySet<string> = new Set([
+  'self',
+  'point-within-range',
+  'creature',
+  'object',
 ]);
 
 const USAGE_RECHARGE_RESTS: ReadonlySet<string> = new Set([
@@ -4814,6 +4850,58 @@ function validateObjectHitPointsProjection(
   });
 }
 
+// eshyra-o9bd.19.2.3.1 (opus:F-16): the madness tables' printed duration,
+// derived from the Madness Effects rule sentence that introduces each table.
+function validateMadnessDurationProjection(
+  projection: Obj,
+  path: string,
+): void {
+  const duration = projection.duration;
+  if (
+    typeof duration !== 'object' ||
+    duration === null ||
+    Array.isArray(duration)
+  ) {
+    throw new RulesPackError(`${path}.duration must be an object`);
+  }
+  const d = duration as Obj;
+  const durationPath = `${path}.duration`;
+  if (d.kind !== undefined) {
+    if (d.kind !== 'until-cured' || Object.keys(d).length !== 1) {
+      throw new RulesPackError(
+        `${durationPath} must be exactly {kind:"until-cured"} or a timed duration`,
+      );
+    }
+  } else {
+    const dice = reqStr(d, 'dice', durationPath);
+    if (!/^\d+d\d+$/.test(dice)) {
+      throw new RulesPackError(`${durationPath}.dice must be NdM`);
+    }
+    if (d.multiplier !== undefined) {
+      if (
+        typeof d.multiplier !== 'number' ||
+        !Number.isInteger(d.multiplier) ||
+        d.multiplier <= 0
+      ) {
+        throw new RulesPackError(
+          `${durationPath}.multiplier must be a positive integer`,
+        );
+      }
+    }
+    const unit = reqStr(d, 'unit', durationPath);
+    if (unit !== 'minute' && unit !== 'hour' && unit !== 'day') {
+      throw new RulesPackError(
+        `${durationPath}.unit must be minute, hour, or day`,
+      );
+    }
+  }
+  const ref = reqStr(projection, 'sourceRuleRef', path);
+  if (!ref.startsWith('rule:')) {
+    throw new RulesPackError(`${path}.sourceRuleRef must be a 'rule:' ref`);
+  }
+  reqStr(projection, 'sourceText', path);
+}
+
 function optDnd5eTableProjection(parent: Obj, path: string): void {
   const value = parent.projection;
   if (value === undefined) return;
@@ -4861,11 +4949,32 @@ function optDnd5eTableProjection(parent: Obj, path: string): void {
     case 'objectHitPoints':
       validateObjectHitPointsProjection(projection, `${path}.projection`);
       return;
+    case 'madnessDuration':
+      validateMadnessDurationProjection(projection, `${path}.projection`);
+      return;
     default:
       throw new RulesPackError(
         `${path}.projection.kind has unsupported table projection kind "${kind}"`,
       );
   }
+}
+
+// The Barding rule's typed cost/weight transformation (eshyra-o9bd.19.2.3.1,
+// sol:CAP-013), carried on rule:mounts-and-vehicles.
+function validateBardingTransformation(data: Obj, path: string): void {
+  const value = data.bardingTransformation;
+  if (value === undefined) return;
+  const p = `${path}.bardingTransformation`;
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(`${p} must be an object when present`);
+  }
+  const t = value as Obj;
+  reqInt(t, 'costMultiplier', p, 1);
+  reqInt(t, 'weightMultiplier', p, 1);
+  if (t.appliesTo !== 'armor-table') {
+    throw new RulesPackError(`${p}.appliesTo must be "armor-table"`);
+  }
+  reqStr(t, 'sourceText', p);
 }
 
 const BASE_KIND_VALIDATORS: Record<RulesRecordKind, Validator> = {
@@ -4889,6 +4998,7 @@ const BASE_KIND_VALIDATORS: Record<RulesRecordKind, Validator> = {
     reqStr(data, 'text', `${path}.data`);
     optStrArray(data, 'tableRefs', `${path}.data`);
     optSkillsByAbility(data, 'skillsByAbility', `${path}.data`);
+    validateBardingTransformation(data, `${path}.data`);
   },
   spell: baseObjectKind,
   // An abbreviated inline combat stat block (eshyra-4a7.4); baseline only
@@ -5268,6 +5378,9 @@ const EQUIPMENT_GROUPS: ReadonlySet<string> = new Set([
   'artisans-tools',
   'gaming-set',
   'musical-instrument',
+  // The printed rows of the "Tack, Harness, and Drawn Vehicles" table
+  // (eshyra-o9bd.19.2.3.1).
+  'tack-harness-drawn-vehicles',
 ]);
 
 // How (if at all) the Dexterity modifier applies to a non-shield armor's base
