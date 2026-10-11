@@ -311,10 +311,19 @@ function freezeKindIndexes(
   );
 }
 
+/**
+ * The supported apostrophe spellings: U+0027, left/right single quotation
+ * marks (U+2018/U+2019), modifier letter apostrophe (U+02BC), single high-
+ * reversed-9 quotation mark (U+201B) and fullwidth apostrophe (U+FF07). All
+ * canonicalize to U+0027 for index alias generation, discovery and exact
+ * lookup. Other letters/modifiers (primes, saltillo, ...) are left untouched.
+ */
+const APOSTROPHE_GLYPHS = /[\u2018\u2019\u02BC\u201B\uFF07]/gu;
+
 function normalizeName(name: string): string {
   return name
     .trim()
-    .replace(/[‘’]/g, "'")
+    .replace(APOSTROPHE_GLYPHS, "'")
     .replace(/[‐‑‒–—-]/g, ' ')
     .replace(/\s+/g, ' ')
     .toLocaleLowerCase('en-US');

@@ -4,6 +4,7 @@ import type { RulesRecordKind } from '../../src/internal.js';
 import {
   extractDiscoverySignals,
   getBundledDnd5eSrdPack,
+  lookupRulesRecord,
   projectDiscoveryTrace,
   RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP,
   RULES_RECORD_KINDS,
@@ -269,6 +270,164 @@ describe('name-mention punctuation folding', () => {
       String(signal.evidence.matchedName),
     );
     expect(names).toContain('hide');
+  });
+});
+
+/**
+ * Apostrophe grammar (eshyra-o9bd.19.2.4.10, review 19.2.4.9 S1-S3). The
+ * expectation is derived from the index: a mention that denotes indexed name n
+ * must carry, for EVERY key k of U(n) (the union over all kinds), a reason for
+ * n whose siblings are exactly U(n) minus k. Assertions are per name and key
+ * REASON, never key presence, because other aliases can share a key.
+ */
+describe('name-mention apostrophe grammar', () => {
+  const { keysByName } = indexes();
+  const GLYPHS = [
+    "'",
+    '\u2018',
+    '\u2019',
+    '\u02BC',
+    '\u201B',
+    '\uFF07',
+  ] as const;
+
+  /** Missing or wrong (name, key) reasons for `input` expecting `name`. */
+  function reasonFailures(input: string, name: string): string[] {
+    const expected = [...(keysByName.get(name) ?? [])].sort();
+    const trace = extractDiscoverySignals(
+      { playerInput: input, stateFields: {} },
+      stack,
+    );
+    const signals = trace.outputsProduced.filter(
+      (signal) => signal.kind === 'name-mention',
+    );
+    const failures: string[] = [];
+    for (const key of expected) {
+      const matching = signals.filter((signal) => signal.proposes === key);
+      if (matching.length !== 1) {
+        failures.push(`${input}|${name}|${key}: ${matching.length} signals`);
+        continue;
+      }
+      const reason = reasonsOf(matching[0]?.evidence ?? {}).find(
+        (item) => item.name === name,
+      );
+      const siblings = expected.filter((other) => other !== key);
+      if (JSON.stringify(reason?.siblings) !== JSON.stringify(siblings))
+        failures.push(`${input}|${name}|${key}: ${JSON.stringify(reason)}`);
+    }
+    return failures;
+  }
+
+  const apostropheNames = [...keysByName.keys()].filter((name) =>
+    name.includes("'"),
+  );
+  const withGlyph = (name: string, glyph: string) =>
+    name.replaceAll("'", glyph);
+
+  it('has real apostrophe-bearing names to exercise', () => {
+    expect(apostropheNames).toContain("land's stride");
+    expect(apostropheNames).toContain("alchemist's fire");
+  });
+
+  it('recognizes an apostrophe name with a trailing possessive and quote edges, in every glyph combination', () => {
+    const failures: string[] = [];
+    // Every inner glyph per name; the outer glyph rotates by name so each
+    // inner x outer pair is covered across the population at bounded cost.
+    apostropheNames.forEach((name, nameIndex) => {
+      GLYPHS.forEach((inner, glyphIndex) => {
+        const outer = GLYPHS[(nameIndex + glyphIndex) % GLYPHS.length];
+        const written = withGlyph(name, inner);
+        for (const input of [
+          `${written}${outer}s effect`,
+          `before ${outer}${written}${outer} after`,
+        ])
+          failures.push(...reasonFailures(input, name));
+      });
+    });
+    expect(failures).toEqual([]);
+  });
+
+  it('keeps each exact reason for the named examples', () => {
+    expect(reasonFailures("Land's Stride's effect", "land's stride")).toEqual(
+      [],
+    );
+    expect(reasonFailures("Hunter's Mark's damage", "hunter's mark")).toEqual(
+      [],
+    );
+    // The name itself keeps its reason; the plural alias does not replace it.
+    expect(
+      reasonFailures("alchemist's fire's effect", "alchemist's fire"),
+    ).toEqual([]);
+    expect(reasonFailures('Thieves\u02BC Cant', 'thieves cant')).toEqual([]);
+  });
+
+  it('applies a possessive to any token of a multi-word name', () => {
+    const failures: string[] = [];
+    const names = [...keysByName.keys()].filter(
+      (name, index) =>
+        /^[\p{L}\p{N} -]+$/u.test(name) &&
+        name.includes(' ') &&
+        ((keysByName.get(name)?.size ?? 0) > 1 || index % 20 === 0),
+    );
+    expect(names.length).toBeGreaterThan(50);
+    for (const name of names) {
+      const words = name.split(' ');
+      for (let at = 0; at < words.length; at++) {
+        const possessive = words.map((word, i) =>
+          i === at ? `${word}\u2019s` : word,
+        );
+        failures.push(...reasonFailures(possessive.join(' '), name));
+      }
+    }
+    expect(failures).toEqual([]);
+    // An ambiguous section alias through the shared names.
+    expect(
+      reasonFailures("Spellcasting's Ability", 'spellcasting ability'),
+    ).toEqual([]);
+    expect(
+      reasonFailures(
+        "Ability's Score Improvement",
+        'ability score improvement',
+      ),
+    ).toEqual([]);
+  });
+
+  it('never strips a terminal s from a word without an apostrophe', () => {
+    const trace = extractDiscoverySignals(
+      { playerInput: 'shields of faith', stateFields: {} },
+      stack,
+    );
+    const names = trace.outputsProduced.map((signal) =>
+      String(signal.evidence.matchedName),
+    );
+    expect(names).not.toContain('shield of faith');
+    expect(names).not.toContain('shield');
+  });
+
+  it('resolves exact kind-scoped lookup by name identically for every glyph', () => {
+    const mismatches: string[] = [];
+    for (const kind of RULES_RECORD_KINDS) {
+      const byName = stack.recordsByKind.get(kind)?.byName as
+        | ByName
+        | undefined;
+      for (const name of byName?.keys() ?? []) {
+        if (!name.includes("'")) continue;
+        const outcome = (spelling: string) => {
+          const result = lookupRulesRecord(stack, { kind, name: spelling });
+          return result.ok
+            ? `ok:${result.record.key}`
+            : result.code === 'ambiguous'
+              ? `ambiguous:${result.candidateKeys.join(',')}`
+              : result.code;
+        };
+        const baseline = outcome(name);
+        expect(baseline).not.toBe('not_found');
+        for (const glyph of GLYPHS)
+          if (outcome(withGlyph(name, glyph)) !== baseline)
+            mismatches.push(`${kind}|${name}|${glyph}`);
+      }
+    }
+    expect(mismatches).toEqual([]);
   });
 });
 

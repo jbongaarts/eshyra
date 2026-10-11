@@ -140,16 +140,37 @@ function cueSignals(
 }
 
 function foldName(normalized: string): string {
-  return (
-    normalized
-      .replace(/'/gu, '')
-      // Every character other than a letter, digit, or a hyphen joining two
-      // word characters is a word boundary (colons and stray hyphens included).
-      .replace(/[^\p{L}\p{N} -]/gu, ' ')
-      .replace(/(?<![\p{L}\p{N}])-|-(?![\p{L}\p{N}])/gu, ' ')
-      .replace(/\s+/gu, ' ')
-      .trim()
-  );
+  return normalized
+    .replace(/'/gu, '')
+    .replace(/[^\p{L}\p{N} -]/gu, ' ')
+    .replace(/(?<![\p{L}\p{N}])-|-(?![\p{L}\p{N}])/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .trim();
+}
+
+/**
+ * Tokenize player input once. An apostrophe between two word characters stays
+ * inside its token; any other apostrophe (a quote edge, a trailing possessive
+ * `s'`) is a boundary, as is every other non-word character except a hyphen
+ * joining two word characters. Each token yields the spellings it may match an
+ * indexed (apostrophe-free folded) name token with: as written with
+ * apostrophes removed ("land's" -> "lands"), and with a trailing possessive
+ * `'s` removed first ("stride's" -> "stride"). A terminal `s` is never
+ * stripped from a word without an apostrophe.
+ */
+function inputTokenAlternatives(normalizedInput: string): string[][] {
+  return normalizedInput
+    .replace(/(?<![\p{L}\p{N}])'|'(?![\p{L}\p{N}])/gu, ' ')
+    .replace(/[^\p{L}\p{N} '-]/gu, ' ')
+    .replace(/(?<![\p{L}\p{N}])-|-(?![\p{L}\p{N}])/gu, ' ')
+    .split(/\s+/u)
+    .filter(Boolean)
+    .map((token) => {
+      const written = token.replaceAll("'", '');
+      return token.endsWith("'s") && token.length > 2
+        ? [written, token.slice(0, -2).replaceAll("'", '')]
+        : [written];
+    });
 }
 
 interface NameReason {
@@ -167,18 +188,16 @@ function nameSignals(
   index: number,
 ): { signals: DiscoverySignal[]; ambiguous: AmbiguousNameObservation[] } {
   // Input and indexed names are folded to the same word-boundary form:
-  // apostrophes are dropped ("Land's Stride" and "Lands Stride" agree), a
-  // hyphen between two word characters joins them ("half-elf"), and every
-  // other character - commas, colons, periods, quotes, brackets, dashes - is a
-  // boundary ("Food, Drink, and Lodging" agrees with "food drink and lodging";
-  // "Darkvision: how far" reaches "darkvision"). The
-  // input is additionally matched with apostrophes as boundaries so a
-  // possessive ("the wizard's spellbook") still reaches "wizard".
-  const normalizedInput = normalizeRulesRecordName(scenario.playerInput);
-  const inputVariants = [
-    foldName(normalizedInput.replace(/'/gu, '')),
-    foldName(normalizedInput.replace(/'/gu, ' ')),
-  ].map((text) => text.split(' ').filter(Boolean));
+  // apostrophes are dropped from index names ("Land's Stride" and "Lands
+  // Stride" agree), a hyphen between two word characters joins them
+  // ("half-elf"), and every other character - commas, colons, periods, quotes,
+  // brackets, dashes - is a boundary ("Food, Drink, and Lodging" agrees with
+  // "food drink and lodging"). Apostrophes in the input are decided per token
+  // (see inputTokenAlternatives), so "Land's Stride's effect" reaches "land's
+  // stride" and "the wizard's spellbook" still reaches "wizard".
+  const tokens = inputTokenAlternatives(
+    normalizeRulesRecordName(scenario.playerInput),
+  );
   const signals: DiscoverySignal[] = [];
   const ambiguous: AmbiguousNameObservation[] = [];
   // Every key a matched name resolves to, across ALL kinds. A name shared by
@@ -208,13 +227,11 @@ function nameSignals(
     for (const [rawName, entries] of names) {
       const nameTokens = foldName(rawName).split(' ').filter(Boolean);
       if (nameTokens.length === 0) continue;
-      const found = inputVariants.some(
-        (tokens) =>
-          nameTokens.length <= tokens.length &&
-          tokens.some(
-            (_, i) =>
-              i + nameTokens.length <= tokens.length &&
-              nameTokens.every((token, offset) => tokens[i + offset] === token),
+      const found = tokens.some(
+        (_, i) =>
+          i + nameTokens.length <= tokens.length &&
+          nameTokens.every(
+            (token, offset) => tokens[i + offset]?.includes(token) ?? false,
           ),
       );
       if (!found) continue;
