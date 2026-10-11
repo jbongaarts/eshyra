@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type CharacterCreationEngine,
   type CharacterDraft,
+  createCharacterCreationEngine,
+  createRulesPackCharacterResolver,
   finalizeCharacterDraft,
   getBundledDnd5eSrdPack,
   getDnd5eCharacterCreationEngine,
+  resolveRulesStack,
   SRD_5_1_STANDARD_LANGUAGES,
   validateRulesPack,
 } from '../src/internal.js';
@@ -210,6 +214,11 @@ describe('background equipment is structured and credited (opus:F-18)', () => {
       );
       draft = engine.setChoice(draft, entry.choice.id, picks);
     }
+    // Language grants must be distinct identities (eshyra-o9bd.19.3.3.3).
+    draft = engine.setChoice(draft, 'background.languages', [
+      'Elvish',
+      'Giant',
+    ]);
     const result = finalizeCharacterDraft(draft, META);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -281,5 +290,275 @@ describe('High Elf extra language reaches creation as a language choice', () => 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.character.languages).toContain('Sylvan');
+  });
+});
+
+/**
+ * eshyra-o9bd.19.3.3.3 (Sol S1-S3): language choices are validated as DISTINCT
+ * additional language identities, an exhausted default domain is never an open
+ * pool, and custom-background language picks use the same approval path.
+ */
+describe('language choice identity, exhausted domains and custom backgrounds', () => {
+  const ALL_STANDARD = [...SRD_5_1_STANDARD_LANGUAGES];
+
+  function build(
+    eng: CharacterCreationEngine,
+    ancestry: string,
+    background = 'Acolyte',
+  ): CharacterDraft {
+    let draft = eng.createDraft({ id: 'hero', mode: 'concept-first' });
+    draft = eng.setIdentity(draft, { name: 'Grok', concept: 'guard' });
+    draft = eng.setClass(draft, 'Fighter');
+    draft = eng.setAncestry(draft, ancestry);
+    draft = eng.setBackground(draft, background);
+    draft = eng.setAbilityScoreMethod(draft, 'point_buy');
+    draft = eng.setAbilityScores(draft, {
+      strength: 15,
+      dexterity: 14,
+      constitution: 13,
+      intelligence: 12,
+      wisdom: 10,
+      charisma: 8,
+    });
+    for (const entry of eng.mechanicalChoices(draft)) {
+      if (entry.choice.kind === 'languages') continue;
+      const picks = (entry.choice.from ?? []).slice(
+        0,
+        entry.choice.choose ?? 0,
+      );
+      draft = eng.setChoice(draft, entry.choice.id, picks);
+    }
+    return draft;
+  }
+
+  function apply(
+    eng: CharacterCreationEngine,
+    base: CharacterDraft,
+    picks: Record<string, string[]>,
+    approvals: Record<string, string[]>,
+  ): CharacterDraft {
+    let draft = base;
+    for (const [id, values] of Object.entries(picks)) {
+      draft = eng.setChoice(draft, id, values);
+    }
+    for (const [id, values] of Object.entries(approvals)) {
+      draft = eng.setGmApprovedLanguages(draft, id, values);
+    }
+    return draft;
+  }
+
+  const satisfied = (
+    eng: CharacterCreationEngine,
+    draft: CharacterDraft,
+    id: string,
+  ) => eng.mechanicalChoices(draft).find((e) => e.choice.id === id)?.satisfied;
+
+  // S1: a pack whose Acolyte fixed grant holds every Standard language leaves
+  // zero default choices for both grant shapes.
+  const exhaustedPack = structuredClone(getBundledDnd5eSrdPack());
+  const acolyte = exhaustedPack.records.find(
+    (r) => r.key === 'background:acolyte',
+  );
+  const acolyteGrants = (
+    acolyte?.data as { languages: { fixed: string[] }[] } | undefined
+  )?.languages;
+  if (acolyteGrants?.[0] === undefined) throw new Error('no Acolyte grant');
+  acolyteGrants[0].fixed = [...ALL_STANDARD];
+  const exhaustedResolver = createRulesPackCharacterResolver(
+    resolveRulesStack({ base: exhaustedPack, addons: [] }),
+  );
+  const exhaustedEngine = createCharacterCreationEngine(exhaustedResolver);
+
+  it.each([
+    ['Human', 'ancestry.languages'],
+    ['High Elf', 'ancestry.languages.extra-language'],
+  ])(
+    'S1: an exhausted default domain still needs per-choice approval (%s)',
+    (ancestry, id) => {
+      const base = build(exhaustedEngine, ancestry);
+      expect(
+        exhaustedEngine.mechanicalChoices(base).find((e) => e.choice.id === id)
+          ?.choice.from,
+      ).toEqual([]);
+      const cases: [string[], Record<string, string[]>, boolean][] = [
+        [['Sylvan'], {}, false], // missing approval
+        [['Sylvan'], { [id]: ['Sylvan'] }, true], // present approval
+        [['Sylvan'], { 'background.languages': ['Sylvan'] }, false], // wrong choice
+        [['Sylvan'], { [id]: ['Abyssal'] }, false], // wrong language
+        [[' '], { [id]: [' '] }, false], // blank pick
+        [['Elvish'], { [id]: ['Elvish'] }, false], // already held fixed language
+        [[], {}, false],
+      ];
+      for (const [picks, approvals, expected] of cases) {
+        const draft = apply(exhaustedEngine, base, { [id]: picks }, approvals);
+        expect(
+          satisfied(exhaustedEngine, draft, id),
+          JSON.stringify(picks),
+        ).toBe(expected);
+      }
+      // Both shapes together: the background grant behaves the same.
+      let draft = apply(
+        exhaustedEngine,
+        base,
+        { [id]: ['Sylvan'], 'background.languages': ['Abyssal', 'Celestial'] },
+        { [id]: ['Sylvan'] },
+      );
+      expect(
+        finalizeCharacterDraft(draft, META, exhaustedResolver, exhaustedEngine)
+          .ok,
+      ).toBe(false);
+      draft = exhaustedEngine.setGmApprovedLanguages(
+        draft,
+        'background.languages',
+        ['Abyssal', 'Celestial'],
+      );
+      const done = finalizeCharacterDraft(
+        draft,
+        META,
+        exhaustedResolver,
+        exhaustedEngine,
+      );
+      expect(done.ok).toBe(true);
+      if (done.ok) {
+        expect(done.character.languages).toEqual(
+          expect.arrayContaining(['Sylvan', 'Abyssal', 'Celestial']),
+        );
+      }
+    },
+  );
+
+  // S2: bundled pack, distinct identities within and across choice grants.
+  const EXTRA = 'ancestry.languages.extra-language';
+  it.each([
+    [
+      'cross-group collision',
+      'High Elf',
+      { [EXTRA]: ['Sylvan'], 'background.languages': ['Sylvan', 'Giant'] },
+    ],
+    [
+      'same-group case variant',
+      'Human',
+      {
+        'ancestry.languages': ['Giant'],
+        'background.languages': ['Abyssal', 'abyssal'],
+      },
+    ],
+    [
+      'same-group whitespace variant',
+      'Human',
+      {
+        'ancestry.languages': ['Giant'],
+        'background.languages': ['Deep Speech', ' deep  speech '],
+      },
+    ],
+    [
+      'standard cross-group collision',
+      'Human',
+      {
+        'ancestry.languages': ['Giant'],
+        'background.languages': ['Giant', 'Orc'],
+      },
+    ],
+    [
+      'case variant across groups',
+      'High Elf',
+      { [EXTRA]: ['Sylvan'], 'background.languages': ['sylvan', 'Giant'] },
+    ],
+  ])(
+    'S2: refuses %s and never finalizes a lost grant',
+    (_label, ancestry, picks) => {
+      const approvals = Object.fromEntries(
+        Object.entries(picks).map(([id, v]) => [id, [...v]]),
+      );
+      const eng = engine;
+      const draft = apply(eng, build(eng, ancestry), picks, approvals);
+      const states = eng
+        .mechanicalChoices(draft)
+        .filter((e) => e.choice.kind === 'languages');
+      expect(states.some((e) => !e.satisfied)).toBe(true);
+      expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+    },
+  );
+
+  it('S2: distinct additional languages across both grants finalize intact', () => {
+    const draft = apply(
+      engine,
+      build(engine, 'High Elf'),
+      { [EXTRA]: ['Sylvan'], 'background.languages': ['Abyssal', 'Giant'] },
+      { [EXTRA]: ['Sylvan'], 'background.languages': ['Abyssal'] },
+    );
+    const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect([...result.character.languages].sort()).toEqual(
+      ['Abyssal', 'Common', 'Elvish', 'Giant', 'Sylvan'].sort(),
+    );
+  });
+
+  // S3: supported custom background uses the canonical grant's extension.
+  const custom = (languages: string[]) => ({
+    name: 'Temple Archivist',
+    skillProficiencies: ['Arcana', 'History'],
+    toolProficiencies: [],
+    languages,
+    feature: 'background:acolyte#feature:shelter-of-the-faithful',
+  });
+  function customDraft(
+    languages: string[],
+    approvals: Record<string, string[]>,
+  ): CharacterDraft {
+    let draft = build(engine, 'Human');
+    for (const [id, v] of Object.entries(approvals)) {
+      draft = engine.setGmApprovedLanguages(draft, id, v);
+    }
+    draft = engine.setBackgroundCustomization(draft, custom(languages));
+    return engine.setChoice(draft, 'ancestry.languages', ['Giant']);
+  }
+
+  it.each([
+    [
+      'approved outside picks',
+      ['Abyssal', 'Sylvan'],
+      { 'background.languages': ['Abyssal', 'Sylvan'] },
+      true,
+    ],
+    [
+      'normalized approval',
+      ['Abyssal', 'Sylvan'],
+      { 'background.languages': [' abyssal', 'SYLVAN '] },
+      true,
+    ],
+    ['no approval', ['Abyssal', 'Sylvan'], {}, false],
+    [
+      'wrong choice id',
+      ['Abyssal', 'Sylvan'],
+      { 'ancestry.languages': ['Abyssal', 'Sylvan'] },
+      false,
+    ],
+    [
+      'partial approval',
+      ['Abyssal', 'Sylvan'],
+      { 'background.languages': ['Abyssal'] },
+      false,
+    ],
+    ['standard control', ['Elvish', 'Dwarvish'], {}, true],
+    ['held ancestry language', ['Common', 'Dwarvish'], {}, false],
+    [
+      'duplicate identity',
+      ['Abyssal', 'abyssal'],
+      { 'background.languages': ['Abyssal'] },
+      false,
+    ],
+  ])('S3: custom background %s', (_label, languages, approvals, ok) => {
+    const result = finalizeCharacterDraft(
+      customDraft(languages, approvals),
+      META,
+    );
+    expect(result.ok).toBe(ok);
+    if (result.ok) {
+      expect(result.character.languages).toEqual(
+        expect.arrayContaining(languages),
+      );
+    }
   });
 });

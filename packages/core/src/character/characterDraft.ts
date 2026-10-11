@@ -457,13 +457,32 @@ function validateBackgroundCustomization(
   }
   const tools = new Set(custom.toolProficiencies);
   const languages = new Set(custom.languages);
+  const grants = Array.isArray(background.languages)
+    ? background.languages
+    : [];
   const languageDomain = new Set(
-    Array.isArray(background.languages)
-      ? background.languages.flatMap((grant) => [
-          ...grant.fixed,
-          ...(grant.from ?? []),
-        ])
-      : [],
+    grants.flatMap((grant) => [...grant.fixed, ...(grant.from ?? [])]),
+  );
+  // An outside-domain custom language is admitted only through the canonical
+  // source grant's GM-permission extension and an explicit approval keyed by
+  // that grant's choice id (eshyra-o9bd.19.3.3.3).
+  const approvedCustom = grants.some(
+    (grant) =>
+      grant.choose !== undefined &&
+      grant.extension?.requiresGmApproval === true,
+  )
+    ? approvedLanguageKeys(
+        selections.gmApprovedLanguages?.['background.languages'],
+      )
+    : new Set<string>();
+  const ancestryResult =
+    selections.ancestry === undefined
+      ? undefined
+      : resolver.resolveAncestry(selections.ancestry);
+  const ancestryHeld = new Set(
+    fixedLanguageGrants(
+      ancestryResult?.ok ? ancestryResult.record : undefined,
+    ).map(languageKey),
   );
   if (
     tools.size !== custom.toolProficiencies.length ||
@@ -473,7 +492,17 @@ function validateBackgroundCustomization(
   }
   if (
     languages.size !== custom.languages.length ||
-    [...languages].some((language) => !languageDomain.has(language))
+    new Set(custom.languages.map(languageKey)).size !==
+      custom.languages.length ||
+    custom.languages.some(
+      (language) =>
+        languageKey(language).length === 0 ||
+        ancestryHeld.has(languageKey(language)) ||
+        !(
+          languageDomain.has(language) ||
+          approvedCustom.has(languageKey(language))
+        ),
+    )
   ) {
     fail('custom background contains an unknown or duplicate source language');
   }
@@ -802,6 +831,9 @@ export function createCharacterCreationEngine(
     const mechanical = all.filter((choice) =>
       MECHANICAL_CHOICE_KINDS.has(choice.kind),
     );
+    // Language identities already held or claimed, so a later language choice
+    // can never re-grant the same language (eshyra-o9bd.19.3.3.3).
+    const claimedLanguages = new Set(heldLanguages.map(languageKey));
     const choices = (
       draft.selections.startingEquipmentMode === 'starting-wealth'
         ? mechanical.filter((choice) => choice.kind !== 'equipment')
@@ -809,11 +841,15 @@ export function createCharacterCreationEngine(
     ).map((choice) => ({
       choice,
       selected: stored[choice.id] ?? [],
-      satisfied: isChoiceSatisfied(
-        choice,
-        stored[choice.id] ?? [],
-        gmApprovedFor(draft, choice, heldLanguages),
-      ),
+      satisfied:
+        choice.kind === 'languages'
+          ? isLanguageChoiceSatisfied(
+              choice,
+              stored[choice.id] ?? [],
+              gmApprovedFor(draft, choice),
+              claimedLanguages,
+            )
+          : isChoiceSatisfied(choice, stored[choice.id] ?? []),
     }));
     const background = effectiveBackground(draft.selections, resolver);
     const ancestrySkills =
@@ -1645,17 +1681,51 @@ function isChoiceSatisfied(
   );
 }
 
+/** One bounded identity normalization for language names (case, whitespace). */
+export function languageKey(language: string): string {
+  return language.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
 /**
- * The languages a draft's explicit GM approval admits OUTSIDE a language
- * choice's default domain (eshyra-o9bd.19.3.3.1). Empty unless the choice is a
- * language choice carrying the source's GM-permission extension; a language the
- * character already holds as a fixed grant is never admitted, and a blank name
- * never is. Approval is read only from the draft's explicit input.
+ * Whether a language choice is satisfied. Unlike other kinds, an empty `from`
+ * is an EXHAUSTED default domain, never an open pool: every pick outside it
+ * needs the source extension and an explicit per-choice approval. Picks must be
+ * `choose` distinct language identities that no fixed grant or earlier language
+ * choice already holds; a satisfied choice claims its identities.
+ */
+function isLanguageChoiceSatisfied(
+  choice: Level1RequiredChoice,
+  selected: readonly string[],
+  approved: ReadonlySet<string>,
+  claimed: Set<string>,
+): boolean {
+  if (choice.choose === undefined) return true;
+  const keys = selected.map(languageKey);
+  if (
+    selected.length !== choice.choose ||
+    new Set(keys).size !== choice.choose ||
+    keys.some((key) => key.length === 0 || claimed.has(key))
+  ) {
+    return false;
+  }
+  const domain = new Set(choice.from ?? []);
+  const ok = selected.every(
+    (value, index) => domain.has(value) || approved.has(keys[index] as string),
+  );
+  if (ok) for (const key of keys) claimed.add(key);
+  return ok;
+}
+
+/**
+ * The normalized languages a draft's explicit GM approval admits OUTSIDE a
+ * language choice's default domain (eshyra-o9bd.19.3.3.1). Empty unless the
+ * choice is a language choice carrying the source's GM-permission extension; a
+ * blank name never is admitted. Approval is read only from the draft's
+ * explicit input.
  */
 function gmApprovedFor(
   draft: CharacterDraft,
   choice: Level1RequiredChoice,
-  heldLanguages: readonly string[],
 ): ReadonlySet<string> {
   if (
     choice.kind !== 'languages' ||
@@ -1663,13 +1733,16 @@ function gmApprovedFor(
   ) {
     return new Set();
   }
-  const held = new Set(heldLanguages.map((l) => l.trim().toLowerCase()));
-  const approved = draft.selections.gmApprovedLanguages?.[choice.id] ?? [];
+  return approvedLanguageKeys(
+    draft.selections.gmApprovedLanguages?.[choice.id],
+  );
+}
+
+function approvedLanguageKeys(
+  approved: readonly string[] | undefined,
+): ReadonlySet<string> {
   return new Set(
-    approved.filter(
-      (language) =>
-        language.trim().length > 0 && !held.has(language.trim().toLowerCase()),
-    ),
+    (approved ?? []).map(languageKey).filter((key) => key.length > 0),
   );
 }
 

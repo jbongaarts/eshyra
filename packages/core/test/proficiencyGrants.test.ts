@@ -477,6 +477,8 @@ describe('creation', () => {
         );
       }
     }
+    // Additional languages must be distinct from the ancestry's pick.
+    draft = engine.setChoice(draft, 'background.languages', ['Giant', 'Orc']);
     if (className === 'Cleric') {
       const spells = bundled
         .listSpells()

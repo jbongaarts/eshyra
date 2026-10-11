@@ -36,6 +36,7 @@ import {
   type CharacterDraft,
   effectiveBackground,
   getDnd5eCharacterCreationEngine,
+  languageKey,
   type MechanicalChoiceState,
   parseStartingEquipmentMode,
   type RequiredChoice,
@@ -1052,15 +1053,25 @@ function collectLanguages(
   backgroundLanguages: string | readonly ResolvedLanguageGrant[] | undefined,
 ): readonly string[] {
   const languages = new Set<string>();
-  for (const language of fixedLanguages(ancestryLanguages)) {
-    languages.add(language);
-  }
-  for (const language of fixedLanguages(backgroundLanguages)) {
+  const identities = new Set<string>();
+  for (const language of [
+    ...fixedLanguages(ancestryLanguages),
+    ...fixedLanguages(backgroundLanguages),
+  ]) {
+    identities.add(languageKey(language));
     languages.add(language);
   }
   for (const entry of engine.mechanicalChoices(draft)) {
     if (entry.choice.kind === 'languages') {
       for (const language of entry.selected) {
+        // Validation guarantees distinct identities; a collision here would
+        // silently drop a required language grant, so fail loudly instead.
+        if (identities.has(languageKey(language))) {
+          throw new Error(
+            `language choice ${entry.choice.id} repeats an already granted language: ${language}`,
+          );
+        }
+        identities.add(languageKey(language));
         languages.add(language);
       }
     }

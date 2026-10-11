@@ -316,6 +316,11 @@ describe('finalizeCharacterDraft', () => {
         (entry.choice.from ?? []).slice(0, entry.choice.choose ?? 0),
       );
     }
+    // Additional languages must be distinct from the ancestry's pick.
+    draft = engine.setChoice(draft, 'background.languages', [
+      'Elvish',
+      'Giant',
+    ]);
     const result = finalizeCharacterDraft(draft, META);
     expect(result.ok).toBe(true);
     if (result.ok) {
