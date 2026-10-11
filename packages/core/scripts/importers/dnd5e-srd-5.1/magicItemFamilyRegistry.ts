@@ -18,6 +18,7 @@ import { projectMagicItemConsumable } from './magicItemConsumables.js';
 import { projectMagicItemContainmentInteractions } from './magicItemContainmentInteractions.js';
 import { projectMagicItemCurses } from './magicItemCurses.js';
 import { projectMagicItemEntityGrants } from './magicItemEntityGrants.js';
+import { applyFaithfulMagicItemOperations } from './magicItemFaithfulOperations.js';
 import {
   projectMagicItemPassiveMechanics,
   projectMagicItemPassiveVariantMechanics,
@@ -115,29 +116,36 @@ function withoutCentralDispositions(
 function parentProjections(
   item: MagicItemExtraction,
 ): readonly MagicItemFamilyProjection[] {
-  return applyAdjudicatedMagicItemEffects(
+  return applyFaithfulMagicItemOperations(
     item,
-    PARENT_PROJECTORS.map((project) => project(item))
-      .filter(defined)
-      .map(withoutCentralDispositions),
+    applyAdjudicatedMagicItemEffects(
+      item,
+      PARENT_PROJECTORS.map((project) => project(item))
+        .filter(defined)
+        .map(withoutCentralDispositions),
+    ),
   ).map((projection) =>
     namespaceProjection(projection, `magic-item:${slug(item.name)}`),
   );
 }
 
 function variantProjections(
-  parentName: string,
+  item: MagicItemExtraction,
   variant: MagicItemVariant,
 ): readonly MagicItemFamilyProjection[] {
-  return VARIANT_PROJECTORS.map((project) => project(parentName, variant))
-    .filter(defined)
-    .map(withoutCentralDispositions)
-    .map((projection) =>
-      namespaceProjection(
-        projection,
-        `magic-item:${slug(parentName)}/variant:${slug(variant.name)}`,
-      ),
-    );
+  const parentName = item.name;
+  return applyFaithfulMagicItemOperations(
+    item,
+    VARIANT_PROJECTORS.map((project) => project(parentName, variant))
+      .filter(defined)
+      .map(withoutCentralDispositions),
+    variant.name,
+  ).map((projection) =>
+    namespaceProjection(
+      projection,
+      `magic-item:${slug(parentName)}/variant:${slug(variant.name)}`,
+    ),
+  );
 }
 
 export interface CompiledMagicItemFamilies {
@@ -172,9 +180,7 @@ export function compileMagicItemFamilies(
     }
     variants.set(
       variant.name,
-      aggregateMagicItemFamilyProjections(
-        variantProjections(item.name, variant),
-      ),
+      aggregateMagicItemFamilyProjections(variantProjections(item, variant)),
     );
   }
   return { ...parent, variants };

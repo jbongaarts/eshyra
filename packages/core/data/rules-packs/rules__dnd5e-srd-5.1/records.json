@@ -88455,7 +88455,8 @@
             "id": "speak-command-word",
             "activation": {
               "cost": "bonus-action",
-              "commandWord": true
+              "commandWord": true,
+              "requirement": "While holding this shield"
             },
             "doesNotExpend": [
               "uses"
@@ -88464,8 +88465,7 @@
           {
             "id": "end-animation",
             "activation": {
-              "cost": "bonus-action",
-              "commandWord": true
+              "cost": "bonus-action"
             }
           }
         ],
@@ -88710,61 +88710,61 @@
           {
             "id": "set-lever-1",
             "activation": {
-              "cost": "action"
+              "requirement": "A creature in the compartment"
             }
           },
           {
             "id": "set-lever-2",
             "activation": {
-              "cost": "action"
+              "requirement": "A creature in the compartment"
             }
           },
           {
             "id": "set-lever-3",
             "activation": {
-              "cost": "action"
+              "requirement": "A creature in the compartment"
             }
           },
           {
             "id": "set-lever-4",
             "activation": {
-              "cost": "action"
+              "requirement": "A creature in the compartment"
             }
           },
           {
             "id": "set-lever-5",
             "activation": {
-              "cost": "action"
+              "requirement": "A creature in the compartment"
             }
           },
           {
             "id": "set-lever-6",
             "activation": {
-              "cost": "action"
+              "requirement": "A creature in the compartment"
             }
           },
           {
             "id": "set-lever-7",
             "activation": {
-              "cost": "action"
+              "requirement": "A creature in the compartment"
             }
           },
           {
             "id": "set-lever-8",
             "activation": {
-              "cost": "action"
+              "requirement": "A creature in the compartment"
             }
           },
           {
             "id": "set-lever-9",
             "activation": {
-              "cost": "action"
+              "requirement": "A creature in the compartment"
             }
           },
           {
             "id": "set-lever-10",
             "activation": {
-              "cost": "action"
+              "requirement": "A creature in the compartment"
             }
           }
         ],
@@ -88794,6 +88794,146 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-1",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-10",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-2",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-3",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-4",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-5",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-6",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-7",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-8",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-9",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:apparatus-of-the-crab/m5-complex-apparatus-hidden-catch",
             "scope": {
@@ -90370,6 +90510,10 @@
         "operations": [
           {
             "id": "pull-fuzzy-object",
+            "activation": {
+              "cost": "action",
+              "requirement": "pull the fuzzy object from the bag and throw it up to 20 feet"
+            },
             "cost": [
               {
                 "economy": "uses",
@@ -90387,6 +90531,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:bag-of-tricks/activation-fuzzy-object-creature",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "When the object lands, it transforms into a creature you determine by rolling a d8 and consulting the table that corresponds to the bag’s color."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
           {
             "clauseId": "magic-item:bag-of-tricks/c1-uses",
             "scope": {
@@ -90602,7 +90760,8 @@
           {
             "id": "move-force-sphere",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "An enclosed creature"
             }
           }
         ],
@@ -90648,6 +90807,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:bead-of-force/activation-move-force-sphere",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "An enclosed creature can use its action to push against the sphere’s wall, moving the sphere up to half the creature’s walking speed."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
           {
             "clauseId": "magic-item:bead-of-force/c2-residual-bead-force-damage",
             "scope": {
@@ -91642,7 +91815,7 @@
           {
             "id": "deactivate-speed",
             "activation": {
-              "cost": "bonus-action"
+              "trigger": "If you click your heels together again"
             }
           }
         ],
@@ -91665,6 +91838,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:boots-of-speed/activation-deactivate-speed",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If you click your heels together again, you end the effect."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:boots-of-speed/c1-speed",
             "scope": {
@@ -92070,6 +92257,11 @@
         "operations": [
           {
             "id": "summon-water-elemental",
+            "activation": {
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "While this bowl is filled with water"
+            },
             "cost": [
               {
                 "economy": "uses",
@@ -92401,6 +92593,11 @@
         "operations": [
           {
             "id": "summon-fire-elemental",
+            "activation": {
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "While a fire burns in this brass brazier"
+            },
             "cost": [
               {
                 "economy": "uses",
@@ -92674,25 +92871,26 @@
           {
             "id": "mount-broom",
             "activation": {
-              "cost": "action"
+              "commandWord": true,
+              "requirement": "stand astride it"
             }
           },
           {
-            "id": "dismount-broom",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "dismount-broom"
           },
           {
             "id": "send-broom",
             "activation": {
-              "cost": "action"
+              "commandWord": true,
+              "target": "a destination within 1 mile of you",
+              "requirement": "name the location, and are familiar with that place"
             }
           },
           {
             "id": "recall-broom",
             "activation": {
-              "cost": "action"
+              "commandWord": true,
+              "requirement": "the broom is still within 1 mile of you"
             }
           }
         ],
@@ -92713,6 +92911,62 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:broom-of-flying/activation-dismount-broom",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "The broom stops hovering when you land."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:broom-of-flying/activation-mount-broom",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "until you stand astride it and speak its command word"
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:broom-of-flying/activation-recall-broom",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "The broom comes back to you when you speak another command word, provided that the broom is still within 1 mile of you."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:broom-of-flying/activation-send-broom",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "You can send the broom to travel alone to a destination within 1 mile of you if you speak the command word, name the location, and are familiar with that place."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:broom-of-flying/m3-broom-of-flying-fly-speed",
             "scope": {
@@ -92868,13 +93122,12 @@
           },
           {
             "id": "m9-cast-candle-spell",
-            "activation": {
-              "cost": "free",
-              "requirement": "eligible matching-alignment cleric or druid in candle light"
-            },
             "doesNotExpend": [
               "burn-time"
-            ]
+            ],
+            "activation": {
+              "requirement": "a cleric or druid in the light whose alignment matches the candle’s"
+            }
           }
         ],
         "effects": [
@@ -92892,6 +93145,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:candle-of-invocation/activation-cast-candle-spell",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M9",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed sentence lets the matching cleric or druid cast prepared 1st-level spells without expending spell slots; casting without a slot is not casting without time, so the spell keeps its normal casting time, interpreted by the DM model.",
+              "sourceText": "a cleric or druid in the light whose alignment matches the candle’s can cast"
+            },
+            "reason": "The printed sentence lets the matching cleric or druid cast prepared 1st-level spells without expending spell slots; casting without a slot is not casting without time, so the spell keeps its normal casting time, interpreted by the DM model."
+          },
           {
             "clauseId": "magic-item:candle-of-invocation/c1-burn-time",
             "scope": {
@@ -93203,14 +93470,12 @@
           {
             "id": "command-flight",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true
             }
           },
           {
-            "id": "end-flight",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "end-flight"
           }
         ],
         "effects": [
@@ -93248,6 +93513,34 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:carpet-of-flying/activation-command-flight",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "It moves according to your spoken directions, provided that you are within 30 feet of it."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
+          {
+            "clauseId": "magic-item:carpet-of-flying/activation-end-flight",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "It moves according to your spoken directions, provided that you are within 30 feet of it."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:carpet-of-flying/m3-carpet-of-flying-fly-speed",
             "scope": {
@@ -93410,6 +93703,11 @@
         "operations": [
           {
             "id": "summon-air-elemental",
+            "activation": {
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "While incense is burning in this censer"
+            },
             "cost": [
               {
                 "economy": "uses",
@@ -94572,6 +94870,7 @@
           {
             "id": "cast-polymorph",
             "activation": {
+              "requirement": "While wearing the cloak in an area of dim light or darkness",
               "cost": "action"
             },
             "cost": [
@@ -94582,10 +94881,7 @@
             ]
           },
           {
-            "id": "end-polymorph",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "end-polymorph"
           }
         ],
         "effects": [
@@ -94606,6 +94902,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:cloak-of-the-bat/activation-end-polymorph",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for ending the bat form; it is the cast polymorph spell’s own ending, interpreted by the DM model.",
+              "sourceText": "you can use your action to cast polymorph on yourself, transforming into a bat"
+            },
+            "reason": "The printed text names no action cost for ending the bat form; it is the cast polymorph spell’s own ending, interpreted by the DM model."
+          },
           {
             "clauseId": "magic-item:cloak-of-the-bat/c1-uses",
             "scope": {
@@ -94862,6 +95172,10 @@
             "operations": [
               {
                 "id": "cast-suggestion",
+                "activation": {
+                  "cost": "action",
+                  "requirement": "While scrying with the crystal ball"
+                },
                 "cost": [
                   {
                     "economy": "uses",
@@ -94941,6 +95255,21 @@
               "F2",
               "F8"
             ]
+          },
+          {
+            "clauseId": "magic-item:crystal-ball/variant:crystal-ball-of-telepathy/activation-cast-suggestion",
+            "scope": {
+              "kind": "variant",
+              "variantKey": "crystal-ball-of-telepathy"
+            },
+            "tag": "C1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "You can also use an action to cast the suggestion spell (save DC 17) through the sensor on one of those creatures. You don’t need to concentrate on this suggestion to maintain it during its duration, but it ends if scrying ends."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
           },
           {
             "clauseId": "magic-item:crystal-ball/variant:crystal-ball-of-telepathy/c1-uses",
@@ -96155,8 +96484,7 @@
           {
             "id": "coat-blade",
             "activation": {
-              "cost": "action",
-              "requirement": "dagger is coated"
+              "cost": "action"
             },
             "cost": [
               {
@@ -96445,20 +96773,19 @@
           {
             "id": "launch-sword",
             "activation": {
-              "cost": "bonus-action"
+              "cost": "bonus-action",
+              "commandWord": true
             }
           },
           {
             "id": "command-attack",
             "activation": {
-              "cost": "bonus-action"
+              "cost": "bonus-action",
+              "requirement": "While the sword hovers"
             }
           },
           {
-            "id": "catch-sword",
-            "activation": {
-              "cost": "free"
-            }
+            "id": "catch-sword"
           }
         ],
         "effects": [
@@ -96473,6 +96800,34 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:dancing-sword/activation-catch-sword",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "After the hovering sword attacks for the fourth time, it flies up to 30 feet and tries to return to your hand."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:dancing-sword/activation-command-attack",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "you can use a bonus action to cause it to fly up to 30 feet to another spot within 30 feet of you. As part of the same bonus action, you can cause the sword to attack one creature within 5 feet of it."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
           {
             "clauseId": "magic-item:dancing-sword/c2-residual-dancing-attack-statistics",
             "scope": {
@@ -96655,26 +97010,29 @@
           {
             "id": "produce-stream",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "remove the stopper"
             }
           },
           {
             "id": "produce-fountain",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "remove the stopper"
             }
           },
           {
             "id": "produce-geyser",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "remove the stopper"
             }
           },
           {
-            "id": "stop-water",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "stop-water"
           }
         ],
         "effects": [
@@ -96699,6 +97057,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:decanter-of-endless-water/activation-stop-water",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "The water stops pouring out at the start of your next turn."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:decanter-of-endless-water/c2-residual-geyser-impact",
             "scope": {
@@ -96879,6 +97251,10 @@
         "operations": [
           {
             "id": "draw-and-throw-card",
+            "activation": {
+              "cost": "action",
+              "requirement": "draw a card at random from the deck and throw it to the ground at a point within 30 feet of you"
+            },
             "cost": [
               {
                 "economy": "cards",
@@ -96894,6 +97270,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:deck-of-illusions/activation-card-illusion",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "An illusion of one or more creatures forms over the thrown card and remains until dispelled."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
           {
             "clauseId": "magic-item:deck-of-illusions/c1-cards",
             "scope": {
@@ -100094,7 +100484,8 @@
           {
             "id": "close-bottle",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true
             }
           }
         ]
@@ -100634,54 +101025,60 @@
         "operations": [
           {
             "id": "use-token",
+            "effects": [
+              "token-kind-payload"
+            ],
             "activation": {
-              "cost": "action",
-              "target": "varies by token kind"
+              "cost": "action"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "token-kind-payload"
             ]
           },
           {
             "id": "use-anchor",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "target": "a boat or ship"
             }
           },
           {
             "id": "use-bird",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "toss the token 5 feet into the air"
             }
           },
           {
             "id": "use-fan",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "If you are on a boat or ship"
             }
           },
           {
             "id": "use-swan-boat",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "target": "a body of water at least 60 feet in diameter"
             }
           },
           {
             "id": "use-tree",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "You must be outdoors to use this token",
+              "target": "an unoccupied space on the ground"
             }
           },
           {
             "id": "use-whip",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "target": "a point within 10 feet of you"
             }
           }
         ],
@@ -100779,6 +101176,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:feather-token/activation-use-fan",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "If you are on a boat or ship, you can use an action to toss the token up to 10 feet in the air."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
           {
             "clauseId": "magic-item:feather-token/c2-residual-whip-attack",
             "scope": {
@@ -101337,6 +101748,34 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:figurine-of-wondrous-power/activation-figurine-creation",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "If you use an action to speak the command word and throw the figurine to a point on the ground within 60 feet of you, the figurine becomes a living creature. If the space where the creature would appear is occupied by other creatures or objects, or if there isn’t enough space for the creature, the figurine doesn’t become a creature."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
+          {
+            "clauseId": "magic-item:figurine-of-wondrous-power/activation-figurine-reversion",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "It reverts to a figurine early if it drops to 0 hit points or if you use an action to speak the command word again while touching it."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
           {
             "clauseId": "magic-item:figurine-of-wondrous-power/c1-economy-goat-of-traveling-hour-charges",
             "scope": {
@@ -101902,19 +102341,22 @@
           {
             "id": "become-boat",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true
             }
           },
           {
             "id": "become-ship",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true
             }
           },
           {
             "id": "fold-boat",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true
             }
           }
         ]
@@ -102022,6 +102464,10 @@
         "operations": [
           {
             "id": "extinguish-flames",
+            "activation": {
+              "trigger": "When you draw this weapon",
+              "target": "all nonmagical flames within 30 feet of you"
+            },
             "cost": [
               {
                 "economy": "cooldown",
@@ -102276,6 +102722,7 @@
           {
             "id": "shed-light",
             "activation": {
+              "requirement": "While you are holding it",
               "cost": "action",
               "commandWord": true
             },
@@ -102686,6 +103133,10 @@
         "operations": [
           {
             "id": "gain-truesight",
+            "activation": {
+              "cost": "action",
+              "commandWord": true
+            },
             "cost": [
               {
                 "economy": "charges",
@@ -103007,8 +103458,13 @@
             },
             {
               "from": "active",
+              "to": "active",
+              "via": "set-appearance"
+            },
+            {
+              "from": "active",
               "to": "inactive",
-              "via": "restore-appearance"
+              "condition": "remove the armor"
             }
           ]
         },
@@ -103016,14 +103472,7 @@
           {
             "id": "set-appearance",
             "activation": {
-              "cost": "action",
-              "commandWord": true
-            }
-          },
-          {
-            "id": "restore-appearance",
-            "activation": {
-              "cost": "action",
+              "cost": "bonus-action",
               "commandWord": true
             }
           }
@@ -103475,9 +103924,7 @@
           {
             "id": "hurl-thunderclap",
             "activation": {
-              "cost": "action",
-              "requirement": "attuned to and holding the hammer",
-              "target": "one target within 60 feet"
+              "requirement": "While attuned to it"
             },
             "cost": [
               {
@@ -103491,13 +103938,12 @@
           },
           {
             "id": "giant-slaying-critical",
-            "activation": {
-              "cost": "free",
-              "trigger": "natural 20 attack against a giant"
-            },
             "effects": [
               "c2-giant-slaying-critical-payload"
-            ]
+            ],
+            "activation": {
+              "trigger": "When you roll a 20 on an attack roll made with this weapon against a giant"
+            }
           }
         ],
         "effects": [
@@ -103551,6 +103997,34 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:hammer-of-thunderbolts/activation-giant-slaying-critical",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "When you roll a 20 on an attack roll made with this weapon against a giant, the giant must succeed on a DC 17 Constitution saving throw or die."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:hammer-of-thunderbolts/activation-hurl-thunderclap",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "you can expend 1 charge and make a ranged weapon attack with the hammer, hurling it as if it had the thrown property with a normal range of 20 feet and a long range of 60 feet."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:hammer-of-thunderbolts/c1-economy-charges",
             "scope": {
@@ -104346,7 +104820,8 @@
             "id": "ignite-weapon",
             "activation": {
               "cost": "action",
-              "commandWord": true
+              "commandWord": true,
+              "requirement": "As long as the helm has at least one fire opal"
             }
           },
           {
@@ -106023,6 +106498,9 @@
         "operations": [
           {
             "id": "blow-horn",
+            "activation": {
+              "cost": "action"
+            },
             "cost": [
               {
                 "economy": "cooldown",
@@ -106038,6 +106516,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:horn-of-valhalla/activation-valhalla-berserkers",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "In response, warrior spirits from the Valhalla appear within 60 feet of you."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
           {
             "clauseId": "magic-item:horn-of-valhalla/c1-cooldown",
             "scope": {
@@ -106511,13 +107003,17 @@
           {
             "id": "deploy-fortress",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "place this 1-inch metal cube on the ground"
             }
           },
           {
             "id": "dismiss-fortress",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "works only if the fortress is empty"
             }
           }
         ],
@@ -107670,6 +108166,8 @@
           {
             "id": "throw-bands",
             "activation": {
+              "commandWord": true,
+              "target": "a Huge or smaller creature you can see within 60 feet of you",
               "cost": "action"
             },
             "cost": [
@@ -110439,12 +110937,13 @@
             "result": "occupant escapes its cell"
           },
           "release": {
+            "destination": "nearest unoccupied space facing away from the mirror",
+            "result": "free one creature selected by name or cell number with its possessions",
             "activation": {
               "cost": "action",
-              "commandWord": true
-            },
-            "destination": "nearest unoccupied space facing away from the mirror",
-            "result": "free one creature selected by name or cell number with its possessions"
+              "commandWord": true,
+              "requirement": "While within 5 feet of the mirror"
+            }
           },
           "overflow": "free one random current occupant before trapping the new prisoner",
           "rupture": {
@@ -111355,15 +111854,8 @@
           {
             "id": "slay-on-critical",
             "activation": {
-              "cost": "free",
-              "trigger": "critical hit against eligible creature"
+              "trigger": "If you score a critical hit against a creature that has fewer than 100 hit points"
             },
-            "cost": [
-              {
-                "economy": "charges",
-                "amount": 1
-              }
-            ],
             "effects": [
               "c2-slay-on-critical-payload"
             ]
@@ -111394,6 +111886,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:nine-lives-stealer/activation-slay-on-critical",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If you score a critical hit against a creature that has fewer than 100 hit points, it must succeed on a DC 15 Constitution saving throw or be slain instantly as the sword tears its life force from its body (a construct or an undead is immune)."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:nine-lives-stealer/c1-economy-charges",
             "scope": {
@@ -112790,6 +113296,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:orb-of-dragonkind/activation-called-evil-dragons",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "While you control the orb, you can use an action to cause the artifact to issue a telepathic call that extends in all directions for 40 miles."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
+          {
             "clauseId": "magic-item:orb-of-dragonkind/c1-economy-charges",
             "scope": {
               "kind": "parent"
@@ -113441,6 +113961,7 @@
           {
             "id": "regain-spell-slot",
             "activation": {
+              "requirement": "While this pearl is on your person",
               "cost": "action",
               "commandWord": true
             },
@@ -114334,6 +114855,10 @@
         "operations": [
           {
             "id": "call-rat-swarms",
+            "activation": {
+              "cost": "bonus-action",
+              "requirement": "If you play the pipes as an action"
+            },
             "cost": [
               {
                 "economy": "charges",
@@ -114354,6 +114879,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:pipes-of-the-sewers/activation-call-rat-swarms",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.",
+              "sourceText": "You must be proficient with wind instruments to use these pipes."
+            },
+            "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
           {
             "clauseId": "magic-item:pipes-of-the-sewers/c1-economy-charges",
             "scope": {
@@ -114550,6 +115089,11 @@
         "operations": [
           {
             "id": "gain-etherealness",
+            "activation": {
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "While you’re wearing this armor"
+            },
             "cost": [
               {
                 "economy": "uses",
@@ -118054,6 +118598,12 @@
         "operations": [
           {
             "id": "summon-djinni",
+            "activation": {
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "While wearing this ring",
+              "target": "an unoccupied space you choose within 120 feet of you"
+            },
             "cost": [
               {
                 "economy": "cooldown",
@@ -121884,6 +122434,7 @@
           {
             "id": "create-ball-lightning",
             "activation": {
+              "target": "an unoccupied space you can see within 120 feet of you",
               "cost": "action"
             },
             "cost": [
@@ -121896,6 +122447,7 @@
           {
             "id": "launch-shooting-stars",
             "activation": {
+              "target": "a point you can see within 60 feet of you",
               "cost": "action",
               "requirement": "expend 1 to 3 charges"
             },
@@ -121932,14 +122484,14 @@
           {
             "id": "move-ball-lightning",
             "activation": {
-              "cost": "bonus-action"
+              "cost": "bonus-action",
+              "requirement": "no farther than 120 feet away from you"
             }
           },
           {
             "id": "discharge-ball-lightning",
             "activation": {
-              "cost": "free",
-              "trigger": "creature comes within 5 feet"
+              "trigger": "When a creature other than you comes within 5 feet of a sphere"
             }
           }
         ],
@@ -121989,6 +122541,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:ring-of-shooting-stars/activation-discharge-ball-lightning",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "When a creature other than you comes within 5 feet of a sphere, the sphere discharges lightning at that creature and disappears."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:ring-of-shooting-stars/c1-economy-charges",
             "scope": {
@@ -123128,6 +123694,10 @@
           },
           {
             "id": "break-object",
+            "activation": {
+              "cost": "action",
+              "target": "an object you can see within 60 feet of you that isn’t being worn or carried"
+            },
             "cost": [
               {
                 "economy": "charges",
@@ -123663,6 +124233,11 @@
         "operations": [
           {
             "id": "activate-x-ray-vision",
+            "activation": {
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "While wearing this ring"
+            },
             "cost": [
               {
                 "economy": "safe-use",
@@ -125401,39 +125976,43 @@
           },
           {
             "id": "cast-detect-evil-and-good",
-            "activation": {
-              "cost": "action"
-            },
             "effects": [
               "c2-cast-detect-evil-and-good"
-            ]
+            ],
+            "activation": {
+              "cost": "action",
+              "requirement": "While holding the rod"
+            }
           },
           {
             "id": "cast-detect-magic",
-            "activation": {
-              "cost": "action"
-            },
             "effects": [
               "c2-cast-detect-magic"
-            ]
+            ],
+            "activation": {
+              "cost": "action",
+              "requirement": "While holding the rod"
+            }
           },
           {
             "id": "cast-detect-poison-and-disease",
-            "activation": {
-              "cost": "action"
-            },
             "effects": [
               "c2-cast-detect-poison-and-disease"
-            ]
+            ],
+            "activation": {
+              "cost": "action",
+              "requirement": "While holding the rod"
+            }
           },
           {
             "id": "cast-see-invisibility",
-            "activation": {
-              "cost": "action"
-            },
             "effects": [
               "c2-cast-see-invisibility"
-            ]
+            ],
+            "activation": {
+              "cost": "action",
+              "requirement": "While holding the rod"
+            }
           },
           {
             "id": "activate-aura",
@@ -126027,8 +126606,7 @@
           {
             "id": "drain-life",
             "activation": {
-              "cost": "free",
-              "trigger": "melee hit with rod"
+              "trigger": "When you hit a creature with a melee attack using the rod"
             },
             "cost": [
               {
@@ -126043,8 +126621,7 @@
           {
             "id": "paralyze",
             "activation": {
-              "cost": "free",
-              "trigger": "melee hit with rod"
+              "trigger": "When you hit a creature with a melee attack using the rod"
             },
             "cost": [
               {
@@ -126181,6 +126758,34 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:rod-of-lordly-might/activation-drain-life",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "When you hit a creature with a melee attack using the rod, you can force the target to make a DC 17 Constitution saving throw."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:rod-of-lordly-might/activation-paralyze",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "When you hit a creature with a melee attack using the rod, you can force the target to make a DC 17 Strength saving throw."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:rod-of-lordly-might/c1-economy-drain-life",
             "scope": {
@@ -126641,6 +127246,11 @@
         "operations": [
           {
             "id": "command-obedience",
+            "activation": {
+              "cost": "action",
+              "requirement": "present the rod",
+              "target": "each creature of your choice that you can see within 120 feet of you"
+            },
             "cost": [
               {
                 "economy": "uses",
@@ -126791,11 +127401,12 @@
             "durationDividedByOccupants": true
           },
           "entry": {
-            "activation": {
-              "cost": "action"
-            },
             "destination": "user-shaped extraplanar paradise",
-            "result": "user and up to 199 visible willing creatures are transported"
+            "result": "user and up to 199 visible willing creatures are transported",
+            "activation": {
+              "cost": "action",
+              "requirement": "While holding this rod"
+            }
           },
           "exit": {
             "trigger": "duration expires or user ends paradise as an action",
@@ -126832,6 +127443,10 @@
         "operations": [
           {
             "id": "enter-paradise",
+            "activation": {
+              "cost": "action",
+              "requirement": "While holding this rod"
+            },
             "cost": [
               {
                 "economy": "cooldown",
@@ -127005,32 +127620,67 @@
           {
             "id": "animate-rope",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "you hold one end of the rope"
             }
           },
           {
-            "id": "fasten-rope",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "fasten-rope"
           },
           {
-            "id": "knot-rope",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "knot-rope"
           },
           {
-            "id": "release-rope",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "release-rope"
           }
         ]
       },
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:rope-of-climbing/activation-fasten-rope",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "You can also tell the rope to fasten itself securely to an object or to unfasten itself, to knot or unknot itself, or to coil itself for carrying."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:rope-of-climbing/activation-knot-rope",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "You can also tell the rope to fasten itself securely to an object or to unfasten itself, to knot or unknot itself, or to coil itself for carrying."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:rope-of-climbing/activation-release-rope",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "You can also tell the rope to fasten itself securely to an object or to unfasten itself, to knot or unknot itself, or to coil itself for carrying."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:rope-of-climbing/m5-rope-of-climbing",
             "scope": {
@@ -127169,7 +127819,8 @@
           {
             "id": "release-creature",
             "activation": {
-              "cost": "bonus-action"
+              "cost": "bonus-action",
+              "commandWord": true
             }
           },
           {
@@ -135216,7 +135867,9 @@
           {
             "id": "become-python",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "throw the staff on the ground within 10 feet of you"
             }
           },
           {
@@ -135534,8 +136187,8 @@
           {
             "id": "tree-form",
             "activation": {
-              "cost": "action",
-              "commandWord": true
+              "requirement": "plant one end of the staff in fertile earth",
+              "cost": "action"
             },
             "cost": [
               {
@@ -135560,7 +136213,8 @@
             "id": "return-from-tree",
             "activation": {
               "cost": "action",
-              "commandWord": true
+              "commandWord": true,
+              "requirement": "While touching the tree"
             }
           }
         ],
@@ -136493,6 +137147,9 @@
         "operations": [
           {
             "id": "lightning",
+            "activation": {
+              "trigger": "When you hit with a melee attack using the staff"
+            },
             "cost": [
               {
                 "economy": "lightning",
@@ -136502,6 +137159,9 @@
           },
           {
             "id": "thunder",
+            "activation": {
+              "trigger": "When you hit with a melee attack using the staff"
+            },
             "cost": [
               {
                 "economy": "thunder",
@@ -137292,6 +137952,11 @@
         "operations": [
           {
             "id": "summon-earth-elemental",
+            "activation": {
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "If the stone is touching the ground"
+            },
             "cost": [
               {
                 "economy": "uses",
@@ -137915,16 +138580,11 @@
           {
             "id": "shed-light",
             "activation": {
-              "cost": "action",
               "commandWord": true
             }
           },
           {
-            "id": "end-light",
-            "activation": {
-              "cost": "action",
-              "commandWord": true
-            }
+            "id": "end-light"
           }
         ],
         "effects": [
@@ -137949,6 +138609,34 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:sword-of-sharpness/activation-end-light",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "Speaking the command word again or sheathing the sword puts out the light."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:sword-of-sharpness/activation-shed-light",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "you can speak the sword’s command word to cause the blade to shed bright light"
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:sword-of-sharpness/c2-static-sharpness-natural-twenty-rider",
             "scope": {
@@ -138503,6 +139191,11 @@
         "operations": [
           {
             "id": "open-fissure",
+            "activation": {
+              "cost": "action",
+              "requirement": "If you are wearing or holding it",
+              "target": "one creature you can see on the ground within 120 feet of you"
+            },
             "cost": [
               {
                 "economy": "charges",
@@ -139041,6 +139734,11 @@
         "operations": [
           {
             "id": "open-fissure",
+            "activation": {
+              "cost": "action",
+              "requirement": "If you are wearing or holding it",
+              "target": "one creature you can see on the ground within 120 feet of you"
+            },
             "cost": [
               {
                 "economy": "charges",
@@ -140356,6 +141054,7 @@
           {
             "id": "assisted-escape",
             "activation": {
+              "requirement": "While holding the wand",
               "cost": "reaction",
               "trigger": "make a save to avoid paralyzed/restrained or a check to escape grapple"
             },
@@ -140756,6 +141455,11 @@
         "operations": [
           {
             "id": "detect-enemy",
+            "activation": {
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "While holding it"
+            },
             "cost": [
               {
                 "economy": "charges",
@@ -142448,6 +143152,10 @@
         "operations": [
           {
             "id": "detect-secret",
+            "activation": {
+              "cost": "action",
+              "requirement": "While holding it"
+            },
             "cost": [
               {
                 "economy": "charges",
@@ -142962,7 +143670,7 @@
             {
               "id": "wonder-effect",
               "kind": "table-roll",
-              "trigger": "an action expends one charge and chooses a target within 120 feet",
+              "trigger": "While holding it, you can use an action to expend 1 of its charges and choose a target within 120 feet of you",
               "roll": "1d100",
               "tableRef": "table:wand-of-wonder",
               "outcome": "apply the rolled row with save DC 15, range 120 feet where applicable, area centered on and including the target, and seeded random subject selection",
@@ -142999,6 +143707,11 @@
         "operations": [
           {
             "id": "produce-random-effect",
+            "activation": {
+              "cost": "action",
+              "requirement": "While holding it",
+              "target": "a target within 120 feet of you"
+            },
             "cost": [
               {
                 "economy": "charges",

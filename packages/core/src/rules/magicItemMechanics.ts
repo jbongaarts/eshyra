@@ -24,7 +24,12 @@ export interface MagicItemDurationSpec {
 }
 
 export interface MagicItemActivationSpec {
-  readonly cost: 'action' | 'bonus-action' | 'reaction' | 'free' | 'consume';
+  /**
+   * The action cost the printed text states. Omitted when the source names no
+   * cost (faithful-or-absent, eshyra-o9bd.19.4.6.1): there is no default
+   * cost, so an absent cost means the DM model reads the printed activation.
+   */
+  readonly cost?: 'action' | 'bonus-action' | 'reaction' | 'free' | 'consume';
   readonly commandWord?: boolean;
   readonly trigger?: string;
   readonly requirement?: string;
@@ -605,11 +610,15 @@ function activation(value: unknown, path: string): void {
     ['cost', 'commandWord', 'trigger', 'requirement', 'target', 'note'],
     path,
   );
-  const cost = string(obj.cost, `${path}.cost`);
-  if (!ACTIVATION_COSTS.has(cost)) {
-    throw new RulesPackError(
-      `${path}.cost must be one of ${[...ACTIVATION_COSTS].join(', ')}`,
-    );
+  if (Object.keys(obj).length === 0)
+    throw new RulesPackError(`${path} must state at least one printed field`);
+  if (obj.cost !== undefined) {
+    const cost = string(obj.cost, `${path}.cost`);
+    if (!ACTIVATION_COSTS.has(cost)) {
+      throw new RulesPackError(
+        `${path}.cost must be one of ${[...ACTIVATION_COSTS].join(', ')}`,
+      );
+    }
   }
   if (obj.commandWord !== undefined)
     boolean(obj.commandWord, `${path}.commandWord`);

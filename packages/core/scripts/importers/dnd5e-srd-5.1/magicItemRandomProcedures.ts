@@ -495,7 +495,7 @@ const SPECS: ReadonlyMap<string, RandomProcedureSpec> = new Map<
           id: 'wonder-effect',
           kind: 'table-roll',
           trigger:
-            'an action expends one charge and chooses a target within 120 feet',
+            'While holding it, you can use an action to expend 1 of its charges and choose a target within 120 feet of you',
           roll: '1d100',
           tableRef: 'table:wand-of-wonder',
           outcome:

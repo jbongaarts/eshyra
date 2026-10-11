@@ -881,6 +881,30 @@ describe('magic-item mechanics schema', () => {
     );
   });
 
+  it('accepts an activation with no cost (faithful-or-absent) but rejects an empty or invalid one', () => {
+    // eshyra-o9bd.19.4.6.1: the printed text may name a trigger or
+    // requirement and no action cost; no default cost is ever supplied.
+    expect(() =>
+      validate({
+        operations: [
+          {
+            id: 'discharge',
+            activation: { trigger: 'a creature comes close' },
+          },
+          { id: 'speak', activation: { commandWord: true } },
+        ],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({ operations: [{ id: 'empty', activation: {} }] }),
+    ).toThrow(/at least one printed field/);
+    expect(() =>
+      validate({
+        operations: [{ id: 'bad', activation: { cost: 'whenever' } }],
+      }),
+    ).toThrow(/cost must be one of/);
+  });
+
   it('rejects malformed and dangling state-machine references', () => {
     expect(() =>
       validate({
