@@ -923,7 +923,8 @@ export const HALF_DAMAGE_SUCCESS_CENSUS: readonly HalfDamageCensusEntry[] = [
     joins: [
       {
         recordKey: 'hazard:pits',
-        pointer: '/data',
+        // The Spiked Pit variant carries the save (eshyra-o9bd.19.3.1.1, O2).
+        pointer: '/data/variants/3',
         anchor:
           'In that case, anyone taking piercing damage from the spikes must also make a DC 13 Constitution saving throw, taking an 22 (4d10) poison damage on a failed save, or half as much damage on a successful one.',
         representation: 'typed-save',

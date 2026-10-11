@@ -104,12 +104,15 @@ export interface FeatureChoiceOption {
     }[];
   }[];
   /**
-   * Typed mechanics this option grants, limited to proficiency effects
-   * derived from its own text (eshyra-olc5.7.1). Engine consumption is
-   * owned by eshyra-olc5.7.2.
+   * Typed mechanics this option's own text grants: proficiency effects
+   * (eshyra-olc5.7.1; consumed by character/proficiencyGrants.ts) and/or
+   * spell grants moved off the parent feature (eshyra-o9bd.19.3.1, e.g. Pact
+   * of the Chain's find familiar). Either field may be absent; the kind schema
+   * validates which shapes appear.
    */
   readonly mechanics?: {
-    readonly effects: readonly ProficiencyGrantEffect[];
+    readonly effects?: readonly ProficiencyGrantEffect[];
+    readonly spellGrants?: readonly { readonly spell: string }[];
   };
   /** Human-readable source label for this option's source text. */
   readonly source: string;

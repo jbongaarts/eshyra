@@ -131,9 +131,12 @@ describe('creature multi-save entries (opus:F-32)', () => {
     for (const record of creatures) {
       for (const entry of entriesOf(record.data as Obj)) {
         const text = typeof entry.text === 'string' ? entry.text : '';
+        // A clause names one ability, or a printed alternative ("DC 16
+        // Strength or Dexterity saving throw", bulette Deadly Leap), which
+        // projects as abilityOptions (eshyra-o9bd.19.3.1).
         const clauses = [
           ...text.matchAll(
-            /\bDC (\d+) (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw\b/g,
+            /\bDC (\d+) (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)(?: or (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma))? saving throw\b/g,
           ),
         ];
         const saves = savesOf(entry);
@@ -151,7 +154,14 @@ describe('creature multi-save entries (opus:F-32)', () => {
           clauses.every(
             (clause, i) =>
               saves[i]?.dc === Number(clause[1]) &&
-              saves[i]?.ability === clause[2].toLowerCase(),
+              (clause[3] === undefined
+                ? saves[i]?.ability === clause[2].toLowerCase()
+                : saves[i]?.ability === undefined &&
+                  JSON.stringify(saves[i]?.abilityOptions) ===
+                    JSON.stringify([
+                      clause[2].toLowerCase(),
+                      clause[3].toLowerCase(),
+                    ])),
           );
         if (!ok) mismatched.push(`${record.key} ${entry.name}`);
       }

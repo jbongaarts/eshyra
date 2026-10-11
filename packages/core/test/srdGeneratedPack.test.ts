@@ -780,7 +780,10 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // it and carry no mechanics; the four casters without a prior projection
   // (cleric, druid, sorcerer, wizard spellcasting) gain the spell-slot
   // resource and the printed Spell save DC formula.
-  { kind: 'feature', field: 'mechanics', missingCount: 50, totalInKind: 179 },
+  // eshyra-o9bd.19.3.1.1 (O5): four option-bearing features no longer carry
+  // parent mechanics derived from one option's prose (defensive-tactics,
+  // hunters-prey, superior-hunters-defense, warlock pact-boon).
+  { kind: 'feature', field: 'mechanics', missingCount: 54, totalInKind: 179 },
   // eshyra-o9bd.19.2.1.3.1: the end-of-chapter option-list section a feature
   // body points to, kept apart from `description` as one verbatim span. Only
   // feature:warlock:eldritch-invocations has one in SRD 5.1 (Cleric's Destroy
@@ -816,10 +819,14 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // carry `poisonType` and `price`.
   // First-pass mechanics projections (eshyra-ngcj.6): all but one trap/disease/
   // poison record expose an explicit save, damage, or condition projection.
-  { kind: 'hazard', field: 'mechanics', missingCount: 1, totalInKind: 25 },
+  // eshyra-o9bd.19.3.1.1 (O2): hazard:pits moves its per-trap projections into
+  // data.variants, so its record-level mechanics are absent.
+  { kind: 'hazard', field: 'mechanics', missingCount: 2, totalInKind: 25 },
   { kind: 'hazard', field: 'poisonType', missingCount: 11, totalInKind: 25 },
   { kind: 'hazard', field: 'price', missingCount: 11, totalInKind: 25 },
   { kind: 'hazard', field: 'trapType', missingCount: 17, totalInKind: 25 },
+  // eshyra-o9bd.19.3.1.1 (O2): only hazard:pits prints several named traps.
+  { kind: 'hazard', field: 'variants', missingCount: 24, totalInKind: 25 },
   {
     kind: 'magic-item',
     field: 'attunementRequirement',
@@ -7359,11 +7366,31 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       }
     });
 
-    it('includes the known Pact of the Chain find familiar grant', () => {
+    // eshyra-o9bd.19.3.1.1 (O5): the grant is printed only by the Pact of the
+    // Chain option, so it moved from the parent feature to that option. This
+    // replaces the former parent-level expectation (the parent carried it for
+    // every option); the option-level assertion keeps the same known grant.
+    it('grants find familiar only through the Pact of the Chain option', () => {
       const pactBoon = grants.find(
         (g) => g.recordKey === 'feature:warlock:pact-boon',
       );
-      expect(pactBoon?.value).toEqual([{ spell: 'spell:find-familiar' }]);
+      expect(pactBoon).toBeUndefined();
+      const pactRecord = pack.records.find(
+        (r) => r.key === 'feature:warlock:pact-boon',
+      );
+      const choices = (
+        pactRecord?.data as
+          | {
+              choices?: { options?: { id: string; mechanics?: unknown }[] }[];
+            }
+          | undefined
+      )?.choices;
+      const chain = (choices ?? [])
+        .flatMap((choice) => choice.options ?? [])
+        .find((option) => option.id === 'pact-boon:pact-of-the-chain');
+      expect(chain?.mechanics).toEqual({
+        spellGrants: [{ spell: 'spell:find-familiar' }],
+      });
     });
   });
 
