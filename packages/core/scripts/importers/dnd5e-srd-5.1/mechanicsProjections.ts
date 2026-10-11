@@ -6,6 +6,7 @@ import {
   parseCreatureSpellcasting,
   type SpellRefResolver,
 } from './creatureSpellcasting.js';
+import { normalizePdfHyphenCluster } from './extract.js';
 import { projectS1SummoningMechanics } from './s1SummoningSpecs.js';
 import type {
   ActionExtraction,
@@ -861,6 +862,179 @@ function parseSpellArea(range: string): Mechanics | undefined {
     unit: match[2],
     origin: 'self',
   });
+}
+
+/**
+ * Area of effect printed in a spell's description (eshyra-o9bd.19.4.1.1,
+ * repaired by eshyra-o9bd.19.4.1.3).
+ *
+ * The DEFINING area clause is a description sentence that prints exactly one
+ * N-foot area shape AND the anchor the area is measured from: a point within
+ * range ("centered on a point you choose within range", or a back-reference
+ * "centered on that point" to such a point) or the caster ("around you",
+ * "centered on you"). Sentences that print a dimension without an anchor
+ * (secondary light radii, burning 5-foot cubes, object or image bounds, sense
+ * radii) are subordinate and never veto an identified defining area. Genuinely
+ * competing defining clauses (different shapes, several origins, "each point",
+ * a shape sentence with two shapes) fail closed, as does a description with no
+ * defining clause. Every projected value is read from the defining sentence.
+ */
+const SPELL_SHAPE_RE = new RegExp(
+  [
+    '(?<cyl>(\\d+)-foot[- ]radius,? (\\d+)-foot[- ](?:high|tall) cylinder)',
+    '(?<tallcyl>(\\d+)-foot[- ](?:high|tall) cylinder with an? (\\d+)-foot radius)',
+    '(?<round>(\\d+)-foot[- ]radius (?<rshape>sphere|hemisphere))',
+    '(?<circle>(\\d+)-foot[- ]radius circle)',
+    '(?<flat>(\\d+)-foot (?<fshape>cube|cone))',
+    '(?<widelong>(\\d+)-foot-wide, (\\d+)-foot-long line)',
+    '(?<longline>line (?:of [a-z ]+ )?(\\d+) feet long and (\\d+) feet wide)',
+    '(?<bare>(\\d+)-foot[- ]radius\\b)',
+    '(?<radiusof>radius of (\\d+) feet)',
+    '(?<mile>(?:half|\\d+)-mile radius)',
+  ].join('|'),
+  'gi',
+);
+const SPELL_POINT_ANCHOR_RE = /\bpoint\b[^.]{0,80}?\bwithin range\b/i;
+
+interface SpellShape {
+  readonly shape: string;
+  readonly size: number;
+  readonly height?: number;
+  readonly width?: number;
+}
+
+/** Every area-shape phrase a sentence prints, in order. */
+function spellShapesIn(sentence: string): readonly SpellShape[] {
+  const shapes: SpellShape[] = [];
+  for (const match of sentence.matchAll(SPELL_SHAPE_RE)) {
+    const g = match.groups ?? {};
+    const n = match.slice(1).filter((x) => x !== undefined && /^\d+$/.test(x));
+    const num = (i: number) => Number(n[i]);
+    if (g.cyl !== undefined)
+      shapes.push({ shape: 'cylinder', size: num(0), height: num(1) });
+    else if (g.tallcyl !== undefined)
+      shapes.push({ shape: 'cylinder', size: num(1), height: num(0) });
+    else if (g.round !== undefined)
+      shapes.push({
+        shape: (g.rshape ?? '').toLowerCase(),
+        size: num(0),
+      });
+    else if (g.circle !== undefined || g.bare !== undefined)
+      shapes.push({ shape: 'radius', size: num(0) });
+    else if (g.mile !== undefined)
+      // A mile-scale radius is a competing alternative the foot-unit area
+      // cannot represent (Plant Growth's second use); kept so it vetoes.
+      shapes.push({ shape: 'mile-radius', size: 0 });
+    else if (g.radiusof !== undefined)
+      shapes.push({ shape: 'radius', size: num(0) });
+    else if (g.flat !== undefined)
+      shapes.push({ shape: (g.fshape ?? '').toLowerCase(), size: num(0) });
+    else if (g.widelong !== undefined)
+      shapes.push({ shape: 'line', size: num(1), width: num(0) });
+    else if (g.longline !== undefined)
+      shapes.push({ shape: 'line', size: num(0), width: num(1) });
+  }
+  return shapes;
+}
+
+/** The origin a sentence prints for its area, or undefined when none. */
+function spellAnchorOf(
+  sentence: string,
+  pointPrinted: boolean,
+): string | 'ambiguous' | undefined {
+  if (/\beach point\b/i.test(sentence)) return 'ambiguous';
+  if (
+    SPELL_POINT_ANCHOR_RE.test(sentence) ||
+    (pointPrinted && /\b(?:that|the) point\b/i.test(sentence))
+  )
+    return 'point-within-range';
+  if (/\b(?:around|centered on) you\b/i.test(sentence)) return 'self';
+  return undefined;
+}
+
+function parseSpellDescriptionArea(
+  rawDescription: string,
+): Mechanics | undefined {
+  // Raw extraction text can carry the PDF hyphen-space cluster ("20- foot-
+  // radius") that the emitted record text later joins, so match the same
+  // normalized text the record prints.
+  const description = normalizePdfHyphenCluster(rawDescription);
+  const pointPrinted = SPELL_POINT_ANCHOR_RE.test(description);
+  const defining: { shape: SpellShape; origin: string }[] = [];
+  for (const sentence of description.split(/(?<=\.)\s+/)) {
+    const shapes = spellShapesIn(sentence);
+    if (shapes.length === 0) continue;
+    const origin = spellAnchorOf(sentence, pointPrinted);
+    if (origin === undefined) continue; // subordinate dimension: no anchor
+    if (origin === 'ambiguous' || shapes.length !== 1) return undefined;
+    defining.push({ shape: shapes[0], origin });
+  }
+  if (defining.length === 0) return undefined;
+  const first = JSON.stringify(defining[0]);
+  if (defining.some((item) => JSON.stringify(item) !== first)) return undefined;
+  const { shape, origin } = defining[0];
+  return compact({
+    shape: shape.shape,
+    size: shape.size,
+    height: shape.height,
+    width: shape.width,
+    unit: 'foot',
+    origin,
+  });
+}
+
+/**
+ * A Self-range line prints only its length in the Range parenthetical; the
+ * description prints the width ("a line 100 feet long and 5 feet wide").
+ * Adds that width when the printed length agrees with the range length.
+ */
+function withPrintedLineWidth(
+  area: Mechanics | undefined,
+  rawDescription: string,
+): Mechanics | undefined {
+  if (area === undefined || area.shape !== 'line') return area;
+  const widths = new Set<number>();
+  for (const shape of spellShapesIn(
+    normalizePdfHyphenCluster(rawDescription),
+  )) {
+    if (shape.shape === 'line' && shape.size === area.size && shape.width)
+      widths.add(shape.width);
+  }
+  if (widths.size !== 1) return area;
+  return { ...area, width: [...widths][0] };
+}
+
+/**
+ * Magic Missile's printed base count (eshyra-o9bd.19.4.1.1). Only the printed
+ * creation/call sentence with an explicit count word projects; a singular
+ * "a beam" or a level-scaled count is left to the source text.
+ */
+const SPELL_PROJECTILE_COUNT_RE =
+  /\b(?:create|creates|call|calls) (two|three|four|five|six|seven|eight|nine|ten) (?:glowing )?(darts?|rays?|bolts?)\b/gi;
+const SPELL_COUNT_WORDS: ReadonlyMap<string, number> = new Map([
+  ['two', 2],
+  ['three', 3],
+  ['four', 4],
+  ['five', 5],
+  ['six', 6],
+  ['seven', 7],
+  ['eight', 8],
+  ['nine', 9],
+  ['ten', 10],
+]);
+
+function parseSpellProjectiles(description: string): Mechanics | undefined {
+  const matches = [
+    ...normalizePdfHyphenCluster(description).matchAll(
+      SPELL_PROJECTILE_COUNT_RE,
+    ),
+  ];
+  if (matches.length !== 1) return undefined;
+  const [, count, noun] = matches[0];
+  return {
+    count: SPELL_COUNT_WORDS.get(count.toLowerCase()),
+    noun: noun.toLowerCase().replace(/s$/, ''),
+  };
 }
 
 /**
@@ -2771,7 +2945,10 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
     concentration: /^Concentration,? up to\b/i.test(spell.duration),
     spellAttack: /\b(?:ranged|melee) spell attack\b/i.test(text),
     duration: parseSpellDuration(spell.duration),
-    area: parseSpellArea(spell.range),
+    area:
+      withPrintedLineWidth(parseSpellArea(spell.range), spell.description) ??
+      parseSpellDescriptionArea(spell.description),
+    projectiles: parseSpellProjectiles(spell.description),
     saves: save === undefined ? undefined : [save],
     damage: damage.length > 0 ? damage : equalToDamage,
     weaponDamageModifiers,

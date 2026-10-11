@@ -1057,6 +1057,8 @@ function collectEquipmentPacks(
 const MOUNTS_HEADER = /^Item Cost Speed Capacity$/;
 const TACK_TITLE = /^Tack, Harness, and Drawn Vehicles$/;
 const TACK_HEADER = /^Item Cost Weight$/;
+/** Structural `equipmentGroup` for the rows of the Tack/Harness/Vehicles table. */
+export const TACK_EQUIPMENT_GROUP = 'tack-harness-drawn-vehicles';
 const WATERBORNE_TITLE = /^Waterborne Vehicles$/;
 const WATERBORNE_HEADER = /^Item Cost Speed$/;
 const SPEED_FT = /\d+(?:\/\d+)?[½¼¾]?\s*ft\.?/i;
@@ -1108,7 +1110,8 @@ function collectMounts(flat: readonly FlatLine[]): EquipmentExtraction[] {
  * Collect the Tack, Harness, and Drawn Vehicles table as `category: 'gear'`.
  * The non-priced "Barding ×4 ×2" multiplier row (cost/weight are relative to
  * the equivalent armor, not absolute) is skipped; the "Saddle" sub-header's
- * four variants are qualified to "Saddle, <variant>".
+ * four variants are qualified to "Saddle, <variant>". The Barding rule is
+ * projected onto `rule:mounts-and-vehicles` (`enrichBardingRule`).
  */
 function collectTack(flat: readonly FlatLine[]): EquipmentExtraction[] {
   const titleIdx = flat.findIndex((f) => TACK_TITLE.test(f.line));
@@ -1144,6 +1147,10 @@ function collectTack(flat: readonly FlatLine[]): EquipmentExtraction[] {
       category: 'gear',
       cost: split.cost,
       ...(weight === undefined ? {} : { weight }),
+      // Every row of the printed "Tack, Harness, and Drawn Vehicles" table
+      // carries that table's grouping (eshyra-o9bd.19.2.3.1, sol:CAP-013);
+      // membership is the table's own rows, not a name list.
+      equipmentGroup: TACK_EQUIPMENT_GROUP,
       sourcePage: page,
     });
   }
