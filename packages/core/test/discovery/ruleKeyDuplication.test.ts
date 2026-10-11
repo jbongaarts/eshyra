@@ -14,9 +14,14 @@ describe('rule record duplication hygiene', () => {
   const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
   const rules = [...(stack.recordsByKind.get('rule')?.byName.values() ?? [])]
     .flat()
-    .map((entry) => entry.record as { key: string; data: unknown });
-  const text = (record: { data: unknown }): string =>
-    JSON.stringify(record.data).toLowerCase().replace(/\s+/gu, ' ');
+    .map((entry) => entry.record as { key: string; data: { text?: unknown } });
+  // Compare the printed body text only: serializing the whole data object
+  // would wrap each body in delimiters, so containment could never match.
+  const text = (record: { data: { text?: unknown } }): string =>
+    String(record.data.text ?? '')
+      .toLowerCase()
+      .replace(/\s+/gu, ' ')
+      .trim();
 
   it('has no two rule records with identical or wholly contained body text', () => {
     const seen = new Set<string>();
