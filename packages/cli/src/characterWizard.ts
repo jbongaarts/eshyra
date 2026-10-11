@@ -36,6 +36,7 @@ import {
   DND5E_SRD_CHARACTER_RECIPE,
   enumerateLevel1RequiredChoices,
   formatRolledAbilityScore,
+  languageKey,
   parseAbilityScoreCommand,
   type Rng,
   type RulesPackCharacterResolver,
@@ -1020,6 +1021,9 @@ class Wizard {
         );
       } else {
         this.write(`Choose ${need} — ${remaining} remaining:`);
+        if (state.unsatisfiedReason !== undefined && selected.length > 0) {
+          this.write(state.unsatisfiedReason);
+        }
         this.printChoiceOptions(options, selected);
         if (choice.extension !== undefined) {
           this.write(
@@ -1087,10 +1091,20 @@ class Wizard {
       }
       if (choice.extension !== undefined && /^other$/i.test(input.trim())) {
         if (selected.length >= need && need !== 1) {
-          this.write('This group is full — type `clear` to choose again.');
+          this.write(
+            `This group is full — type \`clear\` to choose again.${
+              state.unsatisfiedReason !== undefined
+                ? ` ${state.unsatisfiedReason}`
+                : ''
+            }`,
+          );
           continue;
         }
-        const name = await this.promptGmApprovedLanguage(options, selected);
+        const name = await this.promptGmApprovedLanguage(
+          options,
+          replacingSelection(selected, need),
+          state.heldLanguages ?? [],
+        );
         if (name === 'eof') return 'eof';
         if (name === undefined) continue;
         const replacing = selected.length >= need;
@@ -1111,7 +1125,15 @@ class Wizard {
       }
       const picked = resolveOption(options, input.trim());
       if (picked === undefined) {
-        this.write(`"${input.trim()}" is not an option here.`);
+        const typedClash =
+          choice.kind === 'languages'
+            ? languageConflict(
+                input.trim(),
+                replacingSelection(selected, need),
+                state.heldLanguages ?? [],
+              )
+            : undefined;
+        this.write(typedClash ?? `"${input.trim()}" is not an option here.`);
         continue;
       }
       if (selected.length >= need) {
@@ -1125,11 +1147,22 @@ class Wizard {
           autoAdvance = true;
           continue;
         }
-        this.write('This group is full — type `clear` to choose again.');
+        this.write(
+          `This group is full — type \`clear\` to choose again.${
+            state.unsatisfiedReason !== undefined
+              ? ` ${state.unsatisfiedReason}`
+              : ''
+          }`,
+        );
         continue;
       }
-      if (selected.includes(picked)) {
-        this.write(`${picked} is already selected.`);
+      const clash = languageConflict(
+        picked,
+        replacingSelection(selected, need),
+        state.heldLanguages ?? [],
+      );
+      if (clash !== undefined) {
+        this.write(clash);
         continue;
       }
       this.draft = this.deps.engine.setChoice(this.draft, choice.id, [
@@ -1149,6 +1182,7 @@ class Wizard {
   private async promptGmApprovedLanguage(
     options: readonly string[],
     selected: readonly string[],
+    held: readonly string[],
   ): Promise<string | undefined> {
     const raw = await this.deps.io.prompt(
       'Language name (Exotic Languages table, or a campaign/secret language)> ',
@@ -1159,14 +1193,13 @@ class Wizard {
       this.write('No language entered.');
       return undefined;
     }
-    if (resolveOption(options, name) !== undefined) {
-      this.write(`${name} is a standard option — pick it from the list.`);
+    const early = languageConflict(name, selected, held);
+    if (early !== undefined) {
+      this.write(early);
       return undefined;
     }
-    const identity = (value: string) =>
-      value.trim().replace(/\s+/g, ' ').toLowerCase();
-    if (selected.some((s) => identity(s) === identity(name))) {
-      this.write(`${name} is already selected.`);
+    if (resolveOption(options, name) !== undefined) {
+      this.write(`${name} is a standard option — pick it from the list.`);
       return undefined;
     }
     const answer = await this.deps.io.prompt(
@@ -1187,7 +1220,9 @@ class Wizard {
     selected: readonly string[],
   ): void {
     options.forEach((option, index) => {
-      const mark = selected.includes(option) ? '✓' : ' ';
+      const mark = selected.some((s) => languageKey(s) === languageKey(option))
+        ? '✓'
+        : ' ';
       this.write(`  [${mark}] ${index + 1}. ${option}`);
     });
   }
@@ -1616,6 +1651,34 @@ function parseCommand(input: string): ParsedCommand {
     name: trimmed.slice(0, space).toLowerCase(),
     rest: trimmed.slice(space + 1).trim(),
   };
+}
+
+/** A single-pick group replaces its pick, so that pick cannot conflict. */
+function replacingSelection(
+  selected: readonly string[],
+  need: number,
+): readonly string[] {
+  return need === 1 && selected.length >= need ? [] : selected;
+}
+
+/**
+ * Why a language cannot be added: already in this selection, or already held
+ * (fixed grant or claimed by another group). Identity is core's `languageKey`.
+ */
+function languageConflict(
+  name: string,
+  selected: readonly string[],
+  held: readonly string[],
+): string | undefined {
+  const key = languageKey(name);
+  if (selected.some((value) => languageKey(value) === key)) {
+    return `${name} is already selected.`;
+  }
+  const holder = held.find((value) => languageKey(value) === key);
+  if (holder !== undefined) {
+    return `${name} is already held (${holder}) - pick a different language.`;
+  }
+  return undefined;
 }
 
 /**

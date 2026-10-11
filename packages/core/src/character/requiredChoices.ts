@@ -40,6 +40,7 @@
 
 import { ABILITY_FULL_NAMES } from './abilities.js';
 import type { AbilityScoreName } from './creation.js';
+import { languageKey } from './languageIdentity.js';
 import type {
   ResolvedAncestryData,
   ResolvedBackgroundData,
@@ -593,9 +594,9 @@ function chooseableLanguages(
   fixed: readonly string[],
   domain: readonly string[] | undefined,
 ): readonly string[] {
-  const taken = new Set(fixed);
+  const taken = new Set(fixed.map(languageKey));
   return (domain ?? SRD_STANDARD_LANGUAGES_FALLBACK).filter(
-    (language) => !taken.has(language),
+    (language) => !taken.has(languageKey(language)),
   );
 }
 

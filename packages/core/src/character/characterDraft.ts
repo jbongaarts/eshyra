@@ -234,6 +234,15 @@ export interface MechanicalChoiceState {
   readonly choice: Level1RequiredChoice;
   readonly selected: readonly string[];
   readonly satisfied: boolean;
+  /**
+   * Language choices only: the languages (canonical spelling) the character
+   * already holds for this choice - fixed grants plus languages claimed by
+   * earlier satisfied language groups. `choice.from` never offers any of them,
+   * and a pick of one is refused (eshyra-o9bd.19.3.3.8).
+   */
+  readonly heldLanguages?: readonly string[];
+  /** Language choices only: why the current selection is not satisfied. */
+  readonly unsatisfiedReason?: string;
   /** Why a non-empty selection is refused (class-feature choices). */
   readonly refusal?: string;
   /**
@@ -834,24 +843,60 @@ export function createCharacterCreationEngine(
     );
     // Language identities already held or claimed, so a later language choice
     // can never re-grant the same language (eshyra-o9bd.19.3.3.3).
-    const claimedLanguages = new Set(heldLanguages.map(languageKey));
+    const claimedLanguages = new Map<string, string>();
+    for (const language of heldLanguages) {
+      const key = languageKey(language);
+      if (key.length > 0 && !claimedLanguages.has(key)) {
+        claimedLanguages.set(key, language);
+      }
+    }
     const choices = (
       draft.selections.startingEquipmentMode === 'starting-wealth'
         ? mechanical.filter((choice) => choice.kind !== 'equipment')
         : mechanical
-    ).map((choice) => ({
-      choice,
-      selected: stored[choice.id] ?? [],
-      satisfied:
-        choice.kind === 'languages'
-          ? isLanguageChoiceSatisfied(
-              choice,
-              stored[choice.id] ?? [],
-              gmApprovedFor(draft, choice),
-              claimedLanguages,
-            )
-          : isChoiceSatisfied(choice, stored[choice.id] ?? []),
-    }));
+    ).map((entry): MechanicalChoiceState => {
+      const selected = stored[entry.id] ?? [];
+      if (entry.kind !== 'languages') {
+        return {
+          choice: entry,
+          selected,
+          satisfied: isChoiceSatisfied(entry, selected),
+        };
+      }
+      // One ordered pass: the held set both filters the offered domain and
+      // judges satisfaction, so anything offered is acceptable and anything
+      // held is never offered.
+      const held = [...claimedLanguages.values()];
+      const choice: Level1RequiredChoice =
+        entry.from === undefined
+          ? entry
+          : {
+              ...entry,
+              from: entry.from.filter(
+                (language) => !claimedLanguages.has(languageKey(language)),
+              ),
+            };
+      const verdict = judgeLanguageChoice(
+        choice,
+        selected,
+        gmApprovedFor(draft, choice),
+        claimedLanguages,
+      );
+      if (verdict.satisfied) {
+        for (const language of selected) {
+          claimedLanguages.set(languageKey(language), language);
+        }
+      }
+      return {
+        choice,
+        selected,
+        satisfied: verdict.satisfied,
+        heldLanguages: held,
+        ...(verdict.reason !== undefined
+          ? { unsatisfiedReason: verdict.reason }
+          : {}),
+      };
+    });
     const background = effectiveBackground(draft.selections, resolver);
     const ancestrySkills =
       resolveAncestry(draft.selections.ancestry)?.skillProficiencies ?? [];
@@ -1690,27 +1735,48 @@ export { languageKey };
  * `choose` distinct language identities that no fixed grant or earlier language
  * choice already holds; a satisfied choice claims its identities.
  */
-function isLanguageChoiceSatisfied(
+function judgeLanguageChoice(
   choice: Level1RequiredChoice,
   selected: readonly string[],
   approved: ReadonlySet<string>,
-  claimed: Set<string>,
-): boolean {
-  if (choice.choose === undefined) return true;
+  claimed: ReadonlyMap<string, string>,
+): { readonly satisfied: boolean; readonly reason?: string } {
+  if (choice.choose === undefined) return { satisfied: true };
   const keys = selected.map(languageKey);
-  if (
-    selected.length !== choice.choose ||
-    new Set(keys).size !== choice.choose ||
-    keys.some((key) => key.length === 0 || claimed.has(key))
-  ) {
-    return false;
+  const blank = keys.findIndex((key) => key.length === 0);
+  if (blank >= 0) return { satisfied: false, reason: 'A language is blank.' };
+  const held = keys.findIndex((key) => claimed.has(key));
+  if (held >= 0) {
+    return {
+      satisfied: false,
+      reason: `${claimed.get(keys[held] as string)} is already held - pick a different language.`,
+    };
+  }
+  const dup = keys.findIndex((key, index) => keys.indexOf(key) !== index);
+  if (dup >= 0) {
+    return {
+      satisfied: false,
+      reason: `${selected[dup]} is selected twice - pick distinct languages.`,
+    };
+  }
+  if (selected.length !== choice.choose) {
+    return {
+      satisfied: false,
+      reason: `Choose ${choice.choose} language(s); ${selected.length} selected.`,
+    };
   }
   const domain = new Set(choice.from ?? []);
-  const ok = selected.every(
-    (value, index) => domain.has(value) || approved.has(keys[index] as string),
+  const unapproved = selected.findIndex(
+    (value, index) =>
+      !domain.has(value) && !approved.has(keys[index] as string),
   );
-  if (ok) for (const key of keys) claimed.add(key);
-  return ok;
+  if (unapproved >= 0) {
+    return {
+      satisfied: false,
+      reason: `${selected[unapproved]} is outside the offered languages and needs GM approval.`,
+    };
+  }
+  return { satisfied: true };
 }
 
 /**

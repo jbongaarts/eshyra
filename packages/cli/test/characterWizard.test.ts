@@ -677,6 +677,66 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
     expect(result.draft.selections.gmApprovedLanguages).toBeUndefined();
   });
 
+  it('refuses a held or cross-group duplicate language with a reason, keeps earlier picks, and marks a resumed variant spelling (eshyra-o9bd.19.3.3.8)', async () => {
+    const acolyte = [...TO_CLASS_CHOICES];
+    acolyte[3] = 'Acolyte';
+    const { deps: d, lines } = deps([
+      ...acolyte,
+      'Athletics',
+      'Perception',
+      '1',
+      '1',
+      '1',
+      '1',
+      'Dwarvish', // ancestry language
+      // Background group: Dwarvish is held (cross-group), Common is held via
+      // the "other" path; neither may be added and Elvish must survive.
+      'Elvish',
+      'Dwarvish',
+      'other',
+      ' common ',
+      'Giant', // distinct pick completes the group
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    const out = text(lines);
+    expect(out).toMatch(/Dwarvish is already held/);
+    expect(out).toMatch(/common is already held \(Common\)/i);
+    expect(out).not.toMatch(/This group is full/);
+    expect(result.draft.selections.choices?.['background.languages']).toEqual([
+      'Elvish',
+      'Giant',
+    ]);
+    expect(
+      result.draft.selections.gmApprovedLanguages?.['background.languages'],
+    ).toBeUndefined();
+
+    // Resume a draft whose stored pick is a variant spelling: it is marked,
+    // and re-picking the canonical name completes the group.
+    const engine = createCharacterCreationEngine(
+      getBundledDnd5eCharacterResolver(),
+    );
+    const variant = engine.setChoice(result.draft, 'ancestry.languages', [
+      ' dwarvish ',
+    ]);
+    const second = deps([
+      ...['', '', '', ''], // identity, class, ancestry, background kept
+      'done', // scores kept
+      ...['', '', '', '', '', '', ''], // acquisition mode, skills, equipment
+      'Dwarvish',
+      'quit',
+    ]);
+    await runCharacterWizard(second.deps, {
+      mode: 'concept-first',
+      draftId: 'grok',
+      resume: variant,
+    });
+    expect(text(second.lines)).toMatch(/\[✓\] \d+\. Dwarvish/);
+  });
+
   it('collects the level-1 fighting style after the ordinary groups (eshyra-nnj6.1)', async () => {
     const { deps: d, lines } = deps([
       ...TO_CLASS_CHOICES,

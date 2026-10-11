@@ -708,4 +708,75 @@ describe('language choice identity, exhausted domains and custom backgrounds', (
       ).not.toContain('Deep Speech');
     });
   });
+
+  // eshyra-o9bd.19.3.3.8: one held-language authority. Anything a language
+  // choice offers is acceptable; anything held (fixed grant, custom background
+  // grant in any spelling, or claimed by an earlier group) is never offered.
+  describe.each(['Human', 'Half-Elf', 'High Elf'])(
+    'offered => acceptable, held => not offered (%s)',
+    (ancestry) => {
+      it.each(['ordinary', 'custom'] as const)('%s Acolyte', (producer) => {
+        let draft = build(engine, ancestry);
+        if (producer === 'custom') {
+          draft = engine.setGmApprovedLanguages(draft, 'background.languages', [
+            'Giant',
+          ]);
+          draft = engine.setBackgroundCustomization(draft, {
+            name: 'Temple Archivist',
+            skillProficiencies: ['Arcana', 'History'],
+            toolProficiencies: [],
+            languages: [' giant ', 'Orc'],
+            feature: 'background:acolyte#feature:shelter-of-the-faithful',
+          });
+        }
+        const key = (v: string) => v.trim().replace(/\s+/g, ' ').toLowerCase();
+        const claimed = new Set<string>();
+        const groups = engine
+          .mechanicalChoices(draft)
+          .filter((e) => e.choice.kind === 'languages')
+          .map((e) => e.choice.id);
+        expect(groups.length).toBeGreaterThan(0);
+        for (const id of groups) {
+          const state = engine
+            .mechanicalChoices(draft)
+            .find((e) => e.choice.id === id);
+          if (state === undefined) throw new Error(id);
+          // The held set is exactly what earlier groups and fixed grants hold.
+          for (const held of state.heldLanguages ?? []) claimed.add(key(held));
+          const offered = state.choice.from ?? [];
+          for (const language of offered) {
+            expect(claimed.has(key(language)), `${id} offers ${language}`).toBe(
+              false,
+            );
+          }
+          const picks = offered.slice(0, state.choice.choose);
+          draft = engine.setChoice(draft, id, picks);
+          const after = engine
+            .mechanicalChoices(draft)
+            .find((e) => e.choice.id === id);
+          expect(after?.satisfied, `${id} offered picks`).toBe(true);
+          // Any held identity, in any spelling, is refused with a reason.
+          const held = [...claimed][0] as string;
+          const forced = engine
+            .mechanicalChoices(
+              engine.setChoice(draft, id, [
+                ` ${held.toUpperCase()} `,
+                ...picks.slice(1),
+              ]),
+            )
+            .find((e) => e.choice.id === id);
+          expect(forced?.satisfied).toBe(false);
+          expect(forced?.unsatisfiedReason).toMatch(/already held/);
+          for (const pick of picks) claimed.add(key(pick));
+        }
+        if (producer === 'custom') {
+          const bg = engine
+            .mechanicalChoices(draft)
+            .find((e) => e.choice.id === 'ancestry.languages');
+          expect(bg?.choice.from ?? []).not.toContain('Giant');
+          expect(bg?.choice.from ?? []).not.toContain('Orc');
+        }
+      });
+    },
+  );
 });
