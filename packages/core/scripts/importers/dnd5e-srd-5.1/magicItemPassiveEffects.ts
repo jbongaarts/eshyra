@@ -954,7 +954,8 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
           sense: 'truesight',
           rangeFeet: 120,
           durationMinutes: 10,
-          condition: 'while peering through the gem',
+          condition:
+            'after you speak the gem’s command word as an action and expend 1 charge, for the next 10 minutes while you peer through the gem',
         },
       ];
     },
@@ -1219,6 +1220,8 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
           sense: 'x-ray-vision',
           rangeFeet: 30,
           durationMinutes: 1,
+          condition:
+            'while wearing the ring, after you use an action to speak its command word',
           detects:
             'penetrates up to 1 foot of stone, 1 inch of common metal, or up to 3 feet of wood or dirt; blocked by thicker substances or a thin sheet of lead',
         },
@@ -1258,9 +1261,8 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
         {
           kind: 'sense',
           sense: 'invisible-hostile-location',
-          rangeFeet: 60,
           condition:
-            'while standing in the planted rod’s bright light (10-minute duration, once per dawn)',
+            'you and any creature friendly to you while in the bright light of the planted rod (the rod’s head stops glowing and the effect ends after 10 minutes, or when a creature uses an action to pull the rod from the ground): the location of any invisible hostile creature that is also in the bright light',
         },
       ];
     },
@@ -1341,7 +1343,8 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
           durationMinutes: 1,
           detects:
             'ethereal, invisible, disguised, or hidden hostile creatures, as well as those in plain sight (direction only, not distance)',
-          condition: 'ends if you stop holding the wand',
+          condition:
+            'while holding the wand, after you use an action and expend 1 charge to speak its command word; ends if you stop holding the wand',
         },
       ];
     },
@@ -1359,6 +1362,8 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
           kind: 'sense',
           sense: 'nearest-secret-door-or-trap',
           rangeFeet: 30,
+          condition:
+            'while holding the wand, after you use an action to expend 1 charge, if a secret door or trap is within 30 feet of you',
         },
       ];
     },

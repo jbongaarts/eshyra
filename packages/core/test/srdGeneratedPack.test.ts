@@ -1175,6 +1175,8 @@ const DICE_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
 const DC_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
   'magic-item:apparatus-of-the-crab|parent|forward|dc:20':
     'DC 20 hidden-catch check is adjudicated per the as87 disposition',
+  'magic-item:figurine-of-wondrous-power|parent|forward|dc:15':
+    'The goat of terror aura (DC 15 Wisdom save) is withheld as a typed effect and carried as an adjudicated clause with the verbatim printed span (eshyra-o9bd.19.4.5.8, faithful-or-absent)',
 };
 
 function diceExceptionKey(
@@ -3281,12 +3283,16 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1016);
+      expect(clauses).toHaveLength(1017);
+      // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
+      // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
+      // charge loss became adjudicated clauses (3 -> 11); the goat aura left
+      // the engine-pending set and the six study rewards left green.
       expect(counts).toEqual({
-        'adjudicated-by-design': 3,
+        'adjudicated-by-design': 11,
         'design-blocked': 1,
-        'engine-pending': 794,
-        green: 218,
+        'engine-pending': 793,
+        green: 212,
       });
       const pending = clauses.filter(
         ({ readiness }) => readiness === 'engine-pending',

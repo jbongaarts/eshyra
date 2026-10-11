@@ -6059,8 +6059,12 @@ function validateReadinessRepresentation(value: unknown, path: string): void {
     return;
   }
   if (representation.adjudicated === true) {
-    closedKeys(representation, ['adjudicated', 'note'], path);
+    closedKeys(representation, ['adjudicated', 'note', 'sourceText'], path);
     reqStr(representation, 'note', path);
+    // Faithful-or-absent (eshyra-o9bd.19.4.5.8): the DM model reads the
+    // printed text itself; the verbatim-substring relation to the item's
+    // description is enforced by the importer and the source-agreement test.
+    reqStr(representation, 'sourceText', path);
     return;
   }
   closedKeys(representation, ['designBlocked', 'reason'], path);

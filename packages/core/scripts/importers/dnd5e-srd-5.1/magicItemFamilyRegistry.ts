@@ -1,6 +1,7 @@
 import type { MagicItemMechanics } from '../../../src/rules/magicItemMechanics.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 import { projectMagicItemActivatedEffects } from './magicItemActivatedEffects.js';
+import { applyAdjudicatedMagicItemEffects } from './magicItemAdjudicatedEffects.js';
 import { projectMagicItemChargeEconomies } from './magicItemChargeEconomies.js';
 import {
   projectMagicItemStaticCombatModifiers,
@@ -114,12 +115,14 @@ function withoutCentralDispositions(
 function parentProjections(
   item: MagicItemExtraction,
 ): readonly MagicItemFamilyProjection[] {
-  return PARENT_PROJECTORS.map((project) => project(item))
-    .filter(defined)
-    .map(withoutCentralDispositions)
-    .map((projection) =>
-      namespaceProjection(projection, `magic-item:${slug(item.name)}`),
-    );
+  return applyAdjudicatedMagicItemEffects(
+    item,
+    PARENT_PROJECTORS.map((project) => project(item))
+      .filter(defined)
+      .map(withoutCentralDispositions),
+  ).map((projection) =>
+    namespaceProjection(projection, `magic-item:${slug(item.name)}`),
+  );
 }
 
 function variantProjections(

@@ -656,7 +656,8 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'launch-shooting-stars',
           'triggeredEffect',
           {
-            trigger: 'a glowing mote reaches its chosen point',
+            trigger:
+              'a glowing mote reaches the point you chose, a point you can see within 60 feet of you',
             result:
               'each creature in the originating 15-foot cube resolves the save and fire damage',
             area: { shape: 'cube', sizeFeet: 15 },
@@ -1154,6 +1155,9 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
             failedSaveCondition: 'deafened',
             conditionDuration: { amount: 1, unit: 'minute' },
             glassOrCrystalDamageDice: '10d6',
+            glassOrCrystalSaveMode: 'disadvantage',
+            glassOrCrystalAppliesTo:
+              'creatures and objects made of glass or crystal',
           },
           undefined,
           {
@@ -1268,10 +1272,13 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'triggeredEffect',
           {
             trigger: 'spectral ram attack hits',
+            result:
+              'for each charge you spend, the target takes 2d10 force damage and is pushed 5 feet away from you',
             attackModifier: 7,
             rangeFeet: 60,
             damagePerCharge: { dice: '2d10', type: 'force' },
             pushFeetPerCharge: 5,
+            pushDirection: 'away from you',
             charges: '1-3',
           },
           [F2, F8, F9],
@@ -1313,7 +1320,7 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'drain-life',
           'triggeredEffect',
           {
-            trigger: 'melee hit with rod',
+            trigger: 'you hit a creature with a melee attack using the rod',
             save: { ability: 'constitution', dc: 17 },
             failedSaveDamage: { dice: '4d6', type: 'necrotic' },
             healing: 'half necrotic damage dealt',
@@ -1326,7 +1333,7 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'imposesCondition',
           {
             conditions: ['paralyzed'],
-            trigger: 'melee hit with rod',
+            trigger: 'you hit a creature with a melee attack using the rod',
             save: { ability: 'strength', dc: 17 },
             duration: { amount: 1, unit: 'minute' },
             repeatSave: 'end of each turn',
@@ -1448,7 +1455,8 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'giant-slaying-critical',
           'triggeredEffect',
           {
-            trigger: 'natural 20 attack against a giant with the hammer',
+            trigger:
+              'while attuned to this weapon, you roll a 20 on an attack roll made with this weapon against a giant',
             save: { ability: 'constitution', dc: 17 },
             failedSaveEffect: 'die',
           },
@@ -1493,7 +1501,6 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
             save: { ability: 'constitution', dc: 15 },
             immuneTypes: ['construct', 'undead'],
             failedSaveEffect: 'slain instantly',
-            chargeCost: 1,
           },
           [F1, F8, F9],
           { cost: 'free', trigger: 'critical hit against eligible creature' },

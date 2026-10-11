@@ -88783,7 +88783,8 @@
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
-              "note": "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text."
+              "note": "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
+              "sourceText": "The barrel has a hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check."
             },
             "reason": "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text."
           },
@@ -91212,7 +91213,8 @@
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
-              "note": "The model identifies the contextually nearest visible/audible candidate set; deterministic dice and action owners resolve the save, a random tie, and the forced Attack action."
+              "note": "The model identifies the contextually nearest visible/audible candidate set; deterministic dice and action owners resolve the save, a random tie, and the forced Attack action.",
+              "sourceText": "attack the creature nearest to you with the axe"
             },
             "reason": "The model identifies the contextually nearest visible/audible candidate set; deterministic dice and action owners resolve the save, a random tie, and the forced Attack action."
           },
@@ -92172,7 +92174,7 @@
             "id": "c2-static-bracers-archery-damage",
             "kind": "damageBonus",
             "amount": 2,
-            "appliesTo": "longbows and shortbows"
+            "appliesTo": "ranged attacks made with the longbow and shortbow"
           },
           {
             "kind": "proficiency",
@@ -96659,8 +96661,8 @@
           {
             "id": "c2-residual-geyser-impact",
             "kind": "triggeredEffect",
-            "trigger": "geyser is aimed with a bonus action at a creature within 30 feet, or at an object that is not worn or carried and weighs no more than 200 pounds",
-            "result": "creature: resolve save, damage, and prone rider; object: knocked over or pushed up to 15 feet away",
+            "trigger": "while holding the decanter, the geyser is aimed as a bonus action at a creature you can see within 30 feet of you, or at an object that isn’t being worn or carried and weighs no more than 200 pounds",
+            "result": "creature: resolve save, damage, and prone rider; object: knocked over or pushed up to 15 feet away from you",
             "save": {
               "ability": "strength",
               "dc": 13
@@ -97521,8 +97523,8 @@
           {
             "id": "c2-residual-defender-bonus-transfer",
             "kind": "triggeredEffect",
-            "trigger": "wielder makes first attack on turn",
-            "result": "choose attack/damage bonus transferred to AC until next turn",
+            "trigger": "the first time you attack with the sword on each of your turns",
+            "result": "transfer some or all of the sword’s bonus to your Armor Class instead of using the bonus on any attacks that turn; the adjusted bonuses remain in effect until the start of your next turn, and you must hold the sword to gain a bonus to AC from it",
             "totalBonus": 3,
             "duration": "until start of next turn"
           }
@@ -100667,8 +100669,8 @@
           {
             "id": "c2-residual-whip-attack",
             "kind": "triggeredEffect",
-            "trigger": "whip token attacks",
-            "result": "resolve +9 attack for 1d6+5 force damage",
+            "trigger": "use a bonus action to make a melee spell attack against a creature within 10 feet of the whip, or, as a bonus action on your turn, direct the whip to fly up to 20 feet and repeat the attack against a creature within 10 feet of it",
+            "result": "melee spell attack: resolve +9 attack; on a hit, 1d6+5 force damage",
             "attackModifier": 9,
             "damage": {
               "dice": "1d6+5",
@@ -101310,23 +101312,6 @@
               }
             ]
           }
-        ],
-        "effects": [
-          {
-            "id": "c2-residual-goat-terror-aura",
-            "kind": "triggeredEffect",
-            "trigger": "hostile creature starts turn within 30 feet of goat of terror while wearer is riding it",
-            "result": "resolve frightened save and duration",
-            "save": {
-              "ability": "wisdom",
-              "dc": 15
-            },
-            "condition": "frightened",
-            "duration": {
-              "amount": 1,
-              "unit": "minute"
-            }
-          }
         ]
       },
       "executionReadiness": {
@@ -101392,44 +101377,13 @@
               "kind": "parent"
             },
             "tag": "C2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "c2-residual-goat-terror-aura"
+              "adjudicated": true,
+              "note": "The aura carries a reversion cutoff, an end-of-turn repeat save, and a 24-hour per-creature immunity after a successful save; the typed effect vocabulary cannot state those exceptions, so the model interprets the printed aura.",
+              "sourceText": "In addition, the goat radiates a 30-foot-radius aura of terror while you are riding it. Any creature hostile to you that starts its turn in the aura must succeed on a DC 15 Wisdom saving throw or be frightened of the goat for 1 minute, or until the goat reverts to figurine form. The frightened creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. Once it successfully saves against the effect, a creature is immune to the goat’s aura for the next 24 hours."
             },
-            "engineHooks": [
-              {
-                "engine": "F1",
-                "hook": "condition and eligibility relations"
-              },
-              {
-                "engine": "F8",
-                "hook": "roll mode and targeting modifiers"
-              },
-              {
-                "engine": "F9",
-                "hook": "damage, range, cover, and forced movement"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F1",
-                "hook": "condition and eligibility relations"
-              },
-              {
-                "engine": "F8",
-                "hook": "roll mode and targeting modifiers"
-              },
-              {
-                "engine": "F9",
-                "hook": "damage, range, cover, and forced movement"
-              }
-            ],
-            "missingEngines": [
-              "F1",
-              "F8",
-              "F9"
-            ]
+            "reason": "The aura carries a reversion cutoff, an end-of-turn repeat save, and a 24-hour per-creature immunity after a successful save; the typed effect vocabulary cannot state those exceptions, so the model interprets the printed aura."
           },
           {
             "clauseId": "magic-item:figurine-of-wondrous-power/m4-figurine-of-wondrous-power",
@@ -102726,7 +102680,7 @@
             "sense": "truesight",
             "rangeFeet": 120,
             "durationMinutes": 10,
-            "condition": "while peering through the gem",
+            "condition": "after you speak the gem’s command word as an action and expend 1 charge, for the next 10 minutes while you peer through the gem",
             "id": "m3-gem-of-seeing-sense-truesight"
           }
         ]
@@ -103530,7 +103484,7 @@
           {
             "id": "c2-giant-slaying-critical-payload",
             "kind": "triggeredEffect",
-            "trigger": "natural 20 attack against a giant with the hammer",
+            "trigger": "while attuned to this weapon, you roll a 20 on an attack roll made with this weapon against a giant",
             "save": {
               "ability": "constitution",
               "dc": 17
@@ -105598,7 +105552,7 @@
             "id": "c2-residual-holy-avenger-aura-saves",
             "kind": "advantage",
             "roll": "saving throws",
-            "condition": "against spells and other magical effects; friendly creature in drawn-sword aura; 10 feet, or 30 feet for level 17+ paladin"
+            "condition": "against spells and other magical effects; you and all creatures friendly to you in the aura while you hold the drawn sword; 10-foot radius, or 30 feet if you have 17 or more levels in the paladin class"
           },
           {
             "id": "c2-static-holy-avenger-attack-damage",
@@ -105864,7 +105818,9 @@
               "amount": 1,
               "unit": "minute"
             },
-            "glassOrCrystalDamageDice": "10d6"
+            "glassOrCrystalDamageDice": "10d6",
+            "glassOrCrystalSaveMode": "disadvantage",
+            "glassOrCrystalAppliesTo": "creatures and objects made of glass or crystal"
           }
         ]
       },
@@ -109503,17 +109459,6 @@
               }
             ]
           }
-        ],
-        "effects": [
-          {
-            "kind": "abilityScoreIncrease",
-            "abilities": [
-              "constitution"
-            ],
-            "amount": 2,
-            "alsoIncreasesMaximum": true,
-            "id": "m2-manual-of-bodily-health-constitution-score-increase"
-          }
         ]
       },
       "executionReadiness": {
@@ -109556,11 +109501,13 @@
               "kind": "parent"
             },
             "tag": "M2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "m2-manual-of-bodily-health-constitution-score-increase"
+              "adjudicated": true,
+              "note": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period.",
+              "sourceText": "If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Constitution score increases by 2, as does your maximum for that score."
             },
-            "readiness": "green"
+            "reason": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period."
           }
         ]
       }
@@ -109635,17 +109582,6 @@
               }
             ]
           }
-        ],
-        "effects": [
-          {
-            "kind": "abilityScoreIncrease",
-            "abilities": [
-              "strength"
-            ],
-            "amount": 2,
-            "alsoIncreasesMaximum": true,
-            "id": "m2-manual-of-gainful-exercise-strength-score-increase"
-          }
         ]
       },
       "executionReadiness": {
@@ -109688,11 +109624,13 @@
               "kind": "parent"
             },
             "tag": "M2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "m2-manual-of-gainful-exercise-strength-score-increase"
+              "adjudicated": true,
+              "note": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period.",
+              "sourceText": "If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Strength score increases by 2, as does your maximum for that score."
             },
-            "readiness": "green"
+            "reason": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period."
           }
         ]
       }
@@ -109982,17 +109920,6 @@
               }
             ]
           }
-        ],
-        "effects": [
-          {
-            "kind": "abilityScoreIncrease",
-            "abilities": [
-              "dexterity"
-            ],
-            "amount": 2,
-            "alsoIncreasesMaximum": true,
-            "id": "m2-manual-of-quickness-of-action-dexterity-score-increase"
-          }
         ]
       },
       "executionReadiness": {
@@ -110035,11 +109962,13 @@
               "kind": "parent"
             },
             "tag": "M2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "m2-manual-of-quickness-of-action-dexterity-score-increase"
+              "adjudicated": true,
+              "note": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period.",
+              "sourceText": "If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Dexterity score increases by 2, as does your maximum for that score."
             },
-            "readiness": "green"
+            "reason": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period."
           }
         ]
       }
@@ -111433,8 +111362,7 @@
               "construct",
               "undead"
             ],
-            "failedSaveEffect": "slain instantly",
-            "chargeCost": 1
+            "failedSaveEffect": "slain instantly"
           },
           {
             "id": "c2-static-nine-lives-attack-damage",
@@ -111571,6 +111499,20 @@
             "missingEngines": [
               "F8"
             ]
+          },
+          {
+            "clauseId": "magic-item:nine-lives-stealer/slay-on-critical-charge-loss",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The charge is lost only when the creature is slain, not when the saving throw succeeds; the typed payload cannot condition a cost on its own outcome, so the model applies the printed charge loss.",
+              "sourceText": "The sword loses 1 charge if the creature is slain."
+            },
+            "reason": "The charge is lost only when the creature is slain, not when the saving throw succeeds; the typed payload cannot condition a cost on its own outcome, so the model applies the printed charge loss."
           }
         ]
       }
@@ -111663,12 +111605,12 @@
             "id": "c2-residual-oathbow-sworn-enemy-attacks",
             "kind": "advantage",
             "roll": "attack rolls",
-            "condition": "target is sworn enemy"
+            "condition": "ranged attack roll made with this weapon against your sworn enemy"
           },
           {
             "id": "c2-residual-oathbow-ignore-cover-range",
             "kind": "triggeredEffect",
-            "trigger": "attack targets sworn enemy",
+            "trigger": "ranged attack roll made with this weapon against your sworn enemy",
             "result": "ignore non-total cover and long-range disadvantage",
             "ignoresCover": [
               "half",
@@ -111679,7 +111621,7 @@
           {
             "id": "c2-residual-oathbow-sworn-enemy-extra-damage",
             "kind": "triggeredEffect",
-            "trigger": "attack hits sworn enemy",
+            "trigger": "ranged attack roll made with this weapon against your sworn enemy hits",
             "result": "deal extra piercing damage to the sworn enemy",
             "extraDamage": {
               "dice": "3d6",
@@ -113369,7 +113311,8 @@
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
-              "note": "The orb essence’s desired evil end is deliberately GM-adjudicated; casting, save DC, charm, and attunement lock remain deterministic."
+              "note": "The orb essence’s desired evil end is deliberately GM-adjudicated; casting, save DC, charm, and attunement lock remain deterministic.",
+              "sourceText": "or something else the GM decides"
             },
             "reason": "The orb essence’s desired evil end is deliberately GM-adjudicated; casting, save DC, charm, and attunement lock remain deterministic."
           },
@@ -114599,7 +114542,7 @@
           {
             "id": "c2-residual-etherealness",
             "kind": "triggeredEffect",
-            "trigger": "wearer uses an action",
+            "trigger": "while wearing the armor, wearer speaks its command word as an action",
             "result": "apply etherealness for ten minutes",
             "spellRef": "spell:etherealness",
             "duration": {
@@ -122001,7 +121944,7 @@
           {
             "id": "c2-launch-shooting-stars-payload",
             "kind": "triggeredEffect",
-            "trigger": "a glowing mote reaches its chosen point",
+            "trigger": "a glowing mote reaches the point you chose, a point you can see within 60 feet of you",
             "result": "each creature in the originating 15-foot cube resolves the save and fire damage",
             "area": {
               "shape": "cube",
@@ -122791,7 +122734,7 @@
             "id": "c2-residual-spell-turning-saves",
             "kind": "advantage",
             "roll": "saving throws",
-            "condition": "spell targets only wearer"
+            "condition": "spell that targets only you (not in an area of effect)"
           }
         ]
       },
@@ -123178,6 +123121,7 @@
             "id": "c2-spectral-ram-attack-payload",
             "kind": "triggeredEffect",
             "trigger": "spectral ram attack hits",
+            "result": "for each charge you spend, the target takes 2d10 force damage and is pushed 5 feet away from you",
             "attackModifier": 7,
             "rangeFeet": 60,
             "damagePerCharge": {
@@ -123185,6 +123129,7 @@
               "type": "force"
             },
             "pushFeetPerCharge": 5,
+            "pushDirection": "away from you",
             "charges": "1-3"
           }
         ]
@@ -123723,6 +123668,7 @@
             "sense": "x-ray-vision",
             "rangeFeet": 30,
             "durationMinutes": 1,
+            "condition": "while wearing the ring, after you use an action to speak its command word",
             "detects": "penetrates up to 1 foot of stone, 1 inch of common metal, or up to 3 feet of wood or dirt; blocked by thicker substances or a thin sheet of lead",
             "id": "m3-ring-of-x-ray-vision-sense-x-ray-vision"
           }
@@ -125506,8 +125452,7 @@
           {
             "kind": "sense",
             "sense": "invisible-hostile-location",
-            "rangeFeet": 60,
-            "condition": "while standing in the planted rod’s bright light (10-minute duration, once per dawn)",
+            "condition": "you and any creature friendly to you while in the bright light of the planted rod (the rod’s head stops glowing and the effect ends after 10 minutes, or when a creature uses an action to pull the rod from the ground): the location of any invisible hostile creature that is also in the bright light",
             "id": "m3-rod-of-alertness-sense-invisible-hostile-location"
           }
         ]
@@ -126148,7 +126093,7 @@
           {
             "id": "c2-drain-life-payload",
             "kind": "triggeredEffect",
-            "trigger": "melee hit with rod",
+            "trigger": "you hit a creature with a melee attack using the rod",
             "save": {
               "ability": "constitution",
               "dc": 17
@@ -126165,7 +126110,7 @@
             "conditions": [
               "paralyzed"
             ],
-            "trigger": "melee hit with rod",
+            "trigger": "you hit a creature with a melee attack using the rod",
             "save": {
               "ability": "strength",
               "dc": 17
@@ -126688,7 +126633,7 @@
           {
             "id": "c2-residual-rulership-charm",
             "kind": "triggeredEffect",
-            "trigger": "rod command is issued",
+            "trigger": "you use an action to present the rod and command obedience from each creature of your choice that you can see within 120 feet of you",
             "result": "resolve charm save and breaking conditions",
             "save": {
               "ability": "wisdom",
@@ -138227,7 +138172,7 @@
           {
             "id": "c2-residual-apply-wound",
             "kind": "triggeredEffect",
-            "trigger": "weapon attack hits",
+            "trigger": "once per turn, you hit a creature with an attack using this magic weapon",
             "result": "apply one wound counter once per turn",
             "maximumApplicationsPerTurn": 1
           },
@@ -138562,8 +138507,8 @@
           {
             "id": "m7-pure-good-fissure-gate",
             "kind": "triggeredEffect",
-            "trigger": "fissure operation targets creature",
-            "condition": "target is evil",
+            "trigger": "while wearing or holding the talisman, you use an action to expend 1 charge and choose one creature you can see on the ground within 120 feet of you",
+            "condition": "target is of evil alignment",
             "result": "DC 20 Dexterity save or destroyed without remains"
           },
           {
@@ -138893,8 +138838,9 @@
             "id": "c2-residual-enhanced-sphere-levitation",
             "kind": "triggeredEffect",
             "trigger": "user starts turn controlling a sphere of annihilation and uses an action to levitate it",
-            "result": "increase sphere movement using source formula",
-            "additionalFeetFormula": "10 + 10 × intelligence-modifier"
+            "result": "levitate the sphere 10 feet plus a number of additional feet equal to 10 × your Intelligence modifier",
+            "baseFeet": 10,
+            "additionalFeetFormula": "10 × intelligence-modifier"
           }
         ]
       },
@@ -139099,8 +139045,8 @@
           {
             "id": "m7-ultimate-evil-fissure-gate",
             "kind": "triggeredEffect",
-            "trigger": "fissure operation targets creature",
-            "condition": "target is good",
+            "trigger": "while wearing or holding the talisman, you use an action to expend 1 charge and choose one creature you can see on the ground within 120 feet of you",
+            "condition": "target is of good alignment",
             "result": "DC 20 Dexterity save or destroyed without remains"
           },
           {
@@ -139438,17 +139384,6 @@
               }
             ]
           }
-        ],
-        "effects": [
-          {
-            "kind": "abilityScoreIncrease",
-            "abilities": [
-              "intelligence"
-            ],
-            "amount": 2,
-            "alsoIncreasesMaximum": true,
-            "id": "m2-tome-of-clear-thought-intelligence-score-increase"
-          }
         ]
       },
       "executionReadiness": {
@@ -139491,11 +139426,13 @@
               "kind": "parent"
             },
             "tag": "M2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "m2-tome-of-clear-thought-intelligence-score-increase"
+              "adjudicated": true,
+              "note": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period.",
+              "sourceText": "If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Intelligence score increases by 2, as does your maximum for that score."
             },
-            "readiness": "green"
+            "reason": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period."
           }
         ]
       }
@@ -139570,17 +139507,6 @@
               }
             ]
           }
-        ],
-        "effects": [
-          {
-            "kind": "abilityScoreIncrease",
-            "abilities": [
-              "charisma"
-            ],
-            "amount": 2,
-            "alsoIncreasesMaximum": true,
-            "id": "m2-tome-of-leadership-and-influence-charisma-score-increase"
-          }
         ]
       },
       "executionReadiness": {
@@ -139623,11 +139549,13 @@
               "kind": "parent"
             },
             "tag": "M2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "m2-tome-of-leadership-and-influence-charisma-score-increase"
+              "adjudicated": true,
+              "note": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period.",
+              "sourceText": "If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Charisma score increases by 2, as does your maximum for that score."
             },
-            "readiness": "green"
+            "reason": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period."
           }
         ]
       }
@@ -139702,17 +139630,6 @@
               }
             ]
           }
-        ],
-        "effects": [
-          {
-            "kind": "abilityScoreIncrease",
-            "abilities": [
-              "wisdom"
-            ],
-            "amount": 2,
-            "alsoIncreasesMaximum": true,
-            "id": "m2-tome-of-understanding-wisdom-score-increase"
-          }
         ]
       },
       "executionReadiness": {
@@ -139755,11 +139672,13 @@
               "kind": "parent"
             },
             "tag": "M2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "m2-tome-of-understanding-wisdom-score-increase"
+              "adjudicated": true,
+              "note": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period.",
+              "sourceText": "If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Wisdom score increases by 2, as does your maximum for that score."
             },
-            "readiness": "green"
+            "reason": "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period."
           }
         ]
       }
@@ -140227,8 +140146,8 @@
             "kind": "extraDamage",
             "dice": "6d8",
             "type": "slashing",
-            "trigger": "attack roll 20",
-            "condition": "target cannot be decapitated or is immune to decapitation"
+            "trigger": "attack roll 20 against a creature",
+            "condition": "the creature is immune to the head-removal effect: it is immune to slashing damage, doesn’t have or need a head, has legendary actions, or the GM decides it is too big for its head to be cut off with this weapon"
           }
         ]
       },
@@ -140437,13 +140356,13 @@
             "id": "c2-residual-assisted-escape-save",
             "kind": "advantage",
             "roll": "saving throw",
-            "condition": "avoid paralyzed or restrained"
+            "condition": "while holding the wand, you use your reaction to expend 1 charge on a saving throw you make to avoid being paralyzed or restrained"
           },
           {
             "id": "c2-residual-assisted-escape-check",
             "kind": "advantage",
             "roll": "ability check",
-            "condition": "escape a grapple"
+            "condition": "while holding the wand, you expend 1 charge on any check you make to escape a grapple"
           },
           {
             "id": "c2-cast-hold-monster",
@@ -140832,7 +140751,7 @@
             "rangeFeet": 60,
             "durationMinutes": 1,
             "detects": "ethereal, invisible, disguised, or hidden hostile creatures, as well as those in plain sight (direction only, not distance)",
-            "condition": "ends if you stop holding the wand",
+            "condition": "while holding the wand, after you use an action and expend 1 charge to speak its command word; ends if you stop holding the wand",
             "id": "m3-wand-of-enemy-detection-sense-nearest-hostile-direction"
           }
         ]
@@ -142522,6 +142441,7 @@
             "kind": "sense",
             "sense": "nearest-secret-door-or-trap",
             "rangeFeet": 30,
+            "condition": "while holding the wand, after you use an action to expend 1 charge, if a secret door or trap is within 30 feet of you",
             "id": "m3-wand-of-secrets-sense-nearest-secret-door-or-trap"
           }
         ]
@@ -142656,7 +142576,7 @@
                 "amount": 3
               }
             ],
-            "appliesTo": "spell attacks"
+            "appliesTo": "spell attack rolls while holding this wand"
           }
         ]
       },

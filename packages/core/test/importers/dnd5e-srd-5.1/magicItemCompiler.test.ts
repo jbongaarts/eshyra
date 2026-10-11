@@ -444,8 +444,14 @@ describe('magic-item clause integrity and readiness', () => {
 
   it('requires every variant-scoped clause disposition to name an emitted variant and clause suffix', () => {
     const record = itemRecord({
+      description: 'A contextual clause.',
       variants: [{ id: 'alpha', name: 'Alpha', mechanics: {} }],
     });
+    const adjudicated = {
+      adjudicated: true,
+      note: 'contextual',
+      sourceText: 'contextual',
+    } as const;
     const classify = (
       id: string,
       representation: ItemClauseExpectation['representation'],
@@ -458,7 +464,7 @@ describe('magic-item clause integrity and readiness', () => {
       });
 
     for (const representation of [
-      { adjudicated: true, note: 'contextual' },
+      adjudicated,
       { designBlocked: true, reason: 'out of scope' },
     ] as const) {
       expect(() =>
@@ -466,25 +472,27 @@ describe('magic-item clause integrity and readiness', () => {
       ).toThrow(/references unknown variant "missing"/);
     }
     expect(() =>
-      classify(`${record.key}/variant:/clause`, {
-        adjudicated: true,
-        note: 'contextual',
-      }),
+      classify(`${record.key}/variant:/clause`, adjudicated),
     ).toThrow(/empty variant scope/);
     for (const id of [
       `${record.key}/variant:alpha`,
       `${record.key}/variant:alpha/`,
     ]) {
-      expect(() =>
-        classify(id, { adjudicated: true, note: 'contextual' }),
-      ).toThrow(/missing clause suffix/);
+      expect(() => classify(id, adjudicated)).toThrow(/missing clause suffix/);
     }
     expect(
-      classify(`${record.key}/variant:alpha/clause`, {
-        adjudicated: true,
-        note: 'contextual',
-      }),
+      classify(`${record.key}/variant:alpha/clause`, adjudicated),
     ).toHaveLength(1);
+    // Faithful-or-absent: an adjudicated clause must carry a verbatim span of
+    // the printed description (eshyra-o9bd.19.4.5.8).
+    for (const sourceText of ['', 'paraphrased clause', 'Contextual']) {
+      expect(() =>
+        classify(`${record.key}/variant:alpha/clause`, {
+          ...adjudicated,
+          sourceText,
+        }),
+      ).toThrow(/not a non-empty verbatim span/);
+    }
   });
 
   it('validates operation references against each runtime-effective parent plus selected variant scope', () => {

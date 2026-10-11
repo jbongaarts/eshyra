@@ -596,13 +596,8 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
       recordMechanics('magic-item:gloves-of-missile-snaring').operations?.[0]
         ?.activation?.trigger,
     ).toContain('free hand');
-    // "while you are riding it": the goat's aura is conditional on riding.
-    expect(
-      String(
-        effect('magic-item:figurine-of-wondrous-power', 'goat-terror-aura')
-          .trigger,
-      ),
-    ).toContain('riding');
+    // The goat's aura (riding / reversion / repeat-save / immunity) is absent as
+    // a typed effect; see the faithful-or-absent block at the end of the file.
     // "takes damage from the arrow" (not merely a hit), on effect and operation.
     expect(
       String(effect('magic-item:arrow-of-slaying', 'slaying-damage').trigger),
@@ -812,4 +807,475 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
     expect('oneWay' in telepathy).toBe(false);
     expect('requiresLanguage' in telepathy).toBe(false);
   });
+});
+
+/**
+ * Faithful-or-absent (eshyra-o9bd.19.4.5.8; bd memory
+ * magic-item-faithful-or-absent). A typed `mechanics.effects` member states the
+ * printed predicate exactly or does not exist as a typed effect; "absent"
+ * means an executionReadiness clause with readiness 'adjudicated-by-design'
+ * whose representation carries a verbatim span of the printed description.
+ *
+ * Scope: `mechanics.effects` only. Operations, state machines, economies,
+ * grants and containment belong to eshyra-o9bd.19.4.6.
+ */
+describe('magic-item effects are faithful or absent (eshyra-o9bd.19.4.5.8)', () => {
+  const norm = (value: string): string =>
+    value.toLowerCase().replace(/\s+/g, ' ').trim();
+  const magicItems = pack.records.filter(
+    (record) => record.kind === 'magic-item',
+  );
+  const dataOf = (key: string): Obj =>
+    (recordsByKey.get(key) as { data: Obj }).data;
+  const descriptionOf = (key: string): string =>
+    norm(String(dataOf(key).description));
+  const allEffects = (key: string): Obj[] => {
+    const data = dataOf(key);
+    const mechanics = isObj(data.mechanics) ? data.mechanics : {};
+    const variants = Array.isArray(data.variants) ? data.variants : [];
+    return [
+      ...((mechanics.effects as Obj[] | undefined) ?? []),
+      ...variants.flatMap((variant) =>
+        isObj(variant) && isObj(variant.mechanics)
+          ? ((variant.mechanics.effects as Obj[] | undefined) ?? [])
+          : [],
+      ),
+    ];
+  };
+  const parentEffect = (key: string, id: string): Obj | undefined =>
+    allEffects(key).find((candidate) => candidate.id === id);
+  const clausesOf = (key: string): Obj[] =>
+    (dataOf(key).executionReadiness as Obj).clauses as Obj[];
+
+  it('every adjudicated clause carries a non-empty verbatim span of the printed description', () => {
+    const adjudicated = magicItems.flatMap((record) =>
+      clausesOf(record.key)
+        .filter((clause) => clause.readiness === 'adjudicated-by-design')
+        .map((clause) => ({ record, clause })),
+    );
+    expect(adjudicated.length).toBeGreaterThan(0);
+    for (const { record, clause } of adjudicated) {
+      const representation = clause.representation as Obj;
+      const label = `${record.key} ${String(clause.clauseId)}`;
+      expect(representation.adjudicated, label).toBe(true);
+      expect(typeof representation.sourceText, label).toBe('string');
+      const sourceText = representation.sourceText as string;
+      expect(sourceText.length, label).toBeGreaterThan(0);
+      // Verbatim (exact, case- and punctuation-sensitive) substring.
+      expect(
+        String((record.data as Obj).description).includes(sourceText),
+        label,
+      ).toBe(true);
+      expect(String(representation.note).length, label).toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * Members whose typed effect states the printed predicate exactly. Each row
+   * names the printed phrase(s) the emitted field must carry: the ineligible
+   * scenario in the review (wrong weapon/mode, non-creature target, wrong
+   * beneficiary, stowed item, out-of-sight point, wrong geometry origin,
+   * unqualified quantity role) is exactly the absence of that phrase. A
+   * fragment must occur in BOTH the printed description and the emitted field.
+   */
+  interface ExactRow {
+    readonly item: string;
+    readonly effect: string;
+    readonly field: string;
+    readonly printed: readonly string[];
+  }
+  const OATH_PRINTED = [
+    'ranged attack roll',
+    'with this weapon against your sworn enemy',
+  ];
+  const EXACT: readonly ExactRow[] = [
+    {
+      item: 'magic-item:oathbow',
+      effect: 'c2-residual-oathbow-sworn-enemy-attacks',
+      field: 'condition',
+      printed: OATH_PRINTED,
+    },
+    {
+      item: 'magic-item:oathbow',
+      effect: 'c2-residual-oathbow-ignore-cover-range',
+      field: 'trigger',
+      printed: OATH_PRINTED,
+    },
+    {
+      item: 'magic-item:oathbow',
+      effect: 'c2-residual-oathbow-sworn-enemy-extra-damage',
+      field: 'trigger',
+      printed: OATH_PRINTED,
+    },
+    ...['c2-drain-life-payload', 'c2-paralyze-payload'].map((effect) => ({
+      item: 'magic-item:rod-of-lordly-might',
+      effect,
+      field: 'trigger',
+      printed: ['a creature with a melee attack using the rod'],
+    })),
+    {
+      item: 'magic-item:sword-of-wounding',
+      effect: 'c2-residual-apply-wound',
+      field: 'trigger',
+      printed: [
+        'once per turn',
+        'a creature with an attack using this magic weapon',
+      ],
+    },
+    {
+      item: 'magic-item:vorpal-sword',
+      effect: 'c2-static-vorpal-no-decapitation-rider',
+      field: 'condition',
+      printed: [
+        'immune to slashing damage',
+        'doesn’t have or need a head',
+        'has legendary actions',
+      ],
+    },
+    {
+      item: 'magic-item:holy-avenger',
+      effect: 'c2-residual-holy-avenger-aura-saves',
+      field: 'condition',
+      printed: [
+        'you and all creatures friendly to you in the aura',
+        'hold the drawn sword',
+        'against spells and other magical effects',
+      ],
+    },
+    {
+      item: 'magic-item:decanter-of-endless-water',
+      effect: 'c2-residual-geyser-impact',
+      field: 'trigger',
+      printed: [
+        'while holding the decanter',
+        'a creature you can see within 30 feet of you',
+        'weighs no more than 200 pounds',
+      ],
+    },
+    {
+      item: 'magic-item:decanter-of-endless-water',
+      effect: 'c2-residual-geyser-impact',
+      field: 'result',
+      printed: ['away from you'],
+    },
+    {
+      item: 'magic-item:ring-of-shooting-stars',
+      effect: 'c2-launch-shooting-stars-payload',
+      field: 'trigger',
+      printed: ['a point you can see within 60 feet of you'],
+    },
+    {
+      item: 'magic-item:bracers-of-archery',
+      effect: 'c2-static-bracers-archery-damage',
+      field: 'appliesTo',
+      printed: ['ranged attacks made with', 'longbow and shortbow'],
+    },
+    {
+      item: 'magic-item:defender',
+      effect: 'c2-residual-defender-bonus-transfer',
+      field: 'trigger',
+      printed: [
+        'the first time you attack with the sword on each of your turns',
+      ],
+    },
+    {
+      item: 'magic-item:defender',
+      effect: 'c2-residual-defender-bonus-transfer',
+      field: 'result',
+      printed: ['you must hold the sword to gain a bonus to ac from it'],
+    },
+    {
+      item: 'magic-item:ring-of-spell-turning',
+      effect: 'c2-residual-spell-turning-saves',
+      field: 'condition',
+      printed: ['targets only you (not in an area of effect)'],
+    },
+    {
+      item: 'magic-item:rod-of-alertness',
+      effect: 'm3-rod-of-alertness-sense-invisible-hostile-location',
+      field: 'condition',
+      printed: [
+        'friendly to you',
+        'invisible hostile creature that is also in the bright light',
+      ],
+    },
+    {
+      item: 'magic-item:horn-of-blasting',
+      effect: 'c2-blow-horn-payload',
+      field: 'glassOrCrystalAppliesTo',
+      printed: ['made of glass or crystal'],
+    },
+    {
+      item: 'magic-item:hammer-of-thunderbolts',
+      effect: 'c2-giant-slaying-critical-payload',
+      field: 'trigger',
+      printed: [
+        'attuned to this weapon',
+        'roll a 20 on an attack roll made with this weapon against a giant',
+      ],
+    },
+    {
+      item: 'magic-item:wand-of-the-war-mage-1-2-or-3',
+      effect: 'c2-static-war-mage-rarity-spell-attack',
+      field: 'appliesTo',
+      printed: ['holding this wand', 'spell attack rolls'],
+    },
+    {
+      item: 'magic-item:ring-of-the-ram',
+      effect: 'c2-spectral-ram-attack-payload',
+      field: 'result',
+      printed: ['away from you'],
+    },
+    {
+      item: 'magic-item:feather-token',
+      effect: 'c2-residual-whip-attack',
+      field: 'trigger',
+      printed: [
+        'a melee spell attack against a creature within 10 feet of the whip',
+      ],
+    },
+    {
+      item: 'magic-item:gem-of-seeing',
+      effect: 'm3-gem-of-seeing-sense-truesight',
+      field: 'condition',
+      printed: [
+        'speak the gem’s command word',
+        'expend 1 charge',
+        'peer through the gem',
+      ],
+    },
+    {
+      item: 'magic-item:plate-armor-of-etherealness',
+      effect: 'c2-residual-etherealness',
+      field: 'trigger',
+      printed: ['its command word as an action'],
+    },
+    {
+      item: 'magic-item:rod-of-rulership',
+      effect: 'c2-residual-rulership-charm',
+      field: 'trigger',
+      printed: [
+        'present the rod and command obedience from each creature of your choice that you can see within 120 feet of you',
+      ],
+    },
+    {
+      item: 'magic-item:wand-of-binding',
+      effect: 'c2-residual-assisted-escape-save',
+      field: 'condition',
+      printed: [
+        'holding the wand',
+        'use your reaction to expend 1 charge',
+        'a saving throw you make to avoid being paralyzed or restrained',
+      ],
+    },
+    {
+      item: 'magic-item:wand-of-binding',
+      effect: 'c2-residual-assisted-escape-check',
+      field: 'condition',
+      printed: ['holding the wand', 'any check you make to escape a grapple'],
+    },
+    {
+      item: 'magic-item:wand-of-enemy-detection',
+      effect: 'm3-wand-of-enemy-detection-sense-nearest-hostile-direction',
+      field: 'condition',
+      printed: [
+        'use an action and expend 1 charge to speak its command word',
+        'stop holding the wand',
+      ],
+    },
+    {
+      item: 'magic-item:ring-of-x-ray-vision',
+      effect: 'm3-ring-of-x-ray-vision-sense-x-ray-vision',
+      field: 'condition',
+      printed: ['while wearing', 'use an action to speak its command word'],
+    },
+    {
+      item: 'magic-item:wand-of-secrets',
+      effect: 'm3-wand-of-secrets-sense-nearest-secret-door-or-trap',
+      field: 'condition',
+      printed: [
+        'use an action to expend 1',
+        'secret door or trap is within 30 feet of you',
+      ],
+    },
+    ...[
+      ['talisman-of-pure-good', 'm7-pure-good-fissure-gate'],
+      ['talisman-of-ultimate-evil', 'm7-ultimate-evil-fissure-gate'],
+    ].map(([item, effect]) => ({
+      item: `magic-item:${item}`,
+      effect,
+      field: 'trigger',
+      printed: [
+        'wearing or holding',
+        'use an action to expend 1 charge',
+        'one creature you can see on the ground within 120 feet of you',
+      ],
+    })),
+    {
+      item: 'magic-item:talisman-of-the-sphere',
+      effect: 'c2-residual-enhanced-sphere-levitation',
+      field: 'result',
+      printed: ['additional feet equal to 10 × your intelligence modifier'],
+    },
+  ];
+
+  it.each(
+    EXACT.map(
+      (row) => [`${row.item} ${row.effect}.${row.field}`, row] as const,
+    ),
+  )('%s states the printed predicate', (_label, row) => {
+    const effect = parentEffect(row.item, row.effect);
+    expect(effect, 'typed effect present').toBeDefined();
+    const value = norm(String((effect as Obj)[row.field]));
+    const printed = descriptionOf(row.item);
+    for (const fragment of row.printed.map(norm)) {
+      expect(printed, `printed text carries ${fragment}`).toContain(fragment);
+      expect(value, `${row.field} carries ${fragment}`).toContain(fragment);
+    }
+  });
+
+  it('keeps quantity roles, geometry origins and branches on the stage the source prints', () => {
+    // Talisman of the Sphere: ten feet PLUS additional feet (10 x Int modifier);
+    // the ten is the base, never part of the additional formula.
+    const sphere = parentEffect(
+      'magic-item:talisman-of-the-sphere',
+      'c2-residual-enhanced-sphere-levitation',
+    ) as Obj;
+    expect(sphere.baseFeet).toBe(10);
+    expect(sphere.additionalFeetFormula).toBe('10 × intelligence-modifier');
+    // Horn of Blasting: glass or crystal have disadvantage AND take 10d6.
+    const horn = parentEffect(
+      'magic-item:horn-of-blasting',
+      'c2-blow-horn-payload',
+    ) as Obj;
+    expect(horn.glassOrCrystalDamageDice).toBe('10d6');
+    expect(horn.glassOrCrystalSaveMode).toBe('disadvantage');
+    // Ring of the Ram: the push is directional ("away from you").
+    expect(
+      (
+        parentEffect(
+          'magic-item:ring-of-the-ram',
+          'c2-spectral-ram-attack-payload',
+        ) as Obj
+      ).pushDirection,
+    ).toBe('away from you');
+    // Rod of Alertness: the 60-foot figure is the rod's bright-light radius
+    // (centred on the rod), not a sensing range from the beneficiary.
+    expect(
+      parentEffect(
+        'magic-item:rod-of-alertness',
+        'm3-rod-of-alertness-sense-invisible-hostile-location',
+      ),
+    ).not.toHaveProperty('rangeFeet');
+    // No predicate collapsed back to its pre-repair broader wording.
+    const broader: readonly (readonly [string, string, string, string])[] = [
+      [
+        'magic-item:oathbow',
+        'c2-residual-oathbow-sworn-enemy-attacks',
+        'condition',
+        'target is sworn enemy',
+      ],
+      [
+        'magic-item:rod-of-lordly-might',
+        'c2-drain-life-payload',
+        'trigger',
+        'melee hit with rod',
+      ],
+      [
+        'magic-item:sword-of-wounding',
+        'c2-residual-apply-wound',
+        'trigger',
+        'weapon attack hits',
+      ],
+      [
+        'magic-item:ring-of-spell-turning',
+        'c2-residual-spell-turning-saves',
+        'condition',
+        'spell targets only wearer',
+      ],
+      [
+        'magic-item:rod-of-rulership',
+        'c2-residual-rulership-charm',
+        'trigger',
+        'rod command is issued',
+      ],
+    ];
+    for (const [item, effect, field, retired] of broader)
+      expect((parentEffect(item, effect) as Obj)[field], effect).not.toBe(
+        retired,
+      );
+  });
+
+  /**
+   * Members that are absent as typed effects. The effect (or the single typed
+   * field) leaves `mechanics.effects`; the printed clause is an adjudicated
+   * clause whose span the DM model reads and interprets.
+   */
+  interface AbsentRow {
+    readonly item: string;
+    readonly effect: string;
+    readonly clauseSuffix: string;
+    readonly span: string;
+    readonly keepsEffect?: true;
+  }
+  const ABSENT: readonly AbsentRow[] = [
+    ...[
+      ['manual-of-bodily-health', 'constitution'],
+      ['manual-of-gainful-exercise', 'strength'],
+      ['manual-of-quickness-of-action', 'dexterity'],
+      ['tome-of-clear-thought', 'intelligence'],
+      ['tome-of-leadership-and-influence', 'charisma'],
+      ['tome-of-understanding', 'wisdom'],
+    ].map(([item, ability]) => ({
+      item: `magic-item:${item}`,
+      effect: `m2-${item}-${ability}-score-increase`,
+      clauseSuffix: `m2-${item}-${ability}-score-increase`,
+      span: '48 hours over a period of 6 days or fewer',
+    })),
+    {
+      item: 'magic-item:figurine-of-wondrous-power',
+      effect: 'c2-residual-goat-terror-aura',
+      clauseSuffix: 'c2-residual-goat-terror-aura',
+      span: 'immune to the goat’s aura for the next 24 hours',
+    },
+    {
+      item: 'magic-item:nine-lives-stealer',
+      effect: 'c2-slay-on-critical-payload',
+      clauseSuffix: 'slay-on-critical-charge-loss',
+      span: 'The sword loses 1 charge if the creature is slain.',
+      keepsEffect: true,
+    },
+  ];
+
+  it.each(ABSENT.map((row) => [`${row.item} ${row.effect}`, row] as const))(
+    '%s is absent as a typed claim and adjudicated with a printed span',
+    (_label, row) => {
+      const effect = allEffects(row.item).find(({ id }) => id === row.effect);
+      if (row.keepsEffect === undefined) {
+        expect(effect).toBeUndefined();
+        // No readiness clause binds the withheld effect, and no operation,
+        // state or transition still names it.
+        expect(
+          clausesOf(row.item).filter(
+            (clause) =>
+              (clause.representation as Obj).block === 'effects' &&
+              (clause.representation as Obj).effectId === row.effect,
+          ),
+        ).toEqual([]);
+        expect(JSON.stringify(dataOf(row.item).mechanics ?? {})).not.toContain(
+          row.effect,
+        );
+      } else {
+        // The kept payload no longer asserts the unconditional cost.
+        expect(effect).not.toHaveProperty('chargeCost');
+      }
+      const clause = clausesOf(row.item).find((candidate) =>
+        String(candidate.clauseId).endsWith(`/${row.clauseSuffix}`),
+      ) as Obj;
+      expect(clause.readiness).toBe('adjudicated-by-design');
+      expect(String((clause.representation as Obj).sourceText)).toContain(
+        row.span,
+      );
+    },
+  );
 });

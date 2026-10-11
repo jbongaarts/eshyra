@@ -299,7 +299,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'holy-avenger-aura-saves',
         'advantage on saving throws against spells and other magical effects',
         'saving throws',
-        'against spells and other magical effects; friendly creature in drawn-sword aura; 10 feet, or 30 feet for level 17+ paladin',
+        'against spells and other magical effects; you and all creatures friendly to you in the aura while you hold the drawn sword; 10-foot radius, or 30 feet if you have 17 or more levels in the paladin class',
       ),
     ],
   ],
@@ -412,12 +412,12 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'oathbow-sworn-enemy-attacks',
         'you have advantage on the roll',
         'attack rolls',
-        'target is sworn enemy',
+        'ranged attack roll made with this weapon against your sworn enemy',
       ),
       triggered(
         'oathbow-ignore-cover-range',
         'target gains no benefit from cover, other than total cover',
-        'attack targets sworn enemy',
+        'ranged attack roll made with this weapon against your sworn enemy',
         'ignore non-total cover and long-range disadvantage',
         {
           ignoresCover: ['half', 'three-quarters'],
@@ -427,7 +427,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'oathbow-sworn-enemy-extra-damage',
         'If the attack hits, your sworn enemy takes an extra 3d6 piercing damage',
-        'attack hits sworn enemy',
+        'ranged attack roll made with this weapon against your sworn enemy hits',
         'deal extra piercing damage to the sworn enemy',
         { extraDamage: { dice: '3d6', type: 'piercing' } },
         [F1, F8, F9],
@@ -553,7 +553,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'spell-turning-saves',
         'advantage on saving throws against any spell that targets only you',
         'saving throws',
-        'spell targets only wearer',
+        'spell that targets only you (not in an area of effect)',
       ),
     ],
   ],
@@ -647,7 +647,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
           'assisted-escape-save',
           'gain advantage on a saving throw you make to avoid being paralyzed or restrained',
           'saving throw',
-          'avoid paralyzed or restrained',
+          'while holding the wand, you use your reaction to expend 1 charge on a saving throw you make to avoid being paralyzed or restrained',
         ),
         operation: {
           id: 'assisted-escape',
@@ -666,7 +666,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'assisted-escape-check',
         'gain advantage on any check you make to escape a grapple',
         'ability check',
-        'escape a grapple',
+        'while holding the wand, you expend 1 charge on any check you make to escape a grapple',
       ),
     ],
   ],
@@ -839,8 +839,8 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'geyser-impact',
         'must succeed on a DC 13 Strength saving throw or take 1d4 bludgeoning damage and fall prone',
-        'geyser is aimed with a bonus action at a creature within 30 feet, or at an object that is not worn or carried and weighs no more than 200 pounds',
-        'creature: resolve save, damage, and prone rider; object: knocked over or pushed up to 15 feet away',
+        'while holding the decanter, the geyser is aimed as a bonus action at a creature you can see within 30 feet of you, or at an object that isn’t being worn or carried and weighs no more than 200 pounds',
+        'creature: resolve save, damage, and prone rider; object: knocked over or pushed up to 15 feet away from you',
         {
           save: { ability: 'strength', dc: 13 },
           failedSaveDamage: { dice: '1d4', type: 'bludgeoning' },
@@ -856,8 +856,8 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'defender-bonus-transfer',
         'transfer some or all of the sword’s bonus to your Armor Class',
-        'wielder makes first attack on turn',
-        'choose attack/damage bonus transferred to AC until next turn',
+        'the first time you attack with the sword on each of your turns',
+        'transfer some or all of the sword’s bonus to your Armor Class instead of using the bonus on any attacks that turn; the adjusted bonuses remain in effect until the start of your next turn, and you must hold the sword to gain a bonus to AC from it',
         { totalBonus: 3, duration: 'until start of next turn' },
       ),
     ],
@@ -931,8 +931,8 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'whip-attack',
         'melee spell attack against a creature within 10 feet of the whip, with an attack bonus of +9',
-        'whip token attacks',
-        'resolve +9 attack for 1d6+5 force damage',
+        'use a bonus action to make a melee spell attack against a creature within 10 feet of the whip, or, as a bonus action on your turn, direct the whip to fly up to 20 feet and repeat the attack against a creature within 10 feet of it',
+        'melee spell attack: resolve +9 attack; on a hit, 1d6+5 force damage',
         { attackModifier: 9, damage: { dice: '1d6+5', type: 'force' } },
       ),
     ],
@@ -1082,7 +1082,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'etherealness',
         'gain the effect of the etherealness spell, which last for 10 minutes',
-        'wearer uses an action',
+        'while wearing the armor, wearer speaks its command word as an action',
         'apply etherealness for ten minutes',
         {
           spellRef: 'spell:etherealness',
@@ -1159,7 +1159,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'rulership-charm',
         'must succeed on a DC 15 Wisdom saving throw or be charmed by you for 8 hours',
-        'rod command is issued',
+        'you use an action to present the rod and command obedience from each creature of your choice that you can see within 120 feet of you',
         'resolve charm save and breaking conditions',
         {
           save: { ability: 'wisdom', dc: 15 },
@@ -1179,7 +1179,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       triggered(
         'apply-wound',
         'Once per turn, when you hit a creature with an attack using this magic weapon',
-        'weapon attack hits',
+        'once per turn, you hit a creature with an attack using this magic weapon',
         'apply one wound counter once per turn',
         { maximumApplicationsPerTurn: 1 },
       ),
@@ -1192,8 +1192,8 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'enhanced-sphere-levitation',
         'levitate it 10 feet plus a number of additional feet equal to 10 × your Intelligence modifier',
         'user starts turn controlling a sphere of annihilation and uses an action to levitate it',
-        'increase sphere movement using source formula',
-        { additionalFeetFormula: '10 + 10 × intelligence-modifier' },
+        'levitate the sphere 10 feet plus a number of additional feet equal to 10 × your Intelligence modifier',
+        { baseFeet: 10, additionalFeetFormula: '10 × intelligence-modifier' },
       ),
     ],
   ],

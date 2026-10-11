@@ -235,7 +235,7 @@ const ITEM_SPECS: ReadonlyMap<string, readonly EffectSpec[]> = new Map([
         '+2 bonus to damage rolls on ranged attacks made with such weapons',
         'damageBonus',
         2,
-        'longbows and shortbows',
+        'ranged attacks made with the longbow and shortbow',
       ),
     ],
   ],
@@ -985,9 +985,9 @@ const ITEM_SPECS: ReadonlyMap<string, readonly EffectSpec[]> = new Map([
         '6d8',
         'slashing',
         {
-          trigger: 'attack roll 20',
+          trigger: 'attack roll 20 against a creature',
           condition:
-            'target cannot be decapitated or is immune to decapitation',
+            'the creature is immune to the head-removal effect: it is immune to slashing damage, doesn’t have or need a head, has legendary actions, or the GM decides it is too big for its head to be cut off with this weapon',
         },
       ),
     ],
@@ -1001,7 +1001,7 @@ const ITEM_SPECS: ReadonlyMap<string, readonly EffectSpec[]> = new Map([
         {
           kind: 'attackRollModifier',
           ...RARITY_BONUS,
-          appliesTo: 'spell attacks',
+          appliesTo: 'spell attack rolls while holding this wand',
         },
         F8,
       ),
