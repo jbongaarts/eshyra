@@ -200,6 +200,7 @@ describe('character wizard — concept-first happy path', () => {
       '1', // equipment.0 → a quarterstaff
       '2', // equipment.1 → an arcane focus
       'scholar', // equipment.2 → a scholar's pack (prefix)
+      'Dwarvish', // High Elf extra language (required choice)
       // Fewer than the required counts stays on the step and says why.
       'Fire Bolt, Magic Missile',
       WIZARD_SPELLS.join(', '), // 3 cantrips + 6 spellbook spells
@@ -442,6 +443,7 @@ describe('character wizard — ability-first flow', () => {
       '1', // a quarterstaff
       '1', // a component pouch
       '1', // a scholar's pack
+      'Dwarvish', // High Elf extra language (required choice)
       WIZARD_SPELLS.join(', '), // spells
       WIZARD_PREPARED.join(', '), // prepared
       '', // review finish
@@ -594,6 +596,145 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
     expect(result.draft.selections.choices?.['ancestry.languages']).toEqual([
       'Dwarvish',
     ]);
+  });
+
+  it('offers an explicit GM-approved "other language" entry and records the approval (indep:011)', async () => {
+    const { deps: d, lines } = deps([
+      ...TO_CLASS_CHOICES,
+      'Athletics',
+      'Perception',
+      '1',
+      '1',
+      '1',
+      '1',
+      'other',
+      'Abyssal',
+      'n', // GM approval not confirmed: nothing recorded
+      'other',
+      'Abyssal',
+      'y', // explicit approval
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    expect(text(lines)).toContain('Other language with GM approval');
+    expect(text(lines)).toContain('needs GM approval');
+    expect(result.draft.selections.choices?.['ancestry.languages']).toEqual([
+      'Abyssal',
+    ]);
+    expect(
+      result.draft.selections.gmApprovedLanguages?.['ancestry.languages'],
+    ).toEqual(['Abyssal']);
+  });
+
+  it('prompts for the High Elf extra language and accepts a GM-approved one', async () => {
+    const { deps: d, lines } = deps([
+      ...TO_CLASS_CHOICES.map((a) => (a === 'Human' ? 'High Elf' : a)),
+      'Athletics',
+      'Perception',
+      '1',
+      '1',
+      '1',
+      '1',
+      'other',
+      'Sylvan',
+      'y',
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    expect(text(lines)).toContain('Other language with GM approval');
+    expect(
+      result.draft.selections.choices?.['ancestry.languages.extra-language'],
+    ).toEqual(['Sylvan']);
+    expect(
+      result.draft.selections.gmApprovedLanguages?.[
+        'ancestry.languages.extra-language'
+      ],
+    ).toEqual(['Sylvan']);
+  });
+
+  it('records no approval when a standard language is picked normally', async () => {
+    const { deps: d } = deps([
+      ...TO_CLASS_CHOICES,
+      'Athletics',
+      'Perception',
+      '1',
+      '1',
+      '1',
+      '1',
+      'Dwarvish',
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    expect(result.draft.selections.gmApprovedLanguages).toBeUndefined();
+  });
+
+  it('refuses a held or cross-group duplicate language with a reason, keeps earlier picks, and marks a resumed variant spelling (eshyra-o9bd.19.3.3.8)', async () => {
+    const acolyte = [...TO_CLASS_CHOICES];
+    acolyte[3] = 'Acolyte';
+    const { deps: d, lines } = deps([
+      ...acolyte,
+      'Athletics',
+      'Perception',
+      '1',
+      '1',
+      '1',
+      '1',
+      'Dwarvish', // ancestry language
+      // Background group: Dwarvish is held (cross-group), Common is held via
+      // the "other" path; neither may be added and Elvish must survive.
+      'Elvish',
+      'Dwarvish',
+      'other',
+      ' common ',
+      'Giant', // distinct pick completes the group
+      'quit',
+    ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'grok',
+    });
+    const out = text(lines);
+    expect(out).toMatch(/Dwarvish is already held/);
+    expect(out).toMatch(/common is already held \(Common\)/i);
+    expect(out).not.toMatch(/This group is full/);
+    expect(result.draft.selections.choices?.['background.languages']).toEqual([
+      'Elvish',
+      'Giant',
+    ]);
+    expect(
+      result.draft.selections.gmApprovedLanguages?.['background.languages'],
+    ).toBeUndefined();
+
+    // Resume a draft whose stored pick is a variant spelling: it is marked,
+    // and re-picking the canonical name completes the group.
+    const engine = createCharacterCreationEngine(
+      getBundledDnd5eCharacterResolver(),
+    );
+    const variant = engine.setChoice(result.draft, 'ancestry.languages', [
+      ' dwarvish ',
+    ]);
+    const second = deps([
+      ...['', '', '', ''], // identity, class, ancestry, background kept
+      'done', // scores kept
+      ...['', '', '', '', '', '', ''], // acquisition mode, skills, equipment
+      'Dwarvish',
+      'quit',
+    ]);
+    await runCharacterWizard(second.deps, {
+      mode: 'concept-first',
+      draftId: 'grok',
+      resume: variant,
+    });
+    expect(text(second.lines)).toMatch(/\[✓\] \d+\. Dwarvish/);
   });
 
   it('collects the level-1 fighting style after the ordinary groups (eshyra-nnj6.1)', async () => {
