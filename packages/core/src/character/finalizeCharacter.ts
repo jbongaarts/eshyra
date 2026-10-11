@@ -46,7 +46,6 @@ import type { SavingThrowDerived } from './derivedValues.js';
 import {
   canonicalLanguageName,
   languageKey,
-  SRD_5_1_EXOTIC_LANGUAGES,
 } from './languageIdentity.js';
 import { effectiveSpellcasting, spellsUnion } from './levelUpSpells.js';
 import {
@@ -70,7 +69,6 @@ import {
   STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './rulesPackResolver.js';
 import { computeAlwaysPrepared } from './spellPreparation.js';
-import { SRD_5_1_STANDARD_LANGUAGES } from './srdCreationChoices.js';
 import type { StartingWealthResult } from './srdStartingWealth.js';
 import { validateStartingWealthResult } from './srdStartingWealth.js';
 
@@ -1062,11 +1060,11 @@ function collectLanguages(
     ...fixedLanguages(ancestryLanguages),
     ...fixedLanguages(backgroundLanguages),
   ];
-  // Canonical spellings: fixed grants, default domains, SRD standard languages
-  // and the languages class-feature picks teach.
+  // Canonical spellings come from the pack and the draft only: fixed grants,
+  // default domains, the languages class-feature picks teach, and the explicit
+  // GM-approved spellings (pack spellings first). Identity never depends on
+  // spelling (`languageKey`).
   const known = [
-    ...SRD_5_1_STANDARD_LANGUAGES,
-    ...SRD_5_1_EXOTIC_LANGUAGES,
     ...fixed,
     ...entries.flatMap((entry) => entry.choice.from ?? []),
     ...entries.flatMap((entry) =>
@@ -1074,6 +1072,8 @@ function collectLanguages(
         ? (entry.application.languages ?? [])
         : [],
     ),
+    // Last, so a pack spelling wins over a GM-typed one.
+    ...Object.values(draft.selections.gmApprovedLanguages ?? {}).flat(),
   ];
   // One sheet entry per language identity (`languageKey`).
   const languages = new Map<string, string>();

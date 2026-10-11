@@ -61,7 +61,6 @@ import type { CharacterFeatureChoice } from './finalizeCharacter.js';
 import {
   canonicalLanguageName,
   languageKey,
-  SRD_5_1_EXOTIC_LANGUAGES,
 } from './languageIdentity.js';
 import {
   normalizeProficiency,
@@ -82,10 +81,7 @@ import {
   STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './rulesPackResolver.js';
 import { computeAlwaysPrepared } from './spellPreparation.js';
-import {
-  SRD_5_1_SKILLS,
-  SRD_5_1_STANDARD_LANGUAGES,
-} from './srdCreationChoices.js';
+import { SRD_5_1_SKILLS } from './srdCreationChoices.js';
 import {
   type StartingWealthResult,
   validateStartingWealthResult,
@@ -901,6 +897,7 @@ export function createCharacterCreationEngine(
           ...fixedLanguageGrants(background),
         ],
         withReplacements.filter((entry) => entry.choice.kind === 'languages'),
+        Object.values(draft.selections.gmApprovedLanguages ?? {}).flat(),
       ),
     });
     return [
@@ -1760,12 +1757,13 @@ export function canonicalHeldLanguages(
     readonly choice: Level1RequiredChoice;
     readonly selected: readonly string[];
   }[],
+  approved: readonly string[] = [],
 ): readonly string[] {
   const known = [
-    ...SRD_5_1_STANDARD_LANGUAGES,
-    ...SRD_5_1_EXOTIC_LANGUAGES,
     ...fixed,
     ...languageChoices.flatMap((entry) => entry.choice.from ?? []),
+    // Last, so a pack spelling wins over a GM-typed one.
+    ...approved,
   ];
   const held = new Map<string, string>();
   for (const language of [

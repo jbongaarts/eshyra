@@ -639,11 +639,16 @@ describe('language choice identity, exhausted domains and custom backgrounds', (
         // Forcing the pick through stored input is still refused.
         const forced = engine.setChoice(draft, LANG1, ['Deep Speech']);
         expect(finalizeCharacterDraft(forced, META).ok).toBe(false);
-        // Without the pick the sheet persists exactly one canonical spelling.
+        // Without the pick the sheet persists exactly one entry for the
+        // identity, in the GM-approved spelling (trimmed, whitespace-collapsed):
+        // canonical spellings come from the pack and the draft, never from a
+        // hard-coded SRD list.
         const result = finalizeCharacterDraft(draft, META);
         expect(result.ok).toBe(true);
         if (!result.ok) return;
-        expect(result.character.languages).toContain('Deep Speech');
+        expect(result.character.languages).toContain(
+          spelling.trim().replace(/\s+/g, ' '),
+        );
         expect(deepSpeechCount(result.character.languages)).toBe(1);
         // Durable consumer: the finalized sheet never re-offers it at level 6.
         const sheet = { ...result.character, level: 5 };
