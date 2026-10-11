@@ -262,6 +262,8 @@ export type {
   GuidedLevelUpResult,
 } from './character/guidedLevelUpFlow.js';
 export { runGuidedLevelUp } from './character/guidedLevelUpFlow.js';
+// The one language identity (case/whitespace-insensitive) every consumer uses.
+export { languageKey } from './character/languageIdentity.js';
 export type {
   AppliedAbilityScoreIncrease,
   LevelUpChangeSet,

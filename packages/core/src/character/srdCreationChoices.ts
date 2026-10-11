@@ -80,7 +80,32 @@ export interface CreationChoice {
    * table itself, not a quotable sentence. See eshyra-o9bd.18.8.7.
    */
   readonly sourceText: string;
+  /**
+   * Source extension point for an open "of your choice" language grant
+   * (eshyra-o9bd.19.3.3.1): beside the unchanged default `from` domain, the
+   * source also allows GM-approved languages outside it.
+   */
+  readonly extension?: LanguageChoiceExtension;
 }
+
+/**
+ * The GM-permission extension `rule:languages` attaches to every open language
+ * choice: "With your GM's permission, you can instead choose a language from
+ * the Exotic Languages table or a secret language". The default domain (`from`)
+ * is never widened; a pick outside it needs an explicit GM-approval input.
+ */
+export interface LanguageChoiceExtension {
+  readonly ruleRef: string;
+  readonly exoticTableRef: string;
+  readonly requiresGmApproval: true;
+}
+
+/** The extension carried by every open SRD 5.1 "of your choice" language grant. */
+export const SRD_5_1_LANGUAGE_EXTENSION: LanguageChoiceExtension = {
+  ruleRef: 'rule:languages',
+  exoticTableRef: 'table:exotic-languages',
+  requiresGmApproval: true,
+};
 
 /** The 18 SRD 5.1 skills, the universe for an open "skills of your choice". */
 export const SRD_5_1_SKILLS: readonly string[] = [
@@ -275,6 +300,7 @@ export function getAncestryCreationChoices(
           from: SRD_5_1_STANDARD_LANGUAGES,
           sourceText:
             'You can speak, read, and write one extra language of your choice.',
+          extension: SRD_5_1_LANGUAGE_EXTENSION,
         },
       ];
     default:
