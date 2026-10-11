@@ -156,7 +156,11 @@ function foldName(normalized: string): string {
  * indexed (apostrophe-free folded) name token with: as written with
  * apostrophes removed ("land's" -> "lands"), and with a trailing possessive
  * `'s` removed first ("stride's" -> "stride"). A terminal `s` is never
- * stripped from a word without an apostrophe.
+ * stripped from a word without an apostrophe. This grammar is the whole
+ * contract: a quote glued to the neighbouring word ("say'Shield'") reads as an
+ * internal apostrophe and is deliberately not recognized - typos and malformed
+ * text are left to the DM model's reasoning over the raw player input (user
+ * decision 2026-10-11), not to further deterministic heuristics.
  */
 function inputTokenAlternatives(normalizedInput: string): string[][] {
   return normalizedInput
