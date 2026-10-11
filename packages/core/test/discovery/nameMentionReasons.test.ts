@@ -27,15 +27,18 @@ const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
 type Entry = { record: { key: string } };
 type ByName = ReadonlyMap<string, readonly Entry[]>;
 
-/** Independent folding: drop apostrophes, other punctuation -> space. */
+/**
+ * Independent folding (a tokenizer, not the production replace chain): drop
+ * apostrophes, keep runs of letters/digits optionally joined by single inner
+ * hyphens, and treat everything else as a boundary.
+ */
 const fold = (text: string): string =>
-  text
-    .toLowerCase()
-    .replace(/[’']/gu, '')
-    .replace(/[^\p{L}\p{N}: -]/gu, ' ')
-    .replace(/[-]/gu, ' ')
-    .replace(/\s+/gu, ' ')
-    .trim();
+  (
+    text
+      .toLowerCase()
+      .replace(/[’']/gu, '')
+      .match(/[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu) ?? []
+  ).join(' ');
 
 /** name -> keys over all kinds, and key -> names (same-kind index). */
 function indexes(source: typeof stack = stack) {
@@ -211,6 +214,51 @@ describe('name-mention punctuation folding', () => {
         db.close();
       }
     });
+
+  // Indexed names written with each punctuation form a player might put beside
+  // them still surface every key indexed under that exact name. One form per
+  // folding path (colon/terminal punctuation, brackets, quotes, dashes, stray
+  // hyphen). Population: every ambiguous name and every name that itself
+  // contains punctuation, plus a deterministic stride through the rest (cost
+  // grows with forms x population x index size, so the population is bounded).
+  // Names are batched per input; the assertion is per name, so batching cannot
+  // mask a miss.
+  const forms: readonly ((name: string) => string)[] = [
+    (n) => `${n}: what does it do?`,
+    (n) => `(${n}).`,
+    (n) => `“${n}”`,
+    (n) => `${n} — then`,
+    (n) => `${n}-`,
+  ];
+  it('surfaces indexed names next to every punctuation form', () => {
+    const all = [...keysByName.keys()].filter((name) => fold(name) !== '');
+    const names = all.filter(
+      (name, index) =>
+        (keysByName.get(name)?.size ?? 0) > 1 ||
+        /[^\p{L}\p{N} ]/u.test(name) ||
+        index % 25 === 0,
+    );
+    expect(names.length).toBeGreaterThan(100);
+    const missed: string[] = [];
+    forms.forEach((form, formIndex) => {
+      for (let i = 0; i < names.length; i += 60) {
+        const batch = names.slice(i, i + 60);
+        const trace = extractDiscoverySignals(
+          { playerInput: batch.map(form).join(' x '), stateFields: {} },
+          stack,
+        );
+        const signalled = new Set(
+          trace.outputsProduced
+            .filter((signal) => signal.kind === 'name-mention')
+            .map((signal) => signal.proposes),
+        );
+        for (const name of batch)
+          for (const key of keysByName.get(name) ?? [])
+            if (!signalled.has(key)) missed.push(`${formIndex}:${name}:${key}`);
+      }
+    });
+    expect(missed).toEqual([]);
+  });
 
   it('keeps a possessive in the input reaching the unpossessed indexed name', () => {
     const trace = extractDiscoverySignals(

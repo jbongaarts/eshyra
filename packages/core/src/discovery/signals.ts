@@ -140,11 +140,16 @@ function cueSignals(
 }
 
 function foldName(normalized: string): string {
-  return normalized
-    .replace(/'/gu, '')
-    .replace(/[^\p{L}\p{N}: -]/gu, ' ')
-    .replace(/\s+/gu, ' ')
-    .trim();
+  return (
+    normalized
+      .replace(/'/gu, '')
+      // Every character other than a letter, digit, or a hyphen joining two
+      // word characters is a word boundary (colons and stray hyphens included).
+      .replace(/[^\p{L}\p{N} -]/gu, ' ')
+      .replace(/(?<![\p{L}\p{N}])-|-(?![\p{L}\p{N}])/gu, ' ')
+      .replace(/\s+/gu, ' ')
+      .trim()
+  );
 }
 
 interface NameReason {
@@ -162,9 +167,11 @@ function nameSignals(
   index: number,
 ): { signals: DiscoverySignal[]; ambiguous: AmbiguousNameObservation[] } {
   // Input and indexed names are folded to the same word-boundary form:
-  // apostrophes are dropped ("Land's Stride" and "Lands Stride" agree) and
-  // every other non-word punctuation, commas included, becomes a boundary
-  // ("Food, Drink, and Lodging" agrees with "food drink and lodging"). The
+  // apostrophes are dropped ("Land's Stride" and "Lands Stride" agree), a
+  // hyphen between two word characters joins them ("half-elf"), and every
+  // other character - commas, colons, periods, quotes, brackets, dashes - is a
+  // boundary ("Food, Drink, and Lodging" agrees with "food drink and lodging";
+  // "Darkvision: how far" reaches "darkvision"). The
   // input is additionally matched with apostrophes as boundaries so a
   // possessive ("the wizard's spellbook") still reaches "wizard".
   const normalizedInput = normalizeRulesRecordName(scenario.playerInput);
