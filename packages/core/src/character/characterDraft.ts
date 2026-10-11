@@ -58,6 +58,7 @@ import {
   LEVEL_1_PROFICIENCY_BONUS,
 } from './derivedValues.js';
 import type { CharacterFeatureChoice } from './finalizeCharacter.js';
+import { canonicalLanguageName, languageKey } from './languageIdentity.js';
 import {
   normalizeProficiency,
   proficiencyReplacementId,
@@ -172,6 +173,15 @@ export interface Dnd5eDraftSelections {
    * equipment/proficiency flow (eshyra-b69j.13).
    */
   readonly choices?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * Explicit GM approvals for language picks outside a language choice's
+   * default domain (eshyra-o9bd.19.3.3.1), keyed by the language choice id
+   * (`ancestry.languages`, `background.languages`) to the approved language
+   * names. A selected language outside the choice's `from` list is accepted only
+   * when it appears here AND the choice carries the `rule:languages` GM
+   * extension. Approval is never inferred; absent means none.
+   */
+  readonly gmApprovedLanguages?: Readonly<Record<string, readonly string[]>>;
   readonly startingEquipmentMode?: StartingEquipmentMode;
   readonly startingWealth?: StartingWealthResult;
 }
@@ -224,6 +234,15 @@ export interface MechanicalChoiceState {
   readonly choice: Level1RequiredChoice;
   readonly selected: readonly string[];
   readonly satisfied: boolean;
+  /**
+   * Language choices only: the languages (canonical spelling) the character
+   * already holds for this choice - fixed grants plus languages claimed by
+   * earlier satisfied language groups. `choice.from` never offers any of them,
+   * and a pick of one is refused (eshyra-o9bd.19.3.3.8).
+   */
+  readonly heldLanguages?: readonly string[];
+  /** Language choices only: why the current selection is not satisfied. */
+  readonly unsatisfiedReason?: string;
   /** Why a non-empty selection is refused (class-feature choices). */
   readonly refusal?: string;
   /**
@@ -306,6 +325,17 @@ export interface CharacterCreationEngine {
     draft: CharacterDraft,
     choiceId: string,
     values: readonly string[] | undefined,
+  ): CharacterDraft;
+  /**
+   * Record (or clear, with `undefined`/empty) the GM-approved languages for a
+   * language choice id. Pure storage: the approval only has effect for a
+   * selected language outside the choice's default domain, on a choice that
+   * carries the source's GM-permission extension.
+   */
+  setGmApprovedLanguages(
+    draft: CharacterDraft,
+    choiceId: string,
+    languages: readonly string[] | undefined,
   ): CharacterDraft;
   setStartingEquipmentMode(
     draft: CharacterDraft,
@@ -437,13 +467,32 @@ function validateBackgroundCustomization(
   }
   const tools = new Set(custom.toolProficiencies);
   const languages = new Set(custom.languages);
+  const grants = Array.isArray(background.languages)
+    ? background.languages
+    : [];
   const languageDomain = new Set(
-    Array.isArray(background.languages)
-      ? background.languages.flatMap((grant) => [
-          ...grant.fixed,
-          ...(grant.from ?? []),
-        ])
-      : [],
+    grants.flatMap((grant) => [...grant.fixed, ...(grant.from ?? [])]),
+  );
+  // An outside-domain custom language is admitted only through the canonical
+  // source grant's GM-permission extension and an explicit approval keyed by
+  // that grant's choice id (eshyra-o9bd.19.3.3.3).
+  const approvedCustom = grants.some(
+    (grant) =>
+      grant.choose !== undefined &&
+      grant.extension?.requiresGmApproval === true,
+  )
+    ? approvedLanguageKeys(
+        selections.gmApprovedLanguages?.['background.languages'],
+      )
+    : new Set<string>();
+  const ancestryResult =
+    selections.ancestry === undefined
+      ? undefined
+      : resolver.resolveAncestry(selections.ancestry);
+  const ancestryHeld = new Set(
+    fixedLanguageGrants(
+      ancestryResult?.ok ? ancestryResult.record : undefined,
+    ).map(languageKey),
   );
   if (
     tools.size !== custom.toolProficiencies.length ||
@@ -453,7 +502,17 @@ function validateBackgroundCustomization(
   }
   if (
     languages.size !== custom.languages.length ||
-    [...languages].some((language) => !languageDomain.has(language))
+    new Set(custom.languages.map(languageKey)).size !==
+      custom.languages.length ||
+    custom.languages.some(
+      (language) =>
+        languageKey(language).length === 0 ||
+        ancestryHeld.has(languageKey(language)) ||
+        !(
+          languageDomain.has(language) ||
+          approvedCustom.has(languageKey(language))
+        ),
+    )
   ) {
     fail('custom background contains an unknown or duplicate source language');
   }
@@ -775,18 +834,69 @@ export function createCharacterCreationEngine(
       abilityModifiers: draft.derived.abilityModifiers,
     });
     const stored = draft.selections.choices ?? {};
+    const heldLanguages = [
+      ...fixedLanguageGrants(resolveAncestry(draft.selections.ancestry)),
+      ...fixedLanguageGrants(effectiveBackground(draft.selections, resolver)),
+    ];
     const mechanical = all.filter((choice) =>
       MECHANICAL_CHOICE_KINDS.has(choice.kind),
     );
+    // Language identities already held or claimed, so a later language choice
+    // can never re-grant the same language (eshyra-o9bd.19.3.3.3).
+    const claimedLanguages = new Map<string, string>();
+    for (const language of heldLanguages) {
+      const key = languageKey(language);
+      if (key.length > 0 && !claimedLanguages.has(key)) {
+        claimedLanguages.set(key, language);
+      }
+    }
     const choices = (
       draft.selections.startingEquipmentMode === 'starting-wealth'
         ? mechanical.filter((choice) => choice.kind !== 'equipment')
         : mechanical
-    ).map((choice) => ({
-      choice,
-      selected: stored[choice.id] ?? [],
-      satisfied: isChoiceSatisfied(choice, stored[choice.id] ?? []),
-    }));
+    ).map((entry): MechanicalChoiceState => {
+      const selected = stored[entry.id] ?? [];
+      if (entry.kind !== 'languages') {
+        return {
+          choice: entry,
+          selected,
+          satisfied: isChoiceSatisfied(entry, selected),
+        };
+      }
+      // One ordered pass: the held set both filters the offered domain and
+      // judges satisfaction, so anything offered is acceptable and anything
+      // held is never offered.
+      const held = [...claimedLanguages.values()];
+      const choice: Level1RequiredChoice =
+        entry.from === undefined
+          ? entry
+          : {
+              ...entry,
+              from: entry.from.filter(
+                (language) => !claimedLanguages.has(languageKey(language)),
+              ),
+            };
+      const verdict = judgeLanguageChoice(
+        choice,
+        selected,
+        gmApprovedFor(draft, choice),
+        claimedLanguages,
+      );
+      if (verdict.satisfied) {
+        for (const language of selected) {
+          claimedLanguages.set(languageKey(language), language);
+        }
+      }
+      return {
+        choice,
+        selected,
+        satisfied: verdict.satisfied,
+        heldLanguages: held,
+        ...(verdict.reason !== undefined
+          ? { unsatisfiedReason: verdict.reason }
+          : {}),
+      };
+    });
     const background = effectiveBackground(draft.selections, resolver);
     const ancestrySkills =
       resolveAncestry(draft.selections.ancestry)?.skillProficiencies ?? [];
@@ -823,15 +933,14 @@ export function createCharacterCreationEngine(
           ...held('tools'),
         ]),
       ],
-      languages: [
-        ...new Set([
+      languages: canonicalHeldLanguages(
+        [
           ...fixedLanguageGrants(resolveAncestry(draft.selections.ancestry)),
           ...fixedLanguageGrants(background),
-          ...withReplacements
-            .filter((entry) => entry.choice.kind === 'languages')
-            .flatMap((entry) => entry.selected),
-        ]),
-      ],
+        ],
+        withReplacements.filter((entry) => entry.choice.kind === 'languages'),
+        Object.values(draft.selections.gmApprovedLanguages ?? {}).flat(),
+      ),
     });
     return [
       ...withReplacements.filter(
@@ -1546,6 +1655,16 @@ export function createCharacterCreationEngine(
       return withSelections(draft, { choices });
     },
 
+    setGmApprovedLanguages(draft, choiceId, languages): CharacterDraft {
+      const approved = { ...(draft.selections.gmApprovedLanguages ?? {}) };
+      if (languages === undefined || languages.length === 0) {
+        delete approved[choiceId];
+      } else {
+        approved[choiceId] = [...languages];
+      }
+      return withSelections(draft, { gmApprovedLanguages: approved });
+    },
+
     setStartingEquipmentMode(draft, mode): CharacterDraft {
       const choices = { ...(draft.selections.choices ?? {}) };
       if (mode === 'starting-wealth') {
@@ -1589,6 +1708,7 @@ export function createCharacterCreationEngine(
 function isChoiceSatisfied(
   choice: Level1RequiredChoice,
   selected: readonly string[],
+  gmApproved: ReadonlySet<string> = new Set(),
 ): boolean {
   if (choice.choose === undefined) {
     return true;
@@ -1601,7 +1721,124 @@ function isChoiceSatisfied(
     return true;
   }
   const options = new Set(choice.from);
-  return [...distinct].every((value) => options.has(value));
+  return [...distinct].every(
+    (value) => options.has(value) || gmApproved.has(value),
+  );
+}
+
+export { languageKey };
+
+/**
+ * Whether a language choice is satisfied. Unlike other kinds, an empty `from`
+ * is an EXHAUSTED default domain, never an open pool: every pick outside it
+ * needs the source extension and an explicit per-choice approval. Picks must be
+ * `choose` distinct language identities that no fixed grant or earlier language
+ * choice already holds; a satisfied choice claims its identities.
+ */
+function judgeLanguageChoice(
+  choice: Level1RequiredChoice,
+  selected: readonly string[],
+  approved: ReadonlySet<string>,
+  claimed: ReadonlyMap<string, string>,
+): { readonly satisfied: boolean; readonly reason?: string } {
+  if (choice.choose === undefined) return { satisfied: true };
+  const keys = selected.map(languageKey);
+  const blank = keys.findIndex((key) => key.length === 0);
+  if (blank >= 0) return { satisfied: false, reason: 'A language is blank.' };
+  const held = keys.findIndex((key) => claimed.has(key));
+  if (held >= 0) {
+    return {
+      satisfied: false,
+      reason: `${claimed.get(keys[held] as string)} is already held - pick a different language.`,
+    };
+  }
+  const dup = keys.findIndex((key, index) => keys.indexOf(key) !== index);
+  if (dup >= 0) {
+    return {
+      satisfied: false,
+      reason: `${selected[dup]} is selected twice - pick distinct languages.`,
+    };
+  }
+  if (selected.length !== choice.choose) {
+    return {
+      satisfied: false,
+      reason: `Choose ${choice.choose} language(s); ${selected.length} selected.`,
+    };
+  }
+  const domain = new Set(choice.from ?? []);
+  const unapproved = selected.findIndex(
+    (value, index) =>
+      !domain.has(value) && !approved.has(keys[index] as string),
+  );
+  if (unapproved >= 0) {
+    return {
+      satisfied: false,
+      reason: `${selected[unapproved]} is outside the offered languages and needs GM approval.`,
+    };
+  }
+  return { satisfied: true };
+}
+
+/**
+ * The normalized languages a draft's explicit GM approval admits OUTSIDE a
+ * language choice's default domain (eshyra-o9bd.19.3.3.1). Empty unless the
+ * choice is a language choice carrying the source's GM-permission extension; a
+ * blank name never is admitted. Approval is read only from the draft's
+ * explicit input.
+ */
+function gmApprovedFor(
+  draft: CharacterDraft,
+  choice: Level1RequiredChoice,
+): ReadonlySet<string> {
+  if (
+    choice.kind !== 'languages' ||
+    choice.extension?.requiresGmApproval !== true
+  ) {
+    return new Set();
+  }
+  return approvedLanguageKeys(
+    draft.selections.gmApprovedLanguages?.[choice.id],
+  );
+}
+
+function approvedLanguageKeys(
+  approved: readonly string[] | undefined,
+): ReadonlySet<string> {
+  return new Set(
+    (approved ?? []).map(languageKey).filter((key) => key.length > 0),
+  );
+}
+
+/**
+ * The languages held at creation as one identity-distinct list in canonical
+ * spelling (fixed grants first), so class-feature language choices exclude every
+ * language already held under the shared `languageKey` identity.
+ */
+export function canonicalHeldLanguages(
+  fixed: readonly string[],
+  languageChoices: readonly {
+    readonly choice: Level1RequiredChoice;
+    readonly selected: readonly string[];
+  }[],
+  approved: readonly string[] = [],
+): readonly string[] {
+  const known = [
+    ...fixed,
+    ...languageChoices.flatMap((entry) => entry.choice.from ?? []),
+    // Last, so a pack spelling wins over a GM-typed one.
+    ...approved,
+  ];
+  const held = new Map<string, string>();
+  for (const language of [
+    ...fixed,
+    ...languageChoices.flatMap((entry) => entry.selected),
+  ]) {
+    const key = languageKey(language);
+    if (key.length > 0 && !held.has(key)) {
+      held.set(key, canonicalLanguageName(language, known));
+    }
+  }
+  return [...held.values()];
 }
 
 let cachedEngine: CharacterCreationEngine | undefined;

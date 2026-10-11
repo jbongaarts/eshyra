@@ -1283,6 +1283,12 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
           'Orc',
         ],
         sourceText: 'Two of your choice',
+        // rule:languages GM-permission extension (eshyra-o9bd.19.3.3.1).
+        extension: {
+          ruleRef: 'rule:languages',
+          exoticTableRef: 'table:exotic-languages',
+          requiresGmApproval: true,
+        },
       },
     ]);
     expect(acolyteData.equipment).toBe(

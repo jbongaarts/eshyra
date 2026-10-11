@@ -40,11 +40,13 @@
 
 import { ABILITY_FULL_NAMES } from './abilities.js';
 import type { AbilityScoreName } from './creation.js';
+import { languageKey } from './languageIdentity.js';
 import type {
   ResolvedAncestryData,
   ResolvedBackgroundData,
   ResolvedChoiceSpec,
   ResolvedClassData,
+  ResolvedLanguageChoiceExtension,
   ResolvedLanguageGrant,
 } from './rulesPackResolver.js';
 import {
@@ -100,6 +102,12 @@ export interface Level1RequiredChoice {
   readonly blockingBead?: string;
   /** An empty selection satisfies the choice (eshyra-mdke). */
   readonly optional?: boolean;
+  /**
+   * Language choices only (eshyra-o9bd.19.3.3.1): the source's GM-permission
+   * extension. `from` stays the default domain; a pick outside it is legal only
+   * with an explicit GM-approval input for that language.
+   */
+  readonly extension?: ResolvedLanguageChoiceExtension;
 }
 
 /** Inputs to {@link enumerateLevel1RequiredChoices}. */
@@ -394,6 +402,19 @@ function collectAncestryChoices(
   });
   collectAncestryAbilityIncrease(ancestry, choices);
   collectAncestryLanguages(ancestry, grantedLanguages, choices);
+  (ancestry.languageChoices ?? []).forEach((spec) => {
+    choices.push({
+      id: `ancestry.languages.${spec.id}`,
+      kind: 'languages',
+      source: 'ancestry',
+      status: 'structured',
+      label: `Choose ${spec.choose} language(s)`,
+      choose: spec.choose,
+      from: chooseableLanguages(grantedLanguages, spec.from),
+      sourceText: spec.sourceText,
+      ...(spec.extension !== undefined ? { extension: spec.extension } : {}),
+    });
+  });
 }
 
 /**
@@ -443,6 +464,7 @@ function collectAncestryLanguages(
     choose: grant.choose,
     from: chooseableLanguages(grantedLanguages, grant.from),
     sourceText: grant.sourceText,
+    ...(grant.extension !== undefined ? { extension: grant.extension } : {}),
   });
 }
 
@@ -531,6 +553,7 @@ function collectBackgroundChoices(
     choose: grant.choose,
     from: chooseableLanguages(grantedLanguages, grant.from),
     sourceText: grant.sourceText,
+    ...(grant.extension !== undefined ? { extension: grant.extension } : {}),
   });
 }
 
@@ -571,9 +594,9 @@ function chooseableLanguages(
   fixed: readonly string[],
   domain: readonly string[] | undefined,
 ): readonly string[] {
-  const taken = new Set(fixed);
+  const taken = new Set(fixed.map(languageKey));
   return (domain ?? SRD_STANDARD_LANGUAGES_FALLBACK).filter(
-    (language) => !taken.has(language),
+    (language) => !taken.has(languageKey(language)),
   );
 }
 

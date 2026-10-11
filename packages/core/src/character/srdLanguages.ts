@@ -35,6 +35,17 @@ export interface LanguageGrant {
   readonly from?: readonly string[];
   /** Verbatim SRD language prose this entry was authored from. */
   readonly sourceText: string;
+  /**
+   * GM-permission extension on an open choice (eshyra-o9bd.19.3.3.1), from
+   * `rule:languages`: "With your GM's permission, you can instead choose a
+   * language from the Exotic Languages table or a secret language". Present iff
+   * `choose` is.
+   */
+  readonly extension?: {
+    readonly ruleRef: string;
+    readonly exoticTableRef: string;
+    readonly requiresGmApproval: true;
+  };
 }
 
 /** Build a fixed-only grant. */
@@ -52,7 +63,17 @@ function choose(
   count: number,
   ...fixed: readonly string[]
 ): LanguageGrant {
-  return { fixed, choose: count, from: SRD_STANDARD_LANGUAGES, sourceText };
+  return {
+    fixed,
+    choose: count,
+    from: SRD_STANDARD_LANGUAGES,
+    sourceText,
+    extension: {
+      ruleRef: 'rule:languages',
+      exoticTableRef: 'table:exotic-languages',
+      requiresGmApproval: true,
+    },
+  };
 }
 
 /**

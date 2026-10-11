@@ -43,6 +43,7 @@ import {
 } from './characterDraft.js';
 import type { AbilityScoreName, CharacterCreationDraft } from './creation.js';
 import type { SavingThrowDerived } from './derivedValues.js';
+import { canonicalLanguageName, languageKey } from './languageIdentity.js';
 import { effectiveSpellcasting, spellsUnion } from './levelUpSpells.js';
 import {
   normalizeProficiency,
@@ -1051,34 +1052,60 @@ function collectLanguages(
   ancestryLanguages: readonly ResolvedLanguageGrant[] | undefined,
   backgroundLanguages: string | readonly ResolvedLanguageGrant[] | undefined,
 ): readonly string[] {
-  const languages = new Set<string>();
-  for (const language of fixedLanguages(ancestryLanguages)) {
-    languages.add(language);
+  const entries = engine.mechanicalChoices(draft);
+  const fixed = [
+    ...fixedLanguages(ancestryLanguages),
+    ...fixedLanguages(backgroundLanguages),
+  ];
+  // Canonical spellings come from the pack and the draft only: fixed grants,
+  // default domains, the languages class-feature picks teach, and the explicit
+  // GM-approved spellings (pack spellings first). Identity never depends on
+  // spelling (`languageKey`).
+  const known = [
+    ...fixed,
+    ...entries.flatMap((entry) => entry.choice.from ?? []),
+    ...entries.flatMap((entry) =>
+      entry.application?.kind === 'feature-choice'
+        ? (entry.application.languages ?? [])
+        : [],
+    ),
+    // Last, so a pack spelling wins over a GM-typed one.
+    ...Object.values(draft.selections.gmApprovedLanguages ?? {}).flat(),
+  ];
+  // One sheet entry per language identity (`languageKey`).
+  const languages = new Map<string, string>();
+  for (const language of fixed) {
+    const key = languageKey(language);
+    if (!languages.has(key)) {
+      languages.set(key, canonicalLanguageName(language, known));
+    }
   }
-  for (const language of fixedLanguages(backgroundLanguages)) {
-    languages.add(language);
-  }
-  for (const entry of engine.mechanicalChoices(draft)) {
+  for (const entry of entries) {
     if (entry.choice.kind === 'languages') {
       for (const language of entry.selected) {
-        languages.add(language);
+        // Validation guarantees distinct identities; a collision here would
+        // silently drop a required language grant, so fail loudly instead.
+        const key = languageKey(language);
+        if (languages.has(key)) {
+          throw new Error(
+            `language choice ${entry.choice.id} repeats an already granted language: ${language}`,
+          );
+        }
+        languages.set(key, canonicalLanguageName(language, known));
       }
     }
     // A class-feature pick that teaches a language (Favored Enemy; eshyra-mdke).
     const application = entry.application;
     if (application?.kind === 'feature-choice') {
       for (const language of application.languages ?? []) {
-        if (
-          ![...languages].some(
-            (l) => l.toLowerCase() === language.toLowerCase(),
-          )
-        ) {
-          languages.add(language);
+        const key = languageKey(language);
+        if (!languages.has(key)) {
+          languages.set(key, canonicalLanguageName(language, known));
         }
       }
     }
   }
-  return [...languages];
+  return [...languages.values()];
 }
 
 function fixedLanguages(

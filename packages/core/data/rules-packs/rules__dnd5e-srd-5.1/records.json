@@ -1120,7 +1120,12 @@
             "Halfling",
             "Orc"
           ],
-          "sourceText": "You can speak, read, and write Common, Elvish, and one extra language of your choice."
+          "sourceText": "You can speak, read, and write Common, Elvish, and one extra language of your choice.",
+          "extension": {
+            "ruleRef": "rule:languages",
+            "exoticTableRef": "table:exotic-languages",
+            "requiresGmApproval": true
+          }
         }
       ],
       "choices": [
@@ -1559,7 +1564,12 @@
             "Halfling",
             "Orc"
           ],
-          "sourceText": "You can speak, read, and write one extra language of your choice."
+          "sourceText": "You can speak, read, and write one extra language of your choice.",
+          "extension": {
+            "ruleRef": "rule:languages",
+            "exoticTableRef": "table:exotic-languages",
+            "requiresGmApproval": true
+          }
         }
       ]
     },
@@ -1845,7 +1855,12 @@
             "Halfling",
             "Orc"
           ],
-          "sourceText": "You can speak, read, and write Common and one extra language of your choice."
+          "sourceText": "You can speak, read, and write Common and one extra language of your choice.",
+          "extension": {
+            "ruleRef": "rule:languages",
+            "exoticTableRef": "table:exotic-languages",
+            "requiresGmApproval": true
+          }
         }
       ]
     },
@@ -2286,7 +2301,12 @@
             "Halfling",
             "Orc"
           ],
-          "sourceText": "Two of your choice"
+          "sourceText": "Two of your choice",
+          "extension": {
+            "ruleRef": "rule:languages",
+            "exoticTableRef": "table:exotic-languages",
+            "requiresGmApproval": true
+          }
         }
       ],
       "equipment": "A holy symbol (a gift to you when you entered the priesthood), a prayer book or prayer wheel, 5 sticks of incense, vestments, a set of common clothes, and a pouch containing 15 gp",
