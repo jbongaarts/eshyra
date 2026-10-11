@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1920,
+  "rowCount": 1918,
   "dispositionCounts": {
     "complete": 440,
-    "model-adjudicated": 1274,
+    "model-adjudicated": 1272,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -17543,7 +17543,7 @@
         "F2",
         "F5"
       ],
-      "population": 1521,
+      "population": 1519,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17567,7 +17567,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1521,
+      "population": 1519,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17591,7 +17591,7 @@
         "F2",
         "F5"
       ],
-      "population": 793,
+      "population": 792,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17615,7 +17615,7 @@
         "F2",
         "F5"
       ],
-      "population": 1513,
+      "population": 1511,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17639,7 +17639,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1513,
+      "population": 1511,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17682,11 +17682,11 @@
       "representativeValues": [
         "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
         "The model identifies the contextually nearest visible/audible candidate set; deterministic dice and action owners resolve the save, a random tie, and the forced Attack action.",
+        "The printed restriction binds the shackled creature, not the wearer or user; the typed immunity vocabulary can only state a bearer immunity, so the model interprets the printed restriction and its portal exception.",
         "The aura carries a reversion cutoff, an end-of-turn repeat save, and a 24-hour per-creature immunity after a successful save; the typed effect vocabulary cannot state those exceptions, so the model interprets the printed aura.",
-        "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period.",
-        "The charge is lost only when the creature is slain, not when the saving throw succeeds; the typed payload cannot condition a cost on its own outcome, so the model applies the printed charge loss."
+        "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period."
       ],
-      "population": 12,
+      "population": 13,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17710,7 +17710,7 @@
         "stateMachine",
         "structuredField"
       ],
-      "population": 1005,
+      "population": 1004,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17758,7 +17758,7 @@
         "c2-residual-proof-against-divination",
         "c2-residual-plane-shift-check"
       ],
-      "population": 453,
+      "population": 452,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17802,11 +17802,11 @@
       "representativeValues": [
         "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
         "The model identifies the contextually nearest visible/audible candidate set; deterministic dice and action owners resolve the save, a random tie, and the forced Attack action.",
+        "The printed restriction binds the shackled creature, not the wearer or user; the typed immunity vocabulary can only state a bearer immunity, so the model interprets the printed restriction and its portal exception.",
         "The aura carries a reversion cutoff, an end-of-turn repeat save, and a 24-hour per-creature immunity after a successful save; the typed effect vocabulary cannot state those exceptions, so the model interprets the printed aura.",
-        "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period.",
-        "The charge is lost only when the creature is slain, not when the saving throw succeeds; the typed payload cannot condition a cost on its own outcome, so the model applies the printed charge loss."
+        "The ability-score increase is a one-time reward that occurs only after the printed study-and-practice period completes; it is not a standing passive modifier, so the DM model applies it from the printed text when the reader completes the period."
       ],
-      "population": 11,
+      "population": 12,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17894,11 +17894,11 @@
       "representativeValues": [
         "The barrel has a hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check.",
         "attack the creature nearest to you with the axe",
+        "In addition to serving as mundane manacles, the shackles prevent a creature bound by them from using any method of extradimensional movement, including teleportation or travel to a different plane of existence. They don’t prevent the creature from passing through an interdimensional portal.",
         "In addition, the goat radiates a 30-foot-radius aura of terror while you are riding it. Any creature hostile to you that starts its turn in the aura must succeed on a DC 15 Wisdom saving throw or be frightened of the goat for 1 minute, or until the goat reverts to figurine form. The frightened creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. Once it successfully saves against the effect, a creature is immune to the goat’s aura for the next 24 hours.",
-        "If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Constitution score increases by 2, as does your maximum for that score.",
-        "If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Strength score increases by 2, as does your maximum for that score."
+        "If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Constitution score increases by 2, as does your maximum for that score."
       ],
-      "population": 11,
+      "population": 12,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -22267,7 +22267,7 @@
         "if you aren’t a dwarf",
         "rely on moving silently"
       ],
-      "population": 81,
+      "population": 98,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -22829,27 +22829,6 @@
       "recordKinds": [
         "magic-item"
       ],
-      "fieldPath": "data.mechanics.effects[].examples[]",
-      "representativeValues": [
-        "teleportation",
-        "travel to another plane"
-      ],
-      "population": 1,
-      "valueClass": "scalar-like",
-      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
-      "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].examples[]",
-      "disposition": "model-adjudicated",
-      "typedSchemaOrConsumer": null,
-      "retainedProseBoundary": null,
-      "owner": null,
-      "futureWork": false
-    },
-    {
-      "system": "dnd5e-srd",
-      "recordKinds": [
-        "magic-item"
-      ],
       "fieldPath": "data.mechanics.effects[].exception",
       "representativeValues": [
         "no foe within 60 feet that bearer can see or hear"
@@ -22859,26 +22838,6 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].exception",
-      "disposition": "model-adjudicated",
-      "typedSchemaOrConsumer": null,
-      "retainedProseBoundary": null,
-      "owner": null,
-      "futureWork": false
-    },
-    {
-      "system": "dnd5e-srd",
-      "recordKinds": [
-        "magic-item"
-      ],
-      "fieldPath": "data.mechanics.effects[].exceptions[]",
-      "representativeValues": [
-        "passing through an interdimensional portal"
-      ],
-      "population": 1,
-      "valueClass": "scalar-like",
-      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
-      "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].exceptions[]",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -23368,7 +23327,7 @@
         "c2-residual-proof-against-divination",
         "c2-residual-plane-shift-check"
       ],
-      "population": 465,
+      "population": 464,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -23514,7 +23473,7 @@
         "immunity",
         "acBonus"
       ],
-      "population": 465,
+      "population": 464,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -24978,9 +24937,9 @@
         "nonmagical damage",
         "damage from spell:magic-missile",
         "being caught in webs of any sort",
-        "extradimensional movement"
+        "exhaustion from a forced march"
       ],
-      "population": 19,
+      "population": 18,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",

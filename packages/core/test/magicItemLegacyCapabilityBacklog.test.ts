@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(794);
+    expect(backlog.candidates).toHaveLength(793);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -79,9 +79,15 @@ describe('magic-item legacy capability backlog', () => {
 
     // eshyra-o9bd.19.4.5.8 (faithful-or-absent): the goat-of-terror aura
     // effect moved to an adjudicated clause, so its engine-hook candidate left
-    // the set (795 -> 794); no other identity changed.
+    // the set (795 -> 794); review 19.4.5.9 S3 then withheld the Dimensional
+    // Shackles restriction the same way (794 -> 793). No other identity changed.
     expect(fingerprint).toBe(
-      '29b182e73bd67354842afeb0f54855d4cc3d960e8e309544d5f8f26a79d04055',
+      '7047dde655c2747582fc8fa1989aa26735df9601eb9d46eeb28fbdcfbee7de21',
+    );
+    expect(
+      backlog.candidates.map(({ candidateId }) => candidateId),
+    ).not.toContain(
+      'magic-item:dimensional-shackles/c2-residual-dimensional-movement-block',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

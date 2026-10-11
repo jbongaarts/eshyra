@@ -614,14 +614,47 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
     ).toBe(
       'light spell cast on the robe or daylight spell cast within 5 feet of the robe',
     );
-    // "while you wear or hold it" (both alignment talismans).
+    // "a +2 bonus to spell attack rolls while you wear or hold it" (both
+    // alignment talismans): the scope is spell attack rolls only.
     for (const [item, id] of [
       ['magic-item:talisman-of-pure-good', 'pure-good-spell-attacks'],
       ['magic-item:talisman-of-ultimate-evil', 'ultimate-evil-spell-attacks'],
-    ] as const)
-      expect(String(effect(item, id).appliesTo)).toContain(
-        'wearing or holding',
+    ] as const) {
+      const appliesTo = String(effect(item, id).appliesTo);
+      expect(appliesTo).toContain('spell attack rolls');
+      expect(appliesTo).toContain('wears or holds');
+    }
+    // Ring of Elemental Command: each plane's dominate monster belongs only to
+    // that plane's ring, and its additional spells also require helping slay
+    // an elemental of that plane while attuned (printed per variant).
+    for (const [plane, extra] of [
+      ['air', ['chain-lightning', 'gust-of-wind', 'wind-wall']],
+      ['earth', ['stone-shape', 'stoneskin', 'wall-of-stone']],
+      ['fire', ['burning-hands', 'fireball', 'wall-of-fire']],
+      [
+        'water',
+        [
+          'create-or-destroy-water',
+          'control-water',
+          'ice-storm',
+          'wall-of-ice',
+        ],
+      ],
+    ] as const) {
+      const ring = `Ring of ${plane[0]?.toUpperCase()}${plane.slice(1)} Elemental Command`;
+      const ringEffect = (id: string) =>
+        effect('magic-item:ring-of-elemental-command', id);
+      expect(String(ringEffect(`dominate-${plane}-elemental`).condition)).toBe(
+        `only a ${ring}`,
       );
+      for (const spell of extra) {
+        const condition = String(ringEffect(`cast-${spell}`).condition);
+        expect(condition).toContain(`only a ${ring}`);
+        expect(condition).toContain(
+          `${plane} elemental while attuned to the ring`,
+        );
+      }
+    }
     // Printed spatial relationships. Javelin of Lightning: a line "from you to
     // a target within 120 feet" has no fixed length; Staff of Thunder and
     // Lightning prints a 120-foot-long line, which stays fixed.
@@ -701,12 +734,6 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
     expect(
       effect('magic-item:spell-scroll', 'scroll-casting-procedure').castingTime,
     ).toBe('spell-normal');
-    // Dimensional Shackles: "They don't prevent the creature from passing
-    // through an interdimensional portal."
-    expect(
-      effect('magic-item:dimensional-shackles', 'dimensional-movement-block')
-        .exceptions,
-    ).toEqual(['passing through an interdimensional portal']);
     // Dust of Dryness: the elemental is EXPOSED to a pinch (no throwing is
     // printed); the damage clause has one account, while the throwing
     // deliveries belong to Disappearance and Sneezing and Choking only.
@@ -1237,6 +1264,14 @@ describe('magic-item effects are faithful or absent (eshyra-o9bd.19.4.5.8)', () 
       effect: 'c2-residual-goat-terror-aura',
       clauseSuffix: 'c2-residual-goat-terror-aura',
       span: 'immune to the goat’s aura for the next 24 hours',
+    },
+    {
+      // The printed restriction binds the shackled creature, which the typed
+      // immunity vocabulary (a bearer immunity) cannot state.
+      item: 'magic-item:dimensional-shackles',
+      effect: 'c2-residual-dimensional-movement-block',
+      clauseSuffix: 'c2-residual-dimensional-movement-block',
+      span: 'They don’t prevent the creature from passing through an interdimensional portal.',
     },
     {
       item: 'magic-item:nine-lives-stealer',
