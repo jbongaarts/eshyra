@@ -58,10 +58,7 @@ import {
   LEVEL_1_PROFICIENCY_BONUS,
 } from './derivedValues.js';
 import type { CharacterFeatureChoice } from './finalizeCharacter.js';
-import {
-  canonicalLanguageName,
-  languageKey,
-} from './languageIdentity.js';
+import { canonicalLanguageName, languageKey } from './languageIdentity.js';
 import {
   normalizeProficiency,
   proficiencyReplacementId,

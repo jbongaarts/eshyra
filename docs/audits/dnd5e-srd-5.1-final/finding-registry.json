@@ -210,6 +210,7 @@
       "aliases": ["opus:F-10"],
       "invariant": "Advancement scaling qualifiers are preserved",
       "status": "accepted",
+      "statusReasoning": "Verified by eshyra-o9bd.19.2.3.1 (no repair needed). Every parenthetical qualifier printed in the 12 class-table Features columns (30 cells, e.g. 'Bardic Inspiration (d8)', 'Song of Rest (d10)') survives as the featureGrant `detail` of its class progression entry, and every numeric/dice resource column survives as resourceProgression; srdTaxonomyDurations.test.ts asserts all 30 so a dropped qualifier fails the build. Cantrip damage scaling is preserved verbatim as spell scalingSourceText (and structured mechanics.scaling where the spell bead projects it); structured Eldritch Blast beam scaling is owned by the spell-mechanics beads, not this row.",
       "provenance": {
         "auditFinding": "opus:F-10",
         "evidenceBasis": "audit-finding"
@@ -221,7 +222,8 @@
       "canonicalId": "proficiency-grants",
       "aliases": ["opus:F-13"],
       "invariant": "Proficiency grants are structured",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Narrowed under ADR 0020 (no corpus-wide typing mandate without a consumer). Saving-throw, skill, and armor grants are typed by eshyra-olc5.7 (PR #642, ProficiencyGrantEffect, consumed by proficiencyGrants.ts). Weapon, tool, and language grants stay verbatim source text because no deterministic consumer reads them; the surviving obligation is that typed grants agree with their verbatim `grant` phrase.",
       "provenance": {
         "auditFinding": "opus:F-13",
         "evidenceBasis": "audit-finding"
@@ -233,7 +235,8 @@
       "canonicalId": "choice-identifiers",
       "aliases": ["opus:F-14"],
       "invariant": "Choice identifiers and catalogs are consistent",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Narrowed under ADR 0020. Checked eshyra-o9bd.19.2.3.1: choice ids are unique within their owning record (the contract in FeatureChoice.id), repeated ids across records ('fighting-style', 'ability-score-improvement', 'cantrips') are intentionally the same semantic choice scoped by (record key, choice id), and option ids are stable (fighting-style:archery is shared by design). `from` lists of tool, skill, language and ability values carry catalog names that creation/level-up consumers resolve against the SRD catalogs; no consumer is harmed, so no repository-wide catalog-ref replacement is imposed. Surviving obligation: ids are unique per record and options ids are unique per choice.",
       "provenance": {
         "auditFinding": "opus:F-14",
         "evidenceBasis": "audit-finding"
@@ -246,6 +249,7 @@
       "aliases": ["opus:F-16"],
       "invariant": "Madness durations are retained",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.3.1 (R1): table:short-term-madness, table:long-term-madness and table:indefinite-madness carry projection kind madnessDuration, derived from the printed Madness Effects sentence ('1d10 minutes', '1d10 × 10 hours', 'lasts until cured'), with sourceRuleRef rule:madness-effects and the verbatim sourceText. Validated in kindSchemas and fails the build if the sentence drifts; asserted in srdTaxonomyDurations.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-16",
         "evidenceBasis": "audit-finding"
@@ -257,7 +261,8 @@
       "canonicalId": "damage-field-shape",
       "aliases": ["opus:F-34"],
       "invariant": "Flat and dice damage fields use a consistent shape",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Narrowed under ADR 0020. Dealt-damage entries across creature, hazard, spell, magic-item and feature records share {dice|amount, type} (validateDamageEntry accepts dice, or an integer amount for the SRD's flat no-dice prints); equipment weapon rows carry the printed-table form damageDie/damageType and equipment use clauses a flat semantic. These reflect distinct printed forms and no deterministic consumer reads weapon damageDie or the clause flat value, so no corpus-wide single shape is imposed (eshyra-o9bd.19.2.3.1).",
       "provenance": {
         "auditFinding": "opus:F-34",
         "evidenceBasis": "audit-finding"
@@ -270,6 +275,7 @@
       "aliases": ["sol:CAP-013"],
       "invariant": "Tack, Harness, and Drawn Vehicles taxonomy is preserved",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.3.1 (R2): the 13 rows of the printed Tack, Harness, and Drawn Vehicles table (bit and bridle, carriage, cart, chariot, feed, four saddles, saddlebags, sled, stabling, wagon) carry equipmentGroup 'tack-harness-drawn-vehicles', populated from the table parse itself. The Barding row prints only 'x4 x2' multipliers (no price), so there is no barding item; the rule is typed as rule:mounts-and-vehicles bardingTransformation {costMultiplier:4, weightMultiplier:2, appliesTo:'armor-table'} with the verbatim sentence, and the importer fails if the sentence drifts. Checked consumers: equipmentGroup is read only for the named starting-equipment groups, so no behavior changes.",
       "provenance": {
         "auditFinding": "sol:CAP-013",
         "evidenceBasis": "audit-finding"
@@ -282,6 +288,7 @@
       "aliases": ["fable:F6"],
       "invariant": "Empty table cells retain their structured meaning",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.3.1 (R3). Compared against the vendored PDF: the 484 empty-string cells were not blank in the source. Every unavailable cell of the eight class tables (spell slots, empty Features rows, Warlock level-1 Invocations Known) prints a dash that the text layer encodes as U+0336 and extraction dropped; per-page U+0336 counts over the class-table rows (Bard 74, Cleric 77, Druid 80, Paladin 44, Ranger 45, Sorcerer 79, Warlock 5, Wizard 80) equal the formerly empty cells exactly, and a rendered Bard page shows the dashes. They are now the printed em dash, the form the other 88 cells already used. No table cell is empty-string (asserted in srdTaxonomyDurations.test.ts); class progression keeps its previous meaning (dash is not-applicable, resource columns keep '—' = none).",
       "provenance": {
         "auditFinding": "fable:F6",
         "evidenceBasis": "audit-finding"
@@ -601,7 +608,8 @@
       "canonicalId": "spell-completeness",
       "aliases": ["indep:005"],
       "invariant": "Spell procedures are complete",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "ADR 0020 withdraws clause-complete spell procedures as a requirement (indep:005). The surviving obligation is that emitted spell projections agree with the source: typed areas and projectile counts are projected only from the printed sentence (eshyra-o9bd.19.4.1.1), and every unprojected spell semantic stays verbatim and model-adjudicated, never implied complete. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellAreaProjection.test.ts.",
       "provenance": {
         "auditFinding": "indep:005",
         "evidenceBasis": "audit-finding"
@@ -614,6 +622,7 @@
       "aliases": ["opus:F-08", "fable:F2"],
       "invariant": "Point-origin spell areas are represented",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.1.1 and eshyra-o9bd.19.4.1.3: the description sentence that DEFINES a spell's effect area (one printed shape with its printed anchor) projects as mechanics.area: sphere, hemisphere, cylinder, cube, cone, line, or radius, with origin point-within-range (a chosen point within range) or self (around or centered on the caster); a Self-range line also carries its printed width. Dimensions with no anchor (secondary light radii, burning sub-cubes) never veto an identified area; light, sense and object or image bounds, alternative uses (Plant Growth), a point you can see (Call Lightning, Storm of Vengeance) and several origin points stay unprojected and are reviewed with clause-level reasons. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellAreaProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-08",
         "evidenceBasis": "audit-finding"
@@ -626,6 +635,7 @@
       "aliases": ["opus:F-11"],
       "invariant": "Magic Missile base projectile count is explicit",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.1.1: the printed creation sentence projects mechanics.projectiles {count: 3, noun: 'dart'}; sibling printed counts (Scorching Ray three rays, Storm of Vengeance six bolts) project the same way, while a singular beam and level-scaled Eldritch Blast beams stay unprojected. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellAreaProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-11",
         "evidenceBasis": "audit-finding"
@@ -637,7 +647,8 @@
       "canonicalId": "spell-mechanics-depth",
       "aliases": ["sol:CAP-003"],
       "invariant": "Spell mechanics are projected to source depth",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "ADR 0020 narrows source-depth projection to a surviving obligation: emitted spell projections agree with source, and unprojected semantics stay verbatim and discoverable rather than engine-pending or implied complete. Repaired areas and projectile counts (eshyra-o9bd.19.4.1.1) are source-faithful; remaining spell semantics are owned by eshyra-o9bd.19.4.1 and the capability lane. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellAreaProjection.test.ts.",
       "provenance": {
         "auditFinding": "sol:CAP-003",
         "evidenceBasis": "audit-finding"

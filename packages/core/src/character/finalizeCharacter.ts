@@ -43,10 +43,7 @@ import {
 } from './characterDraft.js';
 import type { AbilityScoreName, CharacterCreationDraft } from './creation.js';
 import type { SavingThrowDerived } from './derivedValues.js';
-import {
-  canonicalLanguageName,
-  languageKey,
-} from './languageIdentity.js';
+import { canonicalLanguageName, languageKey } from './languageIdentity.js';
 import { effectiveSpellcasting, spellsUnion } from './levelUpSpells.js';
 import {
   normalizeProficiency,
