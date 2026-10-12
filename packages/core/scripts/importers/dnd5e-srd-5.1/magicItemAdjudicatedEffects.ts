@@ -111,6 +111,18 @@ const SPECS: ReadonlyMap<string, readonly AdjudicatedEffectSpec[]> = new Map([
     ],
   ],
   [
+    'Dimensional Shackles',
+    [
+      {
+        kind: 'withhold',
+        effectId: 'c2-residual-dimensional-movement-block',
+        sourceText:
+          'In addition to serving as mundane manacles, the shackles prevent a creature bound by them from using any method of extradimensional movement, including teleportation or travel to a different plane of existence. They don’t prevent the creature from passing through an interdimensional portal.',
+        note: 'The printed restriction binds the shackled creature, not the wearer or user; the typed immunity vocabulary can only state a bearer immunity, so the model interprets the printed restriction and its portal exception.',
+      },
+    ],
+  ],
+  [
     'Nine Lives Stealer',
     [
       {

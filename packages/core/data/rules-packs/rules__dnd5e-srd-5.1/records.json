@@ -98310,20 +98310,6 @@
               "cost": "action"
             }
           }
-        ],
-        "effects": [
-          {
-            "id": "c2-residual-dimensional-movement-block",
-            "kind": "immunity",
-            "to": "extradimensional movement",
-            "examples": [
-              "teleportation",
-              "travel to another plane"
-            ],
-            "exceptions": [
-              "passing through an interdimensional portal"
-            ]
-          }
         ]
       },
       "executionReadiness": {
@@ -98335,35 +98321,13 @@
               "kind": "parent"
             },
             "tag": "C2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "c2-residual-dimensional-movement-block"
+              "adjudicated": true,
+              "note": "The printed restriction binds the shackled creature, not the wearer or user; the typed immunity vocabulary can only state a bearer immunity, so the model interprets the printed restriction and its portal exception.",
+              "sourceText": "In addition to serving as mundane manacles, the shackles prevent a creature bound by them from using any method of extradimensional movement, including teleportation or travel to a different plane of existence. They don’t prevent the creature from passing through an interdimensional portal."
             },
-            "engineHooks": [
-              {
-                "engine": "F1",
-                "hook": "condition and eligibility relations"
-              },
-              {
-                "engine": "F8",
-                "hook": "roll mode and targeting modifiers"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F1",
-                "hook": "condition and eligibility relations"
-              },
-              {
-                "engine": "F8",
-                "hook": "roll mode and targeting modifiers"
-              }
-            ],
-            "missingEngines": [
-              "F1",
-              "F8"
-            ]
+            "reason": "The printed restriction binds the shackled creature, not the wearer or user; the typed immunity vocabulary can only state a bearer immunity, so the model interprets the printed restriction and its portal exception."
           },
           {
             "clauseId": "magic-item:dimensional-shackles/m5-dimensional-shackles",
@@ -119182,106 +119146,123 @@
             "kind": "castSpell",
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
-            "target": "air elemental"
+            "target": "air elemental",
+            "condition": "only a Ring of Air Elemental Command"
           },
           {
             "id": "c2-cast-chain-lightning",
             "kind": "castSpell",
             "spellRef": "spell:chain-lightning",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring"
           },
           {
             "id": "c2-cast-gust-of-wind",
             "kind": "castSpell",
             "spellRef": "spell:gust-of-wind",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring"
           },
           {
             "id": "c2-cast-wind-wall",
             "kind": "castSpell",
             "spellRef": "spell:wind-wall",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring"
           },
           {
             "id": "c2-dominate-earth-elemental",
             "kind": "castSpell",
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
-            "target": "earth elemental"
+            "target": "earth elemental",
+            "condition": "only a Ring of Earth Elemental Command"
           },
           {
             "id": "c2-cast-stone-shape",
             "kind": "castSpell",
             "spellRef": "spell:stone-shape",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring"
           },
           {
             "id": "c2-cast-stoneskin",
             "kind": "castSpell",
             "spellRef": "spell:stoneskin",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring"
           },
           {
             "id": "c2-cast-wall-of-stone",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-stone",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring"
           },
           {
             "id": "c2-dominate-fire-elemental",
             "kind": "castSpell",
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
-            "target": "fire elemental"
+            "target": "fire elemental",
+            "condition": "only a Ring of Fire Elemental Command"
           },
           {
             "id": "c2-cast-burning-hands",
             "kind": "castSpell",
             "spellRef": "spell:burning-hands",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring"
           },
           {
             "id": "c2-cast-fireball",
             "kind": "castSpell",
             "spellRef": "spell:fireball",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring"
           },
           {
             "id": "c2-cast-wall-of-fire",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-fire",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring"
           },
           {
             "id": "c2-dominate-water-elemental",
             "kind": "castSpell",
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
-            "target": "water elemental"
+            "target": "water elemental",
+            "condition": "only a Ring of Water Elemental Command"
           },
           {
             "id": "c2-cast-create-or-destroy-water",
             "kind": "castSpell",
             "spellRef": "spell:create-or-destroy-water",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring"
           },
           {
             "id": "c2-cast-control-water",
             "kind": "castSpell",
             "spellRef": "spell:control-water",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring"
           },
           {
             "id": "c2-cast-ice-storm",
             "kind": "castSpell",
             "spellRef": "spell:ice-storm",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring"
           },
           {
             "id": "c2-cast-wall-of-ice",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-ice",
-            "saveDc": 17
+            "saveDc": 17,
+            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring"
           }
         ]
       },
@@ -139209,7 +139190,7 @@
             "id": "c2-static-pure-good-spell-attacks",
             "kind": "attackRollModifier",
             "amount": 2,
-            "appliesTo": "good cleric or paladin wearing or holding the talisman"
+            "appliesTo": "spell attack rolls of a good cleric or paladin who wears or holds the talisman"
           },
           {
             "id": "m7-pure-good-alignment-contact",
@@ -139752,7 +139733,7 @@
             "id": "c2-static-ultimate-evil-spell-attacks",
             "kind": "attackRollModifier",
             "amount": 2,
-            "appliesTo": "evil cleric or paladin wearing or holding the talisman"
+            "appliesTo": "spell attack rolls of a evil cleric or paladin who wears or holds the talisman"
           },
           {
             "id": "m7-ultimate-evil-alignment-contact",

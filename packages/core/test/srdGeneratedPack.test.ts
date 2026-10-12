@@ -3287,15 +3287,17 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
-      // the engine-pending set and the six study rewards left green.
+      // the engine-pending set and the six study rewards left green; review
+      // 19.4.5.9 S3 withheld the Dimensional Shackles restriction (11 -> 12).
       // eshyra-o9bd.19.4.6.1 (faithful-or-absent operations/activation): 43
       // activation sentences (unprinted costs, delivery, creation and trigger
       // predicates that no activation field states exactly) became
-      // adjudicated clauses (11 -> 54); no pending or green clause moved.
+      // adjudicated clauses (12 -> 55 with the shackles clause above); no pending
+      // or green clause moved.
       expect(counts).toEqual({
-        'adjudicated-by-design': 54,
+        'adjudicated-by-design': 55,
         'design-blocked': 1,
-        'engine-pending': 793,
+        'engine-pending': 792,
         green: 212,
       });
       const pending = clauses.filter(

@@ -575,36 +575,88 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
         spell('dominate-air-elemental', 'spell:dominate-monster', {
           ...fixedDc(17),
           target: 'air elemental',
+          condition: 'only a Ring of Air Elemental Command',
         }),
-        spell('cast-chain-lightning', 'spell:chain-lightning', fixedDc(17)),
-        spell('cast-gust-of-wind', 'spell:gust-of-wind', fixedDc(17)),
-        spell('cast-wind-wall', 'spell:wind-wall', fixedDc(17)),
+        spell('cast-chain-lightning', 'spell:chain-lightning', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring',
+        }),
+        spell('cast-gust-of-wind', 'spell:gust-of-wind', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring',
+        }),
+        spell('cast-wind-wall', 'spell:wind-wall', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring',
+        }),
         spell('dominate-earth-elemental', 'spell:dominate-monster', {
           ...fixedDc(17),
           target: 'earth elemental',
+          condition: 'only a Ring of Earth Elemental Command',
         }),
-        spell('cast-stone-shape', 'spell:stone-shape', fixedDc(17)),
-        spell('cast-stoneskin', 'spell:stoneskin', fixedDc(17)),
-        spell('cast-wall-of-stone', 'spell:wall-of-stone', fixedDc(17)),
+        spell('cast-stone-shape', 'spell:stone-shape', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring',
+        }),
+        spell('cast-stoneskin', 'spell:stoneskin', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring',
+        }),
+        spell('cast-wall-of-stone', 'spell:wall-of-stone', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring',
+        }),
         spell('dominate-fire-elemental', 'spell:dominate-monster', {
           ...fixedDc(17),
           target: 'fire elemental',
+          condition: 'only a Ring of Fire Elemental Command',
         }),
-        spell('cast-burning-hands', 'spell:burning-hands', fixedDc(17)),
-        spell('cast-fireball', 'spell:fireball', fixedDc(17)),
-        spell('cast-wall-of-fire', 'spell:wall-of-fire', fixedDc(17)),
+        spell('cast-burning-hands', 'spell:burning-hands', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring',
+        }),
+        spell('cast-fireball', 'spell:fireball', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring',
+        }),
+        spell('cast-wall-of-fire', 'spell:wall-of-fire', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring',
+        }),
         spell('dominate-water-elemental', 'spell:dominate-monster', {
           ...fixedDc(17),
           target: 'water elemental',
+          condition: 'only a Ring of Water Elemental Command',
         }),
-        spell(
-          'cast-create-or-destroy-water',
-          'spell:create-or-destroy-water',
-          fixedDc(17),
-        ),
-        spell('cast-control-water', 'spell:control-water', fixedDc(17)),
-        spell('cast-ice-storm', 'spell:ice-storm', fixedDc(17)),
-        spell('cast-wall-of-ice', 'spell:wall-of-ice', fixedDc(17)),
+        spell('cast-create-or-destroy-water', 'spell:create-or-destroy-water', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring',
+        }),
+        spell('cast-control-water', 'spell:control-water', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring',
+        }),
+        spell('cast-ice-storm', 'spell:ice-storm', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring',
+        }),
+        spell('cast-wall-of-ice', 'spell:wall-of-ice', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring',
+        }),
       ],
     },
   ],
