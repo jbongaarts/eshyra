@@ -138509,7 +138509,7 @@
             "id": "m7-pure-good-alignment-contact",
             "kind": "triggeredEffect",
             "trigger": "touch or end turn holding/carrying talisman",
-            "result": "neutral creature takes 6d6 radiant; evil creature takes 8d6 radiant"
+            "result": "a creature that is neither good nor evil in alignment takes 6d6 radiant; an evil creature takes 8d6 radiant"
           },
           {
             "id": "m7-pure-good-fissure-gate",
@@ -139047,7 +139047,7 @@
             "id": "m7-ultimate-evil-alignment-contact",
             "kind": "triggeredEffect",
             "trigger": "touch or end turn holding/carrying talisman",
-            "result": "neutral creature takes 6d6 necrotic; good creature takes 8d6 necrotic"
+            "result": "a creature that is neither good nor evil in alignment takes 6d6 necrotic; a good creature takes 8d6 necrotic"
           },
           {
             "id": "m7-ultimate-evil-fissure-gate",

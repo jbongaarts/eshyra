@@ -649,7 +649,7 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
         effect('pure-good-alignment-contact', 'triggeredEffect', {
           trigger: 'touch or end turn holding/carrying talisman',
           result:
-            'neutral creature takes 6d6 radiant; evil creature takes 8d6 radiant',
+            'a creature that is neither good nor evil in alignment takes 6d6 radiant; an evil creature takes 8d6 radiant',
         }),
         effect('pure-good-fissure-gate', 'triggeredEffect', {
           trigger:
@@ -710,7 +710,7 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
         effect('ultimate-evil-alignment-contact', 'triggeredEffect', {
           trigger: 'touch or end turn holding/carrying talisman',
           result:
-            'neutral creature takes 6d6 necrotic; good creature takes 8d6 necrotic',
+            'a creature that is neither good nor evil in alignment takes 6d6 necrotic; a good creature takes 8d6 necrotic',
         }),
         effect('ultimate-evil-fissure-gate', 'triggeredEffect', {
           trigger:

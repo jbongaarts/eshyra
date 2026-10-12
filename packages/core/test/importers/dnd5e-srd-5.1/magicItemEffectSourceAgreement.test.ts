@@ -705,6 +705,20 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
       );
       expect(description).toContain(printed);
     }
+    // Review 19.4.5.12 S1: the talismans' contact damage keeps the printed
+    // complement "A creature that is neither good nor evil in alignment",
+    // which includes unaligned creatures - not the narrower category neutral.
+    for (const [item, id] of [
+      ['magic-item:talisman-of-pure-good', 'm7-pure-good-alignment-contact'],
+      [
+        'magic-item:talisman-of-ultimate-evil',
+        'm7-ultimate-evil-alignment-contact',
+      ],
+    ] as const) {
+      const result = String(effect(item, id).result);
+      expect(result).toContain('neither good nor evil in alignment');
+      expect(result).not.toMatch(/(^|[^a-z])neutral creature/);
+    }
     // Ring of Elemental Command: each plane's dominate monster belongs only to
     // that plane's ring, and its additional spells also require helping slay
     // an elemental of that plane while attuned (printed per variant).
