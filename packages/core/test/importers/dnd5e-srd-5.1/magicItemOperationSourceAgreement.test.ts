@@ -506,16 +506,18 @@ describe('whole-corpus operations screen (every magic-item operation)', () => {
     );
   });
 
-  it('carries a Ring of Elemental Command slay prerequisite on the plane-gated casts', () => {
-    expect(
-      String(
-        activation('Ring of Elemental Command', 'cast-wall-of-ice')
-          ?.requirement,
-      ),
-    ).toBe('If you help slay a water elemental while attuned to the ring');
+  it('carries BOTH printed Ring of Elemental Command gates on the post-slay casts: the linked-plane variant and the help-slay prerequisite', () => {
+    expect(activation('Ring of Elemental Command', 'cast-wall-of-ice')).toEqual(
+      {
+        requirement: 'Ring of Water Elemental Command',
+        trigger: 'If you help slay a water elemental while attuned to the ring',
+      },
+    );
+    // A fire-linked ring that helped slay an AIR elemental satisfies neither
+    // gate of a fire cast: the cast carries the FIRE variant heading.
     expect(activation('Ring of Elemental Command', 'cast-fireball')).toEqual({
-      requirement:
-        'If you help slay a fire elemental while attuned to the ring',
+      requirement: 'Ring of Fire Elemental Command',
+      trigger: 'If you help slay a fire elemental while attuned to the ring',
     });
     expect(
       String(
@@ -523,6 +525,23 @@ describe('whole-corpus operations screen (every magic-item operation)', () => {
           ?.requirement,
       ),
     ).toBe('Ring of Air Elemental Command');
+    // Every post-slay cast of every plane carries its own plane's gates.
+    const planes = ['Air', 'Earth', 'Fire', 'Water'] as const;
+    for (const operation of scopesOf('Ring of Elemental Command')[0]
+      ?.operations ?? []) {
+      const id = String(operation.id);
+      if (!id.startsWith('cast-')) continue;
+      const typed = operation.activation as Obj;
+      const plane = planes.find(
+        (name) => typed.requirement === `Ring of ${name} Elemental Command`,
+      );
+      expect(plane, id).toBeDefined();
+      expect(String(typed.trigger), id).toMatch(
+        new RegExp(
+          `^If you help slay an? ${String(plane).toLowerCase()} elemental while attuned to the ring$`,
+        ),
+      );
+    }
   });
 
   it('prints the previously paraphrased requirements and targets', () => {
@@ -768,13 +787,30 @@ describe('state graphs state the printed transition, timer and termination (S4)'
     );
   });
 
-  it('Eversmoking Bottle: closing does not end the cloud; it disperses ten minutes later', () => {
+  it('Eversmoking Bottle: growth is not a plain timer; closing does not end the cloud, it disperses ten minutes later', () => {
     const transitions = transitionsOf('Eversmoking Bottle');
+    // The "open AND within the cloud" growth guard is not statable by a timer,
+    // so no growth timer or growth state is typed; the printed sentence is an
+    // adjudicated clause.
+    expect(
+      transitions.filter(
+        (entry) =>
+          entry.timer !== undefined && entry.from !== 'cloud-lingering',
+      ),
+    ).toEqual([]);
+    expect(
+      (machineOf('Eversmoking Bottle').states as Obj[]).map(
+        (entry) => entry.id,
+      ),
+    ).toEqual(['closed', 'cloud-open', 'cloud-lingering']);
+    expect(
+      clauseText('Eversmoking Bottle', '/state-eversmoking-bottle-growth'),
+    ).toContain('remains open and within the cloud');
     expect(
       transitions
         .filter((entry) => entry.via === 'close-bottle')
         .map((entry) => entry.to),
-    ).toEqual(['cloud-lingering', 'cloud-lingering', 'cloud-lingering']);
+    ).toEqual(['cloud-lingering']);
     expect(
       transitions.find((entry) => entry.from === 'cloud-lingering'),
     ).toMatchObject({ to: 'closed', timer: { amount: 10, unit: 'minute' } });
@@ -818,18 +854,28 @@ describe('state graphs state the printed transition, timer and termination (S4)'
     );
   });
 
-  it('Apparatus of the Crab: lever 1 never moves the hatch; lever 10 opens and closes it per the table', () => {
+  it('Apparatus of the Crab: lever 1 never moves the hatch; lever 10 UP opens and DOWN seals it, typed in the transition', () => {
     const transitions = transitionsOf('Apparatus of the Crab');
     expect(
       transitions
         .filter((entry) => entry.via === 'set-lever-1')
         .every((entry) => entry.from === entry.to),
     ).toBe(true);
-    const lever10 = transitions.filter((entry) => entry.via === 'set-lever-10');
-    expect(lever10.map((entry) => [entry.from, entry.to])).toEqual([
+    // The direction is the operation (`via`), not a note: repeated UP never
+    // toggles an open hatch shut.
+    const up = transitions.filter((entry) => entry.via === 'set-lever-10-up');
+    const down = transitions.filter(
+      (entry) => entry.via === 'set-lever-10-down',
+    );
+    expect(up.map((entry) => [entry.from, entry.to])).toEqual([
       ['sealed', 'open'],
+    ]);
+    expect(down.map((entry) => [entry.from, entry.to])).toEqual([
       ['open', 'sealed'],
     ]);
+    expect(transitions.some((entry) => entry.via === 'set-lever-10')).toBe(
+      false,
+    );
     const table = pack.records.find(
       (record) => record.key === 'table:apparatus-of-the-crab-levers',
     );
@@ -837,8 +883,8 @@ describe('state graphs state the printed transition, timer and termination (S4)'
     const row = ((table.data as Obj).rows as unknown[][]).find(
       (entry) => entry[0] === 10,
     ) as unknown[];
-    expect(String(lever10[0]?.note)).toContain(String(row[1]));
-    expect(String(lever10[1]?.note)).toContain(String(row[2]));
+    expect(String(up[0]?.note)).toContain(String(row[1]));
+    expect(String(down[0]?.note)).toContain(String(row[2]));
   });
 
   it('Glamoured Studded Leather: re-using the property changes the appearance; removing the armor ends it', () => {
@@ -1060,6 +1106,548 @@ describe('containment states the printed qualifiers (S1.16-S1.18)', () => {
     expect(
       clauseText('Portable Hole', '/containment-portable-hole-suffocation'),
     ).toContain('within a closed portable hole');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Review 19.4.6.3 (eshyra-o9bd.19.4.6.4): omitted predicates, outcome-gated
+// transitions, spellStore costs and per-instance economies
+// ---------------------------------------------------------------------------
+
+const HOLDING_WORDS =
+  /\b(holding|hold|wearing|wear|worn|wield|wielding|carry|carrying|grasping|grasp|on your person|touching)\b/i;
+const HOLDING_LEAD =
+  /\b(?:while|if|as long as)\b[^.,:]{0,50}?\b(?:holding|hold|wearing|wear|wield(?:ing)?|carry|carrying|grasping|grasp|on your person|touching)\b/i;
+const ACTIVATION_WORDS =
+  /\b(you can|can use|expend|speak|command word|use an action|as an action|as a bonus|use your reaction|cast)\b/i;
+
+/**
+ * The OMISSION screen: the verbatim screen above catches an invented or
+ * paraphrased predicate, this one catches a printed one that was dropped. A
+ * `cast-*` operation whose spell is named in a printed activation sentence led
+ * by a holding / wearing / carrying / on-your-person predicate must type that
+ * predicate in requirement, trigger or target. Spell names are specific, so
+ * the association is precise; non-spell operations are covered by the
+ * reviewed census below.
+ */
+function castsMissingHoldingPredicate(
+  description: string,
+  operations: readonly Obj[],
+): { readonly governed: number; readonly missing: string[] } {
+  const sentences = description
+    .split(/(?<=[.!?])\s+/)
+    .filter(
+      (sentence) =>
+        HOLDING_LEAD.test(sentence) && ACTIVATION_WORDS.test(sentence),
+    )
+    .map((sentence) => sentence.toLowerCase());
+  const missing: string[] = [];
+  let governed = 0;
+  for (const operation of operations) {
+    const id = String(operation.id).replace(/^m\d+-/, '');
+    if (!id.startsWith('cast-')) continue;
+    const spell = id.slice('cast-'.length).replaceAll('-', ' ');
+    const spellNames = [
+      spell,
+      spell.replace('enlarge reduce', 'enlarge/reduce'),
+    ];
+    if (
+      !sentences.some((sentence) =>
+        spellNames.some((name) => sentence.includes(name)),
+      )
+    )
+      continue;
+    governed += 1;
+    const typed = (operation.activation ?? {}) as Obj;
+    const text = ['requirement', 'trigger', 'target']
+      .map((field) => String(typed[field] ?? ''))
+      .join(' ');
+    if (!HOLDING_WORDS.test(text)) missing.push(String(operation.id));
+  }
+  return { governed, missing };
+}
+
+describe('omitted printed predicates (review 19.4.6.3 S1)', () => {
+  it('types the printed holding / wearing predicate on every governed spell cast, across the whole corpus', () => {
+    const problems: string[] = [];
+    let governed = 0;
+    for (const record of items)
+      for (const scope of scopesOf(record.name)) {
+        const result = castsMissingHoldingPredicate(
+          scope.description,
+          scope.operations,
+        );
+        governed += result.governed;
+        for (const id of result.missing) problems.push(`${scope.label} ${id}`);
+      }
+    expect(problems).toEqual([]);
+    // Not vacuous: wands, rods, staffs, rings, boots, helms, hats, capes.
+    expect(governed).toBeGreaterThan(70);
+  });
+
+  it('keeps the omission screen able to fail (counterfactual: a stowed-staff cast without the printed holding clause)', () => {
+    const description =
+      'While holding it, you can use an action to expend 1 or more of its charges to cast one of the following spells from it: burning hands (1 charge), fireball (3 charges).';
+    expect(
+      castsMissingHoldingPredicate(description, [
+        { id: 'cast-fireball', activation: { cost: 'action' } },
+        {
+          id: 'cast-burning-hands',
+          activation: { requirement: 'While holding it' },
+        },
+      ]),
+    ).toEqual({ governed: 2, missing: ['cast-fireball'] });
+  });
+
+  it('states the printed holding requirement on every staff cast, including the free casts of the same paragraph', () => {
+    const expected: Record<string, string> = {
+      'Staff of Charming': 'While holding this staff',
+      'Staff of Fire': 'While holding it',
+      'Staff of Frost': 'While holding it',
+      'Staff of Healing': 'While holding it',
+      'Staff of Power': 'While holding this staff',
+      'Staff of Swarming Insects': 'While holding the staff',
+      'Staff of the Magi': 'While holding the staff',
+    };
+    for (const [name, requirement] of Object.entries(expected)) {
+      const casts = (scopesOf(name)[0]?.operations ?? []).filter((entry) =>
+        /^(cast-|create-insect-cloud)/.test(String(entry.id)),
+      );
+      expect(casts.length, name).toBeGreaterThan(2);
+      for (const operation of casts)
+        expect(
+          (operation.activation as Obj).requirement,
+          `${name} ${String(operation.id)}`,
+        ).toBe(requirement);
+    }
+    // Negative siblings: these staffs print no holding clause for their casts.
+    for (const name of [
+      'Staff of the Woodlands',
+      'Staff of Thunder and Lightning',
+    ])
+      for (const operation of (scopesOf(name)[0]?.operations ?? []).filter(
+        (entry) => String(entry.id).startsWith('cast-'),
+      ))
+        expect(
+          String((operation.activation as Obj | undefined)?.requirement ?? ''),
+          `${name} ${String(operation.id)}`,
+        ).not.toMatch(HOLDING_WORDS);
+  });
+
+  it('records the reviewed census of non-spell operations whose printed predicate, actor or target is typed verbatim', () => {
+    const census: readonly (readonly [string, string, string, string])[] = [
+      [
+        'Boots of Speed',
+        'activate-speed',
+        'requirement',
+        'While you wear these boots',
+      ],
+      [
+        'Ring of Invisibility',
+        'become-invisible',
+        'requirement',
+        'While wearing this ring',
+      ],
+      [
+        'Robe of Useful Items',
+        'detach-patch',
+        'requirement',
+        'While wearing the robe',
+      ],
+      [
+        'Wings of Flying',
+        'manifest-wings',
+        'requirement',
+        'While wearing this cloak',
+      ],
+      [
+        'Staff of Swarming Insects',
+        'create-insect-cloud',
+        'requirement',
+        'While holding the staff',
+      ],
+      [
+        'Folding Boat',
+        'fold-boat',
+        'requirement',
+        'provided that no creatures are aboard',
+      ],
+      [
+        'Sphere of Annihilation',
+        'attempt-control',
+        'requirement',
+        'If you are within 60 feet of an uncontrolled sphere',
+      ],
+      [
+        'Rope of Entanglement',
+        'escape-rope',
+        'requirement',
+        'A target restrained by the rope',
+      ],
+      [
+        'Ioun Stone',
+        'grab-orbiting-stone',
+        'trigger',
+        'another creature must use an action to grasp or net the stone',
+      ],
+      [
+        'Chime of Opening',
+        'strike-chime',
+        'target',
+        'an object within 120 feet of you that can be opened',
+      ],
+      [
+        'Dimensional Shackles',
+        'attach-shackles',
+        'target',
+        'an incapacitated creature',
+      ],
+      [
+        'Eyes of Charming',
+        'cast-charm-person',
+        'target',
+        'a humanoid within 30 feet of you',
+      ],
+    ];
+    for (const [name, id, field, span] of census) {
+      expect(descriptionOf(name), `${name} prints it`).toContain(span);
+      expect(activation(name, id)?.[field], `${name} ${id}.${field}`).toBe(
+        span,
+      );
+    }
+    const entry = (mechanicsOf('Iron Flask').containment as Obj).entry as Obj;
+    expect((entry.activation as Obj).target).toBe(
+      'a creature that you can see within 60 feet of you',
+    );
+    expect(descriptionOf('Iron Flask')).toContain(
+      String((entry.activation as Obj).target),
+    );
+    // Typing the printed actor does not change what use_item can execute:
+    // the green set is pinned in the runtime-safety block below.
+  });
+
+  it('records the reviewed operations that deliberately state no holding clause (sweep result)', () => {
+    // Heuristic-sweep hits (item-level token association) that the printed
+    // text does NOT gate by holding / wearing; each is reviewed, none is a
+    // missing predicate.
+    const reviewedUngated: readonly (readonly [string, string, string])[] = [
+      [
+        'Cloak of the Bat',
+        'end-polymorph',
+        'ending is delegated to the polymorph spell; the printed wearing clause governs only the cast',
+      ],
+      [
+        'Ring of Invisibility',
+        'become-visible',
+        'printed as a bonus action with no wearing clause of its own',
+      ],
+      [
+        'Rope of Climbing',
+        'fasten-rope',
+        'a separate printed command sentence, not part of the holding clause',
+      ],
+      [
+        'Rope of Climbing',
+        'knot-rope',
+        'a separate printed command sentence, not part of the holding clause',
+      ],
+      [
+        'Rope of Climbing',
+        'release-rope',
+        'a separate printed command sentence, not part of the holding clause',
+      ],
+      [
+        'Rope of Entanglement',
+        'release-creature',
+        'printed as a second command word with no hold clause',
+      ],
+      [
+        'Staff of Charming',
+        'reflect-enchantment',
+        'printed "with or without the staff’s intervention"; no holding clause',
+      ],
+      [
+        'Staff of the Woodlands',
+        'tree-form',
+        'the touching clause governs the return, not the planting',
+      ],
+      [
+        'Sun Blade',
+        'manifest-blade',
+        'weapon-wielding rule supplies holding (review 19.4.6.3)',
+      ],
+      [
+        'Sun Blade',
+        'dismiss-blade',
+        'weapon-wielding rule supplies holding (review 19.4.6.3)',
+      ],
+      [
+        'Decanter of Endless Water',
+        'produce-geyser',
+        'holding governs only the aim sub-action; no field states both',
+      ],
+    ];
+    for (const [name, id] of reviewedUngated) {
+      const typed = (activation(name, id) ?? {}) as Obj;
+      expect(
+        HOLDING_WORDS.test(
+          ['requirement', 'trigger', 'target']
+            .map((f) => String(typed[f] ?? ''))
+            .join(' '),
+        ),
+        `${name} ${id}`,
+      ).toBe(false);
+    }
+  });
+});
+
+describe('state graph text and outcome-gated transitions, whole corpus (review 19.4.6.3 S2)', () => {
+  const tableCells = (key: string): string[] => {
+    const table = pack.records.find((record) => record.key === key);
+    if (table === undefined) return [];
+    return ((table.data as Obj).rows as unknown[][])
+      .flat()
+      .map((cell) => String(cell));
+  };
+
+  /** A graph string is a verbatim printed span, or a `table:` citation whose
+   * quoted cell text is verbatim in the cited table. */
+  function unprintedGraphText(
+    description: string,
+    field: string,
+    value: unknown,
+  ): string | undefined {
+    if (typeof value !== 'string') return undefined;
+    if (description.includes(value)) return undefined;
+    const cited = /^(table:[a-z0-9-]+) .*?: (.+)$/.exec(value);
+    if (
+      field === 'note' &&
+      cited !== null &&
+      tableCells(String(cited[1])).includes(String(cited[2]))
+    )
+      return undefined;
+    return field;
+  }
+
+  it('every state machine of every item and variant quotes its conditions, notes and termination from the printed description', () => {
+    const problems: string[] = [];
+    let machines = 0;
+    for (const record of items)
+      for (const scope of scopesOf(record.name)) {
+        const machine = scope.mechanics.stateMachine as Obj | undefined;
+        if (machine === undefined) continue;
+        machines += 1;
+        const bad = (field: string, value: unknown, where: string) => {
+          if (unprintedGraphText(scope.description, field, value) !== undefined)
+            problems.push(`${scope.label} ${where} ${field}: ${String(value)}`);
+        };
+        bad('termination', machine.termination, 'machine');
+        bad('note', machine.note, 'machine');
+        for (const entry of machine.transitions as Obj[]) {
+          const where = `${String(entry.from)}->${String(entry.to)}`;
+          bad('condition', entry.condition, where);
+          bad('note', entry.note, where);
+        }
+      }
+    expect(problems).toEqual([]);
+    // Independent census: every machine in the pack was screened.
+    let expected = 0;
+    for (const record of items) {
+      const data = record.data as Obj;
+      if ((data.mechanics as Obj | undefined)?.stateMachine !== undefined)
+        expected += 1;
+      for (const variant of (data.variants as Obj[] | undefined) ?? [])
+        if ((variant.mechanics as Obj | undefined)?.stateMachine !== undefined)
+          expected += 1;
+    }
+    expect(machines).toBe(expected);
+    expect(machines).toBeGreaterThanOrEqual(49);
+  });
+
+  it('keeps the graph-text screen able to fail (counterfactual: a paraphrased condition and a mis-cited table cell)', () => {
+    const description = 'If the rope drops to 0 hit points, it is destroyed.';
+    expect(
+      unprintedGraphText(description, 'condition', 'rope reaches 0 hit points'),
+    ).toBe('condition');
+    expect(
+      unprintedGraphText(
+        description,
+        'condition',
+        'the rope drops to 0 hit points',
+      ),
+    ).toBeUndefined();
+    expect(
+      unprintedGraphText(
+        description,
+        'note',
+        'table:apparatus-of-the-crab-levers lever 10, Up: Not a printed cell.',
+      ),
+    ).toBe('note');
+  });
+
+  it('does not move a state on an outcome the transition cannot state: hit-only, success-only and failed-save-only transitions are condition-only', () => {
+    // Sphere: a FAILED DC 25 check moves the sphere toward the actor and
+    // gains no control. Iron Bands: a MISS makes the bands a sphere again.
+    // Rope of Entanglement: a SUCCESSFUL save leaves the target free.
+    for (const [name, op] of [
+      ['Sphere of Annihilation', 'attempt-control'],
+      ['Iron Bands of Binding', 'throw-bands'],
+      ['Rope of Entanglement', 'entangle-creature'],
+    ] as const) {
+      expect(
+        transitionsOf(name).some((entry) => entry.via === op),
+        `${name} ${op} fires unconditionally`,
+      ).toBe(false);
+    }
+    expect(
+      transitionsOf('Sphere of Annihilation').find(
+        (entry) => entry.from === 'uncontrolled' && entry.to === 'controlled',
+      ),
+    ).toMatchObject({
+      condition: expect.stringMatching(/^On a success, the sphere levitates/),
+    });
+    expect(
+      transitionsOf('Iron Bands of Binding').find(
+        (entry) => entry.from === 'sphere' && entry.to === 'restraining',
+      )?.condition,
+    ).toBe('On a hit, the target is restrained');
+    expect(
+      transitionsOf('Rope of Entanglement').find(
+        (entry) => entry.from === 'loose' && entry.to === 'restraining',
+      )?.condition,
+    ).toMatch(
+      /must succeed on a DC 15 Dexterity saving throw.*become restrained/,
+    );
+    // The outcome-gated operations stay declared (and un-bound).
+    expect(
+      operation('Sphere of Annihilation', 'attempt-control'),
+    ).toBeDefined();
+  });
+
+  it('Immovable Rod: the DC 30 check moves the FIXED rod and does not release it', () => {
+    const machine = machineOf('Immovable Rod');
+    expect(String(machine.termination)).not.toContain('DC 30');
+    expect(String(machine.termination)).toContain('deactivate and fall');
+    expect(String(machine.note)).toContain(
+      'moving the fixed rod up to 10 feet on a success',
+    );
+  });
+
+  it('Marvelous Pigments: any completed painting becomes a real object; a higher value is a worthless-material object, not a representation', () => {
+    const machine = machineOf('Marvelous Pigments');
+    const completes = (machine.transitions as Obj[]).find(
+      (entry) => entry.to === 'realized',
+    );
+    expect(completes?.condition).toBe('When you complete the painting');
+    expect(String(machine.termination)).not.toMatch(
+      /representation|at most 25/,
+    );
+  });
+
+  it('Folding Boat: only the printed box-to-vessel and vessel-to-box transitions exist, folding needs no creatures aboard', () => {
+    const pairs = transitionsOf('Folding Boat').map((entry) =>
+      [entry.from, entry.to, entry.via].join('>'),
+    );
+    expect(pairs.sort()).toEqual(
+      [
+        'box>boat>become-boat',
+        'box>ship>become-ship',
+        'boat>box>fold-boat',
+        'ship>box>fold-boat',
+      ].sort(),
+    );
+    expect(activation('Folding Boat', 'fold-boat')?.requirement).toBe(
+      'provided that no creatures are aboard',
+    );
+  });
+});
+
+describe('spellStore costs and per-instance economies (review 19.4.6.3 S3, S4)', () => {
+  it('no spellStore event types the free cost the text does not print; a stored spell keeps its normal casting time', () => {
+    const problems: string[] = [];
+    let events = 0;
+    for (const record of items)
+      for (const scope of scopesOf(record.name)) {
+        const store = scope.mechanics.spellStore as Obj | undefined;
+        for (const contract of (store?.contracts ?? []) as Obj[])
+          for (const field of ['storeOn', 'castOut', 'absorbOn'] as const) {
+            const event = contract[field] as Obj | undefined;
+            if (event === undefined) continue;
+            events += 1;
+            if (
+              event.cost === 'free' &&
+              !/no action required/.test(scope.description)
+            )
+              problems.push(
+                `${scope.label} ${String(contract.id)}.${field}: free`,
+              );
+            if (
+              event.cost === 'reaction' &&
+              !/\breaction\b/.test(scope.description)
+            )
+              problems.push(
+                `${scope.label} ${String(contract.id)}.${field}: reaction`,
+              );
+          }
+      }
+    expect(problems).toEqual([]);
+    expect(events).toBeGreaterThanOrEqual(9);
+    for (const [name, label] of [
+      ['Ring of Spell Storing', 'Ring of Spell Storing'],
+      ['Ioun Stone', 'Ioun Stone::Reserve'],
+    ] as const) {
+      const scope = scopesOf(name).find((entry) => entry.label === label);
+      if (scope === undefined) throw new Error(`no scope ${label}`);
+      const contract = (
+        (scope.mechanics.spellStore as Obj).contracts as Obj[]
+      )[0] as Obj;
+      expect((contract.storeOn as Obj).cost, name).toBe(
+        'spell-normal-casting-time',
+      );
+      expect((contract.castOut as Obj).cost, name).toBe(
+        'spell-normal-casting-time',
+      );
+    }
+  });
+
+  it('Necklace of Prayer Beads: no necklace-wide once-per-day pool; the per-bead dawn gate is an adjudicated clause carrying the printed sentence', () => {
+    const mechanics = mechanicsOf('Necklace of Prayer Beads');
+    expect(Object.keys((mechanics.economies ?? {}) as Obj)).not.toContain(
+      'bead-spells',
+    );
+    const cast = ((mechanics.operations ?? []) as Obj[]).find(
+      (entry) => entry.id === 'cast-bead-spell',
+    ) as Obj;
+    expect(cast.cost).toBeUndefined();
+    const text = clauseText('Necklace of Prayer Beads', '/c1-bead-spells');
+    expect(text).toBe(
+      'Once a magic bead’s spell is cast, that bead can’t be used again until the next dawn.',
+    );
+    expect(descriptionOf('Necklace of Prayer Beads')).toContain(text);
+    // The bead inventory (1d4 + 2 magic beads) stays typed.
+    expect((mechanics.economies as Obj).beads).toMatchObject({
+      kind: 'doses',
+      doses: { count: '1d4+2' },
+    });
+  });
+
+  it('no per-day pool of one is typed for a gate the text prints per instance', () => {
+    // Class screen: an economy whose note says per-instance / per-bead /
+    // each-X must not be a single shared per-day use.
+    const problems: string[] = [];
+    for (const record of items)
+      for (const scope of scopesOf(record.name)) {
+        const economies = (scope.mechanics.economies ?? {}) as Obj;
+        for (const [id, economy] of Object.entries(economies)) {
+          const typed = economy as Obj;
+          if (
+            typed.kind === 'per-day' &&
+            /\bindependent\b[^.]*\b(each|per)\b/i.test(String(typed.note ?? ''))
+          )
+            problems.push(`${scope.label} ${id}: ${String(typed.note)}`);
+        }
+      }
+    expect(problems).toEqual([]);
   });
 });
 

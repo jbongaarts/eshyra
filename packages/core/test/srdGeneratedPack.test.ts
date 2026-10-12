@@ -3283,7 +3283,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1111);
+      expect(clauses).toHaveLength(1113);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3303,10 +3303,15 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // and the Cloak of Displacement suppression (whose state machine is
       // withheld, moving its clause engine-pending -> adjudicated, 792 -> 791).
       // No green clause moved.
+      // eshyra-o9bd.19.4.6.4 (review 19.4.6.3): the Necklace of Prayer Beads
+      // per-bead dawn gate is withheld (its pool clause engine-pending ->
+      // adjudicated, 791 -> 790), the Eversmoking Bottle growth sentence and
+      // the second Apparatus lever-10 direction operation each added one
+      // adjudicated clause (107 -> 110). No green clause moved.
       expect(counts).toEqual({
-        'adjudicated-by-design': 107,
+        'adjudicated-by-design': 110,
         'design-blocked': 1,
-        'engine-pending': 791,
+        'engine-pending': 790,
         green: 212,
       });
       const pending = clauses.filter(

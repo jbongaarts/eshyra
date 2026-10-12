@@ -81,13 +81,13 @@ const spellStorage = (
   casterOfRecord:
     'slot level, spell save DC, spell attack bonus, and spellcasting ability of original caster',
   storeOn: {
-    cost: 'free',
+    cost: 'spell-normal-casting-time',
     trigger: 'spell is cast while caster touches item',
     requirement: `spell level 1 through ${maximumSpellLevel}; caster touches item`,
     note: 'Uses the spell’s normal casting time; spell has no effect and is stored; an over-capacity spell is expended without effect.',
   },
   castOut: {
-    cost: 'free',
+    cost: 'spell-normal-casting-time',
     requirement: wearer,
     note: 'Uses the spell’s normal casting time; cast as item user except caster-of-record values; remove spell and free its slot-level space.',
   },

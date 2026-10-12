@@ -48,9 +48,14 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         'hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check',
         'Below that, the vehicle takes 2d6 bludgeoning damage per minute from pressure',
       ],
-      operations: Array.from({ length: 10 }, (_, i) =>
-        op(`set-lever-${i + 1}`),
-      ),
+      // Lever 10 is the only lever whose direction matters to the state graph
+      // (Up unseals and opens the rear hatch, Down closes and seals it), so
+      // its two directions are two operations (review 19.4.6.3 S2).
+      operations: [
+        ...Array.from({ length: 9 }, (_, i) => op(`set-lever-${i + 1}`)),
+        op('set-lever-10-up'),
+        op('set-lever-10-down'),
+      ],
       effects: [
         procedure(
           'm5-complex-apparatus-controls',
@@ -90,7 +95,8 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
           { from: 'sealed', to: 'sealed', via: 'set-lever-7' },
           { from: 'sealed', to: 'sealed', via: 'set-lever-8' },
           { from: 'sealed', to: 'sealed', via: 'set-lever-9' },
-          { from: 'sealed', to: 'sealed', via: 'set-lever-10' },
+          { from: 'sealed', to: 'open', via: 'set-lever-10-up' },
+          { from: 'open', to: 'sealed', via: 'set-lever-10-down' },
           {
             from: 'sealed',
             to: 'disabled',

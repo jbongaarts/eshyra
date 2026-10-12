@@ -88443,7 +88443,7 @@
             "amount": 1,
             "unit": "minute"
           },
-          "termination": "deactivation, wearer incapacitation, wearer death, or one minute"
+          "termination": "The shield remains animated for 1 minute, until you use a bonus action to end this effect, or until you are incapacitated or die"
         },
         "economies": {
           "uses": {
@@ -88631,10 +88631,6 @@
             {
               "id": "open",
               "note": "hatch open"
-            },
-            {
-              "id": "disabled",
-              "note": "apparatus reduced to 0 hit points"
             }
           ],
           "transitions": [
@@ -88731,27 +88727,16 @@
             {
               "from": "sealed",
               "to": "open",
-              "via": "set-lever-10",
+              "via": "set-lever-10-up",
               "note": "table:apparatus-of-the-crab-levers lever 10, Up: The rear hatch unseals and opens."
             },
             {
               "from": "open",
               "to": "sealed",
-              "via": "set-lever-10",
+              "via": "set-lever-10-down",
               "note": "table:apparatus-of-the-crab-levers lever 10, Down: The rear hatch closes and seals."
-            },
-            {
-              "from": "sealed",
-              "to": "disabled",
-              "condition": "apparatus reaches 0 hit points"
-            },
-            {
-              "from": "open",
-              "to": "disabled",
-              "condition": "apparatus reaches 0 hit points"
             }
-          ],
-          "termination": "destruction"
+          ]
         },
         "operations": [
           {
@@ -88809,7 +88794,13 @@
             }
           },
           {
-            "id": "set-lever-10",
+            "id": "set-lever-10-up",
+            "activation": {
+              "requirement": "A creature in the compartment"
+            }
+          },
+          {
+            "id": "set-lever-10-down",
             "activation": {
               "requirement": "A creature in the compartment"
             }
@@ -88856,7 +88847,21 @@
             "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
           },
           {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-10",
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-10-down",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
+            },
+            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-10-up",
             "scope": {
               "kind": "parent"
             },
@@ -90787,7 +90792,7 @@
             "amount": 1,
             "unit": "minute"
           },
-          "termination": "one minute after impact"
+          "termination": "A sphere of transparent force then encloses the area for 1 minute"
         },
         "economies": {
           "quantity": {
@@ -91702,12 +91707,13 @@
         "operations": [
           {
             "id": "cast-levitate",
-            "activation": {
-              "cost": "action"
-            },
             "doesNotExpend": [
               "uses"
-            ]
+            ],
+            "activation": {
+              "cost": "action",
+              "requirement": "While you wear these boots"
+            }
           }
         ],
         "effects": [
@@ -91831,7 +91837,7 @@
               "via": "deactivate-speed"
             }
           ],
-          "termination": "deactivation or exhaustion of the separate ten-minute budget"
+          "termination": "If you click your heels together again, you end the effect. When the boots’ property has been used for a total of 10 minutes, the magic ceases to function until you finish a long rest"
         },
         "economies": {
           "speed": {
@@ -91867,7 +91873,8 @@
           {
             "id": "activate-speed",
             "activation": {
-              "cost": "bonus-action"
+              "cost": "bonus-action",
+              "requirement": "While you wear these boots"
             }
           },
           {
@@ -93352,6 +93359,9 @@
         "operations": [
           {
             "id": "cast-dimension-door",
+            "activation": {
+              "requirement": "While wearing it"
+            },
             "cost": [
               {
                 "economy": "uses",
@@ -93497,8 +93507,7 @@
               "to": "grounded",
               "via": "end-flight"
             }
-          ],
-          "termination": "commanded landing"
+          ]
         },
         "operations": [
           {
@@ -93879,10 +93888,9 @@
             {
               "from": "resolving",
               "to": "ready",
-              "condition": "one audible-path lock or latch within 120 feet opens, or no eligible closure exists"
+              "condition": "one lock or latch on the object opens unless the sound can’t reach the object"
             }
-          ],
-          "termination": "resolution is instantaneous; use economy separately owns ten-use depletion"
+          ]
         },
         "economies": {
           "uses": {
@@ -93900,6 +93908,7 @@
           {
             "id": "strike-chime",
             "activation": {
+              "target": "an object within 120 feet of you that can be opened",
               "cost": "action"
             },
             "cost": [
@@ -94023,6 +94032,9 @@
         "operations": [
           {
             "id": "cast-scorching-ray",
+            "activation": {
+              "requirement": "While wearing this circlet"
+            },
             "cost": [
               {
                 "economy": "uses",
@@ -94812,8 +94824,7 @@
               "to": "inactive",
               "via": "end-polymorph"
             }
-          ],
-          "termination": "deactivation or normal polymorph termination"
+          ]
         },
         "economies": {
           "uses": {
@@ -95672,7 +95683,7 @@
             "amount": 1,
             "unit": "minute"
           },
-          "termination": "one minute after last face press or depletion"
+          "termination": "lasts for 1 minute, until you use an action to press the cube’s sixth face, or the cube runs out of charges"
         },
         "economies": {
           "charges": {
@@ -98256,7 +98267,7 @@
               "from": "bound",
               "to": "broken",
               "via": "escape-shackles",
-              "note": "Once every 30 days, the bound creature makes a DC 30 Strength (Athletics) check; on success it breaks free and destroys the shackles.",
+              "note": "Once every 30 days, the bound creature can make a DC 30 Strength (Athletics) check. On a success, the creature breaks free and destroys the shackles.",
               "onFailure": {
                 "retryAfter": {
                   "amount": 30,
@@ -98268,13 +98279,14 @@
               }
             }
           ],
-          "termination": "designated removal or successful once-per-30-days escape destroys shackles"
+          "termination": "Once every 30 days, the bound creature can make a DC 30 Strength (Athletics) check. On a success, the creature breaks free and destroys the shackles"
         },
         "operations": [
           {
             "id": "attach-shackles",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "target": "an incapacitated creature"
             }
           },
           {
@@ -98967,7 +98979,7 @@
               "via": "smash-pellet"
             }
           ],
-          "termination": "pellet smashed and absorbed water released"
+          "termination": "Doing so ends that pellet’s magic"
         },
         "economies": {
           "doses": {
@@ -99512,7 +99524,7 @@
               "via": "return-to-hand"
             }
           ],
-          "termination": "returns immediately after ranged attack"
+          "termination": "Immediately after the attack, the weapon flies back to your hand"
         },
         "operations": [
           {
@@ -100406,13 +100418,7 @@
               "id": "closed"
             },
             {
-              "id": "cloud-60"
-            },
-            {
-              "id": "cloud-growing"
-            },
-            {
-              "id": "cloud-120"
+              "id": "cloud-open"
             },
             {
               "id": "cloud-lingering",
@@ -100422,35 +100428,11 @@
           "transitions": [
             {
               "from": "closed",
-              "to": "cloud-60",
+              "to": "cloud-open",
               "via": "open-bottle"
             },
             {
-              "from": "cloud-60",
-              "to": "cloud-growing",
-              "timer": {
-                "amount": 1,
-                "unit": "minute"
-              },
-              "note": "Each minute the bottle remains open and within the cloud, the radius increases by 10 feet"
-            },
-            {
-              "from": "cloud-growing",
-              "to": "cloud-120",
-              "condition": "until it reaches its maximum radius of 120 feet"
-            },
-            {
-              "from": "cloud-60",
-              "to": "cloud-lingering",
-              "via": "close-bottle"
-            },
-            {
-              "from": "cloud-growing",
-              "to": "cloud-lingering",
-              "via": "close-bottle"
-            },
-            {
-              "from": "cloud-120",
+              "from": "cloud-open",
               "to": "cloud-lingering",
               "via": "close-bottle"
             },
@@ -100528,6 +100510,20 @@
               "F5",
               "F9"
             ]
+          },
+          {
+            "clauseId": "magic-item:eversmoking-bottle/state-eversmoking-bottle-growth",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Growth is gated on the bottle remaining open AND within the cloud, which no typed timer states; no growth state or timer is typed, and the DM model interprets the printed text.",
+              "sourceText": "Each minute the bottle remains open and within the cloud, the radius increases by 10 feet until it reaches its maximum radius of 120 feet."
+            },
+            "reason": "Growth is gated on the bottle remaining open AND within the cloud, which no typed timer states; no growth state or timer is typed, and the DM model interprets the printed text."
           }
         ]
       }
@@ -100584,6 +100580,7 @@
             "id": "cast-charm-person",
             "activation": {
               "requirement": "While wearing them",
+              "target": "a humanoid within 30 feet of you",
               "cost": "action"
             },
             "cost": [
@@ -100961,9 +100958,6 @@
                 "m5-complex-feather-selection"
               ],
               "note": "selected anchor, bird, fan, boat, tree, or whip exists"
-            },
-            {
-              "id": "consumed"
             }
           ],
           "transitions": [
@@ -100996,14 +100990,8 @@
               "from": "token",
               "to": "manifested",
               "via": "use-whip"
-            },
-            {
-              "from": "manifested",
-              "to": "consumed",
-              "condition": "selected token duration or dismissal condition ends"
             }
-          ],
-          "termination": "single-use manifestation ends"
+          ]
         },
         "economies": {
           "quantity": {
@@ -102113,7 +102101,7 @@
               "via": "extinguish-flames"
             }
           ],
-          "termination": "repeat command word or drop/stow weapon"
+          "termination": "The flames last until you use a bonus action to speak the command word again or until you drop or sheathe the sword"
         },
         "economies": {
           "uses": {
@@ -102308,16 +102296,6 @@
             },
             {
               "from": "boat",
-              "to": "ship",
-              "via": "become-ship"
-            },
-            {
-              "from": "ship",
-              "to": "boat",
-              "via": "become-boat"
-            },
-            {
-              "from": "boat",
               "to": "box",
               "via": "fold-boat"
             },
@@ -102327,7 +102305,7 @@
               "via": "fold-boat"
             }
           ],
-          "termination": "third command word when no creatures remain aboard"
+          "termination": "The third command word causes the folding boat to fold back into a box, provided that no creatures are aboard"
         },
         "operations": [
           {
@@ -102348,7 +102326,8 @@
             "id": "fold-boat",
             "activation": {
               "cost": "action",
-              "commandWord": true
+              "commandWord": true,
+              "requirement": "provided that no creatures are aboard"
             }
           }
         ]
@@ -102696,7 +102675,7 @@
               "via": "end-light"
             }
           ],
-          "termination": "repeat first command word or use another gem function"
+          "termination": "It lasts until you use a bonus action to repeat the command word or until you use another function of the gem"
         },
         "economies": {
           "charges": {
@@ -104476,7 +104455,8 @@
           {
             "id": "cast-disguise-self",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "While wearing this hat"
             },
             "doesNotExpend": [
               "uses"
@@ -104676,7 +104656,7 @@
               "via": "extinguish-weapon"
             }
           ],
-          "termination": "repeat command word, drop weapon, or stow weapon"
+          "termination": "The flames last until you use a bonus action to speak the command word again or until you drop or stow the weapon"
         },
         "randomProcedure": {
           "procedures": [
@@ -104752,6 +104732,7 @@
           {
             "id": "cast-prismatic-spray",
             "activation": {
+              "requirement": "while wearing it",
               "cost": "action"
             },
             "cost": [
@@ -104767,6 +104748,7 @@
           {
             "id": "cast-wall-of-fire",
             "activation": {
+              "requirement": "while wearing it",
               "cost": "action"
             },
             "cost": [
@@ -104782,6 +104764,7 @@
           {
             "id": "cast-fireball",
             "activation": {
+              "requirement": "while wearing it",
               "cost": "action"
             },
             "cost": [
@@ -104797,6 +104780,7 @@
           {
             "id": "cast-daylight",
             "activation": {
+              "requirement": "while wearing it",
               "cost": "action"
             },
             "cost": [
@@ -105462,7 +105446,8 @@
           {
             "id": "cast-comprehend-languages",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "While wearing this helm"
             },
             "doesNotExpend": [
               "uses"
@@ -106019,7 +106004,7 @@
               "via": "sheathe-sword"
             }
           ],
-          "termination": "sword no longer held drawn"
+          "termination": "While you hold the drawn sword, it creates an aura in a 10-foot radius around you"
         },
         "operations": [
           {
@@ -106881,7 +106866,8 @@
               "via": "release-rod"
             }
           ],
-          "termination": "button release, more than 8,000 pounds, or successful DC 30 Strength check moves it 10 feet"
+          "termination": "Until you or another creature uses an action to push the button again, the rod doesn’t move, even if it is defying gravity. The rod can hold up to 8,000 pounds of weight. More weight causes the rod to deactivate and fall",
+          "note": "A creature can use an action to make a DC 30 Strength check, moving the fixed rod up to 10 feet on a success"
         },
         "operations": [
           {
@@ -107427,13 +107413,13 @@
                   "initialLevels": "1d4-1",
                   "casterOfRecord": "slot level, spell save DC, spell attack bonus, and spellcasting ability of original caster",
                   "storeOn": {
-                    "cost": "free",
+                    "cost": "spell-normal-casting-time",
                     "trigger": "spell is cast while caster touches item",
                     "requirement": "spell level 1 through 3; caster touches item",
                     "note": "Uses the spell’s normal casting time; spell has no effect and is stored; an over-capacity spell is expended without effect."
                   },
                   "castOut": {
-                    "cost": "free",
+                    "cost": "spell-normal-casting-time",
                     "requirement": "owner while stone orbits",
                     "note": "Uses the spell’s normal casting time; cast as item user except caster-of-record values; remove spell and free its slot-level space."
                   },
@@ -107546,6 +107532,7 @@
             "id": "grab-orbiting-stone",
             "activation": {
               "cost": "action",
+              "trigger": "another creature must use an action to grasp or net the stone",
               "requirement": "either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check"
             }
           }
@@ -108177,7 +108164,7 @@
             {
               "from": "sphere",
               "to": "restraining",
-              "via": "throw-bands"
+              "condition": "On a hit, the target is restrained"
             },
             {
               "from": "restraining",
@@ -108188,7 +108175,7 @@
               "from": "restraining",
               "to": "destroyed",
               "via": "break-bands",
-              "note": "The creature uses an action to make a DC 20 Strength check; on success the iron bands are destroyed and the restrained creature is freed.",
+              "note": "A creature, including the one restrained, can use an action to make a DC 20 Strength check to break the iron bands. On a success, the item is destroyed, and the restrained creature is freed. If the check fails, any further attempts made by that creature automatically fail until 24 hours have elapsed",
               "onFailure": {
                 "retryAfter": {
                   "amount": 24,
@@ -108200,7 +108187,7 @@
               }
             }
           ],
-          "termination": "release command or successful break; failed breaker is locked out for 24 hours"
+          "termination": "On a hit, the target is restrained until you take a bonus action to speak the command word again to release it. Doing so, or missing with the attack, causes the bands to contract and become a sphere once more"
         },
         "economies": {
           "uses": {
@@ -108444,12 +108431,13 @@
             "creatures": 1
           },
           "entry": {
+            "trigger": "target within 60 feet is native to another plane and fails the declared save",
+            "result": "target is trapped until released",
             "activation": {
               "cost": "action",
-              "commandWord": true
-            },
-            "trigger": "target within 60 feet is native to another plane and fails the declared save",
-            "result": "target is trapped until released"
+              "commandWord": true,
+              "target": "a creature that you can see within 60 feet of you"
+            }
           },
           "release": {
             "activation": {
@@ -110660,10 +110648,10 @@
             {
               "from": "painting",
               "to": "realized",
-              "condition": "ten minutes per 100 square feet completes and value is at most 25 gp"
+              "condition": "When you complete the painting"
             }
           ],
-          "termination": "painted energy effects dissipate harmlessly; invalid/high-value depictions remain representations"
+          "termination": "If you paint a form of energy such as fire or lightning, the energy appears but dissipates as soon as you complete the painting, doing no harm to anything"
         },
         "economies": {
           "doses": {
@@ -111701,19 +111689,6 @@
           ]
         },
         "economies": {
-          "bead-spells": {
-            "kind": "per-day",
-            "perDay": {
-              "uses": 1
-            },
-            "reset": [
-              {
-                "at": "dawn",
-                "amount": "all"
-              }
-            ],
-            "note": "independent once-per-dawn counter for each magic bead"
-          },
           "beads": {
             "kind": "doses",
             "doses": {
@@ -111738,12 +111713,6 @@
               "cost": "bonus-action",
               "requirement": "wearing the necklace"
             },
-            "cost": [
-              {
-                "economy": "bead-spells",
-                "amount": 1
-              }
-            ],
             "effects": [
               "c2-cast-bead-spell"
             ]
@@ -111780,26 +111749,13 @@
               "kind": "parent"
             },
             "tag": "C1",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "economies",
-              "economyId": "bead-spells"
+              "adjudicated": true,
+              "note": "The once-per-dawn gate is per magic bead (the necklace has 1d4 + 2 beads); no necklace-wide pool is typed, and the DM model interprets the printed text.",
+              "sourceText": "Once a magic bead’s spell is cast, that bead can’t be used again until the next dawn."
             },
-            "engineHooks": [
-              {
-                "engine": "F5",
-                "hook": "independent per-bead dawn reset"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "independent per-bead dawn reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "reason": "The once-per-dawn gate is per magic bead (the necklace has 1d4 + 2 beads); no necklace-wide pool is typed, and the DM model interprets the printed text."
           },
           {
             "clauseId": "magic-item:necklace-of-prayer-beads/c2-effect-cast-bead-spell",
@@ -116077,7 +116033,7 @@
             "amount": "1d4",
             "unit": "hour"
           },
-          "termination": "rolled duration expires"
+          "termination": "for 1d4 hours (no concentration required)"
         },
         "economies": {
           "quantity": {
@@ -116375,7 +116331,7 @@
             "amount": 1,
             "unit": "hour"
           },
-          "termination": "bonus-action end or one hour"
+          "termination": "for 1 hour (no concentration required) or until you end the effect as a bonus action"
         },
         "economies": {
           "quantity": {
@@ -116688,7 +116644,7 @@
             "amount": "1d4",
             "unit": "hour"
           },
-          "termination": "rolled duration expires"
+          "termination": "for 1d4 hours (no concentration required)"
         },
         "economies": {
           "quantity": {
@@ -119022,8 +118978,7 @@
               "to": "unlocked",
               "via": "unlock-linked-plane"
             }
-          ],
-          "termination": "permanent for this attuned ring/wearer progression"
+          ]
         },
         "economies": {
           "charges": {
@@ -119059,7 +119014,8 @@
           {
             "id": "cast-chain-lightning",
             "activation": {
-              "requirement": "If you help slay an air elemental while attuned to the ring"
+              "requirement": "Ring of Air Elemental Command",
+              "trigger": "If you help slay an air elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119074,7 +119030,8 @@
           {
             "id": "cast-gust-of-wind",
             "activation": {
-              "requirement": "If you help slay an air elemental while attuned to the ring"
+              "requirement": "Ring of Air Elemental Command",
+              "trigger": "If you help slay an air elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119089,7 +119046,8 @@
           {
             "id": "cast-wind-wall",
             "activation": {
-              "requirement": "If you help slay an air elemental while attuned to the ring"
+              "requirement": "Ring of Air Elemental Command",
+              "trigger": "If you help slay an air elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119120,7 +119078,8 @@
           {
             "id": "cast-stone-shape",
             "activation": {
-              "requirement": "If you help slay an earth elemental while attuned to the ring"
+              "requirement": "Ring of Earth Elemental Command",
+              "trigger": "If you help slay an earth elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119135,7 +119094,8 @@
           {
             "id": "cast-stoneskin",
             "activation": {
-              "requirement": "If you help slay an earth elemental while attuned to the ring"
+              "requirement": "Ring of Earth Elemental Command",
+              "trigger": "If you help slay an earth elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119150,7 +119110,8 @@
           {
             "id": "cast-wall-of-stone",
             "activation": {
-              "requirement": "If you help slay an earth elemental while attuned to the ring"
+              "requirement": "Ring of Earth Elemental Command",
+              "trigger": "If you help slay an earth elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119181,7 +119142,8 @@
           {
             "id": "cast-burning-hands",
             "activation": {
-              "requirement": "If you help slay a fire elemental while attuned to the ring"
+              "requirement": "Ring of Fire Elemental Command",
+              "trigger": "If you help slay a fire elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119196,7 +119158,8 @@
           {
             "id": "cast-fireball",
             "activation": {
-              "requirement": "If you help slay a fire elemental while attuned to the ring"
+              "requirement": "Ring of Fire Elemental Command",
+              "trigger": "If you help slay a fire elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119211,7 +119174,8 @@
           {
             "id": "cast-wall-of-fire",
             "activation": {
-              "requirement": "If you help slay a fire elemental while attuned to the ring"
+              "requirement": "Ring of Fire Elemental Command",
+              "trigger": "If you help slay a fire elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119242,7 +119206,8 @@
           {
             "id": "cast-create-or-destroy-water",
             "activation": {
-              "requirement": "If you help slay a water elemental while attuned to the ring"
+              "requirement": "Ring of Water Elemental Command",
+              "trigger": "If you help slay a water elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119257,7 +119222,8 @@
           {
             "id": "cast-control-water",
             "activation": {
-              "requirement": "If you help slay a water elemental while attuned to the ring"
+              "requirement": "Ring of Water Elemental Command",
+              "trigger": "If you help slay a water elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119272,7 +119238,8 @@
           {
             "id": "cast-ice-storm",
             "activation": {
-              "requirement": "If you help slay a water elemental while attuned to the ring"
+              "requirement": "Ring of Water Elemental Command",
+              "trigger": "If you help slay a water elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119287,7 +119254,8 @@
           {
             "id": "cast-wall-of-ice",
             "activation": {
-              "requirement": "If you help slay a water elemental while attuned to the ring"
+              "requirement": "Ring of Water Elemental Command",
+              "trigger": "If you help slay a water elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -121861,13 +121829,14 @@
               "via": "become-visible"
             }
           ],
-          "termination": "ring removed, wearer attacks or casts a spell, or bonus-action deactivation"
+          "termination": "You remain invisible until the ring is removed, until you attack or cast a spell, or until you use a bonus action to become visible again"
         },
         "operations": [
           {
             "id": "become-invisible",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "While wearing this ring"
             }
           },
           {
@@ -122029,7 +121998,8 @@
           {
             "id": "cast-jump",
             "activation": {
-              "cost": "bonus-action"
+              "cost": "bonus-action",
+              "requirement": "While wearing this ring"
             },
             "doesNotExpend": [
               "uses"
@@ -122167,7 +122137,7 @@
               "via": "show-ring"
             }
           ],
-          "termination": "show action, ring removal, or wearer death"
+          "termination": "You can use an action to cause the ring to become invisible until you use another action to make it visible, until you remove the ring, or until you die"
         },
         "curse": {
           "effects": [
@@ -122823,9 +122793,6 @@
             {
               "id": "active",
               "note": "one to four sphere instances; each individually discharges"
-            },
-            {
-              "id": "depleted"
             }
           ],
           "transitions": [
@@ -122841,28 +122808,18 @@
             },
             {
               "from": "active",
-              "to": "depleted",
-              "condition": "all created spheres have discharged"
-            },
-            {
-              "from": "active",
               "to": "inactive",
               "timer": {
                 "amount": 1,
                 "unit": "minute"
               }
-            },
-            {
-              "from": "depleted",
-              "to": "inactive",
-              "condition": "activation ends"
             }
           ],
           "duration": {
             "amount": 1,
             "unit": "minute"
           },
-          "termination": "concentration ends, one minute, or all spheres discharge"
+          "termination": "The spheres last as long as you concentrate (as if concentrating on a spell), up to 1 minute"
         },
         "economies": {
           "charges": {
@@ -123463,13 +123420,13 @@
               "initialLevels": "1d6-1",
               "casterOfRecord": "slot level, spell save DC, spell attack bonus, and spellcasting ability of original caster",
               "storeOn": {
-                "cost": "free",
+                "cost": "spell-normal-casting-time",
                 "trigger": "spell is cast while caster touches item",
                 "requirement": "spell level 1 through 5; caster touches item",
                 "note": "Uses the spell’s normal casting time; spell has no effect and is stored; an over-capacity spell is expended without effect."
               },
               "castOut": {
-                "cost": "free",
+                "cost": "spell-normal-casting-time",
                 "requirement": "attuned wearer wearing ring",
                 "note": "Uses the spell’s normal casting time; cast as item user except caster-of-record values; remove spell and free its slot-level space."
               },
@@ -124039,6 +123996,9 @@
         "operations": [
           {
             "id": "cast-telekinesis",
+            "activation": {
+              "requirement": "While wearing this ring"
+            },
             "doesNotExpend": [
               "uses"
             ],
@@ -125868,10 +125828,10 @@
             {
               "from": "patched",
               "to": "ordinary",
-              "condition": "last patch is removed"
+              "condition": "the last patch is removed"
             }
           ],
-          "termination": "ordinary garment after last patch"
+          "termination": "the robe becomes an ordinary garment"
         },
         "randomProcedure": {
           "procedures": [
@@ -125908,6 +125868,7 @@
           {
             "id": "detach-patch",
             "activation": {
+              "requirement": "While wearing the robe",
               "cost": "action"
             },
             "cost": [
@@ -126464,7 +126425,7 @@
             "amount": 10,
             "unit": "minute"
           },
-          "termination": "ten minutes or rod pulled"
+          "termination": "The rod’s head stops glowing and the effect ends after 10 minutes, or when a creature uses an action to pull the rod from the ground"
         },
         "economies": {
           "uses": {
@@ -127075,7 +127036,7 @@
               "via": "press-button-6"
             }
           ],
-          "termination": "same button or button 6 restores mace form; pole overload/lack of anchor also restores"
+          "termination": "A button’s effect lasts until you push a different button or until you push the same button again, which causes the rod to revert to its normal form"
         },
         "economies": {
           "drain-life": {
@@ -128290,7 +128251,7 @@
             {
               "from": "loose",
               "to": "restraining",
-              "via": "entangle-creature"
+              "condition": "The target must succeed on a DC 15 Dexterity saving throw or become restrained"
             },
             {
               "from": "restraining",
@@ -128300,20 +128261,20 @@
             {
               "from": "restraining",
               "to": "loose",
-              "condition": "restrained target succeeds on DC 15 Strength or Dexterity check"
+              "condition": "On a success, the creature is no longer restrained by the rope"
             },
             {
               "from": "loose",
               "to": "destroyed",
-              "condition": "rope reaches 0 hit points"
+              "condition": "the rope drops to 0 hit points"
             },
             {
               "from": "restraining",
               "to": "destroyed",
-              "condition": "rope reaches 0 hit points"
+              "condition": "the rope drops to 0 hit points"
             }
           ],
-          "termination": "release word, successful escape, or destruction"
+          "termination": "If the rope drops to 0 hit points, it is destroyed"
         },
         "operations": [
           {
@@ -128338,7 +128299,8 @@
           {
             "id": "escape-rope",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "A target restrained by the rope"
             }
           }
         ],
@@ -129189,10 +129151,10 @@
             {
               "from": "bonded",
               "to": "unset",
-              "condition": "universal solvent, oil of etherealness, or wish breaks bond"
+              "condition": "the bond it creates can be broken only by the application of universal solvent or oil of etherealness, or with a wish spell"
             }
           ],
-          "termination": "named counter-agent or wish only"
+          "termination": "the bond it creates can be broken only by the application of universal solvent or oil of etherealness, or with a wish spell"
         },
         "interItem": {
           "requiresItems": [
@@ -129978,7 +129940,7 @@
             {
               "from": "uncontrolled",
               "to": "controlled",
-              "via": "attempt-control"
+              "condition": "On a success, the sphere levitates in one direction of your choice, up to a number of feet equal to 5 × your Intelligence modifier (minimum 5 feet)"
             },
             {
               "from": "controlled",
@@ -129988,7 +129950,7 @@
             {
               "from": "contested",
               "to": "controlled",
-              "condition": "winner of contested Intelligence (Arcana) check becomes controller"
+              "condition": "The winner of the contest gains control of the sphere"
             },
             {
               "from": "controlled",
@@ -129996,7 +129958,7 @@
               "via": "move-sphere"
             }
           ],
-          "termination": "control changes by contest; portal contact is owned by M8/M11"
+          "termination": "The winner of the contest gains control of the sphere and can levitate it as normal"
         },
         "interItem": {
           "portalInteraction": {
@@ -130036,12 +129998,13 @@
           },
           {
             "id": "attempt-control",
-            "activation": {
-              "cost": "action"
-            },
             "effects": [
               "m5-complex-sphere-failed-control"
-            ]
+            ],
+            "activation": {
+              "cost": "action",
+              "requirement": "If you are within 60 feet of an uncontrolled sphere"
+            }
           },
           {
             "id": "contest-control"
@@ -130378,6 +130341,7 @@
           {
             "id": "cast-charm-person",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -130393,6 +130357,7 @@
           {
             "id": "cast-command",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -130408,6 +130373,7 @@
           {
             "id": "cast-comprehend-languages",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -130963,6 +130929,7 @@
           {
             "id": "cast-burning-hands",
             "activation": {
+              "requirement": "While holding it",
               "cost": "action"
             },
             "cost": [
@@ -130978,6 +130945,7 @@
           {
             "id": "cast-fireball",
             "activation": {
+              "requirement": "While holding it",
               "cost": "action"
             },
             "cost": [
@@ -130993,6 +130961,7 @@
           {
             "id": "cast-wall-of-fire",
             "activation": {
+              "requirement": "While holding it",
               "cost": "action"
             },
             "cost": [
@@ -131392,6 +131361,7 @@
           {
             "id": "cast-cone-of-cold",
             "activation": {
+              "requirement": "While holding it",
               "cost": "action"
             },
             "cost": [
@@ -131407,6 +131377,7 @@
           {
             "id": "cast-fog-cloud",
             "activation": {
+              "requirement": "While holding it",
               "cost": "action"
             },
             "cost": [
@@ -131422,6 +131393,7 @@
           {
             "id": "cast-ice-storm",
             "activation": {
+              "requirement": "While holding it",
               "cost": "action"
             },
             "cost": [
@@ -131437,6 +131409,7 @@
           {
             "id": "cast-wall-of-ice",
             "activation": {
+              "requirement": "While holding it",
               "cost": "action"
             },
             "cost": [
@@ -131913,6 +131886,7 @@
           {
             "id": "cast-cure-wounds",
             "activation": {
+              "requirement": "While holding it",
               "cost": "action"
             },
             "cost": [
@@ -131928,6 +131902,7 @@
           {
             "id": "cast-lesser-restoration",
             "activation": {
+              "requirement": "While holding it",
               "cost": "action"
             },
             "cost": [
@@ -131943,6 +131918,7 @@
           {
             "id": "cast-mass-cure-wounds",
             "activation": {
+              "requirement": "While holding it",
               "cost": "action"
             },
             "cost": [
@@ -132353,6 +132329,7 @@
           {
             "id": "cast-cone-of-cold",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -132368,6 +132345,7 @@
           {
             "id": "cast-fireball",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -132383,6 +132361,7 @@
           {
             "id": "cast-globe-of-invulnerability",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -132398,6 +132377,7 @@
           {
             "id": "cast-hold-monster",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -132413,6 +132393,7 @@
           {
             "id": "cast-levitate",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -132428,6 +132409,7 @@
           {
             "id": "cast-lightning-bolt",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -132443,6 +132425,7 @@
           {
             "id": "cast-magic-missile",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -132458,6 +132441,7 @@
           {
             "id": "cast-ray-of-enfeeblement",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -132473,6 +132457,7 @@
           {
             "id": "cast-wall-of-force",
             "activation": {
+              "requirement": "While holding this staff",
               "cost": "action"
             },
             "cost": [
@@ -133857,6 +133842,7 @@
           {
             "id": "cast-giant-insect",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -133872,6 +133858,7 @@
           {
             "id": "cast-insect-plague",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -133887,6 +133874,7 @@
           {
             "id": "create-insect-cloud",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134289,6 +134277,7 @@
           {
             "id": "cast-conjure-elemental",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134304,6 +134293,7 @@
           {
             "id": "cast-dispel-magic",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134319,6 +134309,7 @@
           {
             "id": "cast-fireball",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134334,6 +134325,7 @@
           {
             "id": "cast-flaming-sphere",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134349,6 +134341,7 @@
           {
             "id": "cast-ice-storm",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134364,6 +134357,7 @@
           {
             "id": "cast-invisibility",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134379,6 +134373,7 @@
           {
             "id": "cast-knock",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134394,6 +134389,7 @@
           {
             "id": "cast-lightning-bolt",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134409,6 +134405,7 @@
           {
             "id": "cast-passwall",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134424,6 +134421,7 @@
           {
             "id": "cast-plane-shift",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134439,6 +134437,7 @@
           {
             "id": "cast-telekinesis",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134454,6 +134453,7 @@
           {
             "id": "cast-wall-of-fire",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134469,6 +134469,7 @@
           {
             "id": "cast-web",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "cost": [
@@ -134484,6 +134485,7 @@
           {
             "id": "cast-arcane-lock",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "doesNotExpend": [
@@ -134496,6 +134498,7 @@
           {
             "id": "cast-detect-magic",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "doesNotExpend": [
@@ -134508,6 +134511,7 @@
           {
             "id": "cast-enlarge-reduce",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "doesNotExpend": [
@@ -134520,6 +134524,7 @@
           {
             "id": "cast-light",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "doesNotExpend": [
@@ -134532,6 +134537,7 @@
           {
             "id": "cast-mage-hand",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "doesNotExpend": [
@@ -134544,6 +134550,7 @@
           {
             "id": "cast-protection-from-evil-and-good",
             "activation": {
+              "requirement": "While holding the staff",
               "cost": "action"
             },
             "doesNotExpend": [
@@ -136440,10 +136447,10 @@
             {
               "from": "python",
               "to": "destroyed",
-              "condition": "python is reduced to 0 hit points"
+              "condition": "the snake is reduced to 0 hit points"
             }
           ],
-          "termination": "owner command returns fully healed staff; 0 HP destroys staff"
+          "termination": "If the snake is reduced to 0 hit points, it dies and reverts to its staff form. The staff then shatters and is destroyed"
         },
         "operations": [
           {
@@ -136639,7 +136646,7 @@
               "via": "return-from-tree"
             }
           ],
-          "termination": "touching tree and speaking command word with an action"
+          "termination": "While touching the tree and using another action to speak its command word, you return the staff to its normal form"
         },
         "economies": {
           "charges": {
@@ -139157,7 +139164,7 @@
               "via": "end-light"
             }
           ],
-          "termination": "repeat command word or sheathe sword"
+          "termination": "Speaking the command word again or sheathing the sword puts out the light"
         },
         "randomProcedure": {
           "procedures": [
@@ -145167,7 +145174,7 @@
             "amount": 1,
             "unit": "hour"
           },
-          "termination": "repeat command word or one hour"
+          "termination": "for 1 hour or until you repeat the command word as an action"
         },
         "economies": {
           "cooldown": {
@@ -145190,6 +145197,7 @@
           {
             "id": "manifest-wings",
             "activation": {
+              "requirement": "While wearing this cloak",
               "cost": "action",
               "commandWord": true
             },

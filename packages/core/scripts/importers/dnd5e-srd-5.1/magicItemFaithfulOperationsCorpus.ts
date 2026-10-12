@@ -88,8 +88,14 @@ const ELEMENTAL_COMMAND_SPEC: FaithfulItemSpec = {
         requirement: plane.heading,
         target: `${plane.article} ${plane.plane} elemental`,
       }),
+      // The post-slay casts print BOTH gates: the linked-plane variant (the
+      // plane's heading, as the dominate op) and the help-slay prerequisite.
       ...plane.spells.map((spell) =>
-        op(spell, { cost: null, requirement: plane.slay }),
+        op(spell, {
+          cost: null,
+          requirement: plane.heading,
+          trigger: plane.slay,
+        }),
       ),
     ]),
     // The unlock is one op for all four rings; the per-plane printed sentences
@@ -119,6 +125,62 @@ const ELEMENTAL_COMMAND_SPEC: FaithfulItemSpec = {
     ]),
   ],
 };
+
+const STAFF_CHARMING_CASTS = [
+  'cast-charm-person',
+  'cast-command',
+  'cast-comprehend-languages',
+] as const;
+const STAFF_FIRE_CASTS = [
+  'cast-burning-hands',
+  'cast-fireball',
+  'cast-wall-of-fire',
+] as const;
+const STAFF_FROST_CASTS = [
+  'cast-cone-of-cold',
+  'cast-fog-cloud',
+  'cast-ice-storm',
+  'cast-wall-of-ice',
+] as const;
+const STAFF_HEALING_CASTS = [
+  'cast-cure-wounds',
+  'cast-lesser-restoration',
+  'cast-mass-cure-wounds',
+] as const;
+const STAFF_POWER_CASTS = [
+  'cast-cone-of-cold',
+  'cast-fireball',
+  'cast-globe-of-invulnerability',
+  'cast-hold-monster',
+  'cast-levitate',
+  'cast-lightning-bolt',
+  'cast-magic-missile',
+  'cast-ray-of-enfeeblement',
+  'cast-wall-of-force',
+] as const;
+/** The charged casts and the six free casts share the one printed
+ * "While holding the staff" paragraph. */
+const STAFF_MAGI_CASTS = [
+  'cast-conjure-elemental',
+  'cast-dispel-magic',
+  'cast-fireball',
+  'cast-flaming-sphere',
+  'cast-ice-storm',
+  'cast-invisibility',
+  'cast-knock',
+  'cast-lightning-bolt',
+  'cast-passwall',
+  'cast-plane-shift',
+  'cast-telekinesis',
+  'cast-wall-of-fire',
+  'cast-web',
+  'cast-arcane-lock',
+  'cast-detect-magic',
+  'cast-enlarge-reduce',
+  'cast-light',
+  'cast-mage-hand',
+  'cast-protection-from-evil-and-good',
+] as const;
 
 /** `requirement` only: the printed holding/wearing clause for charged casts. */
 const req = (
@@ -219,7 +281,10 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
   [
     'Dimensional Shackles',
     {
-      operations: [op('escape-shackles', { cost: null })],
+      operations: [
+        op('attach-shackles', { target: 'an incapacitated creature' }),
+        op('escape-shackles', { cost: null }),
+      ],
       clauses: [
         clause(
           'activation-escape-shackles',
@@ -282,7 +347,10 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     'Eyes of Charming',
     {
       operations: [
-        op('cast-charm-person', { requirement: 'While wearing them' }),
+        op('cast-charm-person', {
+          requirement: 'While wearing them',
+          target: 'a humanoid within 30 feet of you',
+        }),
       ],
     },
   ],
@@ -357,6 +425,8 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     {
       operations: [
         op('grab-orbiting-stone', {
+          trigger:
+            'another creature must use an action to grasp or net the stone',
           requirement:
             'either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
         }),
@@ -717,6 +787,8 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
           requirement: 'If you hold one end of the rope',
           target: 'a creature you can see within 20 feet of you',
         }),
+        // The actor is the restrained target, not the rope's holder.
+        op('escape-rope', { requirement: 'A target restrained by the rope' }),
       ],
     },
   ],
@@ -759,6 +831,9 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
           cost: null,
           trigger: 'A creature whose space the sphere enters',
         }),
+        op('attempt-control', {
+          requirement: 'If you are within 60 feet of an uncontrolled sphere',
+        }),
         op('contest-control', { cost: null }),
         op('move-sphere', { cost: null }),
       ],
@@ -788,6 +863,9 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     'Staff of Charming',
     {
       operations: [
+        ...STAFF_CHARMING_CASTS.map((id) =>
+          op(id, { requirement: 'While holding this staff' }),
+        ),
         op('reflect-enchantment', {
           trigger:
             'If you succeed on a save against an enchantment spell that targets only you',
@@ -813,6 +891,9 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     'Staff of Power',
     {
       operations: [
+        ...STAFF_POWER_CASTS.map((id) =>
+          op(id, { requirement: 'While holding this staff' }),
+        ),
         op('power-strike', {
           cost: null,
           trigger: 'When you hit with a melee attack using the staff',
@@ -865,6 +946,9 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     'Staff of the Magi',
     {
       operations: [
+        ...STAFF_MAGI_CASTS.map((id) =>
+          op(id, { requirement: 'While holding the staff' }),
+        ),
         op('m9-absorb-staff-spell', {
           requirement: 'While holding the staff',
           trigger: 'when another creature casts a spell that targets only you',
@@ -952,4 +1036,67 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
   req('Wand of Polymorph', ['cast-polymorph'], 'While holding it'),
   req('Wand of Web', ['cast-web'], 'While holding it'),
   req('Wind Fan', ['cast-gust-of-wind'], 'While holding this fan'),
+  // --- eshyra-o9bd.19.4.6.4 (review 19.4.6.3 S1): printed holding / wearing
+  // / target predicates that earlier passes omitted --------------------------
+  req('Staff of Fire', STAFF_FIRE_CASTS, 'While holding it'),
+  req('Staff of Frost', STAFF_FROST_CASTS, 'While holding it'),
+  req('Staff of Healing', STAFF_HEALING_CASTS, 'While holding it'),
+  req(
+    'Staff of Swarming Insects',
+    ['cast-giant-insect', 'cast-insect-plague', 'create-insect-cloud'],
+    'While holding the staff',
+  ),
+  req('Boots of Levitation', ['cast-levitate'], 'While you wear these boots'),
+  req('Cape of the Mountebank', ['cast-dimension-door'], 'While wearing it'),
+  req(
+    'Circlet of Blasting',
+    ['cast-scorching-ray'],
+    'While wearing this circlet',
+  ),
+  req('Hat of Disguise', ['cast-disguise-self'], 'While wearing this hat'),
+  req(
+    'Helm of Comprehending Languages',
+    ['cast-comprehend-languages'],
+    'While wearing this helm',
+  ),
+  req('Ring of Invisibility', ['become-invisible'], 'While wearing this ring'),
+  req('Ring of Jumping', ['cast-jump'], 'While wearing this ring'),
+  req('Ring of Telekinesis', ['cast-telekinesis'], 'While wearing this ring'),
+  req('Robe of Useful Items', ['detach-patch'], 'While wearing the robe'),
+  req('Wings of Flying', ['manifest-wings'], 'While wearing this cloak'),
+  [
+    'Chime of Opening',
+    {
+      operations: [
+        op('strike-chime', {
+          target: 'an object within 120 feet of you that can be opened',
+        }),
+      ],
+    },
+  ],
+  [
+    'Iron Flask',
+    {
+      containment: [
+        {
+          procedure: 'entry',
+          activation: {
+            target: 'a creature that you can see within 60 feet of you',
+          },
+        },
+      ],
+    },
+  ],
+  // The helm's four spell casts sit under "You gain the following benefits
+  // while wearing it".
+  req(
+    'Helm of Brilliance',
+    [
+      'cast-prismatic-spray',
+      'cast-wall-of-fire',
+      'cast-fireball',
+      'cast-daylight',
+    ],
+    'while wearing it',
+  ),
 ]);

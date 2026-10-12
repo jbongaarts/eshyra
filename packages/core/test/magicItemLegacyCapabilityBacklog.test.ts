@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(792);
+    expect(backlog.candidates).toHaveLength(791);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -83,9 +83,12 @@ describe('magic-item legacy capability backlog', () => {
     // Shackles restriction the same way (794 -> 793); eshyra-o9bd.19.4.6.2
     // withheld the Cloak of Displacement state machine (two independent
     // suppression lifetimes no single typed graph states), so its M5 engine-
-    // hook candidate left the set (793 -> 792). No other identity changed.
+    // hook candidate left the set (793 -> 792); eshyra-o9bd.19.4.6.4 withheld
+    // the Necklace of Prayer Beads necklace-wide pool (the printed gate is per
+    // magic bead), so its F5 candidate left the set (792 -> 791). No other
+    // identity changed.
     expect(fingerprint).toBe(
-      '7e72418d67cac6d45414cd5afa98019c2eda693c67da28096cdac7c9d5bd591e',
+      'a27124f47ca4d3bd4564aeb6e4bfe44b119fbce6ed8731f5dc022c110e04170a',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

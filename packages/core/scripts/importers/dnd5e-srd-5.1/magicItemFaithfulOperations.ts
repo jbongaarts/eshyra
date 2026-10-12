@@ -74,10 +74,11 @@ const FIGURINE_CREATION =
   'If you use an action to speak the command word and throw the figurine to a point on the ground within 60 feet of you, the figurine becomes a living creature. If the space where the creature would appear is occupied by other creatures or objects, or if there isn’t enough space for the creature, the figurine doesn’t become a creature.';
 const FIGURINE_REVERSION =
   'It reverts to a figurine early if it drops to 0 hit points or if you use an action to speak the command word again while touching it.';
-const APPARATUS_LEVERS = Array.from(
-  { length: 10 },
-  (_, index) => `set-lever-${index + 1}`,
-);
+const APPARATUS_LEVERS = [
+  ...Array.from({ length: 9 }, (_, index) => `set-lever-${index + 1}`),
+  'set-lever-10-up',
+  'set-lever-10-down',
+];
 const TALISMAN_TARGET =
   'one creature you can see on the ground within 120 feet of you';
 
@@ -316,9 +317,15 @@ const BASE_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
   [
     'Folding Boat',
     {
-      operations: ['become-boat', 'become-ship', 'fold-boat'].map((id) =>
-        op(id, { commandWord: true }),
-      ),
+      operations: [
+        ...['become-boat', 'become-ship'].map((id) =>
+          op(id, { commandWord: true }),
+        ),
+        op('fold-boat', {
+          commandWord: true,
+          requirement: 'provided that no creatures are aboard',
+        }),
+      ],
     },
   ],
   [
@@ -835,6 +842,7 @@ const BASE_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
     'Boots of Speed',
     {
       operations: [
+        op('activate-speed', { requirement: 'While you wear these boots' }),
         // Ending the effect restates no bonus action.
         op('deactivate-speed', {
           cost: null,
