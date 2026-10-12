@@ -275,11 +275,17 @@ describe('C2 spell grants and activated save/DC projection', () => {
           {
             save: { ability: 'constitution', dc: 15 },
             immuneTypes: ['construct', 'undead'],
-            chargeCost: 1,
           },
         ],
       },
     });
+    // "The sword loses 1 charge if the creature is slain": the cost is owed
+    // only on the slain outcome, which the payload cannot condition, so the
+    // payload carries no cost (the printed clause is an adjudicated clause).
+    expect(
+      projectMagicItemActivatedEffects(named('Nine Lives Stealer')).mechanics
+        .effects?.[0],
+    ).not.toHaveProperty('chargeCost');
   });
 
   it('merges payloads into the exact C1 operation IDs and validates every result', () => {

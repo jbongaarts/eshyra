@@ -62,7 +62,13 @@ export type ItemClauseRepresentation =
       readonly field: string;
       readonly ref?: string;
     }
-  | { readonly adjudicated: true; readonly note: string }
+  | {
+      readonly adjudicated: true;
+      readonly note: string;
+      /** Verbatim span of the item's printed description the DM model reads
+       * and interprets; validated as an exact substring of that text. */
+      readonly sourceText: string;
+    }
   | { readonly designBlocked: true; readonly reason: string };
 
 export interface ItemClauseExpectation {
@@ -702,6 +708,21 @@ export function validateMagicItemClausesAndClassify(input: {
           ? undefined
           : clause.engineHooks;
       if (disposition === 'adjudicated') {
+        const sourceText =
+          'sourceText' in clause.representation
+            ? clause.representation.sourceText
+            : undefined;
+        const description = data.description;
+        if (
+          typeof sourceText !== 'string' ||
+          sourceText.length === 0 ||
+          typeof description !== 'string' ||
+          !description.includes(sourceText)
+        ) {
+          throw new Error(
+            `magic-item clause integrity: ${clause.id} adjudicated sourceText is not a non-empty verbatim span of ${itemKey}'s printed description`,
+          );
+        }
         result.push({
           itemKey,
           clauseId: clause.id,

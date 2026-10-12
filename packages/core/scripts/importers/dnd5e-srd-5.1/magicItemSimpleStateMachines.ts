@@ -293,7 +293,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
       ],
       operations: [
         operation('sprinkle-dust', 'action', {
-          target: 'water or a water-composed elemental',
+          target: 'water',
         }),
         operation('smash-pellet'),
       ],

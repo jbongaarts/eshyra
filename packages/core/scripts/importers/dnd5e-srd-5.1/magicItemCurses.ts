@@ -200,6 +200,7 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
           {
             adjudicated: true,
             note: 'The model identifies the contextually nearest visible/audible candidate set; deterministic dice and action owners resolve the save, a random tie, and the forced Attack action.',
+            sourceText: 'attack the creature nearest to you with the axe',
           },
           [],
         ),
@@ -478,8 +479,6 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
       effects: [
         effect('mind-ring-soul-telepathy', 'telepathy', {
           audience: 'any creature wearing the soul-housing ring',
-          oneWay: true,
-          requiresLanguage: false,
         }),
       ],
       operations: [
@@ -607,6 +606,7 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
           {
             adjudicated: true,
             note: 'The orb essence’s desired evil end is deliberately GM-adjudicated; casting, save DC, charm, and attunement lock remain deterministic.',
+            sourceText: 'or something else the GM decides',
           },
           [],
         ),
@@ -649,11 +649,12 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
         effect('pure-good-alignment-contact', 'triggeredEffect', {
           trigger: 'touch or end turn holding/carrying talisman',
           result:
-            'neutral creature takes 6d6 radiant; evil creature takes 8d6 radiant',
+            'a creature that is neither good nor evil in alignment takes 6d6 radiant; an evil creature takes 8d6 radiant',
         }),
         effect('pure-good-fissure-gate', 'triggeredEffect', {
-          trigger: 'fissure operation targets creature',
-          condition: 'target is evil',
+          trigger:
+            'while wearing or holding the talisman, you use an action to expend 1 charge and choose one creature you can see on the ground within 120 feet of you',
+          condition: 'target is of evil alignment',
           result: 'DC 20 Dexterity save or destroyed without remains',
         }),
         effect('pure-good-wielder-eligibility', 'triggeredEffect', {
@@ -709,11 +710,12 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
         effect('ultimate-evil-alignment-contact', 'triggeredEffect', {
           trigger: 'touch or end turn holding/carrying talisman',
           result:
-            'neutral creature takes 6d6 necrotic; good creature takes 8d6 necrotic',
+            'a creature that is neither good nor evil in alignment takes 6d6 necrotic; a good creature takes 8d6 necrotic',
         }),
         effect('ultimate-evil-fissure-gate', 'triggeredEffect', {
-          trigger: 'fissure operation targets creature',
-          condition: 'target is good',
+          trigger:
+            'while wearing or holding the talisman, you use an action to expend 1 charge and choose one creature you can see on the ground within 120 feet of you',
+          condition: 'target is of good alignment',
           result: 'DC 20 Dexterity save or destroyed without remains',
         }),
         effect('ultimate-evil-wielder-eligibility', 'triggeredEffect', {

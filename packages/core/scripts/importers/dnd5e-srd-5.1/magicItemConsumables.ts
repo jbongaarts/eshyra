@@ -170,23 +170,17 @@ const specs: ReadonlyMap<string, ConsumableSpec> = new Map([
       operations: [
         operation('sprinkle-dust', 'doses', ['absorb-water'], {
           cost: 'action',
-          target: 'water or a water-composed elemental',
+          target: 'water',
         }),
       ],
       effects: [
         effect('absorb-water', 'triggeredEffect', {
-          trigger:
-            'a pinch is sprinkled over water or exposed to a water-composed elemental',
+          trigger: 'a pinch is sprinkled over water',
           waterCubeFeetPerSide: 15,
           becomes: 'marble-sized pellet',
           pelletRelease: {
             activation: 'action',
             method: 'smash against a hard surface',
-          },
-          waterElemental: {
-            save: { ability: 'constitution', dc: 13 },
-            failedSaveDamage: { dice: '10d6', type: 'necrotic' },
-            successfulSaveDamage: 'half',
           },
         }),
       ],
@@ -310,6 +304,14 @@ const specs: ReadonlyMap<string, ConsumableSpec> = new Map([
               branchRadiusFeet: 20,
             },
             whip: {
+              // "use a bonus action to make a melee spell attack against a
+              // creature within 10 feet of the whip"; "As a bonus action on
+              // your turn, you can direct the whip to fly up to 20 feet and
+              // repeat the attack against a creature within 10 feet of it."
+              attackKind: 'melee-spell-attack',
+              target: 'a creature within 10 feet of the whip',
+              attackAction: 'bonus-action',
+              moveAndRepeat: 'As a bonus action on your turn',
               attackBonus: 9,
               damage: { dice: '1d6+5', type: 'force' },
               moveFeet: 20,

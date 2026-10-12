@@ -254,7 +254,7 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         ),
         procedure(
           'm5-complex-cube-contact',
-          'a listed spell contacts the barrier',
+          'the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects',
           'deduct the source-defined charges',
           { tableRef: 'table:cube-of-force-charges-lost' },
         ),
@@ -941,6 +941,8 @@ export function projectMagicItemComplexStateMachine(
               representation: {
                 adjudicated: true as const,
                 note: 'The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.',
+                sourceText:
+                  'The barrel has a hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check.',
               },
             },
           ]

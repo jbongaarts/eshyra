@@ -162,13 +162,21 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
         'cast the plane shift spell (save DC 17)',
       ],
       effects: [
-        spell('cast-gate', 'spell:gate', {
-          targetPlane: 'plane keyed to pressed side',
-        }),
-        spell('cast-plane-shift', 'spell:plane-shift', {
-          ...fixedDc(17),
-          targetPlane: 'plane keyed to pressed side',
-        }),
+        spell(
+          'cast-gate',
+          'spell:gate',
+          { targetPlane: 'plane keyed to pressed side' },
+          action('press one side of the cube'),
+        ),
+        spell(
+          'cast-plane-shift',
+          'spell:plane-shift',
+          {
+            ...fixedDc(17),
+            targetPlane: 'plane keyed to pressed side',
+          },
+          action('press the same side of the cube twice'),
+        ),
       ],
     },
   ],
@@ -413,10 +421,15 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
     {
       sourcePhrases: ['gain the effect of the clairvoyance spell'],
       effects: [
-        spell('drink', 'spell:clairvoyance', noConcentration, {
-          cost: 'consume',
-          target: 'self',
-        }),
+        spell(
+          'drink',
+          'spell:clairvoyance',
+          {},
+          {
+            cost: 'consume',
+            target: 'self',
+          },
+        ),
       ],
     },
   ],
@@ -562,36 +575,88 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
         spell('dominate-air-elemental', 'spell:dominate-monster', {
           ...fixedDc(17),
           target: 'air elemental',
+          condition: 'only a Ring of Air Elemental Command',
         }),
-        spell('cast-chain-lightning', 'spell:chain-lightning', fixedDc(17)),
-        spell('cast-gust-of-wind', 'spell:gust-of-wind', fixedDc(17)),
-        spell('cast-wind-wall', 'spell:wind-wall', fixedDc(17)),
+        spell('cast-chain-lightning', 'spell:chain-lightning', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring',
+        }),
+        spell('cast-gust-of-wind', 'spell:gust-of-wind', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring',
+        }),
+        spell('cast-wind-wall', 'spell:wind-wall', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring',
+        }),
         spell('dominate-earth-elemental', 'spell:dominate-monster', {
           ...fixedDc(17),
           target: 'earth elemental',
+          condition: 'only a Ring of Earth Elemental Command',
         }),
-        spell('cast-stone-shape', 'spell:stone-shape', fixedDc(17)),
-        spell('cast-stoneskin', 'spell:stoneskin', fixedDc(17)),
-        spell('cast-wall-of-stone', 'spell:wall-of-stone', fixedDc(17)),
+        spell('cast-stone-shape', 'spell:stone-shape', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring',
+        }),
+        spell('cast-stoneskin', 'spell:stoneskin', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring',
+        }),
+        spell('cast-wall-of-stone', 'spell:wall-of-stone', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring',
+        }),
         spell('dominate-fire-elemental', 'spell:dominate-monster', {
           ...fixedDc(17),
           target: 'fire elemental',
+          condition: 'only a Ring of Fire Elemental Command',
         }),
-        spell('cast-burning-hands', 'spell:burning-hands', fixedDc(17)),
-        spell('cast-fireball', 'spell:fireball', fixedDc(17)),
-        spell('cast-wall-of-fire', 'spell:wall-of-fire', fixedDc(17)),
+        spell('cast-burning-hands', 'spell:burning-hands', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring',
+        }),
+        spell('cast-fireball', 'spell:fireball', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring',
+        }),
+        spell('cast-wall-of-fire', 'spell:wall-of-fire', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring',
+        }),
         spell('dominate-water-elemental', 'spell:dominate-monster', {
           ...fixedDc(17),
           target: 'water elemental',
+          condition: 'only a Ring of Water Elemental Command',
         }),
-        spell(
-          'cast-create-or-destroy-water',
-          'spell:create-or-destroy-water',
-          fixedDc(17),
-        ),
-        spell('cast-control-water', 'spell:control-water', fixedDc(17)),
-        spell('cast-ice-storm', 'spell:ice-storm', fixedDc(17)),
-        spell('cast-wall-of-ice', 'spell:wall-of-ice', fixedDc(17)),
+        spell('cast-create-or-destroy-water', 'spell:create-or-destroy-water', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring',
+        }),
+        spell('cast-control-water', 'spell:control-water', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring',
+        }),
+        spell('cast-ice-storm', 'spell:ice-storm', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring',
+        }),
+        spell('cast-wall-of-ice', 'spell:wall-of-ice', {
+          ...fixedDc(17),
+          condition:
+            'only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring',
+        }),
       ],
     },
   ],
@@ -643,7 +708,8 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'launch-shooting-stars',
           'triggeredEffect',
           {
-            trigger: 'a glowing mote reaches its chosen point',
+            trigger:
+              'a glowing mote reaches the point you chose, a point you can see within 60 feet of you',
             result:
               'each creature in the originating 15-foot cube resolves the save and fire damage',
             area: { shape: 'cube', sizeFeet: 15 },
@@ -1141,6 +1207,9 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
             failedSaveCondition: 'deafened',
             conditionDuration: { amount: 1, unit: 'minute' },
             glassOrCrystalDamageDice: '10d6',
+            glassOrCrystalSaveMode: 'disadvantage',
+            glassOrCrystalAppliesTo:
+              'creatures and objects made of glass or crystal',
           },
           undefined,
           {
@@ -1165,7 +1234,11 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'triggeredEffect',
           {
             trigger: 'javelin is hurled and command word spoken',
-            line: { widthFeet: 5, lengthFeet: 120 },
+            line: {
+              widthFeet: 5,
+              from: 'user',
+              to: 'target within 120 feet',
+            },
             excludes: ['user', 'attack-target'],
             save: { ability: 'dexterity', dc: 13 },
             failedSaveDamage: { dice: '4d6', type: 'lightning' },
@@ -1251,10 +1324,13 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'triggeredEffect',
           {
             trigger: 'spectral ram attack hits',
+            result:
+              'for each charge you spend, the target takes 2d10 force damage and is pushed 5 feet away from you',
             attackModifier: 7,
             rangeFeet: 60,
             damagePerCharge: { dice: '2d10', type: 'force' },
             pushFeetPerCharge: 5,
+            pushDirection: 'away from you',
             charges: '1-3',
           },
           [F2, F8, F9],
@@ -1296,7 +1372,7 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'drain-life',
           'triggeredEffect',
           {
-            trigger: 'melee hit with rod',
+            trigger: 'you hit a creature with a melee attack using the rod',
             save: { ability: 'constitution', dc: 17 },
             failedSaveDamage: { dice: '4d6', type: 'necrotic' },
             healing: 'half necrotic damage dealt',
@@ -1309,7 +1385,7 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'imposesCondition',
           {
             conditions: ['paralyzed'],
-            trigger: 'melee hit with rod',
+            trigger: 'you hit a creature with a melee attack using the rod',
             save: { ability: 'strength', dc: 17 },
             duration: { amount: 1, unit: 'minute' },
             repeatSave: 'end of each turn',
@@ -1431,7 +1507,8 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'giant-slaying-critical',
           'triggeredEffect',
           {
-            trigger: 'natural 20 attack against a giant with the hammer',
+            trigger:
+              'while attuned to this weapon, you roll a 20 on an attack roll made with this weapon against a giant',
             save: { ability: 'constitution', dc: 17 },
             failedSaveEffect: 'die',
           },
@@ -1476,7 +1553,6 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
             save: { ability: 'constitution', dc: 15 },
             immuneTypes: ['construct', 'undead'],
             failedSaveEffect: 'slain instantly',
-            chargeCost: 1,
           },
           [F1, F8, F9],
           { cost: 'free', trigger: 'critical hit against eligible creature' },
