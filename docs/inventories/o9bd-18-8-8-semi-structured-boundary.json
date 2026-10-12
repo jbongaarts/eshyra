@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1918,
+  "rowCount": 1922,
   "dispositionCounts": {
     "complete": 440,
-    "model-adjudicated": 1272,
+    "model-adjudicated": 1276,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -25347,6 +25347,46 @@
       "recordKinds": [
         "magic-item"
       ],
+      "fieldPath": "data.mechanics.effects[].variants.whip.attackAction",
+      "representativeValues": [
+        "bonus-action"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].variants.whip.attackAction",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].variants.whip.attackKind",
+      "representativeValues": [
+        "melee-spell-attack"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].variants.whip.attackKind",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
       "fieldPath": "data.mechanics.effects[].variants.whip.damage.dice",
       "representativeValues": [
         "1d6+5"
@@ -25418,6 +25458,46 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].variants.whip.endsOn[]",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].variants.whip.moveAndRepeat",
+      "representativeValues": [
+        "As a bonus action on your turn"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].variants.whip.moveAndRepeat",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].variants.whip.target",
+      "representativeValues": [
+        "a creature within 10 feet of the whip"
+      ],
+      "population": 1,
+      "valueClass": "compound mechanical text",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
+      "currentAuditReadiness": "qualifier remains source/entry prose and is not claimed as typed gameplay support",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,

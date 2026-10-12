@@ -92882,7 +92882,7 @@
             "id": "c2-residual-invocation-zone",
             "kind": "advantage",
             "roll": "attack rolls, saving throws, and ability checks",
-            "condition": "alignment matches candle and creature is within 30 feet of burning candle"
+            "condition": "creature within the burning candle's light (dim light in a 30-foot radius) whose alignment matches that of the candle"
           }
         ]
       },
@@ -95491,7 +95491,7 @@
           {
             "id": "m5-complex-cube-contact",
             "kind": "triggeredEffect",
-            "trigger": "a listed spell contacts the barrier",
+            "trigger": "the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects",
             "result": "deduct the source-defined charges",
             "tableRef": "table:cube-of-force-charges-lost"
           }
@@ -100710,6 +100710,10 @@
                 "branchRadiusFeet": 20
               },
               "whip": {
+                "attackKind": "melee-spell-attack",
+                "target": "a creature within 10 feet of the whip",
+                "attackAction": "bonus-action",
+                "moveAndRepeat": "As a bonus action on your turn",
                 "attackBonus": 9,
                 "damage": {
                   "dice": "1d6+5",
@@ -108336,14 +108340,14 @@
             "level": "bright",
             "radiusFeet": 30,
             "dimAdditionalFeet": 30,
-            "condition": "while lit; burns for 6 hours per pint of oil",
+            "condition": "while lit and the hood is not lowered; burns for 6 hours per pint of oil",
             "id": "m3-lantern-of-revealing-bright-light"
           },
           {
             "kind": "light",
             "level": "dim",
             "radiusFeet": 5,
-            "condition": "hood lowered (an action)",
+            "condition": "while lit with the hood lowered (lowering it is an action)",
             "id": "m3-lantern-of-revealing-dim-light"
           },
           {
@@ -126154,7 +126158,7 @@
           {
             "kind": "sense",
             "sense": "magnetic-north-and-depth",
-            "condition": "the magnetic-north function does nothing in a location with no magnetic north",
+            "condition": "magnetic north: only if you press button 6 (the rod assumes or remains in its normal form); the function does nothing in a location with no magnetic north",
             "id": "m3-rod-of-lordly-might-sense-magnetic-north-and-depth"
           }
         ]

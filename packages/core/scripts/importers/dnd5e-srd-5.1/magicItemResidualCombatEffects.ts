@@ -181,7 +181,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'invocation-zone',
         'makes attack rolls, saving throws, and ability checks with advantage',
         'attack rolls, saving throws, and ability checks',
-        'alignment matches candle and creature is within 30 feet of burning candle',
+        "creature within the burning candle's light (dim light in a 30-foot radius) whose alignment matches that of the candle",
       ),
     ],
   ],

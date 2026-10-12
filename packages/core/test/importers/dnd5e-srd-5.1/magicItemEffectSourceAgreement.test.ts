@@ -624,6 +624,66 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
       expect(appliesTo).toContain('spell attack rolls');
       expect(appliesTo).toContain('wears or holds');
     }
+    // Review 19.4.5.10 S1: each selected effect keeps its own printed
+    // predicate. Cube of Force: "targeted by certain spells or comes into
+    // contact with certain spell or magic item effects" (the table lists the
+    // Horn of Blasting) - not spells only.
+    expect(
+      String(
+        effect('magic-item:cube-of-force', 'm5-complex-cube-contact').trigger,
+      ),
+    ).toContain('certain spell or magic item effects');
+    // Rod of Lordly Might: "If you press button 6, ... indicates magnetic north."
+    expect(
+      String(
+        effect(
+          'magic-item:rod-of-lordly-might',
+          'm3-rod-of-lordly-might-sense-magnetic-north-and-depth',
+        ).condition,
+      ),
+    ).toContain('button 6');
+    // Candle of Invocation: "Any creature within that light" (dim light in a
+    // 30-foot radius), not mere proximity.
+    expect(
+      String(
+        effect('magic-item:candle-of-invocation', 'invocation-zone').condition,
+      ),
+    ).toContain("burning candle's light");
+    // Lantern of Revealing: the 30/30 profile only while lit with the hood not
+    // lowered; lowering the hood (while lit) reduces it to 5-foot dim light.
+    expect(
+      String(
+        effect(
+          'magic-item:lantern-of-revealing',
+          'm3-lantern-of-revealing-bright-light',
+        ).condition,
+      ),
+    ).toContain('hood is not lowered');
+    expect(
+      String(
+        effect(
+          'magic-item:lantern-of-revealing',
+          'm3-lantern-of-revealing-dim-light',
+        ).condition,
+      ),
+    ).toContain('while lit with the hood lowered');
+    // Feather Token: the nested whip profile (a duplicate of the residual whip
+    // attack) carries the same printed scope - a melee spell attack against a
+    // creature within 10 feet of the whip, as a bonus action; the repeat flight
+    // and attack is a bonus action on your turn.
+    const featherRecord = recordsByKey.get('magic-item:feather-token');
+    if (featherRecord === undefined) throw new Error('feather token missing');
+    const tokenPayload = (
+      ((featherRecord.data as Obj).mechanics as Obj).effects as Obj[]
+    ).find((e) => String(e.id).endsWith('token-kind-payload'));
+    const whip = ((tokenPayload?.variants as Obj | undefined)?.whip ??
+      {}) as Obj;
+    expect(whip).toMatchObject({
+      attackKind: 'melee-spell-attack',
+      target: 'a creature within 10 feet of the whip',
+      attackAction: 'bonus-action',
+      moveAndRepeat: 'As a bonus action on your turn',
+    });
     // Ring of Elemental Command: each plane's dominate monster belongs only to
     // that plane's ring, and its additional spells also require helping slay
     // an elemental of that plane while attuned (printed per variant).
