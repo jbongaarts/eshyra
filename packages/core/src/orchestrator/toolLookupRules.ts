@@ -66,7 +66,8 @@ export const lookupRulesTool: Tool = {
     'Omit systemId to use the campaign binding; pass it to query a specific ' +
     'bundled rules system (e.g. "dnd5e-srd", "pathfinder2e-remaster"). ' +
     'If a name matches multiple records of the same kind, the result is an ' +
-    'ambiguous error listing candidate keys (also in structured data.candidateKeys); ' +
+    'ambiguous error listing candidate keys (also in structured data.candidateKeys, ' +
+    'with a kind/source/locator `candidates` card for each shown key); ' +
     're-query by ref with one of them. A successful result includes a `card` ' +
     'summary (key, kind, name, source locator, grantor/parent ref) to ' +
     'disambiguate same- or cross-kind duplicate names without parsing the raw record. ' +
@@ -173,11 +174,23 @@ export const lookupRulesTool: Tool = {
       // For `ambiguous`, the candidate keys are both embedded in the message
       // (for narration) and carried as structured `data` so the DM can
       // re-query by an exact key without parsing free text (ADR 0013).
+      // Each shown candidate also carries the same kind/source/locator card a
+      // successful lookup returns, built from the resolved winning entry in
+      // this kind's index, so the DM can tell source-distinct passages apart
+      // without a further lookup per key.
       return err(
         result.code,
         result.message,
         result.code === 'ambiguous'
-          ? { candidateKeys: result.candidateKeys }
+          ? {
+              candidateKeys: result.candidateKeys,
+              candidates: result.candidateKeys.flatMap((key) => {
+                const entry = stack.recordsByKind.get(kind)?.byKey.get(key);
+                return entry === undefined
+                  ? []
+                  : [buildRulesRecordCard(entry.record)];
+              }),
+            }
           : undefined,
       );
     } catch (e) {

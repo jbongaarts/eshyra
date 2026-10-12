@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1926,
+  "rowCount": 1928,
   "dispositionCounts": {
     "complete": 440,
-    "model-adjudicated": 1280,
+    "model-adjudicated": 1282,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -24838,12 +24838,12 @@
       "fieldPath": "data.mechanics.effects[].target",
       "representativeValues": [
         "self",
+        "you and each creature that needs to breathe within 30 feet of you",
         "one humanoid",
         "creature currently focused on with detect thoughts",
-        "creature native to another plane of existence that you can see",
-        "failed controller"
+        "Each creature in the area where the fortress appears"
       ],
-      "population": 14,
+      "population": 16,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -25467,6 +25467,26 @@
       "recordKinds": [
         "magic-item"
       ],
+      "fieldPath": "data.mechanics.effects[].variants.whip.attackAction",
+      "representativeValues": [
+        "bonus-action"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].variants.whip.attackAction",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
       "fieldPath": "data.mechanics.effects[].variants.whip.attackKind",
       "representativeValues": [
         "melee-spell-attack"
@@ -25558,6 +25578,26 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].variants.whip.endsOn[]",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].variants.whip.moveAndRepeat",
+      "representativeValues": [
+        "As a bonus action on your turn"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].variants.whip.moveAndRepeat",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,

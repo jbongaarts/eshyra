@@ -93169,7 +93169,7 @@
             "id": "c2-residual-invocation-zone",
             "kind": "advantage",
             "roll": "attack rolls, saving throws, and ability checks",
-            "condition": "alignment matches candle and creature is within 30 feet of burning candle"
+            "condition": "creature within the burning candle's light (dim light in a 30-foot radius) whose alignment matches that of the candle"
           }
         ]
       },
@@ -95782,7 +95782,7 @@
           {
             "id": "m5-complex-cube-contact",
             "kind": "triggeredEffect",
-            "trigger": "a listed spell contacts the barrier",
+            "trigger": "the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects",
             "result": "deduct the source-defined charges",
             "tableRef": "table:cube-of-force-charges-lost"
           }
@@ -99207,6 +99207,7 @@
             "kind": "triggeredEffect",
             "trigger": "dust is thrown into air",
             "result": "on failed DC 15 Constitution save impose incapacitated and suffocating with repeat saves",
+            "target": "you and each creature that needs to breathe within 30 feet of you",
             "save": {
               "ability": "constitution",
               "dc": 15
@@ -101136,6 +101137,8 @@
               "whip": {
                 "attackKind": "melee-spell-attack",
                 "target": "a creature within 10 feet of the whip",
+                "attackAction": "bonus-action",
+                "moveAndRepeat": "As a bonus action on your turn",
                 "attackBonus": 9,
                 "damage": {
                   "dice": "1d6+5",
@@ -107028,6 +107031,7 @@
             "kind": "triggeredEffect",
             "trigger": "fortress appears",
             "result": "resolve DC 15 Dexterity save, damage, and push",
+            "target": "Each creature in the area where the fortress appears",
             "save": {
               "ability": "dexterity",
               "dc": 15
@@ -108485,7 +108489,7 @@
           {
             "id": "c2-residual-iron-flask-known-save",
             "kind": "advantage",
-            "roll": "Wisdom saving throw",
+            "roll": "the DC 17 Wisdom saving throw to avoid being trapped in the flask",
             "condition": "target has been trapped by this flask before"
           }
         ]
@@ -108934,14 +108938,14 @@
             "level": "bright",
             "radiusFeet": 30,
             "dimAdditionalFeet": 30,
-            "condition": "while lit; burns for 6 hours per pint of oil",
+            "condition": "while lit and the hood is not lowered; burns for 6 hours per pint of oil",
             "id": "m3-lantern-of-revealing-bright-light"
           },
           {
             "kind": "light",
             "level": "dim",
             "radiusFeet": 5,
-            "condition": "hood lowered (an action)",
+            "condition": "while lit with the hood lowered (lowering it is an action)",
             "id": "m3-lantern-of-revealing-dim-light"
           },
           {
@@ -111091,7 +111095,7 @@
           {
             "id": "c2-residual-mirror-known-save",
             "kind": "advantage",
-            "roll": "Charisma saving throw",
+            "roll": "the DC 15 Charisma saving throw to avoid being trapped in the mirror",
             "condition": "creature knows mirror’s nature"
           },
           {
@@ -127259,7 +127263,7 @@
           {
             "kind": "sense",
             "sense": "magnetic-north-and-depth",
-            "condition": "the magnetic-north function does nothing in a location with no magnetic north",
+            "condition": "magnetic north: only if you press button 6 (the rod assumes or remains in its normal form); the function does nothing in a location with no magnetic north",
             "id": "m3-rod-of-lordly-might-sense-magnetic-north-and-depth"
           }
         ]
@@ -139829,7 +139833,7 @@
             "id": "m7-pure-good-alignment-contact",
             "kind": "triggeredEffect",
             "trigger": "touch or end turn holding/carrying talisman",
-            "result": "neutral creature takes 6d6 radiant; evil creature takes 8d6 radiant"
+            "result": "a creature that is neither good nor evil in alignment takes 6d6 radiant; an evil creature takes 8d6 radiant"
           },
           {
             "id": "m7-pure-good-fissure-gate",
@@ -140372,7 +140376,7 @@
             "id": "m7-ultimate-evil-alignment-contact",
             "kind": "triggeredEffect",
             "trigger": "touch or end turn holding/carrying talisman",
-            "result": "neutral creature takes 6d6 necrotic; good creature takes 8d6 necrotic"
+            "result": "a creature that is neither good nor evil in alignment takes 6d6 necrotic; a good creature takes 8d6 necrotic"
           },
           {
             "id": "m7-ultimate-evil-fissure-gate",

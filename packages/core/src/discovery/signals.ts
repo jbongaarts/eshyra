@@ -139,6 +139,50 @@ function cueSignals(
   return result;
 }
 
+function foldName(normalized: string): string {
+  return normalized
+    .replace(/'/gu, '')
+    .replace(/[^\p{L}\p{N} -]/gu, ' ')
+    .replace(/(?<![\p{L}\p{N}])-|-(?![\p{L}\p{N}])/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .trim();
+}
+
+/**
+ * Tokenize player input once. An apostrophe between two word characters stays
+ * inside its token; any other apostrophe (a quote edge, a trailing possessive
+ * `s'`) is a boundary, as is every other non-word character except a hyphen
+ * joining two word characters. Each token yields the spellings it may match an
+ * indexed (apostrophe-free folded) name token with: as written with
+ * apostrophes removed ("land's" -> "lands"), and with a trailing possessive
+ * `'s` removed first ("stride's" -> "stride"). A terminal `s` is never
+ * stripped from a word without an apostrophe. This grammar is the whole
+ * contract: a quote glued to the neighbouring word ("say'Shield'") reads as an
+ * internal apostrophe and is deliberately not recognized - typos and malformed
+ * text are left to the DM model's reasoning over the raw player input (user
+ * decision 2026-10-11), not to further deterministic heuristics.
+ */
+function inputTokenAlternatives(normalizedInput: string): string[][] {
+  return normalizedInput
+    .replace(/(?<![\p{L}\p{N}])'|'(?![\p{L}\p{N}])/gu, ' ')
+    .replace(/[^\p{L}\p{N} '-]/gu, ' ')
+    .replace(/(?<![\p{L}\p{N}])-|-(?![\p{L}\p{N}])/gu, ' ')
+    .split(/\s+/u)
+    .filter(Boolean)
+    .map((token) => {
+      const written = token.replaceAll("'", '');
+      return token.endsWith("'s") && token.length > 2
+        ? [written, token.slice(0, -2).replaceAll("'", '')]
+        : [written];
+    });
+}
+
+interface NameReason {
+  readonly matchedName: string;
+  readonly kind: RulesRecordKind;
+  readonly ambiguousWith: readonly string[];
+}
+
 function nameSignals(
   scenario: DiscoveryScenario,
   byKind: ReadonlyMap<
@@ -147,43 +191,114 @@ function nameSignals(
   >,
   index: number,
 ): { signals: DiscoverySignal[]; ambiguous: AmbiguousNameObservation[] } {
-  const normalizedInput = normalizeRulesRecordName(
-    scenario.playerInput,
-  ).replace(/[^\p{L}\p{N}: -]/gu, ' ');
-  const tokens = normalizedInput.split(/\s+/u).filter(Boolean);
+  // Input and indexed names are folded to the same word-boundary form:
+  // apostrophes are dropped from index names ("Land's Stride" and "Lands
+  // Stride" agree), a hyphen between two word characters joins them
+  // ("half-elf"), and every other character - commas, colons, periods, quotes,
+  // brackets, dashes - is a boundary ("Food, Drink, and Lodging" agrees with
+  // "food drink and lodging"). Apostrophes in the input are decided per token
+  // (see inputTokenAlternatives), so "Land's Stride's effect" reaches "land's
+  // stride" and "the wizard's spellbook" still reaches "wizard".
+  const tokens = inputTokenAlternatives(
+    normalizeRulesRecordName(scenario.playerInput),
+  );
   const signals: DiscoverySignal[] = [];
   const ambiguous: AmbiguousNameObservation[] = [];
-  const seen = new Set<string>();
+  // Every key a matched name resolves to, across ALL kinds. A name shared by
+  // several records (within one kind or across kinds) is ambiguous: ADR 0020
+  // many-to-many means every matching key is surfaced with the ambiguity as a
+  // retrieval reason, never silently dropped and never ranked by kind.
+  const keysByName = new Map<string, Set<string>>();
   for (const kind of RULES_RECORD_KINDS) {
     const names = byKind.get(kind)?.byName;
     if (names === undefined) continue;
     for (const [rawName, entries] of names) {
-      const nameTokens = rawName.split(/\s+/u).filter(Boolean);
-      if (nameTokens.length === 0 || nameTokens.length > tokens.length)
-        continue;
-      const found = Array.from(
-        { length: tokens.length - nameTokens.length + 1 },
-        (_, i) => tokens.slice(i, i + nameTokens.length).join(' ') === rawName,
-      ).some(Boolean);
+      const bucket = keysByName.get(rawName) ?? new Set<string>();
+      for (const entry of entries) bucket.add(entry.record.key);
+      keysByName.set(rawName, bucket);
+    }
+  }
+  const observed = new Set<string>();
+  // One canonical candidate identity per key, but every independently
+  // meaningful matched-name reason survives on it (a key indexed under several
+  // names, e.g. a feature reachable by two section names, keeps each name with
+  // that name's own ambiguity siblings). One signal per key keeps the route
+  // count, and so retention ranking, unchanged.
+  const reasonsByKey = new Map<string, NameReason[]>();
+  for (const kind of RULES_RECORD_KINDS) {
+    const names = byKind.get(kind)?.byName;
+    if (names === undefined) continue;
+    for (const [rawName, entries] of names) {
+      const nameTokens = foldName(rawName).split(' ').filter(Boolean);
+      if (nameTokens.length === 0) continue;
+      const found = tokens.some(
+        (_, i) =>
+          i + nameTokens.length <= tokens.length &&
+          nameTokens.every(
+            (token, offset) => tokens[i + offset]?.includes(token) ?? false,
+          ),
+      );
       if (!found) continue;
       const keys = [
         ...new Set(entries.map((entry) => entry.record.key)),
       ].sort();
-      const evidence = {
-        input: scenario.playerInput,
-        matchedName: rawName,
-        kind,
-      };
-      if (keys.length === 1) {
-        const key = keys[0];
-        if (!seen.has(key)) {
-          signals.push(signal('name-mention', key, evidence, index++));
-          seen.add(key);
-        }
-      } else {
-        ambiguous.push({ name: rawName, keys, evidence });
+      const allKeys = [...(keysByName.get(rawName) ?? keys)].sort();
+      if (allKeys.length > 1 && !observed.has(rawName)) {
+        observed.add(rawName);
+        ambiguous.push({
+          name: rawName,
+          keys: allKeys,
+          evidence: {
+            input: scenario.playerInput,
+            matchedName: rawName,
+            kind,
+          },
+        });
+      }
+      for (const key of keys) {
+        const reasons = reasonsByKey.get(key) ?? [];
+        if (reasons.some((reason) => reason.matchedName === rawName)) continue;
+        reasons.push({
+          matchedName: rawName,
+          kind,
+          ambiguousWith: allKeys.filter((other) => other !== key),
+        });
+        reasonsByKey.set(key, reasons);
       }
     }
+  }
+  for (const [key, reasons] of reasonsByKey) {
+    // Name order, not index order, picks the primary reason so the evidence is
+    // stable however the index happens to be built.
+    const sorted = [...reasons].sort((a, b) =>
+      a.matchedName < b.matchedName
+        ? -1
+        : a.matchedName > b.matchedName
+          ? 1
+          : 0,
+    );
+    const [primary] = sorted as [NameReason, ...NameReason[]];
+    const reasonEvidence = (reason: NameReason) => ({
+      matchedName: reason.matchedName,
+      kind: reason.kind,
+      ...(reason.ambiguousWith.length > 0
+        ? { ambiguousWith: [...reason.ambiguousWith] }
+        : {}),
+    });
+    signals.push(
+      signal(
+        'name-mention',
+        key,
+        {
+          input: scenario.playerInput,
+          ...reasonEvidence(primary),
+          ...(sorted.length > 1
+            ? { matchedNames: sorted.map(reasonEvidence) }
+            : {}),
+        },
+        index++,
+      ),
+    );
   }
   return { signals, ambiguous };
 }

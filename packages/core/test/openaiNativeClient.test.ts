@@ -6,6 +6,11 @@ import {
   OPENAI_NATIVE_TOOL_PROTOCOL,
   OpenAiNativeModelClient,
 } from '../src/model/openaiNativeClient.js';
+import {
+  AMBIGUOUS_LOOKUP_CASES,
+  expectProviderPayloadQualified,
+  realAmbiguousLookup,
+} from './support/ambiguousLookup.js';
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -231,6 +236,33 @@ describe('OpenAiNativeModelClient', () => {
       { role: 'user', content: 'Continue.' },
     ]);
   });
+
+  it.each(AMBIGUOUS_LOOKUP_CASES)(
+    'delivers qualified ambiguous $name candidates in the provider tool message',
+    async ({ kind, name }) => {
+      fetchMock.mockResolvedValue(completion({ content: 'ok' }));
+      const lookup = realAmbiguousLookup(kind, name);
+
+      await new OpenAiNativeModelClient('gpt-test', auth).complete({
+        messages: [
+          {
+            role: 'user',
+            content: '',
+            toolResults: [
+              { callId: 'call_a', name: 'lookup_rules', result: lookup.result },
+            ],
+          },
+        ],
+      });
+
+      const messages = requestBody().messages as Array<{
+        role: string;
+        content: string;
+      }>;
+      const tool = messages.find((m) => m.role === 'tool');
+      expectProviderPayloadQualified(JSON.parse(String(tool?.content)), lookup);
+    },
+  );
 
   it.each([
     ['stop', 'end_turn'],

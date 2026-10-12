@@ -19,7 +19,11 @@ import type {
   ModelToolResult,
   ModelUsage,
 } from './client.js';
-import { ModelClientError, ModelRateLimitError } from './client.js';
+import {
+  ModelClientError,
+  ModelRateLimitError,
+  toToolResultPayload,
+} from './client.js';
 import type { ModelToolDefinition } from './toolSchema.js';
 
 /**
@@ -131,9 +135,7 @@ function toNativeTools(
 
 /** Serialize a deterministic tool result for the native `tool_result` block. */
 function toResultPayload(result: ModelToolResult['result']): unknown {
-  return result.ok
-    ? { ok: true, data: result.data }
-    : { ok: false, code: result.code, message: result.message };
+  return toToolResultPayload(result);
 }
 
 /**

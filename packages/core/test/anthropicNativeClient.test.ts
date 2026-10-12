@@ -48,6 +48,11 @@ import {
   AnthropicNativeModelClient,
 } from '../src/model/anthropicNativeClient.js';
 import { ModelClientError, ModelRateLimitError } from '../src/model/client.js';
+import {
+  AMBIGUOUS_LOOKUP_CASES,
+  expectProviderPayloadQualified,
+  realAmbiguousLookup,
+} from './support/ambiguousLookup.js';
 
 /** A collecting {@link import('../src/debug/sessionDebug.js').SessionDebugSink}. */
 function collectingSink(captureContent = false): {
@@ -286,6 +291,39 @@ describe('AnthropicNativeModelClient', () => {
       is_error: true,
     });
   });
+
+  it.each(AMBIGUOUS_LOOKUP_CASES)(
+    'delivers qualified ambiguous $name candidates in the provider tool_result',
+    async ({ kind, name }) => {
+      createMock.mockResolvedValue(
+        message({ content: [{ type: 'text', text: 'ok' }] }),
+      );
+      const lookup = realAmbiguousLookup(kind, name);
+
+      await new AnthropicNativeModelClient('m').complete({
+        messages: [
+          {
+            role: 'user',
+            content: '',
+            toolResults: [
+              {
+                callId: 'toolu_a',
+                name: 'lookup_rules',
+                result: lookup.result,
+              },
+            ],
+          },
+        ],
+      });
+
+      const arg = createMock.mock.calls[0][0] as {
+        messages: Array<{ content: Array<Record<string, unknown>> }>;
+      };
+      const block = arg.messages[0].content[0];
+      expect(block.is_error).toBe(true);
+      expectProviderPayloadQualified(JSON.parse(String(block.content)), lookup);
+    },
+  );
 
   it('maps provider stop reasons onto the neutral vocabulary', async () => {
     const cases: Array<[string | null, string | undefined]> = [

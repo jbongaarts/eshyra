@@ -254,7 +254,7 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         ),
         procedure(
           'm5-complex-cube-contact',
-          'a listed spell contacts the barrier',
+          'the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects',
           'deduct the source-defined charges',
           { tableRef: 'table:cube-of-force-charges-lost' },
         ),

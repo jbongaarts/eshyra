@@ -59,6 +59,11 @@ import type {
 import { ModelClientError, ModelRateLimitError } from '../src/model/client.js';
 import type { ModelToolDefinition } from '../src/model/toolSchema.js';
 import { ModelTurnAuditor } from '../src/orchestrator/turnAuditor.js';
+import {
+  AMBIGUOUS_LOOKUP_CASES,
+  expectProviderPayloadQualified,
+  realAmbiguousLookup,
+} from './support/ambiguousLookup.js';
 
 interface CapturedTool {
   name: string;
@@ -308,6 +313,79 @@ describe('AgentSdkMcpModelClient', () => {
     expect(handlerResult?.isError).toBe(true);
     expect(out.text).toBe('It fizzles.');
     expect(out.executedToolCalls?.[0].result).toEqual({
+      ok: false,
+      code: 'invalid_args',
+      message: 'bad dice',
+    });
+  });
+
+  it.each(AMBIGUOUS_LOOKUP_CASES)(
+    'delivers qualified ambiguous $name candidates in MCP text and structuredContent',
+    async ({ kind, name }) => {
+      const lookup = realAmbiguousLookup(kind, name);
+      let handlerResult:
+        | {
+            isError?: boolean;
+            content: { text: string }[];
+            structuredContent?: unknown;
+          }
+        | undefined;
+      queryMock.mockImplementation((arg: QueryArg) =>
+        (async function* () {
+          yield { type: 'system', subtype: 'init', mcp_servers: [], tools: [] };
+          const t = arg.options.mcpServers.eshyra.tools[0];
+          handlerResult = (await t.handler({ dice: '1d20' }, {})) as never;
+          yield {
+            type: 'result',
+            subtype: 'success',
+            result: 'ok',
+            stop_reason: 'end_turn',
+          };
+        })(),
+      );
+
+      await new AgentSdkMcpModelClient('m').complete({
+        messages: [{ role: 'user', content: 'x' }],
+        tools: [rollDef],
+        executeTool: executorReturning(lookup.result),
+      });
+
+      expect(handlerResult?.isError).toBe(true);
+      expectProviderPayloadQualified(
+        JSON.parse(String(handlerResult?.content[0].text)),
+        lookup,
+      );
+      expectProviderPayloadQualified(handlerResult?.structuredContent, lookup);
+    },
+  );
+
+  it('keeps an error without data free of a data field in MCP output', async () => {
+    let handlerResult: { structuredContent?: unknown } | undefined;
+    queryMock.mockImplementation((arg: QueryArg) =>
+      (async function* () {
+        yield { type: 'system', subtype: 'init', mcp_servers: [], tools: [] };
+        handlerResult = (await arg.options.mcpServers.eshyra.tools[0].handler(
+          { dice: '??' },
+          {},
+        )) as never;
+        yield {
+          type: 'result',
+          subtype: 'success',
+          result: 'ok',
+          stop_reason: 'end_turn',
+        };
+      })(),
+    );
+    await new AgentSdkMcpModelClient('m').complete({
+      messages: [{ role: 'user', content: 'x' }],
+      tools: [rollDef],
+      executeTool: executorReturning({
+        ok: false,
+        code: 'invalid_args',
+        message: 'bad dice',
+      }),
+    });
+    expect(handlerResult?.structuredContent).toEqual({
       ok: false,
       code: 'invalid_args',
       message: 'bad dice',

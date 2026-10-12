@@ -181,7 +181,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'invocation-zone',
         'makes attack rolls, saving throws, and ability checks with advantage',
         'attack rolls, saving throws, and ability checks',
-        'alignment matches candle and creature is within 30 feet of burning candle',
+        "creature within the burning candle's light (dim light in a 30-foot radius) whose alignment matches that of the candle",
       ),
     ],
   ],
@@ -326,7 +326,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       advantage(
         'iron-flask-known-save',
         'has advantage on the saving throw',
-        'Wisdom saving throw',
+        'the DC 17 Wisdom saving throw to avoid being trapped in the flask',
         'target has been trapped by this flask before',
       ),
     ],
@@ -383,7 +383,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       advantage(
         'mirror-known-save',
         'saving throw is made with advantage',
-        'Charisma saving throw',
+        'the DC 15 Charisma saving throw to avoid being trapped in the mirror',
         'creature knows mirror’s nature',
       ),
       immunity(
@@ -917,6 +917,8 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'dust is thrown into air',
         'on failed DC 15 Constitution save impose incapacitated and suffocating with repeat saves',
         {
+          target:
+            'you and each creature that needs to breathe within 30 feet of you',
           save: { ability: 'constitution', dc: 15 },
           conditions: ['incapacitated', 'suffocating'],
           repeatSave: 'end of each turn while conscious',
@@ -974,6 +976,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'fortress appears',
         'resolve DC 15 Dexterity save, damage, and push',
         {
+          target: 'Each creature in the area where the fortress appears',
           save: { ability: 'dexterity', dc: 15 },
           failedSaveDamage: { dice: '10d10', type: 'bludgeoning' },
           successfulSaveDamage: 'half',

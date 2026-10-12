@@ -499,13 +499,15 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
           level: 'bright',
           radiusFeet: 30,
           dimAdditionalFeet: 30,
-          condition: 'while lit; burns for 6 hours per pint of oil',
+          condition:
+            'while lit and the hood is not lowered; burns for 6 hours per pint of oil',
         },
         {
           kind: 'light',
           level: 'dim',
           radiusFeet: 5,
-          condition: 'hood lowered (an action)',
+          condition:
+            'while lit with the hood lowered (lowering it is an action)',
         },
         {
           kind: 'sense',
@@ -825,7 +827,7 @@ const COVERAGE_CASES: readonly CoverageCase[] = [
           kind: 'sense',
           sense: 'magnetic-north-and-depth',
           condition:
-            'the magnetic-north function does nothing in a location with no magnetic north',
+            'magnetic north: only if you press button 6 (the rod assumes or remains in its normal form); the function does nothing in a location with no magnetic north',
         },
       ],
     },

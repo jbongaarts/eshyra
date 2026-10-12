@@ -624,6 +624,117 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
       expect(appliesTo).toContain('spell attack rolls');
       expect(appliesTo).toContain('wears or holds');
     }
+    // Review 19.4.5.10 S1: each selected effect keeps its own printed
+    // predicate. Cube of Force: "targeted by certain spells or comes into
+    // contact with certain spell or magic item effects" (the table lists the
+    // Horn of Blasting) - not spells only.
+    expect(
+      String(
+        effect('magic-item:cube-of-force', 'm5-complex-cube-contact').trigger,
+      ),
+    ).toContain('certain spell or magic item effects');
+    // Rod of Lordly Might: "If you press button 6, ... indicates magnetic north."
+    expect(
+      String(
+        effect(
+          'magic-item:rod-of-lordly-might',
+          'm3-rod-of-lordly-might-sense-magnetic-north-and-depth',
+        ).condition,
+      ),
+    ).toContain('button 6');
+    // Candle of Invocation: "Any creature within that light" (dim light in a
+    // 30-foot radius), not mere proximity.
+    expect(
+      String(
+        effect('magic-item:candle-of-invocation', 'invocation-zone').condition,
+      ),
+    ).toContain("burning candle's light");
+    // Lantern of Revealing: the 30/30 profile only while lit with the hood not
+    // lowered; lowering the hood (while lit) reduces it to 5-foot dim light.
+    expect(
+      String(
+        effect(
+          'magic-item:lantern-of-revealing',
+          'm3-lantern-of-revealing-bright-light',
+        ).condition,
+      ),
+    ).toContain('hood is not lowered');
+    expect(
+      String(
+        effect(
+          'magic-item:lantern-of-revealing',
+          'm3-lantern-of-revealing-dim-light',
+        ).condition,
+      ),
+    ).toContain('while lit with the hood lowered');
+    // Feather Token: the nested whip profile (a duplicate of the residual whip
+    // attack) carries the same printed scope - a melee spell attack against a
+    // creature within 10 feet of the whip, as a bonus action; the repeat flight
+    // and attack is a bonus action on your turn.
+    const featherRecord = recordsByKey.get('magic-item:feather-token');
+    if (featherRecord === undefined) throw new Error('feather token missing');
+    const tokenPayload = (
+      ((featherRecord.data as Obj).mechanics as Obj).effects as Obj[]
+    ).find((e) => String(e.id).endsWith('token-kind-payload'));
+    const whip = ((tokenPayload?.variants as Obj | undefined)?.whip ??
+      {}) as Obj;
+    expect(whip).toMatchObject({
+      attackKind: 'melee-spell-attack',
+      target: 'a creature within 10 feet of the whip',
+      attackAction: 'bonus-action',
+      moveAndRepeat: 'As a bonus action on your turn',
+    });
+    // Review 19.4.5.11 S1: an independently emitted save/payload effect keeps
+    // its printed recipient and area, verbatim from the printed sentence.
+    for (const [item, id, printed] of [
+      [
+        'magic-item:dust-of-sneezing-and-choking',
+        'c2-residual-choking-dust',
+        'you and each creature that needs to breathe within 30 feet of you',
+      ],
+      [
+        'magic-item:instant-fortress',
+        'c2-residual-fortress-appearance-damage',
+        'Each creature in the area where the fortress appears',
+      ],
+    ] as const) {
+      const target = String(effect(item, id).target);
+      expect(target).toBe(printed);
+      const description = String(
+        (recordsByKey.get(item)?.data as Obj | undefined)?.description,
+      );
+      expect(description).toContain(printed);
+    }
+    // Review 19.4.5.12 S1: the talismans' contact damage keeps the printed
+    // complement "A creature that is neither good nor evil in alignment",
+    // which includes unaligned creatures - not the narrower category neutral.
+    for (const [item, id] of [
+      ['magic-item:talisman-of-pure-good', 'm7-pure-good-alignment-contact'],
+      [
+        'magic-item:talisman-of-ultimate-evil',
+        'm7-ultimate-evil-alignment-contact',
+      ],
+    ] as const) {
+      const result = String(effect(item, id).result);
+      expect(result).toContain('neither good nor evil in alignment');
+      expect(result).not.toMatch(/(^|[^a-z])neutral creature/);
+    }
+    // Review 19.4.5.13 S1: a procedure-local save modifier stays scoped to its
+    // item's trapping save ("advantage on the saving throw" / "This saving
+    // throw"), not every save of the same ability.
+    for (const [item, id, scope] of [
+      [
+        'magic-item:iron-flask',
+        'c2-residual-iron-flask-known-save',
+        'trapped in the flask',
+      ],
+      [
+        'magic-item:mirror-of-life-trapping',
+        'c2-residual-mirror-known-save',
+        'trapped in the mirror',
+      ],
+    ] as const)
+      expect(String(effect(item, id).roll)).toContain(scope);
     // Ring of Elemental Command: each plane's dominate monster belongs only to
     // that plane's ring, and its additional spells also require helping slay
     // an elemental of that plane while attuned (printed per variant).
