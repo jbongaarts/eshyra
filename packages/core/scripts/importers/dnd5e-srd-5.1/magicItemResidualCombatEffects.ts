@@ -326,7 +326,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       advantage(
         'iron-flask-known-save',
         'has advantage on the saving throw',
-        'Wisdom saving throw',
+        'the DC 17 Wisdom saving throw to avoid being trapped in the flask',
         'target has been trapped by this flask before',
       ),
     ],
@@ -383,7 +383,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
       advantage(
         'mirror-known-save',
         'saving throw is made with advantage',
-        'Charisma saving throw',
+        'the DC 15 Charisma saving throw to avoid being trapped in the mirror',
         'creature knows mirror’s nature',
       ),
       immunity(

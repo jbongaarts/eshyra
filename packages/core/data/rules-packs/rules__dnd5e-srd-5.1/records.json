@@ -107907,7 +107907,7 @@
           {
             "id": "c2-residual-iron-flask-known-save",
             "kind": "advantage",
-            "roll": "Wisdom saving throw",
+            "roll": "the DC 17 Wisdom saving throw to avoid being trapped in the flask",
             "condition": "target has been trapped by this flask before"
           }
         ]
@@ -110441,7 +110441,7 @@
           {
             "id": "c2-residual-mirror-known-save",
             "kind": "advantage",
-            "roll": "Charisma saving throw",
+            "roll": "the DC 15 Charisma saving throw to avoid being trapped in the mirror",
             "condition": "creature knows mirror’s nature"
           },
           {

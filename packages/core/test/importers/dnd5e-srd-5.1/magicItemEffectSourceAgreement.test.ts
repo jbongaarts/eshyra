@@ -719,6 +719,22 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
       expect(result).toContain('neither good nor evil in alignment');
       expect(result).not.toMatch(/(^|[^a-z])neutral creature/);
     }
+    // Review 19.4.5.13 S1: a procedure-local save modifier stays scoped to its
+    // item's trapping save ("advantage on the saving throw" / "This saving
+    // throw"), not every save of the same ability.
+    for (const [item, id, scope] of [
+      [
+        'magic-item:iron-flask',
+        'c2-residual-iron-flask-known-save',
+        'trapped in the flask',
+      ],
+      [
+        'magic-item:mirror-of-life-trapping',
+        'c2-residual-mirror-known-save',
+        'trapped in the mirror',
+      ],
+    ] as const)
+      expect(String(effect(item, id).roll)).toContain(scope);
     // Ring of Elemental Command: each plane's dominate monster belongs only to
     // that plane's ring, and its additional spells also require helping slay
     // an elemental of that plane while attuned (printed per variant).
