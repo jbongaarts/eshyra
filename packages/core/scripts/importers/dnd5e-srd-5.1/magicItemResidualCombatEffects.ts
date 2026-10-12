@@ -917,6 +917,8 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'dust is thrown into air',
         'on failed DC 15 Constitution save impose incapacitated and suffocating with repeat saves',
         {
+          target:
+            'you and each creature that needs to breathe within 30 feet of you',
           save: { ability: 'constitution', dc: 15 },
           conditions: ['incapacitated', 'suffocating'],
           repeatSave: 'end of each turn while conscious',
@@ -974,6 +976,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'fortress appears',
         'resolve DC 15 Dexterity save, damage, and push',
         {
+          target: 'Each creature in the area where the fortress appears',
           save: { ability: 'dexterity', dc: 15 },
           failedSaveDamage: { dice: '10d10', type: 'bludgeoning' },
           successfulSaveDamage: 'half',

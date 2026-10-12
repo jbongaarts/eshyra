@@ -98827,6 +98827,7 @@
             "kind": "triggeredEffect",
             "trigger": "dust is thrown into air",
             "result": "on failed DC 15 Constitution save impose incapacitated and suffocating with repeat saves",
+            "target": "you and each creature that needs to breathe within 30 feet of you",
             "save": {
               "ability": "constitution",
               "dc": 15
@@ -106495,6 +106496,7 @@
             "kind": "triggeredEffect",
             "trigger": "fortress appears",
             "result": "resolve DC 15 Dexterity save, damage, and push",
+            "target": "Each creature in the area where the fortress appears",
             "save": {
               "ability": "dexterity",
               "dc": 15

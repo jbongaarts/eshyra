@@ -684,6 +684,27 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
       attackAction: 'bonus-action',
       moveAndRepeat: 'As a bonus action on your turn',
     });
+    // Review 19.4.5.11 S1: an independently emitted save/payload effect keeps
+    // its printed recipient and area, verbatim from the printed sentence.
+    for (const [item, id, printed] of [
+      [
+        'magic-item:dust-of-sneezing-and-choking',
+        'c2-residual-choking-dust',
+        'you and each creature that needs to breathe within 30 feet of you',
+      ],
+      [
+        'magic-item:instant-fortress',
+        'c2-residual-fortress-appearance-damage',
+        'Each creature in the area where the fortress appears',
+      ],
+    ] as const) {
+      const target = String(effect(item, id).target);
+      expect(target).toBe(printed);
+      const description = String(
+        (recordsByKey.get(item)?.data as Obj | undefined)?.description,
+      );
+      expect(description).toContain(printed);
+    }
     // Ring of Elemental Command: each plane's dominate monster belongs only to
     // that plane's ring, and its additional spells also require helping slay
     // an elemental of that plane while attuned (printed per variant).

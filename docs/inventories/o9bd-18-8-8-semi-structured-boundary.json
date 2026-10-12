@@ -24718,12 +24718,12 @@
       "fieldPath": "data.mechanics.effects[].target",
       "representativeValues": [
         "self",
+        "you and each creature that needs to breathe within 30 feet of you",
         "one humanoid",
         "creature currently focused on with detect thoughts",
-        "creature native to another plane of existence that you can see",
-        "failed controller"
+        "Each creature in the area where the fortress appears"
       ],
-      "population": 14,
+      "population": 16,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
