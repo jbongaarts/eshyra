@@ -304,6 +304,11 @@ const specs: ReadonlyMap<string, ConsumableSpec> = new Map([
               branchRadiusFeet: 20,
             },
             whip: {
+              // "make a melee spell attack against a creature within 10 feet
+              // of the whip" (and the repeat after the whip flies up to 20
+              // feet): a melee spell attack, not any attack roll.
+              attackKind: 'melee-spell-attack',
+              target: 'a creature within 10 feet of the whip',
               attackBonus: 9,
               damage: { dice: '1d6+5', type: 'force' },
               moveFeet: 20,

@@ -18,6 +18,7 @@ import { projectMagicItemConsumable } from './magicItemConsumables.js';
 import { projectMagicItemContainmentInteractions } from './magicItemContainmentInteractions.js';
 import { projectMagicItemCurses } from './magicItemCurses.js';
 import { projectMagicItemEntityGrants } from './magicItemEntityGrants.js';
+import { applyFaithfulMagicItemLifecycles } from './magicItemFaithfulLifecycles.js';
 import { applyFaithfulMagicItemOperations } from './magicItemFaithfulOperations.js';
 import {
   projectMagicItemPassiveMechanics,
@@ -116,13 +117,16 @@ function withoutCentralDispositions(
 function parentProjections(
   item: MagicItemExtraction,
 ): readonly MagicItemFamilyProjection[] {
-  return applyFaithfulMagicItemOperations(
+  return applyFaithfulMagicItemLifecycles(
     item,
-    applyAdjudicatedMagicItemEffects(
+    applyFaithfulMagicItemOperations(
       item,
-      PARENT_PROJECTORS.map((project) => project(item))
-        .filter(defined)
-        .map(withoutCentralDispositions),
+      applyAdjudicatedMagicItemEffects(
+        item,
+        PARENT_PROJECTORS.map((project) => project(item))
+          .filter(defined)
+          .map(withoutCentralDispositions),
+      ),
     ),
   ).map((projection) =>
     namespaceProjection(projection, `magic-item:${slug(item.name)}`),

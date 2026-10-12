@@ -29,8 +29,13 @@
  * never a readiness blocker and cannot turn a green operation red.
  *
  * Scope: operations and activation (review groups S2 and S3 of
- * eshyra-o9bd.19.4.5.7). State graphs, grant lifecycle, economies and
- * composition belong to the follow-on child of eshyra-o9bd.19.4.6.
+ * eshyra-o9bd.19.4.5.7) in `BASE_SPECS`, completed over the whole corpus by
+ * `magicItemFaithfulOperationsCorpus.ts` (eshyra-o9bd.19.4.6.2); the two tables
+ * are merged by key. State graphs, grant lifecycles, economies and containment
+ * are `magicItemFaithfulLifecycles.ts`. Producers may still draft an invented
+ * default cost or operation; these tables are the reviewed layer that removes
+ * it, and the whole-corpus screen in
+ * `magicItemOperationSourceAgreement.test.ts` fails when one survives.
  */
 import type {
   MagicItemActivationSpec,
@@ -42,78 +47,28 @@ import type {
   MagicItemClauseTag,
   MagicItemFamilyProjection,
 } from './magicItemCompiler.js';
+import { CORPUS_SPECS } from './magicItemFaithfulOperationsCorpus.js';
+import {
+  type ActivationPatch,
+  type AdjudicatedOwner,
+  clause,
+  clausesFor,
+  type FaithfulItemSpec,
+  NO_COST_NOTE,
+  NOTE,
+  type OperationPatch,
+  op,
+} from './magicItemFaithfulSpecKit.js';
 import type { MagicItemExtraction } from './types.js';
 
-type ActivationCost = NonNullable<MagicItemActivationSpec['cost']>;
-
-/** `null` removes the field; a string for requirement/trigger/target must be a
- * verbatim span of the item's printed description. */
-export interface ActivationPatch {
-  readonly cost?: ActivationCost | null;
-  readonly commandWord?: true | null;
-  readonly requirement?: string | null;
-  readonly trigger?: string | null;
-  readonly target?: string | null;
-}
-
-export interface OperationPatch {
-  readonly operationId: string;
-  readonly activation?: ActivationPatch;
-  /** Remove the operation's economy `cost` (a charge committed only on an
-   * outcome the cost vocabulary cannot state). Requires `activation` to name
-   * the sentence in a clause. */
-  readonly dropEconomyCost?: true;
-}
-
-export interface ContainmentPatch {
-  readonly procedure: 'entry' | 'exit' | 'release';
-  readonly activation: ActivationPatch;
-}
-
-export type AdjudicatedOwner =
-  | { readonly operation: string }
-  | { readonly block: 'entityGrant' | 'containment' };
-
-export interface ActivationClause {
-  readonly id: string;
-  readonly owner: AdjudicatedOwner;
-  readonly sourceText: string;
-  readonly note?: string;
-}
-
-export interface FaithfulItemSpec {
-  readonly operations?: readonly OperationPatch[];
-  readonly containment?: readonly ContainmentPatch[];
-  readonly clauses?: readonly ActivationClause[];
-}
-
-const NOTE =
-  'The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text.';
-const NO_COST_NOTE =
-  'The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.';
-
-const clause = (
-  id: string,
-  owner: AdjudicatedOwner,
-  sourceText: string,
-  note: string = NOTE,
-): ActivationClause => ({ id, owner, sourceText, note });
-
-/** One clause per operation for a sentence that governs several operations. */
-const clausesFor = (
-  prefix: string,
-  operationIds: readonly string[],
-  sourceText: string,
-  note: string = NOTE,
-): readonly ActivationClause[] =>
-  operationIds.map((operation) =>
-    clause(`${prefix}-${operation}`, { operation }, sourceText, note),
-  );
-
-const op = (
-  operationId: string,
-  activation: ActivationPatch,
-): OperationPatch => ({ operationId, activation });
+export type {
+  ActivationClause,
+  ActivationPatch,
+  AdjudicatedOwner,
+  ContainmentPatch,
+  FaithfulItemSpec,
+  OperationPatch,
+} from './magicItemFaithfulSpecKit.js';
 
 const FIGURINE_CREATION =
   'If you use an action to speak the command word and throw the figurine to a point on the ground within 60 feet of you, the figurine becomes a living creature. If the space where the creature would appear is occupied by other creatures or objects, or if there isn’t enough space for the creature, the figurine doesn’t become a creature.';
@@ -129,7 +84,7 @@ const TALISMAN_TARGET =
 /**
  * Table key: the item name, or `Item name::Variant name` for a variant scope.
  */
-const SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
+const BASE_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
   // --- S2 -----------------------------------------------------------------
   [
     'Dagger of Venom',
@@ -219,7 +174,6 @@ const SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
           commandWord: true,
           requirement: 'stand astride it',
         }),
-        op('dismount-broom', { cost: null }),
         op('send-broom', {
           cost: null,
           commandWord: true,
@@ -237,12 +191,6 @@ const SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
           'activation-mount-broom',
           { operation: 'mount-broom' },
           'until you stand astride it and speak its command word',
-          NO_COST_NOTE,
-        ),
-        clause(
-          'activation-dismount-broom',
-          { operation: 'dismount-broom' },
-          'The broom stops hovering when you land.',
           NO_COST_NOTE,
         ),
         clause(
@@ -299,7 +247,7 @@ const SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
           'activation-end-polymorph',
           { operation: 'end-polymorph' },
           'you can use your action to cast polymorph on yourself, transforming into a bat',
-          'The printed text names no action cost for ending the bat form; it is the cast polymorph spell’s own ending, interpreted by the DM model.',
+          'The cloak prints no ending of its own and names no action cost for ending the bat form. The ending is inherited from the polymorph spell it casts: the transformation lasts for the spell’s duration, or until the target drops to 0 hit points or dies (spell:polymorph). The cited sentence is the only printed passage that casts that spell, so the DM model applies the polymorph spell’s own ending rule.',
         ),
       ],
     },
@@ -333,15 +281,6 @@ const SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
       operations: [
         ...['produce-stream', 'produce-fountain', 'produce-geyser'].map((id) =>
           op(id, { commandWord: true, requirement: 'remove the stopper' }),
-        ),
-        op('stop-water', { cost: null }),
-      ],
-      clauses: [
-        clause(
-          'activation-stop-water',
-          { operation: 'stop-water' },
-          'The water stops pouring out at the start of your next turn.',
-          NO_COST_NOTE,
         ),
       ],
     },
@@ -639,7 +578,11 @@ const SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
     'Wand of Binding',
     {
       operations: [
-        op('assisted-escape', { requirement: 'While holding the wand' }),
+        op('assisted-escape', {
+          requirement: 'While holding the wand',
+          trigger:
+            'a saving throw you make to avoid being paralyzed or restrained, or you can expend 1 charge and gain advantage on any check you make to escape a grapple',
+        }),
       ],
     },
   ],
@@ -994,6 +937,39 @@ const SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
   ],
 ]);
 
+/** The child 1 table and the whole-corpus completion table, merged by key. */
+function mergeSpecs(
+  ...tables: readonly ReadonlyMap<string, FaithfulItemSpec>[]
+): ReadonlyMap<string, FaithfulItemSpec> {
+  const merged = new Map<string, FaithfulItemSpec>();
+  for (const table of tables)
+    for (const [key, spec] of table) {
+      const existing = merged.get(key);
+      merged.set(
+        key,
+        existing === undefined
+          ? spec
+          : {
+              operations: [
+                ...(existing.operations ?? []),
+                ...(spec.operations ?? []),
+              ],
+              containment: [
+                ...(existing.containment ?? []),
+                ...(spec.containment ?? []),
+              ],
+              clauses: [...(existing.clauses ?? []), ...(spec.clauses ?? [])],
+            },
+      );
+    }
+  return merged;
+}
+
+const SPECS: ReadonlyMap<string, FaithfulItemSpec> = mergeSpecs(
+  BASE_SPECS,
+  CORPUS_SPECS,
+);
+
 /** Table keys (item names, or `Item::Variant`), for tests and reports. */
 export const MAGIC_ITEM_FAITHFUL_OPERATION_SPECS: ReadonlyMap<
   string,
@@ -1056,7 +1032,7 @@ function patchOperation(
   } as MagicItemOperation;
 }
 
-function ownerIndex(
+export function ownerIndex(
   projections: readonly MagicItemFamilyProjection[],
   owner: AdjudicatedOwner,
 ): number {
@@ -1071,7 +1047,7 @@ function ownerIndex(
 
 /** The adjudicated clause carries its owning family's tag so the reviewed
  * per-tag item census is unchanged by this layer. */
-function ownerTag(
+export function ownerTag(
   projections: readonly MagicItemFamilyProjection[],
   index: number,
 ): MagicItemClauseTag {

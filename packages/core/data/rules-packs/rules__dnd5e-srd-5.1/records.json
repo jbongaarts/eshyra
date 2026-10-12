@@ -88640,12 +88640,12 @@
           "transitions": [
             {
               "from": "sealed",
-              "to": "open",
+              "to": "sealed",
               "via": "set-lever-1"
             },
             {
               "from": "open",
-              "to": "sealed",
+              "to": "open",
               "via": "set-lever-1"
             },
             {
@@ -88654,8 +88654,18 @@
               "via": "set-lever-2"
             },
             {
+              "from": "open",
+              "to": "open",
+              "via": "set-lever-2"
+            },
+            {
               "from": "sealed",
               "to": "sealed",
+              "via": "set-lever-3"
+            },
+            {
+              "from": "open",
+              "to": "open",
               "via": "set-lever-3"
             },
             {
@@ -88664,8 +88674,18 @@
               "via": "set-lever-4"
             },
             {
+              "from": "open",
+              "to": "open",
+              "via": "set-lever-4"
+            },
+            {
               "from": "sealed",
               "to": "sealed",
+              "via": "set-lever-5"
+            },
+            {
+              "from": "open",
+              "to": "open",
               "via": "set-lever-5"
             },
             {
@@ -88674,8 +88694,18 @@
               "via": "set-lever-6"
             },
             {
+              "from": "open",
+              "to": "open",
+              "via": "set-lever-6"
+            },
+            {
               "from": "sealed",
               "to": "sealed",
+              "via": "set-lever-7"
+            },
+            {
+              "from": "open",
+              "to": "open",
               "via": "set-lever-7"
             },
             {
@@ -88684,14 +88714,31 @@
               "via": "set-lever-8"
             },
             {
+              "from": "open",
+              "to": "open",
+              "via": "set-lever-8"
+            },
+            {
               "from": "sealed",
               "to": "sealed",
               "via": "set-lever-9"
             },
             {
+              "from": "open",
+              "to": "open",
+              "via": "set-lever-9"
+            },
+            {
               "from": "sealed",
+              "to": "open",
+              "via": "set-lever-10",
+              "note": "table:apparatus-of-the-crab-levers lever 10, Up: The rear hatch unseals and opens."
+            },
+            {
+              "from": "open",
               "to": "sealed",
-              "via": "set-lever-10"
+              "via": "set-lever-10",
+              "note": "table:apparatus-of-the-crab-levers lever 10, Down: The rear hatch closes and seals."
             },
             {
               "from": "sealed",
@@ -89146,9 +89193,7 @@
           {
             "id": "activate-immunity",
             "activation": {
-              "cost": "action",
-              "requirement": "wearing the armor",
-              "target": "self"
+              "cost": "action"
             },
             "cost": [
               {
@@ -89658,13 +89703,13 @@
         "operations": [
           {
             "id": "redirect-ranged-attack",
-            "activation": {
-              "cost": "reaction",
-              "trigger": "ranged attack made against a target within 5 feet of wielder"
-            },
             "effects": [
               "c2-residual-redirect-ranged-attack"
-            ]
+            ],
+            "activation": {
+              "cost": "reaction",
+              "trigger": "whenever an attacker makes a ranged attack against a target within 5 feet of you"
+            }
           }
         ],
         "effects": [
@@ -89806,8 +89851,7 @@
           {
             "id": "deal-extra-damage",
             "activation": {
-              "cost": "free",
-              "trigger": "eligible creature takes damage from slaying arrow"
+              "trigger": "If a creature belonging to the type, race, or group associated with an arrow of slaying takes damage from the arrow"
             },
             "cost": [
               {
@@ -89841,6 +89885,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:arrow-of-slaying/activation-deal-extra-damage",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If a creature belonging to the type, race, or group associated with an arrow of slaying takes damage from the arrow, the creature must make a DC 17 Constitution saving throw, taking an extra 6d10 piercing damage on a failed save, or half as much extra damage on a successful one."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:arrow-of-slaying/c1-use",
             "scope": {
@@ -90190,7 +90248,7 @@
             },
             "result": "another creature pulls one trapped creature out after surviving the entry risk"
           },
-          "overflow": "animal or vegetable matter is lost forever; a creature inside at turn start is devoured and its body destroyed; stored objects are swallowed to a GM-chosen plane once daily",
+          "overflow": "Animal or vegetable matter placed wholly in the bag is devoured and lost forever; Any creature that starts its turn inside the bag is devoured, its body destroyed; once each day, the bag swallows any objects inside it and spits them out into another plane of existence",
           "rupture": {
             "triggers": [
               "pierced",
@@ -90745,7 +90803,7 @@
             "id": "throw-bead",
             "activation": {
               "cost": "action",
-              "target": "point within 60 feet"
+              "target": "throw the bead up to 60 feet"
             },
             "cost": [
               {
@@ -92227,7 +92285,6 @@
                 "unit": "hour"
               },
               "revertOn": [
-                "concentration-ended",
                 "reduced-to-0-hit-points",
                 "one-hour-ended"
               ],
@@ -92236,7 +92293,7 @@
                 "scope": "item",
                 "recast": "blocked"
               },
-              "note": "Uses the conjure elemental spell lifecycle and concentration contract."
+              "note": "Uses the conjure elemental spell lifecycle and concentration contract. Uses the conjure elemental spell lifecycle: the elemental disappears when it drops to 0 hit points or when the spell ends after one hour. If concentration is broken the elemental does not disappear; the summoner loses control, it becomes hostile, it cannot be dismissed, and it disappears one hour after it was summoned (spell:conjure-elemental)."
             }
           ]
         },
@@ -92563,7 +92620,6 @@
                 "unit": "hour"
               },
               "revertOn": [
-                "concentration-ended",
                 "reduced-to-0-hit-points",
                 "one-hour-ended"
               ],
@@ -92572,7 +92628,7 @@
                 "scope": "item",
                 "recast": "blocked"
               },
-              "note": "Uses the conjure elemental spell lifecycle and concentration contract."
+              "note": "Uses the conjure elemental spell lifecycle and concentration contract. Uses the conjure elemental spell lifecycle: the elemental disappears when it drops to 0 hit points or when the spell ends after one hour. If concentration is broken the elemental does not disappear; the summoner loses control, it becomes hostile, it cannot be dismissed, and it disappears one hour after it was summoned (spell:conjure-elemental)."
             }
           ]
         },
@@ -92847,7 +92903,7 @@
             {
               "from": "ridden",
               "to": "parked",
-              "via": "dismount-broom"
+              "condition": "The broom stops hovering when you land"
             },
             {
               "from": "parked",
@@ -92857,15 +92913,10 @@
             {
               "from": "remote",
               "to": "parked",
-              "condition": "broom reaches named destination"
-            },
-            {
-              "from": "remote",
-              "to": "remote",
               "via": "recall-broom"
             }
           ],
-          "termination": "dismounted or remote route completed"
+          "termination": "The broom stops hovering when you land"
         },
         "operations": [
           {
@@ -92874,9 +92925,6 @@
               "commandWord": true,
               "requirement": "stand astride it"
             }
-          },
-          {
-            "id": "dismount-broom"
           },
           {
             "id": "send-broom",
@@ -92911,20 +92959,6 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
-          {
-            "clauseId": "magic-item:broom-of-flying/activation-dismount-broom",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
-              "sourceText": "The broom stops hovering when you land."
-            },
-            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
-          },
           {
             "clauseId": "magic-item:broom-of-flying/activation-mount-broom",
             "scope": {
@@ -93673,7 +93707,6 @@
                 "unit": "hour"
               },
               "revertOn": [
-                "concentration-ended",
                 "reduced-to-0-hit-points",
                 "one-hour-ended"
               ],
@@ -93682,7 +93715,7 @@
                 "scope": "item",
                 "recast": "blocked"
               },
-              "note": "Uses the conjure elemental spell lifecycle and concentration contract."
+              "note": "Uses the conjure elemental spell lifecycle and concentration contract. Uses the conjure elemental spell lifecycle: the elemental disappears when it drops to 0 hit points or when the spell ends after one hour. If concentration is broken the elemental does not disappear; the summoner loses control, it becomes hostile, it cannot be dismissed, and it disappears one hour after it was summoned (spell:conjure-elemental)."
             }
           ]
         },
@@ -94129,8 +94162,8 @@
           {
             "id": "cast-web",
             "activation": {
-              "cost": "action",
-              "requirement": "wearing the cloak"
+              "requirement": "While wearing it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -94369,46 +94402,6 @@
       "requiresAttunement": true,
       "description": "While you wear this cloak, it projects an illusion that makes you appear to be standing in a place near your actual location, causing any creature to have disadvantage on attack rolls against you. If you take damage, the property ceases to function until the start of your next turn. This property is suppressed while you are incapacitated, restrained, or otherwise unable to move.",
       "mechanics": {
-        "stateMachine": {
-          "initial": "displacing",
-          "states": [
-            {
-              "id": "displacing"
-            },
-            {
-              "id": "suppressed"
-            }
-          ],
-          "transitions": [
-            {
-              "from": "displacing",
-              "to": "suppressed",
-              "via": "suppress-displacement"
-            },
-            {
-              "from": "suppressed",
-              "to": "displacing",
-              "via": "restore-displacement"
-            }
-          ],
-          "termination": "damage suppresses until next turn; incapacitated, restrained, or unable-to-move keeps suppression active"
-        },
-        "operations": [
-          {
-            "id": "suppress-displacement",
-            "activation": {
-              "cost": "free",
-              "trigger": "wearer takes damage or cannot move"
-            }
-          },
-          {
-            "id": "restore-displacement",
-            "activation": {
-              "cost": "free",
-              "trigger": "start of wearer next turn while wearer can move"
-            }
-          }
-        ],
         "effects": [
           {
             "id": "c2-residual-displacement-attacks",
@@ -94455,43 +94448,13 @@
               "kind": "parent"
             },
             "tag": "M5",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "stateMachine"
+              "adjudicated": true,
+              "note": "Damage suppresses the property until the start of your next turn, while being incapacitated, restrained, or otherwise unable to move suppresses it for as long as that condition holds. The two lifetimes are independent, so no single typed state graph states them exactly; the DM model interprets the printed text.",
+              "sourceText": "If you take damage, the property ceases to function until the start of your next turn. This property is suppressed while you are incapacitated, restrained, or otherwise unable to move"
             },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "reason": "Damage suppresses the property until the start of your next turn, while being incapacitated, restrained, or otherwise unable to move suppresses it for as long as that condition holds. The two lifetimes are independent, so no single typed state graph states them exactly; the DM model interprets the printed text."
           }
         ]
       }
@@ -94911,10 +94874,10 @@
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
-              "note": "The printed text names no action cost for ending the bat form; it is the cast polymorph spell’s own ending, interpreted by the DM model.",
+              "note": "The cloak prints no ending of its own and names no action cost for ending the bat form. The ending is inherited from the polymorph spell it casts: the transformation lasts for the spell’s duration, or until the target drops to 0 hit points or dies (spell:polymorph). The cited sentence is the only printed passage that casts that spell, so the DM model applies the polymorph spell’s own ending rule.",
               "sourceText": "you can use your action to cast polymorph on yourself, transforming into a bat"
             },
-            "reason": "The printed text names no action cost for ending the bat form; it is the cast polymorph spell’s own ending, interpreted by the DM model."
+            "reason": "The cloak prints no ending of its own and names no action cost for ending the bat form. The ending is inherited from the polymorph spell it casts: the transformation lasts for the spell’s duration, or until the target drops to 0 hit points or dies (spell:polymorph). The cited sentence is the only printed passage that casts that spell, so the DM model applies the polymorph spell’s own ending rule."
           },
           {
             "clauseId": "magic-item:cloak-of-the-bat/c1-uses",
@@ -95798,8 +95761,7 @@
           {
             "id": "spell-contact-loss",
             "activation": {
-              "cost": "free",
-              "trigger": "listed spell contacts barrier"
+              "trigger": "when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects"
             },
             "cost": [
               {
@@ -95833,6 +95795,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:cube-of-force/activation-spell-contact-loss",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:cube-of-force/c1-economy-charges",
             "scope": {
@@ -96189,8 +96165,8 @@
           {
             "id": "cast-plane-shift",
             "activation": {
-              "cost": "action",
-              "requirement": "press the same side of the cube twice"
+              "requirement": "press one side twice",
+              "cost": "action"
             },
             "cost": [
               {
@@ -96457,14 +96433,14 @@
             {
               "from": "coated",
               "to": "uncoated",
-              "condition": "an attack using the dagger hits"
+              "condition": "an attack using this weapon hits a creature"
             }
           ],
           "duration": {
             "amount": 1,
             "unit": "minute"
           },
-          "termination": "first hit or one minute"
+          "termination": "The poison remains for 1 minute or until an attack using this weapon hits a creature"
         },
         "economies": {
           "uses": {
@@ -96712,9 +96688,6 @@
               "id": "held"
             },
             {
-              "id": "attack-zero"
-            },
-            {
               "id": "attack-one"
             },
             {
@@ -96728,18 +96701,16 @@
             },
             {
               "id": "grounded"
+            },
+            {
+              "id": "not-hovering"
             }
           ],
           "transitions": [
             {
               "from": "held",
-              "to": "attack-zero",
-              "via": "launch-sword"
-            },
-            {
-              "from": "attack-zero",
               "to": "attack-one",
-              "via": "command-attack"
+              "via": "launch-sword"
             },
             {
               "from": "attack-one",
@@ -96764,10 +96735,35 @@
             {
               "from": "returning",
               "to": "grounded",
-              "condition": "owner has no free hand or is more than 30 feet away"
+              "condition": "If you have no hand free, it falls to the ground at your feet"
+            },
+            {
+              "from": "returning",
+              "to": "grounded",
+              "condition": "If the sword has no unobstructed path to you, it moves as close to you as it can and then falls to the ground"
+            },
+            {
+              "from": "attack-one",
+              "to": "not-hovering",
+              "condition": "It also ceases to hover if you grasp it or move more than 30 feet away from it"
+            },
+            {
+              "from": "attack-two",
+              "to": "not-hovering",
+              "condition": "It also ceases to hover if you grasp it or move more than 30 feet away from it"
+            },
+            {
+              "from": "attack-three",
+              "to": "not-hovering",
+              "condition": "It also ceases to hover if you grasp it or move more than 30 feet away from it"
+            },
+            {
+              "from": "returning",
+              "to": "not-hovering",
+              "condition": "It also ceases to hover if you grasp it or move more than 30 feet away from it"
             }
           ],
-          "termination": "caught by owner after fourth attack, or falls at owner feet / nearest space"
+          "termination": "After the hovering sword attacks for the fourth time, it flies up to 30 feet and tries to return to your hand. If you have no hand free, it falls to the ground at your feet. If the sword has no unobstructed path to you, it moves as close to you as it can and then falls to the ground. It also ceases to hover if you grasp it or move more than 30 feet away from it"
         },
         "operations": [
           {
@@ -96991,20 +96987,20 @@
             {
               "from": "stream",
               "to": "closed",
-              "via": "stop-water"
+              "condition": "The water stops pouring out at the start of your next turn"
             },
             {
               "from": "fountain",
               "to": "closed",
-              "via": "stop-water"
+              "condition": "The water stops pouring out at the start of your next turn"
             },
             {
               "from": "geyser",
               "to": "closed",
-              "via": "stop-water"
+              "condition": "The water stops pouring out at the start of your next turn"
             }
           ],
-          "termination": "mode output completes or stop command"
+          "termination": "The water stops pouring out at the start of your next turn"
         },
         "operations": [
           {
@@ -97030,9 +97026,6 @@
               "commandWord": true,
               "requirement": "remove the stopper"
             }
-          },
-          {
-            "id": "stop-water"
           }
         ],
         "effects": [
@@ -97057,20 +97050,6 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
-          {
-            "clauseId": "magic-item:decanter-of-endless-water/activation-stop-water",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
-              "sourceText": "The water stops pouring out at the start of your next turn."
-            },
-            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
-          },
           {
             "clauseId": "magic-item:decanter-of-endless-water/c2-residual-geyser-impact",
             "scope": {
@@ -98305,16 +98284,27 @@
             }
           },
           {
-            "id": "escape-shackles",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "escape-shackles"
           }
         ]
       },
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:dimensional-shackles/activation-escape-shackles",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "Once every 30 days, the bound creature can make a DC 30 Strength (Athletics) check. On a success, the creature breaks free and destroys the shackles."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:dimensional-shackles/c2-residual-dimensional-movement-block",
             "scope": {
@@ -98807,18 +98797,18 @@
         "operations": [
           {
             "id": "throw-dust",
+            "effects": [
+              "area-invisibility"
+            ],
             "activation": {
               "cost": "action",
-              "target": "self, creatures, and objects within 10 feet"
+              "target": "you and each creature and object within 10 feet of you"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "area-invisibility"
             ]
           }
         ],
@@ -99196,18 +99186,18 @@
         "operations": [
           {
             "id": "throw-dust",
+            "effects": [
+              "choking-dust"
+            ],
             "activation": {
               "cost": "action",
-              "target": "self and breathing creatures within 30 feet"
+              "target": "you and each creature that needs to breathe within 30 feet of you"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "choking-dust"
             ]
           }
         ],
@@ -99364,13 +99354,13 @@
         "operations": [
           {
             "id": "reduce-forced-movement",
-            "activation": {
-              "cost": "reaction",
-              "trigger": "effect moves wearer against wearer’s will along ground"
-            },
             "effects": [
               "c2-residual-reduce-forced-movement"
-            ]
+            ],
+            "activation": {
+              "cost": "reaction",
+              "trigger": "if an effect moves you against your will along the ground"
+            }
           }
         ],
         "effects": [
@@ -99525,15 +99515,12 @@
         },
         "operations": [
           {
-            "id": "throw-weapon",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "throw-weapon"
           },
           {
             "id": "return-to-hand",
             "activation": {
-              "cost": "free"
+              "trigger": "Immediately after the attack"
             }
           }
         ],
@@ -99572,6 +99559,34 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:dwarven-thrower/activation-return-to-hand",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "Immediately after the attack, the weapon flies back to your hand."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:dwarven-thrower/activation-throw-weapon",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "It has the thrown property with a normal range of 20 feet and a long range of 60 feet."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:dwarven-thrower/c2-static-dwarven-thrower-attack-damage",
             "scope": {
@@ -100118,7 +100133,6 @@
                 "unit": "hour"
               },
               "revertOn": [
-                "concentration-ended",
                 "reduced-to-0-hit-points",
                 "one-hour-ended"
               ],
@@ -100127,7 +100141,7 @@
                 "scope": "item",
                 "recast": "blocked"
               },
-              "note": "Gem type selects exactly one elemental; breaking the gem consumes it."
+              "note": "Gem type selects exactly one elemental; breaking the gem consumes it. Uses the conjure elemental spell lifecycle: the elemental disappears when it drops to 0 hit points or when the spell ends after one hour. If concentration is broken the elemental does not disappear; the summoner loses control, it becomes hostile, it cannot be dismissed, and it disappears one hour after it was summoned (spell:conjure-elemental)."
             }
           ]
         },
@@ -100143,18 +100157,17 @@
         "operations": [
           {
             "id": "break-gem",
+            "effects": [
+              "summon-elemental"
+            ],
             "activation": {
-              "cost": "action",
-              "target": "self"
+              "cost": "action"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "summon-elemental"
             ]
           }
         ],
@@ -100399,6 +100412,10 @@
             },
             {
               "id": "cloud-120"
+            },
+            {
+              "id": "cloud-lingering",
+              "note": "Once the bottle is closed, the cloud disperses after 10 minutes"
             }
           ],
           "transitions": [
@@ -100413,30 +100430,40 @@
               "timer": {
                 "amount": 1,
                 "unit": "minute"
-              }
+              },
+              "note": "Each minute the bottle remains open and within the cloud, the radius increases by 10 feet"
             },
             {
               "from": "cloud-growing",
               "to": "cloud-120",
-              "condition": "radius reaches 120 feet after adding 10 feet per minute"
+              "condition": "until it reaches its maximum radius of 120 feet"
             },
             {
               "from": "cloud-60",
-              "to": "closed",
+              "to": "cloud-lingering",
               "via": "close-bottle"
             },
             {
               "from": "cloud-growing",
-              "to": "closed",
+              "to": "cloud-lingering",
               "via": "close-bottle"
             },
             {
               "from": "cloud-120",
-              "to": "closed",
+              "to": "cloud-lingering",
               "via": "close-bottle"
+            },
+            {
+              "from": "cloud-lingering",
+              "to": "closed",
+              "timer": {
+                "amount": 10,
+                "unit": "minute"
+              },
+              "note": "Once the bottle is closed, the cloud disperses after 10 minutes"
             }
           ],
-          "termination": "stoppered by command or smoke dispersed by source wind tiers"
+          "termination": "The cloud persists as long as the bottle is open. Closing the bottle requires you to speak its command word as an action. Once the bottle is closed, the cloud disperses after 10 minutes. A moderate wind (11 to 20 miles per hour) can also disperse the smoke after 1 minute, and a strong wind (21 or more miles per hour) can do so after 1 round"
         },
         "operations": [
           {
@@ -100555,8 +100582,8 @@
           {
             "id": "cast-charm-person",
             "activation": {
-              "cost": "action",
-              "requirement": "wearing the lenses"
+              "requirement": "While wearing them",
+              "cost": "action"
             },
             "cost": [
               {
@@ -101107,6 +101134,8 @@
                 "branchRadiusFeet": 20
               },
               "whip": {
+                "attackKind": "melee-spell-attack",
+                "target": "a creature within 10 feet of the whip",
                 "attackBonus": 9,
                 "damage": {
                   "dice": "1d6+5",
@@ -101483,12 +101512,8 @@
                 "reduced-to-0-hit-points",
                 "owner-command-while-touching"
               ],
-              "exclusiveInstance": {
-                "scope": "item",
-                "recast": "dismiss-existing"
-              },
-              "count": 2,
-              "note": "The pair may transform separately or simultaneously; each lion has its own seven-day cooldown."
+              "count": 1,
+              "note": "You can use one figurine or both simultaneously. Each can become a lion for up to 1 hour. Once a lion has been used, it can’t be used again until 7 days have passed."
             },
             {
               "id": "goat-of-traveling",
@@ -101589,13 +101614,13 @@
               "revertOn": [
                 "duration-ended",
                 "reduced-to-0-hit-points",
-                "owner-command-while-touching"
+                "obeyed-owner-command-while-touching"
               ],
               "exclusiveInstance": {
                 "scope": "item",
                 "recast": "blocked"
               },
-              "note": "Five-day cooldown begins on reversion; mounting while it disobeys transports both to Hades and reverts it."
+              "note": "If you have a good alignment, the figurine has a 10 percent chance each time you use it to ignore your orders, including a command to revert to figurine form"
             },
             {
               "id": "onyx-dog",
@@ -102697,9 +102722,10 @@
           {
             "id": "blinding-beam",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the gem; speak second command word",
-              "target": "one visible creature"
+              "commandWord": true,
+              "requirement": "While you are holding it",
+              "target": "one creature you can see within 60 feet of you",
+              "cost": "action"
             },
             "cost": [
               {
@@ -102714,8 +102740,9 @@
           {
             "id": "blinding-cone",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the gem; speak third command word"
+              "commandWord": true,
+              "requirement": "While you are holding it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -103562,13 +103589,13 @@
         "operations": [
           {
             "id": "snare-missile",
-            "activation": {
-              "cost": "reaction",
-              "trigger": "wearer is hit by a ranged weapon attack and has a free hand"
-            },
             "effects": [
               "c2-residual-snare-missile"
-            ]
+            ],
+            "activation": {
+              "cost": "reaction",
+              "trigger": "When a ranged weapon attack hits you while you’re wearing them, you can use your reaction to reduce the damage by 1d10 + your Dexterity modifier, provided that you have a free hand"
+            }
           }
         ],
         "effects": [
@@ -104282,9 +104309,8 @@
           },
           "rupture": {
             "triggers": [
-              "overloaded",
-              "pierced by a sharp object",
-              "torn"
+              "If it is overloaded",
+              "if a sharp object pierces it or tears it"
             ],
             "destroysItem": true,
             "contentsDestination": "lost forever; artifacts eventually reappear"
@@ -105565,8 +105591,8 @@
           {
             "id": "cast-suggestion",
             "activation": {
-              "cost": "action",
-              "requirement": "focusing on target with detect thoughts"
+              "requirement": "While focusing on a creature with detect thoughts",
+              "cost": "action"
             },
             "cost": [
               {
@@ -105580,13 +105606,13 @@
           },
           {
             "id": "cast-detect-thoughts",
-            "activation": {
-              "cost": "action",
-              "requirement": "wearing the helm"
-            },
             "effects": [
               "c2-cast-detect-thoughts"
-            ]
+            ],
+            "activation": {
+              "cost": "action",
+              "requirement": "While wearing this helm"
+            }
           }
         ],
         "effects": [
@@ -105806,8 +105832,8 @@
           {
             "id": "cast-teleport",
             "activation": {
-              "cost": "action",
-              "requirement": "wearing the helm"
+              "requirement": "While wearing it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -105994,16 +106020,10 @@
         },
         "operations": [
           {
-            "id": "draw-sword",
-            "activation": {
-              "cost": "free"
-            }
+            "id": "draw-sword"
           },
           {
-            "id": "sheathe-sword",
-            "activation": {
-              "cost": "free"
-            }
+            "id": "sheathe-sword"
           }
         ],
         "effects": [
@@ -106033,6 +106053,34 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:holy-avenger/activation-draw-sword",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "While you hold the drawn sword, it creates an aura in a 10-foot radius around you."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:holy-avenger/activation-sheathe-sword",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "While you hold the drawn sword, it creates an aura in a 10-foot radius around you."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:holy-avenger/c2-residual-holy-avenger-aura-saves",
             "scope": {
@@ -106244,14 +106292,14 @@
         "operations": [
           {
             "id": "blow-horn",
+            "effects": [
+              "c2-blow-horn-payload"
+            ],
             "activation": {
               "cost": "action",
               "commandWord": true,
-              "requirement": "speak command word then blow horn"
-            },
-            "effects": [
-              "c2-blow-horn-payload"
-            ]
+              "requirement": "speak the horn’s command word and then blow the horn"
+            }
           }
         ],
         "effects": [
@@ -106939,9 +106987,6 @@
             {
               "id": "fortress",
               "note": "20-foot square, 30 feet high, battlements, source door/wall rules"
-            },
-            {
-              "id": "destroyed"
             }
           ],
           "transitions": [
@@ -106953,15 +106998,11 @@
             {
               "from": "fortress",
               "to": "cube",
-              "via": "dismiss-fortress"
-            },
-            {
-              "from": "fortress",
-              "to": "destroyed",
-              "condition": "walls reduced to 0 hit points"
+              "via": "dismiss-fortress",
+              "note": "which works only if the fortress is empty"
             }
           ],
-          "termination": "dismissed only while empty; wish repairs but does not resurrect destroyed ownership"
+          "termination": "remains until you use an action to speak the command word that dismisses it, which works only if the fortress is empty"
         },
         "operations": [
           {
@@ -107091,6 +107132,20 @@
               "F5",
               "F9"
             ]
+          },
+          {
+            "clauseId": "magic-item:instant-fortress/state-instant-fortress-components",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Component hit points and wish repair are printed per component; no typed whole-item destroyed state is kept, and the DM model interprets the printed text.",
+              "sourceText": "The roof, the door, and the walls each have 100 hit points, immunity to damage from nonmagical weapons excluding siege weapons, and resistance to all other damage. Only a wish spell can repair the fortress (this use of the spell counts as replicating a spell of 8th level or lower). Each casting of wish causes the roof, the door, or one wall to regain 50 hit points."
+            },
+            "reason": "Component hit points and wish repair are printed per component; no typed whole-item destroyed state is kept, and the DM model interprets the printed text."
           }
         ]
       }
@@ -107159,7 +107214,8 @@
                 "id": "m9-cancel-ioun-absorption",
                 "activation": {
                   "cost": "reaction",
-                  "trigger": "eligible spell targets only owner"
+                  "trigger": "a spell of 4th level or lower cast by a creature you can see and targeting only you",
+                  "requirement": "While this pale lavender ellipsoid orbits your head"
                 }
               }
             ]
@@ -107240,7 +107296,8 @@
                 "id": "m9-cancel-ioun-greater-absorption",
                 "activation": {
                   "cost": "reaction",
-                  "trigger": "eligible spell targets only owner"
+                  "trigger": "a spell of 8th level or lower cast by a creature you can see and targeting only you",
+                  "requirement": "While this marbled lavender and green ellipsoid orbits your head"
                 }
               }
             ]
@@ -107388,15 +107445,13 @@
               {
                 "id": "m9-store-ioun-reserve",
                 "activation": {
-                  "cost": "free",
-                  "trigger": "spell is cast while caster touches stone"
+                  "trigger": "by touching it as the spell is cast"
                 }
               },
               {
                 "id": "m9-cast-ioun-reserve",
                 "activation": {
-                  "cost": "free",
-                  "requirement": "stone orbits owner"
+                  "requirement": "While this stone orbits your head"
                 }
               }
             ]
@@ -107465,10 +107520,10 @@
             {
               "from": "orbiting",
               "to": "seized",
-              "condition": "another creature succeeds on DC 24 Dexterity (Acrobatics) check"
+              "condition": "either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check"
             }
           ],
-          "termination": "owner stows stone, stone is destroyed, or another creature seizes it"
+          "termination": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check. You can use an action to seize and stow the stone, ending its effect"
         },
         "operations": [
           {
@@ -107486,7 +107541,8 @@
           {
             "id": "grab-orbiting-stone",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check"
             }
           }
         ],
@@ -107899,6 +107955,36 @@
               "effectId": "m2-ioun-stone-regeneration-regeneration"
             },
             "readiness": "green"
+          },
+          {
+            "clauseId": "magic-item:ioun-stone/variant:reserve/activation-m9-cast-ioun-reserve",
+            "scope": {
+              "kind": "variant",
+              "variantKey": "reserve"
+            },
+            "tag": "M9",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "While this stone orbits your head, you can cast any spell stored in it."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:ioun-stone/variant:reserve/activation-m9-store-ioun-reserve",
+            "scope": {
+              "kind": "variant",
+              "variantKey": "reserve"
+            },
+            "tag": "M9",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "Any creature can cast a spell of 1st through 3rd level into the stone by touching it as the spell is cast."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:reserve/m9-ioun-reserve-capacity",
@@ -108663,9 +108749,9 @@
           {
             "id": "hurl-lightning",
             "activation": {
-              "cost": "action",
-              "commandWord": true,
-              "target": "one target within 120 feet"
+              "trigger": "When you hurl it and speak its command word",
+              "target": "a target within 120 feet",
+              "commandWord": true
             },
             "cost": [
               {
@@ -108711,6 +108797,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:javelin-of-lightning/activation-hurl-lightning",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "When you hurl it and speak its command word, it transforms into a bolt of lightning, forming a line 5 feet wide that extends out from you to a target within 120 feet."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:javelin-of-lightning/c1-uses",
             "scope": {
@@ -108950,6 +109050,19 @@
               "loseProperty": true
             }
           },
+          "wish": {
+            "kind": "per-day",
+            "perDay": {
+              "uses": 1
+            },
+            "reset": [
+              {
+                "at": "dawn",
+                "amount": "all"
+              }
+            ],
+            "note": "This property can’t be used again until the next dawn."
+          },
           "luck": {
             "kind": "per-day",
             "perDay": {
@@ -108967,12 +109080,16 @@
           {
             "id": "cast-wish",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the sword"
+              "requirement": "While holding it",
+              "cost": "action"
             },
             "cost": [
               {
                 "economy": "charges",
+                "amount": 1
+              },
+              {
+                "economy": "wish",
                 "amount": 1
               }
             ],
@@ -108984,7 +109101,8 @@
             "id": "m10-use-luck",
             "activation": {
               "cost": "free",
-              "trigger": "after an attack roll, ability check, or saving throw bearer dislikes"
+              "trigger": "reroll one attack roll, ability check, or saving throw you dislike",
+              "requirement": "If the sword is on your person"
             },
             "cost": [
               {
@@ -109644,8 +109762,8 @@
           {
             "id": "release-terror-wave",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the mace"
+              "requirement": "While holding it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -110166,13 +110284,13 @@
                 "table:manual-of-golems"
               ],
               "count": 1,
-              "control": "permanent owner control; understands and obeys spoken commands",
+              "control": "It is under your control, and it understands and obeys your spoken commands",
               "cooldownEconomy": "use",
               "exclusiveInstance": {
                 "scope": "item",
                 "recast": "blocked"
               },
-              "note": "Table selection also supplies uninterrupted creation time and supply cost; completion consumes the book."
+              "note": "The golem becomes animate when the ashes of the manual are sprinkled on it"
             }
           ]
         },
@@ -110271,6 +110389,34 @@
               "F8",
               "F9"
             ]
+          },
+          {
+            "clauseId": "magic-item:manual-of-golems/grant-manual-of-golems-creation",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The creation work, cost, consumption of the manual and the animating ashes are printed preconditions and a printed trigger for the created-golem grant; the DM model interprets the printed text.",
+              "sourceText": "To create a golem, you must spend the time shown on the table, working without interruption with the manual at hand and resting no more than 8 hours per day. You must also pay the specified cost to purchase supplies. Once you finish creating the golem, the book is consumed in eldritch flames. The golem becomes animate when the ashes of the manual are sprinkled on it."
+            },
+            "reason": "The creation work, cost, consumption of the manual and the animating ashes are printed preconditions and a printed trigger for the created-golem grant; the DM model interprets the printed text."
+          },
+          {
+            "clauseId": "magic-item:manual-of-golems/grant-manual-of-golems-eligibility",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The eligibility gate is a printed precondition for the created-golem grant that the grant vocabulary cannot state; the DM model interprets the printed text.",
+              "sourceText": "To decipher and use the manual, you must be a spellcaster with at least two 5th-level spell slots."
+            },
+            "reason": "The eligibility gate is a printed precondition for the created-golem grant that the grant vocabulary cannot state; the DM model interprets the printed text."
           },
           {
             "clauseId": "magic-item:manual-of-golems/m4-manual-of-golems",
@@ -110546,10 +110692,7 @@
             "note": "One pot covers 1,000 square feet; painting time scales by covered area."
           },
           {
-            "id": "paint-object",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "paint-object"
           }
         ],
         "effects": [
@@ -110569,6 +110712,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:marvelous-pigments/activation-paint-object",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "It takes 10 minutes to cover 100 square feet. When you complete the painting, the object or terrain feature depicted becomes a real, nonmagical object."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:marvelous-pigments/m1-doses",
             "scope": {
@@ -110703,8 +110860,8 @@
           {
             "id": "cast-detect-thoughts",
             "activation": {
-              "cost": "action",
-              "requirement": "wearing the medallion"
+              "requirement": "While wearing it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -112079,15 +112236,13 @@
         "operations": [
           {
             "id": "m7-swear-enemy",
-            "activation": {
-              "cost": "free",
-              "commandWord": true,
-              "trigger": "make a ranged attack with the oathbow",
-              "target": "target of the attack"
-            },
             "effects": [
               "m7-oathbow-other-weapons"
-            ]
+            ],
+            "activation": {
+              "trigger": "When you use this weapon to make a ranged attack",
+              "target": "The target of your attack"
+            }
           }
         ],
         "effects": [
@@ -112129,6 +112284,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:oathbow/activation-m7-swear-enemy",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M7",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names a spoken command phrase and no action cost, so neither a cost nor a command word is typed; the DM model interprets the printed sentence.",
+              "sourceText": "When you use this weapon to make a ranged attack, you can, as a command phrase, say, “Swift death to you who have wronged me.”"
+            },
+            "reason": "The printed text names a spoken command phrase and no action cost, so neither a cost nor a command word is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:oathbow/c2-residual-oathbow-ignore-cover-range",
             "scope": {
@@ -112453,9 +112622,13 @@
         "operations": [
           {
             "id": "apply-oil",
+            "effects": [
+              "etherealness"
+            ],
+            "note": "Spend one vial for Medium or smaller, plus one per size category above Medium.",
             "activation": {
               "cost": "consume",
-              "target": "creature and worn/carried equipment",
+              "target": "a Medium or smaller creature, along with the equipment it’s wearing and carrying",
               "note": "10-minute application"
             },
             "cost": [
@@ -112463,11 +112636,7 @@
                 "economy": "quantity",
                 "amount": "variable"
               }
-            ],
-            "effects": [
-              "etherealness"
-            ],
-            "note": "Spend one vial for Medium or smaller, plus one per size category above Medium."
+            ]
           }
         ],
         "effects": [
@@ -112625,9 +112794,12 @@
         "operations": [
           {
             "id": "apply-oil",
+            "effects": [
+              "sharpness"
+            ],
             "activation": {
               "cost": "consume",
-              "target": "one slashing/piercing weapon or up to five pieces of such ammunition",
+              "target": "one slashing or piercing weapon or up to 5 pieces of slashing or piercing ammunition",
               "note": "1-minute application"
             },
             "cost": [
@@ -112635,9 +112807,6 @@
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "sharpness"
             ]
           }
         ],
@@ -112778,9 +112947,12 @@
         "operations": [
           {
             "id": "apply-oil",
+            "effects": [
+              "freedom-of-movement"
+            ],
             "activation": {
               "cost": "consume",
-              "target": "creature and worn/carried equipment",
+              "target": "a Medium or smaller creature, along with the equipment it’s wearing and carrying",
               "note": "10-minute application; one additional vial per size above Medium"
             },
             "cost": [
@@ -112788,25 +112960,22 @@
                 "economy": "quantity",
                 "amount": "variable"
               }
-            ],
-            "effects": [
-              "freedom-of-movement"
             ]
           },
           {
             "id": "pour-oil",
+            "effects": [
+              "grease-area"
+            ],
             "activation": {
               "cost": "action",
-              "target": "10-foot square of ground"
+              "target": "on the ground"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "grease-area"
             ]
           }
         ],
@@ -113060,15 +113229,11 @@
             {
               "id": "called-evil-dragons",
               "kind": "creature",
-              "control": "not controlled; in-range evil dragons are compelled to approach by the most direct route and may be hostile on arrival",
+              "control": "Evil dragons in range feel compelled to come to the orb as soon as possible by the most direct route",
               "revertOn": [
                 "compelled-dragon-reaches-orb"
               ],
-              "exclusiveInstance": {
-                "scope": "item",
-                "recast": "blocked"
-              },
-              "note": "Conditional open-world selection: every evil dragon within 40 miles except dragon deities. The call has a one-hour item cooldown; existing persistent dragon actors are linked, never copied into item state."
+              "note": "Dragons drawn to the orb might be hostile toward you for compelling them against their will"
             }
           ]
         },
@@ -113118,8 +113283,8 @@
           {
             "id": "cast-cure-wounds",
             "activation": {
-              "cost": "action",
-              "requirement": "control the orb"
+              "requirement": "If you control the orb",
+              "cost": "action"
             },
             "cost": [
               {
@@ -113134,8 +113299,8 @@
           {
             "id": "cast-daylight",
             "activation": {
-              "cost": "action",
-              "requirement": "control the orb"
+              "requirement": "If you control the orb",
+              "cost": "action"
             },
             "cost": [
               {
@@ -113150,8 +113315,8 @@
           {
             "id": "cast-death-ward",
             "activation": {
-              "cost": "action",
-              "requirement": "control the orb"
+              "requirement": "If you control the orb",
+              "cost": "action"
             },
             "cost": [
               {
@@ -113166,8 +113331,8 @@
           {
             "id": "cast-scrying",
             "activation": {
-              "cost": "action",
-              "requirement": "control the orb"
+              "requirement": "If you control the orb",
+              "cost": "action"
             },
             "cost": [
               {
@@ -113182,8 +113347,8 @@
           {
             "id": "cast-detect-magic",
             "activation": {
-              "cost": "action",
-              "requirement": "control the orb"
+              "requirement": "If you control the orb",
+              "cost": "action"
             },
             "doesNotExpend": [
               "charges"
@@ -113194,16 +113359,16 @@
           },
           {
             "id": "m7-attempt-orb-control",
-            "activation": {
-              "cost": "action",
-              "commandWord": true,
-              "requirement": "attuned to orb"
-            },
             "effects": [
               "m7-orb-enslaved-charm",
               "m7-orb-suggestion"
             ],
-            "note": "DC 15 Charisma check; success controls the orb while attuned, failure applies its charmed enslavement state."
+            "note": "DC 15 Charisma check; success controls the orb while attuned, failure applies its charmed enslavement state.",
+            "activation": {
+              "cost": "action",
+              "commandWord": true,
+              "requirement": "While attuned to an orb"
+            }
           }
         ],
         "effects": [
@@ -113672,6 +113837,20 @@
               "reason": "The SRD 5.1 pack contains no minor/major beneficial or detrimental artifact-property tables; these properties require GM-supplied content."
             },
             "reason": "The SRD 5.1 pack contains no minor/major beneficial or detrimental artifact-property tables; these properties require GM-supplied content."
+          },
+          {
+            "clauseId": "magic-item:orb-of-dragonkind/grant-orb-of-dragonkind-call-cooldown",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The one-hour use gate of the call is printed and independent of whether the called dragons have arrived; no typed cooldown or exclusivity is kept, and the DM model interprets the printed text.",
+              "sourceText": "Once you have used this property, it can’t be used again for 1 hour."
+            },
+            "reason": "The one-hour use gate of the call is printed and independent of whether the called dragons have arrived; no typed cooldown or exclusivity is kept, and the DM model interprets the printed text."
           },
           {
             "clauseId": "magic-item:orb-of-dragonkind/m4-orb-of-dragonkind",
@@ -114434,18 +114613,17 @@
         "operations": [
           {
             "id": "drink",
+            "effects": [
+              "love-charm"
+            ],
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "love-charm"
             ]
           }
         ],
@@ -114796,7 +114974,7 @@
               "creatureRefs": [
                 "creature:swarm-of-rats"
               ],
-              "control": "initially uncontrolled; each eligible swarm is controlled only after owner wins Charisma-vs-Wisdom contest and while it hears pipes played each round",
+              "control": "aren’t under your control otherwise; becomes friendly to you and your companions for as long as you continue to play the pipes each round as an action; If a friendly swarm starts its turn and can’t hear the pipes’ music, your control over that swarm ends",
               "cooldownEconomy": "charges",
               "note": "Actual count equals charges spent (1 to 3), subject to enough rats within half a mile. Multiple swarms may coexist. A failed sway or ended control locks that swarm out for 24 hours."
             }
@@ -115219,10 +115397,6 @@
             "destination": "within 5 feet of the hole or its carrier",
             "result": "a creature forces its way out while the cloth is folded"
           },
-          "suffocation": {
-            "airMinutes": 10,
-            "dividedByOccupants": false
-          },
           "note": "Folding closes the hole while all creatures and objects remain inside."
         },
         "interItem": {
@@ -115245,6 +115419,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:portable-hole/containment-portable-hole-suffocation",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M6",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The suffocation timer applies only to a creature within a CLOSED portable hole; the suffocation structure has no closed-state field, so none is typed and the DM model interprets the printed text.",
+              "sourceText": "A breathing creature within a closed portable hole can survive for up to 10 minutes, after which time it begins to suffocate."
+            },
+            "reason": "The suffocation timer applies only to a creature within a CLOSED portable hole; the suffocation structure has no closed-state field, so none is typed and the DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:portable-hole/m11-portable-hole",
             "scope": {
@@ -115400,8 +115588,7 @@
           {
             "id": "drink",
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
@@ -115564,8 +115751,7 @@
           {
             "id": "drink",
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
@@ -115715,19 +115901,18 @@
         "operations": [
           {
             "id": "drink",
+            "effects": [
+              "climbing",
+              "climb-advantage"
+            ],
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "climbing",
-              "climb-advantage"
             ]
           }
         ],
@@ -115903,8 +116088,7 @@
           {
             "id": "drink",
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
@@ -116053,18 +116237,17 @@
         "operations": [
           {
             "id": "drink",
+            "effects": [
+              "flight"
+            ],
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "flight"
             ]
           }
         ],
@@ -116203,8 +116386,7 @@
           {
             "id": "drink",
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
@@ -116359,18 +116541,17 @@
         "operations": [
           {
             "id": "drink",
+            "effects": [
+              "giant-strength"
+            ],
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "giant-strength"
             ]
           }
         ],
@@ -116518,8 +116699,7 @@
           {
             "id": "drink",
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
@@ -116669,8 +116849,7 @@
           {
             "id": "drink",
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
@@ -116839,8 +117018,7 @@
           {
             "id": "drink",
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
@@ -117056,18 +117234,17 @@
         "operations": [
           {
             "id": "drink",
+            "effects": [
+              "invisibility"
+            ],
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "invisibility"
             ]
           }
         ],
@@ -117211,8 +117388,7 @@
           {
             "id": "drink",
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
@@ -117375,8 +117551,7 @@
           {
             "id": "drink",
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
@@ -117559,18 +117734,17 @@
         "operations": [
           {
             "id": "drink",
+            "effects": [
+              "damage-resistance"
+            ],
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "damage-resistance"
             ]
           }
         ],
@@ -117715,8 +117889,7 @@
           {
             "id": "drink",
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
@@ -117876,18 +118049,17 @@
         "operations": [
           {
             "id": "drink",
+            "effects": [
+              "water-breathing"
+            ],
             "activation": {
-              "cost": "consume",
-              "target": "self"
+              "cost": "consume"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "water-breathing"
             ]
           }
         ],
@@ -117991,19 +118163,19 @@
         "operations": [
           {
             "id": "use-ointment",
+            "effects": [
+              "ointment-healing",
+              "ointment-restoration"
+            ],
             "activation": {
               "cost": "action",
-              "target": "creature swallowing it or receiving it on the skin"
+              "target": "one dose of the ointment can be swallowed or applied to the skin"
             },
             "cost": [
               {
                 "economy": "doses",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "ointment-healing",
-              "ointment-restoration"
             ]
           }
         ],
@@ -118867,7 +119039,8 @@
           {
             "id": "dominate-air-elemental",
             "activation": {
-              "cost": "action"
+              "requirement": "Ring of Air Elemental Command",
+              "target": "an air elemental"
             },
             "cost": [
               {
@@ -118882,7 +119055,7 @@
           {
             "id": "cast-chain-lightning",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay an air elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -118897,7 +119070,7 @@
           {
             "id": "cast-gust-of-wind",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay an air elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -118912,7 +119085,7 @@
           {
             "id": "cast-wind-wall",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay an air elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -118927,7 +119100,8 @@
           {
             "id": "dominate-earth-elemental",
             "activation": {
-              "cost": "action"
+              "requirement": "Ring of Earth Elemental Command",
+              "target": "an earth elemental"
             },
             "cost": [
               {
@@ -118942,7 +119116,7 @@
           {
             "id": "cast-stone-shape",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay an earth elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -118957,7 +119131,7 @@
           {
             "id": "cast-stoneskin",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay an earth elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -118972,7 +119146,7 @@
           {
             "id": "cast-wall-of-stone",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay an earth elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -118987,7 +119161,8 @@
           {
             "id": "dominate-fire-elemental",
             "activation": {
-              "cost": "action"
+              "requirement": "Ring of Fire Elemental Command",
+              "target": "a fire elemental"
             },
             "cost": [
               {
@@ -119002,7 +119177,7 @@
           {
             "id": "cast-burning-hands",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay a fire elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119017,7 +119192,7 @@
           {
             "id": "cast-fireball",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay a fire elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119032,7 +119207,7 @@
           {
             "id": "cast-wall-of-fire",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay a fire elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119047,7 +119222,8 @@
           {
             "id": "dominate-water-elemental",
             "activation": {
-              "cost": "action"
+              "requirement": "Ring of Water Elemental Command",
+              "target": "a water elemental"
             },
             "cost": [
               {
@@ -119062,7 +119238,7 @@
           {
             "id": "cast-create-or-destroy-water",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay a water elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119077,7 +119253,7 @@
           {
             "id": "cast-control-water",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay a water elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119092,7 +119268,7 @@
           {
             "id": "cast-ice-storm",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay a water elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119107,7 +119283,7 @@
           {
             "id": "cast-wall-of-ice",
             "activation": {
-              "cost": "action"
+              "requirement": "If you help slay a water elemental while attuned to the ring"
             },
             "cost": [
               {
@@ -119120,11 +119296,7 @@
             ]
           },
           {
-            "id": "unlock-linked-plane",
-            "activation": {
-              "cost": "free",
-              "trigger": "wearer helps slay elemental from linked plane"
-            }
+            "id": "unlock-linked-plane"
           }
         ],
         "effects": [
@@ -119269,6 +119441,300 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-burning-hands",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: burning hands (1 charge), fireball (2 charges), and wall of fire (3 charges)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-chain-lightning",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: chain lightning (3 charges), gust of wind (2 charges), or wind wall (1 charge)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-control-water",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: create or destroy water (1 charge), control water (3 charges), ice storm (2 charges), or wall of ice (3 charges)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-create-or-destroy-water",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: create or destroy water (1 charge), control water (3 charges), ice storm (2 charges), or wall of ice (3 charges)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-fireball",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: burning hands (1 charge), fireball (2 charges), and wall of fire (3 charges)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-gust-of-wind",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: chain lightning (3 charges), gust of wind (2 charges), or wind wall (1 charge)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-ice-storm",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: create or destroy water (1 charge), control water (3 charges), ice storm (2 charges), or wall of ice (3 charges)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-stone-shape",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: stone shape (2 charges), stoneskin (3 charges), or wall of stone (3 charges)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-stoneskin",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: stone shape (2 charges), stoneskin (3 charges), or wall of stone (3 charges)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-wall-of-fire",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: burning hands (1 charge), fireball (2 charges), and wall of fire (3 charges)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-wall-of-ice",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: create or destroy water (1 charge), control water (3 charges), ice storm (2 charges), or wall of ice (3 charges)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-wall-of-stone",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: stone shape (2 charges), stoneskin (3 charges), or wall of stone (3 charges)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-cast-wind-wall",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can cast the following spells from the ring, expending the necessary number of charges: chain lightning (3 charges), gust of wind (2 charges), or wind wall (1 charge)."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-dominate-air-elemental",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can expend 2 of the ring’s charges to cast dominate monster on an air elemental."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-dominate-earth-elemental",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can expend 2 of the ring’s charges to cast dominate monster on an earth elemental."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-dominate-fire-elemental",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can expend 2 of the ring’s charges to cast dominate monster on a fire elemental."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-dominate-water-elemental",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.",
+              "sourceText": "You can expend 2 of the ring’s charges to cast dominate monster on a water elemental."
+            },
+            "reason": "The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-unlock-linked-plane-air",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If you help slay an air elemental while attuned to the ring, you gain access to the following additional properties:"
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-unlock-linked-plane-earth",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If you help slay an earth elemental while attuned to the ring, you gain access to the following additional properties:"
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-unlock-linked-plane-fire",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If you help slay a fire elemental while attuned to the ring, you gain access to the following additional properties:"
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:ring-of-elemental-command/activation-unlock-linked-plane-water",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If you help slay a water elemental while attuned to the ring, you gain access to the following additional properties:"
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-economy-charges",
             "scope": {
@@ -120940,8 +121406,8 @@
           {
             "id": "turn-failed-dex-save-into-success",
             "activation": {
-              "cost": "reaction",
-              "trigger": "wearer fails Dexterity saving throw"
+              "trigger": "When you fail a Dexterity saving throw while wearing it",
+              "cost": "reaction"
             },
             "cost": [
               {
@@ -121740,8 +122206,7 @@
           {
             "id": "m7-soul-depart",
             "activation": {
-              "cost": "free",
-              "trigger": "captured soul chooses to depart for the afterlife"
+              "trigger": "depart for the afterlife"
             }
           }
         ],
@@ -121771,6 +122236,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:ring-of-mind-shielding/activation-m7-soul-depart",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M7",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If you die while wearing the ring, your soul enters it, unless it already houses a soul. You can remain in the ring or depart for the afterlife."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:ring-of-mind-shielding/c2-residual-mind-shield-lie",
             "scope": {
@@ -122399,8 +122878,7 @@
           {
             "id": "cast-faerie-fire",
             "activation": {
-              "cost": "action",
-              "requirement": "wearing the ring"
+              "cost": "action"
             },
             "cost": [
               {
@@ -122444,23 +122922,23 @@
           },
           {
             "id": "cast-dancing-lights",
-            "activation": {
-              "cost": "action",
-              "requirement": "wearing the ring in dim light or darkness"
-            },
             "effects": [
               "c2-cast-dancing-lights"
-            ]
+            ],
+            "activation": {
+              "cost": "action",
+              "requirement": "While wearing this ring in dim light or darkness"
+            }
           },
           {
             "id": "cast-light",
-            "activation": {
-              "cost": "action",
-              "requirement": "wearing the ring in dim light or darkness"
-            },
             "effects": [
               "c2-cast-light"
-            ]
+            ],
+            "activation": {
+              "cost": "action",
+              "requirement": "While wearing this ring in dim light or darkness"
+            }
           },
           {
             "id": "move-ball-lightning",
@@ -123003,15 +123481,13 @@
           {
             "id": "m9-store-ring-spell",
             "activation": {
-              "cost": "free",
-              "trigger": "spell is cast while caster touches ring"
+              "trigger": "by touching the ring as the spell is cast"
             }
           },
           {
             "id": "m9-cast-ring-spell",
             "activation": {
-              "cost": "free",
-              "requirement": "attuned wearer is wearing ring"
+              "requirement": "While wearing this ring"
             }
           }
         ]
@@ -123019,6 +123495,34 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:ring-of-spell-storing/activation-m9-cast-ring-spell",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M9",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "While wearing this ring, you can cast any spell stored in it."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:ring-of-spell-storing/activation-m9-store-ring-spell",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M9",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "Any creature can cast a spell of 1st through 5th level into the ring by touching the ring as the spell is cast."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:ring-of-spell-storing/m8-ring-of-spell-storing",
             "scope": {
@@ -123291,8 +123795,7 @@
           {
             "id": "m10-reflect-spell",
             "activation": {
-              "cost": "free",
-              "trigger": "wearer rolls natural 20 on eligible spell save"
+              "trigger": "if you roll a 20 for the save and the spell is 7th level or lower"
             }
           }
         ],
@@ -123308,6 +123811,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:ring-of-spell-turning/activation-m10-reflect-spell",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M10",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "In addition, if you roll a 20 for the save and the spell is 7th level or lower, the spell has no effect on you and instead targets the caster, using the slot level, spell save DC, attack bonus, and spellcasting ability of the caster."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:ring-of-spell-turning/c2-residual-spell-turning-saves",
             "scope": {
@@ -123659,9 +124176,9 @@
           {
             "id": "spectral-ram-attack",
             "activation": {
-              "cost": "action",
-              "requirement": "wearing the ring",
-              "target": "one visible creature"
+              "requirement": "While wearing the ring",
+              "target": "one creature you can see within 60 feet of you",
+              "cost": "action"
             },
             "cost": [
               {
@@ -123885,8 +124402,8 @@
           {
             "id": "cast-wish",
             "activation": {
-              "cost": "action",
-              "requirement": "wearing the ring"
+              "requirement": "While wearing this ring",
+              "cost": "action"
             },
             "cost": [
               {
@@ -124644,8 +125161,8 @@
           {
             "id": "display-scintillating-colors",
             "activation": {
-              "cost": "action",
-              "requirement": "wearing the robe"
+              "requirement": "While you wear it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -124857,8 +125374,8 @@
           {
             "id": "cast-magic-missile",
             "activation": {
-              "cost": "action",
-              "requirement": "wearing the robe"
+              "requirement": "While wearing this robe",
+              "cost": "action"
             },
             "cost": [
               {
@@ -125607,14 +126124,14 @@
             "id": "m9-absorb-rod-spell",
             "activation": {
               "cost": "reaction",
-              "trigger": "eligible spell targets only holder"
+              "trigger": "a spell that is targeting only you and not with an area of effect",
+              "requirement": "While holding this rod"
             }
           },
           {
             "id": "m9-cast-with-rod-energy",
             "activation": {
-              "cost": "free",
-              "requirement": "known/prepared spell and eligible slot level"
+              "requirement": "If you are a spellcaster holding the rod"
             }
           }
         ]
@@ -125622,6 +126139,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:rod-of-absorption/activation-m9-cast-with-rod-energy",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M9",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If you are a spellcaster holding the rod, you can convert energy stored in it into spell slots to cast spells you have prepared or know."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:rod-of-absorption/m10-rod-cancel",
             "scope": {
@@ -125909,7 +126440,7 @@
             {
               "from": "held",
               "to": "planted-aura",
-              "via": "activate-aura"
+              "via": "activate-protective-aura"
             },
             {
               "from": "planted-aura",
@@ -125948,6 +126479,9 @@
         "operations": [
           {
             "id": "activate-protective-aura",
+            "activation": {
+              "cost": "action"
+            },
             "cost": [
               {
                 "economy": "uses",
@@ -125993,12 +126527,6 @@
             "activation": {
               "cost": "action",
               "requirement": "While holding the rod"
-            }
-          },
-          {
-            "id": "activate-aura",
-            "activation": {
-              "cost": "action"
             }
           },
           {
@@ -127554,48 +128082,33 @@
               "id": "loose"
             },
             {
-              "id": "moving"
-            },
-            {
-              "id": "fastened"
-            },
-            {
-              "id": "knotted"
+              "id": "animated",
+              "note": "the rope animates"
             }
           ],
           "transitions": [
             {
               "from": "loose",
-              "to": "moving",
+              "to": "animated",
               "via": "animate-rope"
             },
             {
-              "from": "moving",
-              "to": "fastened",
+              "from": "animated",
+              "to": "animated",
               "via": "fasten-rope"
             },
             {
-              "from": "fastened",
-              "to": "knotted",
+              "from": "animated",
+              "to": "animated",
               "via": "knot-rope"
             },
             {
-              "from": "moving",
-              "to": "loose",
-              "via": "release-rope"
-            },
-            {
-              "from": "fastened",
-              "to": "loose",
-              "via": "release-rope"
-            },
-            {
-              "from": "knotted",
-              "to": "loose",
+              "from": "animated",
+              "to": "animated",
               "via": "release-rope"
             }
           ],
-          "termination": "release command or destruction"
+          "termination": "If the rope drops to 0 hit points, it is destroyed"
         },
         "operations": [
           {
@@ -127705,6 +128218,20 @@
               "F5",
               "F9"
             ]
+          },
+          {
+            "clauseId": "magic-item:rope-of-climbing/state-rope-of-climbing-movement",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The rope’s movement toward a destination is a separate bonus-action command that is not a stage of the animation transition; the DM model interprets the printed text.",
+              "sourceText": "As a bonus action, you can command the other end to move toward a destination you choose."
+            },
+            "reason": "The rope’s movement toward a destination is a separate bonus-action command that is not a stage of the animation transition; the DM model interprets the printed text."
           }
         ]
       }
@@ -127790,8 +128317,8 @@
             "activation": {
               "cost": "action",
               "commandWord": true,
-              "requirement": "holding one end of rope",
-              "target": "one visible creature"
+              "requirement": "If you hold one end of the rope",
+              "target": "a creature you can see within 20 feet of you"
             },
             "effects": [
               "c2-entangle-creature-payload"
@@ -128004,8 +128531,8 @@
           {
             "id": "turn-failed-save-into-success",
             "activation": {
-              "cost": "reaction",
-              "trigger": "eligible failed save"
+              "trigger": "If you fail a saving throw against a necromancy spell or a harmful effect originating from an undead creature",
+              "cost": "reaction"
             },
             "cost": [
               {
@@ -128702,7 +129229,7 @@
             "id": "apply-glue",
             "activation": {
               "cost": "consume",
-              "target": "1-square-foot surface"
+              "target": "a 1-foot square surface"
             },
             "cost": [
               {
@@ -128894,9 +129421,13 @@
         "operations": [
           {
             "id": "cast-spell",
+            "effects": [
+              "scroll-casting-procedure"
+            ],
+            "note": "Interrupted casting does not expend the scroll; success or a failed higher-level check expends it.",
             "activation": {
               "cost": "consume",
-              "requirement": "scroll spell is on a class spell list of the reader",
+              "requirement": "If the spell is on your class’s spell list",
               "note": "Uses the spell’s normal casting time."
             },
             "cost": [
@@ -128904,28 +129435,24 @@
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "scroll-casting-procedure"
-            ],
-            "note": "Interrupted casting does not expend the scroll; success or a failed higher-level check expends it."
+            ]
           },
           {
             "id": "copy-spell",
+            "effects": [
+              "scroll-copying-procedure"
+            ],
+            "note": "Destroy the scroll whether the Arcana check succeeds or fails.",
             "activation": {
               "cost": "consume",
-              "requirement": "wizard spell copied using the spellbook-copying procedure"
+              "requirement": "A wizard spell on a spell scroll can be copied just as spells in spellbooks can be copied"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "scroll-copying-procedure"
-            ],
-            "note": "Destroy the scroll whether the Arcana check succeeds or fails."
+            ]
           }
         ],
         "effects": [
@@ -129496,13 +130023,12 @@
         "operations": [
           {
             "id": "sphere-space-entry",
-            "activation": {
-              "cost": "free",
-              "trigger": "sphere enters creature space"
-            },
             "effects": [
               "c2-sphere-space-entry-payload"
-            ]
+            ],
+            "activation": {
+              "trigger": "A creature whose space the sphere enters"
+            }
           },
           {
             "id": "attempt-control",
@@ -129514,16 +130040,10 @@
             ]
           },
           {
-            "id": "contest-control",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "contest-control"
           },
           {
-            "id": "move-sphere",
-            "activation": {
-              "cost": "action"
-            }
+            "id": "move-sphere"
           }
         ],
         "effects": [
@@ -129555,6 +130075,48 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:sphere-of-annihilation/activation-contest-control",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If you attempt to control a sphere that is under another creature’s control, you make an Intelligence (Arcana) check contested by the other creature’s Intelligence (Arcana) check."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:sphere-of-annihilation/activation-move-sphere",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "The winner of the contest gains control of the sphere and can levitate it as normal."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:sphere-of-annihilation/activation-sphere-space-entry",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "A creature whose space the sphere enters must succeed on a DC 13 Dexterity saving throw or be touched by it, taking 4d10 force damage."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:sphere-of-annihilation/c2-effect-sphere-space-entry-payload",
             "scope": {
@@ -129857,8 +130419,8 @@
           {
             "id": "reflect-enchantment",
             "activation": {
-              "cost": "reaction",
-              "trigger": "holder succeeds eligible enchantment save"
+              "trigger": "If you succeed on a save against an enchantment spell that targets only you",
+              "cost": "reaction"
             },
             "cost": [
               {
@@ -129870,8 +130432,8 @@
           {
             "id": "m10-flip-enchantment-save",
             "activation": {
-              "cost": "free",
-              "trigger": "holder fails eligible enchantment save"
+              "trigger": "fail a saving throw against an enchantment spell that targets only you",
+              "requirement": "If you are holding the staff"
             },
             "cost": [
               {
@@ -129905,6 +130467,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:staff-of-charming/activation-m10-flip-enchantment-save",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M10",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "If you are holding the staff and fail a saving throw against an enchantment spell that targets only you, you can turn your failed save into a successful one."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:staff-of-charming/c1-economy-charges",
             "scope": {
@@ -131716,7 +132292,7 @@
                 "percent": 50
               },
               "tableRef": "table:staff-of-power",
-              "outcome": "on success the breaker travels to a random plane and avoids the explosion; otherwise the breaker takes force damage equal to 16 × the number of charges and every other creature makes a DC 17 Dexterity saving throw, taking the distance-table damage on a failure or half as much on a success"
+              "outcome": "You have a 50 percent chance to instantly travel to a random plane of existence, avoiding the explosion. If you fail to avoid the effect, you take force damage equal to 16 × the number of charges in the staff. Every other creature in the area must make a DC 17 Dexterity saving throw. On a failed save, a creature takes an amount of damage based on how far away it is from the point of origin, as shown in the following table. On a successful save, a creature takes half as much damage."
             },
             {
               "id": "last-charge-roll",
@@ -131758,8 +132334,7 @@
           {
             "id": "power-strike",
             "activation": {
-              "cost": "free",
-              "trigger": "melee attack using the staff hits"
+              "trigger": "When you hit with a melee attack using the staff"
             },
             "cost": [
               {
@@ -132005,6 +132580,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:staff-of-power/activation-power-strike",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "When you hit with a melee attack using the staff, you can expend 1 charge to deal an extra 1d6 force damage to the target."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:staff-of-power/c1-economy-charges",
             "scope": {
@@ -132992,8 +133581,7 @@
           {
             "id": "powerful-strike",
             "activation": {
-              "cost": "free",
-              "trigger": "hit with a melee attack using the staff"
+              "trigger": "When you hit with a melee attack using it"
             },
             "cost": [
               {
@@ -133028,6 +133616,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:staff-of-striking/activation-powerful-strike",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "When you hit with a melee attack using it, you can expend up to 3 of its charges."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:staff-of-striking/c1-economy-charges",
             "scope": {
@@ -133199,7 +133801,7 @@
             },
             {
               "id": "cloud",
-              "note": "30-foot heavily obscured cloud except 10-foot clear radius around user"
+              "note": "making the area heavily obscured for creatures other than you. The swarm moves with you, remaining centered on you"
             }
           ],
           "transitions": [
@@ -133211,22 +133813,22 @@
             {
               "from": "cloud",
               "to": "clear",
-              "via": "dismiss-insect-cloud"
-            },
-            {
-              "from": "cloud",
-              "to": "clear",
               "timer": {
                 "amount": 10,
                 "unit": "minute"
               }
+            },
+            {
+              "from": "cloud",
+              "to": "clear",
+              "condition": "A wind of at least 10 miles per hour disperses the swarm and ends the effect"
             }
           ],
           "duration": {
             "amount": 10,
             "unit": "minute"
           },
-          "termination": "dismissal, user moves more than 20 feet, or ten minutes"
+          "termination": "The insects remain for 10 minutes, making the area heavily obscured for creatures other than you. The swarm moves with you, remaining centered on you. A wind of at least 10 miles per hour disperses the swarm and ends the effect"
         },
         "economies": {
           "charges": {
@@ -133289,12 +133891,6 @@
                 "amount": 1
               }
             ]
-          },
-          {
-            "id": "dismiss-insect-cloud",
-            "activation": {
-              "cost": "action"
-            }
           }
         ],
         "effects": [
@@ -133629,7 +134225,7 @@
                 "percent": 50
               },
               "tableRef": "table:staff-of-the-magi",
-              "outcome": "on success the breaker travels to a random plane and avoids the explosion; otherwise the breaker takes force damage equal to 16 × the number of charges and every other creature makes a DC 17 Dexterity saving throw, taking the distance-table damage on a failure or half as much on a success"
+              "outcome": "You have a 50 percent chance to instantly travel to a random plane of existence, avoiding the explosion. If you fail to avoid the effect, you take force damage equal to 16 × the number of charges in the staff. Every other creature in the area must make a DC 17 Dexterity saving throw. On a failed save, a creature takes an amount of damage based on how far away it is from the point of origin, as shown in the following table. On a successful save, a creature takes half as much damage."
             },
             {
               "id": "last-charge-roll",
@@ -133957,7 +134553,8 @@
             "id": "m9-absorb-staff-spell",
             "activation": {
               "cost": "reaction",
-              "trigger": "eligible spell targets only holder"
+              "trigger": "when another creature casts a spell that targets only you",
+              "requirement": "While holding the staff"
             }
           }
         ],
@@ -137681,8 +138278,7 @@
           {
             "id": "withering-strike",
             "activation": {
-              "cost": "free",
-              "trigger": "hit with staff"
+              "trigger": "On a hit"
             },
             "cost": [
               {
@@ -137719,6 +138315,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:staff-of-withering/activation-withering-strike",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "On a hit, it deals damage as a normal quarterstaff, and you can expend 1 charge to deal an extra 2d10 necrotic damage to the target."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:staff-of-withering/c1-economy-charges",
             "scope": {
@@ -137903,7 +138513,6 @@
                 "unit": "hour"
               },
               "revertOn": [
-                "concentration-ended",
                 "reduced-to-0-hit-points",
                 "one-hour-ended"
               ],
@@ -137912,7 +138521,7 @@
                 "scope": "item",
                 "recast": "blocked"
               },
-              "note": "Uses the conjure elemental spell lifecycle and concentration contract."
+              "note": "Uses the conjure elemental spell lifecycle and concentration contract. Uses the conjure elemental spell lifecycle: the elemental disappears when it drops to 0 hit points or when the spell ends after one hour. If concentration is broken the elemental does not disappear; the summoner loses control, it becomes hostile, it cannot be dismissed, and it disappears one hour after it was summoned (spell:conjure-elemental)."
             }
           ]
         },
@@ -138829,32 +139438,28 @@
         "operations": [
           {
             "id": "m7-apply-wound",
-            "activation": {
-              "cost": "free",
-              "trigger": "once per turn when this weapon hits",
-              "target": "creature hit"
-            },
             "effects": [
               "m7-wounding-recurring-damage"
-            ]
+            ],
+            "activation": {
+              "trigger": "Once per turn, when you hit a creature with an attack using this magic weapon",
+              "target": "the target"
+            }
           },
           {
             "id": "m7-end-wounds-save",
+            "note": "DC 15 Constitution saving throw ends all wounds on success.",
             "activation": {
-              "cost": "free",
-              "trigger": "after start-of-turn wound damage",
-              "target": "wounded creature"
-            },
-            "note": "DC 15 Constitution saving throw ends all wounds on success."
+              "trigger": "At the start of each of the wounded creature’s turns"
+            }
           },
           {
             "id": "m7-treat-wounds",
+            "note": "DC 15 Wisdom (Medicine) check ends all wounds on success.",
             "activation": {
               "cost": "action",
-              "requirement": "wounded creature or creature within 5 feet",
-              "target": "wounded creature"
-            },
-            "note": "DC 15 Wisdom (Medicine) check ends all wounds on success."
+              "requirement": "the wounded creature, or a creature within 5 feet of it"
+            }
           }
         ],
         "effects": [
@@ -138888,6 +139493,34 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:sword-of-wounding/activation-m7-apply-wound",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M7",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "Once per turn, when you hit a creature with an attack using this magic weapon, you can wound the target."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
+          {
+            "clauseId": "magic-item:sword-of-wounding/activation-m7-end-wounds-save",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M7",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "At the start of each of the wounded creature’s turns, it takes 1d4 necrotic damage for each time you’ve wounded it, and it can then make a DC 15 Constitution saving throw, ending the effect of all such wounds on itself on a success."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:sword-of-wounding/c2-residual-apply-wound",
             "scope": {
@@ -140433,8 +141066,8 @@
           {
             "id": "cast-dominate-beast",
             "activation": {
-              "cost": "action",
-              "requirement": "carrying the trident"
+              "requirement": "While you carry it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -140629,18 +141262,18 @@
         "operations": [
           {
             "id": "pour-solvent",
+            "effects": [
+              "dissolve-adhesive"
+            ],
             "activation": {
               "cost": "action",
-              "target": "surface within reach"
+              "target": "a surface within reach"
             },
             "cost": [
               {
                 "economy": "quantity",
                 "amount": 1
               }
-            ],
-            "effects": [
-              "dissolve-adhesive"
             ]
           }
         ],
@@ -141003,8 +141636,8 @@
           {
             "id": "cast-hold-monster",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the wand"
+              "requirement": "While holding the wand",
+              "cost": "action"
             },
             "cost": [
               {
@@ -141019,8 +141652,8 @@
           {
             "id": "cast-hold-person",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the wand"
+              "requirement": "While holding the wand",
+              "cost": "action"
             },
             "cost": [
               {
@@ -141036,8 +141669,8 @@
             "id": "assisted-escape",
             "activation": {
               "requirement": "While holding the wand",
-              "cost": "reaction",
-              "trigger": "make a save to avoid paralyzed/restrained or a check to escape grapple"
+              "trigger": "a saving throw you make to avoid being paralyzed or restrained, or you can expend 1 charge and gain advantage on any check you make to escape a grapple",
+              "cost": "reaction"
             },
             "cost": [
               {
@@ -141899,8 +142532,8 @@
           {
             "id": "cast-fireball",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the wand"
+              "requirement": "While holding it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -142111,8 +142744,8 @@
           {
             "id": "cast-lightning-bolt",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the wand"
+              "requirement": "While holding it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -142317,8 +142950,8 @@
           {
             "id": "cast-detect-magic",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the wand"
+              "requirement": "While holding it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -142500,8 +143133,8 @@
           {
             "id": "cast-magic-missile",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the wand"
+              "requirement": "While holding it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -142686,9 +143319,9 @@
           {
             "id": "paralyzing-ray",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the wand",
-              "target": "one visible creature"
+              "requirement": "While holding it",
+              "target": "a creature you can see within 60 feet of you",
+              "cost": "action"
             },
             "cost": [
               {
@@ -142920,8 +143553,8 @@
           {
             "id": "cast-polymorph",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the wand"
+              "requirement": "While holding it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -143449,8 +144082,8 @@
           {
             "id": "cast-web",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the wand"
+              "requirement": "While holding it",
+              "cost": "action"
             },
             "cost": [
               {
@@ -144153,8 +144786,8 @@
           {
             "id": "cast-gust-of-wind",
             "activation": {
-              "cost": "action",
-              "requirement": "holding the fan"
+              "requirement": "While holding this fan",
+              "cost": "action"
             },
             "cost": [
               {

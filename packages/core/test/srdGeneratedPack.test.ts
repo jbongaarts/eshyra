@@ -3283,7 +3283,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1060);
+      expect(clauses).toHaveLength(1111);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3294,10 +3294,19 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // predicates that no activation field states exactly) became
       // adjudicated clauses (12 -> 55 with the shackles clause above); no pending
       // or green clause moved.
+      // eshyra-o9bd.19.4.6.2 (faithful-or-absent lifecycles, economies,
+      // containment and the whole-corpus operations screen): 52 more printed
+      // sentences became adjudicated clauses (55 -> 107): unprinted costs
+      // across the rest of the corpus, the Manual of Golems gate and ashes,
+      // the Orb call cooldown, the Instant Fortress components, the Portable
+      // Hole closed-state suffocation, the Rope of Climbing movement command
+      // and the Cloak of Displacement suppression (whose state machine is
+      // withheld, moving its clause engine-pending -> adjudicated, 792 -> 791).
+      // No green clause moved.
       expect(counts).toEqual({
-        'adjudicated-by-design': 55,
+        'adjudicated-by-design': 107,
         'design-blocked': 1,
-        'engine-pending': 792,
+        'engine-pending': 791,
         green: 212,
       });
       const pending = clauses.filter(

@@ -717,7 +717,7 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         'effect ends after 10 minutes',
         'creature uses an action to pull the rod from the ground',
       ],
-      operations: [op('activate-aura'), op('pull-rod')],
+      operations: [op('activate-protective-aura'), op('pull-rod')],
       stateMachine: {
         initial: 'held',
         states: [
@@ -728,7 +728,7 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
           ),
         ],
         transitions: [
-          { from: 'held', to: 'planted-aura', via: 'activate-aura' },
+          { from: 'held', to: 'planted-aura', via: 'activate-protective-aura' },
           { from: 'planted-aura', to: 'held', via: 'pull-rod' },
           {
             from: 'planted-aura',

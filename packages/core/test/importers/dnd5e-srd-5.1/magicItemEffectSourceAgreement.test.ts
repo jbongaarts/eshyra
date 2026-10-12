@@ -729,7 +729,10 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
       operation('magic-item:orb-of-dragonkind', 'cast-scrying')?.activation,
     ).toMatchObject({
       cost: 'action',
-      requirement: 'control the orb',
+      // The printed predicate is "If you control the orb" (eshyra-o9bd.19.4.6.2
+      // quotes it; the earlier "control the orb" fragment was lifted from the
+      // attunement sentence).
+      requirement: 'If you control the orb',
     });
     expect(
       effect('magic-item:spell-scroll', 'scroll-casting-procedure').castingTime,

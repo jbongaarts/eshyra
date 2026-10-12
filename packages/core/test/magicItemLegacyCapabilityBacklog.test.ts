@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(793);
+    expect(backlog.candidates).toHaveLength(792);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -80,9 +80,17 @@ describe('magic-item legacy capability backlog', () => {
     // eshyra-o9bd.19.4.5.8 (faithful-or-absent): the goat-of-terror aura
     // effect moved to an adjudicated clause, so its engine-hook candidate left
     // the set (795 -> 794); review 19.4.5.9 S3 then withheld the Dimensional
-    // Shackles restriction the same way (794 -> 793). No other identity changed.
+    // Shackles restriction the same way (794 -> 793); eshyra-o9bd.19.4.6.2
+    // withheld the Cloak of Displacement state machine (two independent
+    // suppression lifetimes no single typed graph states), so its M5 engine-
+    // hook candidate left the set (793 -> 792). No other identity changed.
     expect(fingerprint).toBe(
-      '7047dde655c2747582fc8fa1989aa26735df9601eb9d46eeb28fbdcfbee7de21',
+      '7e72418d67cac6d45414cd5afa98019c2eda693c67da28096cdac7c9d5bd591e',
+    );
+    expect(
+      backlog.candidates.map(({ candidateId }) => candidateId),
+    ).not.toContain(
+      'magic-item:cloak-of-displacement/m5-cloak-of-displacement',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),
