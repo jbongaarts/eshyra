@@ -283,7 +283,7 @@ describe('root-cause scenarios: printed-eligible versus ineligible', () => {
     expect(activation('Animated Shield', 'speak-command-word')).toEqual({
       cost: 'bonus-action',
       commandWord: true,
-      equipment: ['held'],
+      equipment: [['held']],
     });
     expect(activation('Animated Shield', 'end-animation')).toEqual({
       cost: 'bonus-action',
@@ -324,15 +324,15 @@ describe('root-cause scenarios: printed-eligible versus ineligible', () => {
 
   it('types the printed worn / held / attuned / on-person prerequisite as structured equipment and keeps every other conjunct adjudicated', () => {
     for (const [name, id, equipment] of [
-      ['Rod of Alertness', 'cast-detect-magic', ['held']],
-      ['Gem of Brightness', 'shed-light', ['held']],
-      ['Pearl of Power', 'regain-spell-slot', ['on-person']],
-      ['Wand of Secrets', 'detect-secret', ['held']],
-      ['Ring of X-ray Vision', 'activate-x-ray-vision', ['worn']],
-      ['Cloak of the Bat', 'cast-polymorph', ['worn']],
-      ['Helm of Brilliance', 'ignite-weapon', ['worn']],
-      ['Hammer of Thunderbolts', 'hurl-thunderclap', ['attuned']],
-      ['Hammer of Thunderbolts', 'giant-slaying-critical', ['attuned']],
+      ['Rod of Alertness', 'cast-detect-magic', [['held']]],
+      ['Gem of Brightness', 'shed-light', [['held']]],
+      ['Pearl of Power', 'regain-spell-slot', [['on-person']]],
+      ['Wand of Secrets', 'detect-secret', [['held']]],
+      ['Ring of X-ray Vision', 'activate-x-ray-vision', [['worn']]],
+      ['Cloak of the Bat', 'cast-polymorph', [['worn']]],
+      ['Helm of Brilliance', 'ignite-weapon', [['worn']]],
+      ['Hammer of Thunderbolts', 'hurl-thunderclap', [['attuned']]],
+      ['Hammer of Thunderbolts', 'giant-slaying-critical', [['attuned']]],
     ] as const)
       expect(activation(name, id)?.equipment, `${name} ${id}`).toEqual(
         equipment,
@@ -348,11 +348,14 @@ describe('root-cause scenarios: printed-eligible versus ineligible', () => {
     expect(
       carries('Hammer of Thunderbolts', 'Giant’s Bane (Requires Attunement)'),
     ).toBe(true);
-    // "wearing or holding it" is an alternative, which the conjunctive
-    // equipment list cannot state: it stays adjudicated.
+    // "wearing or holding it" is an alternative: two equipment alternatives,
+    // never a conjunction; the printed sentence is still carried.
     expect(
       activation('Talisman of Pure Good', 'open-fissure')?.equipment,
-    ).toBeUndefined();
+    ).toEqual([['worn'], ['held']]);
+    expect(
+      activation('Talisman of Ultimate Evil', 'open-fissure')?.equipment,
+    ).toEqual([['worn'], ['held']]);
     expect(
       carries('Talisman of Pure Good', 'If you are wearing or holding it'),
     ).toBe(true);
@@ -613,7 +616,7 @@ describe('whole-corpus operations screen (every magic-item operation)', () => {
     expect(activation('Gem of Brightness', 'blinding-beam')).toEqual({
       cost: 'action',
       commandWord: true,
-      equipment: ['held'],
+      equipment: [['held']],
     });
     expect(
       carries(
@@ -623,7 +626,7 @@ describe('whole-corpus operations screen (every magic-item operation)', () => {
     ).toBe(true);
     expect(activation('Ring of Shooting Stars', 'cast-light')).toEqual({
       cost: 'action',
-      equipment: ['worn'],
+      equipment: [['worn']],
     });
     expect(carries('Ring of Shooting Stars', 'in dim light or darkness')).toBe(
       true,
@@ -1187,7 +1190,7 @@ describe('omitted printed predicates (review 19.4.6.3 S1)', () => {
         { id: 'cast-fireball', activation: { cost: 'action' } },
         {
           id: 'cast-burning-hands',
-          activation: { equipment: ['held'] },
+          activation: { equipment: [['held']] },
         },
       ]),
     ).toEqual({ governed: 2, missing: ['cast-fireball'] });
@@ -1211,7 +1214,7 @@ describe('omitted printed predicates (review 19.4.6.3 S1)', () => {
         expect(
           (operation.activation as Obj).equipment,
           `${name} ${String(operation.id)}`,
-        ).toEqual(['held']);
+        ).toEqual([['held']]);
     }
     // Negative siblings: these staffs print no holding clause for their casts.
     for (const name of [

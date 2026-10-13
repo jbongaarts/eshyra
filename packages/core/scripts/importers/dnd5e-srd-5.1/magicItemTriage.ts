@@ -1024,16 +1024,22 @@ function failOrReport(scope: string, message: string): void {
   else fail(scope, message);
 }
 
-/** Equipment named by a printed requirement (and, for `worn`, trigger) clause. */
+/**
+ * Equipment named by a printed requirement (and, for `worn`, trigger) clause,
+ * as alternatives in disjunctive normal form (see
+ * `MagicItemActivationSpec.equipment`). A printed "wearing or holding it"
+ * yields two alternatives, each also carrying any other printed conjunct.
+ */
 export function equipmentFromPrintedText(
   requirement: string | undefined,
   trigger: string | undefined,
-): readonly MagicItemEquipmentRequirement[] {
+): readonly (readonly MagicItemEquipmentRequirement[])[] {
   const found = new Set<MagicItemEquipmentRequirement>();
   const text = requirement ?? '';
   const alternative =
     /\b(?:wearing or holding|holding or wearing|wear or hold|hold or wear)\b/i;
-  if (!alternative.test(text)) {
+  const isAlternative = alternative.test(text);
+  if (!isAlternative) {
     if (/\b(?:wearing|wear|wears)\b/i.test(text)) found.add('worn');
     if (/\bhold(?:ing)?\b/i.test(text)) found.add('held');
   }
@@ -1045,9 +1051,16 @@ export function equipmentFromPrintedText(
     /\bwhile (?:you(?:’|')re |you are )?wearing (?:it|them)\b/i.test(trigger)
   )
     found.add('worn');
-  return (['worn', 'held', 'attuned', 'on-person'] as const).filter((value) =>
-    found.has(value),
-  );
+  const ordered = (set: ReadonlySet<MagicItemEquipmentRequirement>) =>
+    (['worn', 'held', 'attuned', 'on-person'] as const).filter((value) =>
+      set.has(value),
+    );
+  if (isAlternative)
+    return (['worn', 'held'] as const).map((choice) =>
+      ordered(new Set([...found, choice])),
+    );
+  const conjunct = ordered(found);
+  return conjunct.length === 0 ? [] : [conjunct];
 }
 
 function allClauseTexts(projections: Projections): string[] {
@@ -1156,15 +1169,19 @@ function triageActivations(
             );
           if (anchors.length > 0)
             pending.push({ operationId: operation.id, anchors });
-          const equipment = [
-            ...new Set([
-              ...equipmentFromPrintedText(
-                activation?.requirement,
-                activation?.trigger,
-              ),
-              ...extraEquipment,
-            ]),
-          ];
+          const printed = equipmentFromPrintedText(
+            activation?.requirement,
+            activation?.trigger,
+          );
+          const order = ['worn', 'held', 'attuned', 'on-person'] as const;
+          const withExtra = (alt: readonly MagicItemEquipmentRequirement[]) =>
+            order.filter((v) => alt.includes(v) || extraEquipment.includes(v));
+          const equipment =
+            printed.length > 0
+              ? printed.map(withExtra)
+              : extraEquipment.length > 0
+                ? [withExtra([])]
+                : [];
           const next: Record<string, unknown> = {};
           if (activation?.cost !== undefined) next.cost = activation.cost;
           if (activation?.commandWord !== undefined)

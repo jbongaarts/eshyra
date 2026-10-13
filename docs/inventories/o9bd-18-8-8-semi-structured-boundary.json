@@ -25689,18 +25689,18 @@
       "recordKinds": [
         "magic-item"
       ],
-      "fieldPath": "data.mechanics.operations[].activation.equipment[]",
+      "fieldPath": "data.mechanics.operations[].activation.equipment[][]",
       "representativeValues": [
         "held",
         "worn",
         "attuned",
         "on-person"
       ],
-      "population": 122,
+      "population": 126,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.operations[].activation.equipment[]",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.operations[].activation.equipment[][]",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,

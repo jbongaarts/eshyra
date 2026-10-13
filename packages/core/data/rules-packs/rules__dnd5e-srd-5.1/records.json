@@ -88457,7 +88457,9 @@
               "cost": "bonus-action",
               "commandWord": true,
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             },
             "doesNotExpend": [
@@ -91977,7 +91979,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           }
@@ -92155,7 +92159,9 @@
             "activation": {
               "cost": "bonus-action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           },
@@ -93740,7 +93746,9 @@
             ],
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           }
@@ -94475,7 +94483,9 @@
             ],
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           }
@@ -94626,7 +94636,9 @@
             "id": "cast-web",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -95348,7 +95360,9 @@
             "id": "cast-polymorph",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -101496,7 +101510,9 @@
             "id": "cast-charm-person",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -104048,7 +104064,9 @@
             "id": "shed-light",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action",
               "commandWord": true
@@ -104062,7 +104080,9 @@
             "activation": {
               "commandWord": true,
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -104081,7 +104101,9 @@
             "activation": {
               "commandWord": true,
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -104964,7 +104986,9 @@
             "activation": {
               "cost": "reaction",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           }
@@ -105301,7 +105325,9 @@
             "id": "hurl-thunderclap",
             "activation": {
               "equipment": [
-                "attuned"
+                [
+                  "attuned"
+                ]
               ]
             },
             "cost": [
@@ -105321,7 +105347,9 @@
             ],
             "activation": {
               "equipment": [
-                "attuned"
+                [
+                  "attuned"
+                ]
               ]
             }
           }
@@ -105812,7 +105840,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             },
             "doesNotExpend": [
@@ -106104,7 +106134,9 @@
             "id": "cast-prismatic-spray",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -106122,7 +106154,9 @@
             "id": "cast-wall-of-fire",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -106140,7 +106174,9 @@
             "id": "cast-fireball",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -106158,7 +106194,9 @@
             "id": "cast-daylight",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -106178,7 +106216,9 @@
               "cost": "action",
               "commandWord": true,
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           },
@@ -106857,7 +106897,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             },
             "doesNotExpend": [
@@ -107024,7 +107066,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           }
@@ -107275,7 +107319,9 @@
             "id": "cast-teleport",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -110567,7 +110613,9 @@
             "id": "cast-wish",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -110596,7 +110644,9 @@
             "activation": {
               "cost": "free",
               "equipment": [
-                "on-person"
+                [
+                  "on-person"
+                ]
               ]
             }
           }
@@ -111234,7 +111284,9 @@
             "id": "release-terror-wave",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -112357,7 +112409,9 @@
             "id": "cast-detect-thoughts",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -113158,7 +113212,9 @@
             "activation": {
               "cost": "bonus-action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             },
             "effects": [
@@ -114827,7 +114883,9 @@
               "cost": "action",
               "commandWord": true,
               "equipment": [
-                "attuned"
+                [
+                  "attuned"
+                ]
               ]
             }
           }
@@ -115559,7 +115617,9 @@
             "id": "regain-spell-slot",
             "activation": {
               "equipment": [
-                "on-person"
+                [
+                  "on-person"
+                ]
               ],
               "cost": "action",
               "commandWord": true
@@ -116743,7 +116803,9 @@
               "cost": "action",
               "commandWord": true,
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           }
@@ -119803,7 +119865,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             },
             "cost": [
@@ -119821,7 +119885,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             },
             "cost": [
@@ -119839,7 +119905,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             },
             "cost": [
@@ -120227,7 +120295,9 @@
               "cost": "action",
               "commandWord": true,
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           }
@@ -122957,7 +123027,9 @@
             "id": "turn-failed-dex-save-into-success",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "reaction"
             },
@@ -123366,7 +123438,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           },
@@ -123545,7 +123619,9 @@
             "activation": {
               "cost": "bonus-action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             },
             "doesNotExpend": [
@@ -124444,7 +124520,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           },
@@ -124456,7 +124534,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           },
@@ -125043,7 +125123,9 @@
             "id": "m9-cast-ring-spell",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           }
@@ -125572,7 +125654,9 @@
             "id": "cast-telekinesis",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             },
             "doesNotExpend": [
@@ -125731,7 +125815,9 @@
             "id": "spectral-ram-attack",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -125985,7 +126071,9 @@
             "id": "cast-wish",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -126339,7 +126427,9 @@
               "cost": "action",
               "commandWord": true,
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ]
             }
           }
@@ -126776,7 +126866,9 @@
             "id": "display-scintillating-colors",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -126987,7 +127079,9 @@
             "id": "cast-magic-missile",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -127484,7 +127578,9 @@
             "id": "detach-patch",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action"
             },
@@ -127711,7 +127807,9 @@
             "activation": {
               "cost": "reaction",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           },
@@ -127719,7 +127817,9 @@
             "id": "m9-cast-with-rod-energy",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           }
@@ -128129,7 +128229,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           },
@@ -128141,7 +128243,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           },
@@ -128153,7 +128257,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           },
@@ -128165,7 +128271,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           },
@@ -128589,7 +128697,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             },
             "cost": [
@@ -129669,7 +129779,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           }
@@ -129776,7 +129888,9 @@
               "cost": "action",
               "commandWord": true,
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           },
@@ -130143,7 +130257,9 @@
               "cost": "action",
               "commandWord": true,
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             },
             "effects": [
@@ -132012,7 +132128,9 @@
             "id": "cast-charm-person",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -132030,7 +132148,9 @@
             "id": "cast-command",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -132048,7 +132168,9 @@
             "id": "cast-comprehend-languages",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -132084,7 +132206,9 @@
             ],
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           }
@@ -132570,7 +132694,9 @@
             "id": "cast-burning-hands",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -132588,7 +132714,9 @@
             "id": "cast-fireball",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -132606,7 +132734,9 @@
             "id": "cast-wall-of-fire",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -133022,7 +133152,9 @@
             "id": "cast-cone-of-cold",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -133040,7 +133172,9 @@
             "id": "cast-fog-cloud",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -133058,7 +133192,9 @@
             "id": "cast-ice-storm",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -133076,7 +133212,9 @@
             "id": "cast-wall-of-ice",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -133569,7 +133707,9 @@
             "id": "cast-cure-wounds",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -133587,7 +133727,9 @@
             "id": "cast-lesser-restoration",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -133605,7 +133747,9 @@
             "id": "cast-mass-cure-wounds",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -134029,7 +134173,9 @@
             "id": "cast-cone-of-cold",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -134047,7 +134193,9 @@
             "id": "cast-fireball",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -134065,7 +134213,9 @@
             "id": "cast-globe-of-invulnerability",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -134083,7 +134233,9 @@
             "id": "cast-hold-monster",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -134101,7 +134253,9 @@
             "id": "cast-levitate",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -134119,7 +134273,9 @@
             "id": "cast-lightning-bolt",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -134137,7 +134293,9 @@
             "id": "cast-magic-missile",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -134155,7 +134313,9 @@
             "id": "cast-ray-of-enfeeblement",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -134173,7 +134333,9 @@
             "id": "cast-wall-of-force",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -135571,7 +135733,9 @@
             "id": "cast-giant-insect",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -135589,7 +135753,9 @@
             "id": "cast-insect-plague",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -135607,7 +135773,9 @@
             "id": "create-insect-cloud",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136021,7 +136189,9 @@
             "id": "cast-conjure-elemental",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136039,7 +136209,9 @@
             "id": "cast-dispel-magic",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136057,7 +136229,9 @@
             "id": "cast-fireball",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136075,7 +136249,9 @@
             "id": "cast-flaming-sphere",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136093,7 +136269,9 @@
             "id": "cast-ice-storm",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136111,7 +136289,9 @@
             "id": "cast-invisibility",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136129,7 +136309,9 @@
             "id": "cast-knock",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136147,7 +136329,9 @@
             "id": "cast-lightning-bolt",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136165,7 +136349,9 @@
             "id": "cast-passwall",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136183,7 +136369,9 @@
             "id": "cast-plane-shift",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136201,7 +136389,9 @@
             "id": "cast-telekinesis",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136219,7 +136409,9 @@
             "id": "cast-wall-of-fire",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136237,7 +136429,9 @@
             "id": "cast-web",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136255,7 +136449,9 @@
             "id": "cast-arcane-lock",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136270,7 +136466,9 @@
             "id": "cast-detect-magic",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136285,7 +136483,9 @@
             "id": "cast-enlarge-reduce",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136300,7 +136500,9 @@
             "id": "cast-light",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136315,7 +136517,9 @@
             "id": "cast-mage-hand",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136330,7 +136534,9 @@
             "id": "cast-protection-from-evil-and-good",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -136346,7 +136552,9 @@
             "activation": {
               "cost": "reaction",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           }
@@ -141696,7 +141904,15 @@
               }
             ],
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "equipment": [
+                [
+                  "worn"
+                ],
+                [
+                  "held"
+                ]
+              ]
             }
           }
         ],
@@ -142218,7 +142434,15 @@
               }
             ],
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "equipment": [
+                [
+                  "worn"
+                ],
+                [
+                  "held"
+                ]
+              ]
             }
           }
         ],
@@ -142942,7 +143166,9 @@
             "id": "cast-dominate-beast",
             "activation": {
               "equipment": [
-                "on-person"
+                [
+                  "on-person"
+                ]
               ],
               "cost": "action"
             },
@@ -143541,7 +143767,9 @@
             "id": "cast-hold-monster",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -143559,7 +143787,9 @@
             "id": "cast-hold-person",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -143577,7 +143807,9 @@
             "id": "assisted-escape",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "reaction"
             },
@@ -144016,7 +144248,9 @@
               "cost": "action",
               "commandWord": true,
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           }
@@ -144177,7 +144411,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             },
             "cost": [
@@ -144195,7 +144431,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             },
             "cost": [
@@ -144518,7 +144756,9 @@
             "id": "cast-fireball",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -144746,7 +144986,9 @@
             "id": "cast-lightning-bolt",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -144968,7 +145210,9 @@
             "id": "cast-detect-magic",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -145167,7 +145411,9 @@
             "id": "cast-magic-missile",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -145369,7 +145615,9 @@
             "id": "paralyzing-ray",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -145618,7 +145866,9 @@
             "id": "cast-polymorph",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -145855,7 +146105,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           }
@@ -146179,7 +146431,9 @@
             "id": "cast-web",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -146442,7 +146696,9 @@
             "activation": {
               "cost": "action",
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ]
             }
           }
@@ -146871,7 +147127,9 @@
             "id": "cast-gust-of-wind",
             "activation": {
               "equipment": [
-                "held"
+                [
+                  "held"
+                ]
               ],
               "cost": "action"
             },
@@ -147291,7 +147549,9 @@
             "id": "manifest-wings",
             "activation": {
               "equipment": [
-                "worn"
+                [
+                  "worn"
+                ]
               ],
               "cost": "action",
               "commandWord": true

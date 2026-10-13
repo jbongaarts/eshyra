@@ -26,9 +26,8 @@ export interface MagicItemDurationSpec {
 /**
  * A printed equipment prerequisite of an activation: the item must be worn,
  * held, attuned to, or on the actor's person (eshyra-o9bd.19.4.6.6; consumer
- * eshyra-olc5.10). Every listed value is required (conjunction); a printed
- * alternative ("wearing or holding it") is not representable and stays
- * DM-adjudicated.
+ * eshyra-olc5.10). See `MagicItemActivationSpec.equipment` for how values
+ * compose into alternatives.
  */
 export type MagicItemEquipmentRequirement =
   | 'worn'
@@ -44,8 +43,15 @@ export interface MagicItemActivationSpec {
    */
   readonly cost?: 'action' | 'bonus-action' | 'reaction' | 'free' | 'consume';
   readonly commandWord?: boolean;
-  /** Printed worn/held/attuned/on-person prerequisite (structured). */
-  readonly equipment?: readonly MagicItemEquipmentRequirement[];
+  /**
+   * Printed worn/held/attuned/on-person prerequisite (structured), in
+   * disjunctive normal form: the activation is permitted when ANY ONE
+   * alternative holds, and an alternative holds when ALL its listed states
+   * hold. `[["held"]]` = held; `[["worn"], ["held"]]` = the printed "wearing or
+   * holding it". The shape lets the equipment capability (eshyra-olc5.10) bind
+   * printed alternatives without a pack change.
+   */
+  readonly equipment?: readonly (readonly MagicItemEquipmentRequirement[])[];
   /**
    * Producer-draft free text. The compiled SRD pack never carries these: the
    * triage layer (eshyra-o9bd.19.4.6.6) removes them and carries the printed
@@ -669,19 +675,32 @@ function activation(value: unknown, path: string): void {
   if (obj.commandWord !== undefined)
     boolean(obj.commandWord, `${path}.commandWord`);
   if (obj.equipment !== undefined) {
-    const equipment = array(obj.equipment, `${path}.equipment`);
-    if (equipment.length === 0)
+    const alternatives = array(obj.equipment, `${path}.equipment`);
+    if (alternatives.length === 0)
       throw new RulesPackError(`${path}.equipment must not be empty`);
-    const seen = new Set<string>();
-    equipment.forEach((entry, index) => {
-      const value = string(entry, `${path}.equipment[${index}]`);
-      if (!EQUIPMENT_REQUIREMENTS.has(value))
+    const seenAlternatives = new Set<string>();
+    alternatives.forEach((rawAlternative, at) => {
+      const altPath = `${path}.equipment[${at}]`;
+      const alternative = array(rawAlternative, altPath);
+      if (alternative.length === 0)
+        throw new RulesPackError(`${altPath} must not be empty`);
+      const seen = new Set<string>();
+      alternative.forEach((entry, index) => {
+        const value = string(entry, `${altPath}[${index}]`);
+        if (!EQUIPMENT_REQUIREMENTS.has(value))
+          throw new RulesPackError(
+            `${altPath}[${index}] must be one of ${[...EQUIPMENT_REQUIREMENTS].join(', ')}`,
+          );
+        if (seen.has(value))
+          throw new RulesPackError(`${altPath} must not repeat ${value}`);
+        seen.add(value);
+      });
+      const key = [...seen].sort().join('+');
+      if (seenAlternatives.has(key))
         throw new RulesPackError(
-          `${path}.equipment[${index}] must be one of ${[...EQUIPMENT_REQUIREMENTS].join(', ')}`,
+          `${path}.equipment must not repeat an alternative`,
         );
-      if (seen.has(value))
-        throw new RulesPackError(`${path}.equipment must not repeat ${value}`);
-      seen.add(value);
+      seenAlternatives.add(key);
     });
   }
   for (const key of ['trigger', 'requirement', 'target', 'note']) {

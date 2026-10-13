@@ -230,7 +230,7 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
       }
     expect(operationCount).toBe(362);
     expect(activations + withoutActivation).toBe(operationCount);
-    expect(equipment).toBe(122);
+    expect(equipment).toBe(124);
     expect(scopes.filter((s) => s.mechanics.stateMachine).length).toBe(24);
     expect(scopes.filter((s) => s.mechanics.containment).length).toBe(1);
     expect(scopes.filter((s) => s.mechanics.entityGrant).length).toBe(16);
@@ -250,17 +250,17 @@ describe('B. kept typed fields are exact', () => {
     for (const scope of scopes)
       for (const operation of operations(scope)) {
         const equipment = (operation.activation as Obj | undefined)
-          ?.equipment as (keyof typeof CUES)[] | undefined;
+          ?.equipment as (keyof typeof CUES)[][] | undefined;
         if (equipment === undefined) continue;
         typed += 1;
-        for (const kind of equipment)
+        for (const kind of equipment.flat())
           expect(
             CUES[kind].test(adjudicatedSpans(scope.item).join(' ')) ||
               CUES[kind].test(description(scope.item)),
             `${scope.label} ${String(operation.id)} ${kind}`,
           ).toBe(true);
       }
-    expect(typed).toBe(122);
+    expect(typed).toBe(124);
     // The table-extra equipment gates are printed by a section header.
     for (const [key, kinds] of EQUIPMENT_EXTRA) {
       const item = key.split('::')[0] as string;
@@ -271,32 +271,32 @@ describe('B. kept typed fields are exact', () => {
     }
   });
 
-  it('never types an alternative ("wearing or holding it") as a conjunction', () => {
+  it('types a printed alternative ("wearing or holding it") as alternatives, never as a conjunction', () => {
     expect(
       equipmentFromPrintedText('If you are wearing or holding it', undefined),
-    ).toEqual([]);
+    ).toEqual([['worn'], ['held']]);
     expect(equipmentFromPrintedText('While wearing it', undefined)).toEqual([
-      'worn',
+      ['worn'],
     ]);
     expect(
       equipmentFromPrintedText(
         'If you are a spellcaster holding the rod',
         undefined,
       ),
-    ).toEqual(['held']);
+    ).toEqual([['held']]);
     expect(equipmentFromPrintedText('While attuned to it', undefined)).toEqual([
-      'attuned',
+      ['attuned'],
     ]);
     expect(
       equipmentFromPrintedText('While this pearl is on your person', undefined),
-    ).toEqual(['on-person']);
+    ).toEqual([['on-person']]);
     // A trigger contributes only a printed "while wearing it" qualifier.
     expect(
       equipmentFromPrintedText(
         undefined,
         'When you fail a Dexterity saving throw while wearing it',
       ),
-    ).toEqual(['worn']);
+    ).toEqual([['worn']]);
     expect(
       equipmentFromPrintedText(
         'Ring of Air Elemental Command',
@@ -422,16 +422,16 @@ describe('C. representative eligible / ineligible scenarios per kept category', 
     // Eligible: a worn ring casts; ineligible by the typed gate: not worn.
     expect(
       (operation('Ring of Jumping', 'cast-jump').activation as Obj).equipment,
-    ).toEqual(['worn']);
+    ).toEqual([['worn']]);
     expect(
       (operation('Wand of Fear', 'command').activation as Obj).equipment,
-    ).toEqual(['held']);
+    ).toEqual([['held']]);
     expect(
       (
         operation('Hammer of Thunderbolts', 'giant-slaying-critical')
           .activation as Obj
       ).equipment,
-    ).toEqual(['attuned']);
+    ).toEqual([['attuned']]);
     // The ring's help-slay gate is not equipment; it is a printed sentence.
     expect(
       operation('Ring of Elemental Command', 'cast-fireball').activation as
