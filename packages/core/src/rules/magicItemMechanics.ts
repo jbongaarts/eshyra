@@ -121,6 +121,15 @@ export interface MagicItemOperation {
   readonly cost?: readonly {
     readonly economy: string;
     readonly amount: number | string | 'variable';
+    /**
+     * Soft-limit marker (eshyra-o9bd.19.4.6.8; consumer eshyra-olc5.8). The
+     * printed text gives a count of risk-free uses and permits further uses
+     * at a printed risk (Ring of X-ray Vision, Wind Fan). The cost spends a
+     * safe use while one remains; when none remains the operation is still
+     * permitted, nothing is spent, and the printed risk is DM-adjudicated.
+     * Absent means a hard limit: insufficient resources refuse the use.
+     */
+    readonly onExhausted?: 'risk-adjudicated';
   }[];
   readonly excludes?: readonly string[];
   readonly doesNotExpend?: readonly string[];
@@ -916,10 +925,20 @@ function operation(value: unknown, path: string): MagicItemOperation {
     obj.cost.forEach((entry, index) => {
       const costPath = `${path}.cost[${index}]`;
       const cost = object(entry, costPath);
-      only(cost, ['economy', 'amount'], costPath);
+      only(cost, ['economy', 'amount', 'onExhausted'], costPath);
       id(cost.economy, `${costPath}.economy`);
       if (cost.amount !== 'variable')
         numberOrDice(cost.amount, `${costPath}.amount`);
+      if (cost.onExhausted !== undefined) {
+        if (cost.onExhausted !== 'risk-adjudicated')
+          throw new RulesPackError(
+            `${costPath}.onExhausted must be 'risk-adjudicated'`,
+          );
+        if (typeof cost.amount !== 'number')
+          throw new RulesPackError(
+            `${costPath}.onExhausted requires a fixed numeric amount (the count of risk-free uses it spends)`,
+          );
+      }
     });
   }
   for (const key of ['excludes', 'doesNotExpend', 'effects']) {

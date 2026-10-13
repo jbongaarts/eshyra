@@ -684,8 +684,26 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
         'cast dancing lights and light from the ring at will',
         'cast faerie fire from the ring',
         'Each creature within a 15-foot cube originating from that point is showered in sparks and must make a DC 15 Dexterity saving throw, taking 5d4 fire damage on a failed save, or half as much damage on a successful one',
+        'The spheres last as long as you concentrate (as if concentrating on a spell), up to 1 minute',
       ],
       effects: [
+        // Each activation creates its own set of spheres, so the item has no
+        // single-lifetime state machine (DM-adjudicated, review 19.4.6.7 S2);
+        // the printed duration is typed here for the item-duration capability
+        // (eshyra-olc5.11) to bind start_effect to.
+        payload(
+          'create-ball-lightning',
+          'triggeredEffect',
+          {
+            trigger: 'ball lightning property activated',
+            result:
+              'one to four 3-foot-diameter spheres of lightning appear, each in an unoccupied space you can see within 120 feet of you',
+            rangeFeet: 120,
+            duration: { amount: 1, unit: 'minute' },
+            concentrationRequired: true,
+          },
+          [F2, F3],
+        ),
         spell(
           'cast-dancing-lights',
           'spell:dancing-lights',
@@ -914,8 +932,28 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
   [
     'Staff of Swarming Insects',
     {
-      sourcePhrases: ['giant insect (4 charges) or insect plague (5 charges)'],
+      sourcePhrases: [
+        'giant insect (4 charges) or insect plague (5 charges)',
+        'The insects remain for 10 minutes',
+      ],
       effects: [
+        // Each use creates its own cloud, so the item has no single-lifetime
+        // state machine (DM-adjudicated, review 19.4.6.7 S2); the printed
+        // duration is typed here for the item-duration capability
+        // (eshyra-olc5.11) to bind start_effect to.
+        payload(
+          'create-insect-cloud',
+          'triggeredEffect',
+          {
+            trigger: 'insect cloud property activated',
+            result:
+              'a swarm of harmless flying insects spreads out in a 30-foot radius from you, making the area heavily obscured for creatures other than you; the swarm moves with you, remaining centered on you',
+            radiusFeet: 30,
+            duration: { amount: 10, unit: 'minute' },
+            endsOn: ['wind-of-at-least-10-miles-per-hour'],
+          },
+          [F2],
+        ),
         spell('cast-giant-insect', 'spell:giant-insect', ownDc),
         spell('cast-insect-plague', 'spell:insect-plague', ownDc),
       ],

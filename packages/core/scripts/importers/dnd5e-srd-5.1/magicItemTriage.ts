@@ -20,9 +20,16 @@
  *     (consumer eshyra-olc5.9), and the structured `equipment` prerequisite
  *     (`worn`/`held`/`attuned`/`on-person`) derived from the printed text
  *     (consumer eshyra-olc5.10);
- *   - state machines that are simple active/inactive toggles with a printed
- *     duration or termination, plus the machines the executable (green)
- *     operations are bound to (consumer eshyra-olc5.11);
+ *   - state machines the item owns as exactly ONE lifetime at a time (a simple
+ *     active/inactive toggle with a printed duration or termination), plus the
+ *     machines the executable (green) operations or an existing runtime
+ *     consumer bind to (consumer eshyra-olc5.11). An item whose activation
+ *     creates repeatable or independently-timed instances (a cloud, set of
+ *     spheres or ignited weapon per use) is DM-adjudicated instead, and the
+ *     printed duration of such an item power is typed on its effect (consumer
+ *     eshyra-olc5.11, start_effect binding), never on a machine;
+ *   - the economies' soft-limit safe-use cost marker (`cost[].onExhausted`,
+ *     consumer eshyra-olc5.8) for a printed count of risk-free uses;
  *   - entity-grant creature references, count, duration, reversion events and
  *     cooldown-economy binding (consumer eshyra-olc5.12), and the
  *     `as spell:conjure-elemental` pointer that carries the concentration
@@ -87,11 +94,13 @@ const GRANT_NOTE =
 // ---------------------------------------------------------------------------
 
 /**
- * Machines kept typed: simple two-state active/inactive toggles whose
- * duration or termination the text prints, plus the machines an existing
- * consumer binds to -- the executable (green) operations (Ioun Stone, Rope of
- * Entanglement, Ring of Shooting Stars) and the Cube of Force (timer executor
- * and campaign-rule ambiguity). Every other machine is withheld below.
+ * Machines kept typed: single-lifetime active/inactive toggles whose duration
+ * or termination the text prints, plus the machines an existing consumer binds
+ * to -- the executable (green) operations (Ioun Stone, Rope of Entanglement)
+ * and the Cube of Force (timer executor and campaign-rule ambiguity). Every
+ * other machine is withheld below, including (review 19.4.6.7 S2) the Staff of
+ * Swarming Insects, Helm of Brilliance and Ring of Shooting Stars, whose
+ * activations create repeatable or independently-timed instances.
  */
 export const KEPT_STATE_MACHINES: ReadonlySet<string> = new Set([
   'Animated Shield',
@@ -105,7 +114,6 @@ export const KEPT_STATE_MACHINES: ReadonlySet<string> = new Set([
   'Flame Tongue',
   'Gem of Brightness',
   'Glamoured Studded Leather',
-  'Helm of Brilliance',
   'Immovable Rod',
   'Ioun Stone',
   'Potion of Diminution',
@@ -113,10 +121,8 @@ export const KEPT_STATE_MACHINES: ReadonlySet<string> = new Set([
   'Potion of Growth',
   'Ring of Invisibility',
   'Ring of Mind Shielding',
-  'Ring of Shooting Stars',
   'Rod of Alertness',
   'Rope of Entanglement',
-  'Staff of Swarming Insects',
   'Staff of the Woodlands',
   'Sun Blade',
   'Sword of Sharpness',
@@ -402,6 +408,39 @@ export const WITHHELD: ReadonlyMap<string, BlockSpans> = new Map([
         [
           'If you hold one end of the rope and use an action to speak the command word',
           'If the rope drops to 0 hit points, it is destroyed',
+        ],
+      ],
+    },
+  ],
+  [
+    'Helm of Brilliance',
+    {
+      stateMachine: [
+        [
+          'As long as the helm has at least one fire opal',
+          'or until you drop or stow the weapon',
+        ],
+      ],
+    },
+  ],
+  [
+    'Ring of Shooting Stars',
+    {
+      stateMachine: [
+        [
+          'You can expend 2 charges as an action to create one to four 3-foot-diameter spheres',
+          'the creature takes lightning damage based on the number of spheres you created',
+        ],
+      ],
+    },
+  ],
+  [
+    'Staff of Swarming Insects',
+    {
+      stateMachine: [
+        [
+          'While holding the staff, you can use an action and expend 1 charge to cause a swarm',
+          'disperses the swarm and ends the effect',
         ],
       ],
     },
@@ -1041,7 +1080,7 @@ export function equipmentFromPrintedText(
   const isAlternative = alternative.test(text);
   if (!isAlternative) {
     if (/\b(?:wearing|wear|wears)\b/i.test(text)) found.add('worn');
-    if (/\bhold(?:ing)?\b/i.test(text)) found.add('held');
+    if (/\b(?:hold(?:ing)?|grasp(?:ing)?)\b/i.test(text)) found.add('held');
   }
   if (/\battuned to (?:it|an orb|the ring)\b/i.test(text)) found.add('attuned');
   if (/\bon your person\b/i.test(text) || /\bwhile you carry it\b/i.test(text))
@@ -1417,6 +1456,15 @@ function triageGrants(
         grant.note !== undefined
       )
         stripped = true;
+      // A kept duration / reversion times the creature's EXISTENCE (physical
+      // disappearance or return); a clock on how long it is controlled is the
+      // adjudicated control policy and is never typed (review 19.4.6.7 S4).
+      for (const event of grant.revertOn ?? [])
+        if (/control/i.test(event))
+          fail(
+            scope,
+            `grant ${grant.id} types a control clock (${event}) as a duration/reversion`,
+          );
       if (
         kept.statBlockRef === undefined &&
         kept.creatureRefs === undefined &&

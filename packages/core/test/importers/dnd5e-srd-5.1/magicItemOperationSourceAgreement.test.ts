@@ -731,11 +731,7 @@ describe('state graphs state the printed transition, timer and termination (S4)'
   // Machines that stay typed (simple toggles with a printed duration or
   // termination, plus the machines the green operations bind to); every other
   // reviewed machine is withheld and tested as such below.
-  const GRAPH_ITEMS = [
-    'Dagger of Venom',
-    'Staff of Swarming Insects',
-    'Ioun Stone',
-  ] as const;
+  const GRAPH_ITEMS = ['Dagger of Venom', 'Ioun Stone'] as const;
 
   it('every reviewed machine quotes its conditions and termination from the printed description', () => {
     const problems: string[] = [];
@@ -768,17 +764,29 @@ describe('state graphs state the printed transition, timer and termination (S4)'
     expect(conditions).toEqual(['an attack using this weapon hits a creature']);
   });
 
-  it('Staff of Swarming Insects: wind ends it, no dismissal command, no 20-foot movement cutoff', () => {
-    const machine = machineOf('Staff of Swarming Insects');
+  it('Staff of Swarming Insects: every use creates its own cloud, so no item-wide machine is typed; wind ends it, no dismissal command, no 20-foot movement cutoff (review 19.4.6.7 S2)', () => {
+    const mechanics = mechanicsOf('Staff of Swarming Insects');
+    expect(mechanics.stateMachine).toBeUndefined();
     expect(
-      (mechanicsOf('Staff of Swarming Insects').operations as Obj[]).map(
-        (entry) => entry.id,
-      ),
+      (mechanics.operations as Obj[]).map((entry) => entry.id),
     ).not.toContain('dismiss-insect-cloud');
-    expect(String(machine.termination)).toContain(
-      'A wind of at least 10 miles per hour disperses the swarm',
+    // The printed ten-minute duration lives on the effect, for the item
+    // duration capability (eshyra-olc5.11) to bind start_effect to.
+    const cloud = (mechanics.effects as Obj[]).find(
+      (entry) => entry.id === 'c2-create-insect-cloud-payload',
     );
-    expect(JSON.stringify(machine)).not.toMatch(/20 feet|10-foot clear/);
+    expect(cloud?.duration).toEqual({ amount: 10, unit: 'minute' });
+    expect(cloud?.endsOn).toEqual(['wind-of-at-least-10-miles-per-hour']);
+    expect(
+      operation('Staff of Swarming Insects', 'create-insect-cloud').effects,
+    ).toEqual(['c2-create-insect-cloud-payload']);
+    expect(
+      carries(
+        'Staff of Swarming Insects',
+        'A wind of at least 10 miles per hour disperses the swarm and ends the effect',
+      ),
+    ).toBe(true);
+    expect(JSON.stringify(mechanics)).not.toMatch(/20 feet|10-foot clear/);
   });
 
   it('Cloak of Displacement: independent suppression lifetimes are withheld, not merged', () => {
@@ -1376,16 +1384,6 @@ describe('omitted printed predicates (review 19.4.6.3 S1)', () => {
         'the touching clause governs the return, not the planting',
       ],
       [
-        'Sun Blade',
-        'manifest-blade',
-        'weapon-wielding rule supplies holding (review 19.4.6.3)',
-      ],
-      [
-        'Sun Blade',
-        'dismiss-blade',
-        'weapon-wielding rule supplies holding (review 19.4.6.3)',
-      ],
-      [
         'Decanter of Endless Water',
         'produce-geyser',
         'holding governs only the aim sub-action; no field states both',
@@ -1458,9 +1456,11 @@ describe('state graph text and outcome-gated transitions, whole corpus (review 1
           expected += 1;
     }
     expect(machines).toBe(expected);
-    // 49 machines before the triage; 24 stay typed (simple toggles and the
-    // machines an existing consumer binds to), the other 25 are withheld.
-    expect(machines).toBe(24);
+    // 49 machines before the triage; 21 stay typed (single-lifetime toggles
+    // and the machines an existing consumer binds to), the other 28 are
+    // withheld (review 19.4.6.7 S2 added the Staff of Swarming Insects, Helm
+    // of Brilliance and Ring of Shooting Stars).
+    expect(machines).toBe(21);
   });
 
   it('keeps the graph-text screen able to fail (counterfactual: a paraphrased condition and a mis-cited table cell)', () => {

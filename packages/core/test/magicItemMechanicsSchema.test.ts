@@ -905,6 +905,28 @@ describe('magic-item mechanics schema', () => {
     ).toThrow(/cost must be one of/);
   });
 
+  it('accepts the soft-limit cost marker only as an exact risk-adjudicated count of safe uses', () => {
+    const economies = {
+      'safe-use': { kind: 'per-day', perDay: { uses: 1 } },
+    };
+    const cost = (entry: Record<string, unknown>) => ({
+      economies,
+      operations: [{ id: 'use', cost: [{ economy: 'safe-use', ...entry }] }],
+    });
+    expect(() =>
+      validate(cost({ amount: 1, onExhausted: 'risk-adjudicated' })),
+    ).not.toThrow();
+    expect(() => validate(cost({ amount: 1, onExhausted: 'refuse' }))).toThrow(
+      /onExhausted must be 'risk-adjudicated'/,
+    );
+    expect(() =>
+      validate(cost({ amount: 'variable', onExhausted: 'risk-adjudicated' })),
+    ).toThrow(/requires a fixed numeric amount/);
+    expect(() =>
+      validate(cost({ amount: 1, onExhaust: 'risk-adjudicated' })),
+    ).toThrow();
+  });
+
   it('rejects malformed and dangling state-machine references', () => {
     expect(() =>
       validate({

@@ -99214,7 +99214,10 @@
                 "economy": "uses",
                 "amount": 1
               }
-            ]
+            ],
+            "activation": {
+              "cost": "action"
+            }
           }
         ],
         "effects": [
@@ -106034,31 +106037,6 @@
       "requiresAttunement": true,
       "description": "This dazzling helm is set with 1d10 diamonds, 2d10 rubies, 3d10 fire opals, and 4d10 opals. Any gem pried from the helm crumbles to dust. When all the gems are removed or destroyed, the helm loses its magic. You gain the following benefits while wearing it: • You can use an action to cast one of the following spells (save DC 18), using one of the helm’s gems of the specified type as a component: daylight (opal), fireball (fire opal), prismatic spray (diamond), or wall of fire (ruby). The gem is destroyed when the spell is cast and disappears from the helm. • As long as it has at least one diamond, the helm emits dim light in a 30-foot radius when at least one undead is within that area. Any undead that starts its turn in that area takes 1d6 radiant damage. • As long as the helm has at least one ruby, you have resistance to fire damage. • As long as the helm has at least one fire opal, you can use an action and speak a command word to cause one weapon you are holding to burst into flames. The flames emit bright light in a 10-foot radius and dim light for an additional 10 feet. The flames are harmless to you and the weapon. When you hit with an attack using the blazing weapon, the target takes an extra 1d6 fire damage. The flames last until you use a bonus action to speak the command word again or until you drop or stow the weapon. Roll a d20 if you are wearing the helm and take fire damage as a result of failing a saving throw against a spell. On a roll of 1, the helm emits beams of light from its remaining gems. Each creature within 60 feet of the helm other than you must succeed on a DC 17 Dexterity saving throw or be struck by a beam, taking radiant damage equal to the number of gems in the helm. The helm and its gems are then destroyed.",
       "mechanics": {
-        "stateMachine": {
-          "initial": "inactive",
-          "states": [
-            {
-              "id": "inactive"
-            },
-            {
-              "id": "active",
-              "note": "held weapon burns harmlessly, emits source light, and carries fire rider"
-            }
-          ],
-          "transitions": [
-            {
-              "from": "inactive",
-              "to": "active",
-              "via": "ignite-weapon"
-            },
-            {
-              "from": "active",
-              "to": "inactive",
-              "via": "extinguish-weapon"
-            }
-          ],
-          "termination": "The flames last until you use a bonus action to speak the command word again or until you drop or stow the weapon"
-        },
         "randomProcedure": {
           "procedures": [
             {
@@ -106740,43 +106718,13 @@
               "kind": "parent"
             },
             "tag": "M5",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "stateMachine"
+              "adjudicated": true,
+              "note": "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text.",
+              "sourceText": "Any undead that starts its turn in that area takes 1d6 radiant damage. • As long as the helm has at least one ruby, you have resistance to fire damage. • As long as the helm has at least one fire opal, you can use an action and speak a command word to cause one weapon you are holding to burst into flames. The flames emit bright light in a 10-foot radius and dim light for an additional 10 feet. The flames are harmless to you and the weapon. When you hit with an attack using the blazing weapon, the target takes an extra 1d6 fire damage. The flames last until you use a bonus action to speak the command word again or until you drop or stow the weapon."
             },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "reason": "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
           },
           {
             "clauseId": "magic-item:helm-of-brilliance/m8-helm-of-brilliance",
@@ -106849,6 +106797,96 @@
               "sourceText": "Any undead that starts its turn in that area takes 1d6 radiant damage. • As long as the helm has at least one ruby, you have resistance to fire damage. • As long as the helm has at least one fire opal, you can use an action and speak a command word to cause one weapon you are holding to burst into flames. The flames emit bright light in a 10-foot radius and dim light for an additional 10 feet. The flames are harmless to you and the weapon. When you hit with an attack using the blazing weapon, the target takes an extra 1d6 fire damage. The flames last until you use a bonus action to speak the command word again or until you drop or stow the weapon."
             },
             "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
+          },
+          {
+            "clauseId": "magic-item:helm-of-brilliance/triage-stateMachine-op-extinguish-weapon",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "representation": {
+              "block": "operations",
+              "operationId": "extinguish-weapon"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "activation action economy"
+              },
+              {
+                "engine": "F5",
+                "hook": "item state transition and duration processing"
+              },
+              {
+                "engine": "F9",
+                "hook": "targeting, escape, and movement consequences"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "activation action economy"
+              },
+              {
+                "engine": "F5",
+                "hook": "item state transition and duration processing"
+              },
+              {
+                "engine": "F9",
+                "hook": "targeting, escape, and movement consequences"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F5",
+              "F9"
+            ]
+          },
+          {
+            "clauseId": "magic-item:helm-of-brilliance/triage-stateMachine-op-ignite-weapon",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "representation": {
+              "block": "operations",
+              "operationId": "ignite-weapon"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "activation action economy"
+              },
+              {
+                "engine": "F5",
+                "hook": "item state transition and duration processing"
+              },
+              {
+                "engine": "F9",
+                "hook": "targeting, escape, and movement consequences"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "activation action economy"
+              },
+              {
+                "engine": "F5",
+                "hook": "item state transition and duration processing"
+              },
+              {
+                "engine": "F9",
+                "hook": "targeting, escape, and movement consequences"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F5",
+              "F9"
+            ]
           }
         ]
       }
@@ -109970,14 +110008,7 @@
               "tableRefs": [
                 "table:iron-flask"
               ],
-              "count": 1,
-              "duration": {
-                "amount": 1,
-                "unit": "hour"
-              },
-              "revertOn": [
-                "one-hour-control-ended"
-              ]
+              "count": 1
             }
           ]
         },
@@ -124418,43 +124449,6 @@
       "attunementRequirement": "outdoors at night",
       "description": "While wearing this ring in dim light or darkness, you can cast dancing lights and light from the ring at will. Casting either spell from the ring requires an action. The ring has 6 charges for the following other properties. The ring regains 1d6 expended charges daily at dawn. Faerie Fire. You can expend 1 charge as an action to cast faerie fire from the ring. Ball Lightning. You can expend 2 charges as an action to create one to four 3-foot-diameter spheres of lightning. The more spheres you create, the less powerful each sphere is individually. Each sphere appears in an unoccupied space you can see within 120 feet of you. The spheres last as long as you concentrate (as if concentrating on a spell), up to 1 minute. Each sphere sheds dim light in a 30-foot radius. As a bonus action, you can move each sphere up to 30 feet, but no farther than 120 feet away from you. When a creature other than you comes within 5 feet of a sphere, the sphere discharges lightning at that creature and disappears. That creature must make a DC 15 Dexterity saving throw. On a failed save, the creature takes lightning damage based on the number of spheres you created. Shooting Stars. You can expend 1 to 3 charges as an action. For every charge you expend, you launch a glowing mote of light from the ring at a point you can see within 60 feet of you. Each creature within a 15-foot cube originating from that point is showered in sparks and must make a DC 15 Dexterity saving throw, taking 5d4 fire damage on a failed save, or half as much damage on a successful one.",
       "mechanics": {
-        "stateMachine": {
-          "initial": "inactive",
-          "states": [
-            {
-              "id": "inactive"
-            },
-            {
-              "id": "active",
-              "note": "one to four sphere instances; each individually discharges"
-            }
-          ],
-          "transitions": [
-            {
-              "from": "inactive",
-              "to": "active",
-              "via": "create-ball-lightning"
-            },
-            {
-              "from": "active",
-              "to": "active",
-              "via": "move-ball-lightning"
-            },
-            {
-              "from": "active",
-              "to": "inactive",
-              "timer": {
-                "amount": 1,
-                "unit": "minute"
-              }
-            }
-          ],
-          "duration": {
-            "amount": 1,
-            "unit": "minute"
-          },
-          "termination": "The spheres last as long as you concentrate (as if concentrating on a spell), up to 1 minute"
-        },
         "economies": {
           "charges": {
             "kind": "charges",
@@ -124495,6 +124489,9 @@
                 "economy": "charges",
                 "amount": 2
               }
+            ],
+            "effects": [
+              "c2-create-ball-lightning-payload"
             ]
           },
           {
@@ -124551,6 +124548,18 @@
           }
         ],
         "effects": [
+          {
+            "id": "c2-create-ball-lightning-payload",
+            "kind": "triggeredEffect",
+            "trigger": "ball lightning property activated",
+            "result": "one to four 3-foot-diameter spheres of lightning appear, each in an unoccupied space you can see within 120 feet of you",
+            "rangeFeet": 120,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
+          },
           {
             "id": "c2-cast-dancing-lights",
             "kind": "castSpell",
@@ -124872,6 +124881,42 @@
             ]
           },
           {
+            "clauseId": "magic-item:ring-of-shooting-stars/c2-effect-create-ball-lightning-payload",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-create-ball-lightning-payload"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F3",
+                "hook": "concentration lifecycle"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F3",
+                "hook": "concentration lifecycle"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3"
+            ]
+          },
+          {
             "clauseId": "magic-item:ring-of-shooting-stars/c2-effect-launch-shooting-stars-payload",
             "scope": {
               "kind": "parent"
@@ -124922,43 +124967,13 @@
               "kind": "parent"
             },
             "tag": "M5",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "stateMachine"
+              "adjudicated": true,
+              "note": "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text.",
+              "sourceText": "You can expend 2 charges as an action to create one to four 3-foot-diameter spheres of lightning. The more spheres you create, the less powerful each sphere is individually. Each sphere appears in an unoccupied space you can see within 120 feet of you. The spheres last as long as you concentrate (as if concentrating on a spell), up to 1 minute. Each sphere sheds dim light in a 30-foot radius. As a bonus action, you can move each sphere up to 30 feet, but no farther than 120 feet away from you. When a creature other than you comes within 5 feet of a sphere, the sphere discharges lightning at that creature and disappears. That creature must make a DC 15 Dexterity saving throw. On a failed save, the creature takes lightning damage based on the number of spheres you created."
             },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "reason": "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
           },
           {
             "clauseId": "magic-item:ring-of-shooting-stars/S:Ring of Shooting Stars:requirement:outdoors at night",
@@ -125017,7 +125032,7 @@
             "scope": {
               "kind": "parent"
             },
-            "tag": "C1",
+            "tag": "C2",
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
@@ -125053,6 +125068,51 @@
               "sourceText": "As a bonus action, you can move each sphere up to 30 feet, but no farther than 120 feet away from you."
             },
             "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
+          },
+          {
+            "clauseId": "magic-item:ring-of-shooting-stars/triage-stateMachine-op-move-ball-lightning",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "representation": {
+              "block": "operations",
+              "operationId": "move-ball-lightning"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "activation action economy"
+              },
+              {
+                "engine": "F5",
+                "hook": "complex item state and duration processing"
+              },
+              {
+                "engine": "F9",
+                "hook": "geometry, targeting, movement, and contest resolution"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "activation action economy"
+              },
+              {
+                "engine": "F5",
+                "hook": "complex item state and duration processing"
+              },
+              {
+                "engine": "F9",
+                "hook": "geometry, targeting, movement, and contest resolution"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F5",
+              "F9"
+            ]
           }
         ]
       }
@@ -125433,7 +125493,14 @@
       "mechanics": {
         "operations": [
           {
-            "id": "m10-reflect-spell"
+            "id": "m10-reflect-spell",
+            "activation": {
+              "equipment": [
+                [
+                  "worn"
+                ]
+              ]
+            }
           }
         ],
         "effects": [
@@ -125502,6 +125569,20 @@
               "sourceText": "In addition, if you roll a 20 for the save and the spell is 7th level or lower, the spell has no effect on you and instead targets the caster, using the slot level, spell save DC, attack bonus, and spellcasting ability of the caster."
             },
             "reason": "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
+          },
+          {
+            "clauseId": "magic-item:ring-of-spell-turning/triage-activation-m10-reflect-spell-0",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M10",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
+              "sourceText": "While wearing this ring, you have advantage on saving throws against any spell that targets only you (not in an area of effect). In addition, if you roll a 20 for the save and the spell is 7th level or lower, the spell has no effect on you and instead targets the caster, using the slot level, spell save DC, attack bonus, and spellcasting ability of the caster."
+            },
+            "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
           },
           {
             "clauseId": "magic-item:ring-of-spell-turning/triage-rollManipulation-op-m10-reflect-spell",
@@ -126411,7 +126492,7 @@
                 "amount": "all"
               }
             ],
-            "note": "reuse remains allowed after depletion but triggers the Constitution-save exhaustion risk"
+            "note": "one risk-free use before a long rest; the operation cost is a soft limit (onExhausted), so reuse after depletion is permitted and the printed Constitution-save exhaustion risk is DM-adjudicated"
           }
         },
         "operations": [
@@ -126420,7 +126501,8 @@
             "cost": [
               {
                 "economy": "safe-use",
-                "amount": 1
+                "amount": 1,
+                "onExhausted": "risk-adjudicated"
               }
             ],
             "activation": {
@@ -130487,6 +130569,11 @@
           {
             "id": "turn-failed-save-into-success",
             "activation": {
+              "equipment": [
+                [
+                  "on-person"
+                ]
+              ],
               "cost": "reaction"
             },
             "cost": [
@@ -130614,7 +130701,7 @@
             "representation": {
               "adjudicated": true,
               "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
-              "sourceText": "If you fail a saving throw against a necromancy spell or a harmful effect originating from an undead creature, you can use your reaction to expend 1 charge and turn the failed save into a successful one."
+              "sourceText": "It provides two benefits while it is on your person: • You have advantage on saving throws against spells. • The scarab has 12 charges. If you fail a saving throw against a necromancy spell or a harmful effect originating from an undead creature, you can use your reaction to expend 1 charge and turn the failed save into a successful one."
             },
             "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
           }
@@ -135672,43 +135759,6 @@
       "attunementRequirement": "by a bard, cleric, druid, sorcerer, warlock, or wizard",
       "description": "This staff has 10 charges and regains 1d6 + 4 expended charges daily at dawn. If you expend the last charge, roll a d20. On a 1, a swarm of insects consumes and destroys the staff, then disperses. Spells. While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC: giant insect (4 charges) or insect plague (5 charges). Insect Cloud. While holding the staff, you can use an action and expend 1 charge to cause a swarm of harmless flying insects to spread out in a 30-foot radius from you. The insects remain for 10 minutes, making the area heavily obscured for creatures other than you. The swarm moves with you, remaining centered on you. A wind of at least 10 miles per hour disperses the swarm and ends the effect.",
       "mechanics": {
-        "stateMachine": {
-          "initial": "clear",
-          "states": [
-            {
-              "id": "clear"
-            },
-            {
-              "id": "cloud",
-              "note": "making the area heavily obscured for creatures other than you. The swarm moves with you, remaining centered on you"
-            }
-          ],
-          "transitions": [
-            {
-              "from": "clear",
-              "to": "cloud",
-              "via": "create-insect-cloud"
-            },
-            {
-              "from": "cloud",
-              "to": "clear",
-              "timer": {
-                "amount": 10,
-                "unit": "minute"
-              }
-            },
-            {
-              "from": "cloud",
-              "to": "clear",
-              "condition": "A wind of at least 10 miles per hour disperses the swarm and ends the effect"
-            }
-          ],
-          "duration": {
-            "amount": 10,
-            "unit": "minute"
-          },
-          "termination": "The insects remain for 10 minutes, making the area heavily obscured for creatures other than you. The swarm moves with you, remaining centered on you. A wind of at least 10 miles per hour disperses the swarm and ends the effect"
-        },
         "economies": {
           "charges": {
             "kind": "charges",
@@ -135784,10 +135834,27 @@
                 "economy": "charges",
                 "amount": 1
               }
+            ],
+            "effects": [
+              "c2-create-insect-cloud-payload"
             ]
           }
         ],
         "effects": [
+          {
+            "id": "c2-create-insect-cloud-payload",
+            "kind": "triggeredEffect",
+            "trigger": "insect cloud property activated",
+            "result": "a swarm of harmless flying insects spreads out in a 30-foot radius from you, making the area heavily obscured for creatures other than you; the swarm moves with you, remaining centered on you",
+            "radiusFeet": 30,
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "endsOn": [
+              "wind-of-at-least-10-miles-per-hour"
+            ]
+          },
           {
             "id": "c2-cast-giant-insect",
             "kind": "castSpell",
@@ -136004,48 +136071,45 @@
             ]
           },
           {
-            "clauseId": "magic-item:staff-of-swarming-insects/m5-complex-staff-of-swarming-insects",
+            "clauseId": "magic-item:staff-of-swarming-insects/c2-effect-create-insect-cloud-payload",
             "scope": {
               "kind": "parent"
             },
-            "tag": "M5",
+            "tag": "C2",
             "representation": {
-              "block": "stateMachine"
+              "block": "effects",
+              "effectId": "c2-create-insect-cloud-payload"
             },
             "engineHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
+                "hook": "action-economy activation"
               }
             ],
             "readiness": "engine-pending",
             "missingHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
+                "hook": "action-economy activation"
               }
             ],
             "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
+              "F2"
             ]
+          },
+          {
+            "clauseId": "magic-item:staff-of-swarming-insects/m5-complex-staff-of-swarming-insects",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text.",
+              "sourceText": "While holding the staff, you can use an action and expend 1 charge to cause a swarm of harmless flying insects to spread out in a 30-foot radius from you. The insects remain for 10 minutes, making the area heavily obscured for creatures other than you. The swarm moves with you, remaining centered on you. A wind of at least 10 miles per hour disperses the swarm and ends the effect."
+            },
+            "reason": "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
           },
           {
             "clauseId": "magic-item:staff-of-swarming-insects/S:Staff of Swarming Insects:requirement:by a bard, cleric, druid, sorcerer, warlock, or wizard",
@@ -136091,7 +136155,7 @@
             "scope": {
               "kind": "parent"
             },
-            "tag": "C1",
+            "tag": "C2",
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
@@ -140856,13 +140920,23 @@
           {
             "id": "manifest-blade",
             "activation": {
-              "cost": "bonus-action"
+              "cost": "bonus-action",
+              "equipment": [
+                [
+                  "held"
+                ]
+              ]
             }
           },
           {
             "id": "dismiss-blade",
             "activation": {
-              "cost": "bonus-action"
+              "cost": "bonus-action",
+              "equipment": [
+                [
+                  "held"
+                ]
+              ]
             }
           }
         ],
@@ -141090,6 +141164,20 @@
               "F5",
               "F9"
             ]
+          },
+          {
+            "clauseId": "magic-item:sun-blade/triage-activation-manifest-blade-0",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text. Governs operations: manifest-blade, dismiss-blade.",
+              "sourceText": "While grasping the hilt, you can use a bonus action to cause a blade of pure radiance to spring into existence, or make the blade disappear."
+            },
+            "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text. Governs operations: manifest-blade, dismiss-blade."
           }
         ]
       }
@@ -147008,7 +147096,10 @@
                 "economy": "cooldown",
                 "amount": 1
               }
-            ]
+            ],
+            "activation": {
+              "cost": "action"
+            }
           }
         ]
       },
@@ -147119,7 +147210,7 @@
                 "amount": "all"
               }
             ],
-            "note": "early reuse remains allowed; each early reuse adds a cumulative 20 percent failure-and-destruction chance"
+            "note": "one risk-free use before dawn; the operation cost is a soft limit (onExhausted), so early reuse is permitted and the printed cumulative 20 percent failure-and-destruction chance is DM-adjudicated"
           }
         },
         "operations": [
@@ -147136,7 +147227,8 @@
             "cost": [
               {
                 "economy": "safe-use",
-                "amount": 1
+                "amount": 1,
+                "onExhausted": "risk-adjudicated"
               }
             ],
             "effects": [

@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(804);
+    expect(backlog.candidates).toHaveLength(806);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -95,9 +95,14 @@ describe('magic-item legacy capability backlog', () => {
     // stopper cooldown added one economy candidate (791 -> 804). The three
     // stored-level spellStore cores (Ring of Spell Storing, Ioun Stone
     // Reserve, Rod of Absorption) keep their block candidates. No other
-    // identity changed.
+    // identity changed. eshyra-o9bd.19.4.6.8 (review 19.4.6.7 S2): the Staff of
+    // Swarming Insects, Helm of Brilliance and Ring of Shooting Stars machines
+    // (repeatable or independently-timed instances) are DM-adjudicated, so
+    // their three block candidates left the set while three operation-bound
+    // candidates keep the operations blocked and the typed insect-cloud and
+    // ball-lightning effects add two (804 -> 806).
     expect(fingerprint).toBe(
-      'b1c31386fffdf5993856ac8b0b5f3241666f980e207a6dd8c63a067edb054b75',
+      '8410b566c331be927b640b9401d5ffd50fc68a0510af2e19e5f8e5697dfc9488',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

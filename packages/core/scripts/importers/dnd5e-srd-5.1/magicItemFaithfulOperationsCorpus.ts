@@ -723,6 +723,9 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
       operations: [
         op('m10-reflect-spell', {
           cost: null,
+          // "In addition" continues the wearing sentence whose saving throw
+          // the reflected spell is rolled against.
+          requirement: 'While wearing this ring',
           trigger:
             'if you roll a 20 for the save and the spell is 7th level or lower',
         }),
@@ -797,6 +800,9 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     {
       operations: [
         op('turn-failed-save-into-success', {
+          // The section header "It provides two benefits while it is on your
+          // person" governs both benefits, including this reaction.
+          requirement: 'while it is on your person',
           trigger:
             'If you fail a saving throw against a necromancy spell or a harmful effect originating from an undead creature',
         }),
@@ -1064,6 +1070,21 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
   req('Ring of Telekinesis', ['cast-telekinesis'], 'While wearing this ring'),
   req('Robe of Useful Items', ['detach-patch'], 'While wearing the robe'),
   req('Wings of Flying', ['manifest-wings'], 'While wearing this cloak'),
+  // Review 19.4.6.7 S1: printed gates and non-spell action costs that no
+  // producer draft carried (eshyra-o9bd.19.4.6.8).
+  req(
+    'Sun Blade',
+    ['manifest-blade', 'dismiss-blade'],
+    'While grasping the hilt',
+  ),
+  [
+    'Dragon Scale Mail',
+    { operations: [op('sense-nearest-dragon', { cost: 'action' })] },
+  ],
+  [
+    'Well of Many Worlds',
+    { operations: [op('open-portal', { cost: 'action' })] },
+  ],
   [
     'Chime of Opening',
     {
