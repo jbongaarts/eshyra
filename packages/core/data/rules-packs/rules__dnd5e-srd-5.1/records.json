@@ -89582,6 +89582,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:armor-of-invulnerability/activation-activate-immunity",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed actor and duration condition are not typed activation predicates; the DM model interprets this printed sentence.",
+              "sourceText": "Additionally, you can use an action to make yourself immune to nonmagical damage for 10 minutes or until you are no longer wearing the armor."
+            },
+            "reason": "The printed actor and duration condition are not typed activation predicates; the DM model interprets this printed sentence."
+          },
+          {
             "clauseId": "magic-item:armor-of-invulnerability/c1-uses",
             "scope": {
               "kind": "parent"
@@ -116205,6 +116219,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:philter-of-love/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "The next time you see a creature within 10 minutes after drinking this philter, you become charmed by that creature for 1 hour."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
+          {
             "clauseId": "magic-item:philter-of-love/c2-residual-love-charm",
             "scope": {
               "kind": "parent"
@@ -117177,6 +117205,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:potion-of-animal-friendship/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, you can cast the animal friendship spell (save DC 13) for 1 hour at will."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
+          {
             "clauseId": "magic-item:potion-of-animal-friendship/c2-effect-drink",
             "scope": {
               "kind": "parent"
@@ -117327,6 +117369,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:potion-of-clairvoyance/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, you gain the effect of the clairvoyance spell."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:potion-of-clairvoyance/c2-effect-drink",
             "scope": {
@@ -117504,6 +117560,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:potion-of-climbing/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, you gain a climbing speed equal to your walking speed for 1 hour."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
+          {
             "clauseId": "magic-item:potion-of-climbing/c2-residual-potion-climb-checks",
             "scope": {
               "kind": "parent"
@@ -117665,6 +117735,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:potion-of-diminution/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, you gain the “reduce” effect of the enlarge/reduce spell for 1d4 hours (no concentration required)."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
+          {
             "clauseId": "magic-item:potion-of-diminution/m1-quantity",
             "scope": {
               "kind": "parent"
@@ -117824,6 +117908,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:potion-of-flying/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, you gain a flying speed equal to your walking speed for 1 hour and can hover."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
+          {
             "clauseId": "magic-item:potion-of-flying/m1-quantity",
             "scope": {
               "kind": "parent"
@@ -117968,6 +118066,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:potion-of-gaseous-form/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, you gain the effect of the gaseous form spell for 1 hour (no concentration required) or until you end the effect as a bonus action."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:potion-of-gaseous-form/m1-quantity",
             "scope": {
@@ -118129,6 +118241,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:potion-of-giant-strength/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, your Strength score changes for 1 hour."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
+          {
             "clauseId": "magic-item:potion-of-giant-strength/m1-quantity",
             "scope": {
               "kind": "parent"
@@ -118275,6 +118401,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:potion-of-growth/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, you gain the “enlarge” effect of the enlarge/reduce spell for 1d4 hours (no concentration required)."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:potion-of-growth/m1-quantity",
             "scope": {
@@ -118430,6 +118570,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:potion-of-healing/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "You regain hit points when you drink this potion."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:potion-of-healing/c2-effect-drink-payload",
             "scope": {
@@ -118624,6 +118778,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:potion-of-heroism/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "For 1 hour after drinking it, you gain 10 temporary hit points that last for 1 hour."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:potion-of-heroism/c2-effect-drink-bless",
             "scope": {
@@ -118829,6 +118997,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:potion-of-invisibility/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink it, you become invisible for 1 hour."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
+          {
             "clauseId": "magic-item:potion-of-invisibility/c2-residual-invisibility",
             "scope": {
               "kind": "parent"
@@ -118967,6 +119149,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:potion-of-mind-reading/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, you gain the effect of the detect thoughts spell (save DC 13)."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:potion-of-mind-reading/c2-effect-drink",
             "scope": {
@@ -119161,6 +119357,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:potion-of-poison/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "If you drink it, you take 3d6 poison damage, and you must succeed on a DC 13 Constitution saving throw or be poisoned."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
+          {
             "clauseId": "magic-item:potion-of-poison/c2-effect-drink-payload",
             "scope": {
               "kind": "parent"
@@ -119335,6 +119545,20 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:potion-of-resistance/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, you gain resistance to one type of damage for 1 hour."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
+          {
             "clauseId": "magic-item:potion-of-resistance/c2-static-potion-resistance-table",
             "scope": {
               "kind": "parent"
@@ -119475,6 +119699,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:potion-of-speed/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "When you drink this potion, you gain the effect of the haste spell for 1 minute (no concentration required)."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:potion-of-speed/c2-effect-drink",
             "scope": {
@@ -119634,6 +119872,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:potion-of-water-breathing/activation-drink",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.",
+              "sourceText": "You can breathe underwater for 1 hour after drinking this potion."
+            },
+            "reason": "The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:potion-of-water-breathing/m1-quantity",
             "scope": {
@@ -131183,9 +131435,6 @@
         "operations": [
           {
             "id": "apply-glue",
-            "activation": {
-              "cost": "consume"
-            },
             "cost": [
               {
                 "economy": "doses",
@@ -131218,6 +131467,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:sovereign-glue/activation-apply-glue",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "sourceText": "One ounce of the glue can cover a 1-foot square surface."
+            },
+            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+          },
           {
             "clauseId": "magic-item:sovereign-glue/m1-doses",
             "scope": {
@@ -131278,20 +131541,6 @@
               "sourceText": "The glue takes 1 minute to set. Once it has done so, the bond it creates can be broken only by the application of universal solvent or oil of etherealness, or with a wish spell."
             },
             "reason": "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
-          },
-          {
-            "clauseId": "magic-item:sovereign-glue/triage-activation-apply-glue-0",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M1",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
-              "sourceText": "One ounce of the glue can cover a 1-foot square surface."
-            },
-            "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
           },
           {
             "clauseId": "magic-item:sovereign-glue/triage-stateMachine-op-apply-glue",
@@ -143898,8 +144147,7 @@
                 [
                   "held"
                 ]
-              ],
-              "cost": "reaction"
+              ]
             },
             "cost": [
               {
@@ -143945,6 +144193,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:wand-of-binding/activation-assisted-escape",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The printed reaction applies only to the saving-throw branch; no common activation cost is typed for both branches.",
+              "sourceText": "Assisted Escape. While holding the wand, you can use your reaction to expend 1 charge and gain advantage on a saving throw you make to avoid being paralyzed or restrained, or you can expend 1 charge and gain advantage on any check you make to escape a grapple."
+            },
+            "reason": "The printed reaction applies only to the saving-throw branch; no common activation cost is typed for both branches."
+          },
           {
             "clauseId": "magic-item:wand-of-binding/c1-economy-charges",
             "scope": {
@@ -144239,20 +144501,6 @@
               "field": "requiresAttunement"
             },
             "readiness": "green"
-          },
-          {
-            "clauseId": "magic-item:wand-of-binding/triage-activation-assisted-escape-0",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "C1",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
-              "sourceText": "Assisted Escape. While holding the wand, you can use your reaction to expend 1 charge and gain advantage on a saving throw you make to avoid being paralyzed or restrained, or you can expend 1 charge and gain advantage on any check you make to escape a grapple."
-            },
-            "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
           },
           {
             "clauseId": "magic-item:wand-of-binding/triage-activation-cast-hold-monster-0",
@@ -147470,7 +147718,14 @@
                 "economy": "flight",
                 "amount": 1
               }
-            ]
+            ],
+            "activation": {
+              "equipment": [
+                [
+                  "worn"
+                ]
+              ]
+            }
           }
         ],
         "effects": [
@@ -147541,6 +147796,20 @@
               "effectId": "m3-winged-boots-slow-fall"
             },
             "readiness": "green"
+          },
+          {
+            "clauseId": "magic-item:winged-boots/triage-activation-fly-0",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C1",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
+              "sourceText": "While you wear these boots, you have a flying speed equal to your walking speed."
+            },
+            "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
           }
         ]
       }

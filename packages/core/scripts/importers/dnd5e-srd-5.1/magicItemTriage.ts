@@ -932,6 +932,12 @@ export const OPERATION_SPANS: ReadonlyMap<string, readonly SpanAnchor[]> =
         ],
       ],
     ],
+    [
+      'Winged Boots::fly',
+      [
+        'While you wear these boots, you have a flying speed equal to your walking speed',
+      ],
+    ],
   ]);
 
 /** Equipment the printed text states for an operation but no activation
@@ -942,6 +948,7 @@ export const EQUIPMENT_EXTRA: ReadonlyMap<
 > = new Map([
   ['Helm of Brilliance::ignite-weapon', ['worn']],
   ['Hammer of Thunderbolts::giant-slaying-critical', ['attuned']],
+  ['Winged Boots::fly', ['worn']],
 ]);
 
 /** Event-anchored cooldown waits: the printed wait starts at the termination
@@ -1167,7 +1174,11 @@ function triageActivations(
           const extraEquipment = EQUIPMENT_EXTRA.get(key) ?? [];
           const extraAnchors = OPERATION_SPANS.get(key) ?? [];
           const activation = operation.activation;
-          if (activation === undefined && extraAnchors.length === 0)
+          if (
+            activation === undefined &&
+            extraAnchors.length === 0 &&
+            extraEquipment.length === 0
+          )
             return operation;
           const anchors: SpanAnchor[] = [...extraAnchors];
           for (const field of ['requirement', 'trigger', 'target'] as const) {

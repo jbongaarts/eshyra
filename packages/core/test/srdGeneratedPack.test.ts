@@ -3304,7 +3304,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1356);
+      expect(clauses).toHaveLength(1375);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3340,6 +3340,11 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // Efreeti Bottle stopper cooldown added one economy clause (790 ->
       // 803). No green clause moved: the 212 green clauses and the 19 ready
       // operations are unchanged.
+      // eshyra-o9bd.19.4.6.10: 18 actor/delivery sentences erased by early
+      // nulling now survive as adjudicated clauses; Wand of Binding's branch-
+      // dependent reaction is carried without a composite typed cost; Winged
+      // Boots' worn gate is typed and carried; Sovereign Glue's absent action
+      // cost is adjudicated. Net clause population: +19; readiness unchanged.
       // eshyra-o9bd.19.4.6.8 (review 19.4.6.7): the Staff of Swarming Insects,
       // Helm of Brilliance and Ring of Shooting Stars state machines (their
       // activations create repeatable or independently-timed instances) are
@@ -3348,9 +3353,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // insect-cloud and ball-lightning effects typed with their printed
       // durations add two pending effect clauses (803 -> 805); the Sun Blade
       // grasp and Ring of Spell Turning wearing sentences add two adjudicated
-      // clauses (333 -> 338). No green clause moved.
+      // clauses (333 -> 338). Together with the 19.4.6.10 additions above,
+      // adjudicated clauses total 357. No green clause moved.
       expect(counts).toEqual({
-        'adjudicated-by-design': 338,
+        'adjudicated-by-design': 357,
         'design-blocked': 1,
         'engine-pending': 805,
         green: 212,

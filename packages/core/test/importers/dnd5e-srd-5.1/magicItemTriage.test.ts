@@ -18,6 +18,7 @@
  * kept category. The executable (green) operation set is pinned in
  * `magicItemOperationSourceAgreement.test.ts` (runtime safety).
  */
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   COOLDOWN_ANCHORS,
@@ -73,10 +74,67 @@ const adjudicatedSpans = (name: string): string[] =>
     .map((representation) => String(representation.sourceText));
 const carries = (name: string, printed: string): boolean =>
   adjudicatedSpans(name).some((span) => span.includes(printed));
+const activationCensus = JSON.parse(
+  readFileSync(
+    new URL(
+      '../../../scripts/importers/dnd5e-srd-5.1/magicItemActivationCensus.json',
+      import.meta.url,
+    ),
+    'utf8',
+  ),
+) as {
+  scope: string;
+  operation: string;
+  cost: string | null;
+  equipment: unknown;
+  costSentence: string | null;
+  equipmentSentences: string[];
+  noneReason: { cost: string | null; equipment: string | null };
+}[];
 const operations = (scope: Scope): Obj[] =>
   (scope.mechanics.operations as Obj[] | undefined) ?? [];
 
 describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)', () => {
+  it('matches the activation census for every parent and variant operation', () => {
+    const actual = scopes.flatMap((scope) =>
+      operations(scope).map((operation) => {
+        const activation = operation.activation as Obj | undefined;
+        return {
+          scope: scope.label,
+          operation: String(operation.id),
+          cost: (activation?.cost as string | undefined) ?? null,
+          equipment: activation?.equipment ?? null,
+        };
+      }),
+    );
+    expect(activationCensus).toHaveLength(362);
+    expect(actual).toHaveLength(activationCensus.length);
+    const censusByKey = new Map(
+      activationCensus.map((row) => [`${row.scope}/${row.operation}`, row]),
+    );
+    for (const row of actual) {
+      const expected = censusByKey.get(`${row.scope}/${row.operation}`);
+      expect(expected, `${row.scope}/${row.operation}`).toBeDefined();
+      expect(
+        { cost: row.cost, equipment: row.equipment },
+        `${row.scope}/${row.operation}`,
+      ).toEqual({ cost: expected?.cost, equipment: expected?.equipment });
+      if (expected?.cost !== null)
+        expect(description(row.scope.split('::')[0] as string)).toContain(
+          expected?.costSentence,
+        );
+      else expect(expected?.noneReason.cost).toBeTruthy();
+      if (expected?.equipment !== null) {
+        expect(expected?.equipmentSentences.length).toBeGreaterThan(0);
+        for (const sentence of expected?.equipmentSentences ?? [])
+          expect(description(row.scope.split('::')[0] as string)).toContain(
+            sentence,
+          );
+      } else expect(expected?.noneReason.equipment).toBeTruthy();
+    }
+    expect(censusByKey.get('Winged Boots/fly')?.equipment).toEqual([['worn']]);
+  });
+
   it('types only cost, commandWord and equipment on every operation activation', () => {
     let seen = 0;
     for (const scope of scopes)
@@ -229,7 +287,7 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
       }
     expect(operationCount).toBe(362);
     expect(activations + withoutActivation).toBe(operationCount);
-    expect(equipment).toBe(128);
+    expect(equipment).toBe(129);
     expect(scopes.filter((s) => s.mechanics.stateMachine).length).toBe(21);
     expect(scopes.filter((s) => s.mechanics.containment).length).toBe(1);
     expect(scopes.filter((s) => s.mechanics.entityGrant).length).toBe(16);
@@ -259,7 +317,7 @@ describe('B. kept typed fields are exact', () => {
             `${scope.label} ${String(operation.id)} ${kind}`,
           ).toBe(true);
       }
-    expect(typed).toBe(128);
+    expect(typed).toBe(129);
     // The table-extra equipment gates are printed by a section header.
     for (const [key, kinds] of EQUIPMENT_EXTRA) {
       const item = key.split('::')[0] as string;
@@ -651,88 +709,6 @@ describe('D. kept activation fields agree with the governing printed passage, se
         'another creature must use an action to grasp or net the stone',
       ),
     ).toEqual([]);
-  });
-
-  /** Items whose description has a sentence led by an equipment predicate and
-   * an activation phrase: every non-cast operation of such an item with no
-   * typed equipment must be a reviewed one (the lexical lead cannot see a
-   * header-scoped gate, so the census below is the evidence, not this screen
-   * alone). */
-  const HOLDING_LEAD =
-    /\b(?:while|if|as long as)\b[^.,:]{0,50}?\b(?:holding|hold|wearing|wear|wield(?:ing)?|carry|carrying|grasping|grasp|on your person|touching|attuned)\b/i;
-  const ACTIVATION_WORDS =
-    /\b(you can|can use|expend|speak|command word|use an action|as an action|as a bonus|use your reaction|cast)\b/i;
-  function ungatedCandidates(): string[] {
-    const found: string[] = [];
-    for (const scope of scopes) {
-      const sentences = description(scope.item)
-        .split(/(?<=[.!?])\s+/)
-        .filter((s) => HOLDING_LEAD.test(s) && ACTIVATION_WORDS.test(s));
-      if (sentences.length === 0) continue;
-      for (const operation of operations(scope)) {
-        const id = String(operation.id);
-        if (id.startsWith('cast-')) continue;
-        const equipment = (operation.activation as Obj | undefined)?.equipment;
-        if (equipment === undefined) found.push(`${scope.label}::${id}`);
-      }
-    }
-    return found.sort();
-  }
-
-  it('every non-cast operation of a gate-bearing item without typed equipment is a reviewed ungated one (sweep of all 362 operations)', () => {
-    // Reviewed one by one against the printed text: ending/maintaining an
-    // effect does not inherit the initiating gate; the rest print their own
-    // trigger or target and no worn/held/attuned/on-person gate. Borderline
-    // "Alternatively"/"Additionally" continuations (Ring of the Ram
-    // break-object, Dragon Scale Mail, Dwarven Plate) are NOT typed: nothing
-    // is inferred beyond the printed sentence, which stays carried.
-    expect(ungatedCandidates()).toEqual(
-      [
-        'Animated Shield::end-animation',
-        'Boots of Speed::deactivate-speed',
-        'Boots of Speed::maintain-speed',
-        'Cloak of the Bat::end-polymorph',
-        'Decanter of Endless Water::produce-fountain',
-        'Decanter of Endless Water::produce-geyser',
-        'Decanter of Endless Water::produce-stream',
-        'Figurine of Wondrous Power::goat-of-traveling-beast-form-hour',
-        'Gem of Brightness::end-light',
-        'Helm of Brilliance::extinguish-weapon',
-        'Ring of Elemental Command::dominate-air-elemental',
-        'Ring of Elemental Command::dominate-earth-elemental',
-        'Ring of Elemental Command::dominate-fire-elemental',
-        'Ring of Elemental Command::dominate-water-elemental',
-        'Ring of Elemental Command::unlock-linked-plane',
-        'Ring of Invisibility::become-visible',
-        'Ring of Shooting Stars::create-ball-lightning',
-        'Ring of Shooting Stars::discharge-ball-lightning',
-        'Ring of Shooting Stars::launch-shooting-stars',
-        'Ring of Shooting Stars::move-ball-lightning',
-        'Ring of Spell Storing::m9-store-ring-spell',
-        'Ring of the Ram::break-object',
-        'Rod of Alertness::activate-protective-aura',
-        'Rod of Alertness::pull-rod',
-        'Rod of Lordly Might::drain-life',
-        'Rod of Lordly Might::paralyze',
-        'Rod of Lordly Might::press-button-1',
-        'Rod of Lordly Might::press-button-2',
-        'Rod of Lordly Might::press-button-3',
-        'Rod of Lordly Might::press-button-4',
-        'Rod of Lordly Might::press-button-5',
-        'Rod of Lordly Might::press-button-6',
-        'Rope of Climbing::fasten-rope',
-        'Rope of Climbing::knot-rope',
-        'Rope of Climbing::release-rope',
-        'Rope of Entanglement::escape-rope',
-        'Rope of Entanglement::release-creature',
-        'Staff of Charming::reflect-enchantment',
-        'Staff of Power::power-strike',
-        'Staff of the Woodlands::return-from-tree',
-        'Staff of the Woodlands::tree-form',
-        'Stone of Controlling Earth Elementals::summon-earth-elemental',
-        'Wings of Flying::dismiss-wings',
-      ].sort(),
-    );
   });
 
   const ACTION_PHRASE =

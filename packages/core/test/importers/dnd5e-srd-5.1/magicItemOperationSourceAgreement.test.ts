@@ -10,9 +10,9 @@
  *
  * Authority for the expected values is the printed SRD description of each
  * item, never the generated pack. This is a source-AGREEMENT screen, not a
- * capability or completeness claim. The lexical screen (cost words) is
- * necessary, not sufficient; the typed free-text fields (requirement / trigger /
- * target) set by the reviewed table are strictly stronger because the
+ * capability or completeness claim. Kept activation costs are checked against
+ * the reviewed 362-operation census; typed free-text fields (requirement /
+ * trigger / target) set by the reviewed table are strictly stronger because the
  * compiler requires each to be a verbatim span of the description. The scenario
  * tests below pin one printed-eligible versus ineligible predicate per root
  * cause rather than one reproducer per item.
@@ -30,6 +30,7 @@ import {
   MAGIC_ITEM_FAITHFUL_OPERATION_SPECS,
   MAGIC_ITEM_PRODUCER_FAITHFUL_OPERATION_ITEMS,
 } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemFaithfulOperations.js';
+import { DRINK_SENTENCES } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemFaithfulOperationsCorpus.js';
 import { getBundledDnd5eSrdPack } from '../../../src/internal.js';
 import { magicItemVariantDefinitions } from '../../../src/rules/magicItemVariants.js';
 import { assertMagicItemOperationReady } from '../../../src/state/itemExecutionReadiness.js';
@@ -114,6 +115,30 @@ const carries = (name: string, printed: string): boolean =>
   spansOfItem(name).some((span) => span.includes(printed));
 
 describe('typed activation agrees with the printed text (covered items)', () => {
+  it('preserves the governing spans for every early-null actor/delivery activation', () => {
+    const governing = new Map([
+      [
+        'Armor of Invulnerability',
+        'Additionally, you can use an action to make yourself immune to nonmagical damage for 10 minutes or until you are no longer wearing the armor.',
+      ],
+      ...Object.entries(DRINK_SENTENCES),
+    ]);
+    expect(governing).toHaveLength(18);
+    for (const [name, sentence] of governing) {
+      const activation = operation(
+        name,
+        name === 'Armor of Invulnerability' ? 'activate-immunity' : 'drink',
+      ).activation as Obj | undefined;
+      expect(activation?.requirement, name).toBeUndefined();
+      expect(activation?.target, name).toBeUndefined();
+      expect(scopesOf(name)[0]?.description).toContain(sentence);
+      expect(
+        carries(name, sentence),
+        `${name} governing early-null sentence`,
+      ).toBe(true);
+    }
+  });
+
   it('resolves every table key to a real item, variant and operation', () => {
     for (const [key, spec] of MAGIC_ITEM_FAITHFUL_OPERATION_SPECS) {
       const [itemName, variantName] = key.split('::') as [string, string?];
@@ -206,15 +231,32 @@ describe('typed activation agrees with the printed text (covered items)', () => 
           patch.activation !== undefined &&
           'cost' in patch.activation &&
           patch.activation.cost === null;
-        if (!dropsCost && patch.dropEconomyCost !== true) continue;
-        expect(
-          (spec.clauses ?? []).some(
-            (entry) =>
-              'operation' in entry.owner &&
-              entry.owner.operation === patch.operationId,
-          ),
-          `${key} ${patch.operationId} drops a cost without a printed-sentence clause`,
-        ).toBe(true);
+        const dropsPredicate =
+          patch.activation !== undefined &&
+          `${key}/${patch.operationId}` !== 'Dagger of Venom/coat-blade' &&
+          (['requirement', 'trigger', 'target'] as const).some(
+            (field) => patch.activation?.[field] === null,
+          );
+        if (!dropsCost && !dropsPredicate && patch.dropEconomyCost !== true)
+          continue;
+        if (dropsCost || patch.dropEconomyCost === true)
+          expect(
+            (spec.clauses ?? []).some(
+              (entry) =>
+                'operation' in entry.owner &&
+                entry.owner.operation === patch.operationId,
+            ),
+            `${key} ${patch.operationId} drops a cost without a printed-sentence clause`,
+          ).toBe(true);
+        if (dropsPredicate) {
+          const itemName = key.split('::')[0] as string;
+          expect(
+            spansOfItem(itemName).some((span) =>
+              scope.description.includes(span),
+            ),
+            `${key} ${patch.operationId} dropped an activation predicate without retaining an adjudicated source span`,
+          ).toBe(true);
+        }
       }
     }
   });

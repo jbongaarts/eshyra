@@ -592,6 +592,7 @@ const BASE_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
     {
       operations: [
         op('assisted-escape', {
+          cost: null,
           requirement: 'While holding the wand',
           trigger:
             'a saving throw you make to avoid being paralyzed or restrained, or you can expend 1 charge and gain advantage on any check you make to escape a grapple',

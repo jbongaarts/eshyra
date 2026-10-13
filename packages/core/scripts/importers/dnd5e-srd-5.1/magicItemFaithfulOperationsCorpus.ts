@@ -182,6 +182,42 @@ const STAFF_MAGI_CASTS = [
   'cast-protection-from-evil-and-good',
 ] as const;
 
+export const DRINK_SENTENCES: Readonly<Record<string, string>> = {
+  'Philter of Love':
+    'The next time you see a creature within 10 minutes after drinking this philter, you become charmed by that creature for 1 hour.',
+  'Potion of Animal Friendship':
+    'When you drink this potion, you can cast the animal friendship spell (save DC 13) for 1 hour at will.',
+  'Potion of Clairvoyance':
+    'When you drink this potion, you gain the effect of the clairvoyance spell.',
+  'Potion of Climbing':
+    'When you drink this potion, you gain a climbing speed equal to your walking speed for 1 hour.',
+  'Potion of Diminution':
+    'When you drink this potion, you gain the “reduce” effect of the enlarge/reduce spell for 1d4 hours (no concentration required).',
+  'Potion of Flying':
+    'When you drink this potion, you gain a flying speed equal to your walking speed for 1 hour and can hover.',
+  'Potion of Gaseous Form':
+    'When you drink this potion, you gain the effect of the gaseous form spell for 1 hour (no concentration required) or until you end the effect as a bonus action.',
+  'Potion of Giant Strength':
+    'When you drink this potion, your Strength score changes for 1 hour.',
+  'Potion of Growth':
+    'When you drink this potion, you gain the “enlarge” effect of the enlarge/reduce spell for 1d4 hours (no concentration required).',
+  'Potion of Healing': 'You regain hit points when you drink this potion.',
+  'Potion of Heroism':
+    'For 1 hour after drinking it, you gain 10 temporary hit points that last for 1 hour.',
+  'Potion of Invisibility':
+    'When you drink it, you become invisible for 1 hour.',
+  'Potion of Mind Reading':
+    'When you drink this potion, you gain the effect of the detect thoughts spell (save DC 13).',
+  'Potion of Poison':
+    'If you drink it, you take 3d6 poison damage, and you must succeed on a DC 13 Constitution saving throw or be poisoned.',
+  'Potion of Resistance':
+    'When you drink this potion, you gain resistance to one type of damage for 1 hour.',
+  'Potion of Speed':
+    'When you drink this potion, you gain the effect of the haste spell for 1 minute (no concentration required).',
+  'Potion of Water Breathing':
+    'You can breathe underwater for 1 hour after drinking this potion.',
+};
+
 /** `requirement` only: the printed holding/wearing clause for charged casts. */
 const req = (
   name: string,
@@ -198,12 +234,19 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
 >([
   [
     'Armor of Invulnerability',
-    // "wearing the armor" occurs only in the duration clause ("until you are no
-    // longer wearing the armor"), and "self" only inside "yourself"; neither is
-    // a printed activation predicate.
+    // The printed actor and wearing-duration sentence governs immunity. These
+    // contextual predicates stay untyped and survive as an adjudicated span.
     {
       operations: [
         op('activate-immunity', { requirement: null, target: null }),
+      ],
+      clauses: [
+        clause(
+          'activation-activate-immunity',
+          { operation: 'activate-immunity' },
+          'Additionally, you can use an action to make yourself immune to nonmagical damage for 10 minutes or until you are no longer wearing the armor.',
+          'The printed actor and duration condition are not typed activation predicates; the DM model interprets this printed sentence.',
+        ),
       ],
     },
   ],
@@ -629,7 +672,17 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     // Drinking targets the drinker; no printed target phrase exists.
   ].map((name): readonly [string, FaithfulItemSpec] => [
     name,
-    { operations: [op('drink', { target: null })] },
+    {
+      operations: [op('drink', { target: null })],
+      clauses: [
+        clause(
+          'activation-drink',
+          { operation: 'drink' },
+          DRINK_SENTENCES[name] as string,
+          'The printed drinker/delivery meaning is not typed as a target; the DM model interprets the printed text.',
+        ),
+      ],
+    },
   ]),
   [
     'Restorative Ointment',
@@ -812,7 +865,20 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
   [
     'Sovereign Glue',
     {
-      operations: [op('apply-glue', { target: 'a 1-foot square surface' })],
+      operations: [
+        op('apply-glue', {
+          cost: null,
+          target: 'a 1-foot square surface',
+        }),
+      ],
+      clauses: [
+        clause(
+          'activation-apply-glue',
+          { operation: 'apply-glue' },
+          'One ounce of the glue can cover a 1-foot square surface.',
+          NO_COST_NOTE,
+        ),
+      ],
     },
   ],
   [
@@ -1010,6 +1076,14 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
       operations: [
         ...['cast-hold-monster', 'cast-hold-person'].map((id) =>
           op(id, { requirement: 'While holding the wand' }),
+        ),
+      ],
+      clauses: [
+        clause(
+          'activation-assisted-escape',
+          { operation: 'assisted-escape' },
+          'Assisted Escape. While holding the wand, you can use your reaction to expend 1 charge and gain advantage on a saving throw you make to avoid being paralyzed or restrained, or you can expend 1 charge and gain advantage on any check you make to escape a grapple.',
+          'The printed reaction applies only to the saving-throw branch; no common activation cost is typed for both branches.',
         ),
       ],
     },
