@@ -456,21 +456,15 @@ describe('S1: sight restrictions survive into non-creature target projections', 
     expect(cohort.map((record) => record.key).sort()).toEqual([
       'feature:school-of-evocation:sculpt-spells',
       'magic-item:eyes-of-charming',
-      'magic-item:gem-of-brightness',
-      // eshyra-o9bd.19.4.6.1: the printed sight-restricted activation targets
-      // (S2) now project on these operations; each still must carry its sight
-      // restriction (asserted for the whole cohort below).
-      'magic-item:iron-bands-of-binding',
+      // eshyra-o9bd.19.4.6.6: the sight-restricted free-text activation
+      // targets (gem of brightness, iron bands, ring of shooting stars, ring
+      // of the ram, rod of rulership, rope of entanglement, talismans, wand of
+      // paralysis) are DM-adjudicated; each
+      // printed sentence is a verbatim adjudicated clause, not a typed
+      // projection, so those records leave this typed cohort.
       'magic-item:iron-flask',
-      'magic-item:ring-of-shooting-stars',
-      'magic-item:ring-of-the-ram',
       'magic-item:robe-of-scintillating-colors',
       'magic-item:rod-of-lordly-might',
-      'magic-item:rod-of-rulership',
-      'magic-item:rope-of-entanglement',
-      'magic-item:talisman-of-pure-good',
-      'magic-item:talisman-of-ultimate-evil',
-      'magic-item:wand-of-paralysis',
     ]);
     for (const record of cohort) {
       expect(

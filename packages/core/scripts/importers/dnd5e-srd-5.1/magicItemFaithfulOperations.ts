@@ -2,6 +2,12 @@
  * Faithful-or-absent operations and activation (eshyra-o9bd.19.4.6.1; bd
  * memory magic-item-faithful-or-absent).
  *
+ * NOTE (eshyra-o9bd.19.4.6.6): this table is the reviewed INPUT layer. The
+ * `magicItemTriage.ts` pass applied after it removes the free-text
+ * requirement / trigger / target / note fields from the compiled pack (keeping
+ * cost, commandWord and the structured `equipment` prerequisite) and carries
+ * each printed sentence as an adjudicated clause.
+ *
  * A typed `activation` field on a magic-item operation states the printed
  * predicate exactly or does not exist. The family producers draft candidate
  * operations (and, for generic toggles, a default `action` cost); this table is

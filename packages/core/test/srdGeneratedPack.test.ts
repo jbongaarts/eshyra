@@ -838,6 +838,15 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // field and intentionally does not appear in this missing-field baseline.
   // Deck of Many Things and Figurine of Wondrous Power reference their inline
   // stat blocks; the other 238 magic items have none.
+  // eshyra-o9bd.19.4.6.6: Bag of Devouring and Efficient Quiver carry only
+  // containment, which the triage made DM-adjudicated, so they have no typed
+  // mechanics left (their printed text is carried by adjudicated clauses).
+  {
+    kind: 'magic-item',
+    field: 'mechanics',
+    missingCount: 2,
+    totalInKind: 240,
+  },
   {
     kind: 'magic-item',
     field: 'statBlockRefs',
@@ -1173,6 +1182,18 @@ const DICE_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
 };
 
 const DC_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
+  'magic-item:bag-of-devouring|parent|forward|dc:15':
+    'The escape check is carried by the DM-adjudicated containment sentence as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: containment is not typed)',
+  'magic-item:bag-of-devouring|parent|forward|dc:20':
+    'The rescue check is carried by the DM-adjudicated containment sentence as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: containment is not typed)',
+  'magic-item:deck-of-illusions|parent|forward|dc:15':
+    'The inspection check is carried by the DM-adjudicated illusion-control sentence as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: grant control text is not typed)',
+  'magic-item:dimensional-shackles|parent|forward|dc:30':
+    'The break-free check is carried by the DM-adjudicated shackles sentences as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: the shackles state machine is not typed)',
+  'magic-item:iron-bands-of-binding|parent|forward|dc:20':
+    'The break-the-bands check is carried by the DM-adjudicated bands sentences as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: the bands state machine is not typed)',
+  'magic-item:portable-hole|parent|forward|dc:10':
+    'The forced-exit check is carried by the DM-adjudicated containment sentence as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: containment is not typed)',
   'magic-item:apparatus-of-the-crab|parent|forward|dc:20':
     'DC 20 hidden-catch check is adjudicated per the as87 disposition',
   'magic-item:figurine-of-wondrous-power|parent|forward|dc:15':
@@ -3283,7 +3304,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1113);
+      expect(clauses).toHaveLength(1349);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3308,10 +3329,21 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // adjudicated, 791 -> 790), the Eversmoking Bottle growth sentence and
       // the second Apparatus lever-10 direction operation each added one
       // adjudicated clause (107 -> 110). No green clause moved.
+      // eshyra-o9bd.19.4.6.6 (non-effect triage, bd memory
+      // magic-item-faithful-or-absent): the free-text activation predicates,
+      // 26 complex state machines, grant control text, containment,
+      // spellStore and rollManipulation became adjudicated clauses
+      // (110 -> 333). The 66 block-level engine-pending clauses of the
+      // withheld blocks left the pending set; each withheld block's bound
+      // operations keep one operation-bound engine-pending clause carrying
+      // the block's hooks so no operation became executable (+78), and the
+      // Efreeti Bottle stopper cooldown added one economy clause (790 ->
+      // 803). No green clause moved: the 212 green clauses and the 19 ready
+      // operations are unchanged.
       expect(counts).toEqual({
-        'adjudicated-by-design': 110,
+        'adjudicated-by-design': 333,
         'design-blocked': 1,
-        'engine-pending': 790,
+        'engine-pending': 803,
         green: 212,
       });
       const pending = clauses.filter(

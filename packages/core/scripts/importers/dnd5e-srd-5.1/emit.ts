@@ -87,7 +87,9 @@ import type { SourceRegionLedger } from './sourceRegionLedger.js';
 import { linkSpellEmbeddedTables } from './spellTables.js';
 import {
   assertNoEmbeddedTableLinearization,
+  spansByOwner,
   stripEmbeddedTableProse,
+  stripTableSpansFromProse,
 } from './stripEmbeddedTableProse.js';
 import type {
   ActionExtraction,
@@ -1537,13 +1539,22 @@ function buildMagicItemData(
   item: MagicItemExtraction,
   statBlockRefs: readonly string[] | undefined,
   compileExecutableSemantics: boolean,
+  tableSpans: readonly string[],
 ): Record<string, unknown> {
   // The executable-curation registry is an exact-corpus specification for the
   // reviewed 240 SRD items. Small parser fixtures deliberately carry clipped
   // descriptions and must exercise structural extraction without pretending
   // to be authoritative semantic inputs.
   const compiled = compileExecutableSemantics
-    ? compileMagicItemFamilies(item)
+    ? compileMagicItemFamilies(item, {
+        description: stripTableSpansFromProse(item.description, tableSpans),
+        variants: new Map(
+          (item.variants ?? []).map((variant) => [
+            variant.name,
+            stripTableSpansFromProse(variant.text, tableSpans),
+          ]),
+        ),
+      })
     : { mechanics: undefined, clauses: [], variants: new Map() };
   const data: Record<string, unknown> = {
     itemType: item.itemType,
@@ -1585,8 +1596,10 @@ function buildMagicItemData(
 export function magicItemExtractionsToRecords(
   magicItems: readonly MagicItemExtraction[],
   statBlockRefsByItemName: ReadonlyMap<string, readonly string[]> = new Map(),
+  tables: readonly TableExtraction[] = [],
 ): RulesRecord[] {
   const compileExecutableSemantics = magicItems.length === 240;
+  const tableSpansByOwner = spansByOwner(tables);
   const out: RulesRecord[] = magicItems.map((item) => {
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
@@ -1597,6 +1610,7 @@ export function magicItemExtractionsToRecords(
         item,
         statBlockRefsByItemName.get(item.name),
         compileExecutableSemantics,
+        tableSpansByOwner.get(magicItemKey(item.name)) ?? [],
       ),
       source: sourceLabelFor(item.sourcePage),
       license: SRD_5_1_LICENSE,
@@ -1862,6 +1876,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
   const magicItemRecords = magicItemExtractionsToRecords(
     input.magicItems ?? [],
     statBlockRefsByItemName,
+    input.tables ?? [],
   );
   // Link ancestry option tables (eshyra-4a7.7): add `tableRefs` on any ancestry
   // trait whose prose names "the <Name> table" (the Dragonborn Draconic

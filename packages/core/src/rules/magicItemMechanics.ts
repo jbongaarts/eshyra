@@ -23,6 +23,19 @@ export interface MagicItemDurationSpec {
   readonly unit: MagicItemDurationUnit;
 }
 
+/**
+ * A printed equipment prerequisite of an activation: the item must be worn,
+ * held, attuned to, or on the actor's person (eshyra-o9bd.19.4.6.6; consumer
+ * eshyra-olc5.10). Every listed value is required (conjunction); a printed
+ * alternative ("wearing or holding it") is not representable and stays
+ * DM-adjudicated.
+ */
+export type MagicItemEquipmentRequirement =
+  | 'worn'
+  | 'held'
+  | 'attuned'
+  | 'on-person';
+
 export interface MagicItemActivationSpec {
   /**
    * The action cost the printed text states. Omitted when the source names no
@@ -31,17 +44,36 @@ export interface MagicItemActivationSpec {
    */
   readonly cost?: 'action' | 'bonus-action' | 'reaction' | 'free' | 'consume';
   readonly commandWord?: boolean;
+  /** Printed worn/held/attuned/on-person prerequisite (structured). */
+  readonly equipment?: readonly MagicItemEquipmentRequirement[];
+  /**
+   * Producer-draft free text. The compiled SRD pack never carries these: the
+   * triage layer (eshyra-o9bd.19.4.6.6) removes them and carries the printed
+   * sentence as an `adjudicated-by-design` clause with a verbatim span.
+   */
   readonly trigger?: string;
   readonly requirement?: string;
   readonly target?: string;
   readonly note?: string;
 }
 
+export type MagicItemCooldownAnchor =
+  | { readonly event: 'grant-ended'; readonly grantId: string }
+  | { readonly event: 'state-entered'; readonly stateId: string };
+
 export interface MagicItemEconomy {
   readonly kind: MagicItemEconomyKind;
   readonly charges?: { readonly max: number | string };
   readonly perDay?: { readonly uses: number };
-  readonly cooldown?: { readonly duration: MagicItemDurationSpec };
+  readonly cooldown?: {
+    readonly duration: MagicItemDurationSpec;
+    /**
+     * Printed termination event that starts the wait (eshyra-o9bd.19.4.6.6;
+     * consumer eshyra-olc5.8). Absent means the wait starts when the
+     * initiating operation spends the pool.
+     */
+    readonly startsOn?: MagicItemCooldownAnchor;
+  };
   readonly budget?: {
     readonly total: MagicItemDurationSpec;
     readonly increment: MagicItemDurationSpec;
@@ -432,6 +464,12 @@ const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const REF_RE = /^[a-z][a-z0-9-]*:[a-z0-9]+(?:[-:][a-z0-9]+)*$/;
 const DICE_RE = /^(?:\d*)d\d+(?:(?:kh|kl|dh|dl)\d+)?(?:[+-]\d+)?$/i;
 const DURATION_UNITS = new Set(['round', 'minute', 'hour', 'day']);
+const EQUIPMENT_REQUIREMENTS = new Set([
+  'worn',
+  'held',
+  'attuned',
+  'on-person',
+]);
 const ACTIVATION_COSTS = new Set([
   'action',
   'bonus-action',
@@ -607,7 +645,15 @@ function activation(value: unknown, path: string): void {
   const obj = object(value, path);
   only(
     obj,
-    ['cost', 'commandWord', 'trigger', 'requirement', 'target', 'note'],
+    [
+      'cost',
+      'commandWord',
+      'equipment',
+      'trigger',
+      'requirement',
+      'target',
+      'note',
+    ],
     path,
   );
   if (Object.keys(obj).length === 0)
@@ -622,6 +668,22 @@ function activation(value: unknown, path: string): void {
   }
   if (obj.commandWord !== undefined)
     boolean(obj.commandWord, `${path}.commandWord`);
+  if (obj.equipment !== undefined) {
+    const equipment = array(obj.equipment, `${path}.equipment`);
+    if (equipment.length === 0)
+      throw new RulesPackError(`${path}.equipment must not be empty`);
+    const seen = new Set<string>();
+    equipment.forEach((entry, index) => {
+      const value = string(entry, `${path}.equipment[${index}]`);
+      if (!EQUIPMENT_REQUIREMENTS.has(value))
+        throw new RulesPackError(
+          `${path}.equipment[${index}] must be one of ${[...EQUIPMENT_REQUIREMENTS].join(', ')}`,
+        );
+      if (seen.has(value))
+        throw new RulesPackError(`${path}.equipment must not repeat ${value}`);
+      seen.add(value);
+    });
+  }
   for (const key of ['trigger', 'requirement', 'target', 'note']) {
     if (obj[key] !== undefined) string(obj[key], `${path}.${key}`);
   }
@@ -775,8 +837,23 @@ function economy(value: unknown, path: string): void {
   }
   if (obj.cooldown !== undefined) {
     const shape = object(obj.cooldown, `${path}.cooldown`);
-    only(shape, ['duration'], `${path}.cooldown`);
+    only(shape, ['duration', 'startsOn'], `${path}.cooldown`);
     duration(shape.duration, `${path}.cooldown.duration`);
+    if (shape.startsOn !== undefined) {
+      const anchor = object(shape.startsOn, `${path}.cooldown.startsOn`);
+      const event = string(anchor.event, `${path}.cooldown.startsOn.event`);
+      if (event === 'grant-ended') {
+        only(anchor, ['event', 'grantId'], `${path}.cooldown.startsOn`);
+        id(anchor.grantId, `${path}.cooldown.startsOn.grantId`);
+      } else if (event === 'state-entered') {
+        only(anchor, ['event', 'stateId'], `${path}.cooldown.startsOn`);
+        id(anchor.stateId, `${path}.cooldown.startsOn.stateId`);
+      } else {
+        throw new RulesPackError(
+          `${path}.cooldown.startsOn.event must be grant-ended or state-entered`,
+        );
+      }
+    }
   }
   if (obj.budget !== undefined) {
     const shape = object(obj.budget, `${path}.budget`);
@@ -1930,23 +2007,10 @@ function spellStore(
         );
     }
     const required: Readonly<Record<string, readonly string[]>> = {
-      'spell-storage': [
-        'capacityLevels',
-        'maximumSpellLevel',
-        'casterOfRecord',
-        'storeOn',
-        'castOut',
-        'operationIds',
-      ],
-      'spell-energy': [
-        'capacityLevels',
-        'lifetimeCapacityLevels',
-        'maximumSpellLevel',
-        'absorbOn',
-        'castOut',
-        'operationIds',
-        'onExhausted',
-      ],
+      // Numeric core only (eshyra-o9bd.19.4.6.6): the stored-level counters
+      // item initialization binds; casting rules are DM-adjudicated.
+      'spell-storage': ['capacityLevels', 'operationIds'],
+      'spell-energy': ['lifetimeCapacityLevels', 'operationIds'],
       'spell-cancellation': [
         'lifetimeCapacityLevels',
         'maximumSpellLevel',
@@ -2398,7 +2462,40 @@ export function validateMagicItemMechanics(
   }
   if (mechanics.interItem !== undefined)
     interItem(mechanics.interItem, `${path}.interItem`);
+  cooldownAnchors(mechanics, path);
   validateAmbiguityReferences(mechanics, ambiguityIds, path);
+}
+
+/** An event-anchored cooldown must name a grant or state this scope declares. */
+function cooldownAnchors(mechanics: Obj, path: string): void {
+  const economies = mechanics.economies;
+  if (typeof economies !== 'object' || economies === null) return;
+  const grantIds = new Set<string>();
+  const grants = (mechanics.entityGrant as Obj | undefined)?.grants;
+  if (Array.isArray(grants))
+    for (const grant of grants) grantIds.add(String((grant as Obj).id));
+  const stateIds = new Set<string>();
+  const states = (mechanics.stateMachine as Obj | undefined)?.states;
+  if (Array.isArray(states))
+    for (const state of states) stateIds.add(String((state as Obj).id));
+  for (const [economyId, raw] of Object.entries(economies)) {
+    const anchor = ((raw as Obj).cooldown as Obj | undefined)?.startsOn as
+      | Obj
+      | undefined;
+    if (anchor === undefined) continue;
+    const where = `${path}.economies.${economyId}.cooldown.startsOn`;
+    if (anchor.event === 'grant-ended' && !grantIds.has(String(anchor.grantId)))
+      throw new RulesPackError(
+        `${where}.grantId references unknown grant ${JSON.stringify(anchor.grantId)}`,
+      );
+    if (
+      anchor.event === 'state-entered' &&
+      !stateIds.has(String(anchor.stateId))
+    )
+      throw new RulesPackError(
+        `${where}.stateId references unknown state ${JSON.stringify(anchor.stateId)}`,
+      );
+  }
 }
 
 /** Pure implementation of the stateful-singleton invariant from PR #408. */

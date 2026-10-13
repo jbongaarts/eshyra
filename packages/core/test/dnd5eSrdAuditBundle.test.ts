@@ -774,7 +774,12 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
     const byKey = new Map(
       report.dispositions.map((d) => [`${d.kind}#${d.bucket}`, d]),
     );
-    expect(byKey.get('magic-item#prose-only')).toBeUndefined();
+    // eshyra-o9bd.19.4.6.6: the two containment-only items are fully
+    // DM-adjudicated and reviewed as accepted prose.
+    expect(byKey.get('magic-item#prose-only')).toMatchObject({
+      count: 2,
+      status: 'accepted-prose-only',
+    });
     expect(byKey.get('magic-item#partial-structure')).toBeUndefined();
     expect(byKey.get('rule#prose-only')?.bead).toBe('eshyra-o9bd.18.7.8');
     expect(byKey.get('equipment#prose-only')?.bead).toBe('eshyra-o9bd.18.7.6');

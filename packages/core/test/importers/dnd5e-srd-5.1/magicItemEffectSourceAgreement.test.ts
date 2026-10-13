@@ -592,20 +592,54 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
       'snare-missile',
     );
     expect(String(snare.trigger)).toContain('free hand');
+    // eshyra-o9bd.19.4.6.6: the operation's free-text trigger is DM-adjudicated,
+    // so it is no longer typed; the whole printed sentence (with the free-hand
+    // qualifier) is carried by an adjudicated clause, and the effect above
+    // still types the qualifier on the stage it governs.
     expect(
       recordMechanics('magic-item:gloves-of-missile-snaring').operations?.[0]
         ?.activation?.trigger,
-    ).toContain('free hand');
+    ).toBeUndefined();
+    const gloves = recordsByKey.get('magic-item:gloves-of-missile-snaring') as {
+      data: {
+        executionReadiness: {
+          clauses: { representation?: { sourceText?: string } }[];
+        };
+      };
+    };
+    expect(
+      gloves.data.executionReadiness.clauses.some((clause) =>
+        clause.representation?.sourceText?.includes(
+          'provided that you have a free hand',
+        ),
+      ),
+    ).toBe(true);
     // The goat's aura (riding / reversion / repeat-save / immunity) is absent as
     // a typed effect; see the faithful-or-absent block at the end of the file.
     // "takes damage from the arrow" (not merely a hit), on effect and operation.
     expect(
       String(effect('magic-item:arrow-of-slaying', 'slaying-damage').trigger),
     ).toContain('takes damage');
+    // (The operation's free-text trigger is DM-adjudicated since
+    // eshyra-o9bd.19.4.6.6; its printed sentence is an adjudicated clause.)
     expect(
       recordMechanics('magic-item:arrow-of-slaying').operations?.[0]?.activation
         ?.trigger,
-    ).toContain('takes damage');
+    ).toBeUndefined();
+    const arrow = recordsByKey.get('magic-item:arrow-of-slaying') as {
+      data: {
+        executionReadiness: {
+          clauses: { representation?: { sourceText?: string } }[];
+        };
+      };
+    };
+    expect(
+      arrow.data.executionReadiness.clauses.some((clause) =>
+        clause.representation?.sourceText?.includes(
+          'takes damage from the arrow',
+        ),
+      ),
+    ).toBe(true);
     // "light spell cast on the robe or daylight spell cast within 5 feet".
     expect(
       String(
@@ -836,15 +870,26 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
           operations?: { id?: string; activation?: Obj }[];
         }
       ).operations?.find((candidate) => candidate.id === id);
+    // eshyra-o9bd.19.4.6.6: the printed predicate "If you control the orb" is
+    // DM-adjudicated; the activation types only the printed action cost and
+    // the sentence is carried verbatim by an adjudicated clause.
     expect(
       operation('magic-item:orb-of-dragonkind', 'cast-scrying')?.activation,
-    ).toMatchObject({
-      cost: 'action',
-      // The printed predicate is "If you control the orb" (eshyra-o9bd.19.4.6.2
-      // quotes it; the earlier "control the orb" fragment was lifted from the
-      // attunement sentence).
-      requirement: 'If you control the orb',
-    });
+    ).toEqual({ cost: 'action' });
+    const orbClauses = (
+      recordsByKey.get('magic-item:orb-of-dragonkind') as {
+        data: {
+          executionReadiness: {
+            clauses: { representation?: { sourceText?: string } }[];
+          };
+        };
+      }
+    ).data.executionReadiness.clauses;
+    expect(
+      orbClauses.some((clause) =>
+        clause.representation?.sourceText?.includes('If you control the orb'),
+      ),
+    ).toBe(true);
     expect(
       effect('magic-item:spell-scroll', 'scroll-casting-procedure').castingTime,
     ).toBe('spell-normal');
@@ -863,7 +908,7 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
     expect(
       operation('magic-item:dust-of-dryness', 'sprinkle-dust')?.activation
         ?.target,
-    ).toBe('water');
+    ).toBeUndefined();
     for (const item of [
       'magic-item:dust-of-disappearance',
       'magic-item:dust-of-sneezing-and-choking',
@@ -935,10 +980,25 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
     expect(
       effect('magic-item:plate-armor-of-etherealness', 'etherealness').endsOn,
     ).toContain('armor-removed');
+    // The "press one side twice" prerequisite is DM-adjudicated
+    // (eshyra-o9bd.19.4.6.6); the printed sentence is an adjudicated clause.
     expect(
       operation('magic-item:cubic-gate', 'cast-plane-shift')?.activation
         ?.requirement,
-    ).toContain('twice');
+    ).toBeUndefined();
+    expect(
+      (
+        recordsByKey.get('magic-item:cubic-gate') as {
+          data: {
+            executionReadiness: {
+              clauses: { representation?: { sourceText?: string } }[];
+            };
+          };
+        }
+      ).data.executionReadiness.clauses.some((clause) =>
+        clause.representation?.sourceText?.includes('press one side twice'),
+      ),
+    ).toBe(true);
     // "you can telepathically communicate with any creature wearing it": no
     // added directionality or language flags.
     const telepathy = effect(

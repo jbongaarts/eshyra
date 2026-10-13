@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(791);
+    expect(backlog.candidates).toHaveLength(804);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -85,10 +85,25 @@ describe('magic-item legacy capability backlog', () => {
     // suppression lifetimes no single typed graph states), so its M5 engine-
     // hook candidate left the set (793 -> 792); eshyra-o9bd.19.4.6.4 withheld
     // the Necklace of Prayer Beads necklace-wide pool (the printed gate is per
-    // magic bead), so its F5 candidate left the set (792 -> 791). No other
+    // magic bead), so its F5 candidate left the set (792 -> 791).
+    // eshyra-o9bd.19.4.6.6 (non-effect triage): the 66 block-level candidates
+    // of the withheld state machines (25), spellStore (17), rollManipulation
+    // (14), containment (9) and the Orb of Dragonkind grant (1) left the set
+    // (DM-adjudicated, no capability planned); the operations those blocks
+    // used to block keep one operation-bound candidate each with the block's
+    // hooks (+78) so no operation became executable, and the Efreeti Bottle
+    // stopper cooldown added one economy candidate (791 -> 804). The three
+    // stored-level spellStore cores (Ring of Spell Storing, Ioun Stone
+    // Reserve, Rod of Absorption) keep their block candidates. No other
     // identity changed.
     expect(fingerprint).toBe(
-      'a27124f47ca4d3bd4564aeb6e4bfe44b119fbce6ed8731f5dc022c110e04170a',
+      'b1c31386fffdf5993856ac8b0b5f3241666f980e207a6dd8c63a067edb054b75',
+    );
+    expect(
+      backlog.candidates.map(({ candidateId }) => candidateId),
+    ).not.toContain('magic-item:dancing-sword/m5-complex-dancing-sword');
+    expect(backlog.candidates.map(({ candidateId }) => candidateId)).toContain(
+      'magic-item:dancing-sword/triage-stateMachine-op-launch-sword',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

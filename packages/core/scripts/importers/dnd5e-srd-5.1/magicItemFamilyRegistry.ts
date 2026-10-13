@@ -35,6 +35,7 @@ import {
   projectMagicItemDesignBlockedClause,
   projectMagicItemStructuredClauses,
 } from './magicItemStructuredClauses.js';
+import { applyMagicItemTriage } from './magicItemTriage.js';
 import {
   projectMagicItemUseEconomies,
   projectMagicItemUseVariantEconomies,
@@ -114,18 +115,30 @@ function withoutCentralDispositions(
   };
 }
 
+/** The printed prose as it will stand in the FINAL record (embedded-table
+ * linearizations removed), which the triage spans must quote. */
+export interface PrintedProse {
+  readonly description: string;
+  readonly variants: ReadonlyMap<string, string>;
+}
+
 function parentProjections(
   item: MagicItemExtraction,
+  prose: PrintedProse | undefined,
 ): readonly MagicItemFamilyProjection[] {
-  return applyFaithfulMagicItemLifecycles(
+  return applyMagicItemTriage(
     item,
-    applyFaithfulMagicItemOperations(
+    prose,
+    applyFaithfulMagicItemLifecycles(
       item,
-      applyAdjudicatedMagicItemEffects(
+      applyFaithfulMagicItemOperations(
         item,
-        PARENT_PROJECTORS.map((project) => project(item))
-          .filter(defined)
-          .map(withoutCentralDispositions),
+        applyAdjudicatedMagicItemEffects(
+          item,
+          PARENT_PROJECTORS.map((project) => project(item))
+            .filter(defined)
+            .map(withoutCentralDispositions),
+        ),
       ),
     ),
   ).map((projection) =>
@@ -136,13 +149,19 @@ function parentProjections(
 function variantProjections(
   item: MagicItemExtraction,
   variant: MagicItemVariant,
+  prose: PrintedProse | undefined,
 ): readonly MagicItemFamilyProjection[] {
   const parentName = item.name;
-  return applyFaithfulMagicItemOperations(
+  return applyMagicItemTriage(
     item,
-    VARIANT_PROJECTORS.map((project) => project(parentName, variant))
-      .filter(defined)
-      .map(withoutCentralDispositions),
+    prose,
+    applyFaithfulMagicItemOperations(
+      item,
+      VARIANT_PROJECTORS.map((project) => project(parentName, variant))
+        .filter(defined)
+        .map(withoutCentralDispositions),
+      variant.name,
+    ),
     variant.name,
   ).map((projection) =>
     namespaceProjection(
@@ -167,8 +186,11 @@ export interface CompiledMagicItemFamilies {
 /** Compile every parent and variant family exactly once per mechanics scope. */
 export function compileMagicItemFamilies(
   item: MagicItemExtraction,
+  prose?: PrintedProse,
 ): CompiledMagicItemFamilies {
-  const parent = aggregateMagicItemFamilyProjections(parentProjections(item));
+  const parent = aggregateMagicItemFamilyProjections(
+    parentProjections(item, prose),
+  );
   const variants = new Map<
     string,
     {
@@ -184,7 +206,9 @@ export function compileMagicItemFamilies(
     }
     variants.set(
       variant.name,
-      aggregateMagicItemFamilyProjections(variantProjections(item, variant)),
+      aggregateMagicItemFamilyProjections(
+        variantProjections(item, variant, prose),
+      ),
     );
   }
   return { ...parent, variants };
@@ -271,11 +295,30 @@ export function buildMagicItemClausesByItemKey(
         `magic-item family registry: extraction ${JSON.stringify(item.name)} has no emitted record`,
       );
     }
-    const compiled = compileMagicItemFamilies(item);
+    // The triage spans quote the FINAL record prose (embedded tables stripped).
+    const recordData = record.data as {
+      readonly description?: unknown;
+      readonly variants?: readonly { name?: unknown; text?: unknown }[];
+    };
+    const prose: PrintedProse | undefined =
+      typeof recordData.description === 'string'
+        ? {
+            description: recordData.description,
+            variants: new Map(
+              (recordData.variants ?? []).flatMap((variant) =>
+                typeof variant.name === 'string' &&
+                typeof variant.text === 'string'
+                  ? [[variant.name, variant.text] as const]
+                  : [],
+              ),
+            ),
+          }
+        : undefined;
+    const compiled = compileMagicItemFamilies(item, prose);
     const structured = projectMagicItemStructuredClauses(record);
     const designBlocked = projectMagicItemDesignBlockedClause(item);
     const parent = aggregateMagicItemFamilyProjections([
-      ...parentProjections(item),
+      ...parentProjections(item, prose),
       ...(structured === undefined
         ? []
         : [namespaceProjection(structured, key)]),
