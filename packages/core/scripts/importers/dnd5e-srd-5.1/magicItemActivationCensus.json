@@ -1924,12 +1924,12 @@
   {
     "scope": "Orb of Dragonkind",
     "operation": "cast-scrying",
-    "cost": "action",
+    "cost": null,
     "equipment": null,
     "costSentence": "If you control the orb, you can use an action and expend 1 or more charges to cast one of the following spells (save DC 18) from it: cure wounds (5th-level version, 3 charges), daylight (1 charge), death ward (2 charges), or scrying (3 charges).",
     "equipmentSentences": [],
     "noneReason": {
-      "cost": null,
+      "cost": "rule:spells says a spell cast from a magic item uses its normal casting time; the printed action expends charges to cast and does not change scrying's 10-minute casting time.",
       "equipment": "No equipment prerequisite is retained for this operation."
     }
   },
@@ -3713,7 +3713,7 @@
   {
     "scope": "Staff of the Magi",
     "operation": "cast-conjure-elemental",
-    "cost": "action",
+    "cost": null,
     "equipment": [["held"]],
     "costSentence": "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges).",
     "equipmentSentences": [
@@ -3722,7 +3722,7 @@
       "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges)."
     ],
     "noneReason": {
-      "cost": null,
+      "cost": "rule:spells says a spell cast from a magic item uses its normal casting time; the printed action expends charges to cast and does not change conjure elemental's 1-minute casting time.",
       "equipment": null
     }
   },
@@ -4053,12 +4053,12 @@
   {
     "scope": "Staff of the Woodlands",
     "operation": "cast-awaken",
-    "cost": "action",
+    "cost": null,
     "equipment": null,
     "costSentence": "You can use an action to expend 1 or more of the staff’s charges to cast one of the following spells from it, using your spell save DC: animal friendship (1 charge), awaken (5 charges), barkskin (2 charges), locate animals or plants (2 charges), speak with animals (1 charge), speak with plants (3 charges), or wall of thorns (6 charges).",
     "equipmentSentences": [],
     "noneReason": {
-      "cost": null,
+      "cost": "rule:spells says a spell cast from a magic item uses its normal casting time; the printed action expends charges to cast and does not change awaken's 8-hour casting time.",
       "equipment": "No equipment prerequisite is retained for this operation."
     }
   },

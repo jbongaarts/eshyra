@@ -114874,9 +114874,6 @@
           },
           {
             "id": "cast-scrying",
-            "activation": {
-              "cost": "action"
-            },
             "cost": [
               {
                 "economy": "charges",
@@ -114983,6 +114980,20 @@
               "sourceText": "While you control the orb, you can use an action to cause the artifact to issue a telepathic call that extends in all directions for 40 miles."
             },
             "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
+          {
+            "clauseId": "magic-item:orb-of-dragonkind/activation-cast-scrying",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "No action cost is typed for this spell: the sentence prints “use an action” to activate the item, but rule:spells says a spell cast from an item uses its normal casting time unless the item changes it, and this item does not. The DM model applies the spell’s casting time.",
+              "sourceText": "scrying (3 charges)"
+            },
+            "reason": "No action cost is typed for this spell: the sentence prints “use an action” to activate the item, but rule:spells says a spell cast from an item uses its normal casting time unless the item changes it, and this item does not. The DM model applies the spell’s casting time."
           },
           {
             "clauseId": "magic-item:orb-of-dragonkind/c1-economy-charges",
@@ -136427,8 +136438,7 @@
                 [
                   "held"
                 ]
-              ],
-              "cost": "action"
+              ]
             },
             "cost": [
               {
@@ -136937,6 +136947,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:staff-of-the-magi/activation-cast-conjure-elemental",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "No action cost is typed for this spell: the sentence prints “use an action” to activate the item, but rule:spells says a spell cast from an item uses its normal casting time unless the item changes it, and this item does not. The DM model applies the spell’s casting time.",
+              "sourceText": "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges)."
+            },
+            "reason": "No action cost is typed for this spell: the sentence prints “use an action” to activate the item, but rule:spells says a spell cast from an item uses its normal casting time unless the item changes it, and this item does not. The DM model applies the spell’s casting time."
+          },
           {
             "clauseId": "magic-item:staff-of-the-magi/c1-economy-charges",
             "scope": {
@@ -138942,9 +138966,6 @@
           },
           {
             "id": "cast-awaken",
-            "activation": {
-              "cost": "action"
-            },
             "cost": [
               {
                 "economy": "charges",
@@ -139128,6 +139149,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:staff-of-the-woodlands/activation-cast-awaken",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "No action cost is typed for this spell: the sentence prints “use an action” to activate the item, but rule:spells says a spell cast from an item uses its normal casting time unless the item changes it, and this item does not. The DM model applies the spell’s casting time.",
+              "sourceText": "You can use an action to expend 1 or more of the staff’s charges to cast one of the following spells from it, using your spell save DC: animal friendship (1 charge), awaken (5 charges), barkskin (2 charges), locate animals or plants (2 charges), speak with animals (1 charge), speak with plants (3 charges), or wall of thorns (6 charges)."
+            },
+            "reason": "No action cost is typed for this spell: the sentence prints “use an action” to activate the item, but rule:spells says a spell cast from an item uses its normal casting time unless the item changes it, and this item does not. The DM model applies the spell’s casting time."
+          },
           {
             "clauseId": "magic-item:staff-of-the-woodlands/c1-economy-charges",
             "scope": {

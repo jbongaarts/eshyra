@@ -1766,6 +1766,7 @@ export type {
   ItemInstanceState,
   UseItemInput,
   UseItemResult,
+  UseItemTurnResource,
 } from './state/itemState.js';
 export {
   applyCooldownAnchorToState,
@@ -1789,6 +1790,11 @@ export type {
   TransferItemResult,
 } from './state/itemTransfer.js';
 export { ItemTransferError, transferItem } from './state/itemTransfer.js';
+export {
+  PRINTED_CASTING_TIME_OVERRIDES,
+  planItemTurnResource,
+  turnResourceForCastingTime,
+} from './state/itemTurnResource.js';
 // Read-only level-up eligibility detection.
 export type { LevelUpEligibility } from './state/levelUpEligibility.js';
 export {

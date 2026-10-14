@@ -870,12 +870,12 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
           operations?: { id?: string; activation?: Obj }[];
         }
       ).operations?.find((candidate) => candidate.id === id);
-    // eshyra-o9bd.19.4.6.6: the printed predicate "If you control the orb" is
-    // DM-adjudicated; the activation types only the printed action cost and
-    // the sentence is carried verbatim by an adjudicated clause.
+    // rule:spells gives item casts their normal casting time. The action
+    // spends charges to cast and does not make scrying an action-cast spell;
+    // its sentence is carried verbatim by an adjudicated clause.
     expect(
       operation('magic-item:orb-of-dragonkind', 'cast-scrying')?.activation,
-    ).toEqual({ cost: 'action' });
+    ).toBeUndefined();
     const orbClauses = (
       recordsByKey.get('magic-item:orb-of-dragonkind') as {
         data: {

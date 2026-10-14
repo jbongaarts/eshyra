@@ -29,6 +29,8 @@ import {
 
 const SPELL_CASTS_NOTE =
   'The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.';
+const ITEM_SPELL_NORMAL_CASTING_TIME_NOTE =
+  'No action cost is typed for this spell: the sentence prints “use an action” to activate the item, but rule:spells says a spell cast from an item uses its normal casting time unless the item changes it, and this item does not. The DM model applies the spell’s casting time.';
 
 const ELEMENTAL_COMMAND_PLANES = [
   {
@@ -638,16 +640,29 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     'Orb of Dragonkind',
     {
       operations: [
+        op('cast-scrying', {
+          cost: null,
+          requirement: 'If you control the orb',
+        }),
         ...[
           'cast-cure-wounds',
           'cast-daylight',
           'cast-death-ward',
-          'cast-scrying',
           'cast-detect-magic',
         ].map((id) => op(id, { requirement: 'If you control the orb' })),
         op('m7-attempt-orb-control', {
           requirement: 'While attuned to an orb',
         }),
+      ],
+      clauses: [
+        clause(
+          'activation-cast-scrying',
+          { operation: 'cast-scrying' },
+          // Narrow span: the full shared sentence stays in the triage clause
+          // that governs all five orb casts.
+          'scrying (3 charges)',
+          ITEM_SPELL_NORMAL_CASTING_TIME_NOTE,
+        ),
       ],
     },
   ],
@@ -1018,13 +1033,39 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     'Staff of the Magi',
     {
       operations: [
-        ...STAFF_MAGI_CASTS.map((id) =>
-          op(id, { requirement: 'While holding the staff' }),
+        op('cast-conjure-elemental', {
+          cost: null,
+          requirement: 'While holding the staff',
+        }),
+        ...STAFF_MAGI_CASTS.filter((id) => id !== 'cast-conjure-elemental').map(
+          (id) => op(id, { requirement: 'While holding the staff' }),
         ),
         op('m9-absorb-staff-spell', {
           requirement: 'While holding the staff',
           trigger: 'when another creature casts a spell that targets only you',
         }),
+      ],
+      clauses: [
+        clause(
+          'activation-cast-conjure-elemental',
+          { operation: 'cast-conjure-elemental' },
+          'While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges).',
+          ITEM_SPELL_NORMAL_CASTING_TIME_NOTE,
+        ),
+      ],
+    },
+  ],
+  [
+    'Staff of the Woodlands',
+    {
+      operations: [op('cast-awaken', { cost: null })],
+      clauses: [
+        clause(
+          'activation-cast-awaken',
+          { operation: 'cast-awaken' },
+          'You can use an action to expend 1 or more of the staff’s charges to cast one of the following spells from it, using your spell save DC: animal friendship (1 charge), awaken (5 charges), barkskin (2 charges), locate animals or plants (2 charges), speak with animals (1 charge), speak with plants (3 charges), or wall of thorns (6 charges).',
+          ITEM_SPELL_NORMAL_CASTING_TIME_NOTE,
+        ),
       ],
     },
   ],

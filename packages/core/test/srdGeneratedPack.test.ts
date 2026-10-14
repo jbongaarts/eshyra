@@ -3306,7 +3306,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1375);
+      expect(clauses).toHaveLength(1378);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3361,12 +3361,32 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // X-ray Vision risk effect becomes an exact source-backed adjudication
       // (engine-pending -> adjudicated): final counts are 358 adjudicated,
       // 797 pending, and 219 green.
+      // eshyra-olc5.9.2: the three normal-casting-time spell clauses are
+      // adjudicated (+3). The Orb scrying clause carries only its own
+      // 'scrying (3 charges)' span, so the shared Orb activation sentence keeps
+      // its triage clause governing all five casts: final counts are 361
+      // adjudicated, 797 pending, and 219 green. No readiness status moves.
       expect(counts).toEqual({
-        'adjudicated-by-design': 358,
+        'adjudicated-by-design': 361,
         'design-blocked': 1,
         'engine-pending': 797,
         green: 219,
       });
+      // The shared Orb spell sentence stays governed by one triage clause for
+      // every cast it prints (cloud review r2 of PR #661, S1).
+      const orbShared = clauses.find(
+        ({ clauseId }) =>
+          clauseId ===
+          'magic-item:orb-of-dragonkind/triage-activation-cast-cure-wounds-0',
+      );
+      for (const operation of [
+        'cast-cure-wounds',
+        'cast-daylight',
+        'cast-death-ward',
+        'cast-scrying',
+        'cast-detect-magic',
+      ])
+        expect(JSON.stringify(orbShared?.representation)).toContain(operation);
       const pending = clauses.filter(
         ({ readiness }) => readiness === 'engine-pending',
       );
