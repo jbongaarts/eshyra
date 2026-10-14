@@ -87,12 +87,30 @@ const activationCensus = JSON.parse(
   operation: string;
   cost: string | null;
   equipment: unknown;
-  costSentence: string | null;
+  costSentence: string | string[] | null;
   equipmentSentences: string[];
   noneReason: { cost: string | null; equipment: string | null };
 }[];
 const operations = (scope: Scope): Obj[] =>
   (scope.mechanics.operations as Obj[] | undefined) ?? [];
+const costRow = (scope: string, operation: string) => {
+  const row = activationCensus.find(
+    (entry) => entry.scope === scope && entry.operation === operation,
+  );
+  if (row === undefined)
+    throw new Error(`no activation census row ${scope}/${operation}`);
+  return row;
+};
+
+// Pipes of the Sewers first states the required action used to play the pipes,
+// then separately assigns the swarm-calling operation its bonus action. Both
+// costs govern this one operation, so both printed tokens are legitimate.
+const DUAL_COST_SENTENCE_ALLOWLIST = new Map<string, string>([
+  [
+    'Pipes of the Sewers/call-rat-swarms',
+    'The action is the playing prerequisite; the operation itself costs a bonus action.',
+  ],
+]);
 
 describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)', () => {
   it('matches the activation census for every parent and variant operation', () => {
@@ -119,11 +137,19 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
         { cost: row.cost, equipment: row.equipment },
         `${row.scope}/${row.operation}`,
       ).toEqual({ cost: expected?.cost, equipment: expected?.equipment });
-      if (expected?.cost !== null)
-        expect(description(row.scope.split('::')[0] as string)).toContain(
-          expected?.costSentence,
-        );
-      else expect(expected?.noneReason.cost).toBeTruthy();
+      if (expected?.cost !== null) {
+        const sentences = Array.isArray(expected?.costSentence)
+          ? expected.costSentence
+          : [expected?.costSentence as string];
+        expect(
+          sentences.length,
+          `${row.scope}/${row.operation}`,
+        ).toBeGreaterThan(0);
+        for (const sentence of sentences)
+          expect(description(row.scope.split('::')[0] as string)).toContain(
+            sentence,
+          );
+      } else expect(expected?.noneReason.cost).toBeTruthy();
       if (expected?.equipment !== null) {
         expect(expected?.equipmentSentences.length).toBeGreaterThan(0);
         for (const sentence of expected?.equipmentSentences ?? [])
@@ -133,6 +159,95 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
       } else expect(expected?.noneReason.equipment).toBeTruthy();
     }
     expect(censusByKey.get('Winged Boots/fly')?.equipment).toEqual([['worn']]);
+  });
+
+  it('keeps every typed cost citation free of contradictory printed costs', () => {
+    const tokenCosts = (sentence: string): Set<string> => {
+      const lower = sentence.toLowerCase();
+      const costs = new Set<string>();
+      if (/\bbonus action\b/.test(lower)) costs.add('bonus-action');
+      if (/\breaction\b/.test(lower)) costs.add('reaction');
+      if (/\bno action required\b|\bwithout using an action\b/.test(lower))
+        costs.add('free');
+      if (/(?<!bonus )\baction\b/.test(lower) && !costs.has('free'))
+        costs.add('action');
+      return costs;
+    };
+
+    for (const row of activationCensus) {
+      if (row.cost === null || row.cost === 'consume') continue;
+      const label = `${row.scope}/${row.operation}`;
+      const sentences = Array.isArray(row.costSentence)
+        ? row.costSentence
+        : [row.costSentence ?? ''];
+      expect(sentences.length, label).toBeGreaterThan(0);
+      for (const sentence of sentences) {
+        expect(sentence, label).toBeTruthy();
+        const printedCosts = tokenCosts(sentence);
+        expect(printedCosts.has(row.cost), label).toBe(true);
+        if (printedCosts.size > 1) {
+          // Every mixed-cost exception must name its allowed cost and explain
+          // why both printed costs govern this operation.
+          expect(DUAL_COST_SENTENCE_ALLOWLIST.has(label), label).toBe(true);
+          expect(
+            DUAL_COST_SENTENCE_ALLOWLIST.get(label),
+            `${label} allowlist rationale`,
+          ).toBeTruthy();
+        } else {
+          expect(printedCosts, label).toEqual(new Set([row.cost]));
+        }
+      }
+    }
+  });
+
+  it('binds representative costs to the operation and variant that print them', () => {
+    const expected = [
+      [
+        'Luck Blade',
+        'cast-wish',
+        'Wish. The sword has 1d4 – 1 charges. While holding it, you can use an action to expend 1 charge and cast the wish spell from it.',
+      ],
+      [
+        'Rod of Lordly Might',
+        'terrify',
+        'Terrify. While holding the rod, you can use an action to force each creature you can see within 30 feet of you to make a DC 17 Wisdom saving throw.',
+      ],
+      [
+        'Eversmoking Bottle',
+        'close-bottle',
+        'Closing the bottle requires you to speak its command word as an action.',
+      ],
+      [
+        'Ring of the Ram',
+        'break-object',
+        'Alternatively, you can expend 1 to 3 of the ring’s charges as an action to try to break an object you can see within 60 feet of you that isn’t being worn or carried.',
+      ],
+      [
+        'Ioun Stone::Greater Absorption',
+        'm9-cancel-ioun-greater-absorption',
+        'While this marbled lavender and green ellipsoid orbits your head, you can use your reaction to cancel a spell of 8th level or lower cast by a creature you can see and targeting only you.',
+      ],
+      [
+        'Crystal Ball::Crystal Ball of Telepathy',
+        'cast-suggestion',
+        'You can also use an action to cast the suggestion spell (save DC 17) through the sensor on one of those creatures.',
+      ],
+    ] as const;
+
+    for (const [scope, operation, sentence] of expected) {
+      const row = costRow(scope, operation);
+      expect(row.costSentence, `${scope}/${operation}`).toBe(sentence);
+      expect(description(scope.split('::')[0] as string)).toContain(sentence);
+    }
+
+    expect(costRow('Feather Token', 'use-token').costSentence).toEqual([
+      'Anchor. You can use an action to touch the token to a boat or ship.',
+      'Bird. You can use an action to toss the token 5 feet into the air.',
+      'Fan. If you are on a boat or ship, you can use an action to toss the token up to 10 feet in the air.',
+      'Swan Boat. You can use an action to touch the token to a body of water at least 60 feet in diameter.',
+      'Tree. You must be outdoors to use this token. You can use an action to touch it to an unoccupied space on the ground.',
+      'Whip. You can use an action to throw the token to a point within 10 feet of you.',
+    ]);
   });
 
   it('types only cost, commandWord and equipment on every operation activation', () => {

@@ -16,7 +16,7 @@
     "operation": "end-animation",
     "cost": "bonus-action",
     "equipment": null,
-    "costSentence": "While holding this shield, you can speak its command word as a bonus action to cause it to animate.",
+    "costSentence": "The shield remains animated for 1 minute, until you use a bonus action to end this effect, or until you are incapacitated or die, at which point the shield falls to the ground or into your hand if you have one free.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -246,7 +246,7 @@
     "operation": "move-force-sphere",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to throw the bead up to 60 feet.",
+    "costSentence": "An enclosed creature can use its action to push against the sphere’s wall, moving the sphere up to half the creature’s walking speed.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -559,7 +559,7 @@
     "operation": "cast-suggestion",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to cast the detect thoughts spell (save DC 17) while you are scrying with the crystal ball, targeting creatures you can see within 30 feet of the spell’s sensor.",
+    "costSentence": "You can also use an action to cast the suggestion spell (save DC 17) through the sensor on one of those creatures.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -667,7 +667,7 @@
     "operation": "cast-plane-shift",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to press one side of the cube to cast the gate spell with it, opening a portal to the plane keyed to that side.",
+    "costSentence": "Alternatively, if you use an action to press one side twice, you can cast the plane shift spell (save DC 17) with the cube and transport the targets to the plane keyed to that side.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -715,7 +715,7 @@
     "operation": "launch-sword",
     "cost": "bonus-action",
     "equipment": null,
-    "costSentence": "You can use a bonus action to toss this magic sword into the air and speak the command word.",
+    "costSentence": "While the sword hovers, you can use a bonus action to cause it to fly up to 30 feet to another spot within 30 feet of you.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -787,7 +787,7 @@
     "operation": "designated-remove",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to place these shackles on an incapacitated creature.",
+    "costSentence": "You and any creature you designate when you use the shackles can use an action to remove them.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -835,7 +835,7 @@
     "operation": "smash-pellet",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to sprinkle a pinch of it over water.",
+    "costSentence": "Someone can use an action to smash the pellet against a hard surface, causing the pellet to shatter and release the water the dust absorbed.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -919,7 +919,7 @@
     "operation": "close-bottle",
     "cost": "action",
     "equipment": null,
-    "costSentence": "When you use an action to remove the stopper, a cloud of thick smoke pours out in a 60-foot radius from the bottle.",
+    "costSentence": "Closing the bottle requires you to speak its command word as an action.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -969,7 +969,7 @@
     "operation": "use-bird",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to touch the token to a boat or ship.",
+    "costSentence": "Bird. You can use an action to toss the token 5 feet into the air.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -981,7 +981,7 @@
     "operation": "use-fan",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to touch the token to a boat or ship.",
+    "costSentence": "Fan. If you are on a boat or ship, you can use an action to toss the token up to 10 feet in the air.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -993,7 +993,7 @@
     "operation": "use-swan-boat",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to touch the token to a boat or ship.",
+    "costSentence": "Swan Boat. You can use an action to touch the token to a body of water at least 60 feet in diameter.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1005,7 +1005,14 @@
     "operation": "use-token",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to touch the token to a boat or ship.",
+    "costSentence": [
+      "Anchor. You can use an action to touch the token to a boat or ship.",
+      "Bird. You can use an action to toss the token 5 feet into the air.",
+      "Fan. If you are on a boat or ship, you can use an action to toss the token up to 10 feet in the air.",
+      "Swan Boat. You can use an action to touch the token to a body of water at least 60 feet in diameter.",
+      "Tree. You must be outdoors to use this token. You can use an action to touch it to an unoccupied space on the ground.",
+      "Whip. You can use an action to throw the token to a point within 10 feet of you."
+    ],
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1017,7 +1024,7 @@
     "operation": "use-tree",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to touch the token to a boat or ship.",
+    "costSentence": "Tree. You must be outdoors to use this token. You can use an action to touch it to an unoccupied space on the ground.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1029,7 +1036,7 @@
     "operation": "use-whip",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to touch the token to a boat or ship.",
+    "costSentence": "Whip. You can use an action to throw the token to a point within 10 feet of you.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1053,7 +1060,7 @@
     "operation": "extinguish-flames",
     "cost": "bonus-action",
     "equipment": null,
-    "costSentence": "You can use a bonus action to speak this magic sword’s command word, causing flames to erupt from the blade.",
+    "costSentence": "The flames last until you use a bonus action to speak the command word again or until you drop or sheathe the sword.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1337,7 +1344,7 @@
     "operation": "ignite-weapon",
     "cost": "action",
     "equipment": [["worn"]],
-    "costSentence": "You gain the following benefits while wearing it: • You can use an action to cast one of the following spells (save DC 18), using one of the helm’s gems of the specified type as a component: daylight (opal), fireball (fire opal), prismatic spray (diamond), or wall of fire (ruby).",
+    "costSentence": "As long as the helm has at least one fire opal, you can use an action and speak a command word to cause one weapon you are holding to burst into flames.",
     "equipmentSentences": [
       "You gain the following benefits while wearing it: • You can use an action to cast one of the following spells (save DC 18), using one of the helm’s gems of the specified type as a component: daylight (opal), fireball (fire opal), prismatic spray (diamond), or wall of fire (ruby).",
       "Roll a d20 if you are wearing the helm and take fire damage as a result of failing a saving throw against a spell."
@@ -1380,7 +1387,7 @@
     "operation": "cast-suggestion",
     "cost": "action",
     "equipment": null,
-    "costSentence": "While wearing this helm, you can use an action to cast the detect thoughts spell (save DC 13) from it.",
+    "costSentence": "While focusing on a creature with detect thoughts, you can use an action to cast the suggestion spell (save DC 13) from the helm on that creature.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1466,7 +1473,7 @@
     "operation": "release-rod",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to press the button, which causes the rod to become magically fixed in place.",
+    "costSentence": "Until you or another creature uses an action to push the button again, the rod doesn’t move, even if it is defying gravity.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1490,7 +1497,7 @@
     "operation": "dismiss-fortress",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to place this 1-inch metal cube on the ground and speak its command word.",
+    "costSentence": "The cube rapidly grows into a fortress that remains until you use an action to speak the command word that dismisses it, which works only if the fortress is empty.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1502,7 +1509,7 @@
     "operation": "grab-orbiting-stone",
     "cost": "action",
     "equipment": null,
-    "costSentence": "When you use an action to toss one of these stones into the air, the stone orbits your head at a distance of 1d3 feet and confers a benefit to you.",
+    "costSentence": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1514,7 +1521,7 @@
     "operation": "seize-and-stow",
     "cost": "action",
     "equipment": null,
-    "costSentence": "When you use an action to toss one of these stones into the air, the stone orbits your head at a distance of 1d3 feet and confers a benefit to you.",
+    "costSentence": "You can use an action to seize and stow the stone, ending its effect.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1550,7 +1557,7 @@
     "operation": "m9-cancel-ioun-greater-absorption",
     "cost": "reaction",
     "equipment": null,
-    "costSentence": "While this pale lavender ellipsoid orbits your head, you can use your reaction to cancel a spell of 4th level or lower cast by a creature you can see and targeting only you.",
+    "costSentence": "While this marbled lavender and green ellipsoid orbits your head, you can use your reaction to cancel a spell of 8th level or lower cast by a creature you can see and targeting only you.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1586,7 +1593,7 @@
     "operation": "break-bands",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to speak the command word and throw the sphere at a Huge or smaller creature you can see within 60 feet of you.",
+    "costSentence": "A creature, including the one restrained, can use an action to make a DC 20 Strength check to break the iron bands.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1634,7 +1641,7 @@
     "operation": "cast-wish",
     "cost": "action",
     "equipment": [["held"]],
-    "costSentence": "If the sword is on your person, you can call on its luck (no action required) to reroll one attack roll, ability check, or saving throw you dislike.",
+    "costSentence": "Wish. The sword has 1d4 – 1 charges. While holding it, you can use an action to expend 1 charge and cast the wish spell from it.",
     "equipmentSentences": [
       "While holding it, you can use an action to expend 1 charge and cast the wish spell from it."
     ],
@@ -1725,7 +1732,7 @@
     "operation": "paint",
     "cost": "consume",
     "equipment": null,
-    "costSentence": "Typically found in 1d4 pots inside a fine wooden box with a brush (weighing 1 pound in total), these pigments allow you to create three-dimensional objects by painting them in two dimensions.",
+    "costSentence": "The paint flows from the brush to form the desired object as you concentrate on its image.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1871,7 +1878,7 @@
     "operation": "cast-cure-wounds",
     "cost": "action",
     "equipment": null,
-    "costSentence": "While attuned to an orb, you can use an action to peer into the orb’s depths and speak its command word.",
+    "costSentence": "If you control the orb, you can use an action and expend 1 or more charges to cast one of the following spells (save DC 18) from it: cure wounds (5th-level version, 3 charges), daylight (1 charge), death ward (2 charges), or scrying (3 charges).",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1883,7 +1890,7 @@
     "operation": "cast-daylight",
     "cost": "action",
     "equipment": null,
-    "costSentence": "While attuned to an orb, you can use an action to peer into the orb’s depths and speak its command word.",
+    "costSentence": "If you control the orb, you can use an action and expend 1 or more charges to cast one of the following spells (save DC 18) from it: cure wounds (5th-level version, 3 charges), daylight (1 charge), death ward (2 charges), or scrying (3 charges).",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1895,7 +1902,7 @@
     "operation": "cast-death-ward",
     "cost": "action",
     "equipment": null,
-    "costSentence": "While attuned to an orb, you can use an action to peer into the orb’s depths and speak its command word.",
+    "costSentence": "If you control the orb, you can use an action and expend 1 or more charges to cast one of the following spells (save DC 18) from it: cure wounds (5th-level version, 3 charges), daylight (1 charge), death ward (2 charges), or scrying (3 charges).",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1907,7 +1914,7 @@
     "operation": "cast-detect-magic",
     "cost": "action",
     "equipment": null,
-    "costSentence": "While attuned to an orb, you can use an action to peer into the orb’s depths and speak its command word.",
+    "costSentence": "You can also use an action to cast the detect magic spell from the orb without using any charges.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -1919,7 +1926,7 @@
     "operation": "cast-scrying",
     "cost": "action",
     "equipment": null,
-    "costSentence": "While attuned to an orb, you can use an action to peer into the orb’s depths and speak its command word.",
+    "costSentence": "If you control the orb, you can use an action and expend 1 or more charges to cast one of the following spells (save DC 18) from it: cure wounds (5th-level version, 3 charges), daylight (1 charge), death ward (2 charges), or scrying (3 charges).",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -2605,7 +2612,7 @@
     "operation": "cast-faerie-fire",
     "cost": "action",
     "equipment": null,
-    "costSentence": "Casting either spell from the ring requires an action.",
+    "costSentence": "Faerie Fire. You can expend 1 charge as an action to cast faerie fire from the ring.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -2631,7 +2638,7 @@
     "operation": "create-ball-lightning",
     "cost": "action",
     "equipment": null,
-    "costSentence": "Casting either spell from the ring requires an action.",
+    "costSentence": "Ball Lightning. You can expend 2 charges as an action to create one to four 3-foot-diameter spheres of lightning.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -2655,7 +2662,7 @@
     "operation": "launch-shooting-stars",
     "cost": "action",
     "equipment": null,
-    "costSentence": "Casting either spell from the ring requires an action.",
+    "costSentence": "Shooting Stars. You can expend 1 to 3 charges as an action.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -2734,7 +2741,7 @@
     "operation": "break-object",
     "cost": "action",
     "equipment": null,
-    "costSentence": "While wearing the ring, you can use an action to expend 1 to 3 of its charges to attack one creature you can see within 60 feet of you.",
+    "costSentence": "Alternatively, you can expend 1 to 3 of the ring’s charges as an action to try to break an object you can see within 60 feet of you that isn’t being worn or carried.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -2862,7 +2869,7 @@
     "operation": "activate-protective-aura",
     "cost": "action",
     "equipment": null,
-    "costSentence": "While holding the rod, you can use an action to cast one of the following spells from it: detect evil and good, detect magic, detect poison and disease, or see invisibility.",
+    "costSentence": "Protective Aura. As an action, you can plant the haft end of the rod in the ground, whereupon the rod’s head sheds bright light in a 60-foot radius and dim light for an additional 60 feet.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -2934,7 +2941,7 @@
     "operation": "pull-rod",
     "cost": "action",
     "equipment": null,
-    "costSentence": "While holding the rod, you can use an action to cast one of the following spells from it: detect evil and good, detect magic, detect poison and disease, or see invisibility.",
+    "costSentence": "The rod’s head stops glowing and the effect ends after 10 minutes, or when a creature uses an action to pull the rod from the ground.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -3042,7 +3049,7 @@
     "operation": "terrify",
     "cost": "action",
     "equipment": [["held"]],
-    "costSentence": "You can press one of the rod’s six buttons as a bonus action.",
+    "costSentence": "Terrify. While holding the rod, you can use an action to force each creature you can see within 30 feet of you to make a DC 17 Wisdom saving throw.",
     "equipmentSentences": [
       "While holding the rod, you can use an action to force each creature you can see within 30 feet of you to make a DC 17 Wisdom saving throw."
     ],
@@ -3147,7 +3154,7 @@
     "operation": "escape-rope",
     "cost": "action",
     "equipment": null,
-    "costSentence": "If you hold one end of the rope and use an action to speak its command word, the other end darts forward to entangle a creature you can see within 20 feet of you.",
+    "costSentence": "A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice).",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -3197,7 +3204,7 @@
     "operation": "cast-spell",
     "cost": "consume",
     "equipment": null,
-    "costSentence": "A spell scroll bears the words of a single spell, written in a mystical cipher.",
+    "costSentence": "Once the spell is cast, the words on the scroll fade, and it crumbles to dust.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -3209,7 +3216,7 @@
     "operation": "copy-spell",
     "cost": "consume",
     "equipment": null,
-    "costSentence": "A spell scroll bears the words of a single spell, written in a mystical cipher.",
+    "costSentence": "When a spell is copied from a spell scroll, the copier must succeed on an Intelligence (Arcana) check with a DC equal to 10 + the spell’s level. If the check succeeds, the spell is successfully copied. Whether the check succeeds or fails, the spell scroll is destroyed.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -3677,7 +3684,7 @@
     "operation": "create-insect-cloud",
     "cost": "action",
     "equipment": [["held"]],
-    "costSentence": "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC: giant insect (4 charges) or insect plague (5 charges).",
+    "costSentence": "Insect Cloud. While holding the staff, you can use an action and expend 1 charge to cause a swarm of harmless flying insects to spread out in a 30-foot radius from you.",
     "equipmentSentences": [
       "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC: giant insect (4 charges) or insect plague (5 charges).",
       "While holding the staff, you can use an action and expend 1 charge to cause a swarm of harmless flying insects to spread out in a 30-foot radius from you."
@@ -3692,7 +3699,7 @@
     "operation": "cast-arcane-lock",
     "cost": "action",
     "equipment": [["held"]],
-    "costSentence": "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges).",
+    "costSentence": "You can also use an action to cast one of the following spells from the staff without using any charges: arcane lock, detect magic, enlarge/reduce, light, mage hand, or protection from evil and good.",
     "equipmentSentences": [
       "While you hold it, you gain a +2 bonus to spell attack rolls.",
       "While holding the staff, you have advantage on saving throws against spells.",
@@ -3724,7 +3731,7 @@
     "operation": "cast-detect-magic",
     "cost": "action",
     "equipment": [["held"]],
-    "costSentence": "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges).",
+    "costSentence": "You can also use an action to cast one of the following spells from the staff without using any charges: arcane lock, detect magic, enlarge/reduce, light, mage hand, or protection from evil and good.",
     "equipmentSentences": [
       "While you hold it, you gain a +2 bonus to spell attack rolls.",
       "While holding the staff, you have advantage on saving throws against spells.",
@@ -3756,7 +3763,7 @@
     "operation": "cast-enlarge-reduce",
     "cost": "action",
     "equipment": [["held"]],
-    "costSentence": "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges).",
+    "costSentence": "You can also use an action to cast one of the following spells from the staff without using any charges: arcane lock, detect magic, enlarge/reduce, light, mage hand, or protection from evil and good.",
     "equipmentSentences": [
       "While you hold it, you gain a +2 bonus to spell attack rolls.",
       "While holding the staff, you have advantage on saving throws against spells.",
@@ -3852,7 +3859,7 @@
     "operation": "cast-light",
     "cost": "action",
     "equipment": [["held"]],
-    "costSentence": "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges).",
+    "costSentence": "You can also use an action to cast one of the following spells from the staff without using any charges: arcane lock, detect magic, enlarge/reduce, light, mage hand, or protection from evil and good.",
     "equipmentSentences": [
       "While you hold it, you gain a +2 bonus to spell attack rolls.",
       "While holding the staff, you have advantage on saving throws against spells.",
@@ -3884,7 +3891,7 @@
     "operation": "cast-mage-hand",
     "cost": "action",
     "equipment": [["held"]],
-    "costSentence": "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges).",
+    "costSentence": "You can also use an action to cast one of the following spells from the staff without using any charges: arcane lock, detect magic, enlarge/reduce, light, mage hand, or protection from evil and good.",
     "equipmentSentences": [
       "While you hold it, you gain a +2 bonus to spell attack rolls.",
       "While holding the staff, you have advantage on saving throws against spells.",
@@ -3932,7 +3939,7 @@
     "operation": "cast-protection-from-evil-and-good",
     "cost": "action",
     "equipment": [["held"]],
-    "costSentence": "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges).",
+    "costSentence": "You can also use an action to cast one of the following spells from the staff without using any charges: arcane lock, detect magic, enlarge/reduce, light, mage hand, or protection from evil and good.",
     "equipmentSentences": [
       "While you hold it, you gain a +2 bonus to spell attack rolls.",
       "While holding the staff, you have advantage on saving throws against spells.",
@@ -4084,7 +4091,7 @@
     "operation": "cast-pass-without-trace",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to expend 1 or more of the staff’s charges to cast one of the following spells from it, using your spell save DC: animal friendship (1 charge), awaken (5 charges), barkskin (2 charges), locate animals or plants (2 charges), speak with animals (1 charge), speak with plants (3 charges), or wall of thorns (6 charges).",
+    "costSentence": "You can also use an action to cast the pass without trace spell from the staff without using any charges.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -4132,7 +4139,7 @@
     "operation": "return-from-tree",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to expend 1 or more of the staff’s charges to cast one of the following spells from it, using your spell save DC: animal friendship (1 charge), awaken (5 charges), barkskin (2 charges), locate animals or plants (2 charges), speak with animals (1 charge), speak with plants (3 charges), or wall of thorns (6 charges).",
+    "costSentence": "While touching the tree and using another action to speak its command word, you return the staff to its normal form.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -4144,7 +4151,7 @@
     "operation": "tree-form",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to expend 1 or more of the staff’s charges to cast one of the following spells from it, using your spell save DC: animal friendship (1 charge), awaken (5 charges), barkskin (2 charges), locate animals or plants (2 charges), speak with animals (1 charge), speak with plants (3 charges), or wall of thorns (6 charges).",
+    "costSentence": "Tree Form. You can use an action to plant one end of the staff in fertile earth and expend 1 charge to transform the staff into a healthy tree.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -4168,7 +4175,7 @@
     "operation": "lightning-strike",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to cause a bolt of lightning to leap from the staff’s tip in a line that is 5 feet wide and 120 feet long.",
+    "costSentence": "Lightning Strike. You can use an action to cause a bolt of lightning to leap from the staff’s tip in a line that is 5 feet wide and 120 feet long.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -4192,7 +4199,7 @@
     "operation": "thunder-and-lightning",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to cause a bolt of lightning to leap from the staff’s tip in a line that is 5 feet wide and 120 feet long.",
+    "costSentence": "Thunder and Lightning. You can use an action to use the Lightning Strike and Thunderclap properties at the same time.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -4204,7 +4211,7 @@
     "operation": "thunderclap",
     "cost": "action",
     "equipment": null,
-    "costSentence": "You can use an action to cause a bolt of lightning to leap from the staff’s tip in a line that is 5 feet wide and 120 feet long.",
+    "costSentence": "Thunderclap. You can use an action to cause the staff to issue a deafening thunderclap, audible out to 600 feet.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -4497,7 +4504,7 @@
     "operation": "cone-of-fear",
     "cost": "action",
     "equipment": [["held"]],
-    "costSentence": "While holding the wand, you can use an action to expend 1 charge and command another creature to flee or grovel, as with the command spell (save DC 15).",
+    "costSentence": "Cone of Fear. While holding the wand, you can use an action to expend 2 charges, causing the wand’s tip to emit a 60-foot cone of amber light.",
     "equipmentSentences": [
       "While holding the wand, you can use an action to expend 1 charge and command another creature to flee or grovel, as with the command spell (save DC 15).",
       "While holding the wand, you can use an action to expend 2 charges, causing the wand’s tip to emit a 60-foot cone of amber light."
@@ -4678,7 +4685,7 @@
     "operation": "dismiss-wings",
     "cost": "action",
     "equipment": null,
-    "costSentence": "While wearing this cloak, you can use an action to speak its command word.",
+    "costSentence": "This turns the cloak into a pair of bat wings or bird wings on your back for 1 hour or until you repeat the command word as an action.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
