@@ -123,6 +123,18 @@ const SPECS: ReadonlyMap<string, readonly AdjudicatedEffectSpec[]> = new Map([
     ],
   ],
   [
+    'Ring of X-ray Vision',
+    [
+      {
+        kind: 'withhold',
+        effectId: 'c2-residual-xray-exhaustion',
+        sourceText:
+          'Whenever you use the ring again before taking a long rest, you must succeed on a DC 15 Constitution saving throw or gain one level of exhaustion.',
+        note: 'The safe-use counter permits reuse after its one risk-free use; the printed save and exhaustion risk remain with the DM, as required by the soft-limit cost contract.',
+      },
+    ],
+  ],
+  [
     'Nine Lives Stealer',
     [
       {

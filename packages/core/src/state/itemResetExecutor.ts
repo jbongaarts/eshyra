@@ -10,6 +10,7 @@ import {
   destroyInventoryItem,
 } from './inventoryLifecycle.js';
 import {
+  applyCooldownAnchorToState,
   type ItemInstanceState,
   readItemState,
   resolveEconomyMax,
@@ -854,11 +855,27 @@ function applyDueTimer(
     throw new ItemResetExecutorError(
       `${item.packRef} instance '${item.row.id}' state '${timer.to}' declares a timer that expires no later than the transition that entered it`,
     );
-  const nextState = validatedState(item, {
+  let nextState = validatedState(item, {
     ...state,
     machineState: String(timer.to),
     pendingTimers: [...remainingTimers, ...scheduled],
   });
+  try {
+    nextState = validatedState(
+      item,
+      applyCooldownAnchorToState(
+        nextState,
+        (item.mechanics.economies ?? {}) as Obj,
+        item.packRef,
+        { event: 'state-entered', stateId: String(timer.to) },
+        timer.deadlineElapsedMinutes,
+        ctx.rng,
+      ).state,
+    );
+  } catch (error) {
+    if (error instanceof Error) throw new ItemResetExecutorError(error.message);
+    throw error;
+  }
   const evidence: ItemTimerResolutionEvidence = {
     instanceId: item.row.id,
     packRef: item.packRef,

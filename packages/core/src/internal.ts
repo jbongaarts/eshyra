@@ -1760,12 +1760,16 @@ export {
   resolveRestEventItemResets,
 } from './state/itemResetExecutor.js';
 export type {
+  ItemCooldownAnchorEvent,
+  ItemCooldownAnchorEvidence,
   ItemEconomyState,
   ItemInstanceState,
   UseItemInput,
   UseItemResult,
 } from './state/itemState.js';
 export {
+  applyCooldownAnchorToState,
+  applyItemCooldownAnchorEvent,
   createInitialItemState,
   declaredItemOperationIds,
   deriveItemOperationReadinessInput,

@@ -1699,13 +1699,14 @@ describe('spellStore costs and per-instance economies (review 19.4.6.3 S3, S4)',
 
 describe('runtime safety across the whole corpus', () => {
   // The preflight ("green") operation set over every item x variant x operation
-  // id, pinned. It is identical before and after eshyra-o9bd.19.4.6.2 and
-  // eshyra-o9bd.19.4.6.1; a change here is a runtime-behavior change that must
-  // be source-required and reported.
+  // id, pinned. The four olc5.8 additions are source-required; each operation's
+  // behavior outside the landed economy is carried by an explicit adjudicated
+  // clause.
   const READY = [
     'Ammunition, +1, +2, or +3||hit-target',
     'Boots of Levitation||cast-levitate',
     'Candle of Invocation||burn',
+    'Frost Brand||extinguish-flames',
     ...[
       'absorption',
       'agility',
@@ -1723,7 +1724,10 @@ describe('runtime safety across the whole corpus', () => {
       'sustenance',
     ].map((variant) => `Ioun Stone|${variant}|grab-orbiting-stone`),
     'Ring of Shooting Stars||discharge-ball-lightning',
+    'Ring of X-ray Vision||activate-x-ray-vision',
+    'Rod of Security||enter-paradise',
     'Rope of Entanglement||escape-rope',
+    'Well of Many Worlds||open-portal',
   ].sort();
 
   it('keeps the executable operation set identical', () => {

@@ -343,11 +343,37 @@ export function magicItemEngineHookKey(binding: EngineHookBinding): string {
  * `createInitialItemState` (total duration -> exact declared-increment units)
  * and `useItem` (validated increment cost -> persisted decrement and depletion
  * handling).
+ * `elapsed-time cooldown reset` is implemented by useItem scheduling from the
+ * spend time and the reset executor restoring the economy at its deadline.
+ * `state-anchored cooldown reset` is implemented by state transitions calling
+ * the anchor scheduler at the transition boundary.
+ * Grant-ended anchors remain staged for olc5.12, which owns grant lifecycle
+ * events and must call applyItemCooldownAnchorEvent when a grant ends.
+ * The long-rest and dawn hooks own both the soft-limit spend rule (exhausted
+ * uses remain permitted without spending) and the matching reset that restores
+ * the safe use.
  */
 export const LANDED_MAGIC_ITEM_ENGINE_HOOKS: ReadonlySet<string> = new Set([
   magicItemEngineHookKey({
     engine: 'F5',
     hook: 'duration-budget accounting',
+  }),
+  // useItem schedules at spend; the reset executor restores at that deadline.
+  magicItemEngineHookKey({ engine: 'F5', hook: 'elapsed-time cooldown reset' }),
+  // State transitions schedule depleted economies at their entered boundary.
+  magicItemEngineHookKey({
+    engine: 'F5',
+    hook: 'state-anchored cooldown reset',
+  }),
+  // Exhausted safe-use pools remain usable; long rest restores the safe use.
+  magicItemEngineHookKey({
+    engine: 'F7',
+    hook: 'long-rest reset and early-reuse gate',
+  }),
+  // Exhausted safe-use pools remain usable; dawn restores the safe use.
+  magicItemEngineHookKey({
+    engine: 'F5',
+    hook: 'dawn reset with nonblocking early-reuse risk',
   }),
 ]);
 

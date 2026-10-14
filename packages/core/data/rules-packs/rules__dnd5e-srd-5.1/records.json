@@ -100918,14 +100918,14 @@
             "engineHooks": [
               {
                 "engine": "F5",
-                "hook": "elapsed-time cooldown reset"
+                "hook": "grant-anchored cooldown reset"
               }
             ],
             "readiness": "engine-pending",
             "missingHooks": [
               {
                 "engine": "F5",
-                "hook": "elapsed-time cooldown reset"
+                "hook": "grant-anchored cooldown reset"
               }
             ],
             "missingEngines": [
@@ -103855,16 +103855,7 @@
                 "hook": "elapsed-time cooldown reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "elapsed-time cooldown reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:frost-brand/c2-static-frost-brand-fire",
@@ -108156,16 +108147,7 @@
                 "hook": "elapsed-time cooldown reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "elapsed-time cooldown reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:horn-of-valhalla/m4-horn-of-valhalla",
@@ -120602,14 +120584,14 @@
             "engineHooks": [
               {
                 "engine": "F5",
-                "hook": "elapsed-time cooldown reset"
+                "hook": "grant-anchored cooldown reset"
               }
             ],
             "readiness": "engine-pending",
             "missingHooks": [
               {
                 "engine": "F5",
-                "hook": "elapsed-time cooldown reset"
+                "hook": "grant-anchored cooldown reset"
               }
             ],
             "missingEngines": [
@@ -126770,17 +126752,6 @@
         ],
         "effects": [
           {
-            "id": "c2-residual-xray-exhaustion",
-            "kind": "triggeredEffect",
-            "trigger": "ring is reused before long rest",
-            "result": "resolve save and exhaustion",
-            "save": {
-              "ability": "constitution",
-              "dc": 15
-            },
-            "failedSaveCondition": "one exhaustion level"
-          },
-          {
             "kind": "sense",
             "sense": "x-ray-vision",
             "rangeFeet": 30,
@@ -126810,16 +126781,7 @@
                 "hook": "long-rest reset and early-reuse gate"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F7",
-                "hook": "long-rest reset and early-reuse gate"
-              }
-            ],
-            "missingEngines": [
-              "F7"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-x-ray-vision/c2-residual-xray-exhaustion",
@@ -126827,44 +126789,13 @@
               "kind": "parent"
             },
             "tag": "C2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "c2-residual-xray-exhaustion"
+              "adjudicated": true,
+              "note": "The safe-use counter permits reuse after its one risk-free use; the printed save and exhaustion risk remain with the DM, as required by the soft-limit cost contract.",
+              "sourceText": "Whenever you use the ring again before taking a long rest, you must succeed on a DC 15 Constitution saving throw or gain one level of exhaustion."
             },
-            "engineHooks": [
-              {
-                "engine": "F1",
-                "hook": "condition and eligibility relations"
-              },
-              {
-                "engine": "F8",
-                "hook": "roll mode and targeting modifiers"
-              },
-              {
-                "engine": "F9",
-                "hook": "damage, range, cover, and forced movement"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F1",
-                "hook": "condition and eligibility relations"
-              },
-              {
-                "engine": "F8",
-                "hook": "roll mode and targeting modifiers"
-              },
-              {
-                "engine": "F9",
-                "hook": "damage, range, cover, and forced movement"
-              }
-            ],
-            "missingEngines": [
-              "F1",
-              "F8",
-              "F9"
-            ]
+            "reason": "The safe-use counter permits reuse after its one risk-free use; the printed save and exhaustion risk remain with the DM, as required by the soft-limit cost contract."
           },
           {
             "clauseId": "magic-item:ring-of-x-ray-vision/m3-ring-of-x-ray-vision-sense-x-ray-vision",
@@ -130140,16 +130071,7 @@
                 "hook": "elapsed-time cooldown reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "elapsed-time cooldown reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:rod-of-security/m6-rod-of-security",
@@ -147370,16 +147292,7 @@
                 "hook": "elapsed-time cooldown reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "elapsed-time cooldown reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:well-of-many-worlds/m6-well-of-many-worlds",
@@ -147513,16 +147426,7 @@
                 "hook": "dawn reset with nonblocking early-reuse risk"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "dawn reset with nonblocking early-reuse risk"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:wind-fan/c2-effect-cast-gust-of-wind",
@@ -147958,19 +147862,10 @@
             "engineHooks": [
               {
                 "engine": "F5",
-                "hook": "elapsed-time cooldown reset"
+                "hook": "state-anchored cooldown reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "elapsed-time cooldown reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:wings-of-flying/m3-wings-of-flying-fly-speed",

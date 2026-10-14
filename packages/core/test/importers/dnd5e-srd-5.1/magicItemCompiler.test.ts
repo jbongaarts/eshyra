@@ -31,12 +31,36 @@ describe('magic-item compiler family aggregation', () => {
   });
 
   it('registers only reviewed, exact live-runtime hook contracts', () => {
-    expect([...LANDED_MAGIC_ITEM_ENGINE_HOOKS]).toEqual([
+    expect([...LANDED_MAGIC_ITEM_ENGINE_HOOKS].sort()).toEqual(
+      [
+        magicItemEngineHookKey({
+          engine: 'F5',
+          hook: 'duration-budget accounting',
+        }),
+        magicItemEngineHookKey({
+          engine: 'F5',
+          hook: 'elapsed-time cooldown reset',
+        }),
+        magicItemEngineHookKey({
+          engine: 'F5',
+          hook: 'state-anchored cooldown reset',
+        }),
+        magicItemEngineHookKey({
+          engine: 'F7',
+          hook: 'long-rest reset and early-reuse gate',
+        }),
+        magicItemEngineHookKey({
+          engine: 'F5',
+          hook: 'dawn reset with nonblocking early-reuse risk',
+        }),
+      ].sort(),
+    );
+    expect(LANDED_MAGIC_ITEM_ENGINE_HOOKS).not.toContain(
       magicItemEngineHookKey({
         engine: 'F5',
-        hook: 'duration-budget accounting',
+        hook: 'grant-anchored cooldown reset',
       }),
-    ]);
+    );
     expect(LANDED_MAGIC_ITEM_ENGINE_HOOKS).not.toContain(
       magicItemEngineHookKey({
         engine: 'F5',

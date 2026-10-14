@@ -1755,6 +1755,154 @@ function durationMinutesAtSpend(
   return minutes;
 }
 
+export type ItemCooldownAnchorEvent =
+  | { readonly event: 'state-entered'; readonly stateId: string }
+  | { readonly event: 'grant-ended'; readonly grantId: string };
+
+export interface ItemCooldownAnchorEvidence {
+  readonly economy: string;
+  readonly anchor: ItemCooldownAnchorEvent;
+  readonly availableAt: string;
+}
+
+export function applyCooldownAnchorToState(
+  state: ItemInstanceState,
+  economies: Obj,
+  packRef: string,
+  event: ItemCooldownAnchorEvent,
+  elapsedMinutes: number,
+  rng: Rng | undefined,
+  requireDeclaredAnchor = false,
+): { state: ItemInstanceState; evidence: ItemCooldownAnchorEvidence[] } {
+  const matching: [string, Obj][] = [];
+  for (const [economyId, raw] of Object.entries(economies)) {
+    const economy = obj(raw, `${packRef}.economies.${economyId}`);
+    if (economy.cooldown === undefined) continue;
+    const cooldown = obj(
+      economy.cooldown,
+      `${packRef}.economies.${economyId}.cooldown`,
+    );
+    if (cooldown.startsOn === undefined) continue;
+    const anchor = obj(
+      cooldown.startsOn,
+      `${packRef}.economies.${economyId}.cooldown.startsOn`,
+    );
+    if (
+      anchor.event === event.event &&
+      (event.event === 'state-entered'
+        ? anchor.stateId === event.stateId
+        : anchor.grantId === event.grantId)
+    )
+      matching.push([economyId, economy]);
+  }
+  if (matching.length === 0 && requireDeclaredAnchor)
+    throw new ItemStateError(
+      `${packRef} has no cooldown anchor for ${JSON.stringify(event)}`,
+    );
+  if (matching.length === 0) return { state, evidence: [] };
+  const nextEconomies = { ...(state.economies ?? {}) };
+  const evidence: ItemCooldownAnchorEvidence[] = [];
+  for (const [economyId, economy] of matching) {
+    if (economy.kind !== 'cooldown')
+      throw new ItemStateError(
+        `${packRef}.economies.${economyId} anchor requires kind 'cooldown'`,
+      );
+    const current = nextEconomies[economyId];
+    if (
+      current === undefined ||
+      current.remaining !== 0 ||
+      current.availableAt !== undefined
+    )
+      continue;
+    const cooldown = obj(
+      economy.cooldown,
+      `${packRef}.economies.${economyId}.cooldown`,
+    );
+    const availableAt =
+      elapsedMinutes +
+      durationMinutesAtSpend(cooldown.duration, packRef, economyId, rng);
+    if (!Number.isSafeInteger(availableAt))
+      throw new ItemStateError(
+        `${packRef} economy '${economyId}' cooldown anchor exceeds the safe elapsed-minute range`,
+      );
+    const value = String(availableAt);
+    nextEconomies[economyId] = { ...current, availableAt: value };
+    evidence.push({ economy: economyId, anchor: event, availableAt: value });
+  }
+  return {
+    state:
+      evidence.length === 0 ? state : { ...state, economies: nextEconomies },
+    evidence,
+  };
+}
+
+/** Schedule a spent, depleted, event-anchored economy at its printed event.
+ * Grant-ended callers are staged until olc5.12 integrates grant lifecycle. */
+export function applyItemCooldownAnchorEvent(
+  db: Db,
+  input: Pick<
+    UseItemInput,
+    | 'instanceId'
+    | 'resolveRulesPack'
+    | 'rng'
+    | 'provenance'
+    | 'sessionId'
+    | 'at'
+  > & {
+    readonly packRef: string;
+    readonly elapsedMinutes?: number;
+  },
+  event: ItemCooldownAnchorEvent,
+): readonly ItemCooldownAnchorEvidence[] {
+  return withTransaction(db, (txnDb) => {
+    const row = txnDb
+      .prepare('SELECT pack_ref, variant_id FROM inventory WHERE id = ?')
+      .get(input.instanceId) as
+      | { pack_ref: string | null; variant_id: string | null }
+      | undefined;
+    if (row === undefined || row.pack_ref !== input.packRef)
+      throw new ItemStateError(
+        `inventory item '${input.instanceId}' does not match packRef '${input.packRef}'`,
+      );
+    const hit = lookupStrictCampaignRecord(
+      txnDb,
+      'magic-item',
+      input.packRef,
+      input.resolveRulesPack,
+    );
+    if (hit === undefined)
+      throw new ItemStateError(
+        `item '${input.packRef}' does not resolve in the active campaign rules stack`,
+      );
+    const mechanics = effectiveMagicItemMechanics(
+      hit.record,
+      row.variant_id ?? undefined,
+    );
+    const economies = obj(
+      mechanics?.economies ?? {},
+      `${input.packRef}.mechanics.economies`,
+    );
+    const state = readItemState(txnDb, input.instanceId);
+    if (state === undefined)
+      throw new ItemStateError(`item '${input.instanceId}' has no live state`);
+    const elapsed = input.elapsedMinutes ?? elapsedNow(txnDb);
+    if (!Number.isSafeInteger(elapsed) || elapsed < 0)
+      throw new ItemStateError('cooldown anchor elapsed_minutes is malformed');
+    const applied = applyCooldownAnchorToState(
+      state,
+      economies,
+      input.packRef,
+      event,
+      elapsed,
+      input.rng,
+      true,
+    );
+    if (applied.evidence.length > 0)
+      writeItemState(txnDb, input.instanceId, applied.state, input);
+    return applied.evidence;
+  });
+}
+
 function scheduleEconomyAfterSpend(
   db: Db,
   packRef: string,
@@ -1763,6 +1911,13 @@ function scheduleEconomyAfterSpend(
   remaining: number,
   rng: Rng | undefined,
 ): string | undefined {
+  const cooldown =
+    economy.cooldown === undefined
+      ? undefined
+      : obj(economy.cooldown, `${packRef}.economies.${economyId}.cooldown`);
+  // Event-anchored cooldowns remain depleted until their matching lifecycle
+  // event explicitly schedules the wait.
+  if (cooldown?.startsOn !== undefined) return undefined;
   const resets = Array.isArray(economy.reset) ? economy.reset : [];
   const perPeriod = resets.filter(
     (entry) =>
@@ -2353,6 +2508,24 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
         variantId,
         { resolveTable },
       );
+      if (selectedTransition !== undefined) {
+        const anchored = applyCooldownAnchorToState(
+          state,
+          refs.economies,
+          packRef,
+          { event: 'state-entered', stateId: selectedTransition.nextState },
+          elapsedNow(txnDb),
+          input.rng,
+        );
+        if (anchored.evidence.length > 0)
+          state = validateItemStateForRecord(
+            anchored.state,
+            packRef,
+            hit.record,
+            variantId,
+            { resolveTable },
+          );
+      }
       if (destroyed && !deferredDestroyed) {
         attunementsEnded = destroyInventoryItem(
           txnDb,
