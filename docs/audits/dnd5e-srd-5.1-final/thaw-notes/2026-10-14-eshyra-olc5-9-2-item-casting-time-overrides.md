@@ -32,3 +32,7 @@ boundary inventory check passes at 1,853 rows.
 Updated `records.json` SHA-256:
 
 `b10703f817c04564ed2d838a3cd20ab75e52bc2283ad6496d42cfb716b3f3afd`
+
+## Review r2 repair (PR #661)
+
+The Orb of Dragonkind scrying clause now carries only its own `scrying (3 charges)` span. Its earlier full-sentence span duplicated the shared Orb spell sentence, and triage deduplication then dropped the clause that governs all five Orb casts. The shared clause (`triage-activation-cast-cure-wounds-0`) is restored, and the normal-casting-time note no longer claims the sentence prints only the charge use.

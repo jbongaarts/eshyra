@@ -30,7 +30,7 @@ import {
 const SPELL_CASTS_NOTE =
   'The printed text names no action cost for casting this spell from the item, so none is typed; the DM model applies the spell’s own casting time and the printed charge cost.';
 const ITEM_SPELL_NORMAL_CASTING_TIME_NOTE =
-  'The typed activation carries no action cost: rule:spells says an item spell uses its normal casting time, and this sentence prints only the charge use. The DM model interprets the printed text.';
+  'No action cost is typed for this spell: the sentence prints “use an action” to activate the item, but rule:spells says a spell cast from an item uses its normal casting time unless the item changes it, and this item does not. The DM model applies the spell’s casting time.';
 
 const ELEMENTAL_COMMAND_PLANES = [
   {
@@ -658,7 +658,9 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
         clause(
           'activation-cast-scrying',
           { operation: 'cast-scrying' },
-          'If you control the orb, you can use an action and expend 1 or more charges to cast one of the following spells (save DC 18) from it: cure wounds (5th-level version, 3 charges), daylight (1 charge), death ward (2 charges), or scrying (3 charges).',
+          // Narrow span: the full shared sentence stays in the triage clause
+          // that governs all five orb casts.
+          'scrying (3 charges)',
           ITEM_SPELL_NORMAL_CASTING_TIME_NOTE,
         ),
       ],
