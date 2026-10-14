@@ -22,9 +22,16 @@ import {
 } from '../rules/magicItemVariants.js';
 import type { RulesRecord } from '../rules/types.js';
 import {
+  ActionEconomyError,
+  spendTurnResource,
+  type TurnBudget,
+} from './actionEconomy.js';
+import {
   type CampaignRulesPackResolver,
+  lookupCampaignRecord,
   lookupStrictCampaignRecord,
 } from './campaignRecordLookup.js';
+import { getActiveCombatInstance } from './encounterCombatants.js';
 import {
   type DestroyedItemAttunementEvidence,
   destroyInventoryItem,
@@ -52,6 +59,11 @@ import {
   reconcileItemStateTimers,
   resolveItemStateTimers,
 } from './itemTimers.js';
+import {
+  ItemTurnResourceError,
+  type ItemTurnResourceNotSpentReason,
+  planItemTurnResource,
+} from './itemTurnResource.js';
 
 type Obj = Record<string, unknown>;
 
@@ -115,6 +127,38 @@ export interface UseItemInput {
   ) => void;
 }
 
+/**
+ * What `use_item` did with the acting character's turn budget (eshyra-olc5.9).
+ * Present only when the operation carries a typed activation cost or a bound
+ * spell. In structured combat the printed resource is already spent: the DM
+ * must NOT also call `spend_turn_resource` for it.
+ */
+export type UseItemTurnResource =
+  | {
+      readonly status: 'spent';
+      readonly resource: 'action' | 'bonus_action' | 'reaction';
+      /** Typed activation cost, or the bound spell's casting time when the
+       *  operation types no cost. */
+      readonly source: 'activation-cost' | 'spell-casting-time';
+      readonly activity: string;
+      readonly spellRef?: string;
+      readonly castingTimeOverride?: {
+        readonly spellRef: string;
+        readonly castingTime: string;
+      };
+      /** The effect offers a DM-selected spell list: the bonus-action-spell
+       *  rule for that cast is not enforced and stays a DM ruling. */
+      readonly spellSelectedByDm?: true;
+      readonly extraReactionRestriction?: string;
+      readonly budget: TurnBudget;
+    }
+  | {
+      readonly status: 'not-spent';
+      readonly reason: ItemTurnResourceNotSpentReason;
+      readonly spellRef?: string;
+      readonly castingTime?: string;
+    };
+
 export interface UseItemResult {
   readonly instanceId: string;
   readonly packRef: string;
@@ -124,6 +168,7 @@ export interface UseItemResult {
     readonly amount: number;
   }[];
   readonly effects: readonly unknown[];
+  readonly turnResource?: UseItemTurnResource;
   readonly transition?: {
     readonly from: string;
     readonly to: string;
@@ -2080,6 +2125,94 @@ function splitNonmagicalSingleUseInventory(
   });
 }
 
+function spendActivationTurnResource(
+  db: Db,
+  args: {
+    readonly input: UseItemInput;
+    readonly itemKey: string;
+    readonly itemName: string;
+    readonly operation: Obj;
+    readonly effects: readonly unknown[];
+  },
+): UseItemTurnResource | undefined {
+  const { input, operation } = args;
+  let plan: ReturnType<typeof planItemTurnResource>;
+  try {
+    plan = planItemTurnResource({
+      itemKey: args.itemKey,
+      operation,
+      effects: args.effects,
+      inCombat: getActiveCombatInstance(db, input.campaignId) !== undefined,
+      castingTimeOf: (spellRef) => {
+        const data = lookupCampaignRecord(
+          db,
+          'spell',
+          spellRef,
+          input.resolveRulesPack,
+        )?.data;
+        const castingTime =
+          typeof data === 'object' && data !== null
+            ? (data as Obj).castingTime
+            : undefined;
+        return typeof castingTime === 'string' ? castingTime : undefined;
+      },
+    });
+  } catch (error) {
+    if (error instanceof ItemTurnResourceError)
+      throw new ItemStateError(error.message);
+    throw error;
+  }
+  if (plan.kind === 'absent') return undefined;
+  if (plan.kind === 'not-spent')
+    return {
+      status: 'not-spent',
+      reason: plan.reason,
+      ...(plan.spellRef === undefined ? {} : { spellRef: plan.spellRef }),
+      ...(plan.castingTime === undefined
+        ? {}
+        : { castingTime: plan.castingTime }),
+    };
+  const activity = `use_item: ${args.itemName} (${String(operation.id)})`;
+  try {
+    const spent = spendTurnResource(db, {
+      campaignId: input.campaignId,
+      participant: { kind: 'character', ref: input.characterId },
+      resource: plan.resource,
+      activity,
+      ...(plan.spellRef === undefined
+        ? { itemOperation: true as const }
+        : { spellRef: plan.spellRef }),
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+      resolveRulesPack: input.resolveRulesPack,
+    });
+    return {
+      status: 'spent',
+      resource: plan.resource,
+      source: plan.source,
+      activity,
+      ...(plan.spellRef === undefined ? {} : { spellRef: plan.spellRef }),
+      ...(plan.castingTimeOverride === undefined
+        ? {}
+        : { castingTimeOverride: plan.castingTimeOverride }),
+      ...(plan.spellSelectedByDm === undefined
+        ? {}
+        : { spellSelectedByDm: true as const }),
+      ...(spent.extraReactionRestriction === undefined
+        ? {}
+        : { extraReactionRestriction: spent.extraReactionRestriction }),
+      budget: spent.budget,
+    };
+  } catch (error) {
+    if (error instanceof ActionEconomyError)
+      throw new ItemStateError(
+        `use_item refused: ${args.itemKey} operation '${String(operation.id)}' spends the character's ${plan.resource.replace('_', ' ')}, which is unavailable (${error.message}); no item state was changed`,
+      );
+    throw error;
+  }
+}
+
 export function useItem(db: Db, input: UseItemInput): UseItemResult {
   return withTransaction(db, (txnDb) => {
     const row = txnDb
@@ -2201,6 +2334,15 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
         `${packRef} declares no operation '${input.operationId}'`,
       );
     const operationEffectIds = [...readinessInput.operationEffectIds];
+    // The printed activation resource is spent BEFORE any item mutation and in
+    // this same transaction: a refused spend throws, and nothing below runs.
+    const turnResource = spendActivationTurnResource(txnDb, {
+      input,
+      itemKey: hit.record.key,
+      itemName: row.name,
+      operation,
+      effects: operationEffectIds.map((id) => refs.effects.get(id)),
+    });
     const resolveTable = (ref: string): RulesRecord | undefined => {
       const result = lookupRulesRecord(hit.stack, { kind: 'table', ref });
       return result.ok ? result.record : undefined;
@@ -2545,6 +2687,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       operationId: input.operationId,
       costs,
       effects: effectIds.map((id) => refs.effects.get(id)),
+      ...(turnResource === undefined ? {} : { turnResource }),
       ...(selectedTransition === undefined
         ? {}
         : { transition: selectedTransition.result }),

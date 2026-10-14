@@ -19,7 +19,16 @@ export const useItemTool: Tool = {
   description:
     'Use one rules-pack-bound inventory instance through an operation declared by its magic-item record. ' +
     'The engine validates the operation and all economy/effect references, refuses insufficient resources, ' +
-    'and applies deterministic costs. Use the instance id shown in inventory context, not the pack ref.',
+    'and applies deterministic costs. Use the instance id shown in inventory context, not the pack ref. ' +
+    'TURN RESOURCE: when the operation prints an action, bonus-action or reaction activation, and the acting character is in the active combat, ' +
+    'use_item spends that resource itself (for a spell the operation casts it passes the spell, so the bonus-action-spell rule applies; ' +
+    "with no printed cost the spell's own casting time of 1 action / bonus action / reaction is spent). " +
+    'Do NOT also call spend_turn_resource for the same activation: that double-spends. If the resource is unavailable ' +
+    '(already used, not their turn for an action or bonus action, surprised) use_item refuses and changes nothing. ' +
+    "The result's turnResource says what was spent or why nothing was (outside combat, free or consumed activation, a casting time " +
+    'longer than a reaction that you adjudicate). A creature other than the acting character (a combatant, e.g. someone else ' +
+    "releasing an Immovable Rod or smashing a Dust of Dryness pellet) is not charged by use_item; record that creature's " +
+    'activation yourself with spend_turn_resource on its combatant.',
   inputSchema: {
     type: 'object',
     properties: {

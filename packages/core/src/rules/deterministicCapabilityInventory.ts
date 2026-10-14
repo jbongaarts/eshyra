@@ -958,10 +958,11 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('use_item', 'bounded-procedure', {
     operation:
-      'Use one rules-pack-bound inventory instance the character holds through an operation its magic-item record declares (or activate or deactivate through its state machine), in one transaction: require attunement when the record does, run the magic-item readiness preflight, select the state-machine transition, spend its economy costs (at-will free, stateless single-use reduces quantity, insufficient resources refused), apply declared depletion outcomes, and return the declared effect definitions.',
+      'Use one rules-pack-bound inventory instance the character holds through an operation its magic-item record declares (or activate or deactivate through its state machine), in one transaction: require attunement when the record does, run the magic-item readiness preflight, select the state-machine transition, spend the typed action / bonus-action / reaction activation (or, with no typed cost, the bound castSpell spell 1-action / bonus-action / reaction casting time) from the turn budget of the acting character when a combat instance is active, refusing before any mutation when it is unavailable, spend its economy costs (at-will free, stateless single-use reduces quantity, insufficient resources refused), apply declared depletion outcomes, and return the declared effect definitions.',
     requiredInputs: ['instanceId', 'operationId'],
     exclusions: [
       'A quarantined row, a row not bound to a pack item, an unresolvable packRef, a missing required attunement, a blocked readiness preflight (derived-magic-item-clauses-v1), an undeclared operation, an inert or nonmagical instance, an ambiguous transition lacking transitionTo, and an uninitialized dice-derived economy are refused.',
+      'Spends no turn resource outside combat, for a free or consumed activation, or for an operation with no typed cost and no bound spell; a longer casting time, a DM-selected spell list, and a typed cost that contradicts the bound spell casting time (outside the reviewed printed-text override set) are not auto-spent (the contradiction is refused). A non-character actor is not charged by use_item.',
       'Returns the declared effects but does not start them (start_effect does) and does not execute item semantics outside the declared operation.',
     ],
     residualDmInterpretation: [
@@ -971,9 +972,14 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
       o('toolUseItem.ts'),
       s('itemState.ts'),
       s('itemDepletion.ts'),
+      s('itemTurnResource.ts'),
       'packages/core/src/campaign/capabilityPreflight.ts',
     ],
-    evidence: [t('itemState.test.ts'), t('itemAdoption.test.ts')],
+    evidence: [
+      t('itemState.test.ts'),
+      t('itemAdoption.test.ts'),
+      t('itemTurnResource.test.ts'),
+    ],
   }),
   toolEntry('transfer_item', 'state-integrity', {
     operation:

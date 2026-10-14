@@ -193,6 +193,10 @@ export interface SpendTurnResourceInput extends TurnMutationContext {
    *  the statblock prints it (e.g. "Wing Attack"). The engine derives the
    *  action cost from the record; an unmatched name fails closed. */
   readonly legendaryActionName?: string;
+  /** Set only by `use_item`: the spend is a magic-item operation whose typed
+   *  pack data binds no `spellRef`, so the prose-cast guard below does not
+   *  apply (the activity text names the item and operation, not a cast). */
+  readonly itemOperation?: true;
 }
 
 export interface SpendTurnResourceResult {
@@ -1045,6 +1049,7 @@ export function spendTurnResource(
   }
   if (
     input.spellRef === undefined &&
+    input.itemOperation !== true &&
     isSpendableForSpell &&
     SPELL_CAST_ACTIVITY.test(input.activity)
   ) {
