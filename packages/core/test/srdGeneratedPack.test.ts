@@ -1198,6 +1198,8 @@ const DC_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
     'DC 20 hidden-catch check is adjudicated per the as87 disposition',
   'magic-item:figurine-of-wondrous-power|parent|forward|dc:15':
     'The goat of terror aura (DC 15 Wisdom save) is withheld as a typed effect and carried as an adjudicated clause with the verbatim printed span (eshyra-o9bd.19.4.5.8, faithful-or-absent)',
+  'magic-item:ring-of-x-ray-vision|parent|forward|dc:15':
+    'The repeated-use Constitution save and exhaustion risk are carried by the exact DM-adjudicated span under the soft-limit cost contract (eshyra-olc5.8)',
 };
 
 function diceExceptionKey(
@@ -3354,12 +3356,16 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // durations add two pending effect clauses (803 -> 805); the Sun Blade
       // grasp and Ring of Spell Turning wearing sentences add two adjudicated
       // clauses (333 -> 338). Together with the 19.4.6.10 additions above,
-      // adjudicated clauses total 357. No green clause moved.
+      // adjudicated clauses total 357. eshyra-olc5.8 lands seven cooldown and
+      // soft-limit economy hooks (engine-pending -> green), while the Ring of
+      // X-ray Vision risk effect becomes an exact source-backed adjudication
+      // (engine-pending -> adjudicated): final counts are 358 adjudicated,
+      // 797 pending, and 219 green.
       expect(counts).toEqual({
-        'adjudicated-by-design': 357,
+        'adjudicated-by-design': 358,
         'design-blocked': 1,
-        'engine-pending': 805,
-        green: 212,
+        'engine-pending': 797,
+        green: 219,
       });
       const pending = clauses.filter(
         ({ readiness }) => readiness === 'engine-pending',

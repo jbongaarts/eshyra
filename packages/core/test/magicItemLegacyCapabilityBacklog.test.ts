@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(806);
+    expect(backlog.candidates).toHaveLength(805);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -100,9 +100,11 @@ describe('magic-item legacy capability backlog', () => {
     // (repeatable or independently-timed instances) are DM-adjudicated, so
     // their three block candidates left the set while three operation-bound
     // candidates keep the operations blocked and the typed insect-cloud and
-    // ball-lightning effects add two (804 -> 806).
+    // ball-lightning effects add two (804 -> 806). eshyra-olc5.8 withholds
+    // Ring of X-ray Vision's residual risk effect as an exact adjudicated
+    // clause, removing its one engine-hook candidate (806 -> 805).
     expect(fingerprint).toBe(
-      '8410b566c331be927b640b9401d5ffd50fc68a0510af2e19e5f8e5697dfc9488',
+      'f02dda0d18ff4fbe78d7653a74d541030d130d86deb8d6438ff3bc2bbf7b7f40',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

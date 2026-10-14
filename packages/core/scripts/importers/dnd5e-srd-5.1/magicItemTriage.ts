@@ -1513,11 +1513,18 @@ function triageGrants(
 function anchorCooldowns(scope: string, projections: Projections): Projections {
   const anchor = COOLDOWN_ANCHORS.get(scope);
   if (anchor === undefined) return projections;
+  if (anchor.startsOn === undefined)
+    fail(scope, 'has no reviewed cooldown start event');
+  const startsOn = anchor.startsOn;
   let found = false;
   const result = projections.map((projection) => {
     const economy = projection.mechanics.economies?.[anchor.economy];
     if (economy?.cooldown === undefined) return projection;
     found = true;
+    const hook =
+      startsOn.event === 'state-entered'
+        ? 'state-anchored cooldown reset'
+        : 'grant-anchored cooldown reset';
     return {
       ...projection,
       mechanics: {
@@ -1526,10 +1533,22 @@ function anchorCooldowns(scope: string, projections: Projections): Projections {
           ...projection.mechanics.economies,
           [anchor.economy]: {
             ...economy,
-            cooldown: { ...economy.cooldown, startsOn: anchor.startsOn },
+            cooldown: { ...economy.cooldown, startsOn },
           },
         },
       },
+      clauses: projection.clauses.map((clause) => {
+        const representation = clause.representation;
+        return 'block' in representation &&
+          representation.block === 'economies' &&
+          'economyId' in representation &&
+          representation.economyId === anchor.economy
+          ? {
+              ...clause,
+              engineHooks: [{ engine: 'F5', hook }] as const,
+            }
+          : clause;
+      }),
     };
   });
   if (!found) fail(scope, `has no ${anchor.economy} cooldown to anchor`);
@@ -1579,7 +1598,9 @@ function efreetiStopper(projections: Projections): Projections {
           id: 'm4-stopper',
           tag: 'M4',
           representation: { block: 'economies', economyId: 'stopper' },
-          engineHooks: [{ engine: 'F5', hook: 'elapsed-time cooldown reset' }],
+          engineHooks: [
+            { engine: 'F5', hook: 'grant-anchored cooldown reset' },
+          ],
         } as ItemClauseExpectation,
       ],
     };
