@@ -252,7 +252,7 @@ describe('item reset/timer executor', () => {
     wingsDb.close();
   });
 
-  it('keeps Rope of Entanglement save and escape outcomes on paid operations', () => {
+  it('keeps the owner save outcome paid and records target escape as an external event', () => {
     const rope = packedItem('Rope of Entanglement');
     const pack = rulesPack(rope);
     const db = freshDbWithSession();
@@ -280,29 +280,22 @@ describe('item reset/timer executor', () => {
       state: { machineState: 'restraining' },
       transition: { outcome: 'success' },
     });
+    expect(() => useItem(db, useInput(pack, id, 'escape-rope'))).toThrow(
+      /declares no operation/,
+    );
     expect(
-      useItem(
-        db,
-        useInput(pack, id, 'escape-rope', {
-          transitionOutcome: 'failure',
-        }),
-      ),
-    ).toMatchObject({
-      state: { machineState: 'restraining' },
-      transition: {
-        outcome: 'failure',
-        onFailure: { scope: 'target', to: 'restraining' },
-      },
-    });
-    expect(() =>
       applyItemStateConditionEvent(db, {
         ...CTX,
         instanceId: id,
         condition:
-          'The target must succeed on a DC 15 Dexterity saving throw or become restrained',
+          'A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope.',
         resolveRulesPack: resolver(pack),
       }),
-    ).toThrow(/no declared condition transition/);
+    ).toMatchObject({
+      instanceId: id,
+      from: 'restraining',
+      to: 'loose',
+    });
     const destroyed = (
       (rope.data as Record<string, unknown>).mechanics as Record<
         string,
@@ -321,7 +314,7 @@ describe('item reset/timer executor', () => {
         condition: String(destructionCondition),
         resolveRulesPack: resolver(pack),
       }),
-    ).toMatchObject({ from: 'restraining', to: 'destroyed' });
+    ).toMatchObject({ from: 'loose', to: 'destroyed' });
     db.close();
   });
 

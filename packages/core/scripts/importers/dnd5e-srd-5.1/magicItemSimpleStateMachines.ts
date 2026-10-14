@@ -75,6 +75,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         'speak its command word as a bonus action to cause it to animate',
         'remains animated for 1 minute',
         'until you are incapacitated or die',
+        'at which point the shield falls to the ground or into your hand if you have one free',
       ],
       ...toggle(
         'speak-command-word',
@@ -469,11 +470,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         'orbits your head at a distance of 1d3 feet',
         'use an action to seize and stow the stone',
       ],
-      operations: [
-        operation('start-orbit'),
-        operation('seize-and-stow'),
-        operation('grab-orbiting-stone'),
-      ],
+      operations: [operation('start-orbit'), operation('seize-and-stow')],
       stateMachine: {
         initial: 'stowed',
         states: [
@@ -683,12 +680,11 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
       sourcePhrases: [
         'darts forward to entangle a creature',
         'release the creature by using a bonus action',
-        'DC 15 Strength or Dexterity check',
+        'A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope.',
       ],
       operations: [
         operation('entangle-creature'),
         operation('release-creature', 'bonus-action'),
-        operation('escape-rope'),
       ],
       stateMachine: {
         initial: 'loose',
@@ -708,12 +704,8 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           {
             from: 'restraining',
             to: 'loose',
-            via: 'escape-rope',
-            onFailure: {
-              scope: 'target',
-              to: 'restraining',
-              note: 'transitionOutcome failure means the target fails the Strength or Dexterity check',
-            },
+            condition:
+              'A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope.',
           },
           {
             from: 'loose',

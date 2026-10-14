@@ -240,6 +240,73 @@ describe('regular/simple M5 state-machine projection', () => {
       condition:
         'Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
     });
+    const generated = itemRecords.find(
+      (record) => record.name === 'Ioun Stone',
+    );
+    expect(generated?.data).toMatchObject({
+      mechanics: {
+        stateMachine: {
+          transitions: expect.arrayContaining([
+            {
+              from: 'orbiting',
+              to: 'seized',
+              condition:
+                'Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
+            },
+          ]),
+        },
+      },
+    });
+    if (generated === undefined)
+      throw new Error('missing generated Ioun Stone');
+    const generatedMechanics = (generated.data as Record<string, unknown>)
+      .mechanics as { operations: { id: string }[] };
+    expect(
+      generatedMechanics.operations.map((entry) => entry.id),
+    ).not.toContain('grab-orbiting-stone');
+  });
+
+  it('carries the Animated Shield termination placement clause verbatim in the generated pack', () => {
+    const generated = itemRecords.find(
+      (record) => record.name === 'Animated Shield',
+    );
+    expect(generated?.data).toMatchObject({
+      executionReadiness: {
+        clauses: expect.arrayContaining([
+          expect.objectContaining({
+            clauseId:
+              'magic-item:animated-shield/state-animated-shield-fall-destination',
+            representation: expect.objectContaining({
+              adjudicated: true,
+              sourceText:
+                'at which point the shield falls to the ground or into your hand if you have one free',
+            }),
+          }),
+        ]),
+      },
+    });
+  });
+
+  it('models the Rope target escape as a no-cost external condition event', () => {
+    const generated = itemRecords.find(
+      (record) => record.name === 'Rope of Entanglement',
+    );
+    const mechanics = (generated?.data as Record<string, unknown>)
+      ?.mechanics as Record<string, unknown>;
+    const operations = mechanics.operations as { id: string }[];
+    const machine = mechanics.stateMachine as {
+      transitions: Record<string, unknown>[];
+    };
+    expect(operations.map((entry) => entry.id)).not.toContain('escape-rope');
+    expect(machine.transitions).toContainEqual({
+      from: 'restraining',
+      to: 'loose',
+      condition:
+        'A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope.',
+    });
+    expect(
+      operations.find((entry) => entry.id === 'release-creature'),
+    ).toBeDefined();
   });
 
   it('merges the same operation IDs with the existing C1/M1 owners', () => {

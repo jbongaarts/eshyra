@@ -1506,18 +1506,6 @@
   },
   {
     "scope": "Ioun Stone",
-    "operation": "grab-orbiting-stone",
-    "cost": "action",
-    "equipment": null,
-    "costSentence": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check.",
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": null,
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Ioun Stone",
     "operation": "seize-and-stow",
     "cost": "action",
     "equipment": null,
@@ -2647,18 +2635,6 @@
   },
   {
     "scope": "Ring of Shooting Stars",
-    "operation": "discharge-ball-lightning",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Ring of Shooting Stars",
     "operation": "launch-shooting-stars",
     "cost": "action",
     "equipment": null,
@@ -3147,18 +3123,6 @@
     "noneReason": {
       "cost": null,
       "equipment": null
-    }
-  },
-  {
-    "scope": "Rope of Entanglement",
-    "operation": "escape-rope",
-    "cost": "action",
-    "equipment": null,
-    "costSentence": "A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice).",
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": null,
-      "equipment": "No equipment prerequisite is retained for this operation."
     }
   },
   {

@@ -560,7 +560,7 @@
         {
           "from": "orbiting",
           "to": "seized",
-          "condition": "either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check"
+          "condition": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check"
         }
       ],
       "roundUnitTimers": []
@@ -766,20 +766,15 @@
           "from": "restraining",
           "to": "loose",
           "via": "release-creature"
-        },
-        {
-          "from": "restraining",
-          "to": "loose",
-          "via": "escape-rope",
-          "onFailure": {
-            "scope": "target",
-            "to": "restraining",
-            "note": "transitionOutcome failure means the target fails the Strength or Dexterity check"
-          }
         }
       ],
       "timerTransitions": [],
       "conditionTransitions": [
+        {
+          "from": "restraining",
+          "to": "loose",
+          "condition": "A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope."
+        },
         {
           "from": "loose",
           "to": "destroyed",

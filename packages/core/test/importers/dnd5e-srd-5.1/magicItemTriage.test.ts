@@ -125,7 +125,7 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
         };
       }),
     );
-    expect(activationCensus).toHaveLength(362);
+    expect(activationCensus).toHaveLength(359);
     expect(actual).toHaveLength(activationCensus.length);
     const censusByKey = new Map(
       activationCensus.map((row) => [`${row.scope}/${row.operation}`, row]),
@@ -410,7 +410,7 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
         else activations += 1;
         if (typed?.equipment !== undefined) equipment += 1;
       }
-    expect(operationCount).toBe(362);
+    expect(operationCount).toBe(359);
     expect(activations + withoutActivation).toBe(operationCount);
     expect(equipment).toBe(129);
     expect(scopes.filter((s) => s.mechanics.stateMachine).length).toBe(21);
@@ -874,7 +874,7 @@ describe('D. kept activation fields agree with the governing printed passage, se
       .map(({ id }) => id);
   }
 
-  it('types the printed action cost of every non-spell operation whose own sentence prints one (sweep of all 362 operations)', () => {
+  it('types the printed action cost of every non-spell operation whose own sentence prints one (sweep of all 359 operations)', () => {
     const missing: string[] = [];
     for (const scope of scopes)
       for (const id of missingPrintedCosts(

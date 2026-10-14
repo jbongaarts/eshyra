@@ -11,7 +11,7 @@
  * Authority for the expected values is the printed SRD description of each
  * item, never the generated pack. This is a source-AGREEMENT screen, not a
  * capability or completeness claim. Kept activation costs are checked against
- * the reviewed 362-operation census; typed free-text fields (requirement /
+ * the reviewed 359-operation census; typed free-text fields (requirement /
  * trigger / target) set by the reviewed table are strictly stronger because the
  * compiler requires each to be a verbatim span of the description. The scenario
  * tests below pin one printed-eligible versus ineligible predicate per root
@@ -490,26 +490,25 @@ describe('runtime safety: what use_item can execute is unchanged', () => {
   // These operations pass the readiness preflight at the pre-repair head and
   // must still pass (the preflight and use_item read only operation ids, cost,
   // excludes, doesNotExpend and effects, never `activation`).
-  it.each([
-    ['Ring of Shooting Stars', undefined, 'discharge-ball-lightning'],
-    ['Rope of Entanglement', undefined, 'escape-rope'],
-    ['Boots of Levitation', undefined, 'cast-levitate'],
-  ] as const)('%s %s %s stays ready', (name, variant, operationId) => {
-    const record = byName.get(name);
-    expect(record).toBeDefined();
-    const input = deriveItemOperationReadinessInput(
-      record as NonNullable<typeof record>,
-      variant,
-      operationId,
-    );
-    expect(() =>
-      assertMagicItemOperationReady(
+  it.each([['Boots of Levitation', undefined, 'cast-levitate']] as const)(
+    '%s %s %s stays ready',
+    (name, variant, operationId) => {
+      const record = byName.get(name);
+      expect(record).toBeDefined();
+      const input = deriveItemOperationReadinessInput(
         record as NonNullable<typeof record>,
         variant,
-        input,
-      ),
-    ).not.toThrow();
-  });
+        operationId,
+      );
+      expect(() =>
+        assertMagicItemOperationReady(
+          record as NonNullable<typeof record>,
+          variant,
+          input,
+        ),
+      ).not.toThrow();
+    },
+  );
 
   it('keeps every operation economy cost except the Nine Lives Stealer outcome-only charge', () => {
     for (const [name, id] of [
@@ -679,6 +678,22 @@ describe('whole-corpus operations screen (every magic-item operation)', () => {
     expect(activation('Armor of Invulnerability', 'activate-immunity')).toEqual(
       { cost: 'action' },
     );
+  });
+
+  it('keeps Ring of Shooting Stars sphere discharge as an adjudicated external trigger', () => {
+    const operations = mechanicsOf('Ring of Shooting Stars').operations ?? [];
+    expect(
+      operations.some((entry) => entry.id === 'discharge-ball-lightning'),
+    ).toBe(false);
+    expect(
+      operations.some((entry) => entry.id === 'create-ball-lightning'),
+    ).toBe(true);
+    expect(
+      carries(
+        'Ring of Shooting Stars',
+        'When a creature other than you comes within 5 feet of a sphere, the sphere discharges lightning at that creature and disappears.',
+      ),
+    ).toBe(true);
   });
 
   it('removes a free or action cost the text does not print and carries the sentence as an adjudicated clause', () => {
@@ -901,15 +916,17 @@ describe('state graphs state the printed transition, timer and termination (S4)'
     },
   );
 
-  it('Ioun Stone: seizure accepts the attack OR the Acrobatics check; the executable operation is unchanged', () => {
+  it('Ioun Stone: seizure accepts either printed check as an external condition', () => {
     const seize = transitionsOf('Ioun Stone').find(
       (entry) => entry.to === 'seized',
     );
     expect(seize?.condition).toContain('successful attack roll against AC 24');
     expect(seize?.condition).toContain('DC 24 Dexterity (Acrobatics) check');
     expect(
-      operation('Ioun Stone', 'grab-orbiting-stone').activation,
-    ).toMatchObject({ cost: 'action' });
+      (mechanicsOf('Ioun Stone').operations ?? []).some(
+        (entry) => entry.id === 'grab-orbiting-stone',
+      ),
+    ).toBe(false);
   });
 
   it('Glamoured Studded Leather: re-using the property changes the appearance; removing the armor ends it', () => {
@@ -1325,18 +1342,6 @@ describe('omitted printed predicates (review 19.4.6.3 S1)', () => {
         'If you are within 60 feet of an uncontrolled sphere',
       ],
       [
-        'Rope of Entanglement',
-        'escape-rope',
-        'requirement',
-        'A target restrained by the rope',
-      ],
-      [
-        'Ioun Stone',
-        'grab-orbiting-stone',
-        'trigger',
-        'another creature must use an action to grasp or net the stone',
-      ],
-      [
         'Chime of Opening',
         'strike-chime',
         'target',
@@ -1526,7 +1531,7 @@ describe('state graph text and outcome-gated transitions, whole corpus (review 1
     ).toBe('note');
   });
 
-  it('binds Rope of Entanglement outcomes to paid operations and keeps destruction external', () => {
+  it('binds holder actions to paid operations and target escape to an external event', () => {
     const ropeTransitions = transitionsOf('Rope of Entanglement');
     expect(
       ropeTransitions.find(
@@ -1538,17 +1543,29 @@ describe('state graph text and outcome-gated transitions, whole corpus (review 1
     });
     expect(
       ropeTransitions.find(
-        (entry) => entry.from === 'restraining' && entry.via === 'escape-rope',
+        (entry) =>
+          entry.from === 'restraining' &&
+          typeof entry.condition === 'string' &&
+          entry.condition.includes('target’s choice'),
       ),
-    ).toMatchObject({
-      via: 'escape-rope',
-      onFailure: { to: 'restraining', scope: 'target' },
+    ).toEqual({
+      from: 'restraining',
+      to: 'loose',
+      condition:
+        'A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope.',
     });
+    expect(
+      (mechanicsOf('Rope of Entanglement').operations ?? []).some(
+        (entry) => entry.id === 'escape-rope',
+      ),
+    ).toBe(false);
+    expect(operation('Rope of Entanglement', 'release-creature')).toBeDefined();
     expect(
       ropeTransitions
         .filter((entry) => entry.condition)
         .map((entry) => entry.condition),
     ).toEqual([
+      'A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope.',
       'the rope drops to 0 hit points',
       'the rope drops to 0 hit points',
     ]);
@@ -1709,9 +1726,8 @@ describe('spellStore costs and per-instance economies (review 19.4.6.3 S3, S4)',
 
 describe('runtime safety across the whole corpus', () => {
   // The preflight ("green") operation set over every item x variant x operation
-  // id, pinned. The four olc5.8 additions are source-required; each operation's
-  // behavior outside the landed economy is carried by an explicit adjudicated
-  // clause.
+  // id, pinned. Other creatures' actions are external condition events and are
+  // excluded from this owner-operation set.
   const READY = [
     'Ammunition, +1, +2, or +3||hit-target',
     'Animated Shield||end-animation',
@@ -1719,27 +1735,9 @@ describe('runtime safety across the whole corpus', () => {
     'Boots of Levitation||cast-levitate',
     'Candle of Invocation||burn',
     'Frost Brand||extinguish-flames',
-    ...[
-      'absorption',
-      'agility',
-      'awareness',
-      'fortitude',
-      'greater-absorption',
-      'insight',
-      'intellect',
-      'leadership',
-      'mastery',
-      'protection',
-      'regeneration',
-      'reserve',
-      'strength',
-      'sustenance',
-    ].map((variant) => `Ioun Stone|${variant}|grab-orbiting-stone`),
-    'Ring of Shooting Stars||discharge-ball-lightning',
     'Ring of X-ray Vision||activate-x-ray-vision',
     'Rod of Security||enter-paradise',
     'Rope of Entanglement||entangle-creature',
-    'Rope of Entanglement||escape-rope',
     'Rope of Entanglement||release-creature',
     'Well of Many Worlds||open-portal',
     'Wings of Flying||dismiss-wings',

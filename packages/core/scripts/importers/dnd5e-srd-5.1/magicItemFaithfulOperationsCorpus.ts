@@ -466,19 +466,6 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     },
   ],
   [
-    'Ioun Stone',
-    {
-      operations: [
-        op('grab-orbiting-stone', {
-          trigger:
-            'another creature must use an action to grasp or net the stone',
-          requirement:
-            'either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
-        }),
-      ],
-    },
-  ],
-  [
     'Ioun Stone::Absorption',
     {
       operations: [
@@ -859,8 +846,6 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
           requirement: 'If you hold one end of the rope',
           target: 'a creature you can see within 20 feet of you',
         }),
-        // The actor is the restrained target, not the rope's holder.
-        op('escape-rope', { requirement: 'A target restrained by the rope' }),
       ],
     },
   ],

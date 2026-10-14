@@ -1200,8 +1200,6 @@ const DC_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
     'The goat of terror aura (DC 15 Wisdom save) is withheld as a typed effect and carried as an adjudicated clause with the verbatim printed span (eshyra-o9bd.19.4.5.8, faithful-or-absent)',
   'magic-item:ring-of-x-ray-vision|parent|forward|dc:15':
     'The repeated-use Constitution save and exhaustion risk are carried by the exact DM-adjudicated span under the soft-limit cost contract (eshyra-olc5.8)',
-  'magic-item:rope-of-entanglement|parent|forward|dc:15':
-    'The target save is carried by the source-backed adjudicated clause; use_item records the declared outcome and state transition without resolving the save (eshyra-olc5.11.2)',
 };
 
 function diceExceptionKey(
@@ -3308,7 +3306,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1379);
+      expect(clauses).toHaveLength(1378);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3372,10 +3370,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // (one pending clause), adjudicates Rope of Entanglement's creature
       // condition payload (one pending -> adjudicated), and proves F2/F5 item
       // state execution for Animated Shield, Dagger of Venom, Rope of
-      // Entanglement, and Wings of Flying (four pending -> green): 362
+      // Entanglement, and Wings of Flying (four pending -> green): 361
       // adjudicated, 793 pending, 223 green.
       expect(counts).toEqual({
-        'adjudicated-by-design': 362,
+        'adjudicated-by-design': 361,
         'design-blocked': 1,
         'engine-pending': 793,
         green: 223,

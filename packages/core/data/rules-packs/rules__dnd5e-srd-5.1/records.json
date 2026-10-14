@@ -88569,6 +88569,20 @@
             "readiness": "green"
           },
           {
+            "clauseId": "magic-item:animated-shield/state-animated-shield-fall-destination",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The shield’s destination on termination depends on whether the wielder has a free hand; the state-machine vocabulary does not encode object placement, so the DM model interprets this printed outcome.",
+              "sourceText": "at which point the shield falls to the ground or into your hand if you have one free"
+            },
+            "reason": "The shield’s destination on termination depends on whether the wielder has a free hand; the state-machine vocabulary does not encode object placement, so the DM model interprets this printed outcome."
+          },
+          {
             "clauseId": "magic-item:animated-shield/triage-activation-speak-command-word-0",
             "scope": {
               "kind": "parent"
@@ -109229,7 +109243,7 @@
             {
               "from": "orbiting",
               "to": "seized",
-              "condition": "either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check"
+              "condition": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check"
             }
           ],
           "termination": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check. You can use an action to seize and stow the stone, ending its effect"
@@ -109243,12 +109257,6 @@
           },
           {
             "id": "seize-and-stow",
-            "activation": {
-              "cost": "action"
-            }
-          },
-          {
-            "id": "grab-orbiting-stone",
             "activation": {
               "cost": "action"
             }
@@ -109346,20 +109354,6 @@
               "F5",
               "F9"
             ]
-          },
-          {
-            "clauseId": "magic-item:ioun-stone/triage-activation-grab-orbiting-stone-0",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
-              "sourceText": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check."
-            },
-            "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:absorption/m9-ioun-absorption-cancel",
@@ -125040,9 +125034,6 @@
             "activation": {
               "cost": "bonus-action"
             }
-          },
-          {
-            "id": "discharge-ball-lightning"
           }
         ],
         "effects": [
@@ -125120,14 +125111,14 @@
             "scope": {
               "kind": "parent"
             },
-            "tag": "M5",
+            "tag": "C2",
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
-              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "note": "The discharge is an external trigger of the created sphere, not an operation by the ring’s user; the multi-sphere lifecycle remains DM-adjudicated.",
               "sourceText": "When a creature other than you comes within 5 feet of a sphere, the sphere discharges lightning at that creature and disappears."
             },
-            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+            "reason": "The discharge is an external trigger of the created sphere, not an operation by the ring’s user; the multi-sphere lifecycle remains DM-adjudicated."
           },
           {
             "clauseId": "magic-item:ring-of-shooting-stars/c1-economy-charges",
@@ -130795,12 +130786,7 @@
             {
               "from": "restraining",
               "to": "loose",
-              "via": "escape-rope",
-              "onFailure": {
-                "scope": "target",
-                "to": "restraining",
-                "note": "transitionOutcome failure means the target fails the Strength or Dexterity check"
-              }
+              "condition": "A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope."
             },
             {
               "from": "loose",
@@ -130833,12 +130819,6 @@
             "activation": {
               "cost": "bonus-action",
               "commandWord": true
-            }
-          },
-          {
-            "id": "escape-rope",
-            "activation": {
-              "cost": "action"
             }
           }
         ]
@@ -130892,20 +130872,6 @@
               "adjudicated": true,
               "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
               "sourceText": "If you hold one end of the rope and use an action to speak its command word, the other end darts forward to entangle a creature you can see within 20 feet of you."
-            },
-            "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
-          },
-          {
-            "clauseId": "magic-item:rope-of-entanglement/triage-activation-escape-rope-0",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
-              "sourceText": "A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice)."
             },
             "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
           }

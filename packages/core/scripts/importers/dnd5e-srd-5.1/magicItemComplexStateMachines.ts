@@ -649,9 +649,6 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
       operations: [
         op('create-ball-lightning'),
         op('move-ball-lightning', 'bonus-action'),
-        op('discharge-ball-lightning', 'free', {
-          trigger: 'creature comes within 5 feet',
-        }),
       ],
       stateMachine: {
         initial: 'inactive',
