@@ -703,7 +703,7 @@
     "operation": "command-attack",
     "cost": "bonus-action",
     "equipment": null,
-    "costSentence": "You can use a bonus action to toss this magic sword into the air and speak the command word.",
+    "costSentence": "While the sword hovers, you can use a bonus action to cause it to fly up to 30 feet to another spot within 30 feet of you.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -715,7 +715,7 @@
     "operation": "launch-sword",
     "cost": "bonus-action",
     "equipment": null,
-    "costSentence": "While the sword hovers, you can use a bonus action to cause it to fly up to 30 feet to another spot within 30 feet of you.",
+    "costSentence": "You can use a bonus action to toss this magic sword into the air and speak the command word.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,

@@ -213,6 +213,16 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
         'Terrify. While holding the rod, you can use an action to force each creature you can see within 30 feet of you to make a DC 17 Wisdom saving throw.',
       ],
       [
+        'Dancing Sword',
+        'launch-sword',
+        'You can use a bonus action to toss this magic sword into the air and speak the command word.',
+      ],
+      [
+        'Dancing Sword',
+        'command-attack',
+        'While the sword hovers, you can use a bonus action to cause it to fly up to 30 feet to another spot within 30 feet of you.',
+      ],
+      [
         'Eversmoking Bottle',
         'close-bottle',
         'Closing the bottle requires you to speak its command word as an action.',
