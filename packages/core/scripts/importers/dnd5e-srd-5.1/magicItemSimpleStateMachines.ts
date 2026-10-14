@@ -460,7 +460,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         'rod is fixed in place until overloaded or released',
         {
           termination:
-            'owner button release or more than 8,000 pounds of weight',
+            'you or another creature pushes the button again, or more than 8,000 pounds of weight',
           conditions: ['More weight causes the rod to deactivate and fall.'],
           externalTransitions: [
             {
