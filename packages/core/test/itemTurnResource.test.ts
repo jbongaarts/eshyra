@@ -357,6 +357,28 @@ describe('use_item spends the printed activation turn resource (pack records)', 
     });
   });
 
+  it('Staff of the Magi uses conjure elemental casting time and still spends charges', () => {
+    const { db, pcId } = setup(true);
+    const key = 'magic-item:staff-of-the-magi';
+    const pack = packWith(key);
+    const id = install(db, pack, key, 'magi');
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    const chargesBefore = readItemState(db, id)?.economies?.charges?.remaining;
+
+    const result = use(db, pack, pcId, id, 'cast-conjure-elemental');
+
+    expect(result.turnResource).toEqual({
+      status: 'not-spent',
+      reason: 'casting-time-dm-adjudicated',
+      spellRef: 'spell:conjure-elemental',
+      castingTime: '1 minute',
+    });
+    expect(budgetOf(db, pcId)?.actionUsed).toBe(false);
+    expect(readItemState(db, id)?.economies?.charges?.remaining).toBe(
+      (chargesBefore ?? 0) - 7,
+    );
+  });
+
   it('consumed and free activations spend nothing automatically', () => {
     const { db, pcId } = setup(true);
     const key = 'magic-item:potion-of-heroism';
@@ -459,15 +481,22 @@ describe('typed cost versus bound spell casting time (fail closed)', () => {
         'utf8',
       ),
     ) as { scope: string; operation: string; costSentence: string | null }[];
+    const printedOverrides: Readonly<Record<string, string>> = {
+      'magic-item:elemental-gem#break-gem':
+        'When you use an action to break the gem',
+      'magic-item:ring-of-jumping#cast-jump':
+        'cast the jump spell from it as a bonus action',
+    };
+    expect([...PRINTED_CASTING_TIME_OVERRIDES].sort()).toEqual(
+      Object.keys(printedOverrides).sort(),
+    );
     for (const row of PRINTED_CASTING_TIME_OVERRIDES) {
       const [key, operationId] = row.split('#');
       const name = itemRecord(key ?? '').name;
       const entry = census.find(
         (c) => c.scope === name && c.operation === operationId,
       );
-      expect(entry?.costSentence, row).toMatch(
-        /use an action|use your action|as a bonus action/i,
-      );
+      expect(entry?.costSentence, row).toContain(printedOverrides[row]);
     }
   });
 

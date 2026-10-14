@@ -23,9 +23,10 @@
  * Fail-closed: a typed activation cost that DIFFERS from the bound spell's
  * casting time is a contradiction. It is refused unless the pack row is in
  * {@link PRINTED_CASTING_TIME_OVERRIDES}, the reviewed set of rows whose
- * printed item text states the activation explicitly ("you can use an action
- * to ... cast ..."), which governs instead of the spell's casting time. More
- * than one distinct bound `spellRef` on one operation is ambiguous and refused.
+ * printed item text explicitly changes the casting time. An action that
+ * merely expends charges to cast does not change the spell's normal casting
+ * time. More than one distinct bound `spellRef` on one operation is ambiguous
+ * and refused.
  */
 
 export type ItemTurnResource = 'action' | 'bonus_action' | 'reaction';
@@ -69,17 +70,11 @@ export class ItemTurnResourceError extends Error {
 
 /**
  * Pack rows (`<item key>#<operation id>`) whose typed activation cost differs
- * from the bound spell's casting time AND whose printed item text states the
- * activation explicitly, so the printed activation governs. Evidence is the
- * activation census (magicItemActivationCensus.json costSentence) for each row:
+ * from the bound spell's casting time AND whose printed item text explicitly
+ * changes that casting time. Evidence is the activation census
+ * (magicItemActivationCensus.json costSentence) for each row:
  *   - elemental-gem break-gem: "When you use an action to break the gem, an
  *     elemental is summoned as if you had cast the conjure elemental spell"
- *   - orb-of-dragonkind cast-scrying: "you can use an action and expend 1 or
- *     more charges to cast ... scrying"
- *   - staff-of-the-magi cast-conjure-elemental: "you can use an action to
- *     expend some of its charges to cast ... conjure elemental"
- *   - staff-of-the-woodlands cast-awaken: "You can use an action to expend 1
- *     or more of the staff's charges to cast ... awaken"
  *   - ring-of-jumping cast-jump: "you can cast the jump spell from it as a
  *     bonus action"
  * A contradiction NOT in this set fails closed. A test asserts this set equals
@@ -87,10 +82,7 @@ export class ItemTurnResourceError extends Error {
  */
 export const PRINTED_CASTING_TIME_OVERRIDES: ReadonlySet<string> = new Set([
   'magic-item:elemental-gem#break-gem',
-  'magic-item:orb-of-dragonkind#cast-scrying',
   'magic-item:ring-of-jumping#cast-jump',
-  'magic-item:staff-of-the-magi#cast-conjure-elemental',
-  'magic-item:staff-of-the-woodlands#cast-awaken',
 ]);
 
 const COST_TO_RESOURCE: Readonly<Record<string, ItemTurnResource>> = {

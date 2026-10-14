@@ -3306,7 +3306,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1375);
+      expect(clauses).toHaveLength(1377);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3361,8 +3361,13 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // X-ray Vision risk effect becomes an exact source-backed adjudication
       // (engine-pending -> adjudicated): final counts are 358 adjudicated,
       // 797 pending, and 219 green.
+      // eshyra-olc5.9.2: the three normal-casting-time spell clauses are
+      // adjudicated, while the former shared Orb activation clause is replaced
+      // by the scrying-specific clause (+2 net): final counts are 360
+      // adjudicated, 797 pending, and 219 green. No readiness status moves;
+      // the existing baseline's 19 ready operations remain unchanged.
       expect(counts).toEqual({
-        'adjudicated-by-design': 358,
+        'adjudicated-by-design': 360,
         'design-blocked': 1,
         'engine-pending': 797,
         green: 219,

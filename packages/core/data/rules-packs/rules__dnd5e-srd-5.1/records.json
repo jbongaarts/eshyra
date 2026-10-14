@@ -114874,9 +114874,6 @@
           },
           {
             "id": "cast-scrying",
-            "activation": {
-              "cost": "action"
-            },
             "cost": [
               {
                 "economy": "charges",
@@ -114983,6 +114980,20 @@
               "sourceText": "While you control the orb, you can use an action to cause the artifact to issue a telepathic call that extends in all directions for 40 miles."
             },
             "reason": "The typed activation fields state only the printed predicates they can carry exactly; the DM model interprets the rest of this printed activation sentence from the printed text."
+          },
+          {
+            "clauseId": "magic-item:orb-of-dragonkind/activation-cast-scrying",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation carries no action cost: rule:spells says an item spell uses its normal casting time, and this sentence prints only the charge use. The DM model interprets the printed text.",
+              "sourceText": "If you control the orb, you can use an action and expend 1 or more charges to cast one of the following spells (save DC 18) from it: cure wounds (5th-level version, 3 charges), daylight (1 charge), death ward (2 charges), or scrying (3 charges)."
+            },
+            "reason": "The typed activation carries no action cost: rule:spells says an item spell uses its normal casting time, and this sentence prints only the charge use. The DM model interprets the printed text."
           },
           {
             "clauseId": "magic-item:orb-of-dragonkind/c1-economy-charges",
@@ -115559,20 +115570,6 @@
               "F5",
               "F9"
             ]
-          },
-          {
-            "clauseId": "magic-item:orb-of-dragonkind/triage-activation-cast-cure-wounds-0",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "C2",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text. Governs operations: cast-cure-wounds, cast-daylight, cast-death-ward, cast-scrying, cast-detect-magic.",
-              "sourceText": "If you control the orb, you can use an action and expend 1 or more charges to cast one of the following spells (save DC 18) from it: cure wounds (5th-level version, 3 charges), daylight (1 charge), death ward (2 charges), or scrying (3 charges)."
-            },
-            "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text. Governs operations: cast-cure-wounds, cast-daylight, cast-death-ward, cast-scrying, cast-detect-magic."
           },
           {
             "clauseId": "magic-item:orb-of-dragonkind/triage-activation-m7-attempt-orb-control-0",
@@ -136427,8 +136424,7 @@
                 [
                   "held"
                 ]
-              ],
-              "cost": "action"
+              ]
             },
             "cost": [
               {
@@ -136937,6 +136933,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:staff-of-the-magi/activation-cast-conjure-elemental",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation carries no action cost: rule:spells says an item spell uses its normal casting time, and this sentence prints only the charge use. The DM model interprets the printed text.",
+              "sourceText": "While holding the staff, you can use an action to expend some of its charges to cast one of the following spells from it, using your spell save DC and spellcasting ability: conjure elemental (7 charges), dispel magic (3 charges), fireball (7th-level version, 7 charges), flaming sphere (2 charges), ice storm (4 charges), invisibility (2 charges), knock (2 charges), lightning bolt (7th-level version, 7 charges), passwall (5 charges), plane shift (7 charges), telekinesis (5 charges), wall of fire (4 charges), or web (2 charges)."
+            },
+            "reason": "The typed activation carries no action cost: rule:spells says an item spell uses its normal casting time, and this sentence prints only the charge use. The DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:staff-of-the-magi/c1-economy-charges",
             "scope": {
@@ -138942,9 +138952,6 @@
           },
           {
             "id": "cast-awaken",
-            "activation": {
-              "cost": "action"
-            },
             "cost": [
               {
                 "economy": "charges",
@@ -139128,6 +139135,20 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:staff-of-the-woodlands/activation-cast-awaken",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The typed activation carries no action cost: rule:spells says an item spell uses its normal casting time, and this sentence prints only the charge use. The DM model interprets the printed text.",
+              "sourceText": "You can use an action to expend 1 or more of the staff’s charges to cast one of the following spells from it, using your spell save DC: animal friendship (1 charge), awaken (5 charges), barkskin (2 charges), locate animals or plants (2 charges), speak with animals (1 charge), speak with plants (3 charges), or wall of thorns (6 charges)."
+            },
+            "reason": "The typed activation carries no action cost: rule:spells says an item spell uses its normal casting time, and this sentence prints only the charge use. The DM model interprets the printed text."
+          },
           {
             "clauseId": "magic-item:staff-of-the-woodlands/c1-economy-charges",
             "scope": {
