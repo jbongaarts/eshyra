@@ -31,7 +31,7 @@ boundary inventory check passes at 1,853 rows.
 
 Updated `records.json` SHA-256:
 
-`b10703f817c04564ed2d838a3cd20ab75e52bc2283ad6496d42cfb716b3f3afd`
+`dc96fbd8b93399b97fbf456a2b98da9dfe5cccbf34deb214244e234196c08146`
 
 ## Review r2 repair (PR #661)
 
