@@ -23,20 +23,63 @@ export interface MagicItemDurationSpec {
   readonly unit: MagicItemDurationUnit;
 }
 
+/**
+ * A printed equipment prerequisite of an activation: the item must be worn,
+ * held, attuned to, or on the actor's person (eshyra-o9bd.19.4.6.6; consumer
+ * eshyra-olc5.10). See `MagicItemActivationSpec.equipment` for how values
+ * compose into alternatives.
+ */
+export type MagicItemEquipmentRequirement =
+  | 'worn'
+  | 'held'
+  | 'attuned'
+  | 'on-person';
+
 export interface MagicItemActivationSpec {
-  readonly cost: 'action' | 'bonus-action' | 'reaction' | 'free' | 'consume';
+  /**
+   * The action cost the printed text states. Omitted when the source names no
+   * cost (faithful-or-absent, eshyra-o9bd.19.4.6.1): there is no default
+   * cost, so an absent cost means the DM model reads the printed activation.
+   */
+  readonly cost?: 'action' | 'bonus-action' | 'reaction' | 'free' | 'consume';
   readonly commandWord?: boolean;
+  /**
+   * Printed worn/held/attuned/on-person prerequisite (structured), in
+   * disjunctive normal form: the activation is permitted when ANY ONE
+   * alternative holds, and an alternative holds when ALL its listed states
+   * hold. `[["held"]]` = held; `[["worn"], ["held"]]` = the printed "wearing or
+   * holding it". The shape lets the equipment capability (eshyra-olc5.10) bind
+   * printed alternatives without a pack change.
+   */
+  readonly equipment?: readonly (readonly MagicItemEquipmentRequirement[])[];
+  /**
+   * Producer-draft free text. The compiled SRD pack never carries these: the
+   * triage layer (eshyra-o9bd.19.4.6.6) removes them and carries the printed
+   * sentence as an `adjudicated-by-design` clause with a verbatim span.
+   */
   readonly trigger?: string;
   readonly requirement?: string;
   readonly target?: string;
   readonly note?: string;
 }
 
+export type MagicItemCooldownAnchor =
+  | { readonly event: 'grant-ended'; readonly grantId: string }
+  | { readonly event: 'state-entered'; readonly stateId: string };
+
 export interface MagicItemEconomy {
   readonly kind: MagicItemEconomyKind;
   readonly charges?: { readonly max: number | string };
   readonly perDay?: { readonly uses: number };
-  readonly cooldown?: { readonly duration: MagicItemDurationSpec };
+  readonly cooldown?: {
+    readonly duration: MagicItemDurationSpec;
+    /**
+     * Printed termination event that starts the wait (eshyra-o9bd.19.4.6.6;
+     * consumer eshyra-olc5.8). Absent means the wait starts when the
+     * initiating operation spends the pool.
+     */
+    readonly startsOn?: MagicItemCooldownAnchor;
+  };
   readonly budget?: {
     readonly total: MagicItemDurationSpec;
     readonly increment: MagicItemDurationSpec;
@@ -78,6 +121,15 @@ export interface MagicItemOperation {
   readonly cost?: readonly {
     readonly economy: string;
     readonly amount: number | string | 'variable';
+    /**
+     * Soft-limit marker (eshyra-o9bd.19.4.6.8; consumer eshyra-olc5.8). The
+     * printed text gives a count of risk-free uses and permits further uses
+     * at a printed risk (Ring of X-ray Vision, Wind Fan). The cost spends a
+     * safe use while one remains; when none remains the operation is still
+     * permitted, nothing is spent, and the printed risk is DM-adjudicated.
+     * Absent means a hard limit: insufficient resources refuse the use.
+     */
+    readonly onExhausted?: 'risk-adjudicated';
   }[];
   readonly excludes?: readonly string[];
   readonly doesNotExpend?: readonly string[];
@@ -427,6 +479,12 @@ const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const REF_RE = /^[a-z][a-z0-9-]*:[a-z0-9]+(?:[-:][a-z0-9]+)*$/;
 const DICE_RE = /^(?:\d*)d\d+(?:(?:kh|kl|dh|dl)\d+)?(?:[+-]\d+)?$/i;
 const DURATION_UNITS = new Set(['round', 'minute', 'hour', 'day']);
+const EQUIPMENT_REQUIREMENTS = new Set([
+  'worn',
+  'held',
+  'attuned',
+  'on-person',
+]);
 const ACTIVATION_COSTS = new Set([
   'action',
   'bonus-action',
@@ -602,17 +660,58 @@ function activation(value: unknown, path: string): void {
   const obj = object(value, path);
   only(
     obj,
-    ['cost', 'commandWord', 'trigger', 'requirement', 'target', 'note'],
+    [
+      'cost',
+      'commandWord',
+      'equipment',
+      'trigger',
+      'requirement',
+      'target',
+      'note',
+    ],
     path,
   );
-  const cost = string(obj.cost, `${path}.cost`);
-  if (!ACTIVATION_COSTS.has(cost)) {
-    throw new RulesPackError(
-      `${path}.cost must be one of ${[...ACTIVATION_COSTS].join(', ')}`,
-    );
+  if (Object.keys(obj).length === 0)
+    throw new RulesPackError(`${path} must state at least one printed field`);
+  if (obj.cost !== undefined) {
+    const cost = string(obj.cost, `${path}.cost`);
+    if (!ACTIVATION_COSTS.has(cost)) {
+      throw new RulesPackError(
+        `${path}.cost must be one of ${[...ACTIVATION_COSTS].join(', ')}`,
+      );
+    }
   }
   if (obj.commandWord !== undefined)
     boolean(obj.commandWord, `${path}.commandWord`);
+  if (obj.equipment !== undefined) {
+    const alternatives = array(obj.equipment, `${path}.equipment`);
+    if (alternatives.length === 0)
+      throw new RulesPackError(`${path}.equipment must not be empty`);
+    const seenAlternatives = new Set<string>();
+    alternatives.forEach((rawAlternative, at) => {
+      const altPath = `${path}.equipment[${at}]`;
+      const alternative = array(rawAlternative, altPath);
+      if (alternative.length === 0)
+        throw new RulesPackError(`${altPath} must not be empty`);
+      const seen = new Set<string>();
+      alternative.forEach((entry, index) => {
+        const value = string(entry, `${altPath}[${index}]`);
+        if (!EQUIPMENT_REQUIREMENTS.has(value))
+          throw new RulesPackError(
+            `${altPath}[${index}] must be one of ${[...EQUIPMENT_REQUIREMENTS].join(', ')}`,
+          );
+        if (seen.has(value))
+          throw new RulesPackError(`${altPath} must not repeat ${value}`);
+        seen.add(value);
+      });
+      const key = [...seen].sort().join('+');
+      if (seenAlternatives.has(key))
+        throw new RulesPackError(
+          `${path}.equipment must not repeat an alternative`,
+        );
+      seenAlternatives.add(key);
+    });
+  }
   for (const key of ['trigger', 'requirement', 'target', 'note']) {
     if (obj[key] !== undefined) string(obj[key], `${path}.${key}`);
   }
@@ -766,8 +865,23 @@ function economy(value: unknown, path: string): void {
   }
   if (obj.cooldown !== undefined) {
     const shape = object(obj.cooldown, `${path}.cooldown`);
-    only(shape, ['duration'], `${path}.cooldown`);
+    only(shape, ['duration', 'startsOn'], `${path}.cooldown`);
     duration(shape.duration, `${path}.cooldown.duration`);
+    if (shape.startsOn !== undefined) {
+      const anchor = object(shape.startsOn, `${path}.cooldown.startsOn`);
+      const event = string(anchor.event, `${path}.cooldown.startsOn.event`);
+      if (event === 'grant-ended') {
+        only(anchor, ['event', 'grantId'], `${path}.cooldown.startsOn`);
+        id(anchor.grantId, `${path}.cooldown.startsOn.grantId`);
+      } else if (event === 'state-entered') {
+        only(anchor, ['event', 'stateId'], `${path}.cooldown.startsOn`);
+        id(anchor.stateId, `${path}.cooldown.startsOn.stateId`);
+      } else {
+        throw new RulesPackError(
+          `${path}.cooldown.startsOn.event must be grant-ended or state-entered`,
+        );
+      }
+    }
   }
   if (obj.budget !== undefined) {
     const shape = object(obj.budget, `${path}.budget`);
@@ -811,10 +925,20 @@ function operation(value: unknown, path: string): MagicItemOperation {
     obj.cost.forEach((entry, index) => {
       const costPath = `${path}.cost[${index}]`;
       const cost = object(entry, costPath);
-      only(cost, ['economy', 'amount'], costPath);
+      only(cost, ['economy', 'amount', 'onExhausted'], costPath);
       id(cost.economy, `${costPath}.economy`);
       if (cost.amount !== 'variable')
         numberOrDice(cost.amount, `${costPath}.amount`);
+      if (cost.onExhausted !== undefined) {
+        if (cost.onExhausted !== 'risk-adjudicated')
+          throw new RulesPackError(
+            `${costPath}.onExhausted must be 'risk-adjudicated'`,
+          );
+        if (typeof cost.amount !== 'number')
+          throw new RulesPackError(
+            `${costPath}.onExhausted requires a fixed numeric amount (the count of risk-free uses it spends)`,
+          );
+      }
     });
   }
   for (const key of ['excludes', 'doesNotExpend', 'effects']) {
@@ -1921,23 +2045,10 @@ function spellStore(
         );
     }
     const required: Readonly<Record<string, readonly string[]>> = {
-      'spell-storage': [
-        'capacityLevels',
-        'maximumSpellLevel',
-        'casterOfRecord',
-        'storeOn',
-        'castOut',
-        'operationIds',
-      ],
-      'spell-energy': [
-        'capacityLevels',
-        'lifetimeCapacityLevels',
-        'maximumSpellLevel',
-        'absorbOn',
-        'castOut',
-        'operationIds',
-        'onExhausted',
-      ],
+      // Numeric core only (eshyra-o9bd.19.4.6.6): the stored-level counters
+      // item initialization binds; casting rules are DM-adjudicated.
+      'spell-storage': ['capacityLevels', 'operationIds'],
+      'spell-energy': ['lifetimeCapacityLevels', 'operationIds'],
       'spell-cancellation': [
         'lifetimeCapacityLevels',
         'maximumSpellLevel',
@@ -2389,7 +2500,40 @@ export function validateMagicItemMechanics(
   }
   if (mechanics.interItem !== undefined)
     interItem(mechanics.interItem, `${path}.interItem`);
+  cooldownAnchors(mechanics, path);
   validateAmbiguityReferences(mechanics, ambiguityIds, path);
+}
+
+/** An event-anchored cooldown must name a grant or state this scope declares. */
+function cooldownAnchors(mechanics: Obj, path: string): void {
+  const economies = mechanics.economies;
+  if (typeof economies !== 'object' || economies === null) return;
+  const grantIds = new Set<string>();
+  const grants = (mechanics.entityGrant as Obj | undefined)?.grants;
+  if (Array.isArray(grants))
+    for (const grant of grants) grantIds.add(String((grant as Obj).id));
+  const stateIds = new Set<string>();
+  const states = (mechanics.stateMachine as Obj | undefined)?.states;
+  if (Array.isArray(states))
+    for (const state of states) stateIds.add(String((state as Obj).id));
+  for (const [economyId, raw] of Object.entries(economies)) {
+    const anchor = ((raw as Obj).cooldown as Obj | undefined)?.startsOn as
+      | Obj
+      | undefined;
+    if (anchor === undefined) continue;
+    const where = `${path}.economies.${economyId}.cooldown.startsOn`;
+    if (anchor.event === 'grant-ended' && !grantIds.has(String(anchor.grantId)))
+      throw new RulesPackError(
+        `${where}.grantId references unknown grant ${JSON.stringify(anchor.grantId)}`,
+      );
+    if (
+      anchor.event === 'state-entered' &&
+      !stateIds.has(String(anchor.stateId))
+    )
+      throw new RulesPackError(
+        `${where}.stateId references unknown state ${JSON.stringify(anchor.stateId)}`,
+      );
+  }
 }
 
 /** Pure implementation of the stateful-singleton invariant from PR #408. */

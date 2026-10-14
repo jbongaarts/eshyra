@@ -213,7 +213,9 @@ describe('magic-item M2/M3 membership and clause-count gate (eshyra-o9bd.18.7.7.
       ],
     });
 
-    expect(ring.mechanics?.stateMachine).toBeDefined();
+    // eshyra-o9bd.19.4.6.6: the linked-plane unlock graph is DM-adjudicated
+    // (printed help-slay sentences); the operations stay declared.
+    expect(ring.mechanics?.stateMachine).toBeUndefined();
     expect(ring.mechanics?.operations?.length).toBeGreaterThan(0);
     expect(ring.variants?.map((variant) => variant.name)).toEqual([
       'Ring of Air Elemental Command',

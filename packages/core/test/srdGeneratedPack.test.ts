@@ -838,6 +838,15 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // field and intentionally does not appear in this missing-field baseline.
   // Deck of Many Things and Figurine of Wondrous Power reference their inline
   // stat blocks; the other 238 magic items have none.
+  // eshyra-o9bd.19.4.6.6: Bag of Devouring and Efficient Quiver carry only
+  // containment, which the triage made DM-adjudicated, so they have no typed
+  // mechanics left (their printed text is carried by adjudicated clauses).
+  {
+    kind: 'magic-item',
+    field: 'mechanics',
+    missingCount: 2,
+    totalInKind: 240,
+  },
   {
     kind: 'magic-item',
     field: 'statBlockRefs',
@@ -1173,6 +1182,18 @@ const DICE_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
 };
 
 const DC_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
+  'magic-item:bag-of-devouring|parent|forward|dc:15':
+    'The escape check is carried by the DM-adjudicated containment sentence as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: containment is not typed)',
+  'magic-item:bag-of-devouring|parent|forward|dc:20':
+    'The rescue check is carried by the DM-adjudicated containment sentence as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: containment is not typed)',
+  'magic-item:deck-of-illusions|parent|forward|dc:15':
+    'The inspection check is carried by the DM-adjudicated illusion-control sentence as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: grant control text is not typed)',
+  'magic-item:dimensional-shackles|parent|forward|dc:30':
+    'The break-free check is carried by the DM-adjudicated shackles sentences as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: the shackles state machine is not typed)',
+  'magic-item:iron-bands-of-binding|parent|forward|dc:20':
+    'The break-the-bands check is carried by the DM-adjudicated bands sentences as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: the bands state machine is not typed)',
+  'magic-item:portable-hole|parent|forward|dc:10':
+    'The forced-exit check is carried by the DM-adjudicated containment sentence as a verbatim printed span (eshyra-o9bd.19.4.6.6 triage: containment is not typed)',
   'magic-item:apparatus-of-the-crab|parent|forward|dc:20':
     'DC 20 hidden-catch check is adjudicated per the as87 disposition',
   'magic-item:figurine-of-wondrous-power|parent|forward|dc:15':
@@ -3283,16 +3304,61 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1017);
+      expect(clauses).toHaveLength(1375);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
       // the engine-pending set and the six study rewards left green; review
       // 19.4.5.9 S3 withheld the Dimensional Shackles restriction (11 -> 12).
+      // eshyra-o9bd.19.4.6.1 (faithful-or-absent operations/activation): 43
+      // activation sentences (unprinted costs, delivery, creation and trigger
+      // predicates that no activation field states exactly) became
+      // adjudicated clauses (12 -> 55 with the shackles clause above); no pending
+      // or green clause moved.
+      // eshyra-o9bd.19.4.6.2 (faithful-or-absent lifecycles, economies,
+      // containment and the whole-corpus operations screen): 52 more printed
+      // sentences became adjudicated clauses (55 -> 107): unprinted costs
+      // across the rest of the corpus, the Manual of Golems gate and ashes,
+      // the Orb call cooldown, the Instant Fortress components, the Portable
+      // Hole closed-state suffocation, the Rope of Climbing movement command
+      // and the Cloak of Displacement suppression (whose state machine is
+      // withheld, moving its clause engine-pending -> adjudicated, 792 -> 791).
+      // No green clause moved.
+      // eshyra-o9bd.19.4.6.4 (review 19.4.6.3): the Necklace of Prayer Beads
+      // per-bead dawn gate is withheld (its pool clause engine-pending ->
+      // adjudicated, 791 -> 790), the Eversmoking Bottle growth sentence and
+      // the second Apparatus lever-10 direction operation each added one
+      // adjudicated clause (107 -> 110). No green clause moved.
+      // eshyra-o9bd.19.4.6.6 (non-effect triage, bd memory
+      // magic-item-faithful-or-absent): the free-text activation predicates,
+      // 26 complex state machines, grant control text, containment,
+      // spellStore and rollManipulation became adjudicated clauses
+      // (110 -> 333). The 66 block-level engine-pending clauses of the
+      // withheld blocks left the pending set; each withheld block's bound
+      // operations keep one operation-bound engine-pending clause carrying
+      // the block's hooks so no operation became executable (+78), and the
+      // Efreeti Bottle stopper cooldown added one economy clause (790 ->
+      // 803). No green clause moved: the 212 green clauses and the 19 ready
+      // operations are unchanged.
+      // eshyra-o9bd.19.4.6.10: 18 actor/delivery sentences erased by early
+      // nulling now survive as adjudicated clauses; Wand of Binding's branch-
+      // dependent reaction is carried without a composite typed cost; Winged
+      // Boots' worn gate is typed and carried; Sovereign Glue's absent action
+      // cost is adjudicated. Net clause population: +19; readiness unchanged.
+      // eshyra-o9bd.19.4.6.8 (review 19.4.6.7): the Staff of Swarming Insects,
+      // Helm of Brilliance and Ring of Shooting Stars state machines (their
+      // activations create repeatable or independently-timed instances) are
+      // withheld: three machine clauses engine-pending -> adjudicated, three
+      // operation-bound pending clauses keep their operations blocked, and the
+      // insect-cloud and ball-lightning effects typed with their printed
+      // durations add two pending effect clauses (803 -> 805); the Sun Blade
+      // grasp and Ring of Spell Turning wearing sentences add two adjudicated
+      // clauses (333 -> 338). Together with the 19.4.6.10 additions above,
+      // adjudicated clauses total 357. No green clause moved.
       expect(counts).toEqual({
-        'adjudicated-by-design': 12,
+        'adjudicated-by-design': 357,
         'design-blocked': 1,
-        'engine-pending': 792,
+        'engine-pending': 805,
         green: 212,
       });
       const pending = clauses.filter(

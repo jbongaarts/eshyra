@@ -48,9 +48,14 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         'hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check',
         'Below that, the vehicle takes 2d6 bludgeoning damage per minute from pressure',
       ],
-      operations: Array.from({ length: 10 }, (_, i) =>
-        op(`set-lever-${i + 1}`),
-      ),
+      // Lever 10 is the only lever whose direction matters to the state graph
+      // (Up unseals and opens the rear hatch, Down closes and seals it), so
+      // its two directions are two operations (review 19.4.6.3 S2).
+      operations: [
+        ...Array.from({ length: 9 }, (_, i) => op(`set-lever-${i + 1}`)),
+        op('set-lever-10-up'),
+        op('set-lever-10-down'),
+      ],
       effects: [
         procedure(
           'm5-complex-apparatus-controls',
@@ -90,7 +95,8 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
           { from: 'sealed', to: 'sealed', via: 'set-lever-7' },
           { from: 'sealed', to: 'sealed', via: 'set-lever-8' },
           { from: 'sealed', to: 'sealed', via: 'set-lever-9' },
-          { from: 'sealed', to: 'sealed', via: 'set-lever-10' },
+          { from: 'sealed', to: 'open', via: 'set-lever-10-up' },
+          { from: 'open', to: 'sealed', via: 'set-lever-10-down' },
           {
             from: 'sealed',
             to: 'disabled',
@@ -717,7 +723,7 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         'effect ends after 10 minutes',
         'creature uses an action to pull the rod from the ground',
       ],
-      operations: [op('activate-aura'), op('pull-rod')],
+      operations: [op('activate-protective-aura'), op('pull-rod')],
       stateMachine: {
         initial: 'held',
         states: [
@@ -728,7 +734,7 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
           ),
         ],
         transitions: [
-          { from: 'held', to: 'planted-aura', via: 'activate-aura' },
+          { from: 'held', to: 'planted-aura', via: 'activate-protective-aura' },
           { from: 'planted-aura', to: 'held', via: 'pull-rod' },
           {
             from: 'planted-aura',

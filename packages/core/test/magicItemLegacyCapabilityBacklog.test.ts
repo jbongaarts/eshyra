@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(793);
+    expect(backlog.candidates).toHaveLength(806);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -80,9 +80,40 @@ describe('magic-item legacy capability backlog', () => {
     // eshyra-o9bd.19.4.5.8 (faithful-or-absent): the goat-of-terror aura
     // effect moved to an adjudicated clause, so its engine-hook candidate left
     // the set (795 -> 794); review 19.4.5.9 S3 then withheld the Dimensional
-    // Shackles restriction the same way (794 -> 793). No other identity changed.
+    // Shackles restriction the same way (794 -> 793); eshyra-o9bd.19.4.6.2
+    // withheld the Cloak of Displacement state machine (two independent
+    // suppression lifetimes no single typed graph states), so its M5 engine-
+    // hook candidate left the set (793 -> 792); eshyra-o9bd.19.4.6.4 withheld
+    // the Necklace of Prayer Beads necklace-wide pool (the printed gate is per
+    // magic bead), so its F5 candidate left the set (792 -> 791).
+    // eshyra-o9bd.19.4.6.6 (non-effect triage): the 66 block-level candidates
+    // of the withheld state machines (25), spellStore (17), rollManipulation
+    // (14), containment (9) and the Orb of Dragonkind grant (1) left the set
+    // (DM-adjudicated, no capability planned); the operations those blocks
+    // used to block keep one operation-bound candidate each with the block's
+    // hooks (+78) so no operation became executable, and the Efreeti Bottle
+    // stopper cooldown added one economy candidate (791 -> 804). The three
+    // stored-level spellStore cores (Ring of Spell Storing, Ioun Stone
+    // Reserve, Rod of Absorption) keep their block candidates. No other
+    // identity changed. eshyra-o9bd.19.4.6.8 (review 19.4.6.7 S2): the Staff of
+    // Swarming Insects, Helm of Brilliance and Ring of Shooting Stars machines
+    // (repeatable or independently-timed instances) are DM-adjudicated, so
+    // their three block candidates left the set while three operation-bound
+    // candidates keep the operations blocked and the typed insect-cloud and
+    // ball-lightning effects add two (804 -> 806).
     expect(fingerprint).toBe(
-      '7047dde655c2747582fc8fa1989aa26735df9601eb9d46eeb28fbdcfbee7de21',
+      '8410b566c331be927b640b9401d5ffd50fc68a0510af2e19e5f8e5697dfc9488',
+    );
+    expect(
+      backlog.candidates.map(({ candidateId }) => candidateId),
+    ).not.toContain('magic-item:dancing-sword/m5-complex-dancing-sword');
+    expect(backlog.candidates.map(({ candidateId }) => candidateId)).toContain(
+      'magic-item:dancing-sword/triage-stateMachine-op-launch-sword',
+    );
+    expect(
+      backlog.candidates.map(({ candidateId }) => candidateId),
+    ).not.toContain(
+      'magic-item:cloak-of-displacement/m5-cloak-of-displacement',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

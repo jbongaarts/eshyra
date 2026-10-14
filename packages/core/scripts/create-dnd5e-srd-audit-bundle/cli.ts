@@ -1264,6 +1264,11 @@ export const ACCEPTED_PROSE_RECORD_KEYS: Readonly<
   Record<string, readonly string[]>
 > = Object.freeze({
   'feature#partial-structure': ['feature:cleric:destroy-undead'],
+  // eshyra-o9bd.19.4.6.6: containment-only items, now fully DM-adjudicated.
+  'magic-item#prose-only': [
+    'magic-item:bag-of-devouring',
+    'magic-item:efficient-quiver',
+  ],
   'feature#prose-only': [
     // eshyra-o9bd.19.3.2.1: six features lost a keyword-derived rest resource
     // (F-06 phantom) and are prose-only by design. Each names a rest only as an
@@ -1307,6 +1312,11 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
     status: 'accepted-prose-only',
     reason:
       'Spells whose remaining behavior is inherently DM-mediated or open-ended (conjuring stat-blocked allies, divination answers, utility/social effects, movement forms); casting metadata (concentration, structured duration, save DCs, areas) is projected, and every printed deterministic hook (damage dice, conditions, healing, modifiers, scaling) is typed where the SRD states one (eshyra-o9bd.18.7.4).',
+  },
+  'magic-item#prose-only': {
+    status: 'accepted-prose-only',
+    reason:
+      'Magic items whose only non-effect structure was containment (Bag of Devouring, Efficient Quiver): containment is DM-adjudicated under the faithful-or-absent triage, so the printed text is carried by verbatim adjudicated-by-design clauses and no typed projection is owed (eshyra-o9bd.19.4.6.6).',
   },
   'creature-entry#narrative-prose': {
     status: 'reviewed-per-ref',

@@ -404,8 +404,11 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
             count: 1,
             control:
               'friendly and obedient for one hour; refuses likely-suicidal commands and otherwise only defends itself',
-            duration: { amount: 1, unit: 'hour' },
-            revertOn: ['one-hour-control-ended'],
+            // The printed hour times how long the creature is FRIENDLY and
+            // obedient, not how long it exists: after it the creature stays and
+            // acts on its normal disposition. That control clock is the
+            // adjudicated control paragraph, so no existence duration or
+            // reversion is typed (review 19.4.6.7 S4).
             exclusiveInstance: { scope: 'item', recast: 'blocked' },
             note: 'The released creature remains the same persistent actor; after control ends it resumes its normal disposition and alignment.',
           },

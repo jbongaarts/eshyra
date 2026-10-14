@@ -35,6 +35,17 @@ const cost = (
   extra: Omit<MagicItemOperation, 'id' | 'cost'> = {},
 ): MagicItemOperation => ({ id, cost: [{ economy, amount }], ...extra });
 
+/**
+ * A printed count of risk-free uses followed by permitted risky reuse (Ring of
+ * X-ray Vision, Wind Fan; eshyra-o9bd.19.4.6.8): the operation spends a safe
+ * use while one remains and is never refused when none does -- the printed
+ * risk is DM-adjudicated (consumer eshyra-olc5.8).
+ */
+const softCost = (id: string, economy: string): MagicItemOperation => ({
+  id,
+  cost: [{ economy, amount: 1, onExhausted: 'risk-adjudicated' }],
+});
+
 const atWill = (
   operationId: string,
   sourcePhrases: readonly string[],
@@ -556,10 +567,10 @@ const specs = new Map<string, UseSpec>([
           kind: 'per-day',
           perDay: { uses: 1 },
           reset: [{ at: 'long-rest', amount: 'all' }],
-          note: 'reuse remains allowed after depletion but triggers the Constitution-save exhaustion risk',
+          note: 'one risk-free use before a long rest; the operation cost is a soft limit (onExhausted), so reuse after depletion is permitted and the printed Constitution-save exhaustion risk is DM-adjudicated',
         },
       },
-      operations: [cost('activate-x-ray-vision', 'safe-use')],
+      operations: [softCost('activate-x-ray-vision', 'safe-use')],
       primaryEconomy: 'safe-use',
       engineHooks: [
         { engine: 'F7', hook: 'long-rest reset and early-reuse gate' },
@@ -611,10 +622,10 @@ const specs = new Map<string, UseSpec>([
           kind: 'per-day',
           perDay: { uses: 1 },
           reset: [{ at: 'dawn', amount: 'all' }],
-          note: 'early reuse remains allowed; each early reuse adds a cumulative 20 percent failure-and-destruction chance',
+          note: 'one risk-free use before dawn; the operation cost is a soft limit (onExhausted), so early reuse is permitted and the printed cumulative 20 percent failure-and-destruction chance is DM-adjudicated',
         },
       },
-      operations: [cost('cast-gust-of-wind', 'safe-use')],
+      operations: [softCost('cast-gust-of-wind', 'safe-use')],
       primaryEconomy: 'safe-use',
       engineHooks: [
         { engine: 'F5', hook: 'dawn reset with nonblocking early-reuse risk' },

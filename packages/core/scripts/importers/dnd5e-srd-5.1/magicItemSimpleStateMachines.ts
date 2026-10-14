@@ -379,15 +379,36 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
     'Glamoured Studded Leather',
     {
       sourcePhrases: [
-        'speak the armor’s command word',
+        'use a bonus action to speak the armor’s command word',
         'decide what it looks like',
+        'until you use this property again or remove the armor',
       ],
-      ...toggle(
-        'set-appearance',
-        'restore-appearance',
-        'armor displays a wearer-chosen normal clothing or armor appearance',
-        { commandWord: true },
-      ),
+      // The text prints a bonus-action change of appearance that "lasts until
+      // you use this property again or remove the armor": there is no separate
+      // restore command (eshyra-b0m4; eshyra-o9bd.19.4.6.1 S3.01), so the
+      // only operation is set-appearance, repeated to change the appearance.
+      operations: [
+        operation('set-appearance', 'bonus-action', { commandWord: true }),
+      ],
+      stateMachine: {
+        initial: 'inactive',
+        states: [
+          { id: 'inactive' },
+          {
+            id: 'active',
+            note: 'armor displays a wearer-chosen normal clothing or armor appearance',
+          },
+        ],
+        transitions: [
+          { from: 'inactive', to: 'active', via: 'set-appearance' },
+          { from: 'active', to: 'active', via: 'set-appearance' },
+          {
+            from: 'active',
+            to: 'inactive',
+            condition: 'remove the armor',
+          },
+        ],
+      },
     },
   ],
   [

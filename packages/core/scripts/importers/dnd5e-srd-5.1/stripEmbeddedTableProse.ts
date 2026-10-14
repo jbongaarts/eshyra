@@ -63,7 +63,7 @@ interface StripInput {
 }
 
 /** Owner record key -> verbatim table spans to remove from that record's prose. */
-function spansByOwner(
+export function spansByOwner(
   tables: readonly TableExtraction[],
 ): Map<string, string[]> {
   const out = new Map<string, string[]>();
@@ -77,6 +77,26 @@ function spansByOwner(
     out.set(owner, list);
   }
   return out;
+}
+
+/**
+ * Remove the given embedded-table spans from one prose string exactly as
+ * `stripEmbeddedTableProse` does for a record, so a caller that must quote the
+ * FINAL description (the magic-item triage spans) sees the same text.
+ */
+export function stripTableSpansFromProse(
+  prose: string,
+  spans: readonly string[],
+): string {
+  let text = prose;
+  // Longest spans first so an overlapping super-span (e.g. Cube of Force's two
+  // adjacent cell runs captured as one) is removed before any sub-span.
+  for (const span of [...spans].sort((a, b) => b.length - a.length)) {
+    if (text.includes(span)) {
+      text = reflowProse(text.replaceAll(span, ' '));
+    }
+  }
+  return text;
 }
 
 /**
@@ -107,14 +127,7 @@ export function stripEmbeddedTableProse(input: StripInput): RulesRecord[] {
       );
     }
     const data = record.data as Record<string, unknown>;
-    let text = data[field] as string;
-    // Longest spans first so an overlapping super-span (e.g. Cube of Force's two
-    // adjacent cell runs captured as one) is removed before any sub-span.
-    for (const span of [...spans].sort((a, b) => b.length - a.length)) {
-      if (text.includes(span)) {
-        text = reflowProse(text.replaceAll(span, ' '));
-      }
-    }
+    const text = stripTableSpansFromProse(data[field] as string, spans);
     return { ...record, data: { ...data, [field]: text } };
   });
 }

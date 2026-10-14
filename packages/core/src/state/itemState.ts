@@ -2139,6 +2139,22 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       const economyId = String(cost.economy);
       const amount = costAmount(cost.amount, economyId, input.args);
       const economy = obj(refs.economies[economyId], `economy '${economyId}'`);
+      // Soft limit (eshyra-o9bd.19.4.6.8): the printed text permits further
+      // uses at a risk once the risk-free uses are spent, so an exhausted
+      // pool spends nothing and does not refuse; the printed risk is
+      // adjudicated by the DM. A hard limit (no marker) still refuses.
+      const softLimit = cost.onExhausted === 'risk-adjudicated';
+      const poolRemaining = nextEconomies[economyId]?.remaining;
+      if (
+        softLimit &&
+        economy.kind !== 'at-will' &&
+        economy.kind !== 'single-use' &&
+        poolRemaining !== undefined &&
+        poolRemaining < amount
+      ) {
+        costs.push({ economy: economyId, amount: 0 });
+        continue;
+      }
       costs.push({ economy: economyId, amount });
       if (economy.kind === 'at-will') continue;
       if (economy.kind === 'single-use' && !stateful) {
