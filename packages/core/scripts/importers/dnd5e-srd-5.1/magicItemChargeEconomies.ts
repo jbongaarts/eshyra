@@ -95,7 +95,6 @@ const SPECS: ReadonlyMap<string, ChargeSpec> = new Map([
         op('press-face-4', 4),
         op('press-face-5', 5),
         { id: 'press-face-6', doesNotExpend: ['charges'] },
-        op('spell-contact-loss', 'variable'),
       ],
       [
         'The cube starts with 36 charges',

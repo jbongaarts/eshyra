@@ -125,7 +125,10 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
         };
       }),
     );
-    expect(activationCensus).toHaveLength(359);
+    // olc5.11.4 removes Rod of Alertness pull-rod and Cube of Force
+    // spell-contact-loss: any-creature/external-event predicates are condition
+    // transitions, not operations charged to the item owner.
+    expect(activationCensus).toHaveLength(357);
     expect(actual).toHaveLength(activationCensus.length);
     const censusByKey = new Map(
       activationCensus.map((row) => [`${row.scope}/${row.operation}`, row]),
@@ -410,7 +413,7 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
         else activations += 1;
         if (typed?.equipment !== undefined) equipment += 1;
       }
-    expect(operationCount).toBe(359);
+    expect(operationCount).toBe(357);
     expect(activations + withoutActivation).toBe(operationCount);
     expect(equipment).toBe(129);
     expect(scopes.filter((s) => s.mechanics.stateMachine).length).toBe(21);

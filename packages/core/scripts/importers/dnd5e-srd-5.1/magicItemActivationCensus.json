@@ -639,18 +639,6 @@
     }
   },
   {
-    "scope": "Cube of Force",
-    "operation": "spell-contact-loss",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
     "scope": "Cubic Gate",
     "operation": "cast-gate",
     "cost": "action",
@@ -2910,18 +2898,6 @@
     "noneReason": {
       "cost": null,
       "equipment": null
-    }
-  },
-  {
-    "scope": "Rod of Alertness",
-    "operation": "pull-rod",
-    "cost": "action",
-    "equipment": null,
-    "costSentence": "The rod’s head stops glowing and the effect ends after 10 minutes, or when a creature uses an action to pull the rod from the ground.",
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": null,
-      "equipment": "No equipment prerequisite is retained for this operation."
     }
   },
   {

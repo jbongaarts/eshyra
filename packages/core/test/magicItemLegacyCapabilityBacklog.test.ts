@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(805);
+    expect(backlog.candidates).toHaveLength(804);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -106,8 +106,12 @@ describe('magic-item legacy capability backlog', () => {
     // the Bat's cast-polymorph operation adds one spell-linked castSpell
     // candidate from the spell record (+1); Rope of Entanglement's typed
     // restraint payload becomes an exact adjudicated clause (-1), net 805.
+    // eshyra-olc5.11.4 removes Cube of Force spell-contact-loss as an item
+    // operation: item_state_event cannot deduct its table-defined charge loss,
+    // so the external condition has no operation-bound capability (-1).
+    // The resulting candidate set contains 804 rows.
     expect(fingerprint).toBe(
-      '2c1df51b122d68dbf820c4ab355d2d24727980eb85bf75e1ac8dde99f4aa93b3',
+      '2bc1fb75139dc8707fd61530500e94d6e456dfef033aaece44332303b0b4469d',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

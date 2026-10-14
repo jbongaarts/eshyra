@@ -296,26 +296,6 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     { operations: [op('cast-web', { requirement: 'While wearing it' })] },
   ],
   [
-    'Cube of Force',
-    {
-      operations: [
-        op('spell-contact-loss', {
-          cost: null,
-          trigger:
-            'when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects',
-        }),
-      ],
-      clauses: [
-        clause(
-          'activation-spell-contact-loss',
-          { operation: 'spell-contact-loss' },
-          'The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.',
-          NO_COST_NOTE,
-        ),
-      ],
-    },
-  ],
-  [
     'Cubic Gate',
     {
       operations: [

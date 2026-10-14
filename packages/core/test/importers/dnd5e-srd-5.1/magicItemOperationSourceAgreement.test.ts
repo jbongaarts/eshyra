@@ -1134,6 +1134,96 @@ describe('economies and composition (S6)', () => {
       ),
     ).toMatchObject({ from: 'held', to: 'planted-aura' });
   });
+
+  it('Rod of Alertness: any creature pulling the planted rod is a no-cost external event', () => {
+    const ids = (mechanicsOf('Rod of Alertness').operations as Obj[]).map(
+      (entry) => entry.id,
+    );
+    expect(ids).not.toContain('pull-rod');
+    expect(transitionsOf('Rod of Alertness')).toContainEqual({
+      from: 'planted-aura',
+      to: 'held',
+      condition:
+        'when a creature uses an action to pull the rod from the ground',
+    });
+    expect(transitionsOf('Rod of Alertness')).toContainEqual({
+      from: 'planted-aura',
+      to: 'held',
+      timer: { amount: 10, unit: 'minute' },
+    });
+  });
+
+  it('Immovable Rod: owner release remains an operation; other-creature release and the fixed-rod check are external events', () => {
+    const ids = (mechanicsOf('Immovable Rod').operations as Obj[]).map(
+      (entry) => entry.id,
+    );
+    expect(ids).toEqual(['fix-rod', 'release-rod']);
+    expect(transitionsOf('Immovable Rod')).toContainEqual({
+      from: 'active',
+      to: 'inactive',
+      via: 'release-rod',
+    });
+    expect(transitionsOf('Immovable Rod')).toContainEqual({
+      from: 'active',
+      to: 'inactive',
+      condition: 'another creature uses an action to push the button again',
+    });
+    expect(transitionsOf('Immovable Rod')).toContainEqual({
+      from: 'active',
+      to: 'active',
+      condition:
+        'A creature can use an action to make a DC 30 Strength check, moving the fixed rod up to 10 feet on a success.',
+    });
+    expect(String(machineOf('Immovable Rod').termination)).not.toContain(
+      'DC 30',
+    );
+    expect(transitionsOf('Immovable Rod')).toContainEqual({
+      from: 'active',
+      to: 'inactive',
+      condition: 'More weight causes the rod to deactivate and fall.',
+    });
+  });
+
+  it('Cube of Force contact loss remains a verbatim external predicate without an invented charge operation', () => {
+    const ids = (mechanicsOf('Cube of Force').operations as Obj[]).map(
+      (entry) => entry.id,
+    );
+    expect(ids).not.toContain('spell-contact-loss');
+    expect(mechanicsOf('Cube of Force').economies).toMatchObject({
+      charges: { kind: 'charges', charges: { max: 36 } },
+    });
+    const contact =
+      'The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.';
+    const contactTransitions = transitionsOf('Cube of Force').filter(
+      (entry) => entry.condition === contact,
+    );
+    expect(contactTransitions).toEqual(
+      [1, 2, 3, 4, 5].map((face) => ({
+        from: `face-${face}`,
+        to: `face-${face}`,
+        condition: contact,
+        effects: ['m5-complex-cube-contact'],
+      })),
+    );
+    expect(
+      (mechanicsOf('Cube of Force').effects as Obj[]).find(
+        (entry) => entry.id === 'm5-complex-cube-contact',
+      ),
+    ).toMatchObject({ tableRef: 'table:cube-of-force-charges-lost' });
+    expect(descriptionOf('Cube of Force')).toContain(contact);
+    const readiness = dataOf('Cube of Force').executionReadiness as Obj;
+    const clauses = readiness.clauses as Obj[];
+    expect(
+      clauses.find((entry) =>
+        String(entry.clauseId).endsWith('/m5-complex-cube-of-force'),
+      ),
+    ).toMatchObject({ readiness: 'engine-pending' });
+    expect(
+      clauses.some((entry) =>
+        String(entry.clauseId).endsWith('/activation-spell-contact-loss'),
+      ),
+    ).toBe(false);
+  });
 });
 
 describe('containment states the printed qualifiers (S1.16-S1.18)', () => {

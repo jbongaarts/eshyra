@@ -604,20 +604,19 @@ describe('context-packet intervention (ADR 0020 Phase 3, W10, eshyra-o9bd.19.12.
           'press-face-4',
           'press-face-5',
           'press-face-6',
-          'spell-contact-loss',
         ].sort(),
       );
       for (const capability of candidate?.capabilities ?? [])
         expect(capability.status).toBe('blocked');
       const rendered = renderContextPacketMessage(trace);
       const span = candidateSpan(rendered.text, 'magic-item:cube-of-force');
-      // Every one of the seven is a real bounded contract, and every one
+      // Every one of the six is a real bounded contract, and every one
       // reports that it cannot run. The label tracks AVAILABILITY: a reader
       // skimming headings must not take a positive claim from a preflight
       // that blocked, so no blocked entry carries the positive label.
-      expect(occurrences(span, 'BOUNDED CONTRACT, NOT AVAILABLE')).toBe(7);
+      expect(occurrences(span, 'BOUNDED CONTRACT, NOT AVAILABLE')).toBe(6);
       expect(occurrences(span, 'POSITIVE BOUNDED CONTRACT')).toBe(0);
-      expect(occurrences(span, 'BLOCKED, and a blocked contract')).toBe(7);
+      expect(occurrences(span, 'BLOCKED, and a blocked contract')).toBe(6);
       // ... and a set of blocked contracts is still not the negative form:
       // "no capability positively selected" would say the record declares no
       // capability at all, which is a different and false claim.

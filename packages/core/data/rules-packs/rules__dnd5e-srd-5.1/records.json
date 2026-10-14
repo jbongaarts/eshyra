@@ -96210,7 +96210,7 @@
             {
               "from": "face-1",
               "to": "face-1",
-              "via": "spell-contact-loss",
+              "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
               "effects": [
                 "m5-complex-cube-contact"
               ]
@@ -96218,7 +96218,7 @@
             {
               "from": "face-2",
               "to": "face-2",
-              "via": "spell-contact-loss",
+              "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
               "effects": [
                 "m5-complex-cube-contact"
               ]
@@ -96226,7 +96226,7 @@
             {
               "from": "face-3",
               "to": "face-3",
-              "via": "spell-contact-loss",
+              "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
               "effects": [
                 "m5-complex-cube-contact"
               ]
@@ -96234,7 +96234,7 @@
             {
               "from": "face-4",
               "to": "face-4",
-              "via": "spell-contact-loss",
+              "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
               "effects": [
                 "m5-complex-cube-contact"
               ]
@@ -96242,7 +96242,7 @@
             {
               "from": "face-5",
               "to": "face-5",
-              "via": "spell-contact-loss",
+              "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
               "effects": [
                 "m5-complex-cube-contact"
               ]
@@ -96427,15 +96427,6 @@
             "doesNotExpend": [
               "charges"
             ]
-          },
-          {
-            "id": "spell-contact-loss",
-            "cost": [
-              {
-                "economy": "charges",
-                "amount": "variable"
-              }
-            ]
           }
         ],
         "effects": [
@@ -96462,20 +96453,6 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
-          {
-            "clauseId": "magic-item:cube-of-force/activation-spell-contact-loss",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "C1",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
-              "sourceText": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below."
-            },
-            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
-          },
           {
             "clauseId": "magic-item:cube-of-force/c1-economy-charges",
             "scope": {
@@ -96647,33 +96624,6 @@
             "representation": {
               "block": "operations",
               "operationId": "press-face-6"
-            },
-            "engineHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
-          },
-          {
-            "clauseId": "magic-item:cube-of-force/c1-operation-spell-contact-loss",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "C1",
-            "representation": {
-              "block": "operations",
-              "operationId": "spell-contact-loss"
             },
             "engineHooks": [
               {
@@ -108600,6 +108550,16 @@
               "from": "active",
               "to": "inactive",
               "condition": "More weight causes the rod to deactivate and fall."
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "another creature uses an action to push the button again"
+            },
+            {
+              "from": "active",
+              "to": "active",
+              "condition": "A creature can use an action to make a DC 30 Strength check, moving the fixed rod up to 10 feet on a success."
             }
           ],
           "termination": "Until you or another creature uses an action to push the button again, the rod doesn’t move, even if it is defying gravity. The rod can hold up to 8,000 pounds of weight. More weight causes the rod to deactivate and fall",
@@ -128713,7 +128673,7 @@
             {
               "from": "planted-aura",
               "to": "held",
-              "via": "pull-rod"
+              "condition": "when a creature uses an action to pull the rod from the ground"
             },
             {
               "from": "planted-aura",
@@ -128811,12 +128771,6 @@
                   "held"
                 ]
               ]
-            }
-          },
-          {
-            "id": "pull-rod",
-            "activation": {
-              "cost": "action"
             }
           }
         ],

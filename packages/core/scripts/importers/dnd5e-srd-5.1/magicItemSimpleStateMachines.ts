@@ -28,6 +28,7 @@ const toggle = (
     duration?: MagicItemStateMachine['duration'];
     termination?: string;
     conditions?: readonly string[];
+    externalTransitions?: readonly MagicItemStateMachine['transitions'][number][];
     commandWord?: boolean;
   } = {},
 ): Pick<SimpleStateSpec, 'operations' | 'stateMachine'> => ({
@@ -59,6 +60,7 @@ const toggle = (
         to: 'inactive' as const,
         condition,
       })),
+      ...(options.externalTransitions ?? []),
     ],
     ...(options.duration === undefined ? {} : { duration: options.duration }),
     ...(options.termination === undefined
@@ -448,7 +450,9 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
     {
       sourcePhrases: [
         'press the button, which causes the rod to become magically fixed in place',
-        'push the button again',
+        'Until you or another creature uses an action to push the button again, the rod doesn’t move, even if it is defying gravity.',
+        'More weight causes the rod to deactivate and fall.',
+        'A creature can use an action to make a DC 30 Strength check, moving the fixed rod up to 10 feet on a success.',
       ],
       ...toggle(
         'fix-rod',
@@ -456,8 +460,22 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         'rod is fixed in place until overloaded or released',
         {
           termination:
-            'button release, more than 8,000 pounds, or successful DC 30 Strength check moves it 10 feet',
+            'owner button release or more than 8,000 pounds of weight',
           conditions: ['More weight causes the rod to deactivate and fall.'],
+          externalTransitions: [
+            {
+              from: 'active',
+              to: 'inactive',
+              condition:
+                'another creature uses an action to push the button again',
+            },
+            {
+              from: 'active',
+              to: 'active',
+              condition:
+                'A creature can use an action to make a DC 30 Strength check, moving the fixed rod up to 10 feet on a success.',
+            },
+          ],
         },
       ),
     },

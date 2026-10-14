@@ -268,36 +268,6 @@
         },
         {
           "from": "face-1",
-          "to": "face-1",
-          "via": "spell-contact-loss",
-          "effects": ["m5-complex-cube-contact"]
-        },
-        {
-          "from": "face-2",
-          "to": "face-2",
-          "via": "spell-contact-loss",
-          "effects": ["m5-complex-cube-contact"]
-        },
-        {
-          "from": "face-3",
-          "to": "face-3",
-          "via": "spell-contact-loss",
-          "effects": ["m5-complex-cube-contact"]
-        },
-        {
-          "from": "face-4",
-          "to": "face-4",
-          "via": "spell-contact-loss",
-          "effects": ["m5-complex-cube-contact"]
-        },
-        {
-          "from": "face-5",
-          "to": "face-5",
-          "via": "spell-contact-loss",
-          "effects": ["m5-complex-cube-contact"]
-        },
-        {
-          "from": "face-1",
           "to": "inactive",
           "via": "press-face-6"
         },
@@ -365,6 +335,36 @@
         }
       ],
       "conditionTransitions": [
+        {
+          "from": "face-1",
+          "to": "face-1",
+          "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
+          "effects": ["m5-complex-cube-contact"]
+        },
+        {
+          "from": "face-2",
+          "to": "face-2",
+          "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
+          "effects": ["m5-complex-cube-contact"]
+        },
+        {
+          "from": "face-3",
+          "to": "face-3",
+          "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
+          "effects": ["m5-complex-cube-contact"]
+        },
+        {
+          "from": "face-4",
+          "to": "face-4",
+          "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
+          "effects": ["m5-complex-cube-contact"]
+        },
+        {
+          "from": "face-5",
+          "to": "face-5",
+          "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
+          "effects": ["m5-complex-cube-contact"]
+        },
         {
           "from": "face-1",
           "to": "inactive",
@@ -533,6 +533,16 @@
           "from": "active",
           "to": "inactive",
           "condition": "More weight causes the rod to deactivate and fall."
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "another creature uses an action to push the button again"
+        },
+        {
+          "from": "active",
+          "to": "active",
+          "condition": "A creature can use an action to make a DC 30 Strength check, moving the fixed rod up to 10 feet on a success."
         }
       ],
       "roundUnitTimers": []
@@ -725,11 +735,6 @@
           "from": "held",
           "to": "planted-aura",
           "via": "activate-protective-aura"
-        },
-        {
-          "from": "planted-aura",
-          "to": "held",
-          "via": "pull-rod"
         }
       ],
       "timerTransitions": [
@@ -742,7 +747,13 @@
           }
         }
       ],
-      "conditionTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "planted-aura",
+          "to": "held",
+          "condition": "when a creature uses an action to pull the rod from the ground"
+        }
+      ],
       "roundUnitTimers": []
     },
     {

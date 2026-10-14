@@ -3306,7 +3306,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1378);
+      expect(clauses).toHaveLength(1376);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3372,10 +3372,16 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // state execution for Animated Shield, Dagger of Venom, Rope of
       // Entanglement, and Wings of Flying (four pending -> green): 361
       // adjudicated, 793 pending, 223 green.
+      // eshyra-olc5.11.4 removes Cube of Force spell-contact-loss as an owner
+      // operation. Its exact predicate remains on external machine transitions;
+      // the enclosing M5 clause remains engine-pending because
+      // item_state_event cannot deduct table-defined charges. The former
+      // operation-bound candidate and duplicate adjudicated clause leave the
+      // census, yielding 360 adjudicated, 792 pending, and 223 green.
       expect(counts).toEqual({
-        'adjudicated-by-design': 361,
+        'adjudicated-by-design': 360,
         'design-blocked': 1,
-        'engine-pending': 793,
+        'engine-pending': 792,
         green: 223,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
