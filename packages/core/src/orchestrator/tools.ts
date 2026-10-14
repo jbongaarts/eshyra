@@ -40,6 +40,7 @@ import { flexibleCastingTool } from './toolFlexibleCasting.js';
 import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
+import { holdItemTool, stowItemTool } from './toolHoldItem.js';
 import { joinCombatTool } from './toolJoinCombat.js';
 import { listNearbyItemsTool } from './toolListNearbyItems.js';
 import { listRecoverableItemsTool } from './toolListRecoverableItems.js';
@@ -158,6 +159,8 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   transferItemTool,
   donItemTool,
   doffItemTool,
+  holdItemTool,
+  stowItemTool,
   removeItemTool,
   expendAmmunitionTool,
   recoverAmmunitionTool,

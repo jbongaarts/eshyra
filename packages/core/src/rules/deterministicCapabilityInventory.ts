@@ -958,32 +958,37 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('use_item', 'bounded-procedure', {
     operation:
-      'Use one rules-pack-bound inventory instance the character holds through an operation its magic-item record declares (or activate or deactivate through its state machine), in one transaction: require attunement when the record does, run the magic-item readiness preflight, select the state-machine transition, spend the typed action / bonus-action / reaction activation (or, with no typed cost, the bound castSpell spell 1-action / bonus-action / reaction casting time) from the turn budget of the acting character when a combat instance is active, refusing before any mutation when it is unavailable, spend its economy costs (at-will free, stateless single-use reduces quantity, insufficient resources refused), apply declared depletion outcomes, and return the declared effect definitions.',
+      'Use one rules-pack-bound inventory instance the character holds through an operation its magic-item record declares (or activate or deactivate through its state machine), in one transaction: require attunement when the record does, enforce the operation activation equipment DNF (any one alternative with all requirements met) before turn-resource or item-state mutation, run the magic-item readiness preflight, select the state-machine transition, spend the typed action / bonus-action / reaction activation (or, with no typed cost, the bound castSpell spell 1-action / bonus-action / reaction casting time) from the turn budget of the acting character when a combat instance is active, refusing before any mutation when it is unavailable, spend its economy costs (at-will free, stateless single-use reduces quantity, insufficient resources refused), apply declared depletion outcomes, and return the declared effect definitions.',
     requiredInputs: ['instanceId', 'operationId'],
     exclusions: [
       'A quarantined row, a row not bound to a pack item, an unresolvable packRef, a missing required attunement, a blocked readiness preflight (derived-magic-item-clauses-v1), an undeclared operation, an inert or nonmagical instance, an ambiguous transition lacking transitionTo, and an uninitialized dice-derived economy are refused.',
+      'A missing worn, held, attuned, or on-person equipment alternative is refused; on-person means exact actor custody because inventory has no structured container relation.',
       'Spends no turn resource outside combat, for a free or consumed activation, or for an operation with no typed cost and no bound spell; a longer casting time, a DM-selected spell list, and a typed cost that contradicts the bound spell casting time (outside the reviewed printed-text override set) are not auto-spent (the contradiction is refused). A non-character actor is not charged by use_item.',
       'Returns the declared effects but does not start them (start_effect does) and does not execute item semantics outside the declared operation.',
     ],
     residualDmInterpretation: [
-      'The DM decides whether the character may attempt the operation, supplies transition choices, starts any returned effect, and adjudicates source prose beyond the declared operation.',
+      'The DM decides whether the character may attempt the operation, supplies transition choices, starts any returned effect, adjudicates source prose beyond the declared operation, and enforces hand count, two-handed use, shield conflicts, and whether a contained item counts as on the character.',
     ],
     runtimeOwner: [
       o('toolUseItem.ts'),
       s('itemState.ts'),
       s('itemDepletion.ts'),
       s('itemTurnResource.ts'),
+      s('inventoryHeld.ts'),
+      o('toolHoldItem.ts'),
+      s('inventoryWear.ts'),
       'packages/core/src/campaign/capabilityPreflight.ts',
     ],
     evidence: [
       t('itemState.test.ts'),
       t('itemAdoption.test.ts'),
       t('itemTurnResource.test.ts'),
+      t('equipmentPrerequisites.test.ts'),
     ],
   }),
   toolEntry('transfer_item', 'state-integrity', {
     operation:
-      'Transfer an existing inventory instance between two different characters without recreating it, preserving row id, pack and variant identity, quantity, charges, and item state, clearing holder-relative storage and world placement, and resetting wear state to not worn.',
+      'Transfer an existing inventory instance between two different characters without recreating it, preserving row id, pack and variant identity, quantity, charges, and item state, clearing holder-relative storage and world placement, and resetting wear state to not worn and held state to not held.',
     requiredInputs: ['id', 'to_character', 'attunement'],
     exclusions: [
       'The source must hold the row; an item with multiple attunements or one attuned outside the asserted source and campaign is refused.',
@@ -1039,6 +1044,33 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
       s('curseState.ts'),
     ],
     evidence: [t('inventoryWear.test.ts')],
+  }),
+  toolEntry('hold_item', 'state-integrity', {
+    operation:
+      'Persist that one exact inventory row in the character’s custody is held in hand.',
+    requiredInputs: ['id'],
+    exclusions: [
+      'An item not held by the character, an item with no authoritative held state, or an item already held is refused.',
+      'Does not enforce hand count, two-handed use, or shield conflicts.',
+    ],
+    residualDmInterpretation: [
+      'The DM decides whether the character takes the item in hand and adjudicates hand availability.',
+    ],
+    runtimeOwner: [o('toolHoldItem.ts'), s('inventoryHeld.ts')],
+    evidence: [t('equipmentPrerequisites.test.ts')],
+  }),
+  toolEntry('stow_item', 'state-integrity', {
+    operation:
+      'Persist that one exact held inventory row in the character’s custody is no longer held in hand.',
+    requiredInputs: ['id'],
+    exclusions: [
+      'An item not held by the character, an item with no authoritative held state, or an item already stowed is refused.',
+    ],
+    residualDmInterpretation: [
+      'The DM decides whether the character puts the item away.',
+    ],
+    runtimeOwner: [o('toolHoldItem.ts'), s('inventoryHeld.ts')],
+    evidence: [t('equipmentPrerequisites.test.ts')],
   }),
   toolEntry('remove_item', 'state-integrity', {
     operation:

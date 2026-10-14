@@ -1710,6 +1710,17 @@ export {
   spendInspiration,
 } from './state/inspiration.js';
 export type {
+  InventoryHeldContext,
+  InventoryHeldInput,
+  InventoryHeldResult,
+} from './state/inventoryHeld.js';
+export {
+  holdItem,
+  InventoryHeldError,
+  isInventoryItemHeld,
+  stowItem,
+} from './state/inventoryHeld.js';
+export type {
   DestroyedItemAttunementEvidence,
   DestroyInventoryItemResult,
   InventoryDestructionContext,
