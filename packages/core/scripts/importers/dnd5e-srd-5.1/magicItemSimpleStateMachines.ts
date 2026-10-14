@@ -87,10 +87,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           commandWord: true,
           termination:
             'deactivation, wearer incapacitation, wearer death, or one minute',
-          conditions: [
-            'you are incapacitated',
-            'until you are incapacitated or die',
-          ],
+          conditions: ['until you are incapacitated or die'],
         },
       ),
     },
@@ -493,8 +490,11 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           {
             from: 'orbiting',
             to: 'seized',
+            // This is an external action by another creature, not an
+            // operation available to the item's owner. The DM resolves that
+            // creature's action and item_state_event records its full result.
             condition:
-              'either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
+              'Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
           },
         ],
         termination:
@@ -694,13 +694,26 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         initial: 'loose',
         states: [{ id: 'loose' }, { id: 'restraining' }, { id: 'destroyed' }],
         transitions: [
-          { from: 'loose', to: 'restraining', via: 'entangle-creature' },
+          {
+            from: 'loose',
+            to: 'restraining',
+            via: 'entangle-creature',
+            onFailure: {
+              scope: 'target',
+              to: 'loose',
+              note: 'transitionOutcome failure means the target succeeds on the Dexterity saving throw',
+            },
+          },
           { from: 'restraining', to: 'loose', via: 'release-creature' },
           {
             from: 'restraining',
             to: 'loose',
-            condition:
-              'restrained target succeeds on DC 15 Strength or Dexterity check',
+            via: 'escape-rope',
+            onFailure: {
+              scope: 'target',
+              to: 'restraining',
+              note: 'transitionOutcome failure means the target fails the Strength or Dexterity check',
+            },
           },
           {
             from: 'loose',
@@ -859,6 +872,14 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
   ],
 ]);
 
+/** Pack conformance records for olc5.11's operation + event/timer boundary. */
+const RUNTIME_M5_CONFORMANCE_NAMES = new Set([
+  'Animated Shield',
+  'Dagger of Venom',
+  'Rope of Entanglement',
+  'Wings of Flying',
+]);
+
 export const MAGIC_ITEM_SIMPLE_M5_NAMES = Object.freeze([...SPECS.keys()]);
 export const MAGIC_ITEM_SIMPLE_M5_DEFERRED_COMPLEX_NAMES = Object.freeze([
   'Apparatus of the Crab',
@@ -904,17 +925,28 @@ export function projectMagicItemSimpleStateMachine(
           .replace(/^-|-$/g, '')}`,
         tag: 'M5',
         representation: { block: 'stateMachine' },
-        engineHooks: [
-          { engine: 'F2', hook: 'activation action economy' },
-          {
-            engine: 'F5',
-            hook: 'item state transition and duration processing',
-          },
-          {
-            engine: 'F9',
-            hook: 'targeting, escape, and movement consequences',
-          },
-        ],
+        // These four records have pack conformance tests for the transition
+        // boundary. Their condition truth/save result remains DM input; the
+        // runtime executes the paid action (F2) and state/timer effects (F5).
+        engineHooks: RUNTIME_M5_CONFORMANCE_NAMES.has(item.name)
+          ? [
+              { engine: 'F2', hook: 'olc5.11 pack-tested paid item operation' },
+              {
+                engine: 'F5',
+                hook: 'olc5.11 pack-tested item state and timer transition',
+              },
+            ]
+          : [
+              { engine: 'F2', hook: 'activation action economy' },
+              {
+                engine: 'F5',
+                hook: 'item state transition and duration processing',
+              },
+              {
+                engine: 'F9',
+                hook: 'targeting, escape, and movement consequences',
+              },
+            ],
       },
     ],
   };

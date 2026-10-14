@@ -88441,11 +88441,6 @@
             {
               "from": "active",
               "to": "inactive",
-              "condition": "you are incapacitated"
-            },
-            {
-              "from": "active",
-              "to": "inactive",
               "condition": "until you are incapacitated or die"
             }
           ],
@@ -88564,37 +88559,14 @@
             "engineHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
+                "hook": "olc5.11 pack-tested paid item operation"
               },
               {
                 "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
+                "hook": "olc5.11 pack-tested item state and timer transition"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:animated-shield/triage-activation-speak-command-word-0",
@@ -95405,6 +95377,9 @@
                 "economy": "uses",
                 "amount": 1
               }
+            ],
+            "effects": [
+              "c2-cast-polymorph"
             ]
           },
           {
@@ -95416,6 +95391,16 @@
             "id": "c2-residual-bat-stealth",
             "kind": "advantage",
             "roll": "Dexterity (Stealth) checks"
+          },
+          {
+            "id": "c2-cast-polymorph",
+            "kind": "castSpell",
+            "spellRef": "spell:polymorph",
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "kind": "speedSet",
@@ -95468,6 +95453,60 @@
             ],
             "missingEngines": [
               "F5"
+            ]
+          },
+          {
+            "clauseId": "magic-item:cloak-of-the-bat/c2-effect-cast-polymorph",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-cast-polymorph"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F4",
+                "hook": "canonical spell execution"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F3",
+                "hook": "concentration lifecycle"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F4",
+                "hook": "canonical spell execution"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F3",
+                "hook": "concentration lifecycle"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3",
+              "F4",
+              "F8"
             ]
           },
           {
@@ -95558,7 +95597,7 @@
             "scope": {
               "kind": "parent"
             },
-            "tag": "M5",
+            "tag": "C2",
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
@@ -97258,37 +97297,14 @@
             "engineHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
+                "hook": "olc5.11 pack-tested paid item operation"
               },
               {
                 "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
+                "hook": "olc5.11 pack-tested item state and timer transition"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "readiness": "green"
           }
         ]
       }
@@ -130764,7 +130780,12 @@
             {
               "from": "loose",
               "to": "restraining",
-              "condition": "The target must succeed on a DC 15 Dexterity saving throw or become restrained"
+              "via": "entangle-creature",
+              "onFailure": {
+                "scope": "target",
+                "to": "loose",
+                "note": "transitionOutcome failure means the target succeeds on the Dexterity saving throw"
+              }
             },
             {
               "from": "restraining",
@@ -130774,7 +130795,12 @@
             {
               "from": "restraining",
               "to": "loose",
-              "condition": "On a success, the creature is no longer restrained by the rope"
+              "via": "escape-rope",
+              "onFailure": {
+                "scope": "target",
+                "to": "restraining",
+                "note": "transitionOutcome failure means the target fails the Strength or Dexterity check"
+              }
             },
             {
               "from": "loose",
@@ -130800,10 +130826,7 @@
                   "held"
                 ]
               ]
-            },
-            "effects": [
-              "c2-entangle-creature-payload"
-            ]
+            }
           },
           {
             "id": "release-creature",
@@ -130818,90 +130841,24 @@
               "cost": "action"
             }
           }
-        ],
-        "effects": [
-          {
-            "id": "c2-entangle-creature-payload",
-            "kind": "imposesCondition",
-            "conditions": [
-              "restrained"
-            ],
-            "save": {
-              "ability": "dexterity",
-              "dc": 15
-            },
-            "rangeFeet": 20,
-            "escapeCheck": {
-              "abilityChoice": [
-                "strength",
-                "dexterity"
-              ],
-              "dc": 15,
-              "activation": "action"
-            },
-            "endsOn": [
-              "successful-escape-check",
-              "release-command-word"
-            ]
-          }
         ]
       },
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
-            "clauseId": "magic-item:rope-of-entanglement/c2-effect-entangle-creature-payload",
+            "clauseId": "magic-item:rope-of-entanglement/c2-target-restrained",
             "scope": {
               "kind": "parent"
             },
             "tag": "C2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "c2-entangle-creature-payload"
+              "adjudicated": true,
+              "sourceText": "The target must succeed on a DC 15 Dexterity saving throw or become restrained.",
+              "note": "The DM adjudicates target selection, the saving throw, and applying the restrained condition. use_item records the declared outcome and paid operation state; the typed transition does not resolve the save or apply a creature condition."
             },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
-                "engine": "F6",
-                "hook": "hit points and condition lifecycle"
-              },
-              {
-                "engine": "F8",
-                "hook": "save DC and spell attack resolution"
-              },
-              {
-                "engine": "F9",
-                "hook": "damage, saving throws, and targeting"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
-                "engine": "F6",
-                "hook": "hit points and condition lifecycle"
-              },
-              {
-                "engine": "F8",
-                "hook": "save DC and spell attack resolution"
-              },
-              {
-                "engine": "F9",
-                "hook": "damage, saving throws, and targeting"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F6",
-              "F8",
-              "F9"
-            ]
+            "reason": "The DM adjudicates target selection, the saving throw, and applying the restrained condition. use_item records the declared outcome and paid operation state; the typed transition does not resolve the save or apply a creature condition."
           },
           {
             "clauseId": "magic-item:rope-of-entanglement/m5-rope-of-entanglement",
@@ -130915,44 +130872,21 @@
             "engineHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
+                "hook": "olc5.11 pack-tested paid item operation"
               },
               {
                 "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
+                "hook": "olc5.11 pack-tested item state and timer transition"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:rope-of-entanglement/triage-activation-entangle-creature-0",
             "scope": {
               "kind": "parent"
             },
-            "tag": "C2",
+            "tag": "M5",
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
@@ -148380,37 +148314,14 @@
             "engineHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
+                "hook": "olc5.11 pack-tested paid item operation"
               },
               {
                 "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
+                "hook": "olc5.11 pack-tested item state and timer transition"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:wings-of-flying/triage-activation-manifest-wings-0",

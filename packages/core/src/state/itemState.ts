@@ -175,7 +175,7 @@ export interface UseItemResult {
     readonly to: string;
     readonly outcome: 'success' | 'failure';
     readonly onFailure?: {
-      readonly retryAfter: MagicItemDurationSpec;
+      readonly retryAfter?: MagicItemDurationSpec;
       readonly scope: 'actor' | 'target' | 'item';
       readonly to?: string;
       readonly note?: string;

@@ -1348,35 +1348,14 @@ const GRAPH_EDITS: ReadonlyMap<string, GraphEdit> = new Map<string, GraphEdit>([
     ),
   ],
   [
-    // The entangle transition fires only when the target FAILS the save; the
-    // escape fires on a successful check, not on any attempt.
+    // Both rolls are operation outcomes and therefore stay on their paid
+    // operations. Only rope destruction is an external item_state_event.
     'Rope of Entanglement',
     (machine, ctx) => {
       const destroyed = ctx.span('the rope drops to 0 hit points');
       return setTermination(
         setCondition(
-          setCondition(
-            setCondition(
-              viaToCondition(
-                machine,
-                'loose',
-                'restraining',
-                'entangle-creature',
-                ctx.between(
-                  'The target must succeed on a DC 15 Dexterity saving throw',
-                  'become restrained',
-                ),
-              ),
-              'restraining',
-              'loose',
-              ctx.span(
-                'On a success, the creature is no longer restrained by the rope',
-              ),
-            ),
-            'loose',
-            'destroyed',
-            destroyed,
-          ),
+          setCondition(machine, 'loose', 'destroyed', destroyed),
           'restraining',
           'destroyed',
           destroyed,

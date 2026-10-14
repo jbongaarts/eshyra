@@ -34,6 +34,14 @@ describe('magic-item compiler family aggregation', () => {
     expect([...LANDED_MAGIC_ITEM_ENGINE_HOOKS].sort()).toEqual(
       [
         magicItemEngineHookKey({
+          engine: 'F2',
+          hook: 'olc5.11 pack-tested paid item operation',
+        }),
+        magicItemEngineHookKey({
+          engine: 'F5',
+          hook: 'olc5.11 pack-tested item state and timer transition',
+        }),
+        magicItemEngineHookKey({
           engine: 'F5',
           hook: 'duration-budget accounting',
         }),

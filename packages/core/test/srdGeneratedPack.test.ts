@@ -1200,6 +1200,8 @@ const DC_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
     'The goat of terror aura (DC 15 Wisdom save) is withheld as a typed effect and carried as an adjudicated clause with the verbatim printed span (eshyra-o9bd.19.4.5.8, faithful-or-absent)',
   'magic-item:ring-of-x-ray-vision|parent|forward|dc:15':
     'The repeated-use Constitution save and exhaustion risk are carried by the exact DM-adjudicated span under the soft-limit cost contract (eshyra-olc5.8)',
+  'magic-item:rope-of-entanglement|parent|forward|dc:15':
+    'The target save is carried by the source-backed adjudicated clause; use_item records the declared outcome and state transition without resolving the save (eshyra-olc5.11.2)',
 };
 
 function diceExceptionKey(
@@ -3306,7 +3308,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1378);
+      expect(clauses).toHaveLength(1379);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3366,11 +3368,17 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // 'scrying (3 charges)' span, so the shared Orb activation sentence keeps
       // its triage clause governing all five casts: final counts are 361
       // adjudicated, 797 pending, and 219 green. No readiness status moves.
+      // eshyra-olc5.11.2 adds Cloak of the Bat's spell-linked polymorph effect
+      // (one pending clause), adjudicates Rope of Entanglement's creature
+      // condition payload (one pending -> adjudicated), and proves F2/F5 item
+      // state execution for Animated Shield, Dagger of Venom, Rope of
+      // Entanglement, and Wings of Flying (four pending -> green): 362
+      // adjudicated, 793 pending, 223 green.
       expect(counts).toEqual({
-        'adjudicated-by-design': 361,
+        'adjudicated-by-design': 362,
         'design-blocked': 1,
-        'engine-pending': 797,
-        green: 219,
+        'engine-pending': 793,
+        green: 223,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

@@ -529,7 +529,9 @@ const BASE_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
   ],
   [
     'Rope of Entanglement',
-    { operations: [op('release-creature', { commandWord: true })] },
+    {
+      operations: [op('release-creature', { commandWord: true })],
+    },
   ],
   [
     'Staff of the Python',

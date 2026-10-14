@@ -34,11 +34,6 @@
         {
           "from": "active",
           "to": "inactive",
-          "condition": "you are incapacitated"
-        },
-        {
-          "from": "active",
-          "to": "inactive",
           "condition": "until you are incapacitated or die"
         }
       ],
@@ -129,7 +124,11 @@
         {
           "from": "face-1",
           "to": "face-1",
-          "via": "press-face-1"
+          "via": "press-face-1",
+          "resetsDuration": {
+            "kind": "source-ambiguity",
+            "ambiguityId": "ambiguity:cube-of-force-same-face-duration-reset"
+          }
         },
         {
           "from": "face-1",
@@ -159,7 +158,11 @@
         {
           "from": "face-2",
           "to": "face-2",
-          "via": "press-face-2"
+          "via": "press-face-2",
+          "resetsDuration": {
+            "kind": "source-ambiguity",
+            "ambiguityId": "ambiguity:cube-of-force-same-face-duration-reset"
+          }
         },
         {
           "from": "face-2",
@@ -189,7 +192,11 @@
         {
           "from": "face-3",
           "to": "face-3",
-          "via": "press-face-3"
+          "via": "press-face-3",
+          "resetsDuration": {
+            "kind": "source-ambiguity",
+            "ambiguityId": "ambiguity:cube-of-force-same-face-duration-reset"
+          }
         },
         {
           "from": "face-3",
@@ -219,7 +226,11 @@
         {
           "from": "face-4",
           "to": "face-4",
-          "via": "press-face-4"
+          "via": "press-face-4",
+          "resetsDuration": {
+            "kind": "source-ambiguity",
+            "ambiguityId": "ambiguity:cube-of-force-same-face-duration-reset"
+          }
         },
         {
           "from": "face-4",
@@ -249,32 +260,41 @@
         {
           "from": "face-5",
           "to": "face-5",
-          "via": "press-face-5"
+          "via": "press-face-5",
+          "resetsDuration": {
+            "kind": "source-ambiguity",
+            "ambiguityId": "ambiguity:cube-of-force-same-face-duration-reset"
+          }
         },
         {
           "from": "face-1",
           "to": "face-1",
-          "via": "spell-contact-loss"
+          "via": "spell-contact-loss",
+          "effects": ["m5-complex-cube-contact"]
         },
         {
           "from": "face-2",
           "to": "face-2",
-          "via": "spell-contact-loss"
+          "via": "spell-contact-loss",
+          "effects": ["m5-complex-cube-contact"]
         },
         {
           "from": "face-3",
           "to": "face-3",
-          "via": "spell-contact-loss"
+          "via": "spell-contact-loss",
+          "effects": ["m5-complex-cube-contact"]
         },
         {
           "from": "face-4",
           "to": "face-4",
-          "via": "spell-contact-loss"
+          "via": "spell-contact-loss",
+          "effects": ["m5-complex-cube-contact"]
         },
         {
           "from": "face-5",
           "to": "face-5",
-          "via": "spell-contact-loss"
+          "via": "spell-contact-loss",
+          "effects": ["m5-complex-cube-contact"]
         },
         {
           "from": "face-1",
@@ -733,23 +753,33 @@
       "machineTermination": "If the rope drops to 0 hit points, it is destroyed",
       "operationTransitions": [
         {
+          "from": "loose",
+          "to": "restraining",
+          "via": "entangle-creature",
+          "onFailure": {
+            "scope": "target",
+            "to": "loose",
+            "note": "transitionOutcome failure means the target succeeds on the Dexterity saving throw"
+          }
+        },
+        {
           "from": "restraining",
           "to": "loose",
           "via": "release-creature"
+        },
+        {
+          "from": "restraining",
+          "to": "loose",
+          "via": "escape-rope",
+          "onFailure": {
+            "scope": "target",
+            "to": "restraining",
+            "note": "transitionOutcome failure means the target fails the Strength or Dexterity check"
+          }
         }
       ],
       "timerTransitions": [],
       "conditionTransitions": [
-        {
-          "from": "loose",
-          "to": "restraining",
-          "condition": "The target must succeed on a DC 15 Dexterity saving throw or become restrained"
-        },
-        {
-          "from": "restraining",
-          "to": "loose",
-          "condition": "On a success, the creature is no longer restrained by the rope"
-        },
         {
           "from": "loose",
           "to": "destroyed",

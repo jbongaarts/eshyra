@@ -1159,7 +1159,7 @@ describe('E. kept state machines own exactly one lifetime at a time (review 19.4
         checked += 1;
       }
     }
-    expect(checked).toBe(93);
+    expect(checked).toBe(94);
   });
 });
 

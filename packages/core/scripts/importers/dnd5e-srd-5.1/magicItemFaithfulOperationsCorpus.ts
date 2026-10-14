@@ -855,6 +855,7 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     {
       operations: [
         op('entangle-creature', {
+          commandWord: true,
           requirement: 'If you hold one end of the rope',
           target: 'a creature you can see within 20 feet of you',
         }),

@@ -29,6 +29,7 @@ import {
   expireElapsedRoundEffects,
   formatActiveEffect,
   getActiveCharacterId,
+  getBundledDnd5eSrdPack,
   getCampaignActor,
   getConcentrationEffect,
   grantTemporaryHp,
@@ -4922,6 +4923,52 @@ describe('exact resolver through condition projection and cleanup (S32)', () => 
 });
 
 describe('magic-item active-effect duration binding', () => {
+  it('binds Potion of Growth dice duration to an in-range fixed duration', () => {
+    const db = freshDbWithSession();
+    const pack = getBundledDnd5eSrdPack();
+    const potion = pack.records.find(
+      (record) => record.key === 'magic-item:potion-of-growth',
+    );
+    if (potion === undefined) throw new Error('Potion of Growth is missing');
+    const effectId = 'enlarge';
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(5),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'potion-of-growth-duration-binding',
+      at: NOW,
+      resolveRulesPack: () => ({ ...pack, records: [potion] }),
+    };
+    const args = (effectIdValue: string, amount: number) => ({
+      effectId: effectIdValue,
+      kind: 'item-power',
+      displayName: effectIdValue,
+      source: {
+        kind: 'magic-item',
+        ref: potion.key,
+        effectRef: effectId,
+      },
+      duration: {
+        kind: 'timed',
+        amount,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+    });
+    expect(
+      registry.invoke('start_effect', args('fx-growth-in-range', 4), ctx),
+    ).toMatchObject({
+      ok: true,
+      data: { itemDurationBinding: { status: 'bound' } },
+    });
+    expect(
+      registry.invoke('start_effect', args('fx-growth-out-of-range', 5), ctx),
+    ).toMatchObject({ ok: false, code: 'effect_error' });
+    db.close();
+  });
+
   it('accepts a matching typed duration, refuses a mismatch, and reports an unbound effect', () => {
     const db = freshDbWithSession();
     const registry = createDefaultToolRegistry();

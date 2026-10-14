@@ -202,6 +202,46 @@ describe('regular/simple M5 state-machine projection', () => {
     }
   });
 
+  it('keeps every generated condition transition source-complete and unique per state', () => {
+    for (const record of itemRecords) {
+      const data = record.data as Record<string, unknown>;
+      const mechanics = data.mechanics as Record<string, unknown> | undefined;
+      const machine = mechanics?.stateMachine as
+        | { transitions?: Record<string, unknown>[] }
+        | undefined;
+      if (machine?.transitions === undefined) continue;
+      const seen = new Set<string>();
+      for (const transition of machine.transitions) {
+        if (typeof transition.condition !== 'string') continue;
+        expect(
+          data.description,
+          `${record.name}: ${transition.condition}`,
+        ).toContain(transition.condition);
+        const key = `${String(transition.from)}\u0000${transition.condition}`;
+        expect(
+          seen.has(key),
+          `${record.name}: duplicate ${transition.condition}`,
+        ).toBe(false);
+        seen.add(key);
+      }
+    }
+  });
+
+  it("treats the Ioun Stone's other-creature action as an external event with its full predicate", () => {
+    const machine = projectMagicItemSimpleStateMachine(named('Ioun Stone'))
+      ?.mechanics.stateMachine;
+    const seizure = machine?.transitions.find(
+      (transition) =>
+        transition.from === 'orbiting' && transition.to === 'seized',
+    );
+    expect(seizure).toEqual({
+      from: 'orbiting',
+      to: 'seized',
+      condition:
+        'Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
+    });
+  });
+
   it('merges the same operation IDs with the existing C1/M1 owners', () => {
     for (const name of MAGIC_ITEM_SIMPLE_M5_NAMES) {
       const item = named(name);

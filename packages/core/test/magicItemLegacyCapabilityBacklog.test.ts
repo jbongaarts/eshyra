@@ -102,9 +102,12 @@ describe('magic-item legacy capability backlog', () => {
     // candidates keep the operations blocked and the typed insect-cloud and
     // ball-lightning effects add two (804 -> 806). eshyra-olc5.8 withholds
     // Ring of X-ray Vision's residual risk effect as an exact adjudicated
-    // clause, removing its one engine-hook candidate (806 -> 805).
+    // clause, removing its one engine-hook candidate (806 -> 805). Cloak of
+    // the Bat's cast-polymorph operation adds one spell-linked castSpell
+    // candidate from the spell record (+1); Rope of Entanglement's typed
+    // restraint payload becomes an exact adjudicated clause (-1), net 805.
     expect(fingerprint).toBe(
-      'f02dda0d18ff4fbe78d7653a74d541030d130d86deb8d6438ff3bc2bbf7b7f40',
+      '2c1df51b122d68dbf820c4ab355d2d24727980eb85bf75e1ac8dde99f4aa93b3',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

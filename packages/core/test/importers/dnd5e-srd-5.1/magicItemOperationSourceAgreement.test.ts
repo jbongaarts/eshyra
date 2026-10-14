@@ -1526,22 +1526,32 @@ describe('state graph text and outcome-gated transitions, whole corpus (review 1
     ).toBe('note');
   });
 
-  it('does not move a state on an outcome the transition cannot state: the kept outcome-gated machine is condition-only, the withheld ones carry the printed outcome', () => {
-    // Rope of Entanglement (kept, green-bound): a SUCCESSFUL save leaves the
-    // target free, so the restraining transition is condition-only.
+  it('binds Rope of Entanglement outcomes to paid operations and keeps destruction external', () => {
+    const ropeTransitions = transitionsOf('Rope of Entanglement');
     expect(
-      transitionsOf('Rope of Entanglement').some(
-        (entry) => entry.via === 'entangle-creature',
-      ),
-      'Rope of Entanglement entangle-creature fires unconditionally',
-    ).toBe(false);
-    expect(
-      transitionsOf('Rope of Entanglement').find(
+      ropeTransitions.find(
         (entry) => entry.from === 'loose' && entry.to === 'restraining',
-      )?.condition,
-    ).toMatch(
-      /must succeed on a DC 15 Dexterity saving throw.*become restrained/,
-    );
+      ),
+    ).toMatchObject({
+      via: 'entangle-creature',
+      onFailure: { to: 'loose', scope: 'target' },
+    });
+    expect(
+      ropeTransitions.find(
+        (entry) => entry.from === 'restraining' && entry.via === 'escape-rope',
+      ),
+    ).toMatchObject({
+      via: 'escape-rope',
+      onFailure: { to: 'restraining', scope: 'target' },
+    });
+    expect(
+      ropeTransitions
+        .filter((entry) => entry.condition)
+        .map((entry) => entry.condition),
+    ).toEqual([
+      'the rope drops to 0 hit points',
+      'the rope drops to 0 hit points',
+    ]);
     // Sphere and Iron Bands machines are withheld; the printed outcomes that
     // made their transitions condition-only are adjudicated spans, and the
     // outcome-gated operations stay declared.
@@ -1704,6 +1714,8 @@ describe('runtime safety across the whole corpus', () => {
   // clause.
   const READY = [
     'Ammunition, +1, +2, or +3||hit-target',
+    'Animated Shield||end-animation',
+    'Animated Shield||speak-command-word',
     'Boots of Levitation||cast-levitate',
     'Candle of Invocation||burn',
     'Frost Brand||extinguish-flames',
@@ -1726,8 +1738,12 @@ describe('runtime safety across the whole corpus', () => {
     'Ring of Shooting Stars||discharge-ball-lightning',
     'Ring of X-ray Vision||activate-x-ray-vision',
     'Rod of Security||enter-paradise',
+    'Rope of Entanglement||entangle-creature',
     'Rope of Entanglement||escape-rope',
+    'Rope of Entanglement||release-creature',
     'Well of Many Worlds||open-portal',
+    'Wings of Flying||dismiss-wings',
+    'Wings of Flying||manifest-wings',
   ].sort();
 
   it('keeps the executable operation set identical', () => {

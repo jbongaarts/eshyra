@@ -33,6 +33,7 @@
 // state and use the same ownership cleanup contract as conditions and actors.
 
 import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
+import { parseDice } from '../orchestrator/dice.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
@@ -3661,11 +3662,37 @@ export function createActiveEffect(
           !Array.isArray(typedDuration)
         ) {
           const expected = typedDuration as Record<string, unknown>;
+          const matchesAmount =
+            typeof expected.amount === 'number'
+              ? input.duration.kind === 'timed' &&
+                input.duration.amount === expected.amount
+              : typeof expected.amount === 'string' &&
+                input.duration.kind === 'timed' &&
+                (() => {
+                  try {
+                    const dice = parseDice(expected.amount as string);
+                    const kept =
+                      dice.keep === undefined
+                        ? dice.count
+                        : dice.keep.mode === 'kh' || dice.keep.mode === 'kl'
+                          ? dice.keep.count
+                          : dice.count - dice.keep.count;
+                    const minimum = kept + dice.modifier;
+                    const maximum = kept * dice.faces + dice.modifier;
+                    return (
+                      Number.isSafeInteger(input.duration.amount) &&
+                      input.duration.amount > 0 &&
+                      input.duration.amount >= minimum &&
+                      input.duration.amount <= maximum
+                    );
+                  } catch {
+                    return false;
+                  }
+                })();
           if (
-            typeof expected.amount !== 'number' ||
+            !matchesAmount ||
             typeof expected.unit !== 'string' ||
             input.duration.kind !== 'timed' ||
-            input.duration.amount !== expected.amount ||
             input.duration.unit !== expected.unit
           )
             throw new ActiveEffectError(
