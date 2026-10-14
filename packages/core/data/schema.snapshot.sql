@@ -680,7 +680,7 @@ CREATE TABLE inventory_wear_state (
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
   updated_at TEXT NOT NULL
-);
+, held INTEGER NOT NULL DEFAULT 0 CHECK (held IN (0, 1)));
 
 CREATE TABLE item_state (
   inventory_id TEXT PRIMARY KEY

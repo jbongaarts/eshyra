@@ -36,6 +36,7 @@ import {
   type DestroyedItemAttunementEvidence,
   destroyInventoryItem,
 } from './inventoryLifecycle.js';
+import { getInventoryWearState } from './inventoryWear.js';
 import {
   InventoryWorldLocationError,
   requireCurrentWorldLocation,
@@ -232,6 +233,96 @@ export class ItemStateAmbiguityError extends ItemStateError {
     this.question = question;
     this.interpretationIds = interpretationIds;
   }
+}
+
+function assertActivationEquipment(
+  db: Db,
+  args: {
+    readonly campaignId: string;
+    readonly characterId: string;
+    readonly instanceId: string;
+    readonly packRef: string;
+    readonly operation: Obj;
+  },
+): void {
+  const activation = args.operation.activation;
+  if (
+    typeof activation !== 'object' ||
+    activation === null ||
+    Array.isArray(activation)
+  )
+    return;
+  const equipment = (activation as Obj).equipment;
+  if (equipment === undefined) return;
+  if (!Array.isArray(equipment) || equipment.length === 0)
+    throw new ItemStateError(
+      `${args.packRef} operation '${String(args.operation.id)}' has invalid equipment prerequisites; use_item fails closed`,
+    );
+
+  const custody = db
+    .prepare('SELECT character_id FROM inventory WHERE id=?')
+    .get(args.instanceId) as { character_id: string | null } | undefined;
+  const hasCustody = custody?.character_id === args.characterId;
+  const wearState = getInventoryWearState(db, args.instanceId);
+  const heldRow = db
+    .prepare(
+      'SELECT held FROM inventory_wear_state WHERE inventory_id=? AND character_id=?',
+    )
+    .get(args.instanceId, args.characterId) as { held: number } | undefined;
+  const attuned =
+    (db
+      .prepare(
+        `SELECT 1 AS active FROM attunement
+         WHERE campaign_id=? AND character_id=? AND item_id=?`,
+      )
+      .get(args.campaignId, args.characterId, args.instanceId) as
+      | { active: number }
+      | undefined) !== undefined;
+  const satisfied = (requirement: unknown): boolean => {
+    switch (requirement) {
+      case 'worn':
+        return hasCustody && wearState === 'worn';
+      case 'held':
+        return hasCustody && heldRow?.held === 1;
+      case 'attuned':
+        return attuned;
+      case 'on-person':
+        // The inventory model has no structured containment relation. Exact
+        // character custody is the only authoritative on-person fact.
+        return hasCustody;
+      default:
+        return false;
+    }
+  };
+  const label = (requirement: unknown): string => {
+    if (requirement === 'worn' && wearState === undefined)
+      return 'worn (authoritative wear state unavailable)';
+    if (requirement === 'held' && heldRow === undefined)
+      return 'held (authoritative hold state unavailable)';
+    if (!hasCustody) return `${String(requirement)} (actor lacks custody)`;
+    return String(requirement);
+  };
+  const alternatives = equipment.map((alternative) => {
+    if (!Array.isArray(alternative) || alternative.length === 0)
+      throw new ItemStateError(
+        `${args.packRef} operation '${String(args.operation.id)}' has an invalid equipment alternative; use_item fails closed`,
+      );
+    return alternative as unknown[];
+  });
+  if (alternatives.some((alternative) => alternative.every(satisfied))) return;
+
+  const unmet = alternatives
+    .filter((alternative) => !alternative.every(satisfied))
+    .map(
+      (alternative) =>
+        `(${alternative.map(label).join(' + ')}; unmet: ${alternative
+          .filter((requirement) => !satisfied(requirement))
+          .map(label)
+          .join(' + ')})`,
+    );
+  throw new ItemStateError(
+    `use_item refused: ${args.packRef} operation '${String(args.operation.id)}' requires one equipment alternative to be satisfied; unmet alternatives: ${unmet.join(' or ')}; wear or hold the item, or attune to this instance as required, then retry. No turn resource or item state was changed`,
+  );
 }
 
 const stateColumn = jsonColumn<unknown>('item_state.state_json');
@@ -2333,6 +2424,13 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       throw new ItemStateError(
         `${packRef} declares no operation '${input.operationId}'`,
       );
+    assertActivationEquipment(txnDb, {
+      campaignId: input.campaignId,
+      characterId: input.characterId,
+      instanceId: input.instanceId,
+      packRef,
+      operation,
+    });
     const operationEffectIds = [...readinessInput.operationEffectIds];
     // The printed activation resource is spent BEFORE any item mutation and in
     // this same transaction: a refused spend throws, and nothing below runs.

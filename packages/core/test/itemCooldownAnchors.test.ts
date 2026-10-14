@@ -5,8 +5,10 @@ import {
   attuneItem,
   createInitialItemState,
   createSeededRng,
+  donItem,
   getBundledDnd5eSrdPack,
   giveItem,
+  holdItem,
   readItemState,
   resolveRestEventItemResets,
   useItem,
@@ -47,6 +49,21 @@ function install(
     CTX,
   );
   writeItemState(db, created.id, createInitialItemState(item.key, item), CTX);
+  const operations = (
+    (item.data as Record<string, unknown>).mechanics as
+      | Record<string, unknown>
+      | undefined
+  )?.operations as Record<string, unknown>[] | undefined;
+  const requirements = new Set(
+    (operations ?? []).flatMap((operation) => {
+      const activation = operation.activation as
+        | Record<string, unknown>
+        | undefined;
+      return (activation?.equipment as unknown[][] | undefined)?.flat() ?? [];
+    }),
+  );
+  if (requirements.has('worn')) donItem(db, { ...CTX, itemId: created.id });
+  if (requirements.has('held')) holdItem(db, { ...CTX, itemId: created.id });
   if ((item.data as Record<string, unknown>).requiresAttunement === true)
     attuneItem(db, {
       ...CTX,

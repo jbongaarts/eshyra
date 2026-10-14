@@ -621,6 +621,7 @@ export function claimItem(
          ON CONFLICT(inventory_id) DO UPDATE SET
            character_id=excluded.character_id,
            wear_state='not_worn',
+           held=0,
            provenance=excluded.provenance,
            session_id=excluded.session_id,
            updated_at=excluded.updated_at`,
@@ -799,6 +800,7 @@ export function reacquireItem(
          ON CONFLICT(inventory_id) DO UPDATE SET
            character_id=excluded.character_id,
            wear_state='not_worn',
+           held=0,
            provenance=excluded.provenance,
            session_id=excluded.session_id,
            updated_at=excluded.updated_at`,

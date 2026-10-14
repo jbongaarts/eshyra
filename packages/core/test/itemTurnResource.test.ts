@@ -24,9 +24,11 @@ import type {
 import {
   beginTurn,
   createInitialItemState,
+  donItem,
   getActiveCharacterId,
   getBundledDnd5eSrdPack,
   giveItem,
+  holdItem,
   isStatefulMagicItem,
   PRINTED_CASTING_TIME_OVERRIDES,
   planItemTurnResource,
@@ -176,6 +178,33 @@ function install(
   );
   if (stateful)
     writeItemState(db, row.id, createInitialItemState(key, record), CTX);
+  const operations = ((record.data as Obj).mechanics as Obj).operations as
+    | Obj[]
+    | undefined;
+  const requirements = new Set(
+    (operations ?? []).flatMap((operation) => {
+      const activation = operation.activation as Obj | undefined;
+      return (activation?.equipment as unknown[][] | undefined)?.flat() ?? [];
+    }),
+  );
+  if (requirements.has('worn')) donItem(db, { ...CTX, itemId: row.id });
+  if (requirements.has('held')) holdItem(db, { ...CTX, itemId: row.id });
+  if (requirements.has('attuned'))
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES (?, 'pc-1', ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      CAMPAIGN,
+      row.id,
+      key,
+      record.name,
+      NOW,
+      CTX.provenance,
+      CTX.sessionId,
+      NOW,
+    );
   return row.id;
 }
 
