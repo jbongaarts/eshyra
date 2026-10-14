@@ -4921,6 +4921,88 @@ describe('exact resolver through condition projection and cleanup (S32)', () => 
   }
 });
 
+describe('magic-item active-effect duration binding', () => {
+  it('accepts a matching typed duration, refuses a mismatch, and reports an unbound effect', () => {
+    const db = freshDbWithSession();
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(5),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'item-duration-binding',
+      at: NOW,
+    };
+    const args = (effectId: string, effectRef: string, amount: number) => ({
+      effectId,
+      kind: 'item-power',
+      displayName: effectId,
+      source: {
+        kind: 'magic-item',
+        ref: 'magic-item:armor-of-invulnerability',
+        effectRef,
+      },
+      duration: {
+        kind: 'timed',
+        amount,
+        unit: 'minute',
+        anchor: 'effect-created',
+      },
+    });
+    const matches = registry.invoke(
+      'start_effect',
+      args('fx-item-duration-match', 'c2-activate-immunity-payload', 10),
+      ctx,
+    );
+    expect(matches.ok).toBe(true);
+    if (matches.ok)
+      expect(matches.data).toMatchObject({
+        effect: {
+          source: {
+            ref: 'magic-item:armor-of-invulnerability',
+            effectRef: 'c2-activate-immunity-payload',
+          },
+        },
+        itemDurationBinding: { status: 'bound' },
+      });
+    const mismatch = registry.invoke(
+      'start_effect',
+      args('fx-item-duration-mismatch', 'c2-activate-immunity-payload', 9),
+      ctx,
+    );
+    expect(mismatch).toMatchObject({
+      ok: false,
+      code: 'effect_error',
+    });
+    const unbound = registry.invoke(
+      'start_effect',
+      {
+        ...args(
+          'fx-item-duration-unbound',
+          'm3-boots-of-speed-speed-multiplier',
+          10,
+        ),
+        source: {
+          kind: 'magic-item',
+          ref: 'magic-item:boots-of-speed',
+          effectRef: 'm3-boots-of-speed-speed-multiplier',
+        },
+      },
+      ctx,
+    );
+    expect(unbound).toMatchObject({
+      ok: true,
+      data: {
+        itemDurationBinding: {
+          status: 'unbound',
+          reason: expect.stringContaining('DM adjudicates'),
+        },
+      },
+    });
+    db.close();
+  });
+});
+
 describe('persistent bond identity (S50)', () => {
   it("refuses 'vanish-bonded' for an instance-only combatant, accepts it with a durable identity", () => {
     const { db } = setupCombat();

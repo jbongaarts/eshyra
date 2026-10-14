@@ -1,6 +1,6 @@
 import { rollDice } from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
-import type { Db } from '../persistence/db.js';
+import { type Db, withTransaction } from '../persistence/db.js';
 import type { MagicItemDurationSpec } from '../rules/magicItemMechanics.js';
 import { effectiveMagicItemMechanics } from '../rules/magicItemVariants.js';
 import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
@@ -31,6 +31,12 @@ export interface ItemResetExecutorContext {
   readonly sessionId: string;
   readonly at: string;
   readonly rng?: Rng;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
+}
+
+export interface ItemStateConditionEventInput extends ItemResetExecutorContext {
+  readonly instanceId: string;
+  readonly condition: string;
   readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
@@ -391,6 +397,86 @@ function resolveItem(
     stack: hit.stack,
     mechanics: (mechanics ?? {}) as unknown as Obj,
   };
+}
+
+/** Apply one source-declared external state-machine condition to an item. */
+export function applyItemStateConditionEvent(
+  db: Db,
+  input: ItemStateConditionEventInput,
+): { readonly instanceId: string; readonly from: string; readonly to: string } {
+  return withTransaction(db, (txnDb) => {
+    const row = txnDb
+      .prepare('SELECT id, pack_ref, variant_id FROM inventory WHERE id = ?')
+      .get(input.instanceId) as ItemRow | undefined;
+    if (row === undefined || row.pack_ref === null)
+      throw new ItemResetExecutorError(
+        `inventory instance '${input.instanceId}' is not a bound magic item`,
+      );
+    const item = resolveItem(txnDb, row, input.resolveRulesPack);
+    const state = readItemState(txnDb, input.instanceId);
+    if (state === undefined)
+      throw new ItemResetExecutorError(
+        `inventory instance '${input.instanceId}' has no initialized item state`,
+      );
+    const transitions = machineTransitions(item).filter(
+      (candidate) =>
+        candidate.from === state.machineState &&
+        candidate.condition === input.condition,
+    );
+    if (transitions.length !== 1)
+      throw new ItemResetExecutorError(
+        transitions.length === 0
+          ? `${item.packRef} has no declared condition transition '${input.condition}' from '${String(state.machineState)}'`
+          : `${item.packRef} has ambiguous condition transition '${input.condition}' from '${String(state.machineState)}'`,
+      );
+    const transition = transitions[0];
+    const from = String(transition.from);
+    const to = String(transition.to);
+    const remainingTimers = (state.pendingTimers ?? []).filter(
+      (timer) => timer.from !== from,
+    );
+    const declarations = machineTransitions(item)
+      .filter(
+        (candidate) => candidate.from === to && candidate.timer !== undefined,
+      )
+      .map((candidate) => ({
+        to: String(candidate.to),
+        timer: candidate.timer as MagicItemDurationSpec,
+      }));
+    let scheduled: readonly ItemStateTimer[];
+    try {
+      scheduled = resolveItemStateTimers(txnDb, to, declarations, input.rng);
+    } catch (error) {
+      if (error instanceof ItemTimerError)
+        throw new ItemResetExecutorError(`${item.packRef} ${error.message}`);
+      throw error;
+    }
+    let next = validateItemStateForRecord(
+      {
+        ...state,
+        machineState: to,
+        pendingTimers: [...remainingTimers, ...scheduled],
+      },
+      item.packRef,
+      item.record,
+      item.variantId,
+    );
+    next = validateItemStateForRecord(
+      applyCooldownAnchorToState(
+        next,
+        (item.mechanics.economies ?? {}) as Obj,
+        item.packRef,
+        { event: 'state-entered', stateId: to },
+        currentElapsedMinutes(txnDb),
+        input.rng,
+      ).state,
+      item.packRef,
+      item.record,
+      item.variantId,
+    );
+    writeItemState(txnDb, input.instanceId, next, input);
+    return { instanceId: input.instanceId, from, to };
+  });
 }
 
 function rowsForItems(db: Db, participants?: readonly string[]): ItemRow[] {

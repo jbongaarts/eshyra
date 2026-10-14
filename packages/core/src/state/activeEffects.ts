@@ -261,6 +261,8 @@ export interface CreateActiveEffectInput extends EffectMutationContext {
     /** Pack record key. Required (and must resolve) for 'spell'; optional
      *  but resolution-checked for 'magic-item'. */
     readonly ref?: string;
+    /** Effect id inside a magic-item record; used to bind its typed duration. */
+    readonly effectRef?: string;
     readonly actor?: EffectParticipant;
   };
   /** Present iff the effect requires concentration. */
@@ -324,6 +326,7 @@ export interface ActiveEffectView {
   readonly source: {
     readonly kind: EffectSourceKind;
     readonly ref?: string;
+    readonly effectRef?: string;
     readonly actor?: EffectParticipant;
   };
   readonly requiresConcentration: boolean;
@@ -722,6 +725,7 @@ interface ActiveEffectRow {
   readonly display_name: string;
   readonly source_kind: EffectSourceKind;
   readonly source_ref: string | null;
+  readonly source_effect_ref: string | null;
   readonly source_actor_kind: EffectParticipantKind | null;
   readonly source_actor_ref: string | null;
   readonly requires_concentration: number;
@@ -778,7 +782,7 @@ const detailColumn = jsonColumn<Record<string, unknown>>(
 );
 
 const EFFECT_COLUMNS = `campaign_id, effect_id, kind, display_name,
-  source_kind, source_ref, source_actor_kind, source_actor_ref,
+  source_kind, source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
   requires_concentration, concentration_owner_kind, concentration_owner_ref,
   duration_kind, duration_amount, duration_unit, anchor_kind, anchor_at,
   anchor_game_time, anchor_combat_instance_id, anchor_round,
@@ -1029,6 +1033,9 @@ function effectView(
     source: {
       kind: row.source_kind,
       ...(row.source_ref === null ? {} : { ref: row.source_ref }),
+      ...(row.source_effect_ref === null
+        ? {}
+        : { effectRef: row.source_effect_ref }),
       ...(row.source_actor_kind === null || row.source_actor_ref === null
         ? {}
         : {
@@ -3011,14 +3018,14 @@ function createUncontrolledSuccessor(
   db.prepare(
     `INSERT INTO active_effect(
        campaign_id, effect_id, kind, display_name, source_kind,
-       source_ref, source_actor_kind, source_actor_ref,
+       source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
        requires_concentration, concentration_owner_kind,
        concentration_owner_ref, duration_kind, duration_amount,
        duration_unit, anchor_kind, anchor_at, anchor_game_time,
        anchor_elapsed_minutes, deadline_elapsed_minutes,
        dismissible, status, created_at, provenance, session_id, updated_at
      )
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 'timed', ?, ?, ?, ?, ?,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 'timed', ?, ?, ?, ?, ?,
              ?, ?, 0, 'active', ?, ?, ?, ?)`,
   ).run(
     original.campaign_id,
@@ -3027,6 +3034,7 @@ function createUncontrolledSuccessor(
     displayName,
     original.source_kind,
     original.source_ref,
+    original.source_effect_ref,
     original.source_actor_kind,
     original.source_actor_ref,
     original.duration_amount,
@@ -3614,6 +3622,56 @@ export function createActiveEffect(
           `source.ref '${input.source.ref}' does not resolve to a magic-item record; ` +
             'find the exact key via lookup_rules or omit the ref for homebrew items',
         );
+      }
+      if (input.source.effectRef !== undefined) {
+        const data = record.data as Record<string, unknown>;
+        const mechanics = data.mechanics as Record<string, unknown> | undefined;
+        const effects = Array.isArray(mechanics?.effects)
+          ? mechanics.effects
+          : [];
+        const itemEffect = effects.find(
+          (candidate) =>
+            typeof candidate === 'object' &&
+            candidate !== null &&
+            (candidate as Record<string, unknown>).id ===
+              input.source.effectRef,
+        ) as Record<string, unknown> | undefined;
+        if (itemEffect === undefined)
+          throw new ActiveEffectError(
+            `source.effectRef '${input.source.effectRef}' does not resolve to an effect on '${input.source.ref}'`,
+          );
+        if (
+          itemEffect.concentrationRequired === true &&
+          input.concentration === undefined
+        )
+          throw new ActiveEffectError(
+            `item effect '${input.source.effectRef}' requires concentration`,
+          );
+        if (
+          itemEffect.concentrationRequired === false &&
+          input.concentration !== undefined
+        )
+          throw new ActiveEffectError(
+            `item effect '${input.source.effectRef}' does not require concentration`,
+          );
+        const typedDuration = itemEffect.duration;
+        if (
+          typeof typedDuration === 'object' &&
+          typedDuration !== null &&
+          !Array.isArray(typedDuration)
+        ) {
+          const expected = typedDuration as Record<string, unknown>;
+          if (
+            typeof expected.amount !== 'number' ||
+            typeof expected.unit !== 'string' ||
+            input.duration.kind !== 'timed' ||
+            input.duration.amount !== expected.amount ||
+            input.duration.unit !== expected.unit
+          )
+            throw new ActiveEffectError(
+              `duration for item effect '${input.source.effectRef}' must match its typed item duration ${JSON.stringify(typedDuration)}`,
+            );
+        }
       }
     }
     if (input.source.actor !== undefined) {
@@ -4383,7 +4441,7 @@ export function createActiveEffect(
       .prepare(
         `INSERT INTO active_effect(
            campaign_id, effect_id, kind, display_name, source_kind,
-           source_ref, source_actor_kind, source_actor_ref,
+           source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
            requires_concentration, concentration_owner_kind,
            concentration_owner_ref, duration_kind, duration_amount,
            duration_unit, anchor_kind, anchor_at, anchor_game_time,
@@ -4394,7 +4452,7 @@ export function createActiveEffect(
            dismissible, status, created_at, provenance, session_id,
            updated_at
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                  ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
       )
       .run(
@@ -4404,6 +4462,7 @@ export function createActiveEffect(
         input.displayName,
         input.source.kind,
         input.source.ref ?? null,
+        input.source.effectRef ?? null,
         input.source.actor?.kind ?? null,
         input.source.actor?.ref ?? null,
         input.concentration === undefined ? 0 : 1,

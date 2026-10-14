@@ -140,6 +140,7 @@ export interface MagicItemOperation {
 export interface MagicItemEffect extends Readonly<Record<string, unknown>> {
   readonly kind: string;
   readonly id?: string;
+  readonly duration?: MagicItemDurationSpec | string;
 }
 
 export interface MagicItemStateMachine {
@@ -2406,6 +2407,11 @@ export function validateMagicItemMechanics(
     mechanics.effects.forEach((entry, index) => {
       const effectPath = `${path}.effects[${index}]`;
       const effect = object(entry, effectPath);
+      if (effect.duration !== undefined) {
+        if (typeof effect.duration === 'string')
+          string(effect.duration, `${effectPath}.duration`);
+        else duration(effect.duration, `${effectPath}.duration`);
+      }
       validateEffect(effect, effectPath);
       if (effect.id !== undefined) {
         const effectId = id(effect.id, `${effectPath}.id`);

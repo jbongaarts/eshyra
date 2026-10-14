@@ -1112,13 +1112,54 @@ describe('E. kept state machines own exactly one lifetime at a time (review 19.4
     // carried for the DM; nothing is invented.
     const helm = (scopes.find((s) => s.label === 'Helm of Brilliance')
       ?.mechanics.effects ?? []) as Obj[];
-    expect(helm.filter((effect) => effect.duration !== undefined)).toEqual([]);
+    expect(
+      helm.find(
+        (effect) => effect.id === 'c2-static-helm-brilliance-weapon-flame',
+      )?.duration,
+    ).toBeUndefined();
     expect(
       carries(
         'Helm of Brilliance',
         'The flames last until you use a bonus action to speak the command word again or until you drop or stow the weapon',
       ),
     ).toBe(true);
+  });
+
+  it('projects finite durations from referenced spell records onto operation-bound item spell effects', () => {
+    const spells = new Map(
+      pack.records
+        .filter((record) => record.kind === 'spell')
+        .map((record) => [record.key, record]),
+    );
+    let checked = 0;
+    for (const item of items) {
+      const mechanics = (item.data as Obj).mechanics as Obj | undefined;
+      if (mechanics === undefined) continue;
+      const effects = (mechanics.effects as Obj[] | undefined) ?? [];
+      const byId = new Map(effects.map((effect) => [effect.id, effect]));
+      const operationEffectIds = new Set(
+        ((mechanics.operations as Obj[] | undefined) ?? []).flatMap((op) =>
+          Array.isArray(op.effects) ? (op.effects as string[]) : [],
+        ),
+      );
+      for (const effectId of operationEffectIds) {
+        const effect = byId.get(effectId);
+        if (effect?.kind !== 'castSpell' || typeof effect.spellRef !== 'string')
+          continue;
+        const spell = spells.get(effect.spellRef);
+        const spellData = spell?.data as Obj | undefined;
+        const spellMechanics = spellData?.mechanics as Obj | undefined;
+        const spellDuration = spellMechanics?.duration as Obj | undefined;
+        if (spellDuration?.kind !== 'timed') continue;
+        expect(effect.duration, `${item.key}#${effectId}`).toBeDefined();
+        expect(effect.duration, `${item.key}#${effectId}`).toMatchObject({
+          amount: expect.anything(),
+          unit: expect.any(String),
+        });
+        checked += 1;
+      }
+    }
+    expect(checked).toBe(93);
   });
 });
 

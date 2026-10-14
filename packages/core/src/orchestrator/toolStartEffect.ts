@@ -4,6 +4,7 @@ import type {
   NaturalForm,
 } from '../state/activeEffects.js';
 import { createActiveEffect } from '../state/activeEffects.js';
+import { lookupStrictCampaignRecord } from '../state/campaignRecordLookup.js';
 import type { CharacterConditionEntry } from '../state/liveStateSchema.js';
 import {
   EFFECT_DURATION_SCHEMA,
@@ -94,6 +95,12 @@ export const startEffectTool: Tool = {
             ],
           },
           ref: { type: 'string', minLength: 1 },
+          effectRef: {
+            type: 'string',
+            minLength: 1,
+            description:
+              'For a magic-item source, the id of the item effect that created this effect.',
+          },
           actor: EFFECT_PARTICIPANT_SCHEMA,
         },
         required: ['kind'],
@@ -280,6 +287,48 @@ export const startEffectTool: Tool = {
     if ('ok' in duration) {
       return duration;
     }
+    let itemDurationBinding:
+      | { readonly status: 'bound' }
+      | { readonly status: 'unbound'; readonly reason: string }
+      | undefined;
+    if (source.kind === 'magic-item' && typeof source.ref === 'string') {
+      if (typeof source.effectRef !== 'string')
+        return err(
+          'invalid_args',
+          'a rules-pack magic-item source requires source.effectRef to bind the effect to its item power',
+        );
+      const itemRecord = lookupStrictCampaignRecord(
+        ctx.db,
+        'magic-item',
+        source.ref,
+        ctx.resolveRulesPack,
+      )?.record;
+      const data = itemRecord?.data as Record<string, unknown> | undefined;
+      const mechanics = data?.mechanics as Record<string, unknown> | undefined;
+      const itemEffects = Array.isArray(mechanics?.effects)
+        ? mechanics.effects
+        : [];
+      const itemEffect = itemEffects.find(
+        (candidate) =>
+          typeof candidate === 'object' &&
+          candidate !== null &&
+          (candidate as Record<string, unknown>).id === source.effectRef,
+      ) as Record<string, unknown> | undefined;
+      if (itemEffect === undefined)
+        return err(
+          'invalid_args',
+          `source.effectRef '${source.effectRef}' does not resolve to an effect on '${source.ref}'`,
+        );
+      const typed = itemEffect.duration;
+      itemDurationBinding =
+        typeof typed === 'object' && typed !== null && !Array.isArray(typed)
+          ? { status: 'bound' }
+          : {
+              status: 'unbound',
+              reason:
+                'the item effect has no typed duration; the DM adjudicates the active duration',
+            };
+    }
     const targets: {
       kind: 'character' | 'combatant' | 'campaign_actor' | 'scope';
       ref: string;
@@ -390,29 +439,34 @@ export const startEffectTool: Tool = {
     }
 
     try {
-      return ok(
-        createActiveEffect(ctx.db, {
-          campaignId: ctx.campaignId,
-          effectId: String(a.effectId),
-          kind: a.kind as CreateActiveEffectInput['kind'],
-          displayName: String(a.displayName),
-          source: {
-            kind: source.kind as CreateActiveEffectInput['source']['kind'],
-            ...(typeof source.ref === 'string' ? { ref: source.ref } : {}),
-            ...(sourceActor === undefined ? {} : { actor: sourceActor }),
-          },
-          ...(concentration === undefined ? {} : { concentration }),
-          duration,
-          ...(a.dismissible === true ? { dismissible: true } : {}),
-          ...(targets.length === 0 ? {} : { targets }),
-          ...(conditions.length === 0 ? {} : { conditions }),
-          ...(actors.length === 0 ? {} : { actors }),
-          resolveRulesPack: ctx.resolveRulesPack,
-          provenance: `model:${ctx.turnId}`,
-          sessionId: ctx.sessionId,
-          at: ctx.at,
-        }),
-      );
+      const created = createActiveEffect(ctx.db, {
+        campaignId: ctx.campaignId,
+        effectId: String(a.effectId),
+        kind: a.kind as CreateActiveEffectInput['kind'],
+        displayName: String(a.displayName),
+        source: {
+          kind: source.kind as CreateActiveEffectInput['source']['kind'],
+          ...(typeof source.ref === 'string' ? { ref: source.ref } : {}),
+          ...(typeof source.effectRef === 'string'
+            ? { effectRef: source.effectRef }
+            : {}),
+          ...(sourceActor === undefined ? {} : { actor: sourceActor }),
+        },
+        ...(concentration === undefined ? {} : { concentration }),
+        duration,
+        ...(a.dismissible === true ? { dismissible: true } : {}),
+        ...(targets.length === 0 ? {} : { targets }),
+        ...(conditions.length === 0 ? {} : { conditions }),
+        ...(actors.length === 0 ? {} : { actors }),
+        resolveRulesPack: ctx.resolveRulesPack,
+        provenance: `model:${ctx.turnId}`,
+        sessionId: ctx.sessionId,
+        at: ctx.at,
+      });
+      return ok({
+        ...created,
+        ...(itemDurationBinding === undefined ? {} : { itemDurationBinding }),
+      });
     } catch (e) {
       return effectToolError(e);
     }

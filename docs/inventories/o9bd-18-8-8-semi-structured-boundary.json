@@ -22197,9 +22197,10 @@
       "fieldPath": "data.mechanics.effects[].duration.unit",
       "representativeValues": [
         "minute",
-        "hour"
+        "hour",
+        "round"
       ],
-      "population": 45,
+      "population": 127,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -26492,13 +26493,13 @@
       ],
       "fieldPath": "data.mechanics.stateMachine.transitions[].condition",
       "representativeValues": [
-        "an attack using this weapon hits a creature",
-        "remove the armor",
-        "either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check",
-        "The target must succeed on a DC 15 Dexterity saving throw or become restrained",
-        "On a success, the creature is no longer restrained by the rope"
+        "you are incapacitated",
+        "until you are incapacitated or die",
+        "When the boots’ property has been used for a total of 10 minutes",
+        "the cube runs out of charges",
+        "an attack using this weapon hits a creature"
       ],
-      "population": 7,
+      "population": 23,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -26542,7 +26543,7 @@
         "face-2",
         "face-3"
       ],
-      "population": 95,
+      "population": 111,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -26647,7 +26648,7 @@
         "face-2",
         "face-3"
       ],
-      "population": 95,
+      "population": 111,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",

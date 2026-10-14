@@ -12,6 +12,7 @@ import {
   useItem,
   writeItemState,
 } from '../src/internal.js';
+import { applyItemStateConditionEvent } from '../src/state/itemResetExecutor.js';
 import { freshDbWithSession } from './support/db.js';
 
 const CTX = {
@@ -106,6 +107,69 @@ function useInput(pack: RulesPack, instanceId: string, operationId: string) {
 }
 
 describe('item reset/timer executor', () => {
+  it('fires a declared external condition and clears its active timer without spending an operation', () => {
+    const db = freshDbWithSession();
+    const record = fixture('condition-event', {
+      operations: [{ id: 'activate' }],
+      stateMachine: {
+        initial: 'inactive',
+        states: [{ id: 'inactive' }, { id: 'active' }],
+        transitions: [
+          { from: 'inactive', to: 'active', via: 'activate' },
+          {
+            from: 'active',
+            to: 'inactive',
+            timer: { amount: 1, unit: 'hour' },
+          },
+          {
+            from: 'active',
+            to: 'inactive',
+            condition: 'the wearer is incapacitated',
+          },
+        ],
+      },
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record, {
+      ...createInitialItemState(record.key, record),
+      machineState: 'active',
+      pendingTimers: [
+        {
+          from: 'active',
+          to: 'inactive',
+          anchorElapsedMinutes: 0,
+          deadlineElapsedMinutes: 60,
+          amount: 1,
+          unit: 'hour',
+        },
+      ],
+    });
+    expect(() =>
+      applyItemStateConditionEvent(db, {
+        instanceId: id,
+        condition: 'the wearer falls',
+        ...CTX,
+        rng: createSeededRng('condition-event'),
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toThrow(/no declared condition transition/);
+    expect(readItemState(db, id)?.machineState).toBe('active');
+    expect(
+      applyItemStateConditionEvent(db, {
+        instanceId: id,
+        condition: 'the wearer is incapacitated',
+        ...CTX,
+        rng: createSeededRng('condition-event'),
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toEqual({ instanceId: id, from: 'active', to: 'inactive' });
+    expect(readItemState(db, id)).toMatchObject({
+      machineState: 'inactive',
+      pendingTimers: [],
+    });
+    db.close();
+  });
+
   it('crosses dawn once, clamps regain, and is idempotent', () => {
     const db = freshDbWithSession();
     const record = fixture('reset-dawn', {

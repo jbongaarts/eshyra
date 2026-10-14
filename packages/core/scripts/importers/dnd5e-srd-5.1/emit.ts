@@ -1622,6 +1622,71 @@ export function magicItemExtractionsToRecords(
   return out;
 }
 
+/**
+ * Item effects that cast a spell retain the spell ref as their source tie.
+ * Copy a parsed finite spell duration onto the item effect so start_effect can
+ * bind an item-sourced instance without relying on the DM to repeat spell
+ * record semantics. An item-specific duration already projected by the item
+ * prose always wins. Indefinite / unparsed spell durations stay unbound.
+ */
+function bindMagicItemSpellEffectDurations(
+  magicItems: readonly RulesRecord[],
+  spells: readonly RulesRecord[],
+): RulesRecord[] {
+  const spellByKey = new Map(spells.map((record) => [record.key, record]));
+  return magicItems.map((record) => {
+    const data = record.data as Record<string, unknown>;
+    const mechanics = data.mechanics as Record<string, unknown> | undefined;
+    const effects = Array.isArray(mechanics?.effects)
+      ? mechanics.effects
+      : undefined;
+    if (mechanics === undefined || effects === undefined) return record;
+    let changed = false;
+    const boundEffects = effects.map((raw) => {
+      if (typeof raw !== 'object' || raw === null || Array.isArray(raw))
+        return raw;
+      const effect = raw as Record<string, unknown>;
+      if (
+        effect.kind !== 'castSpell' ||
+        typeof effect.spellRef !== 'string' ||
+        effect.duration !== undefined
+      )
+        return raw;
+      const spell = spellByKey.get(effect.spellRef);
+      const spellData = spell?.data as Record<string, unknown> | undefined;
+      const spellMechanics = spellData?.mechanics as
+        | Record<string, unknown>
+        | undefined;
+      const duration = spellMechanics?.duration as
+        | Record<string, unknown>
+        | undefined;
+      if (
+        duration?.kind !== 'timed' ||
+        typeof duration.amount !== 'number' ||
+        !['round', 'minute', 'hour', 'day'].includes(String(duration.unit))
+      )
+        return raw;
+      changed = true;
+      return {
+        ...effect,
+        duration: { amount: duration.amount, unit: duration.unit },
+        ...(effect.concentrationRequired === undefined &&
+        duration.concentration === true
+          ? { concentrationRequired: true }
+          : {}),
+      };
+    });
+    if (!changed) return record;
+    return {
+      ...record,
+      data: {
+        ...data,
+        mechanics: { ...mechanics, effects: boundEffects },
+      },
+    };
+  });
+}
+
 export function ancestryExtractionsToRecords(
   ancestries: readonly AncestryExtraction[],
   resolveSpellGrant?: SpellGrantResolver,
@@ -1873,10 +1938,13 @@ export function buildPack(input: BuildPackInput): RulesPack {
     list.push(statBlockKey(statBlock.name));
     statBlockRefsByItemName.set(statBlock.containingItem, list);
   }
-  const magicItemRecords = magicItemExtractionsToRecords(
-    input.magicItems ?? [],
-    statBlockRefsByItemName,
-    input.tables ?? [],
+  const magicItemRecords = bindMagicItemSpellEffectDurations(
+    magicItemExtractionsToRecords(
+      input.magicItems ?? [],
+      statBlockRefsByItemName,
+      input.tables ?? [],
+    ),
+    spellRecords,
   );
   // Link ancestry option tables (eshyra-4a7.7): add `tableRefs` on any ancestry
   // trait whose prose names "the <Name> table" (the Dragonborn Draconic

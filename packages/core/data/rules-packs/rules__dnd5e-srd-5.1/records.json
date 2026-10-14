@@ -88437,6 +88437,16 @@
                 "amount": 1,
                 "unit": "minute"
               }
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you are incapacitated"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "until you are incapacitated or die"
             }
           ],
           "duration": {
@@ -92133,6 +92143,11 @@
               "from": "active",
               "to": "inactive",
               "via": "deactivate-speed"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "When the boots’ property has been used for a total of 10 minutes"
             }
           ],
           "termination": "If you click your heels together again, you end the effect. When the boots’ property has been used for a total of 10 minutes, the magic ceases to function until you finish a long rest"
@@ -94673,7 +94688,12 @@
             "kind": "castSpell",
             "spellRef": "spell:web",
             "saveDc": 13,
-            "areaMultiplier": 2
+            "areaMultiplier": 2,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-arachnida-poison",
@@ -96202,6 +96222,31 @@
             {
               "from": "face-1",
               "to": "inactive",
+              "condition": "the cube runs out of charges"
+            },
+            {
+              "from": "face-2",
+              "to": "inactive",
+              "condition": "the cube runs out of charges"
+            },
+            {
+              "from": "face-3",
+              "to": "inactive",
+              "condition": "the cube runs out of charges"
+            },
+            {
+              "from": "face-4",
+              "to": "inactive",
+              "condition": "the cube runs out of charges"
+            },
+            {
+              "from": "face-5",
+              "to": "inactive",
+              "condition": "the cube runs out of charges"
+            },
+            {
+              "from": "face-1",
+              "to": "inactive",
               "timer": {
                 "amount": 1,
                 "unit": "minute"
@@ -96751,7 +96796,12 @@
             "id": "c2-cast-gate",
             "kind": "castSpell",
             "spellRef": "spell:gate",
-            "targetPlane": "plane keyed to pressed side"
+            "targetPlane": "plane keyed to pressed side",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-plane-shift",
@@ -101099,7 +101149,12 @@
             "id": "summon-elemental",
             "kind": "castSpell",
             "spellRef": "spell:conjure-elemental",
-            "gemTypeTableRef": "table:elemental-gem"
+            "gemTypeTableRef": "table:elemental-gem",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -101552,7 +101607,11 @@
             "saveDc": 13,
             "rangeFeet": 30,
             "target": "one humanoid",
-            "requiresMutualSight": true
+            "requiresMutualSight": true,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -103397,6 +103456,11 @@
               "from": "active",
               "to": "inactive",
               "via": "extinguish-flames"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you drop or sheathe the sword"
             }
           ],
           "termination": "The flames last until you use a bonus action to speak the command word again or until you drop or sheathe the sword"
@@ -104051,6 +104115,11 @@
               "from": "active",
               "to": "inactive",
               "via": "end-light"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you use another function of the gem"
             }
           ],
           "termination": "It lasts until you use a bonus action to repeat the command word or until you use another function of the gem"
@@ -105868,7 +105937,11 @@
             "spellRef": "spell:disguise-self",
             "endsOn": [
               "hat-removed"
-            ]
+            ],
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -106218,7 +106291,11 @@
             "id": "c2-cast-daylight",
             "kind": "castSpell",
             "spellRef": "spell:daylight",
-            "saveDc": 18
+            "saveDc": 18,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-fireball",
@@ -106236,7 +106313,12 @@
             "id": "c2-cast-wall-of-fire",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-fire",
-            "saveDc": 18
+            "saveDc": 18,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-helm-brilliance-fire-resistance",
@@ -106957,7 +107039,11 @@
           {
             "id": "c2-cast-comprehend-languages",
             "kind": "castSpell",
-            "spellRef": "spell:comprehend-languages"
+            "spellRef": "spell:comprehend-languages",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -107122,14 +107208,23 @@
             "kind": "castSpell",
             "spellRef": "spell:detect-thoughts",
             "saveDc": 13,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-suggestion",
             "kind": "castSpell",
             "spellRef": "spell:suggestion",
             "saveDc": 13,
-            "target": "creature currently focused on with detect thoughts"
+            "target": "creature currently focused on with detect thoughts",
+            "duration": {
+              "amount": 8,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "kind": "telepathicRelay",
@@ -108470,6 +108565,11 @@
               "from": "active",
               "to": "inactive",
               "via": "release-rod"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "More weight causes the rod to deactivate and fall."
             }
           ],
           "termination": "Until you or another creature uses an action to push the button again, the rod doesn’t move, even if it is defying gravity. The rod can hold up to 8,000 pounds of weight. More weight causes the rod to deactivate and fall",
@@ -112459,7 +112559,11 @@
             "kind": "castSpell",
             "spellRef": "spell:detect-thoughts",
             "saveDc": 13,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -114926,24 +115030,42 @@
             "id": "c2-cast-daylight",
             "kind": "castSpell",
             "spellRef": "spell:daylight",
-            "saveDc": 18
+            "saveDc": 18,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-death-ward",
             "kind": "castSpell",
             "spellRef": "spell:death-ward",
-            "saveDc": 18
+            "saveDc": 18,
+            "duration": {
+              "amount": 8,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-scrying",
             "kind": "castSpell",
             "spellRef": "spell:scrying",
-            "saveDc": 18
+            "saveDc": 18,
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-detect-magic",
             "kind": "castSpell",
-            "spellRef": "spell:detect-magic"
+            "spellRef": "spell:detect-magic",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "m7-orb-enslaved-charm",
@@ -117190,7 +117312,11 @@
               "amount": 1,
               "unit": "hour"
             },
-            "frequency": "at-will"
+            "frequency": "at-will",
+            "duration": {
+              "amount": 24,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -117350,12 +117476,22 @@
           {
             "id": "c2-drink",
             "kind": "castSpell",
-            "spellRef": "spell:clairvoyance"
+            "spellRef": "spell:clairvoyance",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "clairvoyance",
             "kind": "castSpell",
-            "spellRef": "spell:clairvoyance"
+            "spellRef": "spell:clairvoyance",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -119129,13 +119265,22 @@
             "kind": "castSpell",
             "spellRef": "spell:detect-thoughts",
             "saveDc": 13,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "detect-thoughts",
             "kind": "castSpell",
             "spellRef": "spell:detect-thoughts",
-            "saveDc": 13
+            "saveDc": 13,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -120202,19 +120347,32 @@
             "id": "c2-cast-animal-friendship",
             "kind": "castSpell",
             "spellRef": "spell:animal-friendship",
-            "saveDc": 13
+            "saveDc": 13,
+            "duration": {
+              "amount": 24,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-fear",
             "kind": "castSpell",
             "spellRef": "spell:fear",
             "saveDc": 13,
-            "target": "beasts with Intelligence 3 or lower"
+            "target": "beasts with Intelligence 3 or lower",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-speak-with-animals",
             "kind": "castSpell",
-            "spellRef": "spell:speak-with-animals"
+            "spellRef": "spell:speak-with-animals",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -121101,7 +121259,12 @@
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
             "target": "air elemental",
-            "condition": "only a Ring of Air Elemental Command"
+            "condition": "only a Ring of Air Elemental Command",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-chain-lightning",
@@ -121115,14 +121278,24 @@
             "kind": "castSpell",
             "spellRef": "spell:gust-of-wind",
             "saveDc": 17,
-            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring"
+            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-wind-wall",
             "kind": "castSpell",
             "spellRef": "spell:wind-wall",
             "saveDc": 17,
-            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring"
+            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-dominate-earth-elemental",
@@ -121130,7 +121303,12 @@
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
             "target": "earth elemental",
-            "condition": "only a Ring of Earth Elemental Command"
+            "condition": "only a Ring of Earth Elemental Command",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-stone-shape",
@@ -121144,14 +121322,24 @@
             "kind": "castSpell",
             "spellRef": "spell:stoneskin",
             "saveDc": 17,
-            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring"
+            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-wall-of-stone",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-stone",
             "saveDc": 17,
-            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring"
+            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-dominate-fire-elemental",
@@ -121159,7 +121347,12 @@
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
             "target": "fire elemental",
-            "condition": "only a Ring of Fire Elemental Command"
+            "condition": "only a Ring of Fire Elemental Command",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-burning-hands",
@@ -121180,7 +121373,12 @@
             "kind": "castSpell",
             "spellRef": "spell:wall-of-fire",
             "saveDc": 17,
-            "condition": "only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring"
+            "condition": "only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-dominate-water-elemental",
@@ -121188,7 +121386,12 @@
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
             "target": "water elemental",
-            "condition": "only a Ring of Water Elemental Command"
+            "condition": "only a Ring of Water Elemental Command",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-create-or-destroy-water",
@@ -121202,7 +121405,12 @@
             "kind": "castSpell",
             "spellRef": "spell:control-water",
             "saveDc": 17,
-            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring"
+            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-ice-storm",
@@ -121216,7 +121424,12 @@
             "kind": "castSpell",
             "spellRef": "spell:wall-of-ice",
             "saveDc": 17,
-            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring"
+            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -123704,6 +123917,16 @@
               "from": "active",
               "to": "inactive",
               "via": "become-visible"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "the ring is removed"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you attack or cast a spell"
             }
           ],
           "termination": "You remain invisible until the ring is removed, until you attack or cast a spell, or until you use a bonus action to become visible again"
@@ -123913,7 +124136,11 @@
             "id": "c2-cast-jump",
             "kind": "castSpell",
             "spellRef": "spell:jump",
-            "target": "self"
+            "target": "self",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -124048,6 +124275,16 @@
               "from": "active",
               "to": "inactive",
               "via": "show-ring"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you remove the ring"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you die"
             }
           ],
           "termination": "You can use an action to cause the ring to become invisible until you use another action to make it visible, until you remove the ring, or until you die"
@@ -124809,18 +125046,30 @@
             "id": "c2-cast-dancing-lights",
             "kind": "castSpell",
             "spellRef": "spell:dancing-lights",
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-light",
             "kind": "castSpell",
-            "spellRef": "spell:light"
+            "spellRef": "spell:light",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-faerie-fire",
             "kind": "castSpell",
             "spellRef": "spell:faerie-fire",
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-launch-shooting-stars-payload",
@@ -125999,7 +126248,11 @@
             "kind": "castSpell",
             "spellRef": "spell:telekinesis",
             "concentrationRequired": true,
-            "target": "unattended objects only"
+            "target": "unattended objects only",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -128564,22 +128817,41 @@
           {
             "id": "c2-cast-detect-evil-and-good",
             "kind": "castSpell",
-            "spellRef": "spell:detect-evil-and-good"
+            "spellRef": "spell:detect-evil-and-good",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-detect-magic",
             "kind": "castSpell",
-            "spellRef": "spell:detect-magic"
+            "spellRef": "spell:detect-magic",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-detect-poison-and-disease",
             "kind": "castSpell",
-            "spellRef": "spell:detect-poison-and-disease"
+            "spellRef": "spell:detect-poison-and-disease",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-see-invisibility",
             "kind": "castSpell",
-            "spellRef": "spell:see-invisibility"
+            "spellRef": "spell:see-invisibility",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "kind": "sense",
@@ -132487,19 +132759,31 @@
             "id": "c2-cast-charm-person",
             "kind": "castSpell",
             "spellRef": "spell:charm-person",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-command",
             "kind": "castSpell",
             "spellRef": "spell:command",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "round"
+            }
           },
           {
             "id": "c2-cast-comprehend-languages",
             "kind": "castSpell",
             "spellRef": "spell:comprehend-languages",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -133037,7 +133321,12 @@
             "id": "c2-cast-wall-of-fire",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-fire",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-staff-fire-resistance",
@@ -133508,7 +133797,12 @@
           {
             "id": "c2-cast-fog-cloud",
             "kind": "castSpell",
-            "spellRef": "spell:fog-cloud"
+            "spellRef": "spell:fog-cloud",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-ice-storm",
@@ -133520,7 +133814,12 @@
             "id": "c2-cast-wall-of-ice",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-ice",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-staff-frost-resistance",
@@ -134647,19 +134946,34 @@
             "id": "c2-cast-globe-of-invulnerability",
             "kind": "castSpell",
             "spellRef": "spell:globe-of-invulnerability",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-hold-monster",
             "kind": "castSpell",
             "spellRef": "spell:hold-monster",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-levitate",
             "kind": "castSpell",
             "spellRef": "spell:levitate",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-lightning-bolt",
@@ -134679,13 +134993,23 @@
             "kind": "castSpell",
             "spellRef": "spell:ray-of-enfeeblement",
             "saveDc": "owner-spell-save-dc",
-            "attackModifier": "owner-spell-attack-bonus"
+            "attackModifier": "owner-spell-attack-bonus",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-wall-of-force",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-force",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-staff-power-weapon-attack-damage",
@@ -136041,13 +136365,23 @@
             "id": "c2-cast-giant-insect",
             "kind": "castSpell",
             "spellRef": "spell:giant-insect",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-insect-plague",
             "kind": "castSpell",
             "spellRef": "spell:insect-plague",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -136815,7 +137149,12 @@
             "id": "c2-cast-conjure-elemental",
             "kind": "castSpell",
             "spellRef": "spell:conjure-elemental",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-dispel-magic",
@@ -136834,7 +137173,12 @@
             "id": "c2-cast-flaming-sphere",
             "kind": "castSpell",
             "spellRef": "spell:flaming-sphere",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-ice-storm",
@@ -136846,7 +137190,12 @@
             "id": "c2-cast-invisibility",
             "kind": "castSpell",
             "spellRef": "spell:invisibility",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-knock",
@@ -136865,7 +137214,11 @@
             "id": "c2-cast-passwall",
             "kind": "castSpell",
             "spellRef": "spell:passwall",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-plane-shift",
@@ -136878,19 +137231,33 @@
             "kind": "castSpell",
             "spellRef": "spell:telekinesis",
             "saveDc": "owner-spell-save-dc",
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-wall-of-fire",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-fire",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-web",
             "kind": "castSpell",
             "spellRef": "spell:web",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-arcane-lock",
@@ -136902,31 +137269,54 @@
             "id": "c2-cast-detect-magic",
             "kind": "castSpell",
             "spellRef": "spell:detect-magic",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-enlarge-reduce",
             "kind": "castSpell",
             "spellRef": "spell:enlarge-reduce",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-light",
             "kind": "castSpell",
             "spellRef": "spell:light",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-mage-hand",
             "kind": "castSpell",
             "spellRef": "spell:mage-hand",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-protection-from-evil-and-good",
             "kind": "castSpell",
             "spellRef": "spell:protection-from-evil-and-good",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-staff-magi-weapon-attack-damage",
@@ -139088,7 +139478,11 @@
             "id": "c2-cast-animal-friendship",
             "kind": "castSpell",
             "spellRef": "spell:animal-friendship",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 24,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-awaken",
@@ -139100,7 +139494,12 @@
             "id": "c2-cast-barkskin",
             "kind": "castSpell",
             "spellRef": "spell:barkskin",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-locate-animals-or-plants",
@@ -139112,26 +139511,43 @@
             "id": "c2-cast-speak-with-animals",
             "kind": "castSpell",
             "spellRef": "spell:speak-with-animals",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-speak-with-plants",
             "kind": "castSpell",
             "spellRef": "spell:speak-with-plants",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-wall-of-thorns",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-thorns",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-pass-without-trace",
             "kind": "castSpell",
             "spellRef": "spell:pass-without-trace",
             "saveDc": "owner-spell-save-dc",
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-static-staff-woodlands-weapon-attack-damage",
@@ -141531,6 +141947,11 @@
               "from": "active",
               "to": "inactive",
               "via": "end-light"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "sheathing the sword"
             }
           ],
           "termination": "Speaking the command word again or sheathing the sword puts out the light"
@@ -143484,7 +143905,11 @@
             "spellRef": "spell:dominate-beast",
             "saveDc": 15,
             "target": "beast with an innate swimming speed",
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -144136,14 +144561,22 @@
             "kind": "castSpell",
             "spellRef": "spell:hold-monster",
             "saveDc": 17,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-hold-person",
             "kind": "castSpell",
             "spellRef": "spell:hold-person",
             "saveDc": 17,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -144749,7 +145182,11 @@
             "options": [
               "flee",
               "grovel"
-            ]
+            ],
+            "duration": {
+              "amount": 1,
+              "unit": "round"
+            }
           },
           {
             "id": "c2-cone-of-fear-payload",
@@ -145524,7 +145961,12 @@
           {
             "id": "c2-cast-detect-magic",
             "kind": "castSpell",
-            "spellRef": "spell:detect-magic"
+            "spellRef": "spell:detect-magic",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -146182,7 +146624,11 @@
             "kind": "castSpell",
             "spellRef": "spell:polymorph",
             "saveDc": 15,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -146747,7 +147193,11 @@
             "kind": "castSpell",
             "spellRef": "spell:web",
             "saveDc": 15,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -147438,7 +147888,11 @@
             "kind": "castSpell",
             "spellRef": "spell:gust-of-wind",
             "saveDc": 13,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           }
         ]
       },

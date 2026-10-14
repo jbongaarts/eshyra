@@ -1,0 +1,870 @@
+{
+  "source": "D&D 5e SRD 5.1 generated records; sourceText is the verbatim item entry",
+  "count": 21,
+  "machines": [
+    {
+      "recordKey": "magic-item:animated-shield",
+      "name": "Animated Shield",
+      "source": "SRD 5.1 p. 208",
+      "sourceText": "While holding this shield, you can speak its command word as a bonus action to cause it to animate. The shield leaps into the air and hovers in your space to protect you as if you were wielding it, leaving your hands free. The shield remains animated for 1 minute, until you use a bonus action to end this effect, or until you are incapacitated or die, at which point the shield falls to the ground or into your hand if you have one free.",
+      "machineTermination": "The shield remains animated for 1 minute, until you use a bonus action to end this effect, or until you are incapacitated or die",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "speak-command-word"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "end-animation"
+        }
+      ],
+      "timerTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "timer": {
+            "amount": 1,
+            "unit": "minute"
+          }
+        }
+      ],
+      "conditionTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "you are incapacitated"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "until you are incapacitated or die"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:boots-of-speed",
+      "name": "Boots of Speed",
+      "source": "SRD 5.1 p. 212",
+      "sourceText": "While you wear these boots, you can use a bonus action and click the boots’ heels together. If you do, the boots double your walking speed, and any creature that makes an opportunity attack against you has disadvantage on the attack roll. If you click your heels together again, you end the effect. When the boots’ property has been used for a total of 10 minutes, the magic ceases to function until you finish a long rest.",
+      "machineTermination": "If you click your heels together again, you end the effect. When the boots’ property has been used for a total of 10 minutes, the magic ceases to function until you finish a long rest",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "activate-speed"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "deactivate-speed"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "When the boots’ property has been used for a total of 10 minutes"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:cloak-of-the-bat",
+      "name": "Cloak of the Bat",
+      "source": "SRD 5.1 p. 214",
+      "sourceText": "While wearing this cloak, you have advantage on Dexterity (Stealth) checks. In an area of dim light or darkness, you can grip the edges of the cloak with both hands and use it to fly at a speed of 40 feet. If you ever fail to grip the cloak’s edges while flying in this way, or if you are no longer in dim light or darkness, you lose this flying speed. While wearing the cloak in an area of dim light or darkness, you can use your action to cast polymorph on yourself, transforming into a bat. While you are in the form of the bat, you retain your Intelligence, Wisdom, and Charisma scores. The cloak can’t be used this way again until the next dawn.",
+      "machineTermination": null,
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "cast-polymorph"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "end-polymorph"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:cube-of-force",
+      "name": "Cube of Force",
+      "source": "SRD 5.1 p. 215",
+      "sourceText": "This cube is about an inch across. Each face has a distinct marking on it that can be pressed. The cube starts with 36 charges, and it regains 1d20 expended charges daily at dawn. You can use an action to press one of the cube’s faces, expending a number of charges based on the chosen face, as shown in the Cube of Force Faces table. Each face has a different effect. If the cube has insufficient charges remaining, nothing happens. Otherwise, a barrier of invisible force springs into existence, forming a cube 15 feet on a side. The barrier is centered on you, moves with you, and lasts for 1 minute, until you use an action to press the cube’s sixth face, or the cube runs out of charges. You can change the barrier’s effect by pressing a different face of the cube and expending the requisite number of charges, resetting the duration. If your movement causes the barrier to come into contact with a solid object that can’t pass through the cube, you can’t move any closer to that object as long as the barrier remains. The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
+      "machineTermination": "lasts for 1 minute, until you use an action to press the cube’s sixth face, or the cube runs out of charges",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "face-1",
+          "via": "press-face-1"
+        },
+        {
+          "from": "inactive",
+          "to": "face-2",
+          "via": "press-face-2"
+        },
+        {
+          "from": "inactive",
+          "to": "face-3",
+          "via": "press-face-3"
+        },
+        {
+          "from": "inactive",
+          "to": "face-4",
+          "via": "press-face-4"
+        },
+        {
+          "from": "inactive",
+          "to": "face-5",
+          "via": "press-face-5"
+        },
+        {
+          "from": "face-1",
+          "to": "face-1",
+          "via": "press-face-1"
+        },
+        {
+          "from": "face-1",
+          "to": "face-2",
+          "via": "press-face-2"
+        },
+        {
+          "from": "face-1",
+          "to": "face-3",
+          "via": "press-face-3"
+        },
+        {
+          "from": "face-1",
+          "to": "face-4",
+          "via": "press-face-4"
+        },
+        {
+          "from": "face-1",
+          "to": "face-5",
+          "via": "press-face-5"
+        },
+        {
+          "from": "face-2",
+          "to": "face-1",
+          "via": "press-face-1"
+        },
+        {
+          "from": "face-2",
+          "to": "face-2",
+          "via": "press-face-2"
+        },
+        {
+          "from": "face-2",
+          "to": "face-3",
+          "via": "press-face-3"
+        },
+        {
+          "from": "face-2",
+          "to": "face-4",
+          "via": "press-face-4"
+        },
+        {
+          "from": "face-2",
+          "to": "face-5",
+          "via": "press-face-5"
+        },
+        {
+          "from": "face-3",
+          "to": "face-1",
+          "via": "press-face-1"
+        },
+        {
+          "from": "face-3",
+          "to": "face-2",
+          "via": "press-face-2"
+        },
+        {
+          "from": "face-3",
+          "to": "face-3",
+          "via": "press-face-3"
+        },
+        {
+          "from": "face-3",
+          "to": "face-4",
+          "via": "press-face-4"
+        },
+        {
+          "from": "face-3",
+          "to": "face-5",
+          "via": "press-face-5"
+        },
+        {
+          "from": "face-4",
+          "to": "face-1",
+          "via": "press-face-1"
+        },
+        {
+          "from": "face-4",
+          "to": "face-2",
+          "via": "press-face-2"
+        },
+        {
+          "from": "face-4",
+          "to": "face-3",
+          "via": "press-face-3"
+        },
+        {
+          "from": "face-4",
+          "to": "face-4",
+          "via": "press-face-4"
+        },
+        {
+          "from": "face-4",
+          "to": "face-5",
+          "via": "press-face-5"
+        },
+        {
+          "from": "face-5",
+          "to": "face-1",
+          "via": "press-face-1"
+        },
+        {
+          "from": "face-5",
+          "to": "face-2",
+          "via": "press-face-2"
+        },
+        {
+          "from": "face-5",
+          "to": "face-3",
+          "via": "press-face-3"
+        },
+        {
+          "from": "face-5",
+          "to": "face-4",
+          "via": "press-face-4"
+        },
+        {
+          "from": "face-5",
+          "to": "face-5",
+          "via": "press-face-5"
+        },
+        {
+          "from": "face-1",
+          "to": "face-1",
+          "via": "spell-contact-loss"
+        },
+        {
+          "from": "face-2",
+          "to": "face-2",
+          "via": "spell-contact-loss"
+        },
+        {
+          "from": "face-3",
+          "to": "face-3",
+          "via": "spell-contact-loss"
+        },
+        {
+          "from": "face-4",
+          "to": "face-4",
+          "via": "spell-contact-loss"
+        },
+        {
+          "from": "face-5",
+          "to": "face-5",
+          "via": "spell-contact-loss"
+        },
+        {
+          "from": "face-1",
+          "to": "inactive",
+          "via": "press-face-6"
+        },
+        {
+          "from": "face-2",
+          "to": "inactive",
+          "via": "press-face-6"
+        },
+        {
+          "from": "face-3",
+          "to": "inactive",
+          "via": "press-face-6"
+        },
+        {
+          "from": "face-4",
+          "to": "inactive",
+          "via": "press-face-6"
+        },
+        {
+          "from": "face-5",
+          "to": "inactive",
+          "via": "press-face-6"
+        }
+      ],
+      "timerTransitions": [
+        {
+          "from": "face-1",
+          "to": "inactive",
+          "timer": {
+            "amount": 1,
+            "unit": "minute"
+          }
+        },
+        {
+          "from": "face-2",
+          "to": "inactive",
+          "timer": {
+            "amount": 1,
+            "unit": "minute"
+          }
+        },
+        {
+          "from": "face-3",
+          "to": "inactive",
+          "timer": {
+            "amount": 1,
+            "unit": "minute"
+          }
+        },
+        {
+          "from": "face-4",
+          "to": "inactive",
+          "timer": {
+            "amount": 1,
+            "unit": "minute"
+          }
+        },
+        {
+          "from": "face-5",
+          "to": "inactive",
+          "timer": {
+            "amount": 1,
+            "unit": "minute"
+          }
+        }
+      ],
+      "conditionTransitions": [
+        {
+          "from": "face-1",
+          "to": "inactive",
+          "condition": "the cube runs out of charges"
+        },
+        {
+          "from": "face-2",
+          "to": "inactive",
+          "condition": "the cube runs out of charges"
+        },
+        {
+          "from": "face-3",
+          "to": "inactive",
+          "condition": "the cube runs out of charges"
+        },
+        {
+          "from": "face-4",
+          "to": "inactive",
+          "condition": "the cube runs out of charges"
+        },
+        {
+          "from": "face-5",
+          "to": "inactive",
+          "condition": "the cube runs out of charges"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:dagger-of-venom",
+      "name": "Dagger of Venom",
+      "source": "SRD 5.1 p. 215",
+      "sourceText": "You gain a +1 bonus to attack and damage rolls made with this magic weapon. You can use an action to cause thick, black poison to coat the blade. The poison remains for 1 minute or until an attack using this weapon hits a creature. That creature must succeed on a DC 15 Constitution saving throw or take 2d10 poison damage and become poisoned for 1 minute. The dagger can’t be used this way again until the next dawn.",
+      "machineTermination": "The poison remains for 1 minute or until an attack using this weapon hits a creature",
+      "operationTransitions": [
+        {
+          "from": "uncoated",
+          "to": "coated",
+          "via": "coat-blade"
+        }
+      ],
+      "timerTransitions": [
+        {
+          "from": "coated",
+          "to": "uncoated",
+          "timer": {
+            "amount": 1,
+            "unit": "minute"
+          }
+        }
+      ],
+      "conditionTransitions": [
+        {
+          "from": "coated",
+          "to": "uncoated",
+          "condition": "an attack using this weapon hits a creature"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:flame-tongue",
+      "name": "Flame Tongue",
+      "source": "SRD 5.1 p. 223",
+      "sourceText": "You can use a bonus action to speak this magic sword’s command word, causing flames to erupt from the blade. These flames shed bright light in a 40-foot radius and dim light for an additional 40 feet. While the sword is ablaze, it deals an extra 2d6 fire damage to any target it hits. The flames last until you use a bonus action to speak the command word again or until you drop or sheathe the sword.",
+      "machineTermination": "The flames last until you use a bonus action to speak the command word again or until you drop or sheathe the sword",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "toggle-flames"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "extinguish-flames"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "you drop or sheathe the sword"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:gem-of-brightness",
+      "name": "Gem of Brightness",
+      "source": "SRD 5.1 p. 223",
+      "sourceText": "This prism has 50 charges. While you are holding it, you can use an action to speak one of three command words to cause one of the following effects: • The first command word causes the gem to shed bright light in a 30-foot radius and dim light for an additional 30 feet. This effect doesn’t expend a charge. It lasts until you use a bonus action to repeat the command word or until you use another function of the gem. • The second command word expends 1 charge and causes the gem to fire a brilliant beam of light at one creature you can see within 60 feet of you. The creature must succeed on a DC 15 Constitution saving throw or become blinded for 1 minute. The creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. • The third command word expends 5 charges and causes the gem to flare with blinding light in a 30-foot cone originating from it. Each creature in the cone must make a saving throw as if struck by the beam created with the second command word. When all of the gem’s charges are expended, the gem becomes a nonmagical jewel worth 50 gp.",
+      "machineTermination": "It lasts until you use a bonus action to repeat the command word or until you use another function of the gem",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "shed-light"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "end-light"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "you use another function of the gem"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:glamoured-studded-leather",
+      "name": "Glamoured Studded Leather",
+      "source": "SRD 5.1 p. 224",
+      "sourceText": "While wearing this armor, you gain a +1 bonus to AC. You can also use a bonus action to speak the armor’s command word and cause the armor to assume the appearance of a normal set of clothing or some other kind of armor. You decide what it looks like, including color, style, and accessories, but the armor retains its normal bulk and weight. The illusory appearance lasts until you use this property again or remove the armor.",
+      "machineTermination": null,
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "set-appearance"
+        },
+        {
+          "from": "active",
+          "to": "active",
+          "via": "set-appearance"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "remove the armor"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:immovable-rod",
+      "name": "Immovable Rod",
+      "source": "SRD 5.1 p. 226",
+      "sourceText": "This flat iron rod has a button on one end. You can use an action to press the button, which causes the rod to become magically fixed in place. Until you or another creature uses an action to push the button again, the rod doesn’t move, even if it is defying gravity. The rod can hold up to 8,000 pounds of weight. More weight causes the rod to deactivate and fall. A creature can use an action to make a DC 30 Strength check, moving the fixed rod up to 10 feet on a success.",
+      "machineTermination": "Until you or another creature uses an action to push the button again, the rod doesn’t move, even if it is defying gravity. The rod can hold up to 8,000 pounds of weight. More weight causes the rod to deactivate and fall",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "fix-rod"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "release-rod"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "More weight causes the rod to deactivate and fall."
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:ioun-stone",
+      "name": "Ioun Stone",
+      "source": "SRD 5.1 p. 227",
+      "sourceText": "An Ioun stone is named after Ioun, a god of knowledge and prophecy revered on some worlds. Many types of Ioun stone exist, each type a distinct combination of shape and color. When you use an action to toss one of these stones into the air, the stone orbits your head at a distance of 1d3 feet and confers a benefit to you. Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check. You can use an action to seize and stow the stone, ending its effect. A stone has AC 24, 10 hit points, and resistance to all damage. It is considered to be an object that is being worn while it orbits your head. Absorption (Very Rare). While this pale lavender ellipsoid orbits your head, you can use your reaction to cancel a spell of 4th level or lower cast by a creature you can see and targeting only you. Once the stone has canceled 20 levels of spells, it burns out and turns dull gray, losing its magic. If you are targeted by a spell whose level is higher than the number of spell levels the stone has left, the stone can’t cancel it. Agility (Very Rare). Your Dexterity score increases by 2, to a maximum of 20, while this deep red sphere orbits your head. Awareness (Rare). You can’t be surprised while this dark blue rhomboid orbits your head. Fortitude (Very Rare). Your Constitution score increases by 2, to a maximum of 20, while this pink rhomboid orbits your head. Greater Absorption (Legendary). While this marbled lavender and green ellipsoid orbits your head, you can use your reaction to cancel a spell of 8th level or lower cast by a creature you can see and targeting only you. Once the stone has canceled 50 levels of spells, it burns out and turns dull gray, losing its magic. If you are targeted by a spell whose level is higher than the number of spell levels the stone has left, the stone can’t cancel it. Insight (Very Rare). Your Wisdom score increases by 2, to a maximum of 20, while this incandescent blue sphere orbits your head. Intellect (Very Rare). Your Intelligence score increases by 2, to a maximum of 20, while this marbled scarlet and blue sphere orbits your head. Leadership (Very Rare). Your Charisma score increases by 2, to a maximum of 20, while this marbled pink and green sphere orbits your head. Mastery (Legendary). Your proficiency bonus increases by 1 while this pale green prism orbits your head. Protection (Rare). You gain a +1 bonus to AC while this dusty rose prism orbits your head. Regeneration (Legendary). You regain 15 hit points at the end of each hour this pearly white spindle orbits your head, provided that you have at least 1 hit point. Reserve (Rare). This vibrant purple prism stores spells cast into it, holding them until you use them. The stone can store up to 3 levels worth of spells at a time. When found, it contains 1d4 − 1 levels of stored spells chosen by the GM. Any creature can cast a spell of 1st through 3rd level into the stone by touching it as the spell is cast. The spell has no effect, other than to be stored in the stone. If the stone can’t hold the spell, the spell is expended without effect. The level of the slot used to cast the spell determines how much space it uses. While this stone orbits your head, you can cast any spell stored in it. The spell uses the slot level, spell save DC, spell attack bonus, and spellcasting ability of the original caster, but is otherwise treated as if you cast the spell. The spell cast from the stone is no longer stored in it, freeing up space. Strength (Very Rare). Your Strength score increases by 2, to a maximum of 20, while this pale blue rhomboid orbits your head. Sustenance (Rare). You don’t need to eat or drink while this clear spindle orbits your head.",
+      "machineTermination": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check. You can use an action to seize and stow the stone, ending its effect",
+      "operationTransitions": [
+        {
+          "from": "stowed",
+          "to": "orbiting",
+          "via": "start-orbit"
+        },
+        {
+          "from": "orbiting",
+          "to": "stowed",
+          "via": "seize-and-stow"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "orbiting",
+          "to": "seized",
+          "condition": "either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:potion-of-diminution",
+      "name": "Potion of Diminution",
+      "source": "SRD 5.1 p. 233",
+      "sourceText": "When you drink this potion, you gain the “reduce” effect of the enlarge/reduce spell for 1d4 hours (no concentration required). The red in the potion’s liquid continuously contracts to a tiny bead and then expands to color the clear liquid around it. Shaking the bottle fails to interrupt this process.",
+      "machineTermination": "for 1d4 hours (no concentration required)",
+      "operationTransitions": [
+        {
+          "from": "normal",
+          "to": "reduced",
+          "via": "drink"
+        }
+      ],
+      "timerTransitions": [
+        {
+          "from": "reduced",
+          "to": "normal",
+          "timer": {
+            "amount": "1d4",
+            "unit": "hour"
+          }
+        }
+      ],
+      "conditionTransitions": [],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:potion-of-gaseous-form",
+      "name": "Potion of Gaseous Form",
+      "source": "SRD 5.1 p. 234",
+      "sourceText": "When you drink this potion, you gain the effect of the gaseous form spell for 1 hour (no concentration required) or until you end the effect as a bonus action. This potion’s container seems to hold fog that moves and pours like water.",
+      "machineTermination": "for 1 hour (no concentration required) or until you end the effect as a bonus action",
+      "operationTransitions": [
+        {
+          "from": "normal",
+          "to": "gaseous",
+          "via": "drink"
+        },
+        {
+          "from": "gaseous",
+          "to": "normal",
+          "via": "end-gaseous-form"
+        }
+      ],
+      "timerTransitions": [
+        {
+          "from": "gaseous",
+          "to": "normal",
+          "timer": {
+            "amount": 1,
+            "unit": "hour"
+          }
+        }
+      ],
+      "conditionTransitions": [],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:potion-of-growth",
+      "name": "Potion of Growth",
+      "source": "SRD 5.1 p. 234",
+      "sourceText": "When you drink this potion, you gain the “enlarge” effect of the enlarge/reduce spell for 1d4 hours (no concentration required). The red in the potion’s liquid continuously expands from a tiny bead to color the clear liquid around it and then contracts. Shaking the bottle fails to interrupt this process.",
+      "machineTermination": "for 1d4 hours (no concentration required)",
+      "operationTransitions": [
+        {
+          "from": "normal",
+          "to": "enlarged",
+          "via": "drink"
+        }
+      ],
+      "timerTransitions": [
+        {
+          "from": "enlarged",
+          "to": "normal",
+          "timer": {
+            "amount": "1d4",
+            "unit": "hour"
+          }
+        }
+      ],
+      "conditionTransitions": [],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:ring-of-invisibility",
+      "name": "Ring of Invisibility",
+      "source": "SRD 5.1 p. 236",
+      "sourceText": "While wearing this ring, you can turn invisible as an action. Anything you are wearing or carrying is invisible with you. You remain invisible until the ring is removed, until you attack or cast a spell, or until you use a bonus action to become visible again.",
+      "machineTermination": "You remain invisible until the ring is removed, until you attack or cast a spell, or until you use a bonus action to become visible again",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "become-invisible"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "become-visible"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "the ring is removed"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "you attack or cast a spell"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:ring-of-mind-shielding",
+      "name": "Ring of Mind Shielding",
+      "source": "SRD 5.1 p. 236",
+      "sourceText": "While wearing this ring, you are immune to magic that allows other creatures to read your thoughts, determine whether you are lying, know your alignment, or know your creature type. Creatures can telepathically communicate with you only if you allow it. You can use an action to cause the ring to become invisible until you use another action to make it visible, until you remove the ring, or until you die. If you die while wearing the ring, your soul enters it, unless it already houses a soul. You can remain in the ring or depart for the afterlife. As long as your soul is in the ring, you can telepathically communicate with any creature wearing it. A wearer can’t prevent this telepathic communication.",
+      "machineTermination": "You can use an action to cause the ring to become invisible until you use another action to make it visible, until you remove the ring, or until you die",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "hide-ring"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "show-ring"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "you remove the ring"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "you die"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:rod-of-alertness",
+      "name": "Rod of Alertness",
+      "source": "SRD 5.1 p. 240",
+      "sourceText": "This rod has a flanged head and the following properties. Alertness. While holding the rod, you have advantage on Wisdom (Perception) checks and on rolls for initiative. Spells. While holding the rod, you can use an action to cast one of the following spells from it: detect evil and good, detect magic, detect poison and disease, or see invisibility. Protective Aura. As an action, you can plant the haft end of the rod in the ground, whereupon the rod’s head sheds bright light in a 60-foot radius and dim light for an additional 60 feet. While in that bright light, you and any creature that is friendly to you gain a +1 bonus to AC and saving throws and can sense the location of any invisible hostile creature that is also in the bright light. The rod’s head stops glowing and the effect ends after 10 minutes, or when a creature uses an action to pull the rod from the ground. This property can’t be used again until the next dawn.",
+      "machineTermination": "The rod’s head stops glowing and the effect ends after 10 minutes, or when a creature uses an action to pull the rod from the ground",
+      "operationTransitions": [
+        {
+          "from": "held",
+          "to": "planted-aura",
+          "via": "activate-protective-aura"
+        },
+        {
+          "from": "planted-aura",
+          "to": "held",
+          "via": "pull-rod"
+        }
+      ],
+      "timerTransitions": [
+        {
+          "from": "planted-aura",
+          "to": "held",
+          "timer": {
+            "amount": 10,
+            "unit": "minute"
+          }
+        }
+      ],
+      "conditionTransitions": [],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:rope-of-entanglement",
+      "name": "Rope of Entanglement",
+      "source": "SRD 5.1 p. 241",
+      "sourceText": "This rope is 30 feet long and weighs 3 pounds. If you hold one end of the rope and use an action to speak its command word, the other end darts forward to entangle a creature you can see within 20 feet of you. The target must succeed on a DC 15 Dexterity saving throw or become restrained. You can release the creature by using a bonus action to speak a second command word. A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope. The rope has AC 20 and 20 hit points. It regains 1 hit point every 5 minutes as long as it has at least 1 hit point. If the rope drops to 0 hit points, it is destroyed.",
+      "machineTermination": "If the rope drops to 0 hit points, it is destroyed",
+      "operationTransitions": [
+        {
+          "from": "restraining",
+          "to": "loose",
+          "via": "release-creature"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "loose",
+          "to": "restraining",
+          "condition": "The target must succeed on a DC 15 Dexterity saving throw or become restrained"
+        },
+        {
+          "from": "restraining",
+          "to": "loose",
+          "condition": "On a success, the creature is no longer restrained by the rope"
+        },
+        {
+          "from": "loose",
+          "to": "destroyed",
+          "condition": "the rope drops to 0 hit points"
+        },
+        {
+          "from": "restraining",
+          "to": "destroyed",
+          "condition": "the rope drops to 0 hit points"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:staff-of-the-woodlands",
+      "name": "Staff of the Woodlands",
+      "source": "SRD 5.1 p. 245",
+      "sourceText": "This staff can be wielded as a magic quarterstaff that grants a +2 bonus to attack and damage rolls made with it. While holding it, you have a +2 bonus to spell attack rolls. The staff has 10 charges for the following properties. It regains 1d6 + 4 expended charges daily at dawn. If you expend the last charge, roll a d20. On a 1, the staff loses its properties and becomes a nonmagical quarterstaff. Spells. You can use an action to expend 1 or more of the staff’s charges to cast one of the following spells from it, using your spell save DC: animal friendship (1 charge), awaken (5 charges), barkskin (2 charges), locate animals or plants (2 charges), speak with animals (1 charge), speak with plants (3 charges), or wall of thorns (6 charges). You can also use an action to cast the pass without trace spell from the staff without using any charges. Tree Form. You can use an action to plant one end of the staff in fertile earth and expend 1 charge to transform the staff into a healthy tree. The tree is 60 feet tall and has a 5-foot-diameter trunk, and its branches at the top spread out in a 20-foot radius. The tree appears ordinary but radiates a faint aura of transmutation magic if targeted by detect magic. While touching the tree and using another action to speak its command word, you return the staff to its normal form. Any creature in the tree falls when it reverts to a staff.",
+      "machineTermination": "While touching the tree and using another action to speak its command word, you return the staff to its normal form",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "tree-form"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "return-from-tree"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:sun-blade",
+      "name": "Sun Blade",
+      "source": "SRD 5.1 p. 246",
+      "sourceText": "This item appears to be a longsword hilt. While grasping the hilt, you can use a bonus action to cause a blade of pure radiance to spring into existence, or make the blade disappear. While the blade exists, this magic longsword has the finesse property. If you are proficient with shortswords or longswords, you are proficient with the sun blade. You gain a +2 bonus to attack and damage rolls made with this weapon, which deals radiant damage instead of slashing damage. When you hit an undead with it, that target takes an extra 1d8 radiant damage. The sword’s luminous blade emits bright light in a 15-foot radius and dim light for an additional 15 feet. The light is sunlight. While the blade persists, you can use an action to expand or reduce its radius of bright and dim light by 5 feet each, to a maximum of 30 feet each or a minimum of 10 feet each.",
+      "machineTermination": null,
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "manifest-blade"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "dismiss-blade"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:sword-of-sharpness",
+      "name": "Sword of Sharpness",
+      "source": "SRD 5.1 p. 246",
+      "sourceText": "When you attack an object with this magic sword and hit, maximize your weapon damage dice against the target. When you attack a creature with this weapon and roll a 20 on the attack roll, that target takes an extra 4d6 slashing damage. Then roll another d20. If you roll a 20, you lop off one of the target’s limbs, with the effect of such loss determined by the GM. If the creature has no limb to sever, you lop off a portion of its body instead. In addition, you can speak the sword’s command word to cause the blade to shed bright light in a 10-foot radius and dim light for an additional 10 feet. Speaking the command word again or sheathing the sword puts out the light.",
+      "machineTermination": "Speaking the command word again or sheathing the sword puts out the light",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "shed-light"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "end-light"
+        }
+      ],
+      "timerTransitions": [],
+      "conditionTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "condition": "sheathing the sword"
+        }
+      ],
+      "roundUnitTimers": []
+    },
+    {
+      "recordKey": "magic-item:wings-of-flying",
+      "name": "Wings of Flying",
+      "source": "SRD 5.1 p. 251",
+      "sourceText": "While wearing this cloak, you can use an action to speak its command word. This turns the cloak into a pair of bat wings or bird wings on your back for 1 hour or until you repeat the command word as an action. The wings give you a flying speed of 60 feet. When they disappear, you can’t use them again for 1d12 hours.",
+      "machineTermination": "for 1 hour or until you repeat the command word as an action",
+      "operationTransitions": [
+        {
+          "from": "inactive",
+          "to": "active",
+          "via": "manifest-wings"
+        },
+        {
+          "from": "active",
+          "to": "inactive",
+          "via": "dismiss-wings"
+        }
+      ],
+      "timerTransitions": [
+        {
+          "from": "active",
+          "to": "inactive",
+          "timer": {
+            "amount": 1,
+            "unit": "hour"
+          }
+        }
+      ],
+      "conditionTransitions": [],
+      "roundUnitTimers": []
+    }
+  ]
+}

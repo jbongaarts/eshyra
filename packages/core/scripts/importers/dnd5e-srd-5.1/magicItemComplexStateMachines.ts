@@ -314,6 +314,11 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
             to: 'inactive',
             via: 'press-face-6',
           })),
+          ...Array.from({ length: 5 }, (_, i) => ({
+            from: `face-${i + 1}`,
+            to: 'inactive',
+            condition: 'the cube runs out of charges',
+          })),
           // Source: the barrier "lasts for 1 minute"; pressing another face
           // expends charges "resetting the duration", which re-anchors the
           // timer of the face state that press enters.

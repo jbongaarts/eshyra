@@ -1059,6 +1059,26 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
     runtimeOwner: [o('toolHoldItem.ts'), s('inventoryHeld.ts')],
     evidence: [t('equipmentPrerequisites.test.ts')],
   }),
+  toolEntry('item_state_event', 'state-integrity', {
+    operation:
+      'Apply an exact condition transition declared for the item instance current state, reconciling its timers and state-entered cooldown anchors.',
+    requiredInputs: ['instanceId', 'condition', 'character'],
+    exclusions: [
+      'Undeclared or multiply declared conditions from the current state are refused.',
+      'Does not infer that the printed event occurred; the DM adjudicates the event.',
+      'Spends no action, turn resource, or item economy.',
+    ],
+    residualDmInterpretation: [
+      'The DM determines whether the printed external event occurred and supplies the matching declared condition.',
+    ],
+    runtimeOwner: [
+      o('toolItemStateEvent.ts'),
+      s('itemResetExecutor.ts'),
+      s('itemTimers.ts'),
+      s('itemState.ts'),
+    ],
+    evidence: [t('itemResetExecutor.test.ts')],
+  }),
   toolEntry('stow_item', 'state-integrity', {
     operation:
       'Persist that one exact held inventory row in the character’s custody is no longer held in hand.',

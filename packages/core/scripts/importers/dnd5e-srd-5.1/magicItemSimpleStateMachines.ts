@@ -27,6 +27,7 @@ const toggle = (
     deactivateCost?: 'action' | 'bonus-action' | 'free';
     duration?: MagicItemStateMachine['duration'];
     termination?: string;
+    conditions?: readonly string[];
     commandWord?: boolean;
   } = {},
 ): Pick<SimpleStateSpec, 'operations' | 'stateMachine'> => ({
@@ -53,6 +54,11 @@ const toggle = (
               timer: options.duration,
             },
           ]),
+      ...(options.conditions ?? []).map((condition) => ({
+        from: 'active' as const,
+        to: 'inactive' as const,
+        condition,
+      })),
     ],
     ...(options.duration === undefined ? {} : { duration: options.duration }),
     ...(options.termination === undefined
@@ -81,6 +87,10 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           commandWord: true,
           termination:
             'deactivation, wearer incapacitation, wearer death, or one minute',
+          conditions: [
+            'you are incapacitated',
+            'until you are incapacitated or die',
+          ],
         },
       ),
     },
@@ -99,6 +109,9 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         {
           activateCost: 'bonus-action',
           deactivateCost: 'bonus-action',
+          conditions: [
+            'When the boots’ property has been used for a total of 10 minutes',
+          ],
           termination:
             'deactivation or exhaustion of the separate ten-minute budget',
         },
@@ -352,6 +365,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           deactivateCost: 'bonus-action',
           commandWord: true,
           termination: 'repeat command word or drop/stow weapon',
+          conditions: ['you drop or sheathe the sword'],
         },
       ),
     },
@@ -371,6 +385,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           deactivateCost: 'bonus-action',
           commandWord: true,
           termination: 'repeat first command word or use another gem function',
+          conditions: ['you use another function of the gem'],
         },
       ),
     },
@@ -444,6 +459,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         {
           termination:
             'button release, more than 8,000 pounds, or successful DC 30 Strength check moves it 10 feet',
+          conditions: ['More weight causes the rod to deactivate and fall.'],
         },
       ),
     },
@@ -478,7 +494,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
             from: 'orbiting',
             to: 'seized',
             condition:
-              'another creature succeeds on DC 24 Dexterity (Acrobatics) check',
+              'either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
           },
         ],
         termination:
@@ -610,6 +626,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           deactivateCost: 'bonus-action',
           termination:
             'ring removed, wearer attacks or casts a spell, or bonus-action deactivation',
+          conditions: ['the ring is removed', 'you attack or cast a spell'],
         },
       ),
     },
@@ -623,6 +640,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
       ],
       ...toggle('hide-ring', 'show-ring', 'ring is invisible', {
         termination: 'show action, ring removal, or wearer death',
+        conditions: ['you remove the ring', 'you die'],
       }),
     },
   ],
@@ -814,6 +832,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         'sword sheds bright light 10 feet and dim light an additional 10 feet',
         {
           commandWord: true,
+          conditions: ['sheathing the sword'],
           termination: 'repeat command word or sheathe sword',
         },
       ),

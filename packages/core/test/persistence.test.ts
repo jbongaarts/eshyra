@@ -38,8 +38,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 44,
-      name: 'inventory_held_state',
+      version: 45,
+      name: 'active_effect_item_effect_ref',
     });
     db.close();
   });

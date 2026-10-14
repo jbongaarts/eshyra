@@ -41,6 +41,7 @@ import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
 import { holdItemTool, stowItemTool } from './toolHoldItem.js';
+import { itemStateEventTool } from './toolItemStateEvent.js';
 import { joinCombatTool } from './toolJoinCombat.js';
 import { listNearbyItemsTool } from './toolListNearbyItems.js';
 import { listRecoverableItemsTool } from './toolListRecoverableItems.js';
@@ -156,6 +157,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   listRecoverableItemsTool,
   giveItemTool,
   useItemTool,
+  itemStateEventTool,
   transferItemTool,
   donItemTool,
   doffItemTool,
