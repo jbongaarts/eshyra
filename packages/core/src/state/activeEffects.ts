@@ -33,7 +33,7 @@
 // state and use the same ownership cleanup contract as conditions and actors.
 
 import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
-import { parseDice } from '../orchestrator/dice.js';
+import { parseDice, resolveParsedDiceRoll } from '../orchestrator/dice.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
@@ -269,6 +269,7 @@ export interface CreateActiveEffectInput extends EffectMutationContext {
   /** Present iff the effect requires concentration. */
   readonly concentration?: { readonly owner: EffectParticipant };
   readonly duration: EffectDurationInput;
+  readonly durationProvenance?: ItemDurationProvenance;
   readonly dismissible?: boolean;
   readonly targets?: readonly EffectTargetInput[];
   readonly conditions?: readonly EffectConditionProjectionInput[];
@@ -276,6 +277,25 @@ export interface CreateActiveEffectInput extends EffectMutationContext {
   readonly zones?: readonly EffectZoneProjectionInput[];
   readonly forms?: readonly EffectFormProjectionInput[];
 }
+
+export type ItemDurationProvenance =
+  | {
+      readonly kind: 'engine-rolled';
+      readonly expression: string;
+      readonly rolls: readonly number[];
+      readonly total: number;
+    }
+  | {
+      readonly kind: 'typed-fixed';
+      readonly amount: number;
+      readonly unit: EffectDurationUnit;
+    }
+  | {
+      readonly kind: 'dm-override';
+      readonly basis: 'dm-adjudicated' | 'house-rule';
+      readonly reason: string;
+      readonly ruleId?: string;
+    };
 
 export interface EffectTargetView {
   readonly kind: EffectTargetKind;
@@ -333,6 +353,7 @@ export interface ActiveEffectView {
   readonly requiresConcentration: boolean;
   readonly concentrationOwner?: EffectParticipant;
   readonly duration: EffectDurationView;
+  readonly durationProvenance?: ItemDurationProvenance;
   readonly dismissible: boolean;
   readonly status: EffectStatus;
   readonly endReason?: EffectEndReason;
@@ -735,6 +756,7 @@ interface ActiveEffectRow {
   readonly duration_kind: EffectDurationInput['kind'];
   readonly duration_amount: number | null;
   readonly duration_unit: EffectDurationUnit | null;
+  readonly duration_provenance_json: string | null;
   readonly anchor_kind: EffectAnchorKind | null;
   readonly anchor_at: string | null;
   readonly anchor_game_time: string | null;
@@ -781,11 +803,15 @@ interface EffectLinkRow {
 const detailColumn = jsonColumn<Record<string, unknown>>(
   'active_effect_event.detail_json',
 );
+const durationProvenanceColumn = jsonColumn<ItemDurationProvenance>(
+  'active_effect.duration_provenance_json',
+);
 
 const EFFECT_COLUMNS = `campaign_id, effect_id, kind, display_name,
   source_kind, source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
   requires_concentration, concentration_owner_kind, concentration_owner_ref,
-  duration_kind, duration_amount, duration_unit, anchor_kind, anchor_at,
+  duration_kind, duration_amount, duration_unit, duration_provenance_json,
+  anchor_kind, anchor_at,
   anchor_game_time, anchor_combat_instance_id, anchor_round,
   anchor_elapsed_minutes, deadline_elapsed_minutes,
   anchor_participant_kind, anchor_participant_ref,
@@ -1057,6 +1083,13 @@ function effectView(
           },
         }),
     duration: durationView(row),
+    ...(row.duration_provenance_json === null
+      ? {}
+      : {
+          durationProvenance: durationProvenanceColumn.decode(
+            row.duration_provenance_json,
+          ),
+        }),
     dismissible: row.dismissible === 1,
     status: row.status,
     ...(row.end_reason === null ? {} : { endReason: row.end_reason }),
@@ -3662,42 +3695,65 @@ export function createActiveEffect(
           !Array.isArray(typedDuration)
         ) {
           const expected = typedDuration as Record<string, unknown>;
-          const matchesAmount =
-            typeof expected.amount === 'number'
-              ? input.duration.kind === 'timed' &&
-                input.duration.amount === expected.amount
-              : typeof expected.amount === 'string' &&
-                input.duration.kind === 'timed' &&
-                (() => {
-                  try {
-                    const dice = parseDice(expected.amount as string);
-                    const kept =
-                      dice.keep === undefined
-                        ? dice.count
-                        : dice.keep.mode === 'kh' || dice.keep.mode === 'kl'
-                          ? dice.keep.count
-                          : dice.count - dice.keep.count;
-                    const minimum = kept + dice.modifier;
-                    const maximum = kept * dice.faces + dice.modifier;
-                    return (
-                      Number.isSafeInteger(input.duration.amount) &&
-                      input.duration.amount > 0 &&
-                      input.duration.amount >= minimum &&
-                      input.duration.amount <= maximum
-                    );
-                  } catch {
-                    return false;
-                  }
-                })();
-          if (
-            !matchesAmount ||
+          const durationProvenance = input.durationProvenance;
+          if (durationProvenance?.kind === 'dm-override') {
+            if (
+              (durationProvenance.basis !== 'dm-adjudicated' &&
+                durationProvenance.basis !== 'house-rule') ||
+              durationProvenance.reason.trim().length === 0
+            )
+              throw new ActiveEffectError(
+                'item duration override requires a supported basis and reason',
+              );
+          } else if (
             typeof expected.unit !== 'string' ||
             input.duration.kind !== 'timed' ||
             input.duration.unit !== expected.unit
-          )
+          ) {
             throw new ActiveEffectError(
-              `duration for item effect '${input.source.effectRef}' must match its typed item duration ${JSON.stringify(typedDuration)}`,
+              `duration for item effect '${input.source.effectRef}' must use its typed unit ${String(expected.unit)}`,
             );
+          } else if (typeof expected.amount === 'number') {
+            if (
+              input.duration.amount !== expected.amount ||
+              durationProvenance?.kind !== 'typed-fixed' ||
+              durationProvenance.amount !== expected.amount ||
+              durationProvenance.unit !== expected.unit
+            )
+              throw new ActiveEffectError(
+                `duration for item effect '${input.source.effectRef}' must be its typed fixed duration ${JSON.stringify(typedDuration)} or carry an explicit DM override`,
+              );
+          } else if (typeof expected.amount === 'string') {
+            if (
+              durationProvenance?.kind !== 'engine-rolled' ||
+              durationProvenance.expression !== expected.amount ||
+              durationProvenance.total !== input.duration.amount
+            )
+              throw new ActiveEffectError(
+                `duration for dice-typed item effect '${input.source.effectRef}' requires engine roll evidence or an explicit DM override`,
+              );
+            try {
+              const parsed = parseDice(expected.amount);
+              const resolved = resolveParsedDiceRoll(
+                expected.amount,
+                parsed,
+                durationProvenance.rolls,
+              );
+              if (
+                resolved.total !== durationProvenance.total ||
+                resolved.total < 1
+              )
+                throw new Error('invalid total');
+            } catch {
+              throw new ActiveEffectError(
+                `duration evidence for item effect '${input.source.effectRef}' does not resolve its typed dice expression`,
+              );
+            }
+          } else {
+            throw new ActiveEffectError(
+              `item effect '${input.source.effectRef}' has an unsupported typed duration`,
+            );
+          }
         }
       }
     }
@@ -4471,7 +4527,7 @@ export function createActiveEffect(
            source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
            requires_concentration, concentration_owner_kind,
            concentration_owner_ref, duration_kind, duration_amount,
-           duration_unit, anchor_kind, anchor_at, anchor_game_time,
+           duration_unit, duration_provenance_json, anchor_kind, anchor_at, anchor_game_time,
            anchor_elapsed_minutes, deadline_elapsed_minutes,
            anchor_combat_instance_id, anchor_round,
            anchor_participant_kind, anchor_participant_ref,
@@ -4480,7 +4536,7 @@ export function createActiveEffect(
            updated_at
          )
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                 ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
+                 ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
       )
       .run(
         input.campaignId,
@@ -4498,6 +4554,9 @@ export function createActiveEffect(
         duration.kind,
         duration.amount,
         duration.unit,
+        input.durationProvenance === undefined
+          ? null
+          : durationProvenanceColumn.encode(input.durationProvenance),
         duration.anchorKind,
         duration.anchorAt,
         duration.anchorGameTime,
