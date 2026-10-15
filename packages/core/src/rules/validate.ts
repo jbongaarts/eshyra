@@ -1,4 +1,4 @@
-import { parseDice } from '../orchestrator/dice.js';
+import { minimumDiceTotal, parseDice } from '../orchestrator/dice.js';
 import { resolveJsonPointer } from './jsonPointer.js';
 import { validateRecordKindSchema } from './kindSchemas.js';
 import type {
@@ -380,14 +380,20 @@ function assertEconomyDeductionTables(pack: RulesPack): void {
             throw new RulesPackError(
               `${where} amount must be a dice expression or non-negative integer (${JSON.stringify(deduction.tableRef)} row ${rowIndex})`,
             );
-          if (/^\d+$/.test(amount)) return;
+          if (/^\d+$/.test(amount) && Number.isSafeInteger(Number(amount)))
+            return;
+          let parsed: ReturnType<typeof parseDice>;
           try {
-            parseDice(amount);
+            parsed = parseDice(amount);
           } catch {
             throw new RulesPackError(
               `${where} amount ${JSON.stringify(amount)} does not parse as a dice expression (${JSON.stringify(deduction.tableRef)} row ${rowIndex})`,
             );
           }
+          if (minimumDiceTotal(parsed) < 0)
+            throw new RulesPackError(
+              `${where} amount ${JSON.stringify(amount)} can total below zero (${JSON.stringify(deduction.tableRef)} row ${rowIndex})`,
+            );
         });
       }
     }

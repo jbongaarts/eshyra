@@ -1,4 +1,4 @@
-import { rollDice } from '../orchestrator/dice.js';
+import { parseDice, rollDice } from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
 import { type Db, withTransaction } from '../persistence/db.js';
 import type {
@@ -462,6 +462,13 @@ function transitionDeduction(
   return deductions[0];
 }
 
+/**
+ * The deduction table contract, checked on the table the campaign stack
+ * actually resolves (base or add-on override), not on the pack that declared
+ * the effect (eshyra-olc5.13.3). Both columns must exist, every key cell must
+ * be a non-empty string, and keys must be unique across the table, so a
+ * `tableRow` names exactly one row or none.
+ */
 function deductionRows(
   item: ResolvedItem,
   deduction: MagicItemEconomyDeduction,
@@ -480,28 +487,60 @@ function deductionRows(
       `${item.packRef} economy deduction columns are missing from '${deduction.tableRef}'`,
     );
   const rows = Array.isArray(data.rows) ? (data.rows as unknown[][]) : [];
-  return rows.map((row) => ({
-    key: String(row[keyIndex]),
-    cell: row[amountIndex],
-  }));
+  const seen = new Set<string>();
+  return rows.map((row, rowIndex) => {
+    const key = Array.isArray(row) ? row[keyIndex] : undefined;
+    if (typeof key !== 'string' || key.length === 0)
+      throw new ItemResetExecutorError(
+        `${item.packRef} economy deduction key cell must be a non-empty string in '${deduction.tableRef}' row ${rowIndex}; refused with no change`,
+      );
+    if (seen.has(key))
+      throw new ItemResetExecutorError(
+        `${item.packRef} economy deduction key '${key}' is ambiguous in '${deduction.tableRef}' (more than one row); refused with no change`,
+      );
+    seen.add(key);
+    return { key, cell: (row as unknown[])[amountIndex] };
+  });
 }
 
+/**
+ * The resolved deduction amount must be a finite, non-negative safe integer
+ * before anything is written (eshyra-olc5.13.3). Dice are rolled first, so a
+ * negative total such as 1d2-3 is refused on its outcome.
+ */
 function deductionAmount(
   item: ResolvedItem,
   cell: unknown,
   rng: Rng | undefined,
 ): number {
-  if (typeof cell === 'number') return cell;
-  if (typeof cell !== 'string')
+  let amount: number;
+  if (typeof cell === 'number') {
+    amount = cell;
+  } else if (typeof cell !== 'string') {
     throw new ItemResetExecutorError(
       `${item.packRef} economy deduction amount is not a dice expression or integer`,
     );
-  if (/^\d+$/.test(cell)) return Number(cell);
-  if (rng === undefined)
+  } else if (/^\d+$/.test(cell)) {
+    amount = Number(cell);
+  } else {
+    try {
+      parseDice(cell);
+    } catch {
+      throw new ItemResetExecutorError(
+        `${item.packRef} economy deduction amount ${cell} does not parse as a dice expression`,
+      );
+    }
+    if (rng === undefined)
+      throw new ItemResetExecutorError(
+        `${item.packRef} economy deduction amount ${cell} needs seeded RNG`,
+      );
+    amount = rollDice(cell, rng).total;
+  }
+  if (!Number.isSafeInteger(amount) || amount < 0)
     throw new ItemResetExecutorError(
-      `${item.packRef} economy deduction amount ${cell} needs seeded RNG`,
+      `${item.packRef} economy deduction resolved to ${String(amount)}, which is not a non-negative integer; refused with no change`,
     );
-  return rollDice(cell, rng).total;
+  return amount;
 }
 
 /** Apply one source-declared external state-machine condition to an item. */
@@ -559,13 +598,18 @@ export function applyItemStateConditionEvent(
         throw new ItemResetExecutorError(
           `${item.packRef} condition transition '${input.condition}' requires tableRow; valid rows: ${validRows}`,
         );
-      const matched = rows.find(
+      const matches = rows.filter(
         (candidate) => candidate.key === input.tableRow,
       );
-      if (matched === undefined)
+      if (matches.length === 0)
         throw new ItemResetExecutorError(
           `${item.packRef} has no ${deduction.tableRef} row '${input.tableRow}'; valid rows: ${validRows}`,
         );
+      if (matches.length > 1)
+        throw new ItemResetExecutorError(
+          `${item.packRef} ${deduction.tableRef} row '${input.tableRow}' is ambiguous; refused with no change`,
+        );
+      const [matched] = matches;
       deductionPlan = {
         deduction,
         tableRow: matched.key,

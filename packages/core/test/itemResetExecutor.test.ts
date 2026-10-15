@@ -16,7 +16,11 @@ import {
   validateRulesPack,
   writeItemState,
 } from '../src/internal.js';
-import { applyItemStateConditionEvent } from '../src/state/itemResetExecutor.js';
+import { writeCampaignRulesBinding } from '../src/rules/binding.js';
+import {
+  applyItemStateConditionEvent,
+  ItemResetExecutorError,
+} from '../src/state/itemResetExecutor.js';
 import { freshDbWithSession } from './support/db.js';
 
 const CTX = {
@@ -1722,6 +1726,43 @@ describe('economyDeduction pack validation (eshyra-olc5.13.1)', () => {
     ).toThrow(/unsupported key "extra"|has unsupported key/);
   });
 
+  it.each([
+    ['1d2-3', /can total below zero/],
+    ['1d12-12', /can total below zero/],
+    ['9007199254740993', /does not parse as a dice expression/],
+    [1.5, /must be a dice expression or non-negative integer/],
+  ] as const)(
+    'refuses a deduction amount %s whose domain is outside non-negative safe integers (eshyra-olc5.13.3)',
+    (amount, pattern) => {
+      expect(() =>
+        validateRulesPack(
+          mutatedPack(
+            () => undefined,
+            (table) => {
+              (table.data as { rows: unknown[][] }).rows[0][1] = amount;
+            },
+          ),
+        ),
+      ).toThrow(pattern);
+    },
+  );
+
+  it.each(['2d20kh1-1', '2d4-1', '4d6dl1', '1d12'])(
+    'admits an amount expression %s whose lowest outcome is zero or more (eshyra-olc5.13.3)',
+    (amount) => {
+      expect(() =>
+        validateRulesPack(
+          mutatedPack(
+            () => undefined,
+            (table) => {
+              (table.data as { rows: unknown[][] }).rows[0][1] = amount;
+            },
+          ),
+        ),
+      ).not.toThrow();
+    },
+  );
+
   it('rejects an amount cell that is neither a dice expression nor a non-negative integer', () => {
     expect(() =>
       validateRulesPack(
@@ -1745,3 +1786,354 @@ describe('economyDeduction pack validation (eshyra-olc5.13.1)', () => {
     ).toThrow(/amount must be non-negative/);
   });
 });
+
+describe('economy deduction amount domain (eshyra-olc5.13.3, S1)', () => {
+  const CUBE_TABLE = 'table:cube-of-force-charges-lost';
+  const CUBE_CONDITION =
+    'The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.';
+  const SEEDS = ['s1-a', 's1-b', 's1-c', 's1-d', 's1-e', 's1-f'];
+
+  /** Every table row of every user table, byte-for-byte, for whole-database refusal checks. */
+  function databaseSnapshot(db: ReturnType<typeof freshDbWithSession>) {
+    const names = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+      )
+      .all() as { name: string }[];
+    return names.map(({ name }) => [
+      name,
+      db.prepare(`SELECT * FROM "${name}"`).all(),
+    ]);
+  }
+
+  function cubeTable(): RulesRecord {
+    const table = BUNDLED_PACK.records.find(({ key }) => key === CUBE_TABLE);
+    if (table === undefined) throw new Error('bundled pack has no cube table');
+    return JSON.parse(JSON.stringify(table)) as RulesRecord;
+  }
+
+  function cubeAtFace1Charged(db: ReturnType<typeof freshDbWithSession>) {
+    const record = packedItem('Cube of Force');
+    const id = install(db, record, {
+      ...createInitialItemState(record.key, record),
+      machineState: 'face-1',
+    });
+    return { id, condition: CUBE_CONDITION };
+  }
+
+  // Unvalidated resolver pack: the executor must refuse on its own, whatever
+  // admission did or did not check (eshyra-olc5.13.2 S1 probe).
+  function unvalidatedCubePack(amount: unknown): RulesPack {
+    const table = cubeTable();
+    (table.data as { rows: unknown[][] }).rows[0][1] = amount;
+    return { ...BUNDLED_PACK, records: [packedItem('Cube of Force'), table] };
+  }
+
+  it.each([
+    ['dice whose every outcome is negative (1d2-3)', '1d2-3'],
+    ['dice whose lowest outcome is negative (2d4-8)', '2d4-8'],
+    ['negative numeric cell', -7],
+    ['fractional numeric cell', 1.5],
+    ['non-finite numeric cell', Number.NaN],
+    ['integer string beyond the safe-integer range', '9007199254740993'],
+    ['non-numeric non-dice string', 'twelve'],
+  ] as const)(
+    'refuses %s with every table and the Cube state byte-identical',
+    (_label, amount) => {
+      for (const seed of SEEDS) {
+        const db = freshDbWithSession();
+        const { id, condition } = cubeAtFace1Charged(db);
+        const before = databaseSnapshot(db);
+        expect(() =>
+          applyItemStateConditionEvent(db, {
+            ...CTX,
+            instanceId: id,
+            condition,
+            tableRow: 'Disintegrate',
+            rng: createSeededRng(seed),
+            resolveRulesPack: resolver(unvalidatedCubePack(amount)),
+          }),
+        ).toThrow(ItemResetExecutorError);
+        expect(databaseSnapshot(db)).toEqual(before);
+        expect(readItemState(db, id)?.economies?.charges?.remaining).toBe(36);
+        db.close();
+      }
+    },
+  );
+
+  it('never increases remaining for any admitted amount, including mixed-sign dice outcomes', () => {
+    // 1d4-2 can total -1..2: some seeds refuse, the rest must deduct a
+    // non-negative amount that only lowers the charge count.
+    const amounts: unknown[] = ['1d4-2', '1d12', '2d20kh1-1', 0, 4, '6'];
+    for (const amount of amounts) {
+      for (const seed of [...SEEDS, 's1-g', 's1-h', 's1-i']) {
+        const db = freshDbWithSession();
+        const { id, condition } = cubeAtFace1Charged(db);
+        const before = readItemState(db, id);
+        const beforeRemaining = before?.economies?.charges?.remaining ?? -1;
+        const beforeDb = databaseSnapshot(db);
+        try {
+          const result = applyItemStateConditionEvent(db, {
+            ...CTX,
+            instanceId: id,
+            condition,
+            tableRow: 'Disintegrate',
+            rng: createSeededRng(seed),
+            resolveRulesPack: resolver(unvalidatedCubePack(amount)),
+          });
+          const deduction = result.deduction;
+          if (deduction === undefined) throw new Error('deduction missing');
+          expect(Number.isSafeInteger(deduction.amount)).toBe(true);
+          expect(deduction.amount).toBeGreaterThanOrEqual(0);
+          expect(deduction.deducted).toBeGreaterThanOrEqual(0);
+          expect(deduction.remaining).toBeLessThanOrEqual(beforeRemaining);
+          expect(readItemState(db, id)?.economies?.charges?.remaining).toBe(
+            beforeRemaining - deduction.deducted,
+          );
+        } catch (error) {
+          expect(error).toBeInstanceOf(ItemResetExecutorError);
+          expect(databaseSnapshot(db)).toEqual(beforeDb);
+        }
+        db.close();
+      }
+    }
+  });
+
+  it('refuses a table-only add-on override that carries a negative numeric charge, with the database unchanged', () => {
+    const db = freshDbWithSession();
+    const { id, condition } = cubeAtFace1Charged(db);
+    const addon = addonOverridingCubeTable((rows) => {
+      rows[0][1] = -7;
+    });
+    writeCampaignRulesBinding(db, {
+      base: BUNDLED_PACK.meta,
+      addons: [addon.meta],
+      resolvedAt: CTX.at,
+    });
+    const before = databaseSnapshot(db);
+    expect(() =>
+      applyItemStateConditionEvent(db, {
+        ...CTX,
+        instanceId: id,
+        condition,
+        tableRow: 'Disintegrate',
+        resolveRulesPack: addonResolver(addon),
+      }),
+    ).toThrow(/resolved to -7, which is not a non-negative integer/);
+    expect(databaseSnapshot(db)).toEqual(before);
+    expect(readItemState(db, id)?.economies?.charges?.remaining).toBe(36);
+    db.close();
+  });
+});
+
+describe('resolved deduction table contract (eshyra-olc5.13.3, S2)', () => {
+  const CUBE_CONDITION =
+    'The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.';
+  const COLUMNS = ['Spell or Item', 'Charges Lost'];
+
+  function databaseSnapshot(db: ReturnType<typeof freshDbWithSession>) {
+    const names = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+      )
+      .all() as { name: string }[];
+    return names.map(({ name }) => [
+      name,
+      db.prepare(`SELECT * FROM "${name}"`).all(),
+    ]);
+  }
+
+  // A table-only add-on is independently validated (it carries no deduction
+  // effect of its own) and overrides the base Cube table by key.
+  function addonWithTable(
+    columns: string[],
+    rows: unknown[][],
+  ): { addon: RulesPack; resolver: ReturnType<typeof addonResolver> } {
+    const addon = addonOverridingCubeTable(() => undefined, columns, rows);
+    expect(() => validateRulesPack(addon)).not.toThrow();
+    return { addon, resolver: addonResolver(addon) };
+  }
+
+  const DISINTEGRATE_ONCE = [
+    ['Disintegrate', '2'],
+    ['Horn of blasting', '1d10'],
+  ];
+
+  it.each([
+    [
+      'duplicate key, matching row first',
+      COLUMNS,
+      [
+        ['Disintegrate', '1'],
+        ['Disintegrate', '12'],
+      ],
+      /ambiguous/,
+    ],
+    [
+      'duplicate key, matching row second',
+      COLUMNS,
+      [
+        ['Disintegrate', '12'],
+        ['Disintegrate', '1'],
+      ],
+      /ambiguous/,
+    ],
+    [
+      'duplicate key on a row the event does not name',
+      COLUMNS,
+      [
+        ['Disintegrate', '2'],
+        ['Passwall', '1'],
+        ['Passwall', '6'],
+      ],
+      /ambiguous/,
+    ],
+    [
+      'non-string key cell elsewhere in the table',
+      COLUMNS,
+      [
+        ['Disintegrate', '2'],
+        [7, '1'],
+      ],
+      /key cell/,
+    ],
+    [
+      'empty key cell',
+      COLUMNS,
+      [
+        ['Disintegrate', '2'],
+        ['', '1'],
+      ],
+      /key cell/,
+    ],
+    [
+      'amount column missing',
+      ['Spell or Item', 'Charges'],
+      DISINTEGRATE_ONCE,
+      /columns are missing/,
+    ],
+    [
+      'key column missing',
+      ['Spell', 'Charges Lost'],
+      DISINTEGRATE_ONCE,
+      /columns are missing/,
+    ],
+    [
+      'no row for the event',
+      COLUMNS,
+      [['Horn of blasting', '1d10']],
+      /has no table:cube-of-force-charges-lost row 'Disintegrate'/,
+    ],
+  ] as const)(
+    'refuses %s on the resolved stack with the database unchanged',
+    (_label, columns, rows, pattern) => {
+      for (const seed of ['s2-a', 's2-b']) {
+        const db = freshDbWithSession();
+        const record = packedItem('Cube of Force');
+        const id = install(db, record, {
+          ...createInitialItemState(record.key, record),
+          machineState: 'face-1',
+        });
+        const { addon, resolver: resolve } = addonWithTable(
+          [...columns],
+          rows.map((row) => [...row]),
+        );
+        writeCampaignRulesBinding(db, {
+          base: BUNDLED_PACK.meta,
+          addons: [addon.meta],
+          resolvedAt: CTX.at,
+        });
+        const before = databaseSnapshot(db);
+        expect(() =>
+          applyItemStateConditionEvent(db, {
+            ...CTX,
+            instanceId: id,
+            condition: CUBE_CONDITION,
+            tableRow: 'Disintegrate',
+            rng: createSeededRng(seed),
+            resolveRulesPack: resolve,
+          }),
+        ).toThrow(pattern);
+        expect(databaseSnapshot(db)).toEqual(before);
+        expect(readItemState(db, id)?.economies?.charges?.remaining).toBe(36);
+        db.close();
+      }
+    },
+  );
+
+  it('governs the deduction with the unique add-on row, regardless of base row order', () => {
+    const db = freshDbWithSession();
+    const record = packedItem('Cube of Force');
+    const id = install(db, record, {
+      ...createInitialItemState(record.key, record),
+      machineState: 'face-1',
+    });
+    const { addon, resolver: resolve } = addonWithTable(
+      COLUMNS,
+      DISINTEGRATE_ONCE,
+    );
+    writeCampaignRulesBinding(db, {
+      base: BUNDLED_PACK.meta,
+      addons: [addon.meta],
+      resolvedAt: CTX.at,
+    });
+    expect(
+      applyItemStateConditionEvent(db, {
+        ...CTX,
+        instanceId: id,
+        condition: CUBE_CONDITION,
+        tableRow: 'Disintegrate',
+        resolveRulesPack: resolve,
+      }),
+    ).toMatchObject({
+      deduction: {
+        tableRow: 'Disintegrate',
+        amount: 2,
+        deducted: 2,
+        remaining: 34,
+      },
+    });
+    db.close();
+  });
+});
+
+/** A table-only add-on that overrides the bundled Cube table by key. */
+function addonOverridingCubeTable(
+  edit: (rows: unknown[][]) => void,
+  columns: string[] = ['Spell or Item', 'Charges Lost'],
+  rows?: unknown[][],
+): RulesPack {
+  const base = getBundledDnd5eSrdPack();
+  const table = JSON.parse(
+    JSON.stringify(
+      base.records.find(
+        ({ key }) => key === 'table:cube-of-force-charges-lost',
+      ),
+    ),
+  ) as RulesRecord;
+  const data = table.data as { columns: string[]; rows: unknown[][] };
+  data.columns = columns;
+  data.rows = rows ?? data.rows;
+  edit(data.rows);
+  return {
+    meta: {
+      ...base.meta,
+      packId: 'test-cube-addon',
+      role: 'addon',
+      compatibleBaseSystems: [
+        { systemId: base.meta.systemId, versions: [base.meta.version] },
+      ],
+    },
+    records: [
+      {
+        ...table,
+        overrides: [`${base.meta.packId}/table:cube-of-force-charges-lost`],
+      },
+    ],
+  };
+}
+
+function addonResolver(addon: RulesPack) {
+  return (ref: { packId: string }) =>
+    ref.packId === addon.meta.packId ? addon : BUNDLED_PACK;
+}
