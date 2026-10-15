@@ -3436,6 +3436,8 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     reqStr(effect, 'trigger', path);
     optStr(effect, 'result', path);
     optStr(effect, 'condition', path);
+    if (effect.economyDeduction !== undefined)
+      validateEconomyDeduction(effect, path);
   },
   extraReactions: (effect, path) => {
     if ((effect.perTurn === undefined) === (effect.formula === undefined)) {
@@ -4596,6 +4598,32 @@ function validateMechanicsEffect(effect: Obj, path: string): void {
     );
   }
   MECHANICS_EFFECT_PAYLOAD_VALIDATORS[kind]?.(effect, path);
+}
+
+/**
+ * Typed external-event economy deduction on a `triggeredEffect` (Cube of Force
+ * charges lost). Shape-only here: the economy must exist on the owning item
+ * (checked where the item's economies are in scope) and the table, its columns,
+ * and the amount cells are checked pack-wide in `validate.ts`.
+ */
+function validateEconomyDeduction(effect: Obj, path: string): void {
+  const deductionPath = `${path}.economyDeduction`;
+  const deduction = reqObj(effect, 'economyDeduction', path);
+  requireOnlyKeys(
+    deduction,
+    ['economy', 'tableRef', 'keyColumn', 'amountColumn'],
+    deductionPath,
+  );
+  reqStr(deduction, 'economy', deductionPath);
+  const tableRef = reqStr(deduction, 'tableRef', deductionPath);
+  if (!tableRef.startsWith('table:'))
+    throw new RulesPackError(`${deductionPath}.tableRef must be a table: ref`);
+  if (effect.tableRef !== tableRef)
+    throw new RulesPackError(
+      `${deductionPath}.tableRef must equal ${path}.tableRef`,
+    );
+  reqStr(deduction, 'keyColumn', deductionPath);
+  reqStr(deduction, 'amountColumn', deductionPath);
 }
 
 function validateMagicItemEffect(effect: Obj, path: string): void {

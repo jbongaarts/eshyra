@@ -9,9 +9,9 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1854,
+  "rowCount": 1858,
   "dispositionCounts": {
-    "complete": 439,
+    "complete": 443,
     "model-adjudicated": 1209,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
@@ -22229,6 +22229,86 @@
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
       "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].economyDeduction.amountColumn",
+      "representativeValues": [
+        "Charges Lost"
+      ],
+      "population": 1,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "triggeredEffect validator checks the economyDeduction shape; pack-wide validation checks economy, table, columns, and amount cells",
+      "deterministicConsumers": "itemResetExecutor applyItemStateConditionEvent economy deduction via item_state_event tableRow",
+      "currentAuditReadiness": "itemResetExecutor.test.ts conformance on the generated Cube of Force record and pack validation tests",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemEconomyDeduction",
+      "retainedProseBoundary": null,
+      "owner": "magicItemMechanics.ts, validate.ts, itemResetExecutor.ts, and item-state-event conformance tests",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].economyDeduction.economy",
+      "representativeValues": [
+        "charges"
+      ],
+      "population": 1,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "triggeredEffect validator checks the economyDeduction shape; pack-wide validation checks economy, table, columns, and amount cells",
+      "deterministicConsumers": "itemResetExecutor applyItemStateConditionEvent economy deduction via item_state_event tableRow",
+      "currentAuditReadiness": "itemResetExecutor.test.ts conformance on the generated Cube of Force record and pack validation tests",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemEconomyDeduction",
+      "retainedProseBoundary": null,
+      "owner": "magicItemMechanics.ts, validate.ts, itemResetExecutor.ts, and item-state-event conformance tests",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].economyDeduction.keyColumn",
+      "representativeValues": [
+        "Spell or Item"
+      ],
+      "population": 1,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "triggeredEffect validator checks the economyDeduction shape; pack-wide validation checks economy, table, columns, and amount cells",
+      "deterministicConsumers": "itemResetExecutor applyItemStateConditionEvent economy deduction via item_state_event tableRow",
+      "currentAuditReadiness": "itemResetExecutor.test.ts conformance on the generated Cube of Force record and pack validation tests",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemEconomyDeduction",
+      "retainedProseBoundary": null,
+      "owner": "magicItemMechanics.ts, validate.ts, itemResetExecutor.ts, and item-state-event conformance tests",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].economyDeduction.tableRef",
+      "representativeValues": [
+        "table:cube-of-force-charges-lost"
+      ],
+      "population": 1,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "triggeredEffect validator checks the economyDeduction shape; pack-wide validation checks economy, table, columns, and amount cells",
+      "deterministicConsumers": "itemResetExecutor applyItemStateConditionEvent economy deduction via item_state_event tableRow",
+      "currentAuditReadiness": "itemResetExecutor.test.ts conformance on the generated Cube of Force record and pack validation tests",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemEconomyDeduction",
+      "retainedProseBoundary": null,
+      "owner": "magicItemMechanics.ts, validate.ts, itemResetExecutor.ts, and item-state-event conformance tests",
       "futureWork": false
     },
     {

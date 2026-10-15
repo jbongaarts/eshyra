@@ -475,6 +475,23 @@ const rules: readonly ClassificationRule[] = [
       ),
   },
   {
+    name: 'magic-item economy deduction (item_state_event)',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('magic-item')({ recordKinds }) &&
+      /\.economyDeduction(?:\.|$)/.test(fieldPath),
+    classify: () =>
+      result(
+        'identifier-like',
+        'complete',
+        'itemResetExecutor applyItemStateConditionEvent economy deduction via item_state_event tableRow',
+        'triggeredEffect validator checks the economyDeduction shape; pack-wide validation checks economy, table, columns, and amount cells',
+        'itemResetExecutor.test.ts conformance on the generated Cube of Force record and pack validation tests',
+        'MagicItemEconomyDeduction',
+        'magicItemMechanics.ts, validate.ts, itemResetExecutor.ts, and item-state-event conformance tests',
+      ),
+  },
+  {
     name: 'explicit unsupported residuals',
     matches: ({ system, fieldPath, recordKinds }) =>
       system === 'dnd5e-srd' &&
