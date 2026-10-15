@@ -141,6 +141,21 @@ export interface MagicItemEffect extends Readonly<Record<string, unknown>> {
   readonly kind: string;
   readonly id?: string;
   readonly duration?: MagicItemDurationSpec | string;
+  /**
+   * Source-declared charge loss a `triggeredEffect` applies to one of the
+   * item's own economies when an external item_state_event names a row of the
+   * referenced table. `keyColumn` holds the spell/item names that can be sent
+   * as `tableRow`; `amountColumn` holds the dice expression or non-negative
+   * integer deducted for that row.
+   */
+  readonly economyDeduction?: MagicItemEconomyDeduction;
+}
+
+export interface MagicItemEconomyDeduction {
+  readonly economy: string;
+  readonly tableRef: string;
+  readonly keyColumn: string;
+  readonly amountColumn: string;
 }
 
 export interface MagicItemStateMachine {

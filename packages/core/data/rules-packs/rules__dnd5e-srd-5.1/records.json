@@ -96442,7 +96442,13 @@
             "kind": "triggeredEffect",
             "trigger": "the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects",
             "result": "deduct the source-defined charges",
-            "tableRef": "table:cube-of-force-charges-lost"
+            "tableRef": "table:cube-of-force-charges-lost",
+            "economyDeduction": {
+              "economy": "charges",
+              "tableRef": "table:cube-of-force-charges-lost",
+              "keyColumn": "Spell or Item",
+              "amountColumn": "Charges Lost"
+            }
           }
         ]
       },

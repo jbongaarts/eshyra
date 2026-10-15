@@ -1,7 +1,10 @@
 import { rollDice } from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
 import { type Db, withTransaction } from '../persistence/db.js';
-import type { MagicItemDurationSpec } from '../rules/magicItemMechanics.js';
+import type {
+  MagicItemDurationSpec,
+  MagicItemEconomyDeduction,
+} from '../rules/magicItemMechanics.js';
 import { effectiveMagicItemMechanics } from '../rules/magicItemVariants.js';
 import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
 import { lookupStrictCampaignRecord } from './campaignRecordLookup.js';
@@ -37,6 +40,11 @@ export interface ItemResetExecutorContext {
 export interface ItemStateConditionEventInput extends ItemResetExecutorContext {
   readonly instanceId: string;
   readonly condition: string;
+  /**
+   * Exact keyColumn value of one row of the transition's economy-deduction
+   * table. Required when the transition declares a deduction, refused otherwise.
+   */
+  readonly tableRow?: string;
   readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
@@ -399,11 +407,108 @@ function resolveItem(
   };
 }
 
+export interface ItemStateConditionEventResult {
+  readonly instanceId: string;
+  readonly from: string;
+  readonly to: string;
+  readonly deduction?: {
+    readonly economy: string;
+    readonly tableRow: string;
+    readonly amount: number;
+    readonly deducted: number;
+    readonly remaining: number;
+  };
+  /** Present (true) only when a deduction drained the economy to zero. */
+  readonly exhausted?: true;
+}
+
+/**
+ * The single executable effect form: a `triggeredEffect` carrying a typed
+ * `economyDeduction`. Any other effect a condition transition names is refused
+ * by the caller before any write.
+ */
+function transitionDeduction(
+  item: ResolvedItem,
+  transition: Obj,
+): MagicItemEconomyDeduction | undefined {
+  const effectIds = Array.isArray(transition.effects)
+    ? (transition.effects as unknown[]).map(String)
+    : [];
+  if (effectIds.length === 0) return undefined;
+  const declared = Array.isArray(item.mechanics.effects)
+    ? (item.mechanics.effects as Obj[])
+    : [];
+  const label = `${item.packRef} condition transition '${String(transition.condition)}'`;
+  const deductions: MagicItemEconomyDeduction[] = [];
+  for (const effectId of effectIds) {
+    const effect = declared.find((candidate) => candidate.id === effectId);
+    if (effect === undefined)
+      throw new ItemResetExecutorError(
+        `${label} references undeclared effect '${effectId}'; refused with no change`,
+      );
+    if (
+      effect.kind !== 'triggeredEffect' ||
+      effect.economyDeduction === undefined
+    )
+      throw new ItemResetExecutorError(
+        `${label} carries effect '${effectId}' that item_state_event cannot execute; refused with no change`,
+      );
+    deductions.push(effect.economyDeduction as MagicItemEconomyDeduction);
+  }
+  if (deductions.length > 1)
+    throw new ItemResetExecutorError(
+      `${label} carries more than one economy deduction; refused with no change`,
+    );
+  return deductions[0];
+}
+
+function deductionRows(
+  item: ResolvedItem,
+  deduction: MagicItemEconomyDeduction,
+): { readonly key: string; readonly cell: unknown }[] {
+  const table = resolveTable(item, deduction.tableRef);
+  if (table === undefined)
+    throw new ItemResetExecutorError(
+      `${item.packRef} economy deduction references missing table '${deduction.tableRef}'`,
+    );
+  const data = object(table.data, `${deduction.tableRef}.data`);
+  const columns = Array.isArray(data.columns) ? (data.columns as string[]) : [];
+  const keyIndex = columns.indexOf(deduction.keyColumn);
+  const amountIndex = columns.indexOf(deduction.amountColumn);
+  if (keyIndex < 0 || amountIndex < 0)
+    throw new ItemResetExecutorError(
+      `${item.packRef} economy deduction columns are missing from '${deduction.tableRef}'`,
+    );
+  const rows = Array.isArray(data.rows) ? (data.rows as unknown[][]) : [];
+  return rows.map((row) => ({
+    key: String(row[keyIndex]),
+    cell: row[amountIndex],
+  }));
+}
+
+function deductionAmount(
+  item: ResolvedItem,
+  cell: unknown,
+  rng: Rng | undefined,
+): number {
+  if (typeof cell === 'number') return cell;
+  if (typeof cell !== 'string')
+    throw new ItemResetExecutorError(
+      `${item.packRef} economy deduction amount is not a dice expression or integer`,
+    );
+  if (/^\d+$/.test(cell)) return Number(cell);
+  if (rng === undefined)
+    throw new ItemResetExecutorError(
+      `${item.packRef} economy deduction amount ${cell} needs seeded RNG`,
+    );
+  return rollDice(cell, rng).total;
+}
+
 /** Apply one source-declared external state-machine condition to an item. */
 export function applyItemStateConditionEvent(
   db: Db,
   input: ItemStateConditionEventInput,
-): { readonly instanceId: string; readonly from: string; readonly to: string } {
+): ItemStateConditionEventResult {
   return withTransaction(db, (txnDb) => {
     const row = txnDb
       .prepare('SELECT id, pack_ref, variant_id FROM inventory WHERE id = ?')
@@ -432,50 +537,137 @@ export function applyItemStateConditionEvent(
     const transition = transitions[0];
     const from = String(transition.from);
     const to = String(transition.to);
-    const remainingTimers = (state.pendingTimers ?? []).filter(
-      (timer) => timer.from !== from,
-    );
-    const declarations = machineTransitions(item)
-      .filter(
-        (candidate) => candidate.from === to && candidate.timer !== undefined,
-      )
-      .map((candidate) => ({
-        to: String(candidate.to),
-        timer: candidate.timer as MagicItemDurationSpec,
-      }));
-    let scheduled: readonly ItemStateTimer[];
-    try {
-      scheduled = resolveItemStateTimers(txnDb, to, declarations, input.rng);
-    } catch (error) {
-      if (error instanceof ItemTimerError)
-        throw new ItemResetExecutorError(`${item.packRef} ${error.message}`);
-      throw error;
+    // Gate (atomic): every effect the transition names must be executable and
+    // every input must be consistent with it, before any state, economy, timer,
+    // or anchor is read for write. Nothing below this line may throw.
+    const deduction = transitionDeduction(item, transition);
+    if (deduction === undefined && input.tableRow !== undefined)
+      throw new ItemResetExecutorError(
+        `${item.packRef} condition transition '${input.condition}' declares no economy deduction; tableRow is refused`,
+      );
+    let deductionPlan:
+      | {
+          readonly deduction: MagicItemEconomyDeduction;
+          readonly tableRow: string;
+          readonly amount: number;
+        }
+      | undefined;
+    if (deduction !== undefined) {
+      const rows = deductionRows(item, deduction);
+      const validRows = rows.map((candidate) => candidate.key).join(', ');
+      if (input.tableRow === undefined)
+        throw new ItemResetExecutorError(
+          `${item.packRef} condition transition '${input.condition}' requires tableRow; valid rows: ${validRows}`,
+        );
+      const matched = rows.find(
+        (candidate) => candidate.key === input.tableRow,
+      );
+      if (matched === undefined)
+        throw new ItemResetExecutorError(
+          `${item.packRef} has no ${deduction.tableRef} row '${input.tableRow}'; valid rows: ${validRows}`,
+        );
+      deductionPlan = {
+        deduction,
+        tableRow: matched.key,
+        amount: deductionAmount(item, matched.cell, input.rng),
+      };
     }
-    let next = validateItemStateForRecord(
-      {
-        ...state,
-        machineState: to,
-        pendingTimers: [...remainingTimers, ...scheduled],
-      },
-      item.packRef,
-      item.record,
-      item.variantId,
-    );
-    next = validateItemStateForRecord(
-      applyCooldownAnchorToState(
-        next,
-        (item.mechanics.economies ?? {}) as Obj,
+    // A self-loop restates the same state. No self-loop in the pack carries an
+    // explicit reset authorization, so its pending timers and cooldown anchors
+    // are left exactly as they are (eshyra-olc5.13.1).
+    const isSelfLoop = from === to;
+    let next: ItemInstanceState;
+    if (isSelfLoop) {
+      next = validateItemStateForRecord(
+        { ...state, machineState: to },
         item.packRef,
-        { event: 'state-entered', stateId: to },
-        currentElapsedMinutes(txnDb),
-        input.rng,
-      ).state,
-      item.packRef,
-      item.record,
-      item.variantId,
-    );
+        item.record,
+        item.variantId,
+      );
+    } else {
+      const remainingTimers = (state.pendingTimers ?? []).filter(
+        (timer) => timer.from !== from,
+      );
+      const declarations = machineTransitions(item)
+        .filter(
+          (candidate) => candidate.from === to && candidate.timer !== undefined,
+        )
+        .map((candidate) => ({
+          to: String(candidate.to),
+          timer: candidate.timer as MagicItemDurationSpec,
+        }));
+      let scheduled: readonly ItemStateTimer[];
+      try {
+        scheduled = resolveItemStateTimers(txnDb, to, declarations, input.rng);
+      } catch (error) {
+        if (error instanceof ItemTimerError)
+          throw new ItemResetExecutorError(`${item.packRef} ${error.message}`);
+        throw error;
+      }
+      next = validateItemStateForRecord(
+        {
+          ...state,
+          machineState: to,
+          pendingTimers: [...remainingTimers, ...scheduled],
+        },
+        item.packRef,
+        item.record,
+        item.variantId,
+      );
+      next = validateItemStateForRecord(
+        applyCooldownAnchorToState(
+          next,
+          (item.mechanics.economies ?? {}) as Obj,
+          item.packRef,
+          { event: 'state-entered', stateId: to },
+          currentElapsedMinutes(txnDb),
+          input.rng,
+        ).state,
+        item.packRef,
+        item.record,
+        item.variantId,
+      );
+    }
+    let evidence: ItemStateConditionEventResult['deduction'];
+    let exhausted = false;
+    if (deductionPlan !== undefined) {
+      const { deduction: plan, tableRow, amount } = deductionPlan;
+      const current = next.economies?.[plan.economy];
+      if (current === undefined)
+        throw new ItemResetExecutorError(
+          `${item.packRef} instance '${item.row.id}' economy '${plan.economy}' has no live state`,
+        );
+      const deducted = Math.min(amount, current.remaining);
+      const remaining = current.remaining - deducted;
+      next = validateItemStateForRecord(
+        {
+          ...next,
+          economies: {
+            ...(next.economies ?? {}),
+            [plan.economy]: { ...current, remaining },
+          },
+        },
+        item.packRef,
+        item.record,
+        item.variantId,
+      );
+      evidence = {
+        economy: plan.economy,
+        tableRow,
+        amount,
+        deducted,
+        remaining,
+      };
+      exhausted = remaining === 0;
+    }
     writeItemState(txnDb, input.instanceId, next, input);
-    return { instanceId: input.instanceId, from, to };
+    return {
+      instanceId: input.instanceId,
+      from,
+      to,
+      ...(evidence === undefined ? {} : { deduction: evidence }),
+      ...(exhausted ? { exhausted: true as const } : {}),
+    };
   });
 }
 

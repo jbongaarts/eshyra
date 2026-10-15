@@ -11,7 +11,9 @@ import {
   holdItem,
   readItemState,
   resolveRestEventItemResets,
+  rollDice,
   useItem,
+  validateRulesPack,
   writeItemState,
 } from '../src/internal.js';
 import { applyItemStateConditionEvent } from '../src/state/itemResetExecutor.js';
@@ -1342,5 +1344,404 @@ describe('item reset/timer executor', () => {
       undefined,
     );
     db.close();
+  });
+});
+
+describe('item condition events: economy deduction and self-loops (eshyra-olc5.13.1)', () => {
+  const CUBE_ROWS =
+    'Disintegrate, Horn of blasting, Passwall, Prismatic spray, Wall of fire';
+  const machineOf = (record: RulesRecord) =>
+    (
+      (record.data as Record<string, unknown>).mechanics as Record<
+        string,
+        unknown
+      >
+    ).stateMachine as {
+      transitions: Record<string, unknown>[];
+    };
+  const selfLoopCondition = (record: RulesRecord, state: string) => {
+    const condition = machineOf(record).transitions.find(
+      (transition) =>
+        transition.from === state &&
+        transition.to === state &&
+        typeof transition.condition === 'string',
+    )?.condition;
+    if (typeof condition !== 'string')
+      throw new Error(`no ${state} condition self-loop`);
+    return condition;
+  };
+  const rawState = (db: ReturnType<typeof freshDbWithSession>, id: string) =>
+    db
+      .prepare('SELECT state_json FROM item_state WHERE inventory_id = ?')
+      .get(id);
+  const chargesOf = (db: ReturnType<typeof freshDbWithSession>, id: string) =>
+    readItemState(db, id)?.economies?.charges?.remaining;
+  const cubeFace1Timer = {
+    from: 'face-1',
+    to: 'inactive',
+    anchorElapsedMinutes: 0,
+    deadlineElapsedMinutes: 1,
+    amount: 1,
+    unit: 'minute',
+  };
+
+  function cubeAtFace1(db: ReturnType<typeof freshDbWithSession>) {
+    const record = packedItem('Cube of Force');
+    const id = install(db, record, {
+      ...createInitialItemState(record.key, record),
+      machineState: 'face-1',
+      pendingTimers: [cubeFace1Timer],
+    });
+    // A campaign stack holds the referenced table beside the item record.
+    const table = BUNDLED_PACK.records.find(
+      ({ key }) => key === 'table:cube-of-force-charges-lost',
+    );
+    if (table === undefined) throw new Error('bundled pack has no cube table');
+    return {
+      record,
+      id,
+      pack: { ...BUNDLED_PACK, records: [record, table] },
+    };
+  }
+
+  it('deducts the rolled printed amount from the real Cube of Force face without restarting its barrier', () => {
+    const db = freshDbWithSession();
+    const { record, id, pack } = cubeAtFace1(db);
+    const before = readItemState(db, id);
+    expect(before?.economies?.charges?.remaining).toBe(36);
+    const condition = selfLoopCondition(record, 'face-1');
+    const seed = 'cube-contact-disintegrate';
+    const roll = rollDice('1d12', createSeededRng(seed)).total;
+    const expectedDeducted = Math.min(roll, 36);
+    expect(
+      applyItemStateConditionEvent(db, {
+        ...CTX,
+        instanceId: id,
+        condition,
+        tableRow: 'Disintegrate',
+        rng: createSeededRng(seed),
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toEqual({
+      instanceId: id,
+      from: 'face-1',
+      to: 'face-1',
+      deduction: {
+        economy: 'charges',
+        tableRow: 'Disintegrate',
+        amount: roll,
+        deducted: expectedDeducted,
+        remaining: 36 - expectedDeducted,
+      },
+    });
+    // Only the charges economy moved: same face, same pending 1-minute timer
+    // (dueAt unchanged), and no other economy, action, or resource touched.
+    expect(readItemState(db, id)).toEqual({
+      ...before,
+      economies: {
+        ...before?.economies,
+        charges: {
+          ...before?.economies?.charges,
+          remaining: 36 - expectedDeducted,
+        },
+      },
+    });
+    expect(readItemState(db, id)?.pendingTimers).toEqual([cubeFace1Timer]);
+    db.close();
+  });
+
+  it('refuses unknown, missing, and unrolled-without-rng rows with state and charges byte-identical', () => {
+    const db = freshDbWithSession();
+    const { record, id, pack } = cubeAtFace1(db);
+    const condition = selfLoopCondition(record, 'face-1');
+    const rawBefore = rawState(db, id);
+    const rng = createSeededRng('refusal');
+    const refusals: [string, Record<string, unknown>, RegExp][] = [
+      [
+        'unknown row',
+        { tableRow: 'Fireball', rng },
+        new RegExp(`valid rows: ${CUBE_ROWS}`),
+      ],
+      ['missing row', { rng }, /requires tableRow/],
+      // A dice amount with no seeded RNG must refuse rather than guess.
+      ['dice without rng', { tableRow: 'Disintegrate' }, /needs seeded RNG/],
+    ];
+    for (const [, extra, pattern] of refusals) {
+      expect(() =>
+        applyItemStateConditionEvent(db, {
+          ...CTX,
+          instanceId: id,
+          condition,
+          resolveRulesPack: resolver(pack),
+          ...extra,
+        }),
+      ).toThrow(pattern);
+      expect(rawState(db, id)).toEqual(rawBefore);
+      expect(chargesOf(db, id)).toBe(36);
+    }
+    db.close();
+  });
+
+  it('clamps a deduction larger than the remaining charges, reports exhaustion, and then runs out', () => {
+    const db = freshDbWithSession();
+    const { record, id, pack } = cubeAtFace1(db);
+    const before = readItemState(db, id);
+    if (before === undefined) throw new Error('cube state missing');
+    writeItemState(
+      db,
+      id,
+      {
+        ...before,
+        economies: {
+          ...before.economies,
+          charges: { ...before.economies?.charges, remaining: 1 },
+        },
+      },
+      CTX,
+    );
+    const drained = applyItemStateConditionEvent(db, {
+      ...CTX,
+      instanceId: id,
+      condition: selfLoopCondition(record, 'face-1'),
+      tableRow: 'Disintegrate',
+      rng: createSeededRng('drain'),
+      resolveRulesPack: resolver(pack),
+    });
+    expect(drained).toMatchObject({
+      from: 'face-1',
+      to: 'face-1',
+      exhausted: true,
+      deduction: { deducted: 1, remaining: 0 },
+    });
+    expect(drained.deduction?.amount).toBeGreaterThanOrEqual(1);
+    expect(chargesOf(db, id)).toBe(0);
+    // Free text "the cube runs out of charges" is not auto-applied by the
+    // deduction; the DM sends it as its own event, which moves to inactive.
+    expect(
+      applyItemStateConditionEvent(db, {
+        ...CTX,
+        instanceId: id,
+        condition: 'the cube runs out of charges',
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toEqual({ instanceId: id, from: 'face-1', to: 'inactive' });
+    expect(readItemState(db, id)).toMatchObject({
+      machineState: 'inactive',
+      pendingTimers: [],
+    });
+    db.close();
+  });
+
+  it('keeps the Immovable Rod DC 30 self-loop effectless: no tableRow, timers and state preserved', () => {
+    const rod = packedItem('Immovable Rod');
+    const record = fixture('immovable-rod-self-loop', {
+      ...((rod.data as Record<string, unknown>).mechanics as Record<
+        string,
+        unknown
+      >),
+      stateMachine: {
+        ...machineOf(rod),
+        transitions: [
+          ...machineOf(rod).transitions,
+          // A declared timer keeps a real pending deadline on the active state.
+          {
+            from: 'active',
+            to: 'inactive',
+            timer: { amount: 1, unit: 'hour' },
+          },
+        ],
+      },
+    });
+    const db = freshDbWithSession();
+    const pack = rulesPack(record);
+    const timer = {
+      from: 'active',
+      to: 'inactive',
+      anchorElapsedMinutes: 0,
+      deadlineElapsedMinutes: 60,
+      amount: 1,
+      unit: 'hour',
+    };
+    const id = install(db, record, {
+      ...createInitialItemState(record.key, record),
+      machineState: 'active',
+      pendingTimers: [timer],
+    });
+    const before = readItemState(db, id);
+    const condition = selfLoopCondition(record, 'active');
+    expect(
+      applyItemStateConditionEvent(db, {
+        ...CTX,
+        instanceId: id,
+        condition,
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toEqual({ instanceId: id, from: 'active', to: 'active' });
+    expect(readItemState(db, id)).toEqual(before);
+    expect(readItemState(db, id)?.pendingTimers).toEqual([timer]);
+    const rawBefore = rawState(db, id);
+    expect(() =>
+      applyItemStateConditionEvent(db, {
+        ...CTX,
+        instanceId: id,
+        condition,
+        tableRow: 'Disintegrate',
+        rng: createSeededRng('rod'),
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toThrow(/declares no economy deduction; tableRow is refused/);
+    expect(rawState(db, id)).toEqual(rawBefore);
+    db.close();
+  });
+
+  it('refuses a condition transition whose effect is not executable, atomically', () => {
+    const record = fixture('opaque-condition-effect', {
+      operations: [{ id: 'activate' }],
+      effects: [
+        {
+          id: 'opaque-effect',
+          kind: 'triggeredEffect',
+          trigger: 'a fixture trigger',
+          result: 'a fixture result',
+        },
+      ],
+      stateMachine: {
+        initial: 'inactive',
+        states: [{ id: 'inactive' }, { id: 'active' }],
+        transitions: [
+          { from: 'inactive', to: 'active', via: 'activate' },
+          {
+            from: 'active',
+            to: 'active',
+            condition: 'a fixture external event',
+            effects: ['opaque-effect'],
+          },
+          {
+            from: 'active',
+            to: 'inactive',
+            timer: { amount: 1, unit: 'hour' },
+          },
+        ],
+      },
+    });
+    const db = freshDbWithSession();
+    const pack = rulesPack(record);
+    const timer = {
+      from: 'active',
+      to: 'inactive',
+      anchorElapsedMinutes: 0,
+      deadlineElapsedMinutes: 60,
+      amount: 1,
+      unit: 'hour',
+    };
+    const id = install(db, record, {
+      ...createInitialItemState(record.key, record),
+      machineState: 'active',
+      pendingTimers: [timer],
+    });
+    const rawBefore = rawState(db, id);
+    expect(() =>
+      applyItemStateConditionEvent(db, {
+        ...CTX,
+        instanceId: id,
+        condition: 'a fixture external event',
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toThrow(/cannot execute; refused with no change/);
+    expect(rawState(db, id)).toEqual(rawBefore);
+    expect(readItemState(db, id)?.pendingTimers).toEqual([timer]);
+    db.close();
+  });
+});
+
+describe('economyDeduction pack validation (eshyra-olc5.13.1)', () => {
+  const CUBE = 'magic-item:cube-of-force';
+  const CONTACT = 'm5-complex-cube-contact';
+
+  function mutatedPack(
+    edit: (deduction: Record<string, unknown>, cube: RulesRecord) => void,
+    tableEdit?: (table: RulesRecord) => void,
+  ) {
+    const pack = getBundledDnd5eSrdPack();
+    const records = pack.records.map((record) => {
+      const copy = JSON.parse(JSON.stringify(record)) as RulesRecord;
+      if (record.key === CUBE) {
+        const effects = (
+          copy.data as { mechanics: { effects: Record<string, unknown>[] } }
+        ).mechanics.effects;
+        const contact = effects.find((effect) => effect.id === CONTACT);
+        if (contact === undefined)
+          throw new Error('cube contact effect missing');
+        edit(contact.economyDeduction as Record<string, unknown>, copy);
+      }
+      if (
+        tableEdit !== undefined &&
+        record.key === 'table:cube-of-force-charges-lost'
+      )
+        tableEdit(copy);
+      return copy;
+    });
+    return { meta: pack.meta, records };
+  }
+
+  it('accepts the committed Cube deduction', () => {
+    const pack = getBundledDnd5eSrdPack();
+    expect(() =>
+      validateRulesPack({ meta: pack.meta, records: pack.records }),
+    ).not.toThrow();
+  });
+
+  it('rejects a deduction that names an unknown economy, a missing column, or a mismatched table', () => {
+    expect(() =>
+      validateRulesPack(
+        mutatedPack((deduction) => {
+          deduction.economy = 'mana';
+        }),
+      ),
+    ).toThrow(/references unknown economy "mana"/);
+    expect(() =>
+      validateRulesPack(
+        mutatedPack((deduction) => {
+          deduction.keyColumn = 'Spell';
+        }),
+      ),
+    ).toThrow(/must name keyColumn and amountColumn/);
+    expect(() =>
+      validateRulesPack(
+        mutatedPack((deduction) => {
+          deduction.tableRef = 'table:cube-of-force-faces';
+        }),
+      ),
+    ).toThrow(/must equal .*tableRef/);
+    expect(() =>
+      validateRulesPack(
+        mutatedPack((deduction) => {
+          deduction.extra = true;
+        }),
+      ),
+    ).toThrow(/unsupported key "extra"|has unsupported key/);
+  });
+
+  it('rejects an amount cell that is neither a dice expression nor a non-negative integer', () => {
+    expect(() =>
+      validateRulesPack(
+        mutatedPack(
+          () => undefined,
+          (table) => {
+            (table.data as { rows: unknown[][] }).rows[0][1] = '1d12 then more';
+          },
+        ),
+      ),
+    ).toThrow(/does not parse as a dice expression/);
+    expect(() =>
+      validateRulesPack(
+        mutatedPack(
+          () => undefined,
+          (table) => {
+            (table.data as { rows: unknown[][] }).rows[0][1] = -2;
+          },
+        ),
+      ),
+    ).toThrow(/amount must be non-negative/);
   });
 });
