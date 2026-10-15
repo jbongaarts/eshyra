@@ -219,7 +219,7 @@ function itemKey(name: string): string {
 }
 
 export const MAGIC_ITEM_REVIEWED_TAG_ITEM_COUNTS = Object.freeze({
-  C1: 105,
+  C1: 106,
   C2: 169,
   S: 50,
   DB: 1,

@@ -56,7 +56,11 @@ export const startEffectTool: Tool = {
     'creatures the grant prints (count, creature, and duration are checked ' +
     'when typed). Its printed endings are modeled automatically: timer expiry, ' +
     'reduced to 0 hit points (the creature vanishes), and concentration ' +
-    'ending (concentrationOwner required). Every other printed ending (owner ' +
+    'ending (concentrationOwner required). A grant whose cooldown restarts when ' +
+    "it ends (use_item's result hint.bindGrant names it) binds only after that " +
+    'spend, and only once per spend. A grant owned by a persistent ' +
+    'actor needs campaignActorId on each linked actor, so combat closure keeps ' +
+    'it. Every other printed ending (owner ' +
     'commands, next dawn, card moved, wishes, flight distance, and so on) is ' +
     'DM-adjudicated: end the effect with end_effect (reason "ruled" and a ' +
     'note). Illusion and object grants, control or obedience policy, and ' +

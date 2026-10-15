@@ -100883,7 +100883,21 @@
             ],
             "note": "table:efreeti-bottle (d100 11–90): “The stopper can’t be removed for 24 hours.”"
           }
-        }
+        },
+        "operations": [
+          {
+            "id": "remove-stopper",
+            "activation": {
+              "cost": "action"
+            },
+            "cost": [
+              {
+                "economy": "stopper",
+                "amount": 1
+              }
+            ]
+          }
+        ]
       },
       "tableRefs": [
         "table:efreeti-bottle"
@@ -100891,6 +100905,24 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:efreeti-bottle/c1-remove-stopper",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C1",
+            "representation": {
+              "block": "operations",
+              "operationId": "remove-stopper"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "olc5.11 pack-tested paid item operation"
+              }
+            ],
+            "readiness": "green"
+          },
           {
             "clauseId": "magic-item:efreeti-bottle/m4-efreeti-bottle",
             "scope": {
@@ -100951,16 +100983,7 @@
                 "hook": "grant-anchored cooldown reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "grant-anchored cooldown reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:efreeti-bottle/m8-efreeti-bottle",
@@ -120726,16 +120749,7 @@
                 "hook": "grant-anchored cooldown reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "grant-anchored cooldown reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-djinni-summoning/m4-ring-of-djinni-summoning",

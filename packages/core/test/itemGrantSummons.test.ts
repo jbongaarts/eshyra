@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ToolContext } from '../src/internal.js';
 import {
+  advanceWorldTime,
   attuneItem,
   createDefaultToolRegistry,
   createInitialItemState,
@@ -64,6 +65,27 @@ function waivedPack(key: string) {
       };
     }),
   };
+}
+
+/** Spends one operation through the real use_item path and returns its result. */
+function spend(
+  db: ReturnType<typeof freshDbWithSession>,
+  instanceId: string,
+  operationId: string,
+  resolvePack: typeof pack,
+  rngSeed = 3,
+) {
+  return useItem(db, {
+    campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+    instanceId,
+    operationId,
+    characterId: 'pc-1',
+    provenance: 'test:item-grant-spend',
+    sessionId: DEFAULT_TEST_SESSION_ID,
+    at: NOW,
+    rng: createSeededRng(rngSeed),
+    resolveRulesPack: () => resolvePack,
+  });
 }
 
 function setup(resolvePack = pack) {
@@ -244,10 +266,20 @@ describe('olc5.12 item-granted creatures', () => {
     s.hit('c-djinni', -161);
     expect(s.effect('fx-djinni')).toMatchObject({ status: 'ended' });
     // The grant ended at 0 hit points, so the depleted summon cooldown starts
-    // its 24-hour wait from that moment.
-    expect(
-      readItemState(s.db, ringId)?.economies?.cooldown?.availableAt,
-    ).toBeDefined();
+    // its 24-hour wait from that moment (elapsed 0 here).
+    expect(readItemState(s.db, ringId)?.economies?.cooldown?.availableAt).toBe(
+      '1440',
+    );
+    advanceWorldTime(s.db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      minutes: 1440,
+      provenance: 'test:ring-zero-hp-wait',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+      resolveRulesPack: () => waivedPack('magic-item:ring-of-djinni-summoning'),
+      rng: createSeededRng(5),
+    });
+    expect(readItemState(s.db, ringId)?.economies?.cooldown?.remaining).toBe(1);
   });
 
   it('accepts a printed creature and refuses a different creature, count, or duration', () => {
@@ -345,8 +377,13 @@ describe('olc5.12 item-granted creatures', () => {
   });
 
   it('ends a timed grant automatically at expiry', () => {
-    const s = setup();
+    const bottle = waivedPack('magic-item:efreeti-bottle');
+    const s = setup(bottle);
+    s.must('begin_turn', { character: 'pc-1', round: 1 });
     const bottleId = s.install('magic-item:efreeti-bottle', 'bottle-1');
+    // The serving grant's stopper is paid by remove-stopper, so the bind
+    // follows the spend.
+    spend(s.db, bottleId, 'remove-stopper', bottle);
     const bound = s.summon(
       'fx-serving',
       {
@@ -469,5 +506,235 @@ describe('olc5.12 item-granted creatures', () => {
       (value) => !Object.hasOwn(ITEM_GRANT_REVERT_DISPOSITIONS, value),
     );
     expect(unmapped).toEqual([]);
+  });
+
+  it('couples the Ring spend with its bind: refuses an unspent or repeated bind and hints the spend', () => {
+    const ring = waivedPack('magic-item:ring-of-djinni-summoning');
+    const s = setup(ring);
+    const ringId = s.install('magic-item:ring-of-djinni-summoning', 'ring-4', {
+      worn: true,
+    });
+    s.must('begin_turn', { character: 'pc-1', round: 1 });
+    const grantSource = {
+      ref: 'magic-item:ring-of-djinni-summoning',
+      grantRef: 'particular-djinni',
+      itemInstanceId: ringId,
+    };
+    const owner = { concentrationOwner: { kind: 'character', ref: 'pc-1' } };
+    const unspent = s.summon('fx-unspent', grantSource, owner);
+    expect(unspent).toMatchObject({ ok: false });
+    expect(unspent.message).toMatch(/use_item 'summon-djinni' first/);
+
+    const spent = spend(s.db, ringId, 'summon-djinni', ring);
+    expect(spent.hint).toEqual({ bindGrant: 'particular-djinni' });
+    expect(spent.costs).toEqual([{ economy: 'cooldown', amount: 1 }]);
+
+    expect(s.summon('fx-djinni', grantSource, owner)).toMatchObject({
+      ok: true,
+    });
+    // A second live summon of the same spend is refused: the grant is bound.
+    const joined = s.call('join_combat', {
+      creatures: [
+        { rulesRef: 'creature:djinni', side: 'ally', displayLabel: 'djinni-2' },
+      ],
+    });
+    expect(joined).toMatchObject({ ok: true });
+    const secondId = (
+      joined as unknown as { data: { joined: { combatantId: string }[] } }
+    ).data.joined[0]?.combatantId as string;
+    const repeated = s.summon('fx-repeat', grantSource, {
+      ...owner,
+      actors: [{ combatantId: secondId, campaignActorId: 'djinni-2' }],
+    });
+    expect(repeated).toMatchObject({ ok: false });
+    expect(repeated.message).toMatch(/already bound/);
+  });
+
+  it('ends a bound Ring summon by DM ruling and starts the 24-hour wait, which then resets', () => {
+    const ring = waivedPack('magic-item:ring-of-djinni-summoning');
+    const s = setup(ring);
+    const ringId = s.install('magic-item:ring-of-djinni-summoning', 'ring-5', {
+      worn: true,
+    });
+    s.must('begin_turn', { character: 'pc-1', round: 1 });
+    spend(s.db, ringId, 'summon-djinni', ring);
+    expect(
+      s.summon(
+        'fx-ruled',
+        {
+          ref: 'magic-item:ring-of-djinni-summoning',
+          grantRef: 'particular-djinni',
+          itemInstanceId: ringId,
+        },
+        { concentrationOwner: { kind: 'character', ref: 'pc-1' } },
+      ),
+    ).toMatchObject({ ok: true });
+    const ruled = s.must('end_effect', {
+      effectId: 'fx-ruled',
+      reason: 'ruled',
+      note: 'the djinni returns to its plane',
+    });
+    expect(ruled.ok).toBe(true);
+    expect(s.effect('fx-ruled')).toMatchObject({
+      status: 'ended',
+      endReason: 'ruled',
+    });
+    const advance = (minutes: number) =>
+      advanceWorldTime(s.db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        minutes,
+        provenance: 'test:ring-wait',
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        at: NOW,
+        resolveRulesPack: () => ring,
+        rng: createSeededRng(5),
+      });
+    expect(readItemState(s.db, ringId)?.economies?.cooldown?.availableAt).toBe(
+      '1440',
+    );
+    advance(1439);
+    expect(readItemState(s.db, ringId)?.economies?.cooldown?.remaining).toBe(0);
+    advance(1);
+    expect(readItemState(s.db, ringId)?.economies?.cooldown?.remaining).toBe(1);
+    expect(
+      readItemState(s.db, ringId)?.economies?.cooldown?.availableAt,
+    ).toBeUndefined();
+  });
+
+  it('pays the Efreeti serving grant with the stopper: fresh bottle has it, the spend is required, expiry schedules the wait', () => {
+    const bottle = waivedPack('magic-item:efreeti-bottle');
+    const s = setup(bottle);
+    const bottleId = s.install('magic-item:efreeti-bottle', 'bottle-2');
+    expect(readItemState(s.db, bottleId)?.economies?.stopper?.remaining).toBe(
+      1,
+    );
+    const serving = {
+      ref: 'magic-item:efreeti-bottle',
+      grantRef: 'serving-efreeti',
+      itemInstanceId: bottleId,
+    };
+    s.must('begin_turn', { character: 'pc-1', round: 1 });
+    expect(
+      s.summon('fx-unpaid', serving, {
+        actors: [{ combatantId: 'c-efreeti' }],
+      }),
+    ).toMatchObject({
+      ok: false,
+    });
+    const removed = spend(s.db, bottleId, 'remove-stopper', bottle);
+    expect(removed.costs).toEqual([{ economy: 'stopper', amount: 1 }]);
+    expect(removed.hint).toEqual({ bindGrant: 'serving-efreeti' });
+    expect(readItemState(s.db, bottleId)?.economies?.stopper?.remaining).toBe(
+      0,
+    );
+    expect(
+      s.summon('fx-efreeti', serving, {
+        actors: [{ combatantId: 'c-efreeti' }],
+      }),
+    ).toMatchObject({
+      ok: true,
+    });
+    const advance = (minutes: number) =>
+      advanceWorldTime(s.db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        minutes,
+        provenance: 'test:efreeti-wait',
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        at: NOW,
+        resolveRulesPack: () => bottle,
+        rng: createSeededRng(5),
+      });
+    advance(60);
+    expect(s.effect('fx-efreeti')).toMatchObject({
+      status: 'ended',
+      endReason: 'expired',
+    });
+    // The efreeti returns at the hour mark; the stopper waits 24 hours from it.
+    expect(readItemState(s.db, bottleId)?.economies?.stopper?.availableAt).toBe(
+      '1500',
+    );
+    advance(1439);
+    expect(readItemState(s.db, bottleId)?.economies?.stopper?.remaining).toBe(
+      0,
+    );
+    advance(1);
+    expect(readItemState(s.db, bottleId)?.economies?.stopper?.remaining).toBe(
+      1,
+    );
+  });
+
+  it('binds the hostile Efreeti without stopper coupling', () => {
+    const bottle = waivedPack('magic-item:efreeti-bottle');
+    const s = setup(bottle);
+    const bottleId = s.install('magic-item:efreeti-bottle', 'bottle-3');
+    s.must('begin_turn', { character: 'pc-1', round: 1 });
+    const bound = s.summon(
+      'fx-hostile',
+      {
+        ref: 'magic-item:efreeti-bottle',
+        grantRef: 'hostile-efreeti',
+        itemInstanceId: bottleId,
+      },
+      { actors: [{ combatantId: 'c-efreeti' }] },
+    );
+    expect(bound).toMatchObject({ ok: true });
+    expect(readItemState(s.db, bottleId)?.economies?.stopper?.remaining).toBe(
+      1,
+    );
+  });
+
+  it('keeps a persistent-actor summon bound through combat closure only with a durable campaign actor', () => {
+    const ring = waivedPack('magic-item:ring-of-djinni-summoning');
+    const s = setup(ring);
+    const ringId = s.install('magic-item:ring-of-djinni-summoning', 'ring-6', {
+      worn: true,
+    });
+    s.must('begin_turn', { character: 'pc-1', round: 1 });
+    spend(s.db, ringId, 'summon-djinni', ring);
+    const joined = s.call('join_combat', {
+      creatures: [
+        { rulesRef: 'creature:djinni', side: 'ally', displayLabel: 'djinni-3' },
+      ],
+    });
+    const combatantId = (
+      joined as unknown as { data: { joined: { combatantId: string }[] } }
+    ).data.joined[0]?.combatantId as string;
+    const grantSource = {
+      ref: 'magic-item:ring-of-djinni-summoning',
+      grantRef: 'particular-djinni',
+      itemInstanceId: ringId,
+    };
+    const owner = { concentrationOwner: { kind: 'character', ref: 'pc-1' } };
+    const instanceOnly = s.summon('fx-instance-only', grantSource, {
+      ...owner,
+      actors: [{ combatantId }],
+    });
+    expect(instanceOnly).toMatchObject({ ok: false });
+    expect(instanceOnly.message).toMatch(/campaignActorId/);
+
+    expect(
+      s.summon('fx-durable', grantSource, {
+        ...owner,
+        actors: [{ combatantId, campaignActorId: 'djinni-camp' }],
+      }),
+    ).toMatchObject({ ok: true });
+    const closed = s.call('close_combat_instance', { status: 'completed' });
+    expect(closed).toMatchObject({ ok: true });
+    // Combat closure rebinds the link to the campaign actor and does not end
+    // the effect: the djinni keeps its hour.
+    expect(s.effect('fx-durable')).toMatchObject({ status: 'active' });
+    expect(
+      readItemState(s.db, ringId)?.economies?.cooldown?.availableAt,
+    ).toBeUndefined();
+    expect(
+      s
+        .effect('fx-durable')
+        ?.links.some(
+          (link) =>
+            link.target.kind === 'campaign_actor' &&
+            link.target.ref === 'djinni-camp' &&
+            link.status === 'active',
+        ),
+    ).toBe(true);
   });
 });

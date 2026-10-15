@@ -169,6 +169,10 @@ export interface UseItemResult {
     readonly amount: number;
   }[];
   readonly effects: readonly unknown[];
+  /** Present when this spend is the cooldown economy of a typed entity grant
+   *  (olc5.12.2): the summon must then be bound with start_effect, and its
+   *  cooldown starts only when that bound effect ends. */
+  readonly hint?: { readonly bindGrant: string };
   readonly turnResource?: UseItemTurnResource;
   readonly transition?: {
     readonly from: string;
@@ -2304,6 +2308,46 @@ function spendActivationTurnResource(
   }
 }
 
+/** The cooldown economy this grant names is anchored to this grant's end: its
+ *  wait starts only when the bound effect ends (olc5.12.2). */
+export function grantCooldownAnchoredTo(
+  mechanics: Record<string, unknown> | undefined,
+  grant: Record<string, unknown>,
+): boolean {
+  if (typeof grant.cooldownEconomy !== 'string' || typeof grant.id !== 'string')
+    return false;
+  const economies = (mechanics?.economies ?? {}) as Record<
+    string,
+    { cooldown?: { startsOn?: { event?: unknown; grantId?: unknown } } }
+  >;
+  const startsOn = economies[grant.cooldownEconomy]?.cooldown?.startsOn;
+  return startsOn?.event === 'grant-ended' && startsOn.grantId === grant.id;
+}
+
+/** The typed entity grant whose cooldown economy this spend actually charged. */
+function grantPaidBySpend(
+  mechanics: Obj,
+  costs: readonly { economy: string; amount: number }[],
+): string | undefined {
+  const grants = (mechanics.entityGrant as Obj | undefined)?.grants;
+  if (!Array.isArray(grants)) return undefined;
+  for (const raw of grants) {
+    const grant =
+      typeof raw === 'object' && raw !== null ? (raw as Obj) : undefined;
+    if (
+      grant !== undefined &&
+      typeof grant.id === 'string' &&
+      typeof grant.cooldownEconomy === 'string' &&
+      grantCooldownAnchoredTo(mechanics, grant) &&
+      costs.some(
+        (cost) => cost.economy === grant.cooldownEconomy && cost.amount > 0,
+      )
+    )
+      return grant.id;
+  }
+  return undefined;
+}
+
 export function useItem(db: Db, input: UseItemInput): UseItemResult {
   return withTransaction(db, (txnDb) => {
     const row = txnDb
@@ -2779,12 +2823,14 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       }
     }
     const effectIds = [...operationEffectIds, ...transitionEffectIds];
+    const bindGrant = grantPaidBySpend(mechanics, costs);
     return {
       instanceId: input.instanceId,
       packRef,
       operationId: input.operationId,
       costs,
       effects: effectIds.map((id) => refs.effects.get(id)),
+      ...(bindGrant === undefined ? {} : { hint: { bindGrant } }),
       ...(turnResource === undefined ? {} : { turnResource }),
       ...(selectedTransition === undefined
         ? {}

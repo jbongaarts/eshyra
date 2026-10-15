@@ -66,7 +66,11 @@ import {
   updateCampaignActor,
   updateCombatant,
 } from './encounterCombatants.js';
-import { applyItemCooldownAnchorEvent } from './itemState.js';
+import {
+  applyItemCooldownAnchorEvent,
+  grantCooldownAnchoredTo,
+  readItemState,
+} from './itemState.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import { validateConditionsJson } from './liveStateSchema.js';
 import { MutateStateError } from './mutateState.js';
@@ -3826,6 +3830,9 @@ function validateItemGrantBinding(
     throw new ActiveEffectError(
       `${label} creates a creature, so start_effect needs at least one linked actor`,
     );
+  const runtimeOwner = (
+    mechanics?.entityGrant as Record<string, unknown> | undefined
+  )?.runtimeOwner;
   if (typeof grant.count === 'number' && actors.length !== grant.count)
     throw new ActiveEffectError(
       `${label} creates ${grant.count}; ${actors.length} linked actor(s) were given`,
@@ -3840,10 +3847,10 @@ function validateItemGrantBinding(
   for (const actor of actors) {
     const row = db
       .prepare(
-        'SELECT rules_ref FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+        'SELECT rules_ref, identity_kind FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
       )
       .get(input.campaignId, actor.combatantId) as
-      | { rules_ref: string }
+      | { rules_ref: string; identity_kind: string }
       | undefined;
     if (row === undefined)
       throw new ActiveEffectError(
@@ -3852,6 +3859,17 @@ function validateItemGrantBinding(
     if (!grantAdmitsCreature(db, input, grant, row.rules_ref))
       throw new ActiveEffectError(
         `linked actor '${actor.combatantId}' is ${row.rules_ref}, which ${label} does not create (it creates: ${typedCreatures})`,
+      );
+    // A persistent-actor grant outlives the encounter, so its creature needs
+    // a durable campaign actor; an instance-only combatant would be released
+    // by combat closure while the effect stayed active with no creature.
+    if (
+      runtimeOwner === 'persistent-actor' &&
+      actor.campaignActorId === undefined &&
+      row.identity_kind !== 'campaign_actor'
+    )
+      throw new ActiveEffectError(
+        `${label} is owned by a persistent actor, so linked actor '${actor.combatantId}' needs campaignActorId; without a durable identity combat closure would release it from the effect`,
       );
   }
   const typed = grant.duration;
@@ -3901,6 +3919,61 @@ function validateItemGrantBinding(
     if (zeroHp && actor.atZeroHitPoints === 'vanish-bonded')
       throw new ActiveEffectError(
         `${label} prints that the creature leaves at 0 hit points without a bond; 'vanish-bonded' is refused for '${actor.combatantId}'`,
+      );
+  }
+  // A grant whose cooldown economy is anchored to this grant's end (Ring of
+  // Djinni, Efreeti stopper) is paid for by that spend: the economy must be
+  // spent and not yet scheduled, and one live effect may bind the grant at a
+  // time. A spend that is never bound stays recoverable, since the DM can bind
+  // it late. Other cooldownEconomy references (per-day charges) are not
+  // anchored and bind unchanged.
+  if (grantCooldownAnchoredTo(mechanics, grant)) {
+    const economyId = grant.cooldownEconomy as string;
+    const economy = readItemState(db, itemInstanceId)?.economies?.[economyId];
+    if (
+      economy === undefined ||
+      economy.remaining !== 0 ||
+      economy.availableAt !== undefined
+    ) {
+      const spender = (
+        (mechanics?.operations as
+          | { id?: unknown; cost?: unknown }[]
+          | undefined) ?? []
+      ).find(
+        (operation) =>
+          Array.isArray(operation.cost) &&
+          operation.cost.some(
+            (cost) =>
+              typeof cost === 'object' &&
+              cost !== null &&
+              (cost as { economy?: unknown }).economy === economyId,
+          ),
+      );
+      throw new ActiveEffectError(
+        `${label} is paid for by the item's '${economyId}' economy, which must be spent and not yet scheduled before it binds; use_item ${
+          typeof spender?.id === 'string'
+            ? `'${spender.id}'`
+            : 'the item operation'
+        } first`,
+      );
+    }
+    const liveBindings = db
+      .prepare(
+        `SELECT item_grant_json FROM active_effect
+         WHERE campaign_id = ? AND status IN ('active', 'suppressed')
+           AND item_grant_json IS NOT NULL`,
+      )
+      .all(input.campaignId) as { item_grant_json: string }[];
+    if (
+      liveBindings.some((row) => {
+        const bound = itemGrantColumn.decode(row.item_grant_json);
+        return (
+          bound.itemInstanceId === itemInstanceId && bound.grantId === grantId
+        );
+      })
+    )
+      throw new ActiveEffectError(
+        `${label} is already bound by a live effect on item '${itemInstanceId}'; one spend starts one summon`,
       );
   }
   return {

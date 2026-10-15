@@ -141,7 +141,7 @@ describe('reviewed magic-item owner-tag conservation', () => {
     );
     expect(census(expected)).toEqual(MAGIC_ITEM_REVIEWED_TAG_ITEM_COUNTS);
     expect(census(expected)).toMatchObject({
-      C1: 105,
+      C1: 106,
       C2: 169,
       S: 50,
       DB: 1,

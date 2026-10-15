@@ -347,8 +347,10 @@ export function magicItemEngineHookKey(binding: EngineHookBinding): string {
  * spend time and the reset executor restoring the economy at its deadline.
  * `state-anchored cooldown reset` is implemented by state transitions calling
  * the anchor scheduler at the transition boundary.
- * Grant-ended anchors remain staged for olc5.12, which owns grant lifecycle
- * events and must call applyItemCooldownAnchorEvent when a grant ends.
+ * `grant-anchored cooldown reset` is implemented by every grant ending (expiry,
+ * 0 hit points, concentration, DM end) calling applyItemCooldownAnchorEvent in
+ * the same transaction, for a grant bound through start_effect whose spend is
+ * coupled to that binding (olc5.12.2).
  * The long-rest and dawn hooks own both the soft-limit spend rule (exhausted
  * uses remain permitted without spending) and the matching reset that restores
  * the safe use.
@@ -376,6 +378,11 @@ export const LANDED_MAGIC_ITEM_ENGINE_HOOKS: ReadonlySet<string> = new Set([
   magicItemEngineHookKey({
     engine: 'F5',
     hook: 'state-anchored cooldown reset',
+  }),
+  // Grant ends schedule the depleted economy anchored to that grant.
+  magicItemEngineHookKey({
+    engine: 'F5',
+    hook: 'grant-anchored cooldown reset',
   }),
   // Exhausted safe-use pools remain usable; long rest restores the safe use.
   magicItemEngineHookKey({
