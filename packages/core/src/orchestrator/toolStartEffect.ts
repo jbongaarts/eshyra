@@ -1,5 +1,8 @@
 import { getCampaignRule } from '../campaign/campaignRuleStore.js';
-import { effectiveMagicItemMechanics } from '../rules/magicItemVariants.js';
+import {
+  effectiveMagicItemMechanics,
+  magicItemVariantDefinitions,
+} from '../rules/magicItemVariants.js';
 import type {
   CreateActiveEffectInput,
   EffectDurationUnit,
@@ -54,9 +57,18 @@ export const startEffectTool: Tool = {
     'as unbound. For a magic-item creature grant, give source.grantRef and ' +
     'source.itemInstanceId (kind "summoning"): the linked actors must be ' +
     'creatures the grant prints (count, creature, and duration are checked ' +
-    'when typed). Its printed endings are modeled automatically: timer expiry, ' +
-    'reduced to 0 hit points (the creature vanishes), and concentration ' +
-    'ending (concentrationOwner required). A grant whose cooldown restarts when ' +
+    'when typed). A variant-bearing item (figurines) binds only on the ' +
+    'instance whose variant the grant names. Concentration follows the printed ' +
+    'grant: required when it is summoned "as spell:<id>" (elemental vessels and ' +
+    'the Elemental Gem follow that spell, so a broken concentration leaves the ' +
+    'creature uncontrolled until the spell deadline) or when it ends with ' +
+    'concentration (Ring of Djinni); forbidden otherwise (figurines). The ' +
+    'creature leaves play when the grant ends, so cleanupOnEnd and ' +
+    'cleanupOnBreak may not be release (the uncontrolled handover aside). A ' +
+    'grant with no typed duration (goat of traveling) takes a DM-adjudicated ' +
+    'timed duration through durationOverride, or an until-removed duration. ' +
+    'Its printed endings are modeled automatically: timer expiry, reduced to 0 ' +
+    'hit points (the creature vanishes), and concentration ending. A grant whose cooldown restarts when ' +
     "it ends (use_item's result hint.bindGrant names it) binds only after that " +
     'spend, and only once per spend. A grant owned by a persistent ' +
     'actor needs campaignActorId on each linked actor, so combat closure keeps ' +
@@ -385,6 +397,15 @@ export const startEffectTool: Tool = {
                   | undefined
               )?.variant_id
             : undefined;
+        if (
+          itemRecord !== undefined &&
+          magicItemVariantDefinitions(itemRecord).length > 0 &&
+          variant === undefined
+        )
+          return err(
+            'invalid_args',
+            `source.grantRef '${source.grantRef}' is printed on a variant-bearing item: source.itemInstanceId must name an instance that carries its variant`,
+          );
         const mechanics = (
           itemRecord === undefined
             ? undefined
@@ -442,6 +463,14 @@ export const startEffectTool: Tool = {
         };
       }
     }
+    if (
+      !(source.kind === 'magic-item' && typeof source.ref === 'string') &&
+      (source.grantRef !== undefined || source.itemInstanceId !== undefined)
+    )
+      return err(
+        'invalid_args',
+        'a printed item grant or item instance needs source.kind magic-item with source.ref (the item rules-pack ref); it cannot bind without it',
+      );
     const override = asRecord(a.durationOverride);
     if (a.durationOverride !== undefined && override === undefined)
       return err('invalid_args', 'durationOverride must be an object');
@@ -578,13 +607,37 @@ export const startEffectTool: Tool = {
         }
       }
     } else {
-      if (override !== undefined)
+      if (override !== undefined && source.kind !== 'magic-item')
         return err(
           'invalid_args',
           'durationOverride is only valid for a typed item duration',
         );
       duration = parseEffectDuration(a.duration);
       if ('ok' in duration) return duration;
+      if (override !== undefined) {
+        // An item grant with no typed duration (a charge-driven lifetime) takes
+        // a DM-adjudicated duration recorded as an unbound dm-override.
+        if (
+          (override.basis !== 'dm-adjudicated' &&
+            override.basis !== 'house-rule') ||
+          typeof override.reason !== 'string' ||
+          override.reason.trim().length === 0 ||
+          override.ruleId !== undefined
+        )
+          return err(
+            'invalid_args',
+            'durationOverride for an item grant with no typed duration requires basis (dm-adjudicated or house-rule) and a non-empty reason',
+          );
+        durationProvenance = {
+          kind: 'dm-override',
+          basis: override.basis,
+          reason: override.reason.trim(),
+        };
+        itemDurationBinding = {
+          status: 'unbound',
+          reason: `DM override (${override.basis}): ${override.reason.trim()}`,
+        };
+      }
     }
     const targets: {
       kind: 'character' | 'combatant' | 'campaign_actor' | 'scope';

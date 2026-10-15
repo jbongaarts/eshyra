@@ -219,6 +219,9 @@ export function advanceWorldTime(
       provenance: input.provenance,
       sessionId: input.sessionId,
       at: input.at,
+      // S7: the campaign's exact rules stack resolves every grant-ended and
+      // uncontrolled-successor lookup, as the rest of the world-time advance does.
+      resolveRulesPack: input.resolveRulesPack,
     });
     const stableRecoveries = resolveStableRecoveries(txn, next, input);
     const combatantStableRecoveries = resolveCombatantRecoveries(

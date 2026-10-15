@@ -659,6 +659,7 @@ describe('C. representative eligible / ineligible scenarios per kept category', 
         'reduced-to-0-hit-points',
         'owner-command-while-touching',
       ],
+      variants: ['bronze-griffon'],
     });
     const elemental = (
       (

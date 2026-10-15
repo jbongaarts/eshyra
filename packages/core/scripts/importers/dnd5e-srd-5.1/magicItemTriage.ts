@@ -1439,6 +1439,8 @@ const GRANT_KEEP = [
   'statBlockRef',
   'creatureRefs',
   'tableRefs',
+  // The printed variant identity a grant belongs to (S1): structural, not free text.
+  'variants',
   'count',
   'duration',
   'revertOn',

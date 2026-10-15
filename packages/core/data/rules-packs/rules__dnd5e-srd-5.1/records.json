@@ -102720,6 +102720,9 @@
               "creatureRefs": [
                 "creature:griffon"
               ],
+              "variants": [
+                "bronze-griffon"
+              ],
               "duration": {
                 "amount": 6,
                 "unit": "hour"
@@ -102734,6 +102737,9 @@
               "id": "ebony-fly",
               "kind": "creature",
               "statBlockRef": "stat-block:giant-fly",
+              "variants": [
+                "ebony-fly"
+              ],
               "duration": {
                 "amount": 12,
                 "unit": "hour"
@@ -102749,6 +102755,9 @@
               "kind": "creature",
               "creatureRefs": [
                 "creature:lion"
+              ],
+              "variants": [
+                "golden-lions"
               ],
               "count": 1,
               "duration": {
@@ -102767,6 +102776,9 @@
               "creatureRefs": [
                 "creature:riding-horse"
               ],
+              "variants": [
+                "ivory-goats"
+              ],
               "revertOn": [
                 "duration-ended",
                 "reduced-to-0-hit-points",
@@ -102779,6 +102791,9 @@
               "kind": "creature",
               "creatureRefs": [
                 "creature:giant-goat"
+              ],
+              "variants": [
+                "ivory-goats"
               ],
               "duration": {
                 "amount": 3,
@@ -102796,6 +102811,9 @@
               "creatureRefs": [
                 "creature:giant-goat"
               ],
+              "variants": [
+                "ivory-goats"
+              ],
               "duration": {
                 "amount": 3,
                 "unit": "hour"
@@ -102811,6 +102829,9 @@
               "kind": "creature",
               "creatureRefs": [
                 "creature:elephant"
+              ],
+              "variants": [
+                "marble-elephant"
               ],
               "duration": {
                 "amount": 24,
@@ -102828,6 +102849,9 @@
               "creatureRefs": [
                 "creature:nightmare"
               ],
+              "variants": [
+                "obsidian-steed"
+              ],
               "duration": {
                 "amount": 24,
                 "unit": "hour"
@@ -102843,6 +102867,9 @@
               "kind": "creature",
               "creatureRefs": [
                 "creature:mastiff"
+              ],
+              "variants": [
+                "onyx-dog"
               ],
               "duration": {
                 "amount": 6,
@@ -102860,6 +102887,9 @@
               "creatureRefs": [
                 "creature:giant-owl"
               ],
+              "variants": [
+                "serpentine-owl"
+              ],
               "duration": {
                 "amount": 8,
                 "unit": "hour"
@@ -102875,6 +102905,9 @@
               "kind": "creature",
               "creatureRefs": [
                 "creature:raven"
+              ],
+              "variants": [
+                "silver-raven"
               ],
               "duration": {
                 "amount": 12,

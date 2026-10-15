@@ -55,6 +55,9 @@ export interface DomainMutationContext {
   sessionId: string;
   at: string;
   characterId?: string;
+  /** The campaign's exact rules stack: a character's incapacitation ends the
+   *  grants that stack resolves (S7). */
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 export interface AddConditionInput {
@@ -127,7 +130,12 @@ export function addCondition(
         txnDb,
         charId,
         'incapacitated',
-        { provenance: ctx.provenance, sessionId: ctx.sessionId, at: ctx.at },
+        {
+          provenance: ctx.provenance,
+          sessionId: ctx.sessionId,
+          at: ctx.at,
+          resolveRulesPack: ctx.resolveRulesPack,
+        },
       );
       if (broken.broken && broken.effectId !== undefined) {
         concentrationBroken = {

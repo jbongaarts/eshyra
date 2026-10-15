@@ -37,7 +37,10 @@ import { parseDice, resolveParsedDiceRoll } from '../orchestrator/dice.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
-import { effectiveMagicItemMechanics } from '../rules/magicItemVariants.js';
+import {
+  effectiveMagicItemMechanics,
+  magicItemVariantDefinitions,
+} from '../rules/magicItemVariants.js';
 import type { RulesRecord } from '../rules/types.js';
 import {
   type CampaignRulesPackResolver,
@@ -494,7 +497,73 @@ export interface RefreshEffectInput extends EffectMutationContext {
   readonly effectId: string;
   /** New duration; omitted re-anchors the existing one. */
   readonly duration?: EffectDurationInput;
+  /** A dm-override recording why a bound item duration changes (S5). */
+  readonly durationProvenance?: ItemDurationProvenance;
   readonly note?: string;
+}
+
+/** The printed typed duration of an item-bound effect (a granted creature or
+ *  an item power), or undefined when the row is not item-bound (S5). */
+function itemBoundTypedDuration(
+  db: Db,
+  row: ActiveEffectRow,
+  resolveRulesPack: CampaignRulesPackResolver | undefined,
+):
+  | {
+      readonly label: string;
+      readonly typed: Record<string, unknown> | undefined;
+    }
+  | undefined {
+  if (row.source_kind !== 'magic-item' || row.source_ref === null)
+    return undefined;
+  const record = lookupCampaignRecord(
+    db,
+    'magic-item',
+    row.source_ref,
+    resolveRulesPack,
+  );
+  if (record === undefined)
+    throw new ActiveEffectError(
+      `item '${row.source_ref}' does not resolve in the campaign rules stack, so the effect's printed duration cannot be checked`,
+    );
+  const asObject = (value: unknown) =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : undefined;
+  const binding = readItemGrantBinding(db, row.campaign_id, row.effect_id);
+  if (binding !== undefined) {
+    const inventory = db
+      .prepare('SELECT variant_id FROM inventory WHERE id = ?')
+      .get(binding.itemInstanceId) as { variant_id: string | null } | undefined;
+    const mechanics = effectiveMagicItemMechanics(
+      record,
+      inventory?.variant_id ?? undefined,
+    ) as Record<string, unknown> | undefined;
+    const grants = (
+      mechanics?.entityGrant as Record<string, unknown> | undefined
+    )?.grants;
+    const grant = (Array.isArray(grants) ? grants : []).find(
+      (candidate) => asObject(candidate)?.id === binding.grantId,
+    ) as Record<string, unknown> | undefined;
+    return {
+      label: `item grant '${binding.grantId}'`,
+      typed: asObject(grant?.duration),
+    };
+  }
+  if (row.source_effect_ref !== null) {
+    const mechanics = asObject(
+      (record.data as Record<string, unknown>).mechanics,
+    );
+    const effects = Array.isArray(mechanics?.effects) ? mechanics.effects : [];
+    const effect = effects.find(
+      (candidate) => asObject(candidate)?.id === row.source_effect_ref,
+    );
+    return {
+      label: `item effect '${row.source_effect_ref}'`,
+      typed: asObject(asObject(effect)?.duration),
+    };
+  }
+  return undefined;
 }
 
 export interface RecastBondedSummonInput extends EffectMutationContext {
@@ -825,6 +894,11 @@ const itemGrantColumn = jsonColumn<{
   readonly grantId: string;
   readonly itemInstanceId: string;
   readonly packRef: string;
+  /** 'as spell:<id>': the spell whose lifetime the summoned creature follows (S2). */
+  readonly spellRef?: string;
+  /** Whether an item cooldown economy is anchored to this grant's end (S7: lets
+   *  unanchored grants end without resolving the item's rules). */
+  readonly cooldownAnchored?: boolean;
 }>('active_effect.item_grant_json');
 
 const EFFECT_COLUMNS = `campaign_id, effect_id, kind, display_name,
@@ -2923,6 +2997,23 @@ interface FinalizeEndOutcome {
  * recursion, no dependence on iteration order. The transient
  * ended-with-active-links state is invisible outside the transaction.
  */
+function readItemGrantBinding(
+  db: Db,
+  campaignId: string,
+  effectId: string,
+): ReturnType<typeof itemGrantColumn.decode> | undefined {
+  const row = db
+    .prepare(
+      'SELECT item_grant_json FROM active_effect WHERE campaign_id = ? AND effect_id = ?',
+    )
+    .get(campaignId, effectId) as
+    | { item_grant_json: string | null }
+    | undefined;
+  return row?.item_grant_json == null
+    ? undefined
+    : itemGrantColumn.decode(row.item_grant_json);
+}
+
 function finalizeEnd(
   db: Db,
   row: ActiveEffectRow,
@@ -2998,35 +3089,35 @@ function finalizeEnd(
     ctx,
   );
   // Every terminal path of a grant-bound summon (expiry, 0 hit points,
-  // concentration, DM end) lands here, so the item's grant-ended cooldown
-  // anchors are scheduled in this same transaction (olc5.12).
-  const grantRow = db
-    .prepare(
-      'SELECT item_grant_json FROM active_effect WHERE campaign_id = ? AND effect_id = ?',
-    )
-    .get(row.campaign_id, row.effect_id) as
-    | { item_grant_json: string | null }
-    | undefined;
-  const grantBinding =
-    grantRow?.item_grant_json == null
-      ? undefined
-      : itemGrantColumn.decode(grantRow.item_grant_json);
-  if (
-    grantBinding !== undefined &&
-    grantHasCooldownAnchor(db, grantBinding, ctx)
-  )
-    applyItemCooldownAnchorEvent(
-      db,
-      {
-        instanceId: grantBinding.itemInstanceId,
-        packRef: grantBinding.packRef,
-        resolveRulesPack: ctx.resolveRulesPack,
-        provenance: ctx.provenance,
-        sessionId: ctx.sessionId,
-        at: ctx.at,
-      },
-      { event: 'grant-ended', grantId: grantBinding.grantId },
-    );
+  // concentration, DM end) lands here (olc5.12). The grant-ended anchor fires
+  // only when the creature leaves play: a broken concentration that hands the
+  // creature to its uncontrolled successor leaves it present (S3). It is
+  // scheduled at the effective termination minute (S4): the deadline for an
+  // expiry, otherwise the current clock. Unanchored grants never resolve item
+  // rules here (S7), because the stored flag answers without a lookup.
+  const grantBinding = readItemGrantBinding(db, row.campaign_id, row.effect_id);
+  if (grantBinding !== undefined && successorEffectId === undefined) {
+    const anchored =
+      grantBinding.cooldownAnchored ??
+      grantHasCooldownAnchor(db, grantBinding, ctx);
+    if (anchored)
+      applyItemCooldownAnchorEvent(
+        db,
+        {
+          instanceId: grantBinding.itemInstanceId,
+          packRef: grantBinding.packRef,
+          resolveRulesPack: ctx.resolveRulesPack,
+          provenance: ctx.provenance,
+          sessionId: ctx.sessionId,
+          at: ctx.at,
+          ...(input.reason === 'expired' &&
+          row.deadline_elapsed_minutes !== null
+            ? { elapsedMinutes: row.deadline_elapsed_minutes }
+            : {}),
+        },
+        { event: 'grant-ended', grantId: grantBinding.grantId },
+      );
+  }
   return { performed: true, cleanup };
 }
 
@@ -3091,8 +3182,18 @@ function createUncontrolledSuccessor(
   // Anchor evidence comes from the durable row, never the caller's snapshot.
   const original =
     readEffectRow(db, snapshot.campaign_id, snapshot.effect_id) ?? snapshot;
-  if (original.source_kind !== 'spell' || original.source_ref === null)
-    return undefined;
+  // A grant-bound summon printed 'as spell:<id>' follows that spell's lifetime
+  // (S2): its broken concentration hands the creature to the successor.
+  const grantBinding = readItemGrantBinding(
+    db,
+    original.campaign_id,
+    original.effect_id,
+  );
+  const spellRef =
+    original.source_kind === 'spell'
+      ? original.source_ref
+      : grantBinding?.spellRef;
+  if (spellRef === null || spellRef === undefined) return undefined;
   const released = readLinkRows(
     db,
     original.campaign_id,
@@ -3107,7 +3208,7 @@ function createUncontrolledSuccessor(
   const record = lookupCampaignRecord(
     db,
     'spell',
-    original.source_ref,
+    spellRef,
     ctx.resolveRulesPack,
   );
   if (record === undefined) return undefined;
@@ -3696,8 +3797,23 @@ interface ItemGrantBinding {
   readonly itemInstanceId: string;
   readonly packRef: string;
   readonly typedDuration: Record<string, unknown> | undefined;
+  /** A printed fixed timer (one-hour-ended and similar) that a grant with no
+   *  typed duration still ends on: a DM-supplied duration must equal it. */
+  readonly printedTimer:
+    | { readonly amount: number; readonly unit: EffectDurationUnit }
+    | undefined;
   /** Actors whose 0-hit-point rule the grant's printed revertOn sets. */
   readonly zeroHpActorIds: ReadonlySet<string>;
+  /** Printed concentration (S2): required when the grant is summoned 'as
+   *  spell:<id>' or ends when concentration ends; otherwise forbidden. */
+  readonly concentration: 'required' | 'forbidden';
+  /** The spell named by 'as spell:<id>', when the grant has one. */
+  readonly spellRef: string | undefined;
+  readonly spellRecord: RulesRecord | undefined;
+  /** The cleanup the printed grant dictates for its creature (S3). */
+  readonly cleanup: DerivedSummonCleanup;
+  /** Whether an item cooldown economy is anchored to this grant's end. */
+  readonly cooldownAnchored: boolean;
 }
 
 function normalizedName(value: string): string {
@@ -3774,11 +3890,11 @@ function grantAdmitsCreature(
 
 /**
  * Validates a start of a typed item entity grant (olc5.12). The grant must
- * exist on the item record, be a creature grant, and be started as a
- * summoning whose linked actors match its printed creature identity, count,
- * and 0-hit-point/concentration endings. Every printed revertOn value must map
- * to a disposition; unmapped values fail closed. Illusion and object grants are
- * DM-adjudicated and are refused here.
+ * exist on the item record and its instance's variant, be a creature grant,
+ * and be started as a summoning whose linked actors match its printed creature
+ * identity, count, concentration, 0-hit-point and cleanup endings (S1-S3).
+ * Every printed revertOn value must map to a disposition; unmapped values fail
+ * closed. Illusion and object grants are DM-adjudicated and are refused here.
  */
 function validateItemGrantBinding(
   db: Db,
@@ -3801,10 +3917,26 @@ function validateItemGrantBinding(
     throw new ActiveEffectError(
       `item instance '${itemInstanceId}' is not an inventory item of '${record.key}'`,
     );
-  const mechanics = effectiveMagicItemMechanics(
-    record,
-    inventory.variant_id ?? undefined,
-  ) as Record<string, unknown> | undefined;
+  // S1: a variant-bearing item's grants belong to its instance's variant. An
+  // instance that names no variant (or an undeclared one) cannot be identified.
+  const declaredVariants = magicItemVariantDefinitions(record).map(
+    (variant) => variant.id,
+  );
+  const instanceVariant = inventory.variant_id ?? undefined;
+  if (declaredVariants.length > 0 && instanceVariant === undefined)
+    throw new ActiveEffectError(
+      `${label} is printed on a variant-bearing item, and instance '${itemInstanceId}' names no variant; the item's variants are ${declaredVariants.join(', ')}`,
+    );
+  if (
+    instanceVariant !== undefined &&
+    !declaredVariants.includes(instanceVariant)
+  )
+    throw new ActiveEffectError(
+      `item instance '${itemInstanceId}' has variant '${instanceVariant}', which '${record.key}' does not declare`,
+    );
+  const mechanics = effectiveMagicItemMechanics(record, instanceVariant) as
+    | Record<string, unknown>
+    | undefined;
   const grants = (mechanics?.entityGrant as Record<string, unknown> | undefined)
     ?.grants;
   const grant = (Array.isArray(grants) ? grants : []).find(
@@ -3817,6 +3949,15 @@ function validateItemGrantBinding(
     throw new ActiveEffectError(
       `source.grantRef '${grantId}' does not resolve to a grant on '${record.key}'`,
     );
+  if (declaredVariants.length > 0) {
+    const grantVariants = Array.isArray(grant.variants)
+      ? grant.variants.map(String)
+      : [];
+    if (!grantVariants.includes(String(instanceVariant)))
+      throw new ActiveEffectError(
+        `${label} belongs to ${grantVariants.length === 0 ? 'no printed variant' : `variant(s) ${grantVariants.join(', ')}`}, but instance '${itemInstanceId}' is variant '${String(instanceVariant)}'`,
+      );
+  }
   if (grant.kind !== 'creature')
     throw new ActiveEffectError(
       `${label} is a ${String(grant.kind)} grant; start_effect binds only creature grants, and ${String(grant.kind)} grants are DM-adjudicated`,
@@ -3872,15 +4013,53 @@ function validateItemGrantBinding(
         `${label} is owned by a persistent actor, so linked actor '${actor.combatantId}' needs campaignActorId; without a durable identity combat closure would release it from the effect`,
       );
   }
+  // S2: the printed concentration rule. 'as spell:<id>' (elemental vessels,
+  // Elemental Gem) requires concentration and follows that spell's lifetime;
+  // a grant that ends when concentration ends (Ring of Djinni) requires it;
+  // every other grant (figurines, Bag of Tricks, ...) prints none.
+  const revertOn = Array.isArray(grant.revertOn)
+    ? grant.revertOn.map(String)
+    : [];
+  // Fail closed first: every printed revertOn value must map before any other
+  // rule (concentration, cleanup) is derived from the grant.
+  for (const value of revertOn)
+    if (!Object.hasOwn(ITEM_GRANT_REVERT_DISPOSITIONS, value))
+      throw new ActiveEffectError(
+        `${label} has revertOn '${value}', which the engine does not map; it fails closed rather than guess how the grant ends`,
+      );
+  const pointer = /^as spell:([a-z0-9-]+)$/.exec(
+    typeof grant.control === 'string' ? grant.control : '',
+  );
+  const spellRef = pointer === null ? undefined : `spell:${pointer[1]}`;
+  const spellRecord =
+    spellRef === undefined
+      ? undefined
+      : lookupCampaignRecord(db, 'spell', spellRef, input.resolveRulesPack);
+  if (spellRef !== undefined && spellRecord === undefined)
+    throw new ActiveEffectError(
+      `${label} is summoned as if by ${spellRef}, which does not resolve in the campaign rules stack`,
+    );
+  const concentration: 'required' | 'forbidden' =
+    spellRef !== undefined || revertOn.includes('concentration-ended')
+      ? 'required'
+      : 'forbidden';
+  if (concentration === 'required' && input.concentration === undefined)
+    throw new ActiveEffectError(
+      spellRef === undefined
+        ? `${label} ends when concentration ends, so start_effect needs a concentrationOwner`
+        : `${label} is summoned as if by ${spellRef}, which requires concentration, so start_effect needs a concentrationOwner`,
+    );
+  if (concentration === 'forbidden' && input.concentration !== undefined)
+    throw new ActiveEffectError(
+      `${label} prints no concentration requirement, so start_effect must not declare a concentrationOwner`,
+    );
   const typed = grant.duration;
   const typedDuration =
     typeof typed === 'object' && typed !== null && !Array.isArray(typed)
       ? (typed as Record<string, unknown>)
       : undefined;
-  const revertOn = Array.isArray(grant.revertOn)
-    ? grant.revertOn.map(String)
-    : [];
   let zeroHp = false;
+  let printedTimer: ItemGrantBinding['printedTimer'];
   for (const value of revertOn) {
     if (!Object.hasOwn(ITEM_GRANT_REVERT_DISPOSITIONS, value))
       throw new ActiveEffectError(
@@ -3890,10 +4069,13 @@ function validateItemGrantBinding(
       value
     ] as ItemGrantRevertDisposition;
     if (disposition.kind === 'timer') {
-      if (typedDuration === undefined)
-        throw new ActiveEffectError(
-          `${label} ends on '${value}' but has no typed duration to end on`,
-        );
+      if (typedDuration === undefined) {
+        // S6: a grant with no typed duration (a charge-driven lifetime) takes
+        // a DM-supplied timed duration; a printed fixed timer fixes that amount.
+        if (disposition.amount !== undefined && disposition.unit !== undefined)
+          printedTimer = { amount: disposition.amount, unit: disposition.unit };
+        continue;
+      }
       if (
         disposition.amount !== undefined &&
         (typedDuration.amount !== disposition.amount ||
@@ -3904,11 +4086,6 @@ function validateItemGrantBinding(
         );
     } else if (disposition.kind === 'zero-hit-points') {
       zeroHp = true;
-    } else if (disposition.kind === 'concentration-ended') {
-      if (input.concentration === undefined)
-        throw new ActiveEffectError(
-          `${label} ends when concentration ends, so start_effect needs a concentrationOwner`,
-        );
     }
   }
   for (const actor of actors) {
@@ -3921,13 +4098,36 @@ function validateItemGrantBinding(
         `${label} prints that the creature leaves at 0 hit points without a bond; 'vanish-bonded' is refused for '${actor.combatantId}'`,
       );
   }
+  // S3: the printed removal of the creature. A summon that follows a spell
+  // takes that spell's cleanup (a broken concentration may hand the creature
+  // to its uncontrolled successor); every other grant removes its creature
+  // when it ends, so no printed grant ends while its creature stays in play.
+  const removeOnEnd = {
+    policy: 'remove' as const,
+    because: `${label} ends by removing its creature from play`,
+  };
+  const removeOnBreak = {
+    policy: 'remove' as const,
+    because: `${label} prints no lifetime that survives a broken concentration, so its creature leaves play`,
+  };
+  const cleanup: DerivedSummonCleanup =
+    spellRecord === undefined
+      ? { onEnd: removeOnEnd, onBreak: removeOnBreak }
+      : (() => {
+          const derived = deriveSummonCleanup(spellRecord, true);
+          return {
+            onEnd: derived.onEnd ?? removeOnEnd,
+            onBreak: derived.onBreak ?? removeOnBreak,
+          };
+        })();
   // A grant whose cooldown economy is anchored to this grant's end (Ring of
   // Djinni, Efreeti stopper) is paid for by that spend: the economy must be
   // spent and not yet scheduled, and one live effect may bind the grant at a
   // time. A spend that is never bound stays recoverable, since the DM can bind
   // it late. Other cooldownEconomy references (per-day charges) are not
   // anchored and bind unchanged.
-  if (grantCooldownAnchoredTo(mechanics, grant)) {
+  const cooldownAnchored = grantCooldownAnchoredTo(mechanics, grant);
+  if (cooldownAnchored) {
     const economyId = grant.cooldownEconomy as string;
     const economy = readItemState(db, itemInstanceId)?.economies?.[economyId];
     if (
@@ -3981,7 +4181,13 @@ function validateItemGrantBinding(
     itemInstanceId,
     packRef: record.key,
     typedDuration,
+    printedTimer,
     zeroHpActorIds: new Set(zeroHp ? actors.map((a) => a.combatantId) : []),
+    concentration,
+    spellRef,
+    spellRecord,
+    cleanup,
+    cooldownAnchored,
   };
 }
 
@@ -4029,6 +4235,17 @@ export function createActiveEffect(
     ) {
       throw new ActiveEffectError(
         "a magic-item summoning must bind a printed entity grant (source.grantRef with source.itemInstanceId); an item's creature the grant does not print is a ruling (source kind 'ruling')",
+      );
+    }
+    // S1: a grant or item instance is identity evidence; it is never left
+    // unbound because a source lacks the rules-pack ref that validates it.
+    if (
+      (input.source.grantRef !== undefined ||
+        input.source.itemInstanceId !== undefined) &&
+      (input.source.kind !== 'magic-item' || input.source.ref === undefined)
+    ) {
+      throw new ActiveEffectError(
+        'a printed item grant or item instance binds only a magic-item source that names its rules-pack ref (source.kind magic-item with source.ref); it is refused rather than left unbound',
       );
     }
     let concentrationRule: 'required' | 'forbidden' | 'declared' = 'declared';
@@ -4101,6 +4318,7 @@ export function createActiveEffect(
       if (input.source.grantRef !== undefined) {
         itemGrant = validateItemGrantBinding(txnDb, input, record);
         typedDuration = itemGrant.typedDuration;
+        concentrationRule = itemGrant.concentration;
         noun = 'item grant';
         boundId = itemGrant.grantId;
       } else if (input.source.effectRef !== undefined) {
@@ -4204,6 +4422,37 @@ export function createActiveEffect(
           );
         }
       }
+    }
+    // S6: a grant with no typed duration takes a DM-supplied timed duration,
+    // recorded as a dm-override (unbound), and never an invented cap. A
+    // printed fixed timer still fixes the amount. Until-removed needs no record.
+    if (
+      itemGrant !== undefined &&
+      itemGrant.typedDuration === undefined &&
+      input.duration.kind === 'timed'
+    ) {
+      const provenance = input.durationProvenance;
+      if (provenance?.kind !== 'dm-override')
+        throw new ActiveEffectError(
+          `item grant '${itemGrant.grantId}' prints no typed duration, so its timed duration is DM-adjudicated: declare durationOverride (basis and reason), or use an until-removed duration that the DM ends`,
+        );
+      if (
+        (provenance.basis !== 'dm-adjudicated' &&
+          provenance.basis !== 'house-rule') ||
+        provenance.reason.trim().length === 0
+      )
+        throw new ActiveEffectError(
+          'item duration override requires a supported basis and reason',
+        );
+      const printed = itemGrant.printedTimer;
+      if (
+        printed !== undefined &&
+        (input.duration.amount !== printed.amount ||
+          input.duration.unit !== printed.unit)
+      )
+        throw new ActiveEffectError(
+          `item grant '${itemGrant.grantId}' ends on its printed ${printed.amount} ${printed.unit} timer, so its duration must be that, not ${input.duration.amount} ${input.duration.unit}`,
+        );
     }
     if (input.source.actor !== undefined) {
       requireParticipant(
@@ -4512,18 +4761,21 @@ export function createActiveEffect(
     const derivedZeroHpRule =
       spellRecord === undefined ? null : deriveZeroHpRule(spellRecord);
     const derivedCleanup: DerivedSummonCleanup =
-      spellRecord === undefined || input.kind !== 'summoning'
-        ? {}
-        : deriveSummonCleanup(spellRecord, concentrationRule === 'required');
+      itemGrant !== undefined
+        ? itemGrant.cleanup
+        : spellRecord === undefined || input.kind !== 'summoning'
+          ? {}
+          : deriveSummonCleanup(spellRecord, concentrationRule === 'required');
     // A creature the record removes a fixed time after it was summoned once
     // uncontrolled (Conjure Elemental/Fey) inherits this effect's anchor when
     // a broken concentration hands it to the successor. Gate the anchor here,
     // so the break (which must never fail) always has a summoning-moment
     // deadline to copy.
+    const summonRecord = spellRecord ?? itemGrant?.spellRecord;
     const uncontrolledRemoval =
-      spellRecord === undefined || input.kind !== 'summoning'
+      summonRecord === undefined || input.kind !== 'summoning'
         ? undefined
-        : deriveUncontrolledRemoval(spellRecord);
+        : deriveUncontrolledRemoval(summonRecord);
     if (
       uncontrolledRemoval !== undefined &&
       (duration.kind !== 'timed' ||
@@ -4533,7 +4785,7 @@ export function createActiveEffect(
         !SUMMONING_MOMENT_ANCHORS.includes(duration.anchorKind))
     )
       throw new ActiveEffectError(
-        `'${spellRecord?.name}' transition '${uncontrolledRemoval.id}' removes an uncontrolled creature ${uncontrolledRemoval.amount} ${uncontrolledRemoval.unit}(s) after it was summoned, so the effect must be a ${uncontrolledRemoval.amount}-${uncontrolledRemoval.unit} timer anchored to 'spell-cast' or 'effect-created' (the moment of summoning)`,
+        `'${summonRecord?.name}' transition '${uncontrolledRemoval.id}' removes an uncontrolled creature ${uncontrolledRemoval.amount} ${uncontrolledRemoval.unit}(s) after it was summoned, so the effect must be a ${uncontrolledRemoval.amount}-${uncontrolledRemoval.unit} timer anchored to 'spell-cast' or 'effect-created' (the moment of summoning)`,
       );
     // The other admission direction: an effect stored under the derived
     // successor id before the suffix was reserved would make the break fail.
@@ -4546,7 +4798,7 @@ export function createActiveEffect(
       ) !== undefined
     )
       throw new ActiveEffectError(
-        `effect id '${input.effectId}' cannot be used for '${spellRecord?.name}': its uncontrolled successor id '${uncontrolledSuccessorId(input.effectId)}' is already taken, so a broken concentration could not hand the creature over; choose another id`,
+        `effect id '${input.effectId}' cannot be used for '${summonRecord?.name}': its uncontrolled successor id '${uncontrolledSuccessorId(input.effectId)}' is already taken, so a broken concentration could not hand the creature over; choose another id`,
       );
     for (const actor of actors) {
       requireNonEmptyString(actor.combatantId, 'linked actor combatantId');
@@ -5016,6 +5268,10 @@ export function createActiveEffect(
               grantId: itemGrant.grantId,
               itemInstanceId: itemGrant.itemInstanceId,
               packRef: itemGrant.packRef,
+              ...(itemGrant.spellRef === undefined
+                ? {}
+                : { spellRef: itemGrant.spellRef }),
+              cooldownAnchored: itemGrant.cooldownAnchored,
             }),
         duration.anchorKind,
         duration.anchorAt,
@@ -6847,6 +7103,64 @@ export function refreshEffect(
       }
     }
 
+    // S5: an item-bound duration is revalidated exactly as at creation. A
+    // re-anchor (no new duration) keeps the recorded provenance; a changed
+    // duration must equal the printed typed duration, or carry a dm-override.
+    const itemBound = itemBoundTypedDuration(
+      txnDb,
+      row,
+      input.resolveRulesPack,
+    );
+    if (itemBound === undefined && input.durationProvenance !== undefined)
+      throw new ActiveEffectError(
+        'a durationOverride applies only to a duration bound to a printed item grant or item effect',
+      );
+    // undefined: the provenance column is unchanged; null: no provenance.
+    let nextProvenance: ItemDurationProvenance | null | undefined;
+    if (itemBound !== undefined && input.duration !== undefined) {
+      const typed = itemBound.typed;
+      const matchesTyped =
+        typed !== undefined &&
+        typeof typed.amount === 'number' &&
+        duration.kind === 'timed' &&
+        duration.amount === typed.amount &&
+        duration.unit === typed.unit;
+      if (matchesTyped) {
+        nextProvenance = {
+          kind: 'typed-fixed',
+          amount: typed.amount as number,
+          unit: typed.unit as EffectDurationUnit,
+        };
+      } else if (input.durationProvenance?.kind === 'dm-override') {
+        const override = input.durationProvenance;
+        if (
+          (override.basis !== 'dm-adjudicated' &&
+            override.basis !== 'house-rule') ||
+          override.reason.trim().length === 0
+        )
+          throw new ActiveEffectError(
+            'refresh durationOverride requires a supported basis and reason',
+          );
+        nextProvenance = override;
+      } else if (typed === undefined && duration.kind !== 'timed') {
+        nextProvenance = null;
+      } else {
+        throw new ActiveEffectError(
+          `refresh of ${itemBound.label} must keep its printed duration ${
+            typed === undefined
+              ? '(none printed: a timed duration is DM-adjudicated)'
+              : JSON.stringify(typed)
+          }; a different duration needs an explicit durationOverride with basis and reason`,
+        );
+      }
+    }
+    const provenanceJson =
+      nextProvenance === undefined
+        ? row.duration_provenance_json
+        : nextProvenance === null
+          ? null
+          : durationProvenanceColumn.encode(nextProvenance);
+
     const { anchor: worldAnchor, deadline: worldDeadline } =
       elapsedWorldDeadline(txnDb, duration);
     const previous = durationView(row);
@@ -6859,8 +7173,8 @@ export function refreshEffect(
              anchor_combat_instance_id = ?, anchor_round = ?,
              anchor_participant_kind = ?, anchor_participant_ref = ?,
              anchor_participant_turn_ordinal = ?, anchor_trigger = ?,
-             expiry_trigger = ?, provenance = ?, session_id = ?,
-             updated_at = ?
+             expiry_trigger = ?, duration_provenance_json = ?, provenance = ?,
+             session_id = ?, updated_at = ?
          WHERE campaign_id = ? AND effect_id = ?`,
       )
       .run(
@@ -6879,6 +7193,7 @@ export function refreshEffect(
         duration.anchorParticipantTurnOrdinal,
         duration.anchorTrigger,
         duration.expiryTrigger,
+        provenanceJson,
         input.provenance,
         input.sessionId,
         input.at,
