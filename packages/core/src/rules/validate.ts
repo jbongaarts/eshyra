@@ -1,6 +1,6 @@
-import { minimumDiceTotal, parseDice } from '../orchestrator/dice.js';
 import { resolveJsonPointer } from './jsonPointer.js';
 import { validateRecordKindSchema } from './kindSchemas.js';
+import { economyDeductionViolation } from './magicItemMechanics.js';
 import type {
   CompatibleBaseSystem,
   RecordProvenance,
@@ -312,89 +312,48 @@ function assertRecordsMatchKindSchemas(pack: RulesPack): void {
 }
 
 /**
- * Cross-record check for magic-item `economyDeduction` (eshyra-olc5.13.1): the
- * named table must exist, both columns must exist in it, and every amount cell
- * must be a dice expression or non-negative integer. Keys must be unique so a
- * `tableRow` names exactly one row. The economy and tableRef shape are checked
- * on the owning record by the triggeredEffect validator; the economy is checked
- * here against the same mechanics object's economies.
+ * Cross-record check for magic-item `economyDeduction` (eshyra-olc5.13.1,
+ * eshyra-olc5.13.5): every deduction on an effect of the item, or of one of its
+ * variants, must satisfy the shared contract against the economy that item
+ * actually has (variant economies extend the item's own, as the effective
+ * mechanics do) and the pack table it names.
  */
 function assertEconomyDeductionTables(pack: RulesPack): void {
-  const tables = new Map<string, Obj>();
+  const tables = new Map<string, unknown>();
   for (const item of pack.records)
-    if (item.kind === 'table') tables.set(item.key, item.data as Obj);
+    if (item.kind === 'table') tables.set(item.key, item.data);
   pack.records.forEach((item, recordIndex) => {
     if (item.kind !== 'magic-item') return;
     const data = item.data as Obj;
     const variants = Array.isArray(data.variants) ? data.variants : [];
-    const mechanicsList = [
-      data.mechanics,
-      ...variants.map((variant) => (variant as Obj).mechanics),
+    const baseEconomies = ((data.mechanics as Obj | undefined)?.economies ??
+      {}) as Obj;
+    const mechanicsList: { mechanics: unknown; economies: Obj }[] = [
+      { mechanics: data.mechanics, economies: baseEconomies },
+      ...variants.map((variant) => {
+        const mechanics = (variant as Obj).mechanics;
+        const own = ((mechanics as Obj | undefined)?.economies ?? {}) as Obj;
+        return { mechanics, economies: { ...baseEconomies, ...own } };
+      }),
     ];
-    for (const mechanics of mechanicsList) {
+    for (const { mechanics, economies } of mechanicsList) {
       const effects = (mechanics as Obj | undefined)?.effects;
       if (!Array.isArray(effects)) continue;
-      const economies = ((mechanics as Obj).economies ?? {}) as Obj;
       for (const effect of effects) {
         const deduction = (effect as Obj).economyDeduction as Obj | undefined;
         if (deduction === undefined) continue;
-        const where = `records[${recordIndex}] ${item.key} economyDeduction`;
-        if (!Object.hasOwn(economies, String(deduction.economy)))
-          throw new RulesPackError(
-            `${where} references unknown economy ${JSON.stringify(deduction.economy)}`,
-          );
-        const table = tables.get(String(deduction.tableRef));
-        if (table === undefined)
-          throw new RulesPackError(
-            `${where} references missing table ${JSON.stringify(deduction.tableRef)}`,
-          );
-        const columns = (table.columns ?? []) as string[];
-        const keyIndex = columns.indexOf(String(deduction.keyColumn));
-        const amountIndex = columns.indexOf(String(deduction.amountColumn));
-        if (keyIndex < 0 || amountIndex < 0)
-          throw new RulesPackError(
-            `${where} must name keyColumn and amountColumn that exist in ${JSON.stringify(deduction.tableRef)}`,
-          );
-        const rows = (table.rows ?? []) as unknown[][];
-        const keys = new Set<string>();
-        rows.forEach((row, rowIndex) => {
-          const key = row[keyIndex];
-          if (typeof key !== 'string' || key.length === 0)
-            throw new RulesPackError(
-              `${where} key column must hold non-empty strings (${JSON.stringify(deduction.tableRef)} row ${rowIndex})`,
-            );
-          if (keys.has(key))
-            throw new RulesPackError(
-              `${where} key ${JSON.stringify(key)} is not unique in ${JSON.stringify(deduction.tableRef)}`,
-            );
-          keys.add(key);
-          const amount = row[amountIndex];
-          if (typeof amount === 'number' && Number.isSafeInteger(amount)) {
-            if (amount < 0)
-              throw new RulesPackError(
-                `${where} amount must be non-negative (${JSON.stringify(deduction.tableRef)} row ${rowIndex})`,
-              );
-            return;
-          }
-          if (typeof amount !== 'string')
-            throw new RulesPackError(
-              `${where} amount must be a dice expression or non-negative integer (${JSON.stringify(deduction.tableRef)} row ${rowIndex})`,
-            );
-          if (/^\d+$/.test(amount) && Number.isSafeInteger(Number(amount)))
-            return;
-          let parsed: ReturnType<typeof parseDice>;
-          try {
-            parsed = parseDice(amount);
-          } catch {
-            throw new RulesPackError(
-              `${where} amount ${JSON.stringify(amount)} does not parse as a dice expression (${JSON.stringify(deduction.tableRef)} row ${rowIndex})`,
-            );
-          }
-          if (minimumDiceTotal(parsed) < 0)
-            throw new RulesPackError(
-              `${where} amount ${JSON.stringify(amount)} can total below zero (${JSON.stringify(deduction.tableRef)} row ${rowIndex})`,
-            );
+        const violation = economyDeductionViolation({
+          economies,
+          deduction,
+          tableData:
+            typeof deduction.tableRef === 'string'
+              ? tables.get(deduction.tableRef)
+              : undefined,
         });
+        if (violation !== undefined)
+          throw new RulesPackError(
+            `records[${recordIndex}] ${item.key} economyDeduction ${violation}`,
+          );
       }
     }
   });

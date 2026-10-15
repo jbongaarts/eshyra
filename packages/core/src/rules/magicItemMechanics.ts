@@ -1,4 +1,9 @@
 import {
+  maximumDiceTotal,
+  minimumDiceTotal,
+  parseDice,
+} from '../orchestrator/dice.js';
+import {
   optRulesAmbiguities,
   validateAmbiguityReferences,
 } from './rulesAmbiguities.js';
@@ -2607,4 +2612,138 @@ export function isStatefulMagicItemMechanics(
     const kind = (entry as Obj).kind;
     return kind !== 'at-will' && kind !== 'single-use';
   });
+}
+
+/**
+ * The single contract a magic-item `economyDeduction` must satisfy against the
+ * economy it draws from and the table it reads (eshyra-olc5.13.5). Pack
+ * admission (`validate.ts`) and the resolved execution boundary
+ * (`itemResetExecutor.ts`) both call this function, so they cannot disagree.
+ * It returns the first violated clause, or `undefined` when the deduction is
+ * admissible; each caller wraps the clause in its own error type.
+ */
+
+/** Economy kinds whose live state is a numeric `remaining` pool. */
+const NUMERIC_POOL_KINDS: ReadonlySet<string> = new Set(['charges', 'per-day']);
+
+export interface EconomyDeductionCheck {
+  /** The item's effective `mechanics.economies`, or `undefined` when it has none. */
+  readonly economies: unknown;
+  /** The deduction's own fields, read exactly as declared. */
+  readonly deduction: {
+    readonly economy?: unknown;
+    readonly tableRef?: unknown;
+    readonly keyColumn?: unknown;
+    readonly amountColumn?: unknown;
+  };
+  /** The `data` of the table the deduction's tableRef resolves to, or `undefined`. */
+  readonly tableData: unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+const quote = (value: unknown): string => JSON.stringify(value);
+
+/**
+ * One amount cell. Admissible cells are a safe non-negative integer number, a
+ * digit string within the safe range, or a dice expression whose full possible
+ * range `[minimumDiceTotal, maximumDiceTotal]` lies within
+ * `[0, Number.MAX_SAFE_INTEGER]`.
+ */
+function amountViolation(
+  cell: unknown,
+  tableRef: string,
+  rowIndex: number,
+): string | undefined {
+  const where = `(${quote(tableRef)} row ${rowIndex})`;
+  if (typeof cell === 'number') {
+    if (!Number.isSafeInteger(cell))
+      return `amount must be a dice expression or non-negative integer ${where}`;
+    if (cell < 0)
+      return `amount must be non-negative: resolved to ${cell}, which is not a non-negative integer ${where}`;
+    return undefined;
+  }
+  if (typeof cell !== 'string')
+    return `amount must be a dice expression or non-negative integer ${where}`;
+  if (/^\d+$/.test(cell) && Number.isSafeInteger(Number(cell)))
+    return undefined;
+  let parsed: ReturnType<typeof parseDice>;
+  try {
+    parsed = parseDice(cell);
+  } catch {
+    return `amount ${quote(cell)} does not parse as a dice expression ${where}`;
+  }
+  if (minimumDiceTotal(parsed) < 0)
+    return `amount ${quote(cell)} can total below zero ${where}`;
+  if (maximumDiceTotal(parsed) > Number.MAX_SAFE_INTEGER)
+    return `amount ${quote(cell)} can total above the safe-integer range ${where}`;
+  return undefined;
+}
+
+/** The first violated clause of the deduction contract, or `undefined`. */
+export function economyDeductionViolation(
+  check: EconomyDeductionCheck,
+): string | undefined {
+  const { economies, deduction, tableData } = check;
+  const { economy, tableRef, keyColumn, amountColumn } = deduction;
+
+  // The economy must exist on the item and be a numeric pool.
+  const declared = isRecord(economies) ? economies : {};
+  if (typeof economy !== 'string' || !Object.hasOwn(declared, economy))
+    return `references unknown economy ${quote(economy)}`;
+  const definition = declared[economy];
+  if (
+    !isRecord(definition) ||
+    typeof definition.kind !== 'string' ||
+    !NUMERIC_POOL_KINDS.has(definition.kind)
+  )
+    return `economy ${quote(economy)} must be a numeric pool (charges or per-day)`;
+
+  // The table reference must resolve to a table with the declared shape.
+  if (typeof tableRef !== 'string' || tableData === undefined)
+    return `references missing table ${quote(tableRef)}`;
+  if (!isRecord(tableData))
+    return `table ${quote(tableRef)} data must be an object`;
+  const { columns, rows } = tableData;
+  if (
+    !Array.isArray(columns) ||
+    !columns.every((column) => typeof column === 'string')
+  )
+    return `table ${quote(tableRef)} columns must be an array of strings`;
+  if (!Array.isArray(rows))
+    return `table ${quote(tableRef)} rows must be an array`;
+
+  // Each of the two named columns occurs exactly once, and they differ.
+  const headers: readonly unknown[] = columns;
+  const occurrences = (name: unknown) =>
+    headers.filter((header) => header === name).length;
+  const keyCount = occurrences(keyColumn);
+  const amountCount = occurrences(amountColumn);
+  if (keyCount === 0 || amountCount === 0)
+    return `must name keyColumn and amountColumn that exist in ${quote(tableRef)} (columns are missing)`;
+  if (keyCount !== 1 || amountCount !== 1)
+    return `must name keyColumn and amountColumn that each occur exactly once in ${quote(tableRef)} (columns are ambiguous)`;
+  if (keyColumn === amountColumn)
+    return `keyColumn and amountColumn must name different columns in ${quote(tableRef)}`;
+  const keyIndex = headers.indexOf(keyColumn);
+  const amountIndex = headers.indexOf(amountColumn);
+
+  // Every row is complete, every key is a unique non-empty string, and every
+  // amount is admissible, across the whole table rather than the selected row.
+  const keys = new Set<string>();
+  for (const [rowIndex, row] of rows.entries()) {
+    if (!Array.isArray(row) || row.length !== columns.length)
+      return `row ${rowIndex} of ${quote(tableRef)} must have exactly ${columns.length} cells`;
+    const key: unknown = row[keyIndex];
+    if (typeof key !== 'string' || key.length === 0)
+      return `key cell must be a non-empty string in ${quote(tableRef)} row ${rowIndex}`;
+    if (keys.has(key))
+      return `key ${quote(key)} is ambiguous in ${quote(tableRef)} (more than one row)`;
+    keys.add(key);
+    const amount = amountViolation(row[amountIndex], tableRef, rowIndex);
+    if (amount !== undefined) return amount;
+  }
+  return undefined;
 }

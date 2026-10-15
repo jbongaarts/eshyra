@@ -1,9 +1,10 @@
 import { parseDice, rollDice } from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
 import { type Db, withTransaction } from '../persistence/db.js';
-import type {
-  MagicItemDurationSpec,
-  MagicItemEconomyDeduction,
+import {
+  economyDeductionViolation,
+  type MagicItemDurationSpec,
+  type MagicItemEconomyDeduction,
 } from '../rules/magicItemMechanics.js';
 import { effectiveMagicItemMechanics } from '../rules/magicItemVariants.js';
 import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
@@ -463,44 +464,34 @@ function transitionDeduction(
 }
 
 /**
- * The deduction table contract, checked on the table the campaign stack
- * actually resolves (base or add-on override), not on the pack that declared
- * the effect (eshyra-olc5.13.3). Both columns must exist, every key cell must
- * be a non-empty string, and keys must be unique across the table, so a
- * `tableRow` names exactly one row or none.
+ * The deduction contract, checked on the table and economy the item actually
+ * resolves (eshyra-olc5.13.3, eshyra-olc5.13.5). The shared contract refuses
+ * any violation before a row is selected, rolled, or written, so the resolved
+ * table holds exactly one matching row or none.
  */
 function deductionRows(
   item: ResolvedItem,
   deduction: MagicItemEconomyDeduction,
 ): { readonly key: string; readonly cell: unknown }[] {
   const table = resolveTable(item, deduction.tableRef);
-  if (table === undefined)
+  const violation = economyDeductionViolation({
+    economies: item.mechanics.economies,
+    deduction,
+    tableData: table?.data,
+  });
+  if (violation !== undefined)
     throw new ItemResetExecutorError(
-      `${item.packRef} economy deduction references missing table '${deduction.tableRef}'`,
+      `${item.packRef} economy deduction ${violation}; refused with no change`,
     );
-  const data = object(table.data, `${deduction.tableRef}.data`);
-  const columns = Array.isArray(data.columns) ? (data.columns as string[]) : [];
+  const data = object(table?.data, `${deduction.tableRef}.data`);
+  const columns = data.columns as string[];
   const keyIndex = columns.indexOf(deduction.keyColumn);
   const amountIndex = columns.indexOf(deduction.amountColumn);
-  if (keyIndex < 0 || amountIndex < 0)
-    throw new ItemResetExecutorError(
-      `${item.packRef} economy deduction columns are missing from '${deduction.tableRef}'`,
-    );
-  const rows = Array.isArray(data.rows) ? (data.rows as unknown[][]) : [];
-  const seen = new Set<string>();
-  return rows.map((row, rowIndex) => {
-    const key = Array.isArray(row) ? row[keyIndex] : undefined;
-    if (typeof key !== 'string' || key.length === 0)
-      throw new ItemResetExecutorError(
-        `${item.packRef} economy deduction key cell must be a non-empty string in '${deduction.tableRef}' row ${rowIndex}; refused with no change`,
-      );
-    if (seen.has(key))
-      throw new ItemResetExecutorError(
-        `${item.packRef} economy deduction key '${key}' is ambiguous in '${deduction.tableRef}' (more than one row); refused with no change`,
-      );
-    seen.add(key);
-    return { key, cell: (row as unknown[])[amountIndex] };
-  });
+  const rows = data.rows as unknown[][];
+  return rows.map((row) => ({
+    key: row[keyIndex] as string,
+    cell: row[amountIndex],
+  }));
 }
 
 /**
