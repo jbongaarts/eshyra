@@ -1,4 +1,5 @@
 import { getCampaignRule } from '../campaign/campaignRuleStore.js';
+import { effectiveMagicItemMechanics } from '../rules/magicItemVariants.js';
 import type {
   CreateActiveEffectInput,
   EffectDurationUnit,
@@ -50,8 +51,18 @@ export const startEffectTool: Tool = {
     'fills a fixed duration. To use a different duration, supply it and ' +
     'durationOverride { basis: "dm-adjudicated" | "house-rule", reason, ' +
     'ruleId? }; ruleId must name an active house rule. Overrides are recorded ' +
-    'as unbound. Use projected condition ids unique to the ' +
-    'effect (e.g. "blessed:fx-bless-1"). Do NOT use this for instantaneous ' +
+    'as unbound. For a magic-item creature grant, give source.grantRef and ' +
+    'source.itemInstanceId (kind "summoning"): the linked actors must be ' +
+    'creatures the grant prints (count, creature, and duration are checked ' +
+    'when typed). Its printed endings are modeled automatically: timer expiry, ' +
+    'reduced to 0 hit points (the creature vanishes), and concentration ' +
+    'ending (concentrationOwner required). Every other printed ending (owner ' +
+    'commands, next dawn, card moved, wishes, flight distance, and so on) is ' +
+    'DM-adjudicated: end the effect with end_effect (reason "ruled" and a ' +
+    'note). Illusion and object grants, control or obedience policy, and ' +
+    'an Iron Flask capture are DM-adjudicated and are not bound here. A ' +
+    'printed ending this engine does not map is refused. Use projected ' +
+    'condition ids unique to the effect (e.g. "blessed:fx-bless-1"). Do NOT use this for instantaneous ' +
     'spells — they leave no active effect and their consequences land through ' +
     'their own mutations — EXCEPT a bonded summon whose record keeps a ' +
     'persistent link after casting (Find Familiar, Find Steed). Those are ' +
@@ -108,7 +119,19 @@ export const startEffectTool: Tool = {
             type: 'string',
             minLength: 1,
             description:
-              'For a magic-item source, the id of the item effect that created this effect.',
+              'For a magic-item source, the id of the printed item effect that created this effect.',
+          },
+          grantRef: {
+            type: 'string',
+            minLength: 1,
+            description:
+              'For a magic-item source creating a creature, the id of the printed entityGrant entry it realizes (olc5.12). Requires itemInstanceId; use instead of effectRef.',
+          },
+          itemInstanceId: {
+            type: 'string',
+            minLength: 1,
+            description:
+              'For a grantRef source, the inventory instance of the magic item that owns the grant. Its grant-ended cooldown anchors are scheduled when this effect ends.',
           },
           actor: EFFECT_PARTICIPANT_SCHEMA,
         },
@@ -322,10 +345,21 @@ export const startEffectTool: Tool = {
     let durationProvenance: ItemDurationProvenance | undefined;
     let typedItemDuration: Record<string, unknown> | undefined;
     if (source.kind === 'magic-item' && typeof source.ref === 'string') {
-      if (typeof source.effectRef !== 'string')
+      if (
+        typeof source.effectRef !== 'string' &&
+        typeof source.grantRef !== 'string'
+      )
         return err(
           'invalid_args',
-          'a rules-pack magic-item source requires source.effectRef to bind the effect to its item power',
+          'a rules-pack magic-item source requires source.effectRef (a printed item power) or source.grantRef (a printed entity grant)',
+        );
+      if (
+        typeof source.effectRef === 'string' &&
+        typeof source.grantRef === 'string'
+      )
+        return err(
+          'invalid_args',
+          'a magic-item source binds either source.effectRef or source.grantRef, not both',
         );
       const itemRecord = lookupStrictCampaignRecord(
         ctx.db,
@@ -334,22 +368,62 @@ export const startEffectTool: Tool = {
         ctx.resolveRulesPack,
       )?.record;
       const data = itemRecord?.data as Record<string, unknown> | undefined;
-      const mechanics = data?.mechanics as Record<string, unknown> | undefined;
-      const itemEffects = Array.isArray(mechanics?.effects)
-        ? mechanics.effects
-        : [];
-      const itemEffect = itemEffects.find(
-        (candidate) =>
-          typeof candidate === 'object' &&
-          candidate !== null &&
-          (candidate as Record<string, unknown>).id === source.effectRef,
-      ) as Record<string, unknown> | undefined;
-      if (itemEffect === undefined)
-        return err(
-          'invalid_args',
-          `source.effectRef '${source.effectRef}' does not resolve to an effect on '${source.ref}'`,
-        );
-      const typed = itemEffect.duration;
+      let typed: unknown;
+      if (typeof source.grantRef === 'string') {
+        // Grants resolve through the instance's variant, as the engine does.
+        const variant =
+          typeof source.itemInstanceId === 'string' && itemRecord !== undefined
+            ? (
+                ctx.db
+                  .prepare('SELECT variant_id FROM inventory WHERE id = ?')
+                  .get(source.itemInstanceId) as
+                  | { variant_id: string | null }
+                  | undefined
+              )?.variant_id
+            : undefined;
+        const mechanics = (
+          itemRecord === undefined
+            ? undefined
+            : effectiveMagicItemMechanics(itemRecord, variant ?? undefined)
+        ) as Record<string, unknown> | undefined;
+        const entityGrant = mechanics?.entityGrant as
+          | Record<string, unknown>
+          | undefined;
+        const grants = Array.isArray(entityGrant?.grants)
+          ? entityGrant.grants
+          : [];
+        const grant = grants.find(
+          (candidate) =>
+            typeof candidate === 'object' &&
+            candidate !== null &&
+            (candidate as Record<string, unknown>).id === source.grantRef,
+        ) as Record<string, unknown> | undefined;
+        if (grant === undefined)
+          return err(
+            'invalid_args',
+            `source.grantRef '${source.grantRef}' does not resolve to a grant on '${source.ref}'`,
+          );
+        typed = grant.duration;
+      } else {
+        const mechanics = data?.mechanics as
+          | Record<string, unknown>
+          | undefined;
+        const itemEffects = Array.isArray(mechanics?.effects)
+          ? mechanics.effects
+          : [];
+        const itemEffect = itemEffects.find(
+          (candidate) =>
+            typeof candidate === 'object' &&
+            candidate !== null &&
+            (candidate as Record<string, unknown>).id === source.effectRef,
+        ) as Record<string, unknown> | undefined;
+        if (itemEffect === undefined)
+          return err(
+            'invalid_args',
+            `source.effectRef '${source.effectRef}' does not resolve to an effect on '${source.ref}'`,
+          );
+        typed = itemEffect.duration;
+      }
       if (
         typeof typed === 'object' &&
         typed !== null &&
@@ -360,7 +434,7 @@ export const startEffectTool: Tool = {
         itemDurationBinding = {
           status: 'unbound',
           reason:
-            'the item effect has no typed duration; the DM adjudicates the active duration',
+            'the item has no typed duration for this power or grant; the DM adjudicates the active duration',
         };
       }
     }
@@ -628,6 +702,12 @@ export const startEffectTool: Tool = {
           ...(typeof source.ref === 'string' ? { ref: source.ref } : {}),
           ...(typeof source.effectRef === 'string'
             ? { effectRef: source.effectRef }
+            : {}),
+          ...(typeof source.grantRef === 'string'
+            ? { grantRef: source.grantRef }
+            : {}),
+          ...(typeof source.itemInstanceId === 'string'
+            ? { itemInstanceId: source.itemInstanceId }
             : {}),
           ...(sourceActor === undefined ? {} : { actor: sourceActor }),
         },

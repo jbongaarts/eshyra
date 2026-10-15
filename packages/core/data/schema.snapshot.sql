@@ -22,7 +22,7 @@ CREATE TABLE "active_effect" (
   end_reason TEXT CHECK (end_reason IS NULL OR end_reason IN ('expired','dismissed','concentration-broken','dispelled','replaced','source-removed','ruled')),
   end_detail TEXT, ended_at TEXT, created_at TEXT NOT NULL, provenance TEXT NOT NULL, session_id TEXT NOT NULL, updated_at TEXT NOT NULL, anchor_elapsed_minutes INTEGER
   CHECK (anchor_elapsed_minutes IS NULL OR anchor_elapsed_minutes >= 0), deadline_elapsed_minutes INTEGER
-  CHECK (deadline_elapsed_minutes IS NULL OR deadline_elapsed_minutes >= anchor_elapsed_minutes), source_effect_ref TEXT, duration_provenance_json TEXT,
+  CHECK (deadline_elapsed_minutes IS NULL OR deadline_elapsed_minutes >= anchor_elapsed_minutes), source_effect_ref TEXT, duration_provenance_json TEXT, item_grant_json TEXT,
   PRIMARY KEY (campaign_id,effect_id),
   CHECK (requires_concentration = 0 OR (concentration_owner_kind IS NOT NULL AND concentration_owner_ref IS NOT NULL)),
   CHECK (requires_concentration = 1 OR (concentration_owner_kind IS NULL AND concentration_owner_ref IS NULL)),

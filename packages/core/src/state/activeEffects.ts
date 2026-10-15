@@ -37,6 +37,7 @@ import { parseDice, resolveParsedDiceRoll } from '../orchestrator/dice.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
+import { effectiveMagicItemMechanics } from '../rules/magicItemVariants.js';
 import type { RulesRecord } from '../rules/types.js';
 import {
   type CampaignRulesPackResolver,
@@ -65,6 +66,7 @@ import {
   updateCampaignActor,
   updateCombatant,
 } from './encounterCombatants.js';
+import { applyItemCooldownAnchorEvent } from './itemState.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import { validateConditionsJson } from './liveStateSchema.js';
 import { MutateStateError } from './mutateState.js';
@@ -264,6 +266,12 @@ export interface CreateActiveEffectInput extends EffectMutationContext {
     readonly ref?: string;
     /** Effect id inside a magic-item record; used to bind its typed duration. */
     readonly effectRef?: string;
+    /** Grant id inside a magic-item record's entityGrant block; binds the
+     *  summoning effect to that typed grant (olc5.12). Requires itemInstanceId. */
+    readonly grantRef?: string;
+    /** The inventory instance of the magic item that owns grantRef; its
+     *  grant-ended cooldown anchors are scheduled when the grant's effect ends. */
+    readonly itemInstanceId?: string;
     readonly actor?: EffectParticipant;
   };
   /** Present iff the effect requires concentration. */
@@ -648,7 +656,9 @@ const EFFECT_KIND_PROFILES: Readonly<
     concentration: 'allowed',
   },
   summoning: {
-    sourceKinds: ['spell', 'feature', 'ruling'],
+    // A magic-item summon is admitted only when it binds a printed entity
+    // grant (grantRef); see the grounding check in createActiveEffect.
+    sourceKinds: ['spell', 'feature', 'magic-item', 'ruling'],
     linkKinds: ['condition', 'actor'],
     concentration: 'allowed',
   },
@@ -806,6 +816,12 @@ const detailColumn = jsonColumn<Record<string, unknown>>(
 const durationProvenanceColumn = jsonColumn<ItemDurationProvenance>(
   'active_effect.duration_provenance_json',
 );
+/** The item instance and printed grant a summoning effect was bound to (olc5.12). */
+const itemGrantColumn = jsonColumn<{
+  readonly grantId: string;
+  readonly itemInstanceId: string;
+  readonly packRef: string;
+}>('active_effect.item_grant_json');
 
 const EFFECT_COLUMNS = `campaign_id, effect_id, kind, display_name,
   source_kind, source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
@@ -2833,6 +2849,42 @@ function removeProjection(
     : 'missing';
 }
 
+/** Whether the item's effective mechanics anchor an economy's cooldown to
+ *  this grant's end. Grants without an anchor have no cooldown to schedule, so
+ *  their end is a no-op rather than an error. */
+function grantHasCooldownAnchor(
+  db: Db,
+  binding: {
+    readonly grantId: string;
+    readonly itemInstanceId: string;
+    readonly packRef: string;
+  },
+  ctx: EffectMutationContext,
+): boolean {
+  const record = lookupCampaignRecord(
+    db,
+    'magic-item',
+    binding.packRef,
+    ctx.resolveRulesPack,
+  );
+  if (record === undefined) return false;
+  const variant = (
+    db
+      .prepare('SELECT variant_id FROM inventory WHERE id = ?')
+      .get(binding.itemInstanceId) as { variant_id: string | null } | undefined
+  )?.variant_id;
+  const economies = (effectiveMagicItemMechanics(record, variant ?? undefined)
+    ?.economies ?? {}) as Record<
+    string,
+    { cooldown?: { startsOn?: { event?: string; grantId?: string } } }
+  >;
+  return Object.values(economies).some(
+    (economy) =>
+      economy.cooldown?.startsOn?.event === 'grant-ended' &&
+      economy.cooldown.startsOn.grantId === binding.grantId,
+  );
+}
+
 interface FinalizeEndInput {
   readonly reason: EffectEndReason;
   readonly detail?: string;
@@ -2941,6 +2993,36 @@ function finalizeEnd(
     },
     ctx,
   );
+  // Every terminal path of a grant-bound summon (expiry, 0 hit points,
+  // concentration, DM end) lands here, so the item's grant-ended cooldown
+  // anchors are scheduled in this same transaction (olc5.12).
+  const grantRow = db
+    .prepare(
+      'SELECT item_grant_json FROM active_effect WHERE campaign_id = ? AND effect_id = ?',
+    )
+    .get(row.campaign_id, row.effect_id) as
+    | { item_grant_json: string | null }
+    | undefined;
+  const grantBinding =
+    grantRow?.item_grant_json == null
+      ? undefined
+      : itemGrantColumn.decode(grantRow.item_grant_json);
+  if (
+    grantBinding !== undefined &&
+    grantHasCooldownAnchor(db, grantBinding, ctx)
+  )
+    applyItemCooldownAnchorEvent(
+      db,
+      {
+        instanceId: grantBinding.itemInstanceId,
+        packRef: grantBinding.packRef,
+        resolveRulesPack: ctx.resolveRulesPack,
+        provenance: ctx.provenance,
+        sessionId: ctx.sessionId,
+        at: ctx.at,
+      },
+      { event: 'grant-ended', grantId: grantBinding.grantId },
+    );
   return { performed: true, cleanup };
 }
 
@@ -3564,6 +3646,272 @@ function findPersistentBondEffect(
 // createActiveEffect
 // ---------------------------------------------------------------------------
 
+/**
+ * How each printed `revertOn` string of a typed item entity grant ends the
+ * grant (olc5.12). `timer` ends through the effect's own expiry, `zero-hit-points`
+ * is the creature vanishing at 0 hit points, `concentration-ended` is the
+ * concentration break. `dm-ended` values are DM-triggered: the DM ends the
+ * grant with end_effect (reason 'ruled', with a note). Any string not listed
+ * here fails closed when a grant is bound.
+ */
+export type ItemGrantRevertDisposition =
+  | {
+      readonly kind: 'timer';
+      readonly amount?: number;
+      readonly unit?: EffectDurationUnit;
+    }
+  | { readonly kind: 'zero-hit-points' }
+  | { readonly kind: 'concentration-ended' }
+  | { readonly kind: 'dm-ended' };
+
+export const ITEM_GRANT_REVERT_DISPOSITIONS: Readonly<
+  Record<string, ItemGrantRevertDisposition>
+> = {
+  'duration-ended': { kind: 'timer' },
+  'one-hour-ended': { kind: 'timer', amount: 1, unit: 'hour' },
+  'five-rounds-ended': { kind: 'timer', amount: 5, unit: 'round' },
+  'reduced-to-0-hit-points': { kind: 'zero-hit-points' },
+  'concentration-ended': { kind: 'concentration-ended' },
+  'card-moved': { kind: 'dm-ended' },
+  dispelled: { kind: 'dm-ended' },
+  'maximum-daily-flight-distance-reached': { kind: 'dm-ended' },
+  'next-dawn': { kind: 'dm-ended' },
+  'obeyed-owner-command-while-touching': { kind: 'dm-ended' },
+  'owner-bonus-action-command': { kind: 'dm-ended' },
+  'owner-command-while-touching': { kind: 'dm-ended' },
+  'owner-dies': { kind: 'dm-ended' },
+  'owner-dismisses-as-action': { kind: 'dm-ended' },
+  'owner-incapacitated': { kind: 'dm-ended' },
+  'third-wish-granted': { kind: 'dm-ended' },
+};
+
+/** A validated item-grant binding carried into the insert and the actor
+ *  links (olc5.12). */
+interface ItemGrantBinding {
+  readonly grantId: string;
+  readonly itemInstanceId: string;
+  readonly packRef: string;
+  readonly typedDuration: Record<string, unknown> | undefined;
+  /** Actors whose 0-hit-point rule the grant's printed revertOn sets. */
+  readonly zeroHpActorIds: ReadonlySet<string>;
+}
+
+function normalizedName(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/** The printed name of a pack creature or stat block; undefined when absent. */
+function packRecordName(
+  db: Db,
+  rulesRef: string,
+  resolveRulesPack: CampaignRulesPackResolver | undefined,
+): string | undefined {
+  const kind = rulesRef.split(':')[0];
+  return lookupCampaignRecord(
+    db,
+    kind as Parameters<typeof lookupCampaignRecord>[1],
+    rulesRef,
+    resolveRulesPack,
+  )?.name;
+}
+
+/** Whether a grant's printed creature identity admits the combatant's
+ *  creature: a creatureRefs entry, its statBlockRef (by ref or printed name),
+ *  or a row result of one of its tableRefs (matched by printed name). */
+function grantAdmitsCreature(
+  db: Db,
+  input: CreateActiveEffectInput,
+  grant: Record<string, unknown>,
+  rulesRef: string,
+): boolean {
+  const creatureRefs = Array.isArray(grant.creatureRefs)
+    ? grant.creatureRefs.map(String)
+    : [];
+  if (creatureRefs.includes(rulesRef)) return true;
+  const statBlockRef =
+    typeof grant.statBlockRef === 'string' ? grant.statBlockRef : undefined;
+  const creatureName = packRecordName(db, rulesRef, input.resolveRulesPack);
+  if (statBlockRef !== undefined) {
+    if (statBlockRef === rulesRef) return true;
+    const statName = packRecordName(db, statBlockRef, input.resolveRulesPack);
+    if (
+      creatureName !== undefined &&
+      statName !== undefined &&
+      normalizedName(creatureName) === normalizedName(statName)
+    )
+      return true;
+  }
+  const tableRefs = Array.isArray(grant.tableRefs)
+    ? grant.tableRefs.map(String)
+    : [];
+  if (creatureName === undefined) return false;
+  for (const tableRef of tableRefs) {
+    const table = lookupCampaignRecord(
+      db,
+      'table',
+      tableRef,
+      input.resolveRulesPack,
+    );
+    const rows = (table?.data as Record<string, unknown> | undefined)?.rows;
+    if (!Array.isArray(rows)) continue;
+    for (const row of rows)
+      if (
+        Array.isArray(row) &&
+        row.some(
+          (cell) =>
+            typeof cell === 'string' &&
+            normalizedName(cell) === normalizedName(creatureName),
+        )
+      )
+        return true;
+  }
+  return false;
+}
+
+/**
+ * Validates a start of a typed item entity grant (olc5.12). The grant must
+ * exist on the item record, be a creature grant, and be started as a
+ * summoning whose linked actors match its printed creature identity, count,
+ * and 0-hit-point/concentration endings. Every printed revertOn value must map
+ * to a disposition; unmapped values fail closed. Illusion and object grants are
+ * DM-adjudicated and are refused here.
+ */
+function validateItemGrantBinding(
+  db: Db,
+  input: CreateActiveEffectInput,
+  record: RulesRecord,
+): ItemGrantBinding {
+  const grantId = String(input.source.grantRef);
+  const label = `item grant '${grantId}'`;
+  const itemInstanceId = input.source.itemInstanceId;
+  if (typeof itemInstanceId !== 'string' || itemInstanceId.length === 0)
+    throw new ActiveEffectError(
+      `${label} requires source.itemInstanceId so its grant-ended cooldown anchors reach the item`,
+    );
+  const inventory = db
+    .prepare('SELECT pack_ref, variant_id FROM inventory WHERE id = ?')
+    .get(itemInstanceId) as
+    | { pack_ref: string | null; variant_id: string | null }
+    | undefined;
+  if (inventory === undefined || inventory.pack_ref !== record.key)
+    throw new ActiveEffectError(
+      `item instance '${itemInstanceId}' is not an inventory item of '${record.key}'`,
+    );
+  const mechanics = effectiveMagicItemMechanics(
+    record,
+    inventory.variant_id ?? undefined,
+  ) as Record<string, unknown> | undefined;
+  const grants = (mechanics?.entityGrant as Record<string, unknown> | undefined)
+    ?.grants;
+  const grant = (Array.isArray(grants) ? grants : []).find(
+    (candidate) =>
+      typeof candidate === 'object' &&
+      candidate !== null &&
+      (candidate as Record<string, unknown>).id === grantId,
+  ) as Record<string, unknown> | undefined;
+  if (grant === undefined)
+    throw new ActiveEffectError(
+      `source.grantRef '${grantId}' does not resolve to a grant on '${record.key}'`,
+    );
+  if (grant.kind !== 'creature')
+    throw new ActiveEffectError(
+      `${label} is a ${String(grant.kind)} grant; start_effect binds only creature grants, and ${String(grant.kind)} grants are DM-adjudicated`,
+    );
+  if (input.kind !== 'summoning')
+    throw new ActiveEffectError(
+      `${label} creates a creature, so the effect must be kind 'summoning'`,
+    );
+  const actors = input.actors ?? [];
+  if (actors.length === 0)
+    throw new ActiveEffectError(
+      `${label} creates a creature, so start_effect needs at least one linked actor`,
+    );
+  if (typeof grant.count === 'number' && actors.length !== grant.count)
+    throw new ActiveEffectError(
+      `${label} creates ${grant.count}; ${actors.length} linked actor(s) were given`,
+    );
+  const typedCreatures = [
+    ...(Array.isArray(grant.creatureRefs) ? grant.creatureRefs : []),
+    ...(typeof grant.statBlockRef === 'string' ? [grant.statBlockRef] : []),
+    ...(Array.isArray(grant.tableRefs)
+      ? grant.tableRefs.map((ref) => `${String(ref)} (row result)`)
+      : []),
+  ].join(', ');
+  for (const actor of actors) {
+    const row = db
+      .prepare(
+        'SELECT rules_ref FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+      )
+      .get(input.campaignId, actor.combatantId) as
+      | { rules_ref: string }
+      | undefined;
+    if (row === undefined)
+      throw new ActiveEffectError(
+        `linked actor '${actor.combatantId}' is not a combatant of this campaign`,
+      );
+    if (!grantAdmitsCreature(db, input, grant, row.rules_ref))
+      throw new ActiveEffectError(
+        `linked actor '${actor.combatantId}' is ${row.rules_ref}, which ${label} does not create (it creates: ${typedCreatures})`,
+      );
+  }
+  const typed = grant.duration;
+  const typedDuration =
+    typeof typed === 'object' && typed !== null && !Array.isArray(typed)
+      ? (typed as Record<string, unknown>)
+      : undefined;
+  const revertOn = Array.isArray(grant.revertOn)
+    ? grant.revertOn.map(String)
+    : [];
+  let zeroHp = false;
+  for (const value of revertOn) {
+    if (!Object.hasOwn(ITEM_GRANT_REVERT_DISPOSITIONS, value))
+      throw new ActiveEffectError(
+        `${label} has revertOn '${value}', which the engine does not map; it fails closed rather than guess how the grant ends`,
+      );
+    const disposition = ITEM_GRANT_REVERT_DISPOSITIONS[
+      value
+    ] as ItemGrantRevertDisposition;
+    if (disposition.kind === 'timer') {
+      if (typedDuration === undefined)
+        throw new ActiveEffectError(
+          `${label} ends on '${value}' but has no typed duration to end on`,
+        );
+      if (
+        disposition.amount !== undefined &&
+        (typedDuration.amount !== disposition.amount ||
+          typedDuration.unit !== disposition.unit)
+      )
+        throw new ActiveEffectError(
+          `${label} ends on '${value}', which does not match its typed duration ${JSON.stringify(typedDuration)}`,
+        );
+    } else if (disposition.kind === 'zero-hit-points') {
+      zeroHp = true;
+    } else if (disposition.kind === 'concentration-ended') {
+      if (input.concentration === undefined)
+        throw new ActiveEffectError(
+          `${label} ends when concentration ends, so start_effect needs a concentrationOwner`,
+        );
+    }
+  }
+  for (const actor of actors) {
+    if (!zeroHp && actor.atZeroHitPoints !== undefined)
+      throw new ActiveEffectError(
+        `${label} prints no 0-hit-point rule; atZeroHitPoints is refused for linked actor '${actor.combatantId}'`,
+      );
+    if (zeroHp && actor.atZeroHitPoints === 'vanish-bonded')
+      throw new ActiveEffectError(
+        `${label} prints that the creature leaves at 0 hit points without a bond; 'vanish-bonded' is refused for '${actor.combatantId}'`,
+      );
+  }
+  return {
+    grantId,
+    itemInstanceId,
+    packRef: record.key,
+    typedDuration,
+    zeroHpActorIds: new Set(zeroHp ? actors.map((a) => a.combatantId) : []),
+  };
+}
+
 export function createActiveEffect(
   db: Db,
   input: CreateActiveEffectInput,
@@ -3601,9 +3949,19 @@ export function createActiveEffect(
           `(allowed: ${profile.sourceKinds.join(', ')})`,
       );
     }
+    if (
+      input.kind === 'summoning' &&
+      input.source.kind === 'magic-item' &&
+      input.source.grantRef === undefined
+    ) {
+      throw new ActiveEffectError(
+        "a magic-item summoning must bind a printed entity grant (source.grantRef with source.itemInstanceId); an item's creature the grant does not print is a ruling (source kind 'ruling')",
+      );
+    }
     let concentrationRule: 'required' | 'forbidden' | 'declared' = 'declared';
     let recordDuration: ParsedSpellDurationForm | undefined;
     let spellRecord: RulesRecord | undefined;
+    let itemGrant: ItemGrantBinding | undefined;
     let bondedSummon: { maximumLinked: number | undefined } | undefined;
     if (input.source.kind === 'spell') {
       const ref = requireNonEmptyString(
@@ -3657,7 +4015,22 @@ export function createActiveEffect(
             'find the exact key via lookup_rules or omit the ref for homebrew items',
         );
       }
-      if (input.source.effectRef !== undefined) {
+      if (
+        input.source.effectRef !== undefined &&
+        input.source.grantRef !== undefined
+      )
+        throw new ActiveEffectError(
+          'a magic-item source binds either a printed effect (effectRef) or a printed grant (grantRef), not both',
+        );
+      let typedDuration: Record<string, unknown> | undefined;
+      let noun = 'item effect';
+      let boundId = String(input.source.effectRef);
+      if (input.source.grantRef !== undefined) {
+        itemGrant = validateItemGrantBinding(txnDb, input, record);
+        typedDuration = itemGrant.typedDuration;
+        noun = 'item grant';
+        boundId = itemGrant.grantId;
+      } else if (input.source.effectRef !== undefined) {
         const data = record.data as Record<string, unknown>;
         const mechanics = data.mechanics as Record<string, unknown> | undefined;
         const effects = Array.isArray(mechanics?.effects)
@@ -3688,72 +4061,74 @@ export function createActiveEffect(
           throw new ActiveEffectError(
             `item effect '${input.source.effectRef}' does not require concentration`,
           );
-        const typedDuration = itemEffect.duration;
+        const candidate = itemEffect.duration;
         if (
-          typeof typedDuration === 'object' &&
-          typedDuration !== null &&
-          !Array.isArray(typedDuration)
-        ) {
-          const expected = typedDuration as Record<string, unknown>;
-          const durationProvenance = input.durationProvenance;
-          if (durationProvenance?.kind === 'dm-override') {
-            if (
-              (durationProvenance.basis !== 'dm-adjudicated' &&
-                durationProvenance.basis !== 'house-rule') ||
-              durationProvenance.reason.trim().length === 0
-            )
-              throw new ActiveEffectError(
-                'item duration override requires a supported basis and reason',
-              );
-          } else if (
-            typeof expected.unit !== 'string' ||
-            input.duration.kind !== 'timed' ||
-            input.duration.unit !== expected.unit
-          ) {
+          typeof candidate === 'object' &&
+          candidate !== null &&
+          !Array.isArray(candidate)
+        )
+          typedDuration = candidate as Record<string, unknown>;
+      }
+      if (typedDuration !== undefined) {
+        const expected = typedDuration;
+        const durationProvenance = input.durationProvenance;
+        if (durationProvenance?.kind === 'dm-override') {
+          if (
+            (durationProvenance.basis !== 'dm-adjudicated' &&
+              durationProvenance.basis !== 'house-rule') ||
+            durationProvenance.reason.trim().length === 0
+          )
             throw new ActiveEffectError(
-              `duration for item effect '${input.source.effectRef}' must use its typed unit ${String(expected.unit)}`,
+              'item duration override requires a supported basis and reason',
             );
-          } else if (typeof expected.amount === 'number') {
-            if (
-              input.duration.amount !== expected.amount ||
-              durationProvenance?.kind !== 'typed-fixed' ||
-              durationProvenance.amount !== expected.amount ||
-              durationProvenance.unit !== expected.unit
-            )
-              throw new ActiveEffectError(
-                `duration for item effect '${input.source.effectRef}' must be its typed fixed duration ${JSON.stringify(typedDuration)} or carry an explicit DM override`,
-              );
-          } else if (typeof expected.amount === 'string') {
-            if (
-              durationProvenance?.kind !== 'engine-rolled' ||
-              durationProvenance.expression !== expected.amount ||
-              durationProvenance.total !== input.duration.amount
-            )
-              throw new ActiveEffectError(
-                `duration for dice-typed item effect '${input.source.effectRef}' requires engine roll evidence or an explicit DM override`,
-              );
-            try {
-              const parsed = parseDice(expected.amount);
-              const resolved = resolveParsedDiceRoll(
-                expected.amount,
-                parsed,
-                durationProvenance.rolls,
-              );
-              if (
-                resolved.total !== durationProvenance.total ||
-                resolved.total < 1
-              )
-                throw new Error('invalid total');
-            } catch {
-              throw new ActiveEffectError(
-                `duration evidence for item effect '${input.source.effectRef}' does not resolve its typed dice expression`,
-              );
-            }
-          } else {
+        } else if (
+          typeof expected.unit !== 'string' ||
+          input.duration.kind !== 'timed' ||
+          input.duration.unit !== expected.unit
+        ) {
+          throw new ActiveEffectError(
+            `duration for ${noun} '${boundId}' must use its typed unit ${String(expected.unit)}`,
+          );
+        } else if (typeof expected.amount === 'number') {
+          if (
+            input.duration.amount !== expected.amount ||
+            durationProvenance?.kind !== 'typed-fixed' ||
+            durationProvenance.amount !== expected.amount ||
+            durationProvenance.unit !== expected.unit
+          )
             throw new ActiveEffectError(
-              `item effect '${input.source.effectRef}' has an unsupported typed duration`,
+              `duration for ${noun} '${boundId}' must be its typed fixed duration ${JSON.stringify(expected)} or carry an explicit DM override`,
+            );
+        } else if (typeof expected.amount === 'string') {
+          if (
+            durationProvenance?.kind !== 'engine-rolled' ||
+            durationProvenance.expression !== expected.amount ||
+            durationProvenance.total !== input.duration.amount
+          )
+            throw new ActiveEffectError(
+              `duration for dice-typed ${noun} '${boundId}' requires engine roll evidence or an explicit DM override`,
+            );
+          try {
+            const parsed = parseDice(expected.amount);
+            const resolved = resolveParsedDiceRoll(
+              expected.amount,
+              parsed,
+              durationProvenance.rolls,
+            );
+            if (
+              resolved.total !== durationProvenance.total ||
+              resolved.total < 1
+            )
+              throw new Error('invalid total');
+          } catch {
+            throw new ActiveEffectError(
+              `duration evidence for ${noun} '${boundId}' does not resolve its typed dice expression`,
             );
           }
+        } else {
+          throw new ActiveEffectError(
+            `${noun} '${boundId}' has an unsupported typed duration`,
+          );
         }
       }
     }
@@ -4043,7 +4418,12 @@ export function createActiveEffect(
     }
 
     // Actor links.
-    const actors = input.actors ?? [];
+    const actors = (input.actors ?? []).map((actor) =>
+      itemGrant?.zeroHpActorIds.has(actor.combatantId) === true &&
+      actor.atZeroHitPoints === undefined
+        ? { ...actor, atZeroHitPoints: 'vanish' as const }
+        : actor,
+    );
     if (actors.length > 0 && !profile.linkKinds.includes('actor')) {
       throw new ActiveEffectError(
         `a '${input.kind}' effect cannot own linked actors`,
@@ -4527,7 +4907,7 @@ export function createActiveEffect(
            source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
            requires_concentration, concentration_owner_kind,
            concentration_owner_ref, duration_kind, duration_amount,
-           duration_unit, duration_provenance_json, anchor_kind, anchor_at, anchor_game_time,
+           duration_unit, duration_provenance_json, item_grant_json, anchor_kind, anchor_at, anchor_game_time,
            anchor_elapsed_minutes, deadline_elapsed_minutes,
            anchor_combat_instance_id, anchor_round,
            anchor_participant_kind, anchor_participant_ref,
@@ -4535,7 +4915,7 @@ export function createActiveEffect(
            dismissible, status, created_at, provenance, session_id,
            updated_at
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                  ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
       )
       .run(
@@ -4557,6 +4937,13 @@ export function createActiveEffect(
         input.durationProvenance === undefined
           ? null
           : durationProvenanceColumn.encode(input.durationProvenance),
+        itemGrant === undefined
+          ? null
+          : itemGrantColumn.encode({
+              grantId: itemGrant.grantId,
+              itemInstanceId: itemGrant.itemInstanceId,
+              packRef: itemGrant.packRef,
+            }),
         duration.anchorKind,
         duration.anchorAt,
         duration.anchorGameTime,
