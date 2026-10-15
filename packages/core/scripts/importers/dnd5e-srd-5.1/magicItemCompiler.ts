@@ -354,6 +354,18 @@ export function magicItemEngineHookKey(binding: EngineHookBinding): string {
  * the safe use.
  */
 export const LANDED_MAGIC_ITEM_ENGINE_HOOKS: ReadonlySet<string> = new Set([
+  // olc5.11 pack conformance: use_item applies a printed action cost and
+  // declared state outcomes, while item_state_event and the timer executor
+  // apply the matching state/timer changes. Condition/save truth is supplied
+  // by DM adjudication and is not part of these hooks.
+  magicItemEngineHookKey({
+    engine: 'F2',
+    hook: 'olc5.11 pack-tested paid item operation',
+  }),
+  magicItemEngineHookKey({
+    engine: 'F5',
+    hook: 'olc5.11 pack-tested item state and timer transition',
+  }),
   magicItemEngineHookKey({
     engine: 'F5',
     hook: 'duration-budget accounting',

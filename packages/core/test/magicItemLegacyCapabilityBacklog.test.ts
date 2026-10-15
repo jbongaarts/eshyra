@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(805);
+    expect(backlog.candidates).toHaveLength(804);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -102,9 +102,16 @@ describe('magic-item legacy capability backlog', () => {
     // candidates keep the operations blocked and the typed insect-cloud and
     // ball-lightning effects add two (804 -> 806). eshyra-olc5.8 withholds
     // Ring of X-ray Vision's residual risk effect as an exact adjudicated
-    // clause, removing its one engine-hook candidate (806 -> 805).
+    // clause, removing its one engine-hook candidate (806 -> 805). Cloak of
+    // the Bat's cast-polymorph operation adds one spell-linked castSpell
+    // candidate from the spell record (+1); Rope of Entanglement's typed
+    // restraint payload becomes an exact adjudicated clause (-1), net 805.
+    // eshyra-olc5.11.4 removes Cube of Force spell-contact-loss as an item
+    // operation: item_state_event cannot deduct its table-defined charge loss,
+    // so the external condition has no operation-bound capability (-1).
+    // The resulting candidate set contains 804 rows.
     expect(fingerprint).toBe(
-      'f02dda0d18ff4fbe78d7653a74d541030d130d86deb8d6438ff3bc2bbf7b7f40',
+      '2bc1fb75139dc8707fd61530500e94d6e456dfef033aaece44332303b0b4469d',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

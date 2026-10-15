@@ -125,7 +125,10 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
         };
       }),
     );
-    expect(activationCensus).toHaveLength(362);
+    // olc5.11.4 removes Rod of Alertness pull-rod and Cube of Force
+    // spell-contact-loss: any-creature/external-event predicates are condition
+    // transitions, not operations charged to the item owner.
+    expect(activationCensus).toHaveLength(357);
     expect(actual).toHaveLength(activationCensus.length);
     const censusByKey = new Map(
       activationCensus.map((row) => [`${row.scope}/${row.operation}`, row]),
@@ -410,7 +413,7 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
         else activations += 1;
         if (typed?.equipment !== undefined) equipment += 1;
       }
-    expect(operationCount).toBe(362);
+    expect(operationCount).toBe(357);
     expect(activations + withoutActivation).toBe(operationCount);
     expect(equipment).toBe(129);
     expect(scopes.filter((s) => s.mechanics.stateMachine).length).toBe(21);
@@ -874,7 +877,7 @@ describe('D. kept activation fields agree with the governing printed passage, se
       .map(({ id }) => id);
   }
 
-  it('types the printed action cost of every non-spell operation whose own sentence prints one (sweep of all 362 operations)', () => {
+  it('types the printed action cost of every non-spell operation whose own sentence prints one (sweep of all 359 operations)', () => {
     const missing: string[] = [];
     for (const scope of scopes)
       for (const id of missingPrintedCosts(
@@ -1112,13 +1115,54 @@ describe('E. kept state machines own exactly one lifetime at a time (review 19.4
     // carried for the DM; nothing is invented.
     const helm = (scopes.find((s) => s.label === 'Helm of Brilliance')
       ?.mechanics.effects ?? []) as Obj[];
-    expect(helm.filter((effect) => effect.duration !== undefined)).toEqual([]);
+    expect(
+      helm.find(
+        (effect) => effect.id === 'c2-static-helm-brilliance-weapon-flame',
+      )?.duration,
+    ).toBeUndefined();
     expect(
       carries(
         'Helm of Brilliance',
         'The flames last until you use a bonus action to speak the command word again or until you drop or stow the weapon',
       ),
     ).toBe(true);
+  });
+
+  it('projects finite durations from referenced spell records onto operation-bound item spell effects', () => {
+    const spells = new Map(
+      pack.records
+        .filter((record) => record.kind === 'spell')
+        .map((record) => [record.key, record]),
+    );
+    let checked = 0;
+    for (const item of items) {
+      const mechanics = (item.data as Obj).mechanics as Obj | undefined;
+      if (mechanics === undefined) continue;
+      const effects = (mechanics.effects as Obj[] | undefined) ?? [];
+      const byId = new Map(effects.map((effect) => [effect.id, effect]));
+      const operationEffectIds = new Set(
+        ((mechanics.operations as Obj[] | undefined) ?? []).flatMap((op) =>
+          Array.isArray(op.effects) ? (op.effects as string[]) : [],
+        ),
+      );
+      for (const effectId of operationEffectIds) {
+        const effect = byId.get(effectId);
+        if (effect?.kind !== 'castSpell' || typeof effect.spellRef !== 'string')
+          continue;
+        const spell = spells.get(effect.spellRef);
+        const spellData = spell?.data as Obj | undefined;
+        const spellMechanics = spellData?.mechanics as Obj | undefined;
+        const spellDuration = spellMechanics?.duration as Obj | undefined;
+        if (spellDuration?.kind !== 'timed') continue;
+        expect(effect.duration, `${item.key}#${effectId}`).toBeDefined();
+        expect(effect.duration, `${item.key}#${effectId}`).toMatchObject({
+          amount: expect.anything(),
+          unit: expect.any(String),
+        });
+        checked += 1;
+      }
+    }
+    expect(checked).toBe(94);
   });
 });
 

@@ -639,18 +639,6 @@
     }
   },
   {
-    "scope": "Cube of Force",
-    "operation": "spell-contact-loss",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
     "scope": "Cubic Gate",
     "operation": "cast-gate",
     "cost": "action",
@@ -1498,18 +1486,6 @@
     "cost": "action",
     "equipment": null,
     "costSentence": "The cube rapidly grows into a fortress that remains until you use an action to speak the command word that dismisses it, which works only if the fortress is empty.",
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": null,
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Ioun Stone",
-    "operation": "grab-orbiting-stone",
-    "cost": "action",
-    "equipment": null,
-    "costSentence": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check.",
     "equipmentSentences": [],
     "noneReason": {
       "cost": null,
@@ -2647,18 +2623,6 @@
   },
   {
     "scope": "Ring of Shooting Stars",
-    "operation": "discharge-ball-lightning",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Ring of Shooting Stars",
     "operation": "launch-shooting-stars",
     "cost": "action",
     "equipment": null,
@@ -2937,18 +2901,6 @@
     }
   },
   {
-    "scope": "Rod of Alertness",
-    "operation": "pull-rod",
-    "cost": "action",
-    "equipment": null,
-    "costSentence": "The rod’s head stops glowing and the effect ends after 10 minutes, or when a creature uses an action to pull the rod from the ground.",
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": null,
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
     "scope": "Rod of Lordly Might",
     "operation": "drain-life",
     "cost": null,
@@ -3147,18 +3099,6 @@
     "noneReason": {
       "cost": null,
       "equipment": null
-    }
-  },
-  {
-    "scope": "Rope of Entanglement",
-    "operation": "escape-rope",
-    "cost": "action",
-    "equipment": null,
-    "costSentence": "A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice).",
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": null,
-      "equipment": "No equipment prerequisite is retained for this operation."
     }
   },
   {

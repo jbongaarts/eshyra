@@ -184,7 +184,7 @@ describe('magic-item M2/M3 membership and clause-count gate (eshyra-o9bd.18.7.7.
     const crystal = recordData('magic-item:crystal-ball');
 
     expect(ioun.mechanics?.stateMachine).toBeDefined();
-    expect(ioun.mechanics?.operations).toHaveLength(3);
+    expect(ioun.mechanics?.operations).toHaveLength(2);
     expect(ioun.variants?.map((variant) => variant.name)).toEqual([
       'Absorption',
       'Agility',

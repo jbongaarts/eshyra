@@ -88437,6 +88437,11 @@
                 "amount": 1,
                 "unit": "minute"
               }
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "until you are incapacitated or die"
             }
           ],
           "duration": {
@@ -88554,37 +88559,28 @@
             "engineHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
+                "hook": "olc5.11 pack-tested paid item operation"
               },
               {
                 "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
+                "hook": "olc5.11 pack-tested item state and timer transition"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "readiness": "green"
+          },
+          {
+            "clauseId": "magic-item:animated-shield/state-animated-shield-fall-destination",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The shield’s destination on termination depends on whether the wielder has a free hand; the state-machine vocabulary does not encode object placement, so the DM model interprets this printed outcome.",
+              "sourceText": "at which point the shield falls to the ground or into your hand if you have one free"
+            },
+            "reason": "The shield’s destination on termination depends on whether the wielder has a free hand; the state-machine vocabulary does not encode object placement, so the DM model interprets this printed outcome."
           },
           {
             "clauseId": "magic-item:animated-shield/triage-activation-speak-command-word-0",
@@ -92133,6 +92129,11 @@
               "from": "active",
               "to": "inactive",
               "via": "deactivate-speed"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "When the boots’ property has been used for a total of 10 minutes"
             }
           ],
           "termination": "If you click your heels together again, you end the effect. When the boots’ property has been used for a total of 10 minutes, the magic ceases to function until you finish a long rest"
@@ -94673,7 +94674,12 @@
             "kind": "castSpell",
             "spellRef": "spell:web",
             "saveDc": 13,
-            "areaMultiplier": 2
+            "areaMultiplier": 2,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-arachnida-poison",
@@ -95385,6 +95391,9 @@
                 "economy": "uses",
                 "amount": 1
               }
+            ],
+            "effects": [
+              "c2-cast-polymorph"
             ]
           },
           {
@@ -95396,6 +95405,16 @@
             "id": "c2-residual-bat-stealth",
             "kind": "advantage",
             "roll": "Dexterity (Stealth) checks"
+          },
+          {
+            "id": "c2-cast-polymorph",
+            "kind": "castSpell",
+            "spellRef": "spell:polymorph",
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "kind": "speedSet",
@@ -95448,6 +95467,60 @@
             ],
             "missingEngines": [
               "F5"
+            ]
+          },
+          {
+            "clauseId": "magic-item:cloak-of-the-bat/c2-effect-cast-polymorph",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-cast-polymorph"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F4",
+                "hook": "canonical spell execution"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F3",
+                "hook": "concentration lifecycle"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F4",
+                "hook": "canonical spell execution"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F3",
+                "hook": "concentration lifecycle"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3",
+              "F4",
+              "F8"
             ]
           },
           {
@@ -95538,7 +95611,7 @@
             "scope": {
               "kind": "parent"
             },
-            "tag": "M5",
+            "tag": "C2",
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
@@ -96137,7 +96210,7 @@
             {
               "from": "face-1",
               "to": "face-1",
-              "via": "spell-contact-loss",
+              "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
               "effects": [
                 "m5-complex-cube-contact"
               ]
@@ -96145,7 +96218,7 @@
             {
               "from": "face-2",
               "to": "face-2",
-              "via": "spell-contact-loss",
+              "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
               "effects": [
                 "m5-complex-cube-contact"
               ]
@@ -96153,7 +96226,7 @@
             {
               "from": "face-3",
               "to": "face-3",
-              "via": "spell-contact-loss",
+              "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
               "effects": [
                 "m5-complex-cube-contact"
               ]
@@ -96161,7 +96234,7 @@
             {
               "from": "face-4",
               "to": "face-4",
-              "via": "spell-contact-loss",
+              "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
               "effects": [
                 "m5-complex-cube-contact"
               ]
@@ -96169,7 +96242,7 @@
             {
               "from": "face-5",
               "to": "face-5",
-              "via": "spell-contact-loss",
+              "condition": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
               "effects": [
                 "m5-complex-cube-contact"
               ]
@@ -96198,6 +96271,31 @@
               "from": "face-5",
               "to": "inactive",
               "via": "press-face-6"
+            },
+            {
+              "from": "face-1",
+              "to": "inactive",
+              "condition": "the cube runs out of charges"
+            },
+            {
+              "from": "face-2",
+              "to": "inactive",
+              "condition": "the cube runs out of charges"
+            },
+            {
+              "from": "face-3",
+              "to": "inactive",
+              "condition": "the cube runs out of charges"
+            },
+            {
+              "from": "face-4",
+              "to": "inactive",
+              "condition": "the cube runs out of charges"
+            },
+            {
+              "from": "face-5",
+              "to": "inactive",
+              "condition": "the cube runs out of charges"
             },
             {
               "from": "face-1",
@@ -96329,15 +96427,6 @@
             "doesNotExpend": [
               "charges"
             ]
-          },
-          {
-            "id": "spell-contact-loss",
-            "cost": [
-              {
-                "economy": "charges",
-                "amount": "variable"
-              }
-            ]
           }
         ],
         "effects": [
@@ -96364,20 +96453,6 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
-          {
-            "clauseId": "magic-item:cube-of-force/activation-spell-contact-loss",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "C1",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
-              "sourceText": "The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below."
-            },
-            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
-          },
           {
             "clauseId": "magic-item:cube-of-force/c1-economy-charges",
             "scope": {
@@ -96568,33 +96643,6 @@
             ]
           },
           {
-            "clauseId": "magic-item:cube-of-force/c1-operation-spell-contact-loss",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "C1",
-            "representation": {
-              "block": "operations",
-              "operationId": "spell-contact-loss"
-            },
-            "engineHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
-          },
-          {
             "clauseId": "magic-item:cube-of-force/m5-complex-cube-of-force",
             "scope": {
               "kind": "parent"
@@ -96751,7 +96799,12 @@
             "id": "c2-cast-gate",
             "kind": "castSpell",
             "spellRef": "spell:gate",
-            "targetPlane": "plane keyed to pressed side"
+            "targetPlane": "plane keyed to pressed side",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-plane-shift",
@@ -97208,37 +97261,14 @@
             "engineHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
+                "hook": "olc5.11 pack-tested paid item operation"
               },
               {
                 "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
+                "hook": "olc5.11 pack-tested item state and timer transition"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "readiness": "green"
           }
         ]
       }
@@ -101099,7 +101129,12 @@
             "id": "summon-elemental",
             "kind": "castSpell",
             "spellRef": "spell:conjure-elemental",
-            "gemTypeTableRef": "table:elemental-gem"
+            "gemTypeTableRef": "table:elemental-gem",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -101552,7 +101587,11 @@
             "saveDc": 13,
             "rangeFeet": 30,
             "target": "one humanoid",
-            "requiresMutualSight": true
+            "requiresMutualSight": true,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -103397,6 +103436,11 @@
               "from": "active",
               "to": "inactive",
               "via": "extinguish-flames"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you drop or sheathe the sword"
             }
           ],
           "termination": "The flames last until you use a bonus action to speak the command word again or until you drop or sheathe the sword"
@@ -104051,6 +104095,11 @@
               "from": "active",
               "to": "inactive",
               "via": "end-light"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you use another function of the gem"
             }
           ],
           "termination": "It lasts until you use a bonus action to repeat the command word or until you use another function of the gem"
@@ -105868,7 +105917,11 @@
             "spellRef": "spell:disguise-self",
             "endsOn": [
               "hat-removed"
-            ]
+            ],
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -106218,7 +106271,11 @@
             "id": "c2-cast-daylight",
             "kind": "castSpell",
             "spellRef": "spell:daylight",
-            "saveDc": 18
+            "saveDc": 18,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-fireball",
@@ -106236,7 +106293,12 @@
             "id": "c2-cast-wall-of-fire",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-fire",
-            "saveDc": 18
+            "saveDc": 18,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-helm-brilliance-fire-resistance",
@@ -106957,7 +107019,11 @@
           {
             "id": "c2-cast-comprehend-languages",
             "kind": "castSpell",
-            "spellRef": "spell:comprehend-languages"
+            "spellRef": "spell:comprehend-languages",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -107122,14 +107188,23 @@
             "kind": "castSpell",
             "spellRef": "spell:detect-thoughts",
             "saveDc": 13,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-suggestion",
             "kind": "castSpell",
             "spellRef": "spell:suggestion",
             "saveDc": 13,
-            "target": "creature currently focused on with detect thoughts"
+            "target": "creature currently focused on with detect thoughts",
+            "duration": {
+              "amount": 8,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "kind": "telepathicRelay",
@@ -108470,6 +108545,21 @@
               "from": "active",
               "to": "inactive",
               "via": "release-rod"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "More weight causes the rod to deactivate and fall."
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "another creature uses an action to push the button again"
+            },
+            {
+              "from": "active",
+              "to": "active",
+              "condition": "A creature can use an action to make a DC 30 Strength check, moving the fixed rod up to 10 feet on a success."
             }
           ],
           "termination": "Until you or another creature uses an action to push the button again, the rod doesn’t move, even if it is defying gravity. The rod can hold up to 8,000 pounds of weight. More weight causes the rod to deactivate and fall",
@@ -109113,7 +109203,7 @@
             {
               "from": "orbiting",
               "to": "seized",
-              "condition": "either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check"
+              "condition": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check"
             }
           ],
           "termination": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check. You can use an action to seize and stow the stone, ending its effect"
@@ -109127,12 +109217,6 @@
           },
           {
             "id": "seize-and-stow",
-            "activation": {
-              "cost": "action"
-            }
-          },
-          {
-            "id": "grab-orbiting-stone",
             "activation": {
               "cost": "action"
             }
@@ -109230,20 +109314,6 @@
               "F5",
               "F9"
             ]
-          },
-          {
-            "clauseId": "magic-item:ioun-stone/triage-activation-grab-orbiting-stone-0",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
-              "sourceText": "Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check."
-            },
-            "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:absorption/m9-ioun-absorption-cancel",
@@ -112459,7 +112529,11 @@
             "kind": "castSpell",
             "spellRef": "spell:detect-thoughts",
             "saveDc": 13,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -114926,24 +115000,42 @@
             "id": "c2-cast-daylight",
             "kind": "castSpell",
             "spellRef": "spell:daylight",
-            "saveDc": 18
+            "saveDc": 18,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-death-ward",
             "kind": "castSpell",
             "spellRef": "spell:death-ward",
-            "saveDc": 18
+            "saveDc": 18,
+            "duration": {
+              "amount": 8,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-scrying",
             "kind": "castSpell",
             "spellRef": "spell:scrying",
-            "saveDc": 18
+            "saveDc": 18,
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-detect-magic",
             "kind": "castSpell",
-            "spellRef": "spell:detect-magic"
+            "spellRef": "spell:detect-magic",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "m7-orb-enslaved-charm",
@@ -117190,7 +117282,11 @@
               "amount": 1,
               "unit": "hour"
             },
-            "frequency": "at-will"
+            "frequency": "at-will",
+            "duration": {
+              "amount": 24,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -117350,12 +117446,22 @@
           {
             "id": "c2-drink",
             "kind": "castSpell",
-            "spellRef": "spell:clairvoyance"
+            "spellRef": "spell:clairvoyance",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "clairvoyance",
             "kind": "castSpell",
-            "spellRef": "spell:clairvoyance"
+            "spellRef": "spell:clairvoyance",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -119129,13 +119235,22 @@
             "kind": "castSpell",
             "spellRef": "spell:detect-thoughts",
             "saveDc": 13,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "detect-thoughts",
             "kind": "castSpell",
             "spellRef": "spell:detect-thoughts",
-            "saveDc": 13
+            "saveDc": 13,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -120202,19 +120317,32 @@
             "id": "c2-cast-animal-friendship",
             "kind": "castSpell",
             "spellRef": "spell:animal-friendship",
-            "saveDc": 13
+            "saveDc": 13,
+            "duration": {
+              "amount": 24,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-fear",
             "kind": "castSpell",
             "spellRef": "spell:fear",
             "saveDc": 13,
-            "target": "beasts with Intelligence 3 or lower"
+            "target": "beasts with Intelligence 3 or lower",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-speak-with-animals",
             "kind": "castSpell",
-            "spellRef": "spell:speak-with-animals"
+            "spellRef": "spell:speak-with-animals",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -121101,7 +121229,12 @@
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
             "target": "air elemental",
-            "condition": "only a Ring of Air Elemental Command"
+            "condition": "only a Ring of Air Elemental Command",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-chain-lightning",
@@ -121115,14 +121248,24 @@
             "kind": "castSpell",
             "spellRef": "spell:gust-of-wind",
             "saveDc": 17,
-            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring"
+            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-wind-wall",
             "kind": "castSpell",
             "spellRef": "spell:wind-wall",
             "saveDc": 17,
-            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring"
+            "condition": "only a Ring of Air Elemental Command, after you help slay an air elemental while attuned to the ring",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-dominate-earth-elemental",
@@ -121130,7 +121273,12 @@
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
             "target": "earth elemental",
-            "condition": "only a Ring of Earth Elemental Command"
+            "condition": "only a Ring of Earth Elemental Command",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-stone-shape",
@@ -121144,14 +121292,24 @@
             "kind": "castSpell",
             "spellRef": "spell:stoneskin",
             "saveDc": 17,
-            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring"
+            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-wall-of-stone",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-stone",
             "saveDc": 17,
-            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring"
+            "condition": "only a Ring of Earth Elemental Command, after you help slay an earth elemental while attuned to the ring",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-dominate-fire-elemental",
@@ -121159,7 +121317,12 @@
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
             "target": "fire elemental",
-            "condition": "only a Ring of Fire Elemental Command"
+            "condition": "only a Ring of Fire Elemental Command",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-burning-hands",
@@ -121180,7 +121343,12 @@
             "kind": "castSpell",
             "spellRef": "spell:wall-of-fire",
             "saveDc": 17,
-            "condition": "only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring"
+            "condition": "only a Ring of Fire Elemental Command, after you help slay a fire elemental while attuned to the ring",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-dominate-water-elemental",
@@ -121188,7 +121356,12 @@
             "spellRef": "spell:dominate-monster",
             "saveDc": 17,
             "target": "water elemental",
-            "condition": "only a Ring of Water Elemental Command"
+            "condition": "only a Ring of Water Elemental Command",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-create-or-destroy-water",
@@ -121202,7 +121375,12 @@
             "kind": "castSpell",
             "spellRef": "spell:control-water",
             "saveDc": 17,
-            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring"
+            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-ice-storm",
@@ -121216,7 +121394,12 @@
             "kind": "castSpell",
             "spellRef": "spell:wall-of-ice",
             "saveDc": 17,
-            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring"
+            "condition": "only a Ring of Water Elemental Command, after you help slay a water elemental while attuned to the ring",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -123704,6 +123887,16 @@
               "from": "active",
               "to": "inactive",
               "via": "become-visible"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "the ring is removed"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you attack or cast a spell"
             }
           ],
           "termination": "You remain invisible until the ring is removed, until you attack or cast a spell, or until you use a bonus action to become visible again"
@@ -123913,7 +124106,11 @@
             "id": "c2-cast-jump",
             "kind": "castSpell",
             "spellRef": "spell:jump",
-            "target": "self"
+            "target": "self",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -124048,6 +124245,16 @@
               "from": "active",
               "to": "inactive",
               "via": "show-ring"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you remove the ring"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "you die"
             }
           ],
           "termination": "You can use an action to cause the ring to become invisible until you use another action to make it visible, until you remove the ring, or until you die"
@@ -124787,9 +124994,6 @@
             "activation": {
               "cost": "bonus-action"
             }
-          },
-          {
-            "id": "discharge-ball-lightning"
           }
         ],
         "effects": [
@@ -124809,18 +125013,30 @@
             "id": "c2-cast-dancing-lights",
             "kind": "castSpell",
             "spellRef": "spell:dancing-lights",
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-light",
             "kind": "castSpell",
-            "spellRef": "spell:light"
+            "spellRef": "spell:light",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-faerie-fire",
             "kind": "castSpell",
             "spellRef": "spell:faerie-fire",
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-launch-shooting-stars-payload",
@@ -124855,14 +125071,14 @@
             "scope": {
               "kind": "parent"
             },
-            "tag": "M5",
+            "tag": "C2",
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
-              "note": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence.",
+              "note": "The discharge is an external trigger of the created sphere, not an operation by the ring’s user; the multi-sphere lifecycle remains DM-adjudicated.",
               "sourceText": "When a creature other than you comes within 5 feet of a sphere, the sphere discharges lightning at that creature and disappears."
             },
-            "reason": "The printed text names no action cost for this use, so none is typed; the DM model interprets the printed sentence."
+            "reason": "The discharge is an external trigger of the created sphere, not an operation by the ring’s user; the multi-sphere lifecycle remains DM-adjudicated."
           },
           {
             "clauseId": "magic-item:ring-of-shooting-stars/c1-economy-charges",
@@ -125999,7 +126215,11 @@
             "kind": "castSpell",
             "spellRef": "spell:telekinesis",
             "concentrationRequired": true,
-            "target": "unattended objects only"
+            "target": "unattended objects only",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -128453,7 +128673,7 @@
             {
               "from": "planted-aura",
               "to": "held",
-              "via": "pull-rod"
+              "condition": "when a creature uses an action to pull the rod from the ground"
             },
             {
               "from": "planted-aura",
@@ -128552,34 +128772,47 @@
                 ]
               ]
             }
-          },
-          {
-            "id": "pull-rod",
-            "activation": {
-              "cost": "action"
-            }
           }
         ],
         "effects": [
           {
             "id": "c2-cast-detect-evil-and-good",
             "kind": "castSpell",
-            "spellRef": "spell:detect-evil-and-good"
+            "spellRef": "spell:detect-evil-and-good",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-detect-magic",
             "kind": "castSpell",
-            "spellRef": "spell:detect-magic"
+            "spellRef": "spell:detect-magic",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-detect-poison-and-disease",
             "kind": "castSpell",
-            "spellRef": "spell:detect-poison-and-disease"
+            "spellRef": "spell:detect-poison-and-disease",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-see-invisibility",
             "kind": "castSpell",
-            "spellRef": "spell:see-invisibility"
+            "spellRef": "spell:see-invisibility",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "kind": "sense",
@@ -130492,7 +130725,12 @@
             {
               "from": "loose",
               "to": "restraining",
-              "condition": "The target must succeed on a DC 15 Dexterity saving throw or become restrained"
+              "via": "entangle-creature",
+              "onFailure": {
+                "scope": "target",
+                "to": "loose",
+                "note": "transitionOutcome failure means the target succeeds on the Dexterity saving throw"
+              }
             },
             {
               "from": "restraining",
@@ -130502,7 +130740,7 @@
             {
               "from": "restraining",
               "to": "loose",
-              "condition": "On a success, the creature is no longer restrained by the rope"
+              "condition": "A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope."
             },
             {
               "from": "loose",
@@ -130528,10 +130766,7 @@
                   "held"
                 ]
               ]
-            },
-            "effects": [
-              "c2-entangle-creature-payload"
-            ]
+            }
           },
           {
             "id": "release-creature",
@@ -130539,38 +130774,6 @@
               "cost": "bonus-action",
               "commandWord": true
             }
-          },
-          {
-            "id": "escape-rope",
-            "activation": {
-              "cost": "action"
-            }
-          }
-        ],
-        "effects": [
-          {
-            "id": "c2-entangle-creature-payload",
-            "kind": "imposesCondition",
-            "conditions": [
-              "restrained"
-            ],
-            "save": {
-              "ability": "dexterity",
-              "dc": 15
-            },
-            "rangeFeet": 20,
-            "escapeCheck": {
-              "abilityChoice": [
-                "strength",
-                "dexterity"
-              ],
-              "dc": 15,
-              "activation": "action"
-            },
-            "endsOn": [
-              "successful-escape-check",
-              "release-command-word"
-            ]
           }
         ]
       },
@@ -130578,58 +130781,18 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
-            "clauseId": "magic-item:rope-of-entanglement/c2-effect-entangle-creature-payload",
+            "clauseId": "magic-item:rope-of-entanglement/c2-target-restrained",
             "scope": {
               "kind": "parent"
             },
             "tag": "C2",
+            "readiness": "adjudicated-by-design",
             "representation": {
-              "block": "effects",
-              "effectId": "c2-entangle-creature-payload"
+              "adjudicated": true,
+              "sourceText": "The target must succeed on a DC 15 Dexterity saving throw or become restrained.",
+              "note": "The DM adjudicates target selection, the saving throw, and applying the restrained condition. use_item records the declared outcome and paid operation state; the typed transition does not resolve the save or apply a creature condition."
             },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
-                "engine": "F6",
-                "hook": "hit points and condition lifecycle"
-              },
-              {
-                "engine": "F8",
-                "hook": "save DC and spell attack resolution"
-              },
-              {
-                "engine": "F9",
-                "hook": "damage, saving throws, and targeting"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
-                "engine": "F6",
-                "hook": "hit points and condition lifecycle"
-              },
-              {
-                "engine": "F8",
-                "hook": "save DC and spell attack resolution"
-              },
-              {
-                "engine": "F9",
-                "hook": "damage, saving throws, and targeting"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F6",
-              "F8",
-              "F9"
-            ]
+            "reason": "The DM adjudicates target selection, the saving throw, and applying the restrained condition. use_item records the declared outcome and paid operation state; the typed transition does not resolve the save or apply a creature condition."
           },
           {
             "clauseId": "magic-item:rope-of-entanglement/m5-rope-of-entanglement",
@@ -130643,54 +130806,17 @@
             "engineHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
+                "hook": "olc5.11 pack-tested paid item operation"
               },
               {
                 "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
+                "hook": "olc5.11 pack-tested item state and timer transition"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:rope-of-entanglement/triage-activation-entangle-creature-0",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "C2",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
-              "sourceText": "If you hold one end of the rope and use an action to speak its command word, the other end darts forward to entangle a creature you can see within 20 feet of you."
-            },
-            "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
-          },
-          {
-            "clauseId": "magic-item:rope-of-entanglement/triage-activation-escape-rope-0",
             "scope": {
               "kind": "parent"
             },
@@ -130699,7 +130825,7 @@
             "representation": {
               "adjudicated": true,
               "note": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
-              "sourceText": "A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice)."
+              "sourceText": "If you hold one end of the rope and use an action to speak its command word, the other end darts forward to entangle a creature you can see within 20 feet of you."
             },
             "reason": "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text."
           }
@@ -132487,19 +132613,31 @@
             "id": "c2-cast-charm-person",
             "kind": "castSpell",
             "spellRef": "spell:charm-person",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-command",
             "kind": "castSpell",
             "spellRef": "spell:command",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "round"
+            }
           },
           {
             "id": "c2-cast-comprehend-languages",
             "kind": "castSpell",
             "spellRef": "spell:comprehend-languages",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -133037,7 +133175,12 @@
             "id": "c2-cast-wall-of-fire",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-fire",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-staff-fire-resistance",
@@ -133508,7 +133651,12 @@
           {
             "id": "c2-cast-fog-cloud",
             "kind": "castSpell",
-            "spellRef": "spell:fog-cloud"
+            "spellRef": "spell:fog-cloud",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-ice-storm",
@@ -133520,7 +133668,12 @@
             "id": "c2-cast-wall-of-ice",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-ice",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-staff-frost-resistance",
@@ -134647,19 +134800,34 @@
             "id": "c2-cast-globe-of-invulnerability",
             "kind": "castSpell",
             "spellRef": "spell:globe-of-invulnerability",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-hold-monster",
             "kind": "castSpell",
             "spellRef": "spell:hold-monster",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-levitate",
             "kind": "castSpell",
             "spellRef": "spell:levitate",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-lightning-bolt",
@@ -134679,13 +134847,23 @@
             "kind": "castSpell",
             "spellRef": "spell:ray-of-enfeeblement",
             "saveDc": "owner-spell-save-dc",
-            "attackModifier": "owner-spell-attack-bonus"
+            "attackModifier": "owner-spell-attack-bonus",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-wall-of-force",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-force",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-staff-power-weapon-attack-damage",
@@ -136041,13 +136219,23 @@
             "id": "c2-cast-giant-insect",
             "kind": "castSpell",
             "spellRef": "spell:giant-insect",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-insect-plague",
             "kind": "castSpell",
             "spellRef": "spell:insect-plague",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -136815,7 +137003,12 @@
             "id": "c2-cast-conjure-elemental",
             "kind": "castSpell",
             "spellRef": "spell:conjure-elemental",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-dispel-magic",
@@ -136834,7 +137027,12 @@
             "id": "c2-cast-flaming-sphere",
             "kind": "castSpell",
             "spellRef": "spell:flaming-sphere",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-ice-storm",
@@ -136846,7 +137044,12 @@
             "id": "c2-cast-invisibility",
             "kind": "castSpell",
             "spellRef": "spell:invisibility",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-knock",
@@ -136865,7 +137068,11 @@
             "id": "c2-cast-passwall",
             "kind": "castSpell",
             "spellRef": "spell:passwall",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-plane-shift",
@@ -136878,19 +137085,33 @@
             "kind": "castSpell",
             "spellRef": "spell:telekinesis",
             "saveDc": "owner-spell-save-dc",
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-wall-of-fire",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-fire",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-web",
             "kind": "castSpell",
             "spellRef": "spell:web",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-arcane-lock",
@@ -136902,31 +137123,54 @@
             "id": "c2-cast-detect-magic",
             "kind": "castSpell",
             "spellRef": "spell:detect-magic",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-enlarge-reduce",
             "kind": "castSpell",
             "spellRef": "spell:enlarge-reduce",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-light",
             "kind": "castSpell",
             "spellRef": "spell:light",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-mage-hand",
             "kind": "castSpell",
             "spellRef": "spell:mage-hand",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-protection-from-evil-and-good",
             "kind": "castSpell",
             "spellRef": "spell:protection-from-evil-and-good",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-static-staff-magi-weapon-attack-damage",
@@ -139088,7 +139332,11 @@
             "id": "c2-cast-animal-friendship",
             "kind": "castSpell",
             "spellRef": "spell:animal-friendship",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 24,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-cast-awaken",
@@ -139100,7 +139348,12 @@
             "id": "c2-cast-barkskin",
             "kind": "castSpell",
             "spellRef": "spell:barkskin",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-locate-animals-or-plants",
@@ -139112,26 +139365,43 @@
             "id": "c2-cast-speak-with-animals",
             "kind": "castSpell",
             "spellRef": "spell:speak-with-animals",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-speak-with-plants",
             "kind": "castSpell",
             "spellRef": "spell:speak-with-plants",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-wall-of-thorns",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-thorns",
-            "saveDc": "owner-spell-save-dc"
+            "saveDc": "owner-spell-save-dc",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           },
           {
             "id": "c2-cast-pass-without-trace",
             "kind": "castSpell",
             "spellRef": "spell:pass-without-trace",
             "saveDc": "owner-spell-save-dc",
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           },
           {
             "id": "c2-static-staff-woodlands-weapon-attack-damage",
@@ -141531,6 +141801,11 @@
               "from": "active",
               "to": "inactive",
               "via": "end-light"
+            },
+            {
+              "from": "active",
+              "to": "inactive",
+              "condition": "sheathing the sword"
             }
           ],
           "termination": "Speaking the command word again or sheathing the sword puts out the light"
@@ -143484,7 +143759,11 @@
             "spellRef": "spell:dominate-beast",
             "saveDc": 15,
             "target": "beast with an innate swimming speed",
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -144136,14 +144415,22 @@
             "kind": "castSpell",
             "spellRef": "spell:hold-monster",
             "saveDc": 17,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           },
           {
             "id": "c2-cast-hold-person",
             "kind": "castSpell",
             "spellRef": "spell:hold-person",
             "saveDc": 17,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -144749,7 +145036,11 @@
             "options": [
               "flee",
               "grovel"
-            ]
+            ],
+            "duration": {
+              "amount": 1,
+              "unit": "round"
+            }
           },
           {
             "id": "c2-cone-of-fear-payload",
@@ -145524,7 +145815,12 @@
           {
             "id": "c2-cast-detect-magic",
             "kind": "castSpell",
-            "spellRef": "spell:detect-magic"
+            "spellRef": "spell:detect-magic",
+            "duration": {
+              "amount": 10,
+              "unit": "minute"
+            },
+            "concentrationRequired": true
           }
         ]
       },
@@ -146182,7 +146478,11 @@
             "kind": "castSpell",
             "spellRef": "spell:polymorph",
             "saveDc": 15,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -146747,7 +147047,11 @@
             "kind": "castSpell",
             "spellRef": "spell:web",
             "saveDc": 15,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "hour"
+            }
           }
         ]
       },
@@ -147438,7 +147742,11 @@
             "kind": "castSpell",
             "spellRef": "spell:gust-of-wind",
             "saveDc": 13,
-            "concentrationRequired": true
+            "concentrationRequired": true,
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            }
           }
         ]
       },
@@ -147926,37 +148234,14 @@
             "engineHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
+                "hook": "olc5.11 pack-tested paid item operation"
               },
               {
                 "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
+                "hook": "olc5.11 pack-tested item state and timer transition"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "item state transition and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "targeting, escape, and movement consequences"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:wings-of-flying/triage-activation-manifest-wings-0",

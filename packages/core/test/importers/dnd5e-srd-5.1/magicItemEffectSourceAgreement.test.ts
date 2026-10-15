@@ -397,6 +397,37 @@ const itemText = (record: (typeof population)[number]): string => {
 const effectsOf = (record: (typeof population)[number]): Obj[] =>
   ((record.data as Obj).mechanics as Obj).effects as Obj[];
 
+/**
+ * Some item effects inherit a typed finite duration from their referenced
+ * spell. That value is source-backed by the spell record, rather than repeated
+ * in the item's prose. Keep this exception exact to the effect's spellRef and
+ * the matching typed amount/unit pair.
+ */
+const isInheritedSpellDuration = (
+  effect: Obj,
+  violation: Violation,
+): boolean => {
+  if (
+    effect.kind !== 'castSpell' ||
+    typeof effect.spellRef !== 'string' ||
+    !/^.+\.duration\.(amount|unit)$/.test(violation.path)
+  )
+    return false;
+  const spell = recordsByKey.get(effect.spellRef);
+  if (spell?.kind !== 'spell' || !isObj(spell.data)) return false;
+  const mechanics = spell.data.mechanics;
+  if (!isObj(mechanics) || !isObj(mechanics.duration)) return false;
+  const { duration } = mechanics;
+  return (
+    duration.kind === 'timed' &&
+    duration.amount === (effect.duration as Obj | undefined)?.amount &&
+    duration.unit === (effect.duration as Obj | undefined)?.unit &&
+    (violation.path.endsWith('.amount')
+      ? violation.value === String(duration.amount)
+      : violation.value === String(duration.unit))
+  );
+};
+
 describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
   it('enumerates a non-trivial population by query', () => {
     expect(population.length).toBeGreaterThan(0);
@@ -411,16 +442,28 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
         screenEffect(record.key, itemText(record), effect, tableText),
       ),
     );
-    const unreviewed = violations.filter(
-      (violation) =>
+    const unreviewed = violations.filter((violation) => {
+      const record = population.find(
+        (candidate) => candidate.key === violation.item,
+      );
+      const effect = record
+        ? effectsOf(record).find(
+            (candidate) => String(candidate.id) === violation.effect,
+          )
+        : undefined;
+      return (
+        !(
+          effect !== undefined && isInheritedSpellDuration(effect, violation)
+        ) &&
         !REVIEWED_EXCEPTIONS.some(
           (exception) =>
             exception.item === violation.item &&
             exception.path === violation.path &&
             exception.kind === violation.kind &&
             exception.value === violation.value,
-        ),
-    );
+        )
+      );
+    });
     expect(unreviewed).toEqual([]);
     // An exception that no longer fires is stale and must be removed.
     for (const exception of REVIEWED_EXCEPTIONS)

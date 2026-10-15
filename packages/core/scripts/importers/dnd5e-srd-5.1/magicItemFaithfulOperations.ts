@@ -437,19 +437,13 @@ const BASE_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
         op('launch-shooting-stars', {
           target: 'a point you can see within 60 feet of you',
         }),
-        // Automatic discharge: no action cost is printed, only its trigger.
-        op('discharge-ball-lightning', {
-          cost: null,
-          trigger:
-            'When a creature other than you comes within 5 feet of a sphere',
-        }),
       ],
       clauses: [
         clause(
           'activation-discharge-ball-lightning',
-          { operation: 'discharge-ball-lightning' },
+          { operation: 'create-ball-lightning' },
           'When a creature other than you comes within 5 feet of a sphere, the sphere discharges lightning at that creature and disappears.',
-          NO_COST_NOTE,
+          'The discharge is an external trigger of the created sphere, not an operation by the ring’s user; the multi-sphere lifecycle remains DM-adjudicated.',
         ),
       ],
     },
@@ -529,7 +523,9 @@ const BASE_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
   ],
   [
     'Rope of Entanglement',
-    { operations: [op('release-creature', { commandWord: true })] },
+    {
+      operations: [op('release-creature', { commandWord: true })],
+    },
   ],
   [
     'Staff of the Python',

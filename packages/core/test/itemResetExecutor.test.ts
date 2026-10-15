@@ -5,13 +5,16 @@ import {
   attuneItem,
   createInitialItemState,
   createSeededRng,
+  donItem,
   getBundledDnd5eSrdPack,
   giveItem,
+  holdItem,
   readItemState,
   resolveRestEventItemResets,
   useItem,
   writeItemState,
 } from '../src/internal.js';
+import { applyItemStateConditionEvent } from '../src/state/itemResetExecutor.js';
 import { freshDbWithSession } from './support/db.js';
 
 const CTX = {
@@ -20,6 +23,15 @@ const CTX = {
   sessionId: 'session-1',
   at: '2026-07-20T00:00:00.000Z',
 };
+const BUNDLED_PACK = getBundledDnd5eSrdPack();
+
+function packedItem(name: string): RulesRecord {
+  const record = BUNDLED_PACK.records.find(
+    (candidate) => candidate.kind === 'magic-item' && candidate.name === name,
+  );
+  if (record === undefined) throw new Error(`bundled pack has no ${name}`);
+  return record;
+}
 
 function fixture(
   key: string,
@@ -95,17 +107,280 @@ function install(
   return item.id;
 }
 
-function useInput(pack: RulesPack, instanceId: string, operationId: string) {
+function useInput(
+  pack: RulesPack,
+  instanceId: string,
+  operationId: string,
+  args?: Readonly<Record<string, unknown>>,
+) {
   return {
     ...CTX,
     instanceId,
     operationId,
+    ...(args === undefined ? {} : { args }),
     characterId: 'pc-1',
     resolveRulesPack: resolver(pack),
   };
 }
 
 describe('item reset/timer executor', () => {
+  it('executes generated item condition and timer transitions on pack records', () => {
+    const resolverFor = (record: RulesRecord) => resolver(rulesPack(record));
+    const transitions = (record: RulesRecord) =>
+      (
+        (
+          (record.data as Record<string, unknown>).mechanics as Record<
+            string,
+            unknown
+          >
+        ).stateMachine as { transitions: Record<string, unknown>[] }
+      ).transitions;
+
+    const shield = packedItem('Animated Shield');
+    const shieldDb = freshDbWithSession();
+    const shieldId = install(shieldDb, shield);
+    holdItem(shieldDb, { ...CTX, itemId: shieldId });
+    attuneItem(shieldDb, {
+      ...CTX,
+      characterRef: 'pc-1',
+      itemId: shieldId,
+      itemRef: shield.key,
+    });
+    const shieldCondition = transitions(shield).find(
+      (transition) =>
+        typeof transition.condition === 'string' &&
+        transition.condition.includes('incapacitated or die'),
+    )?.condition;
+    expect(shieldCondition).toBe('until you are incapacitated or die');
+    useItem(
+      shieldDb,
+      useInput(rulesPack(shield), shieldId, 'speak-command-word'),
+    );
+    expect(
+      applyItemStateConditionEvent(shieldDb, {
+        ...CTX,
+        instanceId: shieldId,
+        condition: String(shieldCondition),
+        resolveRulesPack: resolverFor(shield),
+      }),
+    ).toMatchObject({ from: 'active', to: 'inactive' });
+    expect(readItemState(shieldDb, shieldId)?.machineState).toBe('inactive');
+    shieldDb.close();
+
+    const dagger = packedItem('Dagger of Venom');
+    const daggerDb = freshDbWithSession();
+    // The hit event is independent of the unrelated C1 daily-reset and C2
+    // poison-application hooks, so waive those gates while preserving the
+    // generated machine and its exact condition predicate.
+    const daggerData = dagger.data as Record<string, unknown>;
+    const readiness = daggerData.executionReadiness as {
+      source: string;
+      clauses: Record<string, unknown>[];
+    };
+    const daggerForTest = {
+      ...dagger,
+      data: {
+        ...daggerData,
+        executionReadiness: {
+          ...readiness,
+          clauses: readiness.clauses.map((clause) =>
+            clause.tag === 'C1' || clause.tag === 'C2'
+              ? {
+                  ...clause,
+                  readiness: 'green',
+                  missingHooks: undefined,
+                  missingEngines: undefined,
+                }
+              : clause,
+          ),
+        },
+      },
+    };
+    const daggerId = install(daggerDb, daggerForTest);
+    holdItem(daggerDb, { ...CTX, itemId: daggerId });
+    const daggerPack = rulesPack(daggerForTest);
+    useItem(daggerDb, useInput(daggerPack, daggerId, 'coat-blade'));
+    const hitCondition = transitions(dagger).find(
+      (transition) =>
+        transition.from === 'coated' &&
+        typeof transition.condition === 'string',
+    )?.condition;
+    expect(hitCondition).toBe('an attack using this weapon hits a creature');
+    expect(
+      applyItemStateConditionEvent(daggerDb, {
+        ...CTX,
+        instanceId: daggerId,
+        condition: String(hitCondition),
+        resolveRulesPack: resolverFor(daggerForTest),
+      }),
+    ).toMatchObject({ from: 'coated', to: 'uncoated' });
+    expect(readItemState(daggerDb, daggerId)?.machineState).toBe('uncoated');
+    expect(() =>
+      applyItemStateConditionEvent(daggerDb, {
+        ...CTX,
+        instanceId: daggerId,
+        condition: 'an undeclared condition',
+        resolveRulesPack: resolverFor(daggerForTest),
+      }),
+    ).toThrow(/no declared condition transition/);
+    daggerDb.close();
+
+    const wings = packedItem('Wings of Flying');
+    const wingsDb = freshDbWithSession();
+    const wingsId = install(wingsDb, wings);
+    donItem(wingsDb, { ...CTX, itemId: wingsId });
+    attuneItem(wingsDb, {
+      ...CTX,
+      characterRef: 'pc-1',
+      itemId: wingsId,
+      itemRef: wings.key,
+    });
+    useItem(wingsDb, useInput(rulesPack(wings), wingsId, 'manifest-wings'));
+    const expired = advanceWorldTime(wingsDb, {
+      ...CTX,
+      minutes: 60,
+      rng: { nextInt: () => 0 },
+      resolveRulesPack: resolverFor(wings),
+    });
+    expect(expired.itemTimerResolutions).toMatchObject([
+      { from: 'active', to: 'inactive', deadlineElapsedMinutes: 60 },
+    ]);
+    expect(readItemState(wingsDb, wingsId)?.economies?.cooldown).toMatchObject({
+      remaining: 0,
+      availableAt: '120',
+    });
+    wingsDb.close();
+  });
+
+  it('keeps the owner save outcome paid and records target escape as an external event', () => {
+    const rope = packedItem('Rope of Entanglement');
+    const pack = rulesPack(rope);
+    const db = freshDbWithSession();
+    const id = install(db, rope);
+    holdItem(db, { ...CTX, itemId: id });
+    if ((rope.data as Record<string, unknown>).requiresAttunement === true)
+      attuneItem(db, {
+        ...CTX,
+        characterRef: 'pc-1',
+        itemId: id,
+        itemRef: rope.key,
+      });
+    expect(
+      useItem(
+        db,
+        useInput(pack, id, 'entangle-creature', {
+          transitionOutcome: 'failure',
+        }),
+      ),
+    ).toMatchObject({
+      state: { machineState: 'loose' },
+      transition: { outcome: 'failure' },
+    });
+    expect(useItem(db, useInput(pack, id, 'entangle-creature'))).toMatchObject({
+      state: { machineState: 'restraining' },
+      transition: { outcome: 'success' },
+    });
+    expect(() => useItem(db, useInput(pack, id, 'escape-rope'))).toThrow(
+      /declares no operation/,
+    );
+    expect(
+      applyItemStateConditionEvent(db, {
+        ...CTX,
+        instanceId: id,
+        condition:
+          'A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope.',
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toMatchObject({
+      instanceId: id,
+      from: 'restraining',
+      to: 'loose',
+    });
+    const destroyed = (
+      (rope.data as Record<string, unknown>).mechanics as Record<
+        string,
+        unknown
+      >
+    ).stateMachine as { transitions: Record<string, unknown>[] };
+    const destructionCondition = destroyed.transitions.find(
+      (transition) =>
+        transition.from === 'restraining' && transition.to === 'destroyed',
+    )?.condition;
+    expect(destructionCondition).toBe('the rope drops to 0 hit points');
+    expect(
+      applyItemStateConditionEvent(db, {
+        ...CTX,
+        instanceId: id,
+        condition: String(destructionCondition),
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toMatchObject({ from: 'loose', to: 'destroyed' });
+    db.close();
+  });
+
+  it('fires a declared external condition and clears its active timer without spending an operation', () => {
+    const db = freshDbWithSession();
+    const record = fixture('condition-event', {
+      operations: [{ id: 'activate' }],
+      stateMachine: {
+        initial: 'inactive',
+        states: [{ id: 'inactive' }, { id: 'active' }],
+        transitions: [
+          { from: 'inactive', to: 'active', via: 'activate' },
+          {
+            from: 'active',
+            to: 'inactive',
+            timer: { amount: 1, unit: 'hour' },
+          },
+          {
+            from: 'active',
+            to: 'inactive',
+            condition: 'the wearer is incapacitated',
+          },
+        ],
+      },
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record, {
+      ...createInitialItemState(record.key, record),
+      machineState: 'active',
+      pendingTimers: [
+        {
+          from: 'active',
+          to: 'inactive',
+          anchorElapsedMinutes: 0,
+          deadlineElapsedMinutes: 60,
+          amount: 1,
+          unit: 'hour',
+        },
+      ],
+    });
+    expect(() =>
+      applyItemStateConditionEvent(db, {
+        instanceId: id,
+        condition: 'the wearer falls',
+        ...CTX,
+        rng: createSeededRng('condition-event'),
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toThrow(/no declared condition transition/);
+    expect(readItemState(db, id)?.machineState).toBe('active');
+    expect(
+      applyItemStateConditionEvent(db, {
+        instanceId: id,
+        condition: 'the wearer is incapacitated',
+        ...CTX,
+        rng: createSeededRng('condition-event'),
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toEqual({ instanceId: id, from: 'active', to: 'inactive' });
+    expect(readItemState(db, id)).toMatchObject({
+      machineState: 'inactive',
+      pendingTimers: [],
+    });
+    db.close();
+  });
+
   it('crosses dawn once, clamps regain, and is idempotent', () => {
     const db = freshDbWithSession();
     const record = fixture('reset-dawn', {

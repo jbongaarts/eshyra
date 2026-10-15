@@ -50,6 +50,11 @@ interface EffectSpec {
 interface ItemSpec {
   readonly sourcePhrases: readonly string[];
   readonly effects: readonly EffectSpec[];
+  readonly adjudicatedClauses?: readonly {
+    readonly id: string;
+    readonly sourceText: string;
+    readonly note: string;
+  }[];
 }
 
 const action = (requirement?: string, target?: string): Activation => ({
@@ -90,6 +95,34 @@ const fixedDc = (saveDc: number) => ({ saveDc });
 const noConcentration = { concentrationRequired: false } as const;
 
 const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
+  [
+    'Cloak of the Bat',
+    {
+      sourcePhrases: ['cast polymorph on yourself, transforming into a bat'],
+      effects: [
+        spell('cast-polymorph', 'spell:polymorph', {
+          concentrationRequired: true,
+        }),
+      ],
+    },
+  ],
+  [
+    'Rope of Entanglement',
+    {
+      sourcePhrases: [
+        'The target must succeed on a DC 15 Dexterity saving throw or become restrained.',
+      ],
+      effects: [],
+      adjudicatedClauses: [
+        {
+          id: 'c2-target-restrained',
+          sourceText:
+            'The target must succeed on a DC 15 Dexterity saving throw or become restrained.',
+          note: 'The DM adjudicates target selection, the saving throw, and applying the restrained condition. use_item records the declared outcome and paid operation state; the typed transition does not resolve the save or apply a creature condition.',
+        },
+      ],
+    },
+  ],
   [
     'Cloak of Arachnida',
     {
@@ -1450,39 +1483,6 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
     },
   ],
   [
-    'Rope of Entanglement',
-    {
-      sourcePhrases: [
-        'DC 15 Dexterity saving throw or become restrained',
-        'DC 15 Strength or Dexterity check',
-      ],
-      effects: [
-        payload(
-          'entangle-creature',
-          'imposesCondition',
-          {
-            conditions: ['restrained'],
-            save: { ability: 'dexterity', dc: 15 },
-            rangeFeet: 20,
-            escapeCheck: {
-              abilityChoice: ['strength', 'dexterity'],
-              dc: 15,
-              activation: 'action',
-            },
-            endsOn: ['successful-escape-check', 'release-command-word'],
-          },
-          undefined,
-          {
-            cost: 'action',
-            commandWord: true,
-            requirement: 'holding one end of rope',
-            target: 'one visible creature',
-          },
-        ),
-      ],
-    },
-  ],
-  [
     'Sphere of Annihilation',
     {
       sourcePhrases: [
@@ -1732,15 +1732,29 @@ export function projectMagicItemActivatedEffects(
   }
   return {
     family: 'c2-spells-and-activated-effects',
-    mechanics: {
-      operations: [...operations.values()],
-      effects: spec.effects.map(({ id, effect }) => ({ id, ...effect })),
-    },
-    clauses: spec.effects.map(({ id, hooks }) => ({
-      id: `c2-effect-${id.replace(/^c2-/, '')}`,
-      tag: 'C2' as const,
-      representation: { block: 'effects' as const, effectId: id },
-      engineHooks: hooks,
-    })),
+    mechanics:
+      spec.effects.length === 0
+        ? {}
+        : {
+            operations: [...operations.values()],
+            effects: spec.effects.map(({ id, effect }) => ({ id, ...effect })),
+          },
+    clauses: [
+      ...spec.effects.map(({ id, hooks }) => ({
+        id: `c2-effect-${id.replace(/^c2-/, '')}`,
+        tag: 'C2' as const,
+        representation: { block: 'effects' as const, effectId: id },
+        engineHooks: hooks,
+      })),
+      ...(spec.adjudicatedClauses ?? []).map((clause) => ({
+        id: clause.id,
+        tag: 'C2' as const,
+        representation: {
+          adjudicated: true as const,
+          sourceText: clause.sourceText,
+          note: clause.note,
+        },
+      })),
+    ],
   };
 }

@@ -36,3 +36,8 @@ Updated `records.json` SHA-256:
 ## Review r2 repair (PR #661)
 
 The Orb of Dragonkind scrying clause now carries only its own `scrying (3 charges)` span. Its earlier full-sentence span duplicated the shared Orb spell sentence, and triage deduplication then dropped the clause that governs all five Orb casts. The shared clause (`triage-activation-cast-cure-wounds-0`) is restored, and the normal-casting-time note no longer claims the sentence prints only the charge use.
+
+The later `eshyra-olc5.11.4` state-machine repair also changed `records.json`.
+Its regenerated SHA-256 is:
+
+`0ff61e8a709827d897c693dfcc8550d10cbaa7e08de04a683c82e11b67b22196`

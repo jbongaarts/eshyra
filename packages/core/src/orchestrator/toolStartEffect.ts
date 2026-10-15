@@ -1,10 +1,15 @@
+import { getCampaignRule } from '../campaign/campaignRuleStore.js';
 import type {
   CreateActiveEffectInput,
+  EffectDurationUnit,
   EffectParticipant,
+  ItemDurationProvenance,
   NaturalForm,
 } from '../state/activeEffects.js';
 import { createActiveEffect } from '../state/activeEffects.js';
+import { lookupStrictCampaignRecord } from '../state/campaignRecordLookup.js';
 import type { CharacterConditionEntry } from '../state/liveStateSchema.js';
+import { rollDice } from './dice.js';
 import {
   EFFECT_DURATION_SCHEMA,
   EFFECT_PARTICIPANT_SCHEMA,
@@ -40,7 +45,12 @@ export const startEffectTool: Tool = {
     'concentration effect deterministically ends the owner’s previous ' +
     'one (reported in the result); projected conditions are owned by the ' +
     'effect and are cleaned up exactly when it ends. Give every timer a ' +
-    'quantity, unit, and anchor. Use projected condition ids unique to the ' +
+    'quantity, unit, and anchor. For an item power with a typed printed ' +
+    'duration, omit duration entirely and the engine rolls printed dice or ' +
+    'fills a fixed duration. To use a different duration, supply it and ' +
+    'durationOverride { basis: "dm-adjudicated" | "house-rule", reason, ' +
+    'ruleId? }; ruleId must name an active house rule. Overrides are recorded ' +
+    'as unbound. Use projected condition ids unique to the ' +
     'effect (e.g. "blessed:fx-bless-1"). Do NOT use this for instantaneous ' +
     'spells — they leave no active effect and their consequences land through ' +
     'their own mutations — EXCEPT a bonded summon whose record keeps a ' +
@@ -94,6 +104,12 @@ export const startEffectTool: Tool = {
             ],
           },
           ref: { type: 'string', minLength: 1 },
+          effectRef: {
+            type: 'string',
+            minLength: 1,
+            description:
+              'For a magic-item source, the id of the item effect that created this effect.',
+          },
           actor: EFFECT_PARTICIPANT_SCHEMA,
         },
         required: ['kind'],
@@ -105,7 +121,23 @@ export const startEffectTool: Tool = {
           'Who concentrates on the effect. Required when the spell record ' +
           'says Concentration; forbidden when it does not.',
       },
-      duration: EFFECT_DURATION_SCHEMA,
+      duration: {
+        ...EFFECT_DURATION_SCHEMA,
+        description:
+          'Required except for a magic-item source whose effect has a typed duration. For that item case, omit the whole duration to have the engine fill the fixed duration or roll its dice with campaign RNG.',
+      },
+      durationOverride: {
+        type: 'object',
+        description:
+          'Declare only when overriding a typed item duration. basis is dm-adjudicated or house-rule; give a reason. If ruleId is supplied it must identify an active house-rule campaign rule.',
+        properties: {
+          basis: { type: 'string', enum: ['dm-adjudicated', 'house-rule'] },
+          reason: { type: 'string', minLength: 1 },
+          ruleId: { type: 'string', minLength: 1 },
+        },
+        required: ['basis', 'reason'],
+        additionalProperties: false,
+      },
       dismissible: {
         type: 'boolean',
         description:
@@ -240,7 +272,7 @@ export const startEffectTool: Tool = {
         },
       },
     },
-    required: ['effectId', 'kind', 'displayName', 'source', 'duration'],
+    required: ['effectId', 'kind', 'displayName', 'source'],
     additionalProperties: false,
   },
   run(args, ctx) {
@@ -276,9 +308,205 @@ export const startEffectTool: Tool = {
       }
       concentration = { owner: resolved };
     }
-    const duration = parseEffectDuration(a.duration);
-    if ('ok' in duration) {
-      return duration;
+    let itemDurationBinding:
+      | {
+          readonly status: 'bound';
+          readonly rollEvidence?: {
+            readonly expression: string;
+            readonly dice: readonly number[];
+            readonly total: number;
+          };
+        }
+      | { readonly status: 'unbound'; readonly reason: string }
+      | undefined;
+    let durationProvenance: ItemDurationProvenance | undefined;
+    let typedItemDuration: Record<string, unknown> | undefined;
+    if (source.kind === 'magic-item' && typeof source.ref === 'string') {
+      if (typeof source.effectRef !== 'string')
+        return err(
+          'invalid_args',
+          'a rules-pack magic-item source requires source.effectRef to bind the effect to its item power',
+        );
+      const itemRecord = lookupStrictCampaignRecord(
+        ctx.db,
+        'magic-item',
+        source.ref,
+        ctx.resolveRulesPack,
+      )?.record;
+      const data = itemRecord?.data as Record<string, unknown> | undefined;
+      const mechanics = data?.mechanics as Record<string, unknown> | undefined;
+      const itemEffects = Array.isArray(mechanics?.effects)
+        ? mechanics.effects
+        : [];
+      const itemEffect = itemEffects.find(
+        (candidate) =>
+          typeof candidate === 'object' &&
+          candidate !== null &&
+          (candidate as Record<string, unknown>).id === source.effectRef,
+      ) as Record<string, unknown> | undefined;
+      if (itemEffect === undefined)
+        return err(
+          'invalid_args',
+          `source.effectRef '${source.effectRef}' does not resolve to an effect on '${source.ref}'`,
+        );
+      const typed = itemEffect.duration;
+      if (
+        typeof typed === 'object' &&
+        typed !== null &&
+        !Array.isArray(typed)
+      ) {
+        typedItemDuration = typed as Record<string, unknown>;
+      } else {
+        itemDurationBinding = {
+          status: 'unbound',
+          reason:
+            'the item effect has no typed duration; the DM adjudicates the active duration',
+        };
+      }
+    }
+    const override = asRecord(a.durationOverride);
+    if (a.durationOverride !== undefined && override === undefined)
+      return err('invalid_args', 'durationOverride must be an object');
+    let duration: ReturnType<typeof parseEffectDuration>;
+    if (typedItemDuration !== undefined) {
+      const typedAmount = typedItemDuration.amount;
+      const typedUnit = typedItemDuration.unit;
+      if (
+        (typeof typedAmount !== 'number' && typeof typedAmount !== 'string') ||
+        typeof typedUnit !== 'string'
+      )
+        return err(
+          'invalid_args',
+          'the item effect has a malformed typed duration and cannot be bound',
+        );
+      if (override !== undefined) {
+        if (
+          (override.basis !== 'dm-adjudicated' &&
+            override.basis !== 'house-rule') ||
+          typeof override.reason !== 'string' ||
+          override.reason.trim().length === 0 ||
+          (override.ruleId !== undefined &&
+            (typeof override.ruleId !== 'string' ||
+              override.ruleId.trim().length === 0))
+        )
+          return err(
+            'invalid_args',
+            'durationOverride requires basis, a non-empty reason, and an optional non-empty ruleId',
+          );
+        if (override.ruleId !== undefined) {
+          const rule = getCampaignRule(ctx.db, {
+            campaignId: ctx.campaignId,
+            ruleIdentity: override.ruleId,
+          });
+          if (
+            rule === undefined ||
+            rule.status !== 'active' ||
+            rule.ruleKind !== 'house-rule'
+          )
+            return err(
+              'invalid_args',
+              `durationOverride.ruleId '${override.ruleId}' must resolve to an active house-rule campaign rule`,
+            );
+        }
+        duration = parseEffectDuration(a.duration);
+        if ('ok' in duration) return duration;
+        durationProvenance = {
+          kind: 'dm-override',
+          basis: override.basis,
+          reason: override.reason.trim(),
+          ...(typeof override.ruleId === 'string'
+            ? { ruleId: override.ruleId }
+            : {}),
+        };
+        const ruleTag =
+          typeof override.ruleId === 'string'
+            ? ` using house-rule '${override.ruleId}'`
+            : '';
+        itemDurationBinding = {
+          status: 'unbound',
+          reason: `DM override (${override.basis}${ruleTag}): ${override.reason.trim()}`,
+        };
+      } else if (a.duration === undefined) {
+        if (typeof typedAmount === 'number') {
+          duration = parseEffectDuration({
+            kind: 'timed',
+            amount: typedAmount,
+            unit: typedUnit,
+            anchor: 'effect-created',
+          });
+          if ('ok' in duration) return duration;
+          durationProvenance = {
+            kind: 'typed-fixed',
+            amount: typedAmount,
+            unit: typedUnit as EffectDurationUnit,
+          };
+          itemDurationBinding = { status: 'bound' };
+        } else {
+          try {
+            const roll = rollDice(typedAmount, ctx.rng);
+            if (roll.total < 1)
+              return err(
+                'invalid_args',
+                `typed item duration '${typedAmount}' resolved below one`,
+              );
+            duration = parseEffectDuration({
+              kind: 'timed',
+              amount: roll.total,
+              unit: typedUnit,
+              anchor: 'effect-created',
+            });
+            if ('ok' in duration) return duration;
+            durationProvenance = {
+              kind: 'engine-rolled',
+              expression: typedAmount,
+              rolls: roll.rolls,
+              total: roll.total,
+            };
+            itemDurationBinding = {
+              status: 'bound',
+              rollEvidence: {
+                expression: typedAmount,
+                dice: roll.rolls,
+                total: roll.total,
+              },
+            };
+          } catch {
+            return err(
+              'invalid_args',
+              `typed item duration '${typedAmount}' is not a supported dice expression`,
+            );
+          }
+        }
+      } else {
+        duration = parseEffectDuration(a.duration);
+        if ('ok' in duration) return duration;
+        if (
+          typeof typedAmount === 'number' &&
+          duration.kind === 'timed' &&
+          duration.amount === typedAmount &&
+          duration.unit === typedUnit
+        ) {
+          durationProvenance = {
+            kind: 'typed-fixed',
+            amount: typedAmount,
+            unit: typedUnit as EffectDurationUnit,
+          };
+          itemDurationBinding = { status: 'bound' };
+        } else {
+          return err(
+            'invalid_args',
+            `duration for item effect '${source.effectRef}' must be omitted so the engine resolves its printed duration, or accompanied by an explicit durationOverride`,
+          );
+        }
+      }
+    } else {
+      if (override !== undefined)
+        return err(
+          'invalid_args',
+          'durationOverride is only valid for a typed item duration',
+        );
+      duration = parseEffectDuration(a.duration);
+      if ('ok' in duration) return duration;
     }
     const targets: {
       kind: 'character' | 'combatant' | 'campaign_actor' | 'scope';
@@ -390,29 +618,35 @@ export const startEffectTool: Tool = {
     }
 
     try {
-      return ok(
-        createActiveEffect(ctx.db, {
-          campaignId: ctx.campaignId,
-          effectId: String(a.effectId),
-          kind: a.kind as CreateActiveEffectInput['kind'],
-          displayName: String(a.displayName),
-          source: {
-            kind: source.kind as CreateActiveEffectInput['source']['kind'],
-            ...(typeof source.ref === 'string' ? { ref: source.ref } : {}),
-            ...(sourceActor === undefined ? {} : { actor: sourceActor }),
-          },
-          ...(concentration === undefined ? {} : { concentration }),
-          duration,
-          ...(a.dismissible === true ? { dismissible: true } : {}),
-          ...(targets.length === 0 ? {} : { targets }),
-          ...(conditions.length === 0 ? {} : { conditions }),
-          ...(actors.length === 0 ? {} : { actors }),
-          resolveRulesPack: ctx.resolveRulesPack,
-          provenance: `model:${ctx.turnId}`,
-          sessionId: ctx.sessionId,
-          at: ctx.at,
-        }),
-      );
+      const created = createActiveEffect(ctx.db, {
+        campaignId: ctx.campaignId,
+        effectId: String(a.effectId),
+        kind: a.kind as CreateActiveEffectInput['kind'],
+        displayName: String(a.displayName),
+        source: {
+          kind: source.kind as CreateActiveEffectInput['source']['kind'],
+          ...(typeof source.ref === 'string' ? { ref: source.ref } : {}),
+          ...(typeof source.effectRef === 'string'
+            ? { effectRef: source.effectRef }
+            : {}),
+          ...(sourceActor === undefined ? {} : { actor: sourceActor }),
+        },
+        ...(concentration === undefined ? {} : { concentration }),
+        duration,
+        ...(durationProvenance === undefined ? {} : { durationProvenance }),
+        ...(a.dismissible === true ? { dismissible: true } : {}),
+        ...(targets.length === 0 ? {} : { targets }),
+        ...(conditions.length === 0 ? {} : { conditions }),
+        ...(actors.length === 0 ? {} : { actors }),
+        resolveRulesPack: ctx.resolveRulesPack,
+        provenance: `model:${ctx.turnId}`,
+        sessionId: ctx.sessionId,
+        at: ctx.at,
+      });
+      return ok({
+        ...created,
+        ...(itemDurationBinding === undefined ? {} : { itemDurationBinding }),
+      });
     } catch (e) {
       return effectToolError(e);
     }

@@ -360,7 +360,6 @@ describe('offline discovery stage boundaries', () => {
           'press-face-4',
           'press-face-5',
           'press-face-6',
-          'spell-contact-loss',
         ].sort(),
       );
       // P7's premise: a jhpt ruling never makes an engine-pending readiness

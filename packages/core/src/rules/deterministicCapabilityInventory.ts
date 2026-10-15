@@ -469,13 +469,13 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
     }),
     toolEntry('start_effect', 'bounded-procedure', {
       operation:
-        'Start one durable active effect (concentration or timed spell effect, condition package, curse, ward, summon control, or activated item power) in one transaction. Source grounding depends on the source form. A spell source must resolve to a spell record in the bound rules stack; when that record carries a duration text, its concentration marker must match the declaration (required or forbidden), and its parsed duration form constrains the declared duration: a timed record (a number of rounds, minutes, hours, or days) requires a timed duration with the same amount and unit; until dispelled requires until-removed; until dispelled or triggered requires until-trigger; and an instantaneous record is refused unless the effect is a summoning whose record mechanics declare a persistent-linked summon with an active initial link (Find Familiar, Find Steed), which is admitted as a bonded summon. A duration text in no recognized form constrains concentration but not the duration, and a record without a duration text constrains neither. A magic-item source that names a ref must resolve to a magic-item record; other source kinds are not grounded in a record. A new concentration effect ends the owner previous live concentration effect in the same transaction; projected conditions, linked actors, zones, and forms are owned by the effect.',
-      requiredInputs: ['effectId', 'kind', 'displayName', 'source', 'duration'],
+        'Start one durable active effect (concentration or timed spell effect, condition package, curse, ward, summon control, or activated item power) in one transaction. Source grounding depends on the source form. A spell source must resolve to a spell record in the bound rules stack; when that record carries a duration text, its concentration marker must match the declaration (required or forbidden), and its parsed duration form constrains the declared duration: a timed record (a number of rounds, minutes, hours, or days) requires a timed duration with the same amount and unit; until dispelled requires until-removed; until dispelled or triggered requires until-trigger; and an instantaneous record is refused unless the effect is a summoning whose record mechanics declare a persistent-linked summon with an active initial link (Find Familiar, Find Steed), which is admitted as a bonded summon. A duration text in no recognized form constrains concentration but not the duration, and a record without a duration text constrains neither. A magic-item source with an effectRef must resolve to an effect on the bound magic-item record. A typed fixed duration can be omitted to use the printed amount, or supplied exactly; a typed dice duration must be omitted so the engine rolls it with campaign RNG and records individual dice evidence. Any explicit replacement of a typed item duration requires a DM override declaration and is stored as unbound provenance; a ruleId must resolve to an active house rule. Untyped item durations remain DM-adjudicated. Other source kinds are not grounded in a record. A new concentration effect ends the owner previous live concentration effect in the same transaction; projected conditions, linked actors, zones, and forms are owned by the effect.',
+      requiredInputs: ['effectId', 'kind', 'displayName', 'source'],
       exclusions: [
         'An existing effect id (whatever its status) is refused, and an id ending in the reserved "<id>:uncontrolled" suffix is refused.',
         'The kind limits which source kinds, concentration, and projections an effect may declare; structurally meaningless combinations, an owned entity that already has an owning effect, and a condition the target already has are refused before any write.',
         'A bonded summon (the instantaneous persistent-linked case above) requires an until-removed duration, a source actor that is a character or campaign actor (not a combatant), and at least one linked actor (and no more than the record maximum, when it gives one), and is refused while the same caster already holds a live effect from that spell with an active actor link (one bond per caster per spell).',
-        'The timed record check compares amount and unit only, not the anchor; a ruling or item source, and a spell record whose duration is unrecognized or absent, leave the declared duration to the caller.',
+        'The timed spell-record check compares amount and unit only, not the anchor; a ruling source and a spell record whose duration is unrecognized or absent leave the declared duration to the caller.',
         'If projecting a condition cascades back and ends the effect mid-creation, the creation is refused and nothing is committed.',
         'Does not apply the consequences of the effect beyond the condition, actor, zone, and form projections it owns.',
       ],
@@ -1058,6 +1058,26 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
     ],
     runtimeOwner: [o('toolHoldItem.ts'), s('inventoryHeld.ts')],
     evidence: [t('equipmentPrerequisites.test.ts')],
+  }),
+  toolEntry('item_state_event', 'state-integrity', {
+    operation:
+      'Apply an exact condition transition declared for the item instance current state, reconciling its timers and state-entered cooldown anchors.',
+    requiredInputs: ['instanceId', 'condition', 'character'],
+    exclusions: [
+      'Undeclared or multiply declared conditions from the current state are refused.',
+      'Does not infer that the printed event occurred; the DM adjudicates the event.',
+      'Spends no action, turn resource, or item economy.',
+    ],
+    residualDmInterpretation: [
+      'The DM determines whether the printed external event occurred and supplies the matching declared condition.',
+    ],
+    runtimeOwner: [
+      o('toolItemStateEvent.ts'),
+      s('itemResetExecutor.ts'),
+      s('itemTimers.ts'),
+      s('itemState.ts'),
+    ],
+    evidence: [t('itemResetExecutor.test.ts')],
   }),
   toolEntry('stow_item', 'state-integrity', {
     operation:

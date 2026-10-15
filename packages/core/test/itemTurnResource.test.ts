@@ -422,15 +422,14 @@ describe('use_item spends the printed activation turn resource (pack records)', 
     expect(budgetOf(db, pcId)?.actionUsed).toBe(false);
   });
 
-  it('an operation with neither a typed cost nor a bound spell reports no turn resource', () => {
+  it('an external sphere trigger is not declared as a ring operation', () => {
     const { db, pcId } = setup(true);
     const key = 'magic-item:ring-of-shooting-stars';
     const pack = packWith(key);
     const id = install(db, pack, key, 'stars');
-    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
-    const result = use(db, pack, pcId, id, 'discharge-ball-lightning');
-    expect(result.turnResource).toBeUndefined();
-    expect(budgetOf(db, pcId)?.actionUsed).toBe(false);
+    expect(() => use(db, pack, pcId, id, 'discharge-ball-lightning')).toThrow(
+      /declares no operation/,
+    );
   });
 });
 

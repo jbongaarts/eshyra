@@ -27,6 +27,8 @@ const toggle = (
     deactivateCost?: 'action' | 'bonus-action' | 'free';
     duration?: MagicItemStateMachine['duration'];
     termination?: string;
+    conditions?: readonly string[];
+    externalTransitions?: readonly MagicItemStateMachine['transitions'][number][];
     commandWord?: boolean;
   } = {},
 ): Pick<SimpleStateSpec, 'operations' | 'stateMachine'> => ({
@@ -53,6 +55,12 @@ const toggle = (
               timer: options.duration,
             },
           ]),
+      ...(options.conditions ?? []).map((condition) => ({
+        from: 'active' as const,
+        to: 'inactive' as const,
+        condition,
+      })),
+      ...(options.externalTransitions ?? []),
     ],
     ...(options.duration === undefined ? {} : { duration: options.duration }),
     ...(options.termination === undefined
@@ -69,6 +77,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         'speak its command word as a bonus action to cause it to animate',
         'remains animated for 1 minute',
         'until you are incapacitated or die',
+        'at which point the shield falls to the ground or into your hand if you have one free',
       ],
       ...toggle(
         'speak-command-word',
@@ -81,6 +90,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           commandWord: true,
           termination:
             'deactivation, wearer incapacitation, wearer death, or one minute',
+          conditions: ['until you are incapacitated or die'],
         },
       ),
     },
@@ -99,6 +109,9 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         {
           activateCost: 'bonus-action',
           deactivateCost: 'bonus-action',
+          conditions: [
+            'When the boots’ property has been used for a total of 10 minutes',
+          ],
           termination:
             'deactivation or exhaustion of the separate ten-minute budget',
         },
@@ -352,6 +365,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           deactivateCost: 'bonus-action',
           commandWord: true,
           termination: 'repeat command word or drop/stow weapon',
+          conditions: ['you drop or sheathe the sword'],
         },
       ),
     },
@@ -371,6 +385,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           deactivateCost: 'bonus-action',
           commandWord: true,
           termination: 'repeat first command word or use another gem function',
+          conditions: ['you use another function of the gem'],
         },
       ),
     },
@@ -435,7 +450,9 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
     {
       sourcePhrases: [
         'press the button, which causes the rod to become magically fixed in place',
-        'push the button again',
+        'Until you or another creature uses an action to push the button again, the rod doesn’t move, even if it is defying gravity.',
+        'More weight causes the rod to deactivate and fall.',
+        'A creature can use an action to make a DC 30 Strength check, moving the fixed rod up to 10 feet on a success.',
       ],
       ...toggle(
         'fix-rod',
@@ -443,7 +460,22 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         'rod is fixed in place until overloaded or released',
         {
           termination:
-            'button release, more than 8,000 pounds, or successful DC 30 Strength check moves it 10 feet',
+            'you or another creature pushes the button again, or more than 8,000 pounds of weight',
+          conditions: ['More weight causes the rod to deactivate and fall.'],
+          externalTransitions: [
+            {
+              from: 'active',
+              to: 'inactive',
+              condition:
+                'another creature uses an action to push the button again',
+            },
+            {
+              from: 'active',
+              to: 'active',
+              condition:
+                'A creature can use an action to make a DC 30 Strength check, moving the fixed rod up to 10 feet on a success.',
+            },
+          ],
         },
       ),
     },
@@ -456,11 +488,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         'orbits your head at a distance of 1d3 feet',
         'use an action to seize and stow the stone',
       ],
-      operations: [
-        operation('start-orbit'),
-        operation('seize-and-stow'),
-        operation('grab-orbiting-stone'),
-      ],
+      operations: [operation('start-orbit'), operation('seize-and-stow')],
       stateMachine: {
         initial: 'stowed',
         states: [
@@ -477,8 +505,11 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           {
             from: 'orbiting',
             to: 'seized',
+            // This is an external action by another creature, not an
+            // operation available to the item's owner. The DM resolves that
+            // creature's action and item_state_event records its full result.
             condition:
-              'another creature succeeds on DC 24 Dexterity (Acrobatics) check',
+              'Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
           },
         ],
         termination:
@@ -610,6 +641,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
           deactivateCost: 'bonus-action',
           termination:
             'ring removed, wearer attacks or casts a spell, or bonus-action deactivation',
+          conditions: ['the ring is removed', 'you attack or cast a spell'],
         },
       ),
     },
@@ -623,6 +655,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
       ],
       ...toggle('hide-ring', 'show-ring', 'ring is invisible', {
         termination: 'show action, ring removal, or wearer death',
+        conditions: ['you remove the ring', 'you die'],
       }),
     },
   ],
@@ -665,24 +698,32 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
       sourcePhrases: [
         'darts forward to entangle a creature',
         'release the creature by using a bonus action',
-        'DC 15 Strength or Dexterity check',
+        'A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope.',
       ],
       operations: [
         operation('entangle-creature'),
         operation('release-creature', 'bonus-action'),
-        operation('escape-rope'),
       ],
       stateMachine: {
         initial: 'loose',
         states: [{ id: 'loose' }, { id: 'restraining' }, { id: 'destroyed' }],
         transitions: [
-          { from: 'loose', to: 'restraining', via: 'entangle-creature' },
+          {
+            from: 'loose',
+            to: 'restraining',
+            via: 'entangle-creature',
+            onFailure: {
+              scope: 'target',
+              to: 'loose',
+              note: 'transitionOutcome failure means the target succeeds on the Dexterity saving throw',
+            },
+          },
           { from: 'restraining', to: 'loose', via: 'release-creature' },
           {
             from: 'restraining',
             to: 'loose',
             condition:
-              'restrained target succeeds on DC 15 Strength or Dexterity check',
+              'A target restrained by the rope can use an action to make a DC 15 Strength or Dexterity check (target’s choice). On a success, the creature is no longer restrained by the rope.',
           },
           {
             from: 'loose',
@@ -814,6 +855,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
         'sword sheds bright light 10 feet and dim light an additional 10 feet',
         {
           commandWord: true,
+          conditions: ['sheathing the sword'],
           termination: 'repeat command word or sheathe sword',
         },
       ),
@@ -838,6 +880,14 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
       ),
     },
   ],
+]);
+
+/** Pack conformance records for olc5.11's operation + event/timer boundary. */
+const RUNTIME_M5_CONFORMANCE_NAMES = new Set([
+  'Animated Shield',
+  'Dagger of Venom',
+  'Rope of Entanglement',
+  'Wings of Flying',
 ]);
 
 export const MAGIC_ITEM_SIMPLE_M5_NAMES = Object.freeze([...SPECS.keys()]);
@@ -885,17 +935,28 @@ export function projectMagicItemSimpleStateMachine(
           .replace(/^-|-$/g, '')}`,
         tag: 'M5',
         representation: { block: 'stateMachine' },
-        engineHooks: [
-          { engine: 'F2', hook: 'activation action economy' },
-          {
-            engine: 'F5',
-            hook: 'item state transition and duration processing',
-          },
-          {
-            engine: 'F9',
-            hook: 'targeting, escape, and movement consequences',
-          },
-        ],
+        // These four records have pack conformance tests for the transition
+        // boundary. Their condition truth/save result remains DM input; the
+        // runtime executes the paid action (F2) and state/timer effects (F5).
+        engineHooks: RUNTIME_M5_CONFORMANCE_NAMES.has(item.name)
+          ? [
+              { engine: 'F2', hook: 'olc5.11 pack-tested paid item operation' },
+              {
+                engine: 'F5',
+                hook: 'olc5.11 pack-tested item state and timer transition',
+              },
+            ]
+          : [
+              { engine: 'F2', hook: 'activation action economy' },
+              {
+                engine: 'F5',
+                hook: 'item state transition and duration processing',
+              },
+              {
+                engine: 'F9',
+                hook: 'targeting, escape, and movement consequences',
+              },
+            ],
       },
     ],
   };

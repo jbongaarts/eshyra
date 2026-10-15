@@ -56,13 +56,13 @@ function mechanicsRecord(name: string, mechanics: unknown): RulesRecord {
 
 describe('C2 spell grants and activated save/DC projection', () => {
   it('pins the exact reviewed bounded membership and canonical references', () => {
-    expect(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).toHaveLength(64);
-    expect(new Set(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).size).toBe(64);
+    expect(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).toHaveLength(65);
+    expect(new Set(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).size).toBe(65);
     expect(
       items
         .map(({ name }) => name)
         .filter((name) => MAGIC_ITEM_ACTIVATED_EFFECT_NAMES.includes(name)),
-    ).toHaveLength(64);
+    ).toHaveLength(65);
     for (const ref of MAGIC_ITEM_ACTIVATED_EFFECT_REFERENCES) {
       expect(keys.has(ref), ref).toBe(true);
     }
@@ -120,6 +120,23 @@ describe('C2 spell grants and activated save/DC projection', () => {
       projectMagicItemActivatedEffects(named('Potion of Healing'))?.mechanics
         .effects?.[0],
     ).toMatchObject({ kind: 'healing', tableRef: 'table:potions-of-healing' });
+  });
+
+  it('binds Cloak of the Bat polymorph to the spell record duration', () => {
+    const effect = records.find(
+      (record) => record.key === 'magic-item:cloak-of-the-bat',
+    )?.data;
+    const mechanics = (effect as Record<string, unknown> | undefined)
+      ?.mechanics as Record<string, unknown> | undefined;
+    const polymorph = (
+      mechanics?.effects as Record<string, unknown>[] | undefined
+    )?.find((entry) => entry.id === 'c2-cast-polymorph');
+    expect(polymorph).toMatchObject({
+      kind: 'castSpell',
+      spellRef: 'spell:polymorph',
+      concentrationRequired: true,
+      duration: { amount: 1, unit: 'hour' },
+    });
   });
 
   it('models activation, save branches, conditions, repeats, and healing', () => {
@@ -291,6 +308,21 @@ describe('C2 spell grants and activated save/DC projection', () => {
   it('merges payloads into the exact C1 operation IDs and validates every result', () => {
     for (const name of MAGIC_ITEM_ACTIVATED_EFFECT_NAMES) {
       const item = named(name);
+      if (name === 'Rope of Entanglement') {
+        const adjudicated = projectMagicItemActivatedEffects(item);
+        expect(adjudicated?.mechanics).toEqual({});
+        expect(adjudicated?.clauses).toContainEqual(
+          expect.objectContaining({
+            tag: 'C2',
+            representation: expect.objectContaining({
+              adjudicated: true,
+              sourceText:
+                'The target must succeed on a DC 15 Dexterity saving throw or become restrained.',
+            }),
+          }),
+        );
+        continue;
+      }
       const projections = [
         projectMagicItemChargeEconomies(item),
         projectMagicItemUseEconomies(item),

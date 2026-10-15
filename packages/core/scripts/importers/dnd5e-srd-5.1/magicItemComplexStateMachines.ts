@@ -245,12 +245,9 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         'expending the requisite number of charges, resetting the duration',
         'cube loses charges when the barrier is targeted by certain spells',
       ],
-      operations: [
-        ...Array.from({ length: 6 }, (_, i) => op(`press-face-${i + 1}`)),
-        op('spell-contact-loss', 'free', {
-          trigger: 'listed spell contacts barrier',
-        }),
-      ],
+      operations: Array.from({ length: 6 }, (_, i) =>
+        op(`press-face-${i + 1}`),
+      ),
       effects: [
         procedure(
           'm5-complex-cube-faces',
@@ -306,13 +303,22 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
           ...Array.from({ length: 5 }, (_, i) => ({
             from: `face-${i + 1}`,
             to: `face-${i + 1}`,
-            via: 'spell-contact-loss',
+            // This external event is source-typed, but item_state_event has no
+            // charge-deduction input. Keep the full clause and effect reference
+            // visible while execution remains engine-pending.
+            condition:
+              'The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.',
             effects: ['m5-complex-cube-contact'],
           })),
           ...Array.from({ length: 5 }, (_, i) => ({
             from: `face-${i + 1}`,
             to: 'inactive',
             via: 'press-face-6',
+          })),
+          ...Array.from({ length: 5 }, (_, i) => ({
+            from: `face-${i + 1}`,
+            to: 'inactive',
+            condition: 'the cube runs out of charges',
           })),
           // Source: the barrier "lasts for 1 minute"; pressing another face
           // expends charges "resetting the duration", which re-anchors the
@@ -644,9 +650,6 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
       operations: [
         op('create-ball-lightning'),
         op('move-ball-lightning', 'bonus-action'),
-        op('discharge-ball-lightning', 'free', {
-          trigger: 'creature comes within 5 feet',
-        }),
       ],
       stateMachine: {
         initial: 'inactive',
@@ -721,9 +724,9 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
       phrases: [
         'plant the haft end of the rod in the ground',
         'effect ends after 10 minutes',
-        'creature uses an action to pull the rod from the ground',
+        'a creature uses an action to pull the rod from the ground',
       ],
-      operations: [op('activate-protective-aura'), op('pull-rod')],
+      operations: [op('activate-protective-aura')],
       stateMachine: {
         initial: 'held',
         states: [
@@ -735,7 +738,12 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         ],
         transitions: [
           { from: 'held', to: 'planted-aura', via: 'activate-protective-aura' },
-          { from: 'planted-aura', to: 'held', via: 'pull-rod' },
+          {
+            from: 'planted-aura',
+            to: 'held',
+            condition:
+              'when a creature uses an action to pull the rod from the ground',
+          },
           {
             from: 'planted-aura',
             to: 'held',

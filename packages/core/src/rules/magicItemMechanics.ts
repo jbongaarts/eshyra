@@ -140,6 +140,7 @@ export interface MagicItemOperation {
 export interface MagicItemEffect extends Readonly<Record<string, unknown>> {
   readonly kind: string;
   readonly id?: string;
+  readonly duration?: MagicItemDurationSpec | string;
 }
 
 export interface MagicItemStateMachine {
@@ -161,7 +162,7 @@ export interface MagicItemStateMachine {
     readonly condition?: string;
     readonly effects?: readonly string[];
     readonly onFailure?: {
-      readonly retryAfter: MagicItemDurationSpec;
+      readonly retryAfter?: MagicItemDurationSpec;
       readonly scope: 'actor' | 'target' | 'item';
       readonly to?: string;
       readonly note?: string;
@@ -1114,7 +1115,8 @@ function stateMachine(
       const failurePath = `${transitionPath}.onFailure`;
       const failure = object(transition.onFailure, failurePath);
       only(failure, ['retryAfter', 'scope', 'to', 'note'], failurePath);
-      duration(failure.retryAfter, `${failurePath}.retryAfter`);
+      if (failure.retryAfter !== undefined)
+        duration(failure.retryAfter, `${failurePath}.retryAfter`);
       const scope = string(failure.scope, `${failurePath}.scope`);
       if (!new Set(['actor', 'target', 'item']).has(scope)) {
         throw new RulesPackError(
@@ -2406,6 +2408,11 @@ export function validateMagicItemMechanics(
     mechanics.effects.forEach((entry, index) => {
       const effectPath = `${path}.effects[${index}]`;
       const effect = object(entry, effectPath);
+      if (effect.duration !== undefined) {
+        if (typeof effect.duration === 'string')
+          string(effect.duration, `${effectPath}.duration`);
+        else duration(effect.duration, `${effectPath}.duration`);
+      }
       validateEffect(effect, effectPath);
       if (effect.id !== undefined) {
         const effectId = id(effect.id, `${effectPath}.id`);

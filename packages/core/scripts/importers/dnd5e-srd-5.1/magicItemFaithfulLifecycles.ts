@@ -14,11 +14,9 @@
  * `adjudicated-by-design` clause carrying a verbatim `sourceText` span, so the
  * DM model interprets the printed text.
  *
- * Runtime safety: no operation the readiness preflight reports green is
- * removed or re-bound (the Ioun Stone `grab-orbiting-stone` operation keeps its
- * id and its absent state binding); `itemState` reads transitions only through
- * `from`/`to`/`via`/`timer`/`effects`, and every removed operation here was
- * never executable (blocked by an engine-pending clause).
+ * Owner-versus-external boundary: only actions by the item owner are
+ * operations. Another creature's action is a source-complete condition event,
+ * never an item operation or owner resource cost.
  */
 import type {
   MagicItemEconomy,
@@ -269,6 +267,21 @@ const SPECS: ReadonlyMap<string, LifecycleSpec> = new Map<
   LifecycleSpec
 >([
   // --- S4 state graphs -------------------------------------------------------
+  [
+    'Animated Shield',
+    {
+      clauses: (ctx) => [
+        clause(
+          'state-animated-shield-fall-destination',
+          { block: 'stateMachine' },
+          ctx.span(
+            'at which point the shield falls to the ground or into your hand if you have one free',
+          ),
+          'The shield’s destination on termination depends on whether the wielder has a free hand; the state-machine vocabulary does not encode object placement, so the DM model interprets this printed outcome.',
+        ),
+      ],
+    },
+  ],
   [
     'Apparatus of the Crab',
     {
@@ -611,7 +624,7 @@ const SPECS: ReadonlyMap<string, LifecycleSpec> = new Map<
               ? {
                   ...entry,
                   condition: ctx.span(
-                    'either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
+                    'Thereafter, another creature must use an action to grasp or net the stone to separate it from you, either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
                   ),
                 }
               : entry,
@@ -1348,35 +1361,14 @@ const GRAPH_EDITS: ReadonlyMap<string, GraphEdit> = new Map<string, GraphEdit>([
     ),
   ],
   [
-    // The entangle transition fires only when the target FAILS the save; the
-    // escape fires on a successful check, not on any attempt.
+    // Both rolls are operation outcomes and therefore stay on their paid
+    // operations. Only rope destruction is an external item_state_event.
     'Rope of Entanglement',
     (machine, ctx) => {
       const destroyed = ctx.span('the rope drops to 0 hit points');
       return setTermination(
         setCondition(
-          setCondition(
-            setCondition(
-              viaToCondition(
-                machine,
-                'loose',
-                'restraining',
-                'entangle-creature',
-                ctx.between(
-                  'The target must succeed on a DC 15 Dexterity saving throw',
-                  'become restrained',
-                ),
-              ),
-              'restraining',
-              'loose',
-              ctx.span(
-                'On a success, the creature is no longer restrained by the rope',
-              ),
-            ),
-            'loose',
-            'destroyed',
-            destroyed,
-          ),
+          setCondition(machine, 'loose', 'destroyed', destroyed),
           'restraining',
           'destroyed',
           destroyed,

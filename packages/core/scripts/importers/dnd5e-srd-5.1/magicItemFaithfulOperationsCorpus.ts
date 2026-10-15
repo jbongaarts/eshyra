@@ -296,26 +296,6 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     { operations: [op('cast-web', { requirement: 'While wearing it' })] },
   ],
   [
-    'Cube of Force',
-    {
-      operations: [
-        op('spell-contact-loss', {
-          cost: null,
-          trigger:
-            'when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects',
-        }),
-      ],
-      clauses: [
-        clause(
-          'activation-spell-contact-loss',
-          { operation: 'spell-contact-loss' },
-          'The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.',
-          NO_COST_NOTE,
-        ),
-      ],
-    },
-  ],
-  [
     'Cubic Gate',
     {
       operations: [
@@ -461,19 +441,6 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
       operations: [
         op('blow-horn', {
           requirement: 'speak the horn’s command word and then blow the horn',
-        }),
-      ],
-    },
-  ],
-  [
-    'Ioun Stone',
-    {
-      operations: [
-        op('grab-orbiting-stone', {
-          trigger:
-            'another creature must use an action to grasp or net the stone',
-          requirement:
-            'either by making a successful attack roll against AC 24 or a successful DC 24 Dexterity (Acrobatics) check',
         }),
       ],
     },
@@ -855,11 +822,10 @@ export const CORPUS_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map<
     {
       operations: [
         op('entangle-creature', {
+          commandWord: true,
           requirement: 'If you hold one end of the rope',
           target: 'a creature you can see within 20 feet of you',
         }),
-        // The actor is the restrained target, not the rope's holder.
-        op('escape-rope', { requirement: 'A target restrained by the rope' }),
       ],
     },
   ],

@@ -33,6 +33,7 @@
 // state and use the same ownership cleanup contract as conditions and actors.
 
 import { createSqliteCharacterSheetStore } from '../character/characterSheetStore.js';
+import { parseDice, resolveParsedDiceRoll } from '../orchestrator/dice.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
@@ -261,11 +262,14 @@ export interface CreateActiveEffectInput extends EffectMutationContext {
     /** Pack record key. Required (and must resolve) for 'spell'; optional
      *  but resolution-checked for 'magic-item'. */
     readonly ref?: string;
+    /** Effect id inside a magic-item record; used to bind its typed duration. */
+    readonly effectRef?: string;
     readonly actor?: EffectParticipant;
   };
   /** Present iff the effect requires concentration. */
   readonly concentration?: { readonly owner: EffectParticipant };
   readonly duration: EffectDurationInput;
+  readonly durationProvenance?: ItemDurationProvenance;
   readonly dismissible?: boolean;
   readonly targets?: readonly EffectTargetInput[];
   readonly conditions?: readonly EffectConditionProjectionInput[];
@@ -273,6 +277,25 @@ export interface CreateActiveEffectInput extends EffectMutationContext {
   readonly zones?: readonly EffectZoneProjectionInput[];
   readonly forms?: readonly EffectFormProjectionInput[];
 }
+
+export type ItemDurationProvenance =
+  | {
+      readonly kind: 'engine-rolled';
+      readonly expression: string;
+      readonly rolls: readonly number[];
+      readonly total: number;
+    }
+  | {
+      readonly kind: 'typed-fixed';
+      readonly amount: number;
+      readonly unit: EffectDurationUnit;
+    }
+  | {
+      readonly kind: 'dm-override';
+      readonly basis: 'dm-adjudicated' | 'house-rule';
+      readonly reason: string;
+      readonly ruleId?: string;
+    };
 
 export interface EffectTargetView {
   readonly kind: EffectTargetKind;
@@ -324,11 +347,13 @@ export interface ActiveEffectView {
   readonly source: {
     readonly kind: EffectSourceKind;
     readonly ref?: string;
+    readonly effectRef?: string;
     readonly actor?: EffectParticipant;
   };
   readonly requiresConcentration: boolean;
   readonly concentrationOwner?: EffectParticipant;
   readonly duration: EffectDurationView;
+  readonly durationProvenance?: ItemDurationProvenance;
   readonly dismissible: boolean;
   readonly status: EffectStatus;
   readonly endReason?: EffectEndReason;
@@ -722,6 +747,7 @@ interface ActiveEffectRow {
   readonly display_name: string;
   readonly source_kind: EffectSourceKind;
   readonly source_ref: string | null;
+  readonly source_effect_ref: string | null;
   readonly source_actor_kind: EffectParticipantKind | null;
   readonly source_actor_ref: string | null;
   readonly requires_concentration: number;
@@ -730,6 +756,7 @@ interface ActiveEffectRow {
   readonly duration_kind: EffectDurationInput['kind'];
   readonly duration_amount: number | null;
   readonly duration_unit: EffectDurationUnit | null;
+  readonly duration_provenance_json: string | null;
   readonly anchor_kind: EffectAnchorKind | null;
   readonly anchor_at: string | null;
   readonly anchor_game_time: string | null;
@@ -776,11 +803,15 @@ interface EffectLinkRow {
 const detailColumn = jsonColumn<Record<string, unknown>>(
   'active_effect_event.detail_json',
 );
+const durationProvenanceColumn = jsonColumn<ItemDurationProvenance>(
+  'active_effect.duration_provenance_json',
+);
 
 const EFFECT_COLUMNS = `campaign_id, effect_id, kind, display_name,
-  source_kind, source_ref, source_actor_kind, source_actor_ref,
+  source_kind, source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
   requires_concentration, concentration_owner_kind, concentration_owner_ref,
-  duration_kind, duration_amount, duration_unit, anchor_kind, anchor_at,
+  duration_kind, duration_amount, duration_unit, duration_provenance_json,
+  anchor_kind, anchor_at,
   anchor_game_time, anchor_combat_instance_id, anchor_round,
   anchor_elapsed_minutes, deadline_elapsed_minutes,
   anchor_participant_kind, anchor_participant_ref,
@@ -1029,6 +1060,9 @@ function effectView(
     source: {
       kind: row.source_kind,
       ...(row.source_ref === null ? {} : { ref: row.source_ref }),
+      ...(row.source_effect_ref === null
+        ? {}
+        : { effectRef: row.source_effect_ref }),
       ...(row.source_actor_kind === null || row.source_actor_ref === null
         ? {}
         : {
@@ -1049,6 +1083,13 @@ function effectView(
           },
         }),
     duration: durationView(row),
+    ...(row.duration_provenance_json === null
+      ? {}
+      : {
+          durationProvenance: durationProvenanceColumn.decode(
+            row.duration_provenance_json,
+          ),
+        }),
     dismissible: row.dismissible === 1,
     status: row.status,
     ...(row.end_reason === null ? {} : { endReason: row.end_reason }),
@@ -3011,14 +3052,14 @@ function createUncontrolledSuccessor(
   db.prepare(
     `INSERT INTO active_effect(
        campaign_id, effect_id, kind, display_name, source_kind,
-       source_ref, source_actor_kind, source_actor_ref,
+       source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
        requires_concentration, concentration_owner_kind,
        concentration_owner_ref, duration_kind, duration_amount,
        duration_unit, anchor_kind, anchor_at, anchor_game_time,
        anchor_elapsed_minutes, deadline_elapsed_minutes,
        dismissible, status, created_at, provenance, session_id, updated_at
      )
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 'timed', ?, ?, ?, ?, ?,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 'timed', ?, ?, ?, ?, ?,
              ?, ?, 0, 'active', ?, ?, ?, ?)`,
   ).run(
     original.campaign_id,
@@ -3027,6 +3068,7 @@ function createUncontrolledSuccessor(
     displayName,
     original.source_kind,
     original.source_ref,
+    original.source_effect_ref,
     original.source_actor_kind,
     original.source_actor_ref,
     original.duration_amount,
@@ -3614,6 +3656,105 @@ export function createActiveEffect(
           `source.ref '${input.source.ref}' does not resolve to a magic-item record; ` +
             'find the exact key via lookup_rules or omit the ref for homebrew items',
         );
+      }
+      if (input.source.effectRef !== undefined) {
+        const data = record.data as Record<string, unknown>;
+        const mechanics = data.mechanics as Record<string, unknown> | undefined;
+        const effects = Array.isArray(mechanics?.effects)
+          ? mechanics.effects
+          : [];
+        const itemEffect = effects.find(
+          (candidate) =>
+            typeof candidate === 'object' &&
+            candidate !== null &&
+            (candidate as Record<string, unknown>).id ===
+              input.source.effectRef,
+        ) as Record<string, unknown> | undefined;
+        if (itemEffect === undefined)
+          throw new ActiveEffectError(
+            `source.effectRef '${input.source.effectRef}' does not resolve to an effect on '${input.source.ref}'`,
+          );
+        if (
+          itemEffect.concentrationRequired === true &&
+          input.concentration === undefined
+        )
+          throw new ActiveEffectError(
+            `item effect '${input.source.effectRef}' requires concentration`,
+          );
+        if (
+          itemEffect.concentrationRequired === false &&
+          input.concentration !== undefined
+        )
+          throw new ActiveEffectError(
+            `item effect '${input.source.effectRef}' does not require concentration`,
+          );
+        const typedDuration = itemEffect.duration;
+        if (
+          typeof typedDuration === 'object' &&
+          typedDuration !== null &&
+          !Array.isArray(typedDuration)
+        ) {
+          const expected = typedDuration as Record<string, unknown>;
+          const durationProvenance = input.durationProvenance;
+          if (durationProvenance?.kind === 'dm-override') {
+            if (
+              (durationProvenance.basis !== 'dm-adjudicated' &&
+                durationProvenance.basis !== 'house-rule') ||
+              durationProvenance.reason.trim().length === 0
+            )
+              throw new ActiveEffectError(
+                'item duration override requires a supported basis and reason',
+              );
+          } else if (
+            typeof expected.unit !== 'string' ||
+            input.duration.kind !== 'timed' ||
+            input.duration.unit !== expected.unit
+          ) {
+            throw new ActiveEffectError(
+              `duration for item effect '${input.source.effectRef}' must use its typed unit ${String(expected.unit)}`,
+            );
+          } else if (typeof expected.amount === 'number') {
+            if (
+              input.duration.amount !== expected.amount ||
+              durationProvenance?.kind !== 'typed-fixed' ||
+              durationProvenance.amount !== expected.amount ||
+              durationProvenance.unit !== expected.unit
+            )
+              throw new ActiveEffectError(
+                `duration for item effect '${input.source.effectRef}' must be its typed fixed duration ${JSON.stringify(typedDuration)} or carry an explicit DM override`,
+              );
+          } else if (typeof expected.amount === 'string') {
+            if (
+              durationProvenance?.kind !== 'engine-rolled' ||
+              durationProvenance.expression !== expected.amount ||
+              durationProvenance.total !== input.duration.amount
+            )
+              throw new ActiveEffectError(
+                `duration for dice-typed item effect '${input.source.effectRef}' requires engine roll evidence or an explicit DM override`,
+              );
+            try {
+              const parsed = parseDice(expected.amount);
+              const resolved = resolveParsedDiceRoll(
+                expected.amount,
+                parsed,
+                durationProvenance.rolls,
+              );
+              if (
+                resolved.total !== durationProvenance.total ||
+                resolved.total < 1
+              )
+                throw new Error('invalid total');
+            } catch {
+              throw new ActiveEffectError(
+                `duration evidence for item effect '${input.source.effectRef}' does not resolve its typed dice expression`,
+              );
+            }
+          } else {
+            throw new ActiveEffectError(
+              `item effect '${input.source.effectRef}' has an unsupported typed duration`,
+            );
+          }
+        }
       }
     }
     if (input.source.actor !== undefined) {
@@ -4383,10 +4524,10 @@ export function createActiveEffect(
       .prepare(
         `INSERT INTO active_effect(
            campaign_id, effect_id, kind, display_name, source_kind,
-           source_ref, source_actor_kind, source_actor_ref,
+           source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
            requires_concentration, concentration_owner_kind,
            concentration_owner_ref, duration_kind, duration_amount,
-           duration_unit, anchor_kind, anchor_at, anchor_game_time,
+           duration_unit, duration_provenance_json, anchor_kind, anchor_at, anchor_game_time,
            anchor_elapsed_minutes, deadline_elapsed_minutes,
            anchor_combat_instance_id, anchor_round,
            anchor_participant_kind, anchor_participant_ref,
@@ -4394,8 +4535,8 @@ export function createActiveEffect(
            dismissible, status, created_at, provenance, session_id,
            updated_at
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                 ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                 ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
       )
       .run(
         input.campaignId,
@@ -4404,6 +4545,7 @@ export function createActiveEffect(
         input.displayName,
         input.source.kind,
         input.source.ref ?? null,
+        input.source.effectRef ?? null,
         input.source.actor?.kind ?? null,
         input.source.actor?.ref ?? null,
         input.concentration === undefined ? 0 : 1,
@@ -4412,6 +4554,9 @@ export function createActiveEffect(
         duration.kind,
         duration.amount,
         duration.unit,
+        input.durationProvenance === undefined
+          ? null
+          : durationProvenanceColumn.encode(input.durationProvenance),
         duration.anchorKind,
         duration.anchorAt,
         duration.anchorGameTime,

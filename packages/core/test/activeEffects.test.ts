@@ -9,6 +9,7 @@
 // validation of malformed durable state.
 
 import { describe, expect, it } from 'vitest';
+import { createCampaignRule as persistCampaignRule } from '../src/campaign/campaignRuleStore.js';
 import type { AdventureModule, Db, ToolContext } from '../src/internal.js';
 import {
   addCondition,
@@ -29,6 +30,7 @@ import {
   expireElapsedRoundEffects,
   formatActiveEffect,
   getActiveCharacterId,
+  getBundledDnd5eSrdPack,
   getCampaignActor,
   getConcentrationEffect,
   grantTemporaryHp,
@@ -46,6 +48,7 @@ import {
   unsuppressEffect,
   updateCombatant,
 } from '../src/internal.js';
+import { rollDice } from '../src/orchestrator/dice.js';
 import { installLateAmbiguityAddon } from './discovery/support/lateAmbiguityAddon.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
@@ -4919,6 +4922,401 @@ describe('exact resolver through condition projection and cleanup (S32)', () => 
       db.close();
     });
   }
+});
+
+describe('magic-item active-effect duration binding', () => {
+  const position = (ordinal: number) => ({
+    sessionId: `session-${ordinal}`,
+    turnId: `turn-${ordinal}`,
+    ordinal,
+  });
+
+  it.each(['potion-of-growth', 'potion-of-diminution'] as const)(
+    'engine-rolls the typed duration for %s and persists replayable evidence',
+    (slug) => {
+      const db = freshDbWithSession();
+      const pack = getBundledDnd5eSrdPack();
+      const potion = pack.records.find(
+        (record) => record.key === `magic-item:${slug}`,
+      );
+      if (potion === undefined) throw new Error(`${slug} is missing`);
+      const potionData = potion.data as Record<string, unknown>;
+      const mechanics = potionData.mechanics as Record<string, unknown>;
+      const effect = (mechanics.effects as Record<string, unknown>[])[0];
+      const effectId = String(effect.id);
+      const typed = effect.duration as { amount: string; unit: string };
+      const seed = 5;
+      const expectedRoll = rollDice(typed.amount, createSeededRng(seed));
+      const registry = createDefaultToolRegistry();
+      const ctx: ToolContext = {
+        db,
+        rng: createSeededRng(seed),
+        campaignId: CAMPAIGN,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: `${slug}-duration-binding`,
+        at: NOW,
+        resolveRulesPack: () => pack,
+      };
+      const args = (id: string) => ({
+        effectId: id,
+        kind: 'item-power',
+        displayName: id,
+        source: {
+          kind: 'magic-item',
+          ref: potion.key,
+          effectRef: effectId,
+        },
+      });
+      const rolled = registry.invoke(
+        'start_effect',
+        args(`fx-${slug}-rolled`),
+        ctx,
+      );
+      expect(rolled).toMatchObject({
+        ok: true,
+        data: {
+          effect: {
+            duration: {
+              kind: 'timed',
+              amount: expectedRoll.total,
+              unit: typed.unit,
+            },
+            durationProvenance: {
+              kind: 'engine-rolled',
+              expression: typed.amount,
+              rolls: expectedRoll.rolls,
+              total: expectedRoll.total,
+            },
+          },
+          itemDurationBinding: {
+            status: 'bound',
+            rollEvidence: {
+              expression: typed.amount,
+              dice: expectedRoll.rolls,
+              total: expectedRoll.total,
+            },
+          },
+        },
+      });
+      const rejected = registry.invoke(
+        'start_effect',
+        {
+          ...args(`fx-${slug}-caller-selected`),
+          duration: {
+            kind: 'timed',
+            amount: expectedRoll.total,
+            unit: typed.unit,
+            anchor: 'effect-created',
+          },
+        },
+        ctx,
+      );
+      expect(rejected).toMatchObject({ ok: false, code: 'invalid_args' });
+      expect(() =>
+        createActiveEffect(db, {
+          campaignId: CAMPAIGN,
+          effectId: `fx-${slug}-unprovenanced-state-write`,
+          kind: 'item-power',
+          displayName: 'unprovenanced item duration',
+          source: {
+            kind: 'magic-item',
+            ref: potion.key,
+            effectRef: effectId,
+          },
+          duration: {
+            kind: 'timed',
+            amount: expectedRoll.total,
+            unit: typed.unit as 'hour',
+            anchor: 'effect-created',
+          },
+          resolveRulesPack: () => pack,
+          provenance: 'test',
+          sessionId: DEFAULT_TEST_SESSION_ID,
+          at: NOW,
+        }),
+      ).toThrow(/requires engine roll evidence/);
+      expect(
+        listActiveEffects(db, CAMPAIGN).map((effect) => effect.effectId),
+      ).toEqual([`fx-${slug}-rolled`]);
+      const replayDb = freshDbWithSession();
+      const replay = registry.invoke(
+        'start_effect',
+        args(`fx-${slug}-replay`),
+        {
+          ...ctx,
+          db: replayDb,
+          rng: createSeededRng(seed),
+        },
+      );
+      expect(replay).toMatchObject({
+        ok: true,
+        data: {
+          effect: {
+            duration: { amount: expectedRoll.total, unit: typed.unit },
+            durationProvenance: {
+              expression: typed.amount,
+              rolls: expectedRoll.rolls,
+              total: expectedRoll.total,
+            },
+          },
+        },
+      });
+      replayDb.close();
+      db.close();
+    },
+  );
+
+  it('accepts a matching typed duration, refuses a mismatch, and reports an unbound effect', () => {
+    const db = freshDbWithSession();
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(5),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'item-duration-binding',
+      at: NOW,
+    };
+    const args = (effectId: string, effectRef: string, amount: number) => ({
+      effectId,
+      kind: 'item-power',
+      displayName: effectId,
+      source: {
+        kind: 'magic-item',
+        ref: 'magic-item:armor-of-invulnerability',
+        effectRef,
+      },
+      duration: {
+        kind: 'timed',
+        amount,
+        unit: 'minute',
+        anchor: 'effect-created',
+      },
+    });
+    const matches = registry.invoke(
+      'start_effect',
+      args('fx-item-duration-match', 'c2-activate-immunity-payload', 10),
+      ctx,
+    );
+    expect(matches.ok).toBe(true);
+    if (matches.ok)
+      expect(matches.data).toMatchObject({
+        effect: {
+          source: {
+            ref: 'magic-item:armor-of-invulnerability',
+            effectRef: 'c2-activate-immunity-payload',
+          },
+        },
+        itemDurationBinding: { status: 'bound' },
+      });
+    const omittedFixed = registry.invoke(
+      'start_effect',
+      {
+        effectId: 'fx-item-duration-fixed-omitted',
+        kind: 'item-power',
+        displayName: 'fixed item duration',
+        source: {
+          kind: 'magic-item',
+          ref: 'magic-item:armor-of-invulnerability',
+          effectRef: 'c2-activate-immunity-payload',
+        },
+      },
+      ctx,
+    );
+    expect(omittedFixed).toMatchObject({
+      ok: true,
+      data: {
+        effect: {
+          duration: { kind: 'timed', amount: 10, unit: 'minute' },
+          durationProvenance: {
+            kind: 'typed-fixed',
+            amount: 10,
+            unit: 'minute',
+          },
+        },
+        itemDurationBinding: { status: 'bound' },
+      },
+    });
+    const mismatch = registry.invoke(
+      'start_effect',
+      args('fx-item-duration-mismatch', 'c2-activate-immunity-payload', 9),
+      ctx,
+    );
+    expect(mismatch).toMatchObject({
+      ok: false,
+      code: 'invalid_args',
+    });
+    const unbound = registry.invoke(
+      'start_effect',
+      {
+        ...args(
+          'fx-item-duration-unbound',
+          'm3-boots-of-speed-speed-multiplier',
+          10,
+        ),
+        source: {
+          kind: 'magic-item',
+          ref: 'magic-item:boots-of-speed',
+          effectRef: 'm3-boots-of-speed-speed-multiplier',
+        },
+      },
+      ctx,
+    );
+    expect(unbound).toMatchObject({
+      ok: true,
+      data: {
+        itemDurationBinding: {
+          status: 'unbound',
+          reason: expect.stringContaining('DM adjudicates'),
+        },
+      },
+    });
+    db.close();
+  });
+
+  it('records overrides as unbound and validates house-rule references', () => {
+    const db = freshDbWithSession();
+    const pack = getBundledDnd5eSrdPack();
+    const potion = pack.records.find(
+      (record) => record.key === 'magic-item:potion-of-growth',
+    );
+    if (potion === undefined) throw new Error('Potion of Growth is missing');
+    persistCampaignRule(
+      db,
+      {
+        ruleIdentity: 'rule:potion-duration',
+        campaignId: CAMPAIGN,
+        ruleKind: 'house-rule',
+        status: 'active',
+        origin: 'player-approved',
+        provenance: { kind: 'house-rule', rationale: 'test' },
+        effectivePosition: position(1),
+        temporalMode: { mode: 'prospective' },
+        supersededBy: null,
+        revokedPosition: null,
+        scope: 'campaign',
+        governingRecordKeys: [potion.key],
+        prose: 'Potion effects last three hours.',
+      },
+      { currentPosition: position(0) },
+    );
+    persistCampaignRule(
+      db,
+      {
+        ruleIdentity: 'rule:inactive-duration',
+        campaignId: CAMPAIGN,
+        ruleKind: 'house-rule',
+        status: 'active',
+        origin: 'player-approved',
+        provenance: { kind: 'house-rule', rationale: 'test' },
+        effectivePosition: position(1),
+        temporalMode: { mode: 'prospective' },
+        supersededBy: null,
+        revokedPosition: null,
+        scope: 'campaign',
+        governingRecordKeys: [potion.key],
+        prose: 'Inactive test rule.',
+      },
+      { currentPosition: position(0) },
+    );
+    db.prepare(
+      "UPDATE campaign_rule SET status = 'revoked', revoked_position = ? WHERE campaign_id = ? AND rule_identity = ?",
+    ).run(
+      'cp1~000000000002~session-2~turn-2',
+      CAMPAIGN,
+      'rule:inactive-duration',
+    );
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(5),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'item-duration-overrides',
+      at: NOW,
+      resolveRulesPack: () => pack,
+    };
+    const registry = createDefaultToolRegistry();
+    const itemArgs = (effectId: string, durationOverride: unknown) => ({
+      effectId,
+      kind: 'item-power',
+      displayName: effectId,
+      source: {
+        kind: 'magic-item',
+        ref: potion.key,
+        effectRef: 'enlarge',
+      },
+      duration: {
+        kind: 'timed',
+        amount: 2,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+      durationOverride,
+    });
+    expect(
+      registry.invoke(
+        'start_effect',
+        itemArgs('fx-growth-dm-override', {
+          basis: 'dm-adjudicated',
+          reason: 'The DM rules that the potion fades early.',
+        }),
+        ctx,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: {
+        itemDurationBinding: {
+          status: 'unbound',
+          reason: expect.stringContaining('dm-adjudicated'),
+        },
+        effect: {
+          durationProvenance: {
+            kind: 'dm-override',
+            basis: 'dm-adjudicated',
+            reason: 'The DM rules that the potion fades early.',
+          },
+        },
+      },
+    });
+    expect(
+      registry.invoke(
+        'start_effect',
+        itemArgs('fx-growth-house-rule', {
+          basis: 'house-rule',
+          reason: 'Campaign rule changes potion duration.',
+          ruleId: 'rule:potion-duration',
+        }),
+        ctx,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: {
+        itemDurationBinding: { status: 'unbound' },
+        effect: {
+          durationProvenance: {
+            kind: 'dm-override',
+            basis: 'house-rule',
+            ruleId: 'rule:potion-duration',
+          },
+        },
+      },
+    });
+    for (const ruleId of ['rule:missing', 'rule:inactive-duration']) {
+      expect(
+        registry.invoke(
+          'start_effect',
+          itemArgs(`fx-growth-invalid-${ruleId.replaceAll(':', '-')}`, {
+            basis: 'house-rule',
+            reason: 'An unsupported house rule reference.',
+            ruleId,
+          }),
+          ctx,
+        ),
+      ).toMatchObject({ ok: false, code: 'invalid_args' });
+    }
+    expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(2);
+    db.close();
+  });
 });
 
 describe('persistent bond identity (S50)', () => {
