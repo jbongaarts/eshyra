@@ -54,6 +54,7 @@ export const addConditionTool: Tool = {
           sessionId: ctx.sessionId,
           at: ctx.at,
           characterId: target.id,
+          resolveRulesPack: ctx.resolveRulesPack,
         },
       );
       return ok(result);

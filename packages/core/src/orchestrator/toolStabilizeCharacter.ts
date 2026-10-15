@@ -42,6 +42,7 @@ export const stabilizeCharacterTool: Tool = {
               provenance: `model:${ctx.turnId}`,
               sessionId: ctx.sessionId,
               at: ctx.at,
+              resolveRulesPack: ctx.resolveRulesPack,
             },
             ctx.rng,
           ),

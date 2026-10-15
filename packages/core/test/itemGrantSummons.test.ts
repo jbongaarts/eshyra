@@ -2,19 +2,22 @@
  * printed revertOn endings, and the grant-ended cooldown anchor. Every case
  * uses the bundled pack's real grant records. */
 import { describe, expect, it } from 'vitest';
-import type { ToolContext } from '../src/internal.js';
+import type { CharacterSheet, ToolContext } from '../src/internal.js';
 import {
   advanceWorldTime,
   attuneItem,
+  completeLongRest,
   createDefaultToolRegistry,
   createInitialItemState,
   createSeededRng,
+  createSqliteCharacterSheetStore,
   donItem,
   expireElapsedWorldEffects,
   getBundledDnd5eSrdPack,
   giveItem,
   ITEM_GRANT_REVERT_DISPOSITIONS,
   listActiveEffects,
+  mutateState,
   readItemState,
   useItem,
   validateRulesPack,
@@ -1819,6 +1822,429 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
     expect(s.effect('fx-armor-s5')).toMatchObject({
       duration: { kind: 'timed', amount: 20, unit: 'minute' },
       durationProvenance: { kind: 'dm-override', basis: 'dm-adjudicated' },
+    });
+  });
+});
+
+/** olc5.12.10: the Ring of Djinni Summoning on a stack, with the owner either
+ * a combatant or the character, and an optional compatible empty add-on. */
+const RING = 'magic-item:ring-of-djinni-summoning';
+
+function ringScenario(
+  options: { addon?: boolean; owner?: 'combatant' | 'character' } = {},
+) {
+  const ring = waivedPack(RING);
+  const addon = {
+    meta: {
+      ...ring.meta,
+      packId: 'review-addon',
+      version: '1.0.0',
+      role: 'addon',
+      order: 1,
+      compatibleBaseSystems: [
+        { systemId: ring.meta.systemId, versions: [ring.meta.version] },
+      ],
+    },
+    records: [],
+  };
+  const resolver = (binding: { packId: string; version: string }) =>
+    [ring, addon].find(
+      (candidate) =>
+        candidate.meta.packId === binding.packId &&
+        candidate.meta.version === binding.version,
+    ) as never;
+  const s = setup(ring, {
+    resolver: resolver as never,
+    extraActors: REPAIR_ACTORS,
+  });
+  const ringId = s.install(RING, 'ring-s10', { worn: true });
+  s.must('begin_turn', { character: 'pc-1', round: 1 });
+  useItem(s.db, {
+    ...s.domainCtx,
+    instanceId: ringId,
+    operationId: 'summon-djinni',
+    rng: createSeededRng(3),
+    resolveRulesPack: () => ring,
+  } as never);
+  if (options.addon === true)
+    writeCampaignRulesBinding(s.db, {
+      base: {
+        systemId: ring.meta.systemId,
+        packId: ring.meta.packId,
+        version: ring.meta.version,
+      },
+      addons: [
+        {
+          systemId: ring.meta.systemId,
+          packId: 'review-addon',
+          version: '1.0.0',
+        },
+      ],
+      resolvedAt: NOW,
+    });
+  const ownerRef =
+    options.owner === 'character'
+      ? { kind: 'character', ref: 'pc-1' }
+      : { kind: 'combatant', ref: 'c-wiz' };
+  const bind = (effectId = 'fx-ring') =>
+    s.summon(
+      effectId,
+      {
+        ref: RING,
+        grantRef: 'particular-djinni',
+        itemInstanceId: ringId,
+      },
+      {
+        concentrationOwner: ownerRef,
+        actors: [{ combatantId: 'c-djinni' }],
+      },
+    );
+  const advance = (minutes: number) =>
+    advanceWorldTime(s.db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      minutes,
+      provenance: 'test:s10-advance',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+      resolveRulesPack: resolver as never,
+      rng: createSeededRng(5),
+    });
+  const cooldown = () => {
+    const state = readItemState(s.db, ringId)?.economies?.cooldown;
+    return { remaining: state?.remaining, availableAt: state?.availableAt };
+  };
+  return { ...s, ring, ringId, bind, advance, cooldown, resolver };
+}
+
+type RingScenario = ReturnType<typeof ringScenario>;
+
+/** A minimal canonical sheet so pc-1 can be a rest participant. */
+function installRestSheet(db: RingScenario['db']) {
+  const ability = { base: 10, final: 10, modifier: 0 };
+  const abilityScores = {
+    strength: ability,
+    dexterity: ability,
+    constitution: ability,
+    intelligence: ability,
+    wisdom: ability,
+    charisma: ability,
+  };
+  createSqliteCharacterSheetStore(db).save('pc-1', {
+    schemaVersion: 1,
+    system: 'dnd5e-srd',
+    rulesPackId: 'rules:dnd5e-srd-5.1',
+    recipeId: 'dnd5e-srd-character',
+    creationMode: 'test',
+    level: 2,
+    identity: { name: 'pc-1' },
+    class: { key: 'class:warlock', name: 'Warlock' },
+    ancestry: { key: 'ancestry:human', name: 'Human' },
+    abilityScores,
+    proficiencyBonus: 2,
+    maxHitPoints: 20,
+    savingThrows: Object.fromEntries(
+      Object.keys(abilityScores).map((key) => [
+        key,
+        { modifier: 0, proficient: false },
+      ]),
+    ),
+    skillProficiencies: [],
+    toolProficiencies: [],
+    armorProficiencies: [],
+    weaponProficiencies: [],
+    equipment: [],
+    languages: [],
+    spells: [],
+    metadata: { createdAt: NOW },
+  } as unknown as CharacterSheet);
+  setCharacterHp(db);
+}
+
+/** pc-1 starts with no hit points; give it a live pool and level 2. */
+function setCharacterHp(db: RingScenario['db']) {
+  for (const [field, value] of [
+    ['hp_max', 20],
+    ['hp_current', 10],
+    ['level', 2],
+  ] as const)
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field,
+      op: 'set',
+      value,
+      provenance: 'test:s10-hp',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+}
+
+/** Every terminal entry point that can end an anchored Ring grant. `endsAt` is
+ * the world minute at which the ending takes effect. */
+const RING_TERMINAL_ENTRY_POINTS: readonly {
+  readonly name: string;
+  readonly owner: 'combatant' | 'character';
+  readonly endsAt: number;
+  readonly trigger: (r: RingScenario) => void;
+}[] = [
+  {
+    name: 'end_effect',
+    owner: 'combatant',
+    endsAt: 0,
+    trigger: (r) => {
+      r.must('end_effect', {
+        effectId: 'fx-ring',
+        reason: 'ruled',
+        note: 'explicit end',
+      });
+    },
+  },
+  {
+    name: 'advance_time expiry',
+    owner: 'combatant',
+    endsAt: 60,
+    trigger: (r) => {
+      r.must('advance_time', { minutes: 120 });
+    },
+  },
+  {
+    name: 'complete long rest expiry',
+    owner: 'character',
+    endsAt: 60,
+    trigger: (r) => {
+      // A rest cannot run during combat; a character-owned grant survives the
+      // close and expires inside the rest's own world-time advance.
+      r.must('close_combat_instance', { status: 'completed' });
+      expect(r.effect('fx-ring')).toMatchObject({ status: 'active' });
+      installRestSheet(r.db);
+      completeLongRest(r.db, {
+        ...r.domainCtx,
+        restId: 'rest-s10',
+        participants: ['pc-1'],
+        qualification: {
+          durationMinutes: 480,
+          sleepMinutes: 360,
+          lightActivityMinutes: 0,
+          strenuousInterruptionMinutes: 0,
+          foodAndDrink: false,
+        },
+        resolveRulesPack: r.resolver,
+      } as never);
+    },
+  },
+  {
+    name: 'update_combatant djinni to 0 hit points',
+    owner: 'combatant',
+    endsAt: 0,
+    trigger: (r) => {
+      r.hit('c-djinni', -161);
+    },
+  },
+  {
+    name: 'update_combatant owner to 0 hit points',
+    owner: 'combatant',
+    endsAt: 0,
+    trigger: (r) => {
+      r.hit('c-wiz', -20);
+    },
+  },
+  {
+    name: 'adjust_exhaustion owner combatant to level 6',
+    owner: 'combatant',
+    endsAt: 0,
+    trigger: (r) => {
+      r.must('adjust_exhaustion', { combatantId: 'c-wiz', delta: 6 });
+    },
+  },
+  {
+    name: 'resolve_concentration failed save',
+    owner: 'combatant',
+    endsAt: 0,
+    trigger: (r) => {
+      r.must('resolve_concentration', {
+        owner: { kind: 'combatant', ref: 'c-wiz' },
+        damage: 200,
+      });
+    },
+  },
+  {
+    name: 'close_combat_instance owner removed',
+    owner: 'combatant',
+    endsAt: 0,
+    trigger: (r) => {
+      r.must('close_combat_instance', { status: 'completed' });
+    },
+  },
+  {
+    name: 'start_effect replaces the concentration',
+    owner: 'combatant',
+    endsAt: 0,
+    trigger: (r) => {
+      r.must('start_effect', {
+        effectId: 'fx-replacement',
+        kind: 'spell-effect',
+        displayName: 'replacement',
+        source: { kind: 'ruling' },
+        concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+        duration: { kind: 'until-removed' },
+      });
+    },
+  },
+  {
+    name: 'set_suffocation drop on the owner combatant',
+    owner: 'combatant',
+    endsAt: 0,
+    trigger: (r) => {
+      r.must('set_suffocation', { event: 'drop', combatantId: 'c-wiz' });
+    },
+  },
+  {
+    name: 'adjust_hp owner character to 0 hit points',
+    owner: 'character',
+    endsAt: 0,
+    trigger: (r) => {
+      setCharacterHp(r.db);
+      r.must('adjust_hp', { amount: -15, character: 'pc-1' });
+    },
+  },
+  {
+    name: 'adjust_exhaustion owner character to level 6',
+    owner: 'character',
+    endsAt: 0,
+    trigger: (r) => {
+      r.must('adjust_exhaustion', { delta: 6, character: 'pc-1' });
+    },
+  },
+  {
+    name: 'add_condition incapacitated on the owner character',
+    owner: 'character',
+    endsAt: 0,
+    trigger: (r) => {
+      r.must('add_condition', { id: 'incapacitated', character: 'pc-1' });
+    },
+  },
+  {
+    name: 'set_suffocation drop on the owner character',
+    owner: 'character',
+    endsAt: 0,
+    trigger: (r) => {
+      r.must('set_suffocation', { event: 'drop', character: 'pc-1' });
+    },
+  },
+];
+
+describe('olc5.12.10 terminal entry points and cascade event time', () => {
+  for (const addon of [false, true]) {
+    for (const entry of RING_TERMINAL_ENTRY_POINTS) {
+      it(`S7 parity: ${entry.name} ends an anchored Ring grant on the ${addon ? 'base plus add-on' : 'base'} stack with the wait scheduled`, () => {
+        const r = ringScenario({ addon, owner: entry.owner });
+        expect(r.bind()).toMatchObject({ ok: true });
+        expect(r.effect('fx-ring')).toMatchObject({ status: 'active' });
+        entry.trigger(r);
+        expect(r.effect('fx-ring')).toMatchObject({ status: 'ended' });
+        expect(r.cooldown()).toEqual({
+          remaining: 0,
+          availableAt: String(entry.endsAt + 1440),
+        });
+      }, 30_000);
+    }
+  }
+
+  it('S4 cascade: an effect expiry that removes the concentration owner anchors the wait at the expiry minute, whatever the partition', () => {
+    const timeline = (steps: readonly number[]) => {
+      const r = ringScenario({ addon: true });
+      expect(r.bind()).toMatchObject({ ok: true });
+      // A 30-minute effect owns the Ring's concentrating combatant; its
+      // expiry removes that combatant, which breaks the concentration, which
+      // ends the grant: a cascade through finalizeEnd inside the sweep.
+      r.must('start_effect', {
+        effectId: 'fx-owner-summon',
+        kind: 'summoning',
+        displayName: 'owner summon',
+        source: { kind: 'ruling' },
+        duration: {
+          kind: 'timed',
+          amount: 30,
+          unit: 'minute',
+          anchor: 'effect-created',
+        },
+        actors: [{ combatantId: 'c-wiz', cleanupOnEnd: 'remove' }],
+      });
+      for (const minutes of steps) r.advance(minutes);
+      expect(r.effect('fx-owner-summon')).toMatchObject({ status: 'ended' });
+      expect(r.effect('fx-ring')).toMatchObject({
+        status: 'ended',
+        endReason: 'concentration-broken',
+      });
+      return r.cooldown();
+    };
+    // Cascaded at minute 30 (not 60, the Ring's own deadline, and not the
+    // advance endpoint): the wait ends at 1470.
+    expect(timeline([30])).toEqual({ remaining: 0, availableAt: '1470' });
+    expect(timeline([40])).toEqual({ remaining: 0, availableAt: '1470' });
+    expect(timeline([2880])).toEqual({ remaining: 1, availableAt: undefined });
+    const whole = timeline([2880]);
+    expect(timeline([30, 1440, 1410])).toEqual(whole);
+    expect(timeline([30, 1439, 1, 1410])).toEqual(whole);
+    expect(timeline([1469, 1411])).toEqual(whole);
+    expect(timeline([1470, 1410])).toEqual(whole);
+  }, 60_000);
+});
+
+describe('olc5.12.10 Ebony Fly (stat block grant)', () => {
+  it('binds the Ebony Fly grant to a combatant built from stat-block:giant-fly, and refuses another creature', () => {
+    const s = setup(pack, {
+      extraActors: [
+        {
+          actorId: 'fly',
+          rulesRef: 'stat-block:giant-fly',
+          hpMax: 19,
+          hpCurrent: 19,
+          side: 'ally',
+        },
+      ],
+    });
+    const flyId = s.install(
+      'magic-item:figurine-of-wondrous-power',
+      'fig-fly',
+      {
+        variantId: 'ebony-fly',
+      },
+    );
+    const grant = {
+      ref: 'magic-item:figurine-of-wondrous-power',
+      grantRef: 'ebony-fly',
+      itemInstanceId: flyId,
+    };
+    const wrong = s.summon('fx-fly-wrong', grant, {
+      actors: [{ combatantId: 'c-dog' }],
+    });
+    expect(wrong).toMatchObject({ ok: false });
+    expect(wrong.message).toMatch(/does not create/);
+    const bound = s.summon('fx-fly', grant, {
+      actors: [{ combatantId: 'c-fly' }],
+    });
+    expect(bound).toMatchObject({
+      ok: true,
+      data: {
+        effect: {
+          duration: { kind: 'timed', amount: 12, unit: 'hour' },
+          durationProvenance: { kind: 'typed-fixed', amount: 12, unit: 'hour' },
+        },
+      },
+    });
+    advanceWorldTime(s.db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      minutes: 720,
+      provenance: 'test:ebony-fly',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+      resolveRulesPack: () => pack,
+      rng: createSeededRng(5),
+    });
+    expect(s.effect('fx-fly')).toMatchObject({
+      status: 'ended',
+      endReason: 'expired',
     });
   });
 });

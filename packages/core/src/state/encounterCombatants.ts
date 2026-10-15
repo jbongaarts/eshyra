@@ -220,6 +220,8 @@ export interface UpdateCombatantInput {
   /** Declared damage types returned by resolve_damage for a negative hpDelta. */
   readonly damageTypes?: readonly string[];
   readonly resolveRulesPack?: CampaignRulesPackResolver;
+  /** Minute of the triggering event when not the current clock (olc5.12.10). */
+  readonly eventElapsedMinutes?: number;
   readonly deathRules?: 'player-character';
   readonly critical?: boolean;
   /** Seeds the stable-recovery deadline when a knockout makes the combatant stable. */
@@ -246,6 +248,8 @@ export interface CampaignActorMutationInput {
   readonly hpMax?: number;
   readonly currentLocationId?: string;
   readonly resolveRulesPack?: CampaignRulesPackResolver;
+  /** Minute of the triggering event when not the current clock (olc5.12.10). */
+  readonly eventElapsedMinutes?: number;
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
@@ -435,6 +439,9 @@ export function updateCampaignActor(
         ...(input.resolveRulesPack === undefined
           ? {}
           : { resolveRulesPack: input.resolveRulesPack }),
+        ...(input.eventElapsedMinutes === undefined
+          ? {}
+          : { eventElapsedMinutes: input.eventElapsedMinutes }),
         provenance: input.provenance,
         sessionId: input.sessionId,
         at: input.at,
@@ -2632,7 +2639,12 @@ export function resolveCombatantDeathSave(
   campaignId: string,
   combatantId: string,
   roll: number,
-  ctx: { provenance: string; sessionId: string; at: string },
+  ctx: {
+    provenance: string;
+    sessionId: string;
+    at: string;
+    resolveRulesPack?: CampaignRulesPackResolver;
+  },
   rng: Rng = createSeededRng(0),
 ) {
   if (!Number.isInteger(roll) || roll < 1 || roll > 20)
@@ -2709,7 +2721,12 @@ export function stabilizeCombatant(
   db: Db,
   campaignId: string,
   combatantId: string,
-  ctx: { provenance: string; sessionId: string; at: string },
+  ctx: {
+    provenance: string;
+    sessionId: string;
+    at: string;
+    resolveRulesPack?: CampaignRulesPackResolver;
+  },
   rng: Rng = createSeededRng(0),
 ) {
   return withTransaction(db, (txn) => {
@@ -2741,7 +2758,12 @@ export function setCombatantSuffocation(
   campaignId: string,
   combatantId: string,
   event: 'drop' | 'breathe',
-  ctx: { provenance: string; sessionId: string; at: string },
+  ctx: {
+    provenance: string;
+    sessionId: string;
+    at: string;
+    resolveRulesPack?: CampaignRulesPackResolver;
+  },
   rng: Rng = createSeededRng(0),
 ) {
   return withTransaction(db, (txn) => {
@@ -3234,6 +3256,8 @@ export function removeCombatantFromPlay(
     readonly campaignId: string;
     readonly combatantId: string;
     readonly resolveRulesPack?: CampaignRulesPackResolver;
+    /** Minute of the triggering event when not the current clock (olc5.12.10). */
+    readonly eventElapsedMinutes?: number;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -3279,6 +3303,9 @@ export function removeCombatantFromPlay(
           provenance: input.provenance,
           sessionId: input.sessionId,
           at: input.at,
+          ...(input.eventElapsedMinutes === undefined
+            ? {}
+            : { eventElapsedMinutes: input.eventElapsedMinutes }),
           ...(input.resolveRulesPack === undefined
             ? {}
             : { resolveRulesPack: input.resolveRulesPack }),
@@ -3296,6 +3323,8 @@ export function removeCampaignActorFromPlay(
     readonly campaignId: string;
     readonly actorId: string;
     readonly resolveRulesPack?: CampaignRulesPackResolver;
+    /** Minute of the triggering event when not the current clock (olc5.12.10). */
+    readonly eventElapsedMinutes?: number;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -4229,6 +4258,9 @@ function updateCombatantInTxn(
         provenance: input.provenance,
         sessionId: input.sessionId,
         at: input.at,
+        ...(input.eventElapsedMinutes === undefined
+          ? {}
+          : { eventElapsedMinutes: input.eventElapsedMinutes }),
         ...(input.resolveRulesPack === undefined
           ? {}
           : { resolveRulesPack: input.resolveRulesPack }),

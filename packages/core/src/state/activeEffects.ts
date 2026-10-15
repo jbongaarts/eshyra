@@ -209,6 +209,13 @@ export interface EffectMutationContext {
   readonly sessionId: string;
   readonly at: string;
   readonly resolveRulesPack?: CampaignRulesPackResolver;
+  /** The world-clock minute at which the event driving this mutation took
+   *  effect, when that differs from the clock now: a world-time advance
+   *  settles an expiry at its deadline although the clock already stands at
+   *  the advance endpoint. Every cascade the mutation causes inherits it
+   *  (olc5.12.10), so a grant-bound ending anchors its cooldown at the
+   *  triggering minute. Absent means the current clock. */
+  readonly eventElapsedMinutes?: number;
 }
 
 export interface EffectTargetInput {
@@ -3021,6 +3028,16 @@ function finalizeEnd(
   ctx: EffectMutationContext,
 ): FinalizeEndOutcome {
   const mode = input.reason === 'concentration-broken' ? 'break' : 'end';
+  // Effective termination minute: an inherited cascade event minute, else the
+  // deadline of an expiry, else undefined (the clock now). Cascades run under
+  // this context so they inherit the triggering minute.
+  const eventElapsedMinutes =
+    ctx.eventElapsedMinutes ??
+    (input.reason === 'expired' && row.deadline_elapsed_minutes !== null
+      ? row.deadline_elapsed_minutes
+      : undefined);
+  if (eventElapsedMinutes !== ctx.eventElapsedMinutes)
+    ctx = { ...ctx, eventElapsedMinutes };
   const reasonLabel =
     input.detail === undefined
       ? input.reason
@@ -3110,10 +3127,9 @@ function finalizeEnd(
           provenance: ctx.provenance,
           sessionId: ctx.sessionId,
           at: ctx.at,
-          ...(input.reason === 'expired' &&
-          row.deadline_elapsed_minutes !== null
-            ? { elapsedMinutes: row.deadline_elapsed_minutes }
-            : {}),
+          ...(eventElapsedMinutes === undefined
+            ? {}
+            : { elapsedMinutes: eventElapsedMinutes }),
         },
         { event: 'grant-ended', grantId: grantBinding.grantId },
       );
@@ -7410,7 +7426,11 @@ export function expireElapsedWorldEffects(
           reason: 'expired',
           note: `world-time deadline ${row.deadline_elapsed_minutes} reached`,
         },
-        input,
+        // The expiry takes effect at its deadline, not at the advance endpoint.
+        {
+          ...input,
+          eventElapsedMinutes: row.deadline_elapsed_minutes as number,
+        },
       );
       if (outcome.performed)
         expired.push({

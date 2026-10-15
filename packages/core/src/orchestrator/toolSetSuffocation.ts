@@ -50,6 +50,7 @@ export const setSuffocationTool: Tool = {
             provenance: `model:${ctx.turnId}`,
             sessionId: ctx.sessionId,
             at: ctx.at,
+            resolveRulesPack: ctx.resolveRulesPack,
           },
           ctx.rng,
         );
@@ -76,6 +77,7 @@ export const setSuffocationTool: Tool = {
       sessionId: ctx.sessionId,
       at: ctx.at,
       characterId: target.id,
+      resolveRulesPack: ctx.resolveRulesPack,
     };
     try {
       return ok(
