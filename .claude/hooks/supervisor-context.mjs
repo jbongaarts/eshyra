@@ -15,6 +15,9 @@
 //     not a gate — leaking supervisor policy into a non-supervisor session is
 //     exactly what this hook exists to prevent, so it must not depend on the
 //     reader choosing to comply.
+//   - The one exception is a Claude desktop host session (eshyra-cjrm): the
+//     desktop host sends no model, so the host process tree is the identity
+//     evidence, verified by the same check that admits the Captain seat.
 //   - source === "resume" is skipped: the transcript already carries the
 //     injection from the original startup, and re-emitting on every resume
 //     would accumulate duplicate copies. startup/clear/compact still emit.
@@ -24,6 +27,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { classifyDesktopHostSession } from '../../scripts/seats/seatContext.mjs';
 
 process.stdout.on('error', (err) => {
   if (err.code === 'EPIPE') process.exit(0);
@@ -46,7 +50,11 @@ if (input.agent_id) process.exit(0);
 if (input.source === 'resume') process.exit(0);
 // Fail closed: an empty `model` fails this test too, so a payload without model
 // identity (older CLI) injects nothing rather than trusting a prose disclaimer.
-if (!SUPERVISOR_MODEL.test(model)) process.exit(0);
+if (
+  !SUPERVISOR_MODEL.test(model) &&
+  !classifyDesktopHostSession({ env: process.env }).eligible
+)
+  process.exit(0);
 
 process.stdout.write(
   readFileSync(

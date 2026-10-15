@@ -19,6 +19,22 @@ otherwise — a subagent, a resumed session, an unauthorized model, and a payloa
 with no model identity all receive nothing. `claude -p` sends no model identity,
 so print-mode runs never occupy the seat.
 
+The one exception is the **Claude desktop app**, whose `SessionStart` payload
+carries no `model` at all. A desktop main session occupies the seat regardless
+of model, admitted by process-tree evidence rather than environment
+(`classifyDesktopHostSession` in `scripts/seats/seatContext.mjs`): the hook must
+descend from `CLAUDE_PID`, that process must be the host-managed CLI under
+`~/.claude/remote/ccd-cli/`, its parent must be the host `server` under
+`~/.claude/remote/srv/`, and `CLAUDE_SSH_CHILD` must name the same pid.
+Environment alone is never enough — anything launched inside a desktop session,
+including a nested `claude -p` on any model, inherits
+`CLAUDE_CODE_ENTRYPOINT=claude-desktop` — but a nested Claude process sets
+`CLAUDE_PID` to itself and fails the tree check. Subagents and resumed sessions
+are still refused. Any other layout (a non-Linux or non-remote desktop host, no
+`/proc`) is refused rather than guessed at. Every session the desktop host
+itself starts qualifies, including background or scheduled ones. The supervisor
+overlay (`.claude/hooks/supervisor-context.mjs`) uses the same check.
+
 Codex Captain is explicit, because `codex exec` fires `SessionStart` exactly
 like an interactive session and the event alone cannot tell a Captain from a
 dispatched implementation worker:

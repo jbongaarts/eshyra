@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import {
   classifyClaudeOccupant,
   classifyClaudeSession,
+  classifyDesktopHostSession,
   consumeClearHandover,
   readCharter,
   readHandoff,
@@ -61,7 +62,12 @@ function inheritedModel() {
 }
 
 const input = { ...parsed, model: inheritedModel() };
-if (!classifyClaudeOccupant(input).eligible) process.exit(0);
+// The desktop host sends no model at all (eshyra-cjrm); its process tree is
+// the identity evidence instead.
+const admission = {
+  desktopHost: classifyDesktopHostSession({ env: process.env }),
+};
+if (!classifyClaudeOccupant(input, admission).eligible) process.exit(0);
 
 const charter = readCharter(SEATS.claudeCaptain, process.env);
 if (charter === null) process.exit(0);
@@ -75,14 +81,16 @@ recordOccupantSession(SEATS.claudeCaptain, cwd, process.env, {
   model: input.model,
 });
 
-if (!classifyClaudeSession(input).eligible) process.exit(0);
+if (!classifyClaudeSession(input, admission).eligible) process.exit(0);
 
 const handoff = readHandoff(SEATS.claudeCaptain, cwd, process.env);
 process.stdout.write(
   renderSeatContext({
     seatId: SEATS.claudeCaptain,
     seatTitle: 'Claude Captain',
-    harness: 'Claude Code',
+    harness: admission.desktopHost.eligible
+      ? 'Claude Code (desktop host)'
+      : 'Claude Code',
     charter,
     handoff,
     occupant: { model: input.model, session: input.session_id },
