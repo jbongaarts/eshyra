@@ -23,6 +23,9 @@ import {
   probeLauncher,
 } from '../../../scripts/seats/probe-dispatch-markers.mjs';
 import {
+  classifyClaudeOccupant,
+  classifyClaudeSession,
+  classifyDesktopHostSession,
   codexRuntimeIdentity,
   extractHookDeclarationRegion,
   handoffExitReminder,
@@ -66,7 +69,13 @@ describe('agent captain seats', () => {
     baseEnv = Object.fromEntries(
       Object.entries(process.env).filter(
         ([key]) =>
-          key !== 'ESHYRA_SEAT_ROLE' && key !== 'ESHYRA_DISPATCH_CHILD',
+          key !== 'ESHYRA_SEAT_ROLE' &&
+          key !== 'ESHYRA_DISPATCH_CHILD' &&
+          // Desktop-host markers, inherited when the suite itself runs inside
+          // a desktop session; the desktop path is exercised explicitly below.
+          key !== 'CLAUDE_CODE_ENTRYPOINT' &&
+          key !== 'CLAUDE_PID' &&
+          key !== 'CLAUDE_SSH_CHILD',
       ),
     );
   });
@@ -87,10 +96,13 @@ describe('agent captain seats', () => {
     });
   }
 
-  function runSupervisor(input: string | Record<string, unknown>): string {
+  function runSupervisor(
+    input: string | Record<string, unknown>,
+    overrides: NodeJS.ProcessEnv = {},
+  ): string {
     return execFileSync(process.execPath, [supervisorScript], {
       input: typeof input === 'string' ? input : JSON.stringify(input),
-      env: baseEnv,
+      env: { ...baseEnv, ...overrides },
       encoding: 'utf8',
     });
   }
@@ -764,6 +776,112 @@ describe('agent captain seats', () => {
         expect(reminder(young(null), () => 'bbb')).toBeNull();
         expect(reminder(young('aaa'), () => null)).toBeNull();
       });
+    });
+  });
+
+  // eshyra-cjrm: the Claude desktop host sends no `model` on SessionStart, so
+  // its main session is admitted by process-tree evidence, regardless of
+  // model. Inherited environment alone must never admit: every process
+  // launched from a desktop session, a nested `claude -p` included, carries
+  // the same markers.
+  describe('desktop host admission', () => {
+    const home = '/home/u';
+    const cli = `${home}/.claude/remote/ccd-cli/2.1.295-abc`;
+    const server = `${home}/.claude/remote/srv/52d8/server`;
+    const desktopEnv = {
+      CLAUDE_CODE_ENTRYPOINT: 'claude-desktop',
+      CLAUDE_PID: '100',
+      CLAUDE_SSH_CHILD: '100:555',
+    };
+    // hook 300 -> sh 200 -> session 100 -> host server 50
+    const tree: Record<number, { exe: string; ppid: number }> = {
+      300: { exe: '/usr/bin/node', ppid: 200 },
+      200: { exe: '/bin/sh', ppid: 100 },
+      100: { exe: cli, ppid: 50 },
+      50: { exe: server, ppid: 1 },
+    };
+    const classify = (
+      env: Record<string, string>,
+      processes: Record<number, { exe: string; ppid: number }> = tree,
+    ) =>
+      classifyDesktopHostSession({
+        env,
+        home,
+        selfPid: 300,
+        readProcess: (pid: number) => processes[pid] ?? null,
+      }).reason;
+
+    it('admits a hook descended from a host-started desktop session', () => {
+      expect(classify(desktopEnv)).toBe('desktop-host-session');
+    });
+
+    it('refuses when the environment markers disagree or are absent', () => {
+      expect(classify({ ...desktopEnv, CLAUDE_CODE_ENTRYPOINT: 'cli' })).toBe(
+        'not-desktop-entrypoint',
+      );
+      expect(classify({ ...desktopEnv, CLAUDE_PID: '' })).toBe('no-claude-pid');
+      expect(classify({ ...desktopEnv, CLAUDE_SSH_CHILD: '999:555' })).toBe(
+        'host-child-mismatch',
+      );
+    });
+
+    it('refuses a nested Claude run, whose CLAUDE_PID names itself', () => {
+      // hook 300 -> sh 200 -> nested claude 150 -> bash 120 -> session 100
+      const nested = {
+        ...tree,
+        200: { exe: '/bin/sh', ppid: 150 },
+        150: { exe: '/usr/local/bin/claude', ppid: 120 },
+        120: { exe: '/bin/bash', ppid: 100 },
+      };
+      // As observed: CLAUDE_SSH_CHILD is inherited from the desktop session.
+      expect(classify({ ...desktopEnv, CLAUDE_PID: '150' }, nested)).toBe(
+        'host-child-mismatch',
+      );
+      // The process tree refuses it even with both markers forged to agree.
+      const forged = {
+        ...desktopEnv,
+        CLAUDE_PID: '150',
+        CLAUDE_SSH_CHILD: '150:1',
+      };
+      expect(classify(forged, nested)).toBe('session-not-host-cli');
+      // Even the host's own CLI binary is refused when a shell started it.
+      const relaunched = { ...nested, 150: { exe: cli, ppid: 120 } };
+      expect(classify(forged, relaunched)).toBe('session-not-host-started');
+    });
+
+    it('refuses a copied environment that borrows a live session pid', () => {
+      const elsewhere = { ...tree, 200: { exe: '/bin/sh', ppid: 77 } };
+      expect(classify(desktopEnv, elsewhere)).toBe(
+        'not-descended-from-session',
+      );
+      expect(classify(desktopEnv, {})).toBe('not-descended-from-session');
+    });
+
+    it('admits regardless of model but never a subagent or resumed session', () => {
+      const desktopHost = { eligible: true, reason: 'desktop-host-session' };
+      for (const model of [undefined, 'claude-sonnet-5']) {
+        expect(classifyClaudeSession({ model }, { desktopHost }).eligible).toBe(
+          true,
+        );
+      }
+      expect(
+        classifyClaudeOccupant({ agent_id: 'a1' }, { desktopHost }).eligible,
+      ).toBe(false);
+      expect(
+        classifyClaudeSession({ source: 'resume' }, { desktopHost }).eligible,
+      ).toBe(false);
+    });
+
+    it('injects neither context from inherited desktop markers alone', () => {
+      // The test runner is not a host-started session, so a hook run under a
+      // desktop environment that names the runner's own pid must stay silent.
+      const inherited = {
+        CLAUDE_CODE_ENTRYPOINT: 'claude-desktop',
+        CLAUDE_PID: String(process.pid),
+        CLAUDE_SSH_CHILD: `${process.pid}:1`,
+      };
+      expect(run(claudeScript, { source: 'startup' }, inherited)).toBe('');
+      expect(runSupervisor({ source: 'startup' }, inherited)).toBe('');
     });
   });
 

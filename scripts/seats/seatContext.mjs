@@ -4,13 +4,14 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  readlinkSync,
   realpathSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { delimiter, isAbsolute, join, resolve } from 'node:path';
+import { basename, delimiter, isAbsolute, join, resolve, sep } from 'node:path';
 
 export const CAPTAIN_MODEL_PATTERN = /fable|opus/i;
 
@@ -36,9 +37,16 @@ export function readHookInput(raw) {
 // the seat — its transcript already carries the charter, which is why nothing
 // is re-injected — so it must still be recognised as an occupant by anything
 // that acts later in the session. Injection layers the resume rule on top.
-export function classifyClaudeOccupant(input) {
+//
+// A Claude desktop session is the other admission path (eshyra-cjrm). The
+// desktop host sends no `model` on SessionStart, so the host process itself is
+// the identity evidence, and it admits regardless of model. `desktopHost` is
+// the result of classifyDesktopHostSession, computed by the caller.
+export function classifyClaudeOccupant(input, { desktopHost } = {}) {
   if (input === null) return { eligible: false, reason: 'malformed-input' };
   if (input.agent_id) return { eligible: false, reason: 'subagent' };
+  if (desktopHost?.eligible)
+    return { eligible: true, reason: 'desktop-host-session' };
   if (typeof input.model !== 'string' || input.model.trim() === '') {
     return { eligible: false, reason: 'no-model-identity' };
   }
@@ -48,11 +56,77 @@ export function classifyClaudeOccupant(input) {
   return { eligible: true, reason: 'authorized-main-session' };
 }
 
-export function classifyClaudeSession(input) {
-  const occupant = classifyClaudeOccupant(input);
+export function classifyClaudeSession(input, options) {
+  const occupant = classifyClaudeOccupant(input, options);
   if (!occupant.eligible) return occupant;
   if (input.source === 'resume') return { eligible: false, reason: 'resume' };
   return occupant;
+}
+
+export const DESKTOP_HOST_ENTRYPOINT = 'claude-desktop';
+
+const MAX_ANCESTRY_DEPTH = 64;
+
+// Reads a process's executable and parent pid from /proc. Returns null where
+// /proc is unavailable or the process is gone, which fails the caller closed.
+export function readProcProcess(pid) {
+  try {
+    const exe = readlinkSync(`/proc/${pid}/exe`);
+    const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+    // comm (field 2) is parenthesised and may itself contain spaces or ')'.
+    const ppid = Number(stat.slice(stat.lastIndexOf(')') + 2).split(' ')[1]);
+    return Number.isInteger(ppid) ? { exe, ppid } : null;
+  } catch {
+    return null;
+  }
+}
+
+// Is this hook running for the main session of a Claude desktop host?
+//
+// Environment alone cannot say so: every process launched from inside a
+// desktop session, including a nested `claude -p` on any model, inherits
+// CLAUDE_CODE_ENTRYPOINT=claude-desktop and the host's other markers. The
+// process tree can. Each Claude process sets CLAUDE_PID to itself for its
+// hooks, and only a session the desktop host started is the host-managed CLI
+// binary whose parent is the host server. A nested run's CLAUDE_PID names the
+// nested process, which fails both checks. CLAUDE_SSH_CHILD (the session pid
+// the host started) must agree, and the hook must descend from CLAUDE_PID so a
+// copied environment cannot borrow a live session's pid. Any other layout —
+// another platform, a local rather than remote host, a missing /proc — is
+// refused rather than guessed at.
+export function classifyDesktopHostSession({
+  env,
+  home = homedir(),
+  selfPid = process.pid,
+  readProcess = readProcProcess,
+}) {
+  const refuse = (reason) => ({ eligible: false, reason });
+  if (env?.CLAUDE_CODE_ENTRYPOINT !== DESKTOP_HOST_ENTRYPOINT)
+    return refuse('not-desktop-entrypoint');
+  const claudePid = Number(env.CLAUDE_PID);
+  if (!Number.isInteger(claudePid) || claudePid <= 1)
+    return refuse('no-claude-pid');
+  if (String(env.CLAUDE_SSH_CHILD ?? '').split(':')[0] !== String(claudePid))
+    return refuse('host-child-mismatch');
+
+  let pid = readProcess(selfPid)?.ppid;
+  for (let depth = 0; pid !== claudePid; depth += 1) {
+    if (!Number.isInteger(pid) || pid <= 1 || depth >= MAX_ANCESTRY_DEPTH)
+      return refuse('not-descended-from-session');
+    pid = readProcess(pid)?.ppid;
+  }
+
+  const remote = join(home, '.claude', 'remote');
+  const session = readProcess(claudePid);
+  if (!session?.exe.startsWith(join(remote, 'ccd-cli') + sep))
+    return refuse('session-not-host-cli');
+  const host = readProcess(session.ppid);
+  if (
+    !host?.exe.startsWith(join(remote, 'srv') + sep) ||
+    basename(host.exe) !== 'server'
+  )
+    return refuse('session-not-host-started');
+  return { eligible: true, reason: 'desktop-host-session' };
 }
 
 export function classifyCodexSession(input, env) {
