@@ -1861,11 +1861,13 @@ describe('economy deduction amount domain (eshyra-olc5.13.3, S1)', () => {
     },
   );
 
-  it('never increases remaining for any admitted amount, including mixed-sign dice outcomes', () => {
-    // 1d4-2 can total -1..2: some seeds refuse, the rest must deduct a
-    // non-negative amount that only lowers the charge count.
-    const amounts: unknown[] = ['1d4-2', '1d12', '2d20kh1-1', 0, 4, '6'];
-    for (const amount of amounts) {
+  // One case per amount keeps each case's database setup inside the default
+  // test budget (Sol review eshyra-olc5.13.6 S5) without weakening the sweep.
+  it.each<[unknown]>([['1d4-2'], ['1d12'], ['2d20kh1-1'], [0], [4], ['6']])(
+    'never increases remaining for admitted amount %s, including mixed-sign dice outcomes',
+    (amount) => {
+      // 1d4-2 can total -1..2: some seeds refuse, the rest must deduct a
+      // non-negative amount that only lowers the charge count.
       for (const seed of [...SEEDS, 's1-g', 's1-h', 's1-i']) {
         const db = freshDbWithSession();
         const { id, condition } = cubeAtFace1Charged(db);
@@ -1896,8 +1898,8 @@ describe('economy deduction amount domain (eshyra-olc5.13.3, S1)', () => {
         }
         db.close();
       }
-    }
-  });
+    },
+  );
 
   it('refuses a table-only add-on override that carries a negative numeric charge, with the database unchanged', () => {
     const db = freshDbWithSession();
