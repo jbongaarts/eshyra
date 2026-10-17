@@ -210,3 +210,115 @@ export function itemInstanceIdRetired(db: Db, itemInstanceId: string): boolean {
       .get(itemInstanceId, itemInstanceId) !== undefined
   );
 }
+
+/** One use of an item that paid for a non-anchored entity grant (olc5.12.3). */
+export interface ItemGrantBindCredit {
+  readonly creditId: string;
+  readonly campaignId: string;
+  readonly itemInstanceId: string;
+  readonly packRef: string;
+  readonly variantId: string | undefined;
+  readonly economyId: string;
+  readonly operationId: string;
+}
+
+/** Issues one credit with the deterministic id <instance>:<operation>:<n>,
+ *  the smallest free n. Called only from useItem's transaction. */
+export function issueItemGrantBindCredit(
+  db: Db,
+  credit: Omit<ItemGrantBindCredit, 'creditId'> & {
+    readonly issuedAt: string;
+    readonly issuedElapsedMinutes: number;
+    readonly provenance: string;
+    readonly sessionId: string;
+  },
+): string {
+  const prefix = `${credit.itemInstanceId}:${credit.operationId}:`;
+  let n = 1;
+  const exists = db.prepare(
+    'SELECT 1 FROM item_grant_bind_credit WHERE credit_id = ?',
+  );
+  while (exists.get(`${prefix}${n}`) !== undefined) n += 1;
+  const creditId = `${prefix}${n}`;
+  db.prepare(
+    `INSERT INTO item_grant_bind_credit(
+       credit_id, campaign_id, item_instance_id, pack_ref, variant_id,
+       economy_id, operation_id, issued_at, issued_elapsed_minutes,
+       provenance, session_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    creditId,
+    credit.campaignId,
+    credit.itemInstanceId,
+    credit.packRef,
+    credit.variantId ?? null,
+    credit.economyId,
+    credit.operationId,
+    credit.issuedAt,
+    credit.issuedElapsedMinutes,
+    credit.provenance,
+    credit.sessionId,
+  );
+  return creditId;
+}
+
+/** The oldest unredeemed credit (issued_at, then insertion order, which
+ *  orders n=10 after n=9 where credit_id text would not) for this
+ *  campaign, instance, pack record, variant and economy. */
+export function oldestOpenItemGrantBindCredit(
+  db: Db,
+  scope: {
+    readonly campaignId: string;
+    readonly itemInstanceId: string;
+    readonly packRef: string;
+    readonly variantId: string | undefined;
+    readonly economyId: string;
+  },
+): string | undefined {
+  const row = db
+    .prepare(
+      `SELECT credit_id FROM item_grant_bind_credit
+       WHERE campaign_id = ? AND item_instance_id = ? AND economy_id = ?
+         AND pack_ref = ? AND variant_id IS ? AND redeemed_effect_id IS NULL
+       ORDER BY issued_at, rowid LIMIT 1`,
+    )
+    .get(
+      scope.campaignId,
+      scope.itemInstanceId,
+      scope.economyId,
+      scope.packRef,
+      scope.variantId ?? null,
+    ) as { credit_id: string } | undefined;
+  return row?.credit_id;
+}
+
+export function redeemItemGrantBindCredit(
+  db: Db,
+  creditId: string,
+  effectId: string,
+  at: string,
+): void {
+  const result = db
+    .prepare(
+      `UPDATE item_grant_bind_credit SET redeemed_effect_id = ?, redeemed_at = ?
+       WHERE credit_id = ? AND redeemed_effect_id IS NULL`,
+    )
+    .run(effectId, at, creditId);
+  if (result.changes !== 1)
+    throw new Error(`bind credit '${creditId}' was already redeemed`);
+}
+
+/** Voids (deletes) the unredeemed bind credits of an instance being destroyed:
+ *  a credit pays for a bind against that live item only, and a later item may
+ *  legitimately reuse the id (a credit does not retire it). Redeemed credits
+ *  stay as evidence; their effects' bindings retire the id themselves. */
+export function voidOpenItemGrantBindCredits(
+  db: Db,
+  itemInstanceId: string,
+): number {
+  return db
+    .prepare(
+      'DELETE FROM item_grant_bind_credit WHERE item_instance_id = ? AND redeemed_effect_id IS NULL',
+    )
+    .run(itemInstanceId).changes;
+}
