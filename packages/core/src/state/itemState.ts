@@ -16,7 +16,9 @@ import {
 } from '../rules/magicItemMechanics.js';
 import {
   effectiveMagicItemMechanics,
+  grantAdmitsInstanceVariant,
   MagicItemVariantError,
+  magicItemVariantDefinitions,
   magicItemVariantTypeKey,
   resolveMagicItemVariant,
 } from '../rules/magicItemVariants.js';
@@ -2377,6 +2379,8 @@ function issueBindCredits(
     readonly costs: readonly { economy: string; amount: number }[];
     readonly packRef: string;
     readonly variantId: string | undefined;
+    /** The item record's declared variant ids (empty when it has none). */
+    readonly declaredVariants: readonly string[];
     readonly elapsedMinutes: number;
   },
 ): { creditId: string; economyId: string; grantIds: string[] }[] {
@@ -2398,6 +2402,14 @@ function issueBindCredits(
         // object grants as DM-adjudicated), so only creature grants are owed a
         // credit; advertising an unredeemable one would mislead the DM.
         grant.kind === 'creature' &&
+        // The binder's own variant membership (S1): a base grant restricted to
+        // other variants (the ivory goats' goat-of-traveling on an onyx dog)
+        // can never bind on this instance, so it is owed no credit.
+        grantAdmitsInstanceVariant(
+          grant,
+          args.declaredVariants,
+          args.variantId,
+        ) &&
         !grantCooldownAnchoredTo(args.mechanics, grant)
         ? [grant.id]
         : [];
@@ -2928,6 +2940,9 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
           costs,
           packRef,
           variantId,
+          declaredVariants: magicItemVariantDefinitions(hit.record).map(
+            (variant) => variant.id,
+          ),
           elapsedMinutes: elapsedNow(txnDb),
         });
     return {

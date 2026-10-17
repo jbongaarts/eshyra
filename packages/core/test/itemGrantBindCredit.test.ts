@@ -439,6 +439,40 @@ describe('olc5.12.3 credit ordering and scoping', () => {
   });
 });
 
+describe('olc5.12.3 credits respect grant-variant membership', () => {
+  // The real figurine prints the goat-of-traveling hour economy and its
+  // spending operation at the base, but the grant belongs to the ivory goats
+  // only. A spend on any other variant must be owed no goat credit.
+  const goat = CARRIERS.find(
+    (c) => c.grantId === 'goat-of-traveling' && c.variantId === 'ivory-goats',
+  ) as Carrier;
+
+  it('an onyx dog spending the base goat economy gets no goat credit; an ivory goat does', () => {
+    expect(goat).toBeDefined();
+    const s = setup([goat.creature]);
+    const dog = s.give('fig-dog', { ...goat, variantId: 'onyx-dog' });
+    s.nextTurn();
+    const spent = s.use(dog, { ...goat, variantId: 'onyx-dog' });
+    // Whether or not the base operation is usable on this variant, it never
+    // advertises or persists a goat credit.
+    const hint = (
+      spent.data as
+        | { hint?: { bindCredits?: { grantIds: string[] }[] } }
+        | undefined
+    )?.hint;
+    for (const credit of hint?.bindCredits ?? [])
+      expect(credit.grantIds).not.toContain('goat-of-traveling');
+    expect(s.credits()).toEqual([]);
+
+    const ivory = s.give('fig-goat', goat);
+    s.nextTurn();
+    expect(s.use(ivory, goat)).toMatchObject({ ok: true });
+    expect(s.open()).toHaveLength(1);
+    expect(s.bind('fx-goat', ivory, goat)).toMatchObject({ ok: true });
+    expect(s.open()).toEqual([]);
+  });
+});
+
 describe('olc5.12.3 stacks of single-use carriers (eshyra-xt6m)', () => {
   const gem = CARRIERS.find(
     (c) => c.key === 'magic-item:elemental-gem',

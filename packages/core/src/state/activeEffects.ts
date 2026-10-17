@@ -39,6 +39,7 @@ import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
 import {
   effectiveMagicItemMechanics,
+  grantAdmitsInstanceVariant,
   magicItemVariantDefinitions,
 } from '../rules/magicItemVariants.js';
 import type { RulesRecord } from '../rules/types.js';
@@ -4031,14 +4032,13 @@ function validateItemGrantBinding(
     throw new ActiveEffectError(
       `source.grantRef '${grantId}' does not resolve to a grant on '${record.key}'`,
     );
-  if (declaredVariants.length > 0) {
+  if (!grantAdmitsInstanceVariant(grant, declaredVariants, instanceVariant)) {
     const grantVariants = Array.isArray(grant.variants)
       ? grant.variants.map(String)
       : [];
-    if (!grantVariants.includes(String(instanceVariant)))
-      throw new ActiveEffectError(
-        `${label} belongs to ${grantVariants.length === 0 ? 'no printed variant' : `variant(s) ${grantVariants.join(', ')}`}, but instance '${itemInstanceId}' is variant '${String(instanceVariant)}'`,
-      );
+    throw new ActiveEffectError(
+      `${label} belongs to ${grantVariants.length === 0 ? 'no printed variant' : `variant(s) ${grantVariants.join(', ')}`}, but instance '${itemInstanceId}' is variant '${String(instanceVariant)}'`,
+    );
   }
   if (grant.kind !== 'creature')
     throw new ActiveEffectError(
