@@ -280,3 +280,24 @@ export function effectiveMagicItemMechanics(
     selected?.mechanics,
   );
 }
+
+/**
+ * Whether a typed entity grant belongs to an item instance's variant (olc5.12
+ * S1). On a variant-bearing item a grant belongs only to the variants it
+ * lists; on an item with no variants every grant applies. The single
+ * predicate behind start_effect binding and use_item bind credits, so a credit
+ * never advertises a grant the binder would refuse.
+ */
+export function grantAdmitsInstanceVariant(
+  grant: { readonly variants?: unknown },
+  declaredVariants: readonly string[],
+  instanceVariant: string | undefined,
+): boolean {
+  if (declaredVariants.length === 0) return true;
+  const grantVariants = Array.isArray(grant.variants)
+    ? grant.variants.map(String)
+    : [];
+  return (
+    instanceVariant !== undefined && grantVariants.includes(instanceVariant)
+  );
+}

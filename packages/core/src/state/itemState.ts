@@ -16,7 +16,9 @@ import {
 } from '../rules/magicItemMechanics.js';
 import {
   effectiveMagicItemMechanics,
+  grantAdmitsInstanceVariant,
   MagicItemVariantError,
+  magicItemVariantDefinitions,
   magicItemVariantTypeKey,
   resolveMagicItemVariant,
 } from '../rules/magicItemVariants.js';
@@ -49,6 +51,7 @@ import {
 } from './itemDepletion.js';
 import type { ItemOperationReadinessInput } from './itemExecutionReadiness.js';
 import {
+  issueItemGrantBindCredit,
   itemInstanceIdTaken,
   writeItemConsumptionReceipt,
 } from './itemGrantBinding.js';
@@ -176,7 +179,16 @@ export interface UseItemResult {
   /** Present when this spend is the cooldown economy of a typed entity grant
    *  (olc5.12.2): the summon must then be bound with start_effect, and its
    *  cooldown starts only when that bound effect ends. */
-  readonly hint?: { readonly bindGrant: string };
+  readonly hint?: {
+    /** The anchored grant this spend paid for (cooldown starts when it ends). */
+    readonly bindGrant?: string;
+    /** Bind credits issued by this use for non-anchored grants (olc5.12.3). */
+    readonly bindCredits?: readonly {
+      readonly creditId: string;
+      readonly economyId: string;
+      readonly grantIds: readonly string[];
+    }[];
+  };
   readonly turnResource?: UseItemTurnResource;
   readonly transition?: {
     readonly from: string;
@@ -2354,6 +2366,72 @@ function grantPaidBySpend(
   return undefined;
 }
 
+/**
+ * One credit per distinct economy this use charged (amount > 0) that some
+ * non-anchored creature grant of the effective mechanics names (olc5.12.3). Anchored
+ * grants keep their economy-state coupling and get no credit.
+ */
+function issueBindCredits(
+  db: Db,
+  args: {
+    readonly input: UseItemInput;
+    readonly mechanics: Obj;
+    readonly costs: readonly { economy: string; amount: number }[];
+    readonly packRef: string;
+    readonly variantId: string | undefined;
+    /** The item record's declared variant ids (empty when it has none). */
+    readonly declaredVariants: readonly string[];
+    readonly elapsedMinutes: number;
+  },
+): { creditId: string; economyId: string; grantIds: string[] }[] {
+  const grants = (args.mechanics.entityGrant as Obj | undefined)?.grants;
+  if (!Array.isArray(grants)) return [];
+  const credits: { creditId: string; economyId: string; grantIds: string[] }[] =
+    [];
+  const charged = new Set(
+    args.costs.filter((cost) => cost.amount > 0).map((cost) => cost.economy),
+  );
+  for (const economyId of charged) {
+    const grantIds = grants.flatMap((raw) => {
+      const grant =
+        typeof raw === 'object' && raw !== null ? (raw as Obj) : undefined;
+      return grant !== undefined &&
+        typeof grant.id === 'string' &&
+        grant.cooldownEconomy === economyId &&
+        // Only a creature grant can be bound (start_effect refuses illusion and
+        // object grants as DM-adjudicated), so only creature grants are owed a
+        // credit; advertising an unredeemable one would mislead the DM.
+        grant.kind === 'creature' &&
+        // The binder's own variant membership (S1): a base grant restricted to
+        // other variants (the ivory goats' goat-of-traveling on an onyx dog)
+        // can never bind on this instance, so it is owed no credit.
+        grantAdmitsInstanceVariant(
+          grant,
+          args.declaredVariants,
+          args.variantId,
+        ) &&
+        !grantCooldownAnchoredTo(args.mechanics, grant)
+        ? [grant.id]
+        : [];
+    });
+    if (grantIds.length === 0) continue;
+    const creditId = issueItemGrantBindCredit(db, {
+      campaignId: args.input.campaignId,
+      itemInstanceId: args.input.instanceId,
+      packRef: args.packRef,
+      variantId: args.variantId,
+      economyId,
+      operationId: args.input.operationId,
+      issuedAt: args.input.at,
+      issuedElapsedMinutes: args.elapsedMinutes,
+      provenance: args.input.provenance,
+      sessionId: args.input.sessionId,
+    });
+    credits.push({ creditId, economyId, grantIds });
+  }
+  return credits;
+}
+
 export function useItem(db: Db, input: UseItemInput): UseItemResult {
   return withTransaction(db, (txnDb) => {
     const row = txnDb
@@ -2698,6 +2776,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
 
     let quantity = row.quantity;
     let consumed = spentStatefulSingleUse;
+    let instanceDestroyed = false;
     let attunementsEnded: readonly DestroyedItemAttunementEvidence[] = [];
     let transformations: NonNullable<UseItemResult['transformations']> = [];
     if (stackedSingleUse > 0) {
@@ -2744,6 +2823,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       }
       if (quantity === 0) {
         recordGrantConsumption();
+        instanceDestroyed = true;
         attunementsEnded = destroyInventoryItem(
           txnDb,
           input.instanceId,
@@ -2837,6 +2917,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       }
       if (destroyed && !deferredDestroyed) {
         recordGrantConsumption();
+        instanceDestroyed = true;
         attunementsEnded = destroyInventoryItem(
           txnDb,
           input.instanceId,
@@ -2850,13 +2931,34 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
     }
     const effectIds = [...operationEffectIds, ...transitionEffectIds];
     const bindGrant = grantPaidBySpend(mechanics, costs);
+    // A destroying use is covered by the consumption receipt instead.
+    const bindCredits = instanceDestroyed
+      ? []
+      : issueBindCredits(txnDb, {
+          input,
+          mechanics,
+          costs,
+          packRef,
+          variantId,
+          declaredVariants: magicItemVariantDefinitions(hit.record).map(
+            (variant) => variant.id,
+          ),
+          elapsedMinutes: elapsedNow(txnDb),
+        });
     return {
       instanceId: input.instanceId,
       packRef,
       operationId: input.operationId,
       costs,
       effects: effectIds.map((id) => refs.effects.get(id)),
-      ...(bindGrant === undefined ? {} : { hint: { bindGrant } }),
+      ...(bindGrant === undefined && bindCredits.length === 0
+        ? {}
+        : {
+            hint: {
+              ...(bindGrant === undefined ? {} : { bindGrant }),
+              ...(bindCredits.length === 0 ? {} : { bindCredits }),
+            },
+          }),
       ...(turnResource === undefined ? {} : { turnResource }),
       ...(selectedTransition === undefined
         ? {}

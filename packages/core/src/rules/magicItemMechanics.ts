@@ -2572,6 +2572,26 @@ function cooldownAnchors(mechanics: Obj, path: string): void {
   }
 }
 
+/** Whether a grant's cooldownEconomy names a 'single-use' economy: a stateless
+ *  consumable stack unit (gem, token, manual), not item state (eshyra-xt6m). */
+function namesSingleUseEconomy(mechanics: Obj, economyId: unknown): boolean {
+  const economies = mechanics.economies;
+  if (
+    typeof economyId !== 'string' ||
+    typeof economies !== 'object' ||
+    economies === null ||
+    Array.isArray(economies)
+  )
+    return false;
+  const entry = (economies as Obj)[economyId];
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    !Array.isArray(entry) &&
+    (entry as Obj).kind === 'single-use'
+  );
+}
+
 /** Pure implementation of the stateful-singleton invariant from PR #408. */
 export function isStatefulMagicItemMechanics(
   mechanics: unknown,
@@ -2604,7 +2624,8 @@ export function isStatefulMagicItemMechanics(
           typeof grant === 'object' &&
           grant !== null &&
           !Array.isArray(grant) &&
-          (grant as Obj).cooldownEconomy !== undefined,
+          (grant as Obj).cooldownEconomy !== undefined &&
+          !namesSingleUseEconomy(value, (grant as Obj).cooldownEconomy),
       )
     )
       return true;
