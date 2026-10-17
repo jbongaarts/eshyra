@@ -2632,8 +2632,11 @@ export function isStatefulMagicItemMechanics(
  * admissible; each caller wraps the clause in its own error type.
  */
 
-/** Economy kinds whose live state is a numeric `remaining` pool. */
-const NUMERIC_POOL_KINDS: ReadonlySet<string> = new Set(['charges', 'per-day']);
+/** Economy kinds an external-event deduction may lower (eshyra-gxt7). Only
+ *  `charges`: the SRD's one deduction table (Cube of Force, table:cube-of-
+ *  force-charges-lost) drains charges, and no source text drains a per-day
+ *  use pool by an external event, so admitting per-day would invent rules. */
+const DEDUCTIBLE_POOL_KINDS: ReadonlySet<string> = new Set(['charges']);
 
 export interface EconomyDeductionCheck {
   /** The item's effective `mechanics.economies`, or `undefined` when it has none. */
@@ -2698,7 +2701,7 @@ export function economyDeductionViolation(
   const { economies, deduction, tableData } = check;
   const { economy, tableRef, keyColumn, amountColumn } = deduction;
 
-  // The economy must exist on the item and be a numeric pool.
+  // The economy must exist on the item and be a deductible (charges) pool.
   const declared = isRecord(economies) ? economies : {};
   if (typeof economy !== 'string' || !Object.hasOwn(declared, economy))
     return `references unknown economy ${quote(economy)}`;
@@ -2706,9 +2709,9 @@ export function economyDeductionViolation(
   if (
     !isRecord(definition) ||
     typeof definition.kind !== 'string' ||
-    !NUMERIC_POOL_KINDS.has(definition.kind)
+    !DEDUCTIBLE_POOL_KINDS.has(definition.kind)
   )
-    return `economy ${quote(economy)} must be a numeric pool (charges or per-day)`;
+    return `economy ${quote(economy)} must be a charges pool (the only economy kind a printed deduction drains)`;
 
   // The table reference must resolve to a table with the declared shape.
   if (typeof tableRef !== 'string' || tableData === undefined)
