@@ -1,4 +1,5 @@
 import { assertEffectiveEconomyDeductions } from './effectiveDeductionAdmission.js';
+import { assertEffectiveRandomInitializationTables } from './effectiveRandomInitializationAdmission.js';
 import type {
   CompatibleBaseSystem,
   RulesPack,
@@ -81,6 +82,7 @@ export function resolveRulesStack(
     recordsByKind: freezeKindIndexes(recordsByKind),
   };
   assertEffectiveEconomyDeductions(stack);
+  assertEffectiveRandomInitializationTables(stack);
   return stack;
 }
 
