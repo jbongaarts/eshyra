@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ifz7",
+  "title": "Decide whether commonAuthorityStructure.test.ts should exist at all",
+  "description": "Deferred question, raised by the user on 2026-09-22 right after PR #558 merged\n(merge commit c3171a28). Not urgent; do not start it as a side quest.\n\neshyra-4tgd reduced the review-authority guard from 17 tests to 2, each\nobserving reachability only: CLAUDE.md still carrying the @AGENTS.md import, and\nevery repository-relative Markdown link in AGENTS.md and CLAUDE.md resolving.\n\nThe open question is whether even those two earn permanent executable status, or\nwhether the file should be retired entirely. Arguments already on the record, so\na future session need not rederive them:\n\nFOR retention - both failure modes are silent and severe. Losing the import\nmeans sessions stop loading repository authority at all. A dangling pointer\nmakes an obligation unfollowable. Neither is obvious in a diff.\n\nAGAINST - the whole file is 3 assertions guarding two facts that a broken link\nchecker, a docs build, or simply opening CLAUDE.md would also reveal, and it is\nitself proof machinery under AGENTS.md \"Permanent Test Evidence\", which says\nmachinery gets evidence proportionate to the decisions it gates and not an\nautomatic test. The link guard also needed a fail-open repair within hours of\nbeing written (bc277005), which is weak evidence that the mechanism costs more\nto keep correct than the invariant is worth.\n\nIf retired, name the replacing responsibility explicitly. Do not replace it with\na new checker, linter config, or CI step - that would move the machinery rather\nthan dispositioning it.\n\nRelated: eshyra-5wbx (beadLifecyclePolicy.test.ts, same defect class).\n",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-22T03:56:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-22T03:56:56Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

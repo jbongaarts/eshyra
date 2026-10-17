@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eb9n",
+  "title": "Creation wizard: level-1 spell step does not validate cantrip/spell counts or wizard preparation",
+  "description": "Found in eshyra-nnj6.1. Creation writes structured spellcasting buckets from the free-form draft spells list (classified by effectiveSpellcasting), but neither the draft nor the wizard enforces the class cantrip/spell/spellbook counts (class.cantrips / class.spells choices are enumerated but not gated), and wizard prepared spells are not collected at creation. Level-up then works from whatever was chosen.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T02:53:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:32:59Z",
+  "started_at": "2026-10-09T04:13:49Z",
+  "closed_at": "2026-10-09T04:32:59Z",
+  "close_reason": "Merged PR #628",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eb9n",
+      "depends_on_id": "eshyra-nnj6.1",
+      "type": "discovered-from",
+      "created_at": "2026-10-08T21:53:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eb9n",
+      "depends_on_id": "eshyra-eb9n.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T23:13:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

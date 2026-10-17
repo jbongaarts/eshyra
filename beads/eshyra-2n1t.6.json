@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.6",
+  "title": "F4: Spell-slot economy",
+  "description": "Per-level slot counters on character live state seeded from the code-owned progression; expend(>= level) validation; long-rest restore hook (F7). Member: spell-slots (IMPL); clause: casting-a-spell-at-a-higher-level (slot-level legality gate; upcast scaling transform is F9). Source: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4.",
+  "acceptance_criteria": "ADR 0018 single-class guard is enforced before slot state is seeded, expended, or restored; ordinary Spellcasting slots come from the sole class progression; single-class Pact Magic remains a separate pool with its own slot level/recharge; no effective multiclass caster calculation, multiclass slot-table lookup, multi-class spell association, or Spellcasting/Pact Magic multiclass interaction is claimed; per-level counters, expend-at-or-above validation, and F7 long-rest restore hook are tested.",
+  "notes": "D1 resolved by ADR 0018: F4 is deliberately single-class and depends on the shared fail-closed boundary bead.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:40:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-11T21:43:16Z",
+  "closed_at": "2026-07-12T02:14:43Z",
+  "close_reason": "Implemented F4 spell-slot economy and addressed PR #433 re-review: applyLevelUp now reconciles derived slots atomically, with ordinary and Pact Magic context integration coverage.",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.6",
+      "depends_on_id": "eshyra-2n1t.13",
+      "type": "blocks",
+      "created_at": "2026-07-11T15:02:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-2n1t.6",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-07T00:40:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

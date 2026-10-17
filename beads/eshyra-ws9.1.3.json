@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ws9.1.3",
+  "title": "REFACTOR: model evaluation harness reports required metrics",
+  "description": "Clean up the harness implementation and exports while keeping focused and full verification green.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-20T23:39:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:06Z",
+  "started_at": "2026-05-20T23:42:22Z",
+  "closed_at": "2026-05-20T23:43:29Z",
+  "close_reason": "Refactor pass complete; cost report names per-session metric; focused, typecheck, build, and full test gates passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ws9.1.3",
+      "depends_on_id": "eshyra-ws9.1.2",
+      "type": "blocks",
+      "created_at": "2026-05-20T18:39:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ws9.1.3",
+      "depends_on_id": "eshyra-ws9.1",
+      "type": "parent-child",
+      "created_at": "2026-05-20T18:39:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "04b4733d-3ed0-5a94-aac4-bb3d3e176fcf",
+      "issue_id": "eshyra-ws9.1.3",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: npx vitest run packages/core/test/modelEvaluation.test.ts -> 1 passed; npm run typecheck -> passed; npm run build -> passed; npm run test -> 158 passed / 1 skipped.",
+      "created_at": "2026-05-20T23:43:29Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

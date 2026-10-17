@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0u2",
+  "title": "PR #100 review fixes: PC-only /switch, stale active-id handling, design doc migration text",
+  "description": "Code review on PR #100 (multi-PC) raised three scoped fixes: (1) /switch must reject non-PC party members (role!='pc'); (2) handle stale/invalid active_character_id (and explicit actingCharacterId) with a controlled domain error instead of a TypeError when the row is missing; (3) update docs/multi-pc-design.md migration text now that v9->v10 adds turn_trace.acting_character_id.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T21:53:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:53Z",
+  "started_at": "2026-05-28T21:53:46Z",
+  "closed_at": "2026-05-28T22:00:46Z",
+  "close_reason": "PR #100 review fixes pushed (db6d58c): (1) setActiveCharacterId validates role='pc' + existence -> CharacterResolutionError; /switch rejects non-PCs via existing CLI catch, active unchanged; tool targeting unaffected. (2) readStateSnapshot throws CharacterResolutionError on stale/missing active or explicit acting id instead of TypeError. (3) design doc migration text updated for additive v9->v10. biome+typecheck clean; full suite 772 passed/3 skipped (only the known dolt timeout flakes fail under parallel load; checkpoint 65/65 in isolation). 8 new/updated tests.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

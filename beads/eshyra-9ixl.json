@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9ixl",
+  "title": "Integrate finding registry with shared capability ledger",
+  "description": "After the bootstrap capability-ledger work lands, replace the local capability identity and primitive relation copy in findingRegistry.ts with the shared boundary. Preserve the multi-valued hook-to-primitive relation, qualified membership expansion, exact hook spellings, and family-owner validation.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T02:33:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T02:35:13Z",
+  "closed_at": "2026-07-28T02:35:13Z",
+  "close_reason": "Duplicate follow-up created by command retry; retain eshyra-oeur.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

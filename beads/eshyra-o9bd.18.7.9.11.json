@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.9.11",
+  "title": "C5 — Model Split reproduction-on-damage behavior",
+  "description": "Model the 2 reviewed Split-family refs from classification §1.6.3 as reproduction triggered by the classified damage conditions, including source-defined eligibility and resulting split state/creatures. Do not reduce it to a prose rider; project both refs fail-closed and complete exact membership and standard verification.",
+  "notes": "Complete exact registry/membership removals and count reconciliation; verify readiness-report delta; regenerate through the importer; add committed-pack assertions; update thaw evidence and freeze hash as appropriate; run verify:dnd5e-srd-pack, verify:dnd5e-srd-freeze, relevant focused tests, full required worktree/check/typecheck tests, and audit-bundle verification where required.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T04:09:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-11T04:46:25Z",
+  "started_at": "2026-07-11T04:33:22Z",
+  "closed_at": "2026-07-11T04:46:25Z",
+  "close_reason": "Implemented and verified C5 splitOnDamage projection, schema, pack regeneration, membership graduation, and audit evidence.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.9.11",
+      "depends_on_id": "eshyra-o9bd.18.7.9",
+      "type": "parent-child",
+      "created_at": "2026-07-10T23:09:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

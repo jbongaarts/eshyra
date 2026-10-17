@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-zzy.4",
+  "title": "Task 4: Final SRD epic verification",
+  "description": "Objective: Verify the SRD epic acceptance criteria end to end and close the epic only if all child tasks are complete. Files: no production files expected unless verification exposes a defect. Steps: 1. Run npm run build. 2. Run npm run test. 3. Run bd show loreweaver-zzy and confirm all acceptance criteria are covered by closed children. 4. Record verification evidence on loreweaver-zzy. 5. Close loreweaver-zzy only after all children are closed and verification is green.",
+  "design": "This is a verification and cleanup task. If a defect is found, create or reopen a targeted child issue rather than expanding this task.",
+  "acceptance_criteria": "Build passes; tests pass; loreweaver-zzy acceptance criteria are satisfied; no untracked generated files remain except intentional build artifacts ignored by git.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T03:02:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:09Z",
+  "started_at": "2026-05-19T03:24:28Z",
+  "closed_at": "2026-05-19T03:26:19Z",
+  "close_reason": "Final SRD verification passed: npm run build exit 0 and npm run test exit 0 with 25 passed / 1 skipped; epic acceptance checked.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-zzy.4",
+      "depends_on_id": "eshyra-zzy",
+      "type": "parent-child",
+      "created_at": "2026-05-18T22:02:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-zzy.4",
+      "depends_on_id": "eshyra-zzy.3",
+      "type": "blocks",
+      "created_at": "2026-05-18T22:03:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "4cdfbc67-d709-5024-b16d-bdb9e3675e6b",
+      "issue_id": "eshyra-zzy.4",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run build -> exit 0; npm run test -> exit 0 with 25 passed / 1 skipped. Epic acceptance checked: monster, spell, and class lookups by stable ref/exact name are covered; partial and wrong-kind lookups return not_found; successful results include SRD 5.1 CC-BY-4.0 license metadata.",
+      "created_at": "2026-05-19T03:25:14Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

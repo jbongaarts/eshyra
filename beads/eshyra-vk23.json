@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vk23",
+  "title": "Close ngcj SRD gameplay-modeling audit findings",
+  "description": "Follow-up epic from the 2026-06-29 ngcj SRD audit bundle review.\n\nThe bundle passed the normal source/reproducibility criteria:\n- verify:dnd5e-srd-pack exits 0 and regenerates cleanly.\n- typecheck exits 0.\n- tests/check pass.\n- source coverage reports unaccounted: 0.\n- source-region ledger reports unrepresented: 0.\n- typed class advancement, table reachability, and overlay parity pass.\n\nThe newly discovered work is not missing source coverage. It is gameplay modeling quality:\n1. Some machine-readable mechanics projections are unsafe because they contain clipped regex/prose fragments.\n2. Core class spell workflows are still not sufficiently structured for deterministic character creation and advancement.\n3. Warlock Eldritch Invocation prerequisites are parsed incorrectly when wrapped across lines/pages.\n4. Several choices still use free-text sources where deterministic tools need typed filters.\n5. Subclass progression is present but not ordered/projected for easy DM/tool consumption.\n6. Gameplay-readiness reporting undercounts some existing structure.\n7. Non-blocking check/typecheck command-output hygiene should be cleaned up before future audit bundles.\n\nGoal:\nMake the SRD pack trustworthy for both primary DM-model discoverability and deterministic tool consumption. Machine-readable fields must be validated structure, not plausible-looking text fragments.\n\nAudit evidence:\n- Bundle: dnd5e-srd-audit-bundle-062926-1.zip / .audit-bundles/dnd5e-srd-audit-bundle\n- Commit reported by bundle: ef90b3a5\n- Pack count reported by review: 1,812 records\n- Key reports: reports/srd-choice-prose-audit.txt, reports/gameplay-readiness.txt, reports/source-coverage.json, reports/source-region-ledger.json",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T03:18:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-30T05:49:20Z",
+  "close_reason": "All nine child issues are complete; remaining vk23 follow-ups are implemented, verified, and prepared in PR branch eshyra-vk23-rest.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.8.2",
+  "title": "Restore backpack strap footnote and Deck of Many Things asterisk legend",
+  "description": "Finding source:\n- Fable P3 found two small prose gaps:\n  1. Adventuring Gear table footnote: \"You can also strap items, such as a bedroll or a coil of rope, to the outside of a backpack\" is in no record.\n  2. Deck of Many Things table keeps * markers on Vizier/Comet/The Fates but drops the legend \"*Found only in a deck with twenty-two cards.\"\n- The deck legend is mechanically relevant because it distinguishes 13-card vs 22-card deck contents; without it, tools cannot interpret the asterisk markers the table retains.\n\nAcceptance criteria:\n- Represent the backpack strap footnote in an appropriate equipment/backpack/adventuring-gear record or rule record.\n- Represent the Deck of Many Things asterisk legend in table/item data so tools can interpret the marked rows.\n- Add regression coverage for table footnotes/legends, especially where table cells retain markers.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-03T00:50:19Z",
+  "closed_at": "2026-07-03T01:03:21Z",
+  "close_reason": "Restored backpack strap footnote and Deck of Many Things asterisk legend through importer-generated pack data with regression coverage.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.8.2",
+      "depends_on_id": "eshyra-o9bd.18.8",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

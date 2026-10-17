@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.3",
+  "title": "Brainstorm x3w: Propose approaches",
+  "description": "Propose two to three architecture approaches with tradeoffs and a recommendation.",
+  "notes": "Decision: use the System Stack approach. Campaigns bind to one base rules system plus an explicitly ordered compatible add-on stack; lookup and validation resolve deterministically through that stack; D&D and Pathfinder character creation dispatch through system-specific validators behind shared seams.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:36:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T04:50:34Z",
+  "closed_at": "2026-05-23T04:53:08Z",
+  "close_reason": "Presented alternatives and user approved System Stack approach.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.3",
+      "depends_on_id": "eshyra-x3w.2",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:36:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.3",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-22T23:36:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

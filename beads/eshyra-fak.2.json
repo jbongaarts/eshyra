@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fak.2",
+  "title": "GREEN: repair subclass feature parsing",
+  "description": "Implement the minimal structural parser fix that makes the subclass regression assertions pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T23:19:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-06T23:24:43Z",
+  "closed_at": "2026-06-06T23:27:24Z",
+  "close_reason": "Structural context fix passes focused, real-PDF, typecheck, and importer-suite verification.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-fak.2",
+      "depends_on_id": "eshyra-fak.1",
+      "type": "blocks",
+      "created_at": "2026-06-06T18:19:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-fak.2",
+      "depends_on_id": "eshyra-fak",
+      "type": "parent-child",
+      "created_at": "2026-06-06T18:19:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "4638b207-85e5-5143-abfb-3e4f8e23c1c8",
+      "issue_id": "eshyra-fak.2",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: focused parser suites passed 53/53; real-PDF in-memory parse emits Berserker 4 features, Oath 3 correctly attributed features, all 12 subclasses nonzero, total features 161, and Oath description length 3791 including Holy Nimbus. npm run typecheck passed; importer directory passed 495/495.",
+      "created_at": "2026-06-06T23:27:22Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

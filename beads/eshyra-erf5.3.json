@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5.3",
+  "title": "Preserve SRD equipment grouping semantics for deterministic filters",
+  "description": "Combined audit finding from Claude Opus 4.8 and ChatGPT review.\n\nThe importer captures leaf equipment records but loses important SRD grouping semantics from equipment tables/lists. This makes several already-emitted deterministic filters and proficiencies unsatisfiable without prose/name heuristics.\n\nKnown problems:\n- Weapon records lack simple/martial and melee/ranged classification, even though starting-equipment filters request martial melee weapons and class proficiencies refer to Simple weapons and martial weapons.\n- Arcane focus, druidic focus, holy symbol, musical instrument, and similar item groups are represented as generic gear/tool records without machine-readable group/subtype tags.\n- Starting-equipment filters such as select: \"arcane-focus\", \"druidic-focus\", \"holy-symbol\", and \"musical-instrument\" cannot enumerate candidates deterministically from the catalog.\n- The pack handles armor grouping better than weapons, so weapons/foci/instruments should be brought to that level of resolvability.\n\nAcceptance criteria:\n- Preserve SRD equipment grouping headers as generated structured metadata.\n- Every generated starting-equipment filter resolves to at least one candidate record unless intentionally documented as deferred.\n- Class equipment proficiencies such as Simple weapons and martial weapons can resolve to concrete catalog entries.\n- Add importer/audit regression coverage.\n- Fixes belong in importer/modeling/resolver/audit code, not hand-edits to generated pack JSON.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T05:58:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-01T06:46:56Z",
+  "closed_at": "2026-07-01T13:05:22Z",
+  "close_reason": "All three children complete: weapons and focus/symbol/instrument/tool groups tagged with structured metadata, and a resolution audit proves every starting-equipment filter and class proficiency phrase resolves to concrete candidates",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-erf5.3",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

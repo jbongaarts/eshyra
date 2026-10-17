@@ -1,0 +1,81 @@
+{
+  "_type": "issue",
+  "id": "eshyra-y34",
+  "title": "Fail closed when SRD ancestry extraction under-extracts races",
+  "description": "## Problem\r\n\r\nThe D&D SRD 5.1 importer slices the Races section and then calls parseAncestries. The section anchor failure path is fail-closed, but parseAncestries itself can still return an empty or partial result if the expected race/subrace boundaries are not found inside an otherwise valid slice.\r\n\r\nThis undermines the deterministic importer goal: a PDF extraction/layout drift could produce a valid-looking rules pack with missing ancestry records.\r\n\r\n## Relevant files\r\n\r\n- packages/core/scripts/importers/dnd5e-srd-5.1/index.ts\r\n- packages/core/scripts/importers/dnd5e-srd-5.1/parseAncestries.ts\r\n- packages/core/scripts/importers/dnd5e-srd-5.1/parseAncestries.test.ts or equivalent importer tests\r\n\r\n## Requirements\r\n\r\n- Add explicit ancestry coverage validation for the SRD 5.1 corpus.\r\n- Fail closed when the parsed ancestry set is empty or missing expected parent/subrace records.\r\n- Include useful diagnostics listing missing expected names.\r\n- Keep section-anchor failures distinct from parser-coverage failures.\r\n- Ensure the failure happens before writing manifest.json / records.json.\r\n\r\n## Expected SRD 5.1 coverage\r\n\r\nParent races:\r\n- Dragonborn\r\n- Dwarf\r\n- Elf\r\n- Gnome\r\n- Half-Elf\r\n- Half-Orc\r\n- Halfling\r\n- Human\r\n- Tiefling\r\n\r\nSubraces:\r\n- Hill Dwarf\r\n- Mountain Dwarf\r\n- High Elf\r\n- Wood Elf\r\n- Dark Elf (Drow)\r\n- Lightfoot\r\n- Stout\r\n- Forest Gnome\r\n- Rock Gnome\r\n\r\n## Acceptance criteria\r\n\r\n- A test fixture with a valid races slice but no recognized race headings causes runImporter or the ancestry parsing path to throw.\r\n- A fixture missing one expected ancestry name throws and names the missing record.\r\n- The happy-path SRD import still emits the expected ancestry count.\r\n- Error messages are deterministic and suitable for CI logs.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-29T00:38:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:42Z",
+  "started_at": "2026-05-31T04:08:59Z",
+  "closed_at": "2026-05-31T04:26:12Z",
+  "close_reason": "Implemented exact SRD 5.1 ancestry coverage validation before pack writes, with deterministic missing-name diagnostics and no/partial Races fixture coverage; verification passed: npm run typecheck, touched-file Biome CI, npm run test.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-y34",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-28T19:38:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "1b2dffdd-7451-5312-9bde-e6cc33aa9d87",
+      "issue_id": "eshyra-y34",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install -> succeeded; npm run typecheck -> passed; npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseAncestries.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> passed (47 tests).",
+      "created_at": "2026-05-31T04:11:15Z"
+    },
+    {
+      "id": "a3f42de4-4980-561d-af4d-39be0a13a129",
+      "issue_id": "eshyra-y34",
+      "author": "Joseph Bongaarts",
+      "text": "Debugging evidence: parseAncestries returns [] when no known race/subrace headings are found, and runImporter currently passes the resulting ancestries directly to buildPack without a validateAncestryCoverage guard. Working references are validateCreatureCoverage/validateClassCoverage/validateSubclassCoverage/validateFeatureCoverage in index.ts, which run after parsing and before writePackToDirectory. Root cause hypothesis: a valid Races slice can under-extract because ancestry coverage is not validated by expected name set before emit.",
+      "created_at": "2026-05-31T04:12:41Z"
+    },
+    {
+      "id": "198cfa97-684b-572b-b26d-44baf6b7d69c",
+      "issue_id": "eshyra-y34",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseAncestries.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> failed as expected. Coverage tests show runImporter resolves instead of rejecting when Races yields 0 ancestries or 17/18 ancestries.",
+      "created_at": "2026-05-31T04:20:26Z"
+    },
+    {
+      "id": "cfb95872-4472-5ae4-bbfa-66a97bfd7cfd",
+      "issue_id": "eshyra-y34",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseAncestries.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> passed (50 tests). Added ancestry coverage guard that rejects 0/partial expected SRD ancestry sets before output.",
+      "created_at": "2026-05-31T04:22:19Z"
+    },
+    {
+      "id": "cc7696d1-96ef-5783-86c6-e8cde275bfa0",
+      "issue_id": "eshyra-y34",
+      "author": "Joseph Bongaarts",
+      "text": "TDD REFACTOR: npx biome format --write --vcs-enabled=false <4 touched files> -> formatted 4 files, fixed 1; npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseAncestries.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> passed (50 tests).",
+      "created_at": "2026-05-31T04:23:40Z"
+    },
+    {
+      "id": "f2cab8bb-e775-502e-b9ba-f379ab0f16f2",
+      "issue_id": "eshyra-y34",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> passed; npx biome ci --vcs-enabled=false <4 touched files> -> passed (4 files checked); npm run test -> passed (960 passed, 3 skipped across 82 files). Note: npm run check -- --vcs-enabled=false cannot process '.' inside .worktrees because biome.json excludes **/.worktrees; touched-file Biome CI was used for local worktree validation.",
+      "created_at": "2026-05-31T04:24:56Z"
+    },
+    {
+      "id": "6e1953f2-ad88-52a5-996b-8c85cfbf5c44",
+      "issue_id": "eshyra-y34",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 77013dd..working-tree: Assessment: Ready to merge. Critical: none. Important: none. Minor: none. Follow-up: none. Reviewed diff against y34 acceptance: exact ancestry name-set guard throws before writePackToDirectory, no/partial Races fixtures reject and leave records.json absent, section-anchor failure remains SectionNotFoundError, and happy path now asserts 18 ancestry records.",
+      "created_at": "2026-05-31T04:25:55Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 7
+}

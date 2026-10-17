@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.1",
+  "title": "Brainstorm x3w: Explore project context",
+  "description": "Explore files, docs, recent commits, and existing beads for the multiple rules-pack design.",
+  "notes": "Context findings: docs/storage.md already reserves <root>/rules-packs and says rules data resolves at runtime, not copied into campaign DBs. Current public seams are SRD-specific: packages/core/src/srd/*, lookup_srd in orchestrator/tools.ts, prompt text in orchestrator/protocol.ts, srdRef on module EncounterCreature, and SRD-only characterCreation.ts validation. Campaign identity currently stores module pack id in core campaign.ts and CLI registry.module; no campaign rules-pack binding exists. World PackLicense/evaluatePackPolicy already provides a license metadata pattern to reuse or generalize for rules packs. Recent main includes character creation before play turns (#48) and memory rollup work (#47/#49), so the design must preserve CLI character gating and close/session flows.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:36:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T04:36:44Z",
+  "closed_at": "2026-05-23T04:38:23Z",
+  "close_reason": "Explored docs, code seams, tests, and recent commits; notes recorded on the bead.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.1",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-22T23:36:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

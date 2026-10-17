@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-i0ey",
+  "title": "Test: refused use_item in combat leaves turn budget unchanged (equipment refusal)",
+  "description": "Non-blocking note from cloud review of PR #662 (olc5.10): code ordering is correct (equipment check precedes turn-resource spend in the same transaction) but no test asserts a refused use_item in active combat leaves the turn budget unchanged. Also noted: hold_item/attunement tool check does not compare item key. Add the test; evaluate the second note.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-14T04:50:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-14T04:50:57Z",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

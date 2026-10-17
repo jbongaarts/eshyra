@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-k3nv",
+  "title": "Grant-anchored cooldown reset: wait is scheduled only when the grant is bound via start_effect",
+  "description": "olc5.12.1 finding. Ring of Djinni Summoning spends its cooldown in use_item, but the 24-hour wait starts only if a later start_effect binds particular-djinni and that effect ends. A DM who narrates the summon without binding leaves the ring depleted forever. F5 grant-anchored cooldown reset therefore stays unlanded. Fix: couple the spend and the grant (for example, refuse the spend without a binding or schedule on a DM ruling that the grant ended). Decide before landing the F5 hook.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-15T04:02:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-15T04:30:04Z",
+  "closed_at": "2026-10-15T04:30:04Z",
+  "close_reason": "Resolved on eshyra-olc5.12.2 (commit b205724d): an anchored summon's spend is coupled to its bind (start_effect refused unless the economy is spent and unscheduled, one live bind per spend), use_item returns hint.bindGrant, and an unbound spend is recoverable by a late bind. F5 grant-anchored cooldown reset is landed.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

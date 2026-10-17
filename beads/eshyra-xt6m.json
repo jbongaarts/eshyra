@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xt6m",
+  "title": "Elemental Gem / Feather Token stacks >1 cannot be used: grants naming cooldownEconomy make the items stateful (quantity must be 1)",
+  "description": "Found in eshyra-olc5.12.13. isStatefulMagicItemMechanics treats any entityGrant with cooldownEconomy as stateful, so a stack of 2+ gems/tokens is refused by use_item ('stateful item must have quantity 1') though the pack calls them stateless single-use consumables. Also use_item break-gem/use-token on the real pack is blocked by readiness (no clause for operation effects summon-elemental/token-kind-payload; F3/F2/F5 hooks pending). Decide whether stacks should be supported.",
+  "notes": "2026-10-17: PR #669 (stacking half of xt6m; the readiness half is with c58j). Captain-verified 6987 passed. Stays in_progress until merge.",
+  "status": "in_progress",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-17T18:34:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-17T20:21:50Z",
+  "started_at": "2026-10-17T20:21:50Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-xt6m",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-17T14:57:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

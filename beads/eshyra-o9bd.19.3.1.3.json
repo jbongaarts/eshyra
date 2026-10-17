@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.1.3",
+  "title": "Dispatch: 19.3.1 repair after Sol S1-S2 (attempt 2)",
+  "description": "Repair PR #649 per Sol review eshyra-o9bd.19.3.1.2 (read S1 and S2 in full). S1: add the printed visibility predicate to Iron Flask and Sculpt Spells through their compiler inputs (magicItemResidualCombatEffects.ts / mechanicsProjections.ts), following how the other members of the visibility cohort carry it (Eyes of Charming requiresMutualSight; others keep sight in target/activation fields); regenerate; re-inspect the whole non-creature target population for equivalent losses; correct the targeting-qualifiers (F-35) registry reasoning to the true result; add one generalized predicate over the reviewed visibility cohort ('can see' wording -> a sight qualifier in the projection) plus the two exact source cases. S2: extend the O5 non-option-prose invariant to mechanics.effects (each parent effect must be derivable from non-option prose), keeping legitimate parent effects (Dragon Ancestor expertise) and option-keyed procedures valid; demonstrate both source-backed bad states (Hunter's Prey extraDamage 1d8; Superior Hunter's Defense evasion + damageReduction) are rejected (temporary in-memory or reverted mutation; record the demonstration in notes). Diff records.json: only Iron Flask and Sculpt Spells (and any equivalent loss you find and justify) may change. Importer protocol; regenerate pack + inventory; verify:dnd5e-srd-pack; host-memory wait; verify:worktree then commit with &&; notes; close this bead. No push/PR.",
+  "notes": "REPAIR of Sol S1-S2 (PR #649 head dc1fca6e), commit dbe6b8d0 on eshyra-o9bd.19.3.1.3.\n\nS1 (visibility): magic-item:iron-flask trap target -> \"creature native to another plane of existence that you can see\" + requiresSight:true (source p.228 \"targeting a creature that you can see within 60 feet\"). feature:school-of-evocation:sculpt-spells autoSucceedSave gains requiresSight:true from \"other creatures that you can see\" (p.54), emitted by a source-regex guard in mechanicsProjections.ts. autoSucceedSave schema admits optBool requiresSight.\n- Cohort: non-creature records with a projected target field and sight wording in their own text: 9 (matches Sol). Before: Sculpt and Iron Flask lacked any sight qualifier; the other seven kept it (eyes-of-charming requiresMutualSight; gem, ring of the ram, robe, rod, rope, wand via target strings). After: all nine carry it.\n- Re-inspection beyond the cohort (broader sight wording: see/visible/sight/unseen/seen): no further sight loss found (dust of disappearance, potions and philter use \"invisible\"/\"self\" without a source sight restriction).\n- Registry F-35 statusReasoning corrected: names the two losses, their repair, and the cohort invariant; non-sight qualifiers stated as token-audit only, not per-record proof.\n- Generalized predicate: alternativeOptionProjections.test.ts \"S1\" block pins the 9-record cohort and asserts projectsSight for each; negative control strips the Iron Flask qualifier and the predicate reports false.\n- Existing exact expectation srdFeatureMechanics.test.ts Sculpt Spells updated to include requiresSight:true (strengthens, same claim).\n\nS2 (O5 invariant): the invariant now checks mechanics.effects too. Witnesses (fail-closed for unknown kinds): expertise /proficiency bonus is doubled/; saveDcFormula /\\bsave dc\\b/; proficiency /\\bproficien/; healing /\\bhit points\\b/; abilityCheckModifier /\\badvantage\\b|\\bcheck\\b/; extraDamage: the dice literal must appear; evasion /\\bevasion\\b/; damageReduction /\\bhalf\\b|\\bhalve\\b/. Body = description + printed sections with each option's name and text removed. Option-keyed fighter procedures are not parent effects and are unaffected. Dragon Ancestor expertise stays valid (prose witness).\n\nS2 BAD-STATE DEMONSTRATION (negative controls, in memory, in the committed test file):\n- Restored Hunter's Prey parent effects [{kind:extraDamage, dice:'1d8'}] -> parentProjectionViolations = ['effects[0] extraDamage 1d8']. Test \"rejects the source-backed option-only effects...\" passes.\n- Restored Superior Hunter's Defense parent saves [{ability:dexterity}] + effects [evasion, damageReduction 0.5] -> violations include 'effects[0] evasion' and 'effects[1] damageReduction 0.5' (plus the save). Same test passes.\n- The prior (pre-repair) invariant checked only spellGrants/conditions/saves and so could not see either effect; it is the blind spot Sol identified.\n\nRECORDS CHANGED vs the 19.3.1 head: exactly feature:school-of-evocation:sculpt-spells and magic-item:iron-flask (2 of 1799). No other churn.\n\nCOMMANDS / RESULTS:\n- npm ci: exit 0.\n- canonical regen (--out packages/core/data/rules-packs/rules__dnd5e-srd-5.1) exit 0; default .generated run exit 0; inventory regenerated exit 0; verify:dnd5e-srd-pack exit 0 (twice).\n- focused: alternativeOptionProjections (13 tests incl. S1 and S2) pass; importer + pack + audit + inventory suites: 86 files / 1878 tests pass.\n- verify:worktree: first full run failed on srdFeatureMechanics exact Sculpt expectation (fixed, intentional change); final run EXIT 0 (347 files passed, 2 skipped; 6435 tests passed, 3 skipped).\n- Host-memory wait: the pgrep pattern 'node .*verify-current-worktree' also matches bash wrapper command lines (including the probe itself), so it counted 3 while no node verification ran; I started a run, found the count inflated, and killed only my own run before rerunning. A node-only count (^node .*verify-current-worktree) was 0 at the final run.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T16:48:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T16:54:21Z",
+  "closed_at": "2026-10-10T16:54:21Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.1.3",
+      "depends_on_id": "eshyra-o9bd.19.3.1",
+      "type": "parent-child",
+      "created_at": "2026-10-10T11:48:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

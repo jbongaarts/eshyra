@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.8.4",
+  "title": "Add duplicate-text and ambiguous-owner diagnostics to source coverage",
+  "description": "Finding sources:\n- ChatGPT found false ownership of p. 109 Ranger spell-list text by table:circle-of-the-land-forest.\n- Codex found 187 ambiguous source-coverage items and 88 normalized duplicate-name groups.\n- Duplicate-name examples include Spellcasting, Ability Score Improvement, Druid, Acolyte, Hide, Shield, and Potion of Healing.\n- Closed heading/tie-break beads did not eliminate this residual ambiguity.\n\nAcceptance criteria:\n- Add source coverage diagnostics for text that can be matched by multiple plausible records, especially across kind/section boundaries.\n- Prefer page/section context over global text matches.\n- Fail closed or require curated ownership when duplicate text would otherwise prove coverage.\n- Include regression cases for spell-list vs subclass table collisions and repeated feature boilerplate.",
+  "notes": "2026-07-08 ADR 0017 adjustment: 'Curated ownership' is allowed only as source-grounded curated input, not as hand-curated output. Any duplicate/ambiguous owner registry must be deterministic, source-region tied, schema/parity checked where exhaustive, and fail loudly on source drift.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-14T02:28:06Z",
+  "started_at": "2026-07-14T02:26:20Z",
+  "closed_at": "2026-07-14T02:28:06Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.8.4",
+      "depends_on_id": "eshyra-o9bd.18.8",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

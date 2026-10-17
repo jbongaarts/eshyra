@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.1.7",
+  "title": "Review: Sol bounded re-review of PR #649 CodeQL test fix (@ c5aca8f5)",
+  "description": "Bounded read-only re-review of PR #649 at exact head c5aca8f525a20a135293ce00e28b9f849a1ccfba: the only change since the approved head 86b819f6 is a test-only regex-escaping fix for a CodeQL js/incomplete-sanitization alert. Findings in notes; ends with a VERDICT line.",
+  "notes": "Dispatched gpt-6.1-sol effort high (bounded); PGID 2535037\nBOUNDED RE-REVIEW of PR #649 at exact head c5aca8f525a20a135293ce00e28b9f849a1ccfba, against the full-review approval recorded in eshyra-o9bd.19.3.1.6 at 86b819f6b9d0e4c54eb4c0eaa796d3de5e803f2f. Read both review beads, docs/design-and-pr-review-policy.md \"Repair review and churn control\", and the applicable importer test protocol.\n\nBounded review is appropriate: exactly one intervening commit and one changed line in packages/core/test/importers/dnd5e-srd-5.1/alternativeOptionProjections.test.ts:106. The known incomplete-regex-escaping class is repaired in a demonstrably non-material test helper change. No product, compiler, generated pack, schema, assertion, or other file change rode along; no repeated surviving repair of this escaping class.\n\nRepair inspection: the character class covers all 14 regex metacharacters (. * + ? ^ $ { } ( ) | [ ] and backslash), globally; the replacement prepends a literal backslash to each matched character using $&. Slash needs no escaping in the RegExp constructor; hyphen has no special meaning outside a character class. Existing literal-substring search within prose is preserved. No regex syntax can now broaden the dice literal into a non-equivalent alternative.\n\nIndependent read-only Node probes evaluated the actual committed extraDamage arrow function in memory. Each metacharacter was tested individually and the full set together; literal witnesses passed, substitutions/deletions/duplications failed, and exact-literal comparisons rejected non-equivalent suffix variants (104 adversarial checks across metacharacters and real dice). All 11 distinct dice strings from 40 committed extraDamage effects remain matchable and produce the same regex source as before. Additional arithmetic witness \"1d8 + 2\" matched in prose while five non-equivalent alternatives were rejected. Missing/non-string dice still fail closed. These are temporary in-memory review probes, not new permanent tests.\n\nVerification: npx --no-install vitest run packages/core/test/importers/dnd5e-srd-5.1/alternativeOptionProjections.test.ts passed: 1 file, 13 tests, including source-backed parent-effect negative controls. git diff --check 86b819f6..HEAD passed. Final HEAD is the assigned SHA and git status is clean. No repository files edited/created, formatting, full verification, install, commit, push, GitHub comment, or merge performed. Owning bead eshyra-o9bd.19.3.1 and prior review bead eshyra-o9bd.19.3.1.6 left unchanged. No blocking findings.\nVERDICT: APPROVED at exact head c5aca8f525a20a135293ce00e28b9f849a1ccfba",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T21:24:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T21:26:28Z",
+  "started_at": "2026-10-10T21:25:17Z",
+  "closed_at": "2026-10-10T21:26:28Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.1.7",
+      "depends_on_id": "eshyra-o9bd.19.3.1",
+      "type": "parent-child",
+      "created_at": "2026-10-10T16:24:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

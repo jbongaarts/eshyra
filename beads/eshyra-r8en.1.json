@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-r8en.1",
+  "title": "Dispatch: r8en resolve_check derives modifiers from the sheet (Sonnet 5.5, attempt 1)",
+  "description": "Plan for parent eshyra-r8en (bd show eshyra-r8en). Decisions made; STOP and note if code contradicts.\nWORKTREE: .worktrees/eshyra-r8en.1 (branch eshyra-r8en.1 from origin/main). Deps installed. Never use git stash. Another PR edits one sentence of packages/core/src/orchestrator/protocol.ts (the spend_turn_resource combat rule); if you touch protocol.ts, change only the resolve_check guidance.\n\nCODE: packages/core/src/orchestrator/toolResolveCheck.ts (resolve_check: kind ability_check|saving_throw|attack_roll, actor?, modifiers?, proficiency? multiplier, vs?, …; read the underlying resolver it calls); packages/core/src/character/skillBonuses.ts deriveSkillBonuses(sheet) (skill -> ability, proficiency none/proficient/expertise, bonus incl. Jack of All Trades / Remarkable Athlete); sheet.savingThrows (proficient flags/modifiers), sheet.abilityScores, proficiencyBonus; createSqliteCharacterSheetStore; resolveTargetCharacterId/actor resolution used by the tool.\n\nDECISIONS\n1. Backward compatible: existing calls (declared modifiers/proficiency) behave exactly as today.\n2. New optional args: `skill` (one of the 18 SRD skills; ability_check only) and `ability` (ability_check or saving_throw). When given and the actor resolves to a CHARACTER with a stored canonical sheet, the engine derives the governing ability modifier and the proficiency term from the sheet (skill: deriveSkillBonuses incl. expertise and half-proficiency features; raw ability check: ability modifier + Jack of All Trades / Remarkable Athlete when applicable; saving throw: ability modifier + PB if proficient in that save) and records them as labelled components in the result/ledger.\n3. Double-count guards (fail closed with a clear message): `proficiency` together with `skill`/`ability` is refused; a caller modifier whose source names the governing ability (full name or 3-letter abbreviation, case-insensitive) is refused. Other caller modifiers are situational extras (Guidance, cover, etc.) and are added.\n4. `skill`/`ability` for a non-character actor (combatant) or a character without a stored sheet: refuse with a message to declare modifiers instead. attack_roll: out of scope (refuse skill/ability there).\n5. Update the tool description (and the resolve_check sentence in protocol.ts if one exists) to prefer `skill`/`ability` for characters.\nEVIDENCE: rogue Stealth expertise check derives 2xPB + DEX; bard 2 raw Strength check gets Jack of All Trades; wizard INT save proficiency; Guidance +d4-style extra modifier still added; proficiency+skill refused; 'DEX' modifier with skill refused; combatant with skill refused; existing resolve_check tests unchanged. Confirm new tests fail pre-fix (copy files aside).\nPROTOCOL: npm run verify:worktree BEFORE commit; commit (Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>); bd update eshyra-r8en.1 --append-notes; bd close eshyra-r8en.1. No push/PR.",
+  "notes": "Implemented in toolResolveCheck.ts (skill/ability args, sheet derivation, guards), skillBonuses.ts (exported halfProficiencyFeature, reused by deriveSkillBonuses), protocol.ts resolve_check guidance, new test resolveCheckSheetDerivation.test.ts. verify:worktree green. Sheet save modifier is level-1 stale so save derivation uses ability mod + current PB when savingThrows[x].proficient. Actor omitted falls back to ctx.actingCharacterId. Result gains derivedFromSheet {characterId, ability, skill?}. Ability-guard checks modifier label and source tokens.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T08:06:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T08:12:41Z",
+  "closed_at": "2026-10-09T08:12:41Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-r8en.1",
+      "depends_on_id": "eshyra-r8en",
+      "type": "parent-child",
+      "created_at": "2026-10-09T03:06:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

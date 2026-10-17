@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.1",
+  "title": "Add choice-bearing prose coverage gate for SRD records",
+  "description": "Problem:\nThe current choice-coverage audit reports 60 structured choices and 0 findings, but it mostly validates choices that already exist. It does not reliably detect SRD records that contain build-choice prose without structured choices or option catalogs.\n\nExamples from the 2026-06-29 audit:\n- feature:warlock:pact-boon has Pact of the Chain / Blade / Tome only in prose.\n- feature:warlock:eldritch-invocations embeds 32 invocations in prose behind one generic choice.\n- feature:hunter:hunters-prey, defensive-tactics, multiattack, and superior-hunters-defense have option lists in prose.\n- feature:sorcerer:metamagic has one generic choice while the eight options are prose only.\n- Fighting Style features expose generic choice text but not structured option refs/effects.\n- Bard Magical Secrets and Wizard Spell Mastery / Signature Spells are not structured spell choices.\n\nImplement:\n- Add a source/record audit that scans feature, class, subclass, ancestry, background, and similar records for choice-bearing language.\n- Detect phrases such as:\n  - choose one of the following\n  - choose two\n  - gain one of the following\n  - select one\n  - options\n  - you learn additional spells of your choice\n  - prerequisite\n- Report records where choice-like prose exists but no structured choices, choice options, option catalog, spell-choice filter, or explicit allowlist explains the gap.\n- Make the report actionable: record id, source location, matched phrase, surrounding snippet, and expected modeling area.\n- Start as a report-only or warning gate if needed, but acceptance should include known 2026-06-29 misses being detected.\n\nAcceptance criteria:\n- The audit detects the known unstructured option cases listed above.\n- False positives can be documented with a narrow allowlist and reason.\n- The report is emitted into the audit bundle.\n- Existing tests pass.\n- The audit does not rely on LLM interpretation.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-29T21:08:09Z",
+  "started_at": "2026-06-29T20:56:15Z",
+  "closed_at": "2026-06-29T21:08:09Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.1",
+      "depends_on_id": "eshyra-ngcj",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

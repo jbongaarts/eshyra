@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.17",
+  "title": "Task 9: Wire CLI campaign creation to rules bindings",
+  "description": "Objective:\nMake managed and unmanaged CLI campaign flows use the campaign rules binding without breaking the current default D&D path.\n\nFiles:\n- Modify: `packages/cli/src/campaigns.ts`\n- Modify: `packages/cli/src/play.ts`\n- Modify: `packages/cli/src/registry.ts` if pointer metadata needs optional rules identity\n- Test: `packages/cli/test/campaigns.test.ts`\n- Test: `packages/cli/test/play.test.ts`\n- Test: `packages/cli/test/registry.test.ts` if registry shape changes\n\nSteps:\n1. Write failing tests that `loreweaver new` creates a campaign DB with the default D&D rules binding and that `loreweaver play` on an unmanaged DB initializes missing D&D binding before play.\n2. If adding registry pointer metadata, write a failing registry round-trip test for optional rules base identity while ensuring registry remains pointer-only.\n3. Run `npx vitest run packages/cli/test/campaigns.test.ts packages/cli/test/play.test.ts packages/cli/test/registry.test.ts`; expected: FAIL until CLI wiring is complete.\n4. Pass default rules binding into `createCampaign` in managed campaign creation and play-time implicit creation.\n5. Ensure `LOREWEAVER_DB_PATH` unmanaged campaigns rely on DB binding/defaulting, not registry metadata.\n6. Keep campaign picker UI unchanged unless a test requires displaying rules identity.\n7. Run focused CLI tests; expected: PASS.\n8. Commit with `git add packages/cli/src packages/cli/test` and `git commit -m feat-wire-cli-rules-binding-defaults`.",
+  "design": "The first CLI slice should not add an interactive rules-system selector. It should preserve current UX by defaulting to D&D SRD for Emberfall campaigns, while leaving explicit APIs ready for future selection. Registry metadata may include base rules identity for display, but it must not become the authoritative source.\n\nInitial test sketch:\n```ts\nconst entry = runNewCommand(['Demo'], deps);\nconst db = openDatabase(loadRegistry(root).campaigns[0].dbPath);\nexpect(readCampaignRulesBinding(db)?.base.systemId).toBe('dnd5e-srd');\n```",
+  "acceptance_criteria": "Focused CLI tests pass. Managed and unmanaged campaigns have or default to authoritative DB rules bindings. Current CLI campaign selection and play UX remain compatible.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T05:10:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-23T22:07:29Z",
+  "close_reason": "Verified that CLI flows already inherit the default D&D SRD binding from core (campaigns.ts forkNewCampaignDb and play.ts implicit createCampaign both call core createCampaign with no binding, which now persists the default). Added focused CLI tests asserting both managed (loreweaver new) and unmanaged (play-time implicit create) campaigns persist a D&D SRD binding read back through readCampaignRulesBinding. No CLI src changes were needed; UX unchanged. Verified: focused campaigns + play tests pass (36/36), full npm run typecheck and npm run test pass (388 passed, 2 documented skips).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.17",
+      "depends_on_id": "eshyra-x3w.15",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:12:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.17",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-23T00:10:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.17",
+      "depends_on_id": "eshyra-x3w.12",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:12:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

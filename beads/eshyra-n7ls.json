@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-n7ls",
+  "title": "Pact/known-caster and prepared-caster legacy flat-list creation (createCharacter non-wizard CLI paths) not re-audited for count UX",
+  "description": "Audit the interactive creation wizard's level-1 spell step (prompt text, shortfall/excess messages, advance/finalize) for known casters (bard/sorcerer/warlock) and prepared casters (cleric/druid) after eshyra-eb9n; eb9n's CLI evidence covered only the Wizard class. Fix wording in characterWizard.ts if unclear; add CLI tests.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:25:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:47:05Z",
+  "started_at": "2026-10-09T04:34:23Z",
+  "closed_at": "2026-10-09T04:47:05Z",
+  "close_reason": "Merged PR #629",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-n7ls",
+      "depends_on_id": "eshyra-n7ls.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T23:34:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

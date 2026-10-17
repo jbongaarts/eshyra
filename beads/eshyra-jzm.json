@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jzm",
+  "title": "Remove redundant lookupSrd pass-through wrapper",
+  "description": "Tech-debt review finding. srd/lookup.ts lookupSrd is a one-line wrapper over lookupSrdRecord that adds nothing, and both are exported publicly inviting inconsistent use. Drop one, and confirm catalogRecordsForKind and CATALOG_KEYS have a production consumer or remove them. Relates to loreweaver-2g7. Parent context: loreweaver-d4r.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T21:25:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:21Z",
+  "started_at": "2026-05-22T22:00:04Z",
+  "closed_at": "2026-05-22T22:03:26Z",
+  "close_reason": "Removed redundant lookupSrd facade, switched internal use to lookupSrdRecord, and removed unused catalogRecordsForKind/CATALOG_KEYS. Verification: npx vitest run packages/core/test/srd.test.ts packages/core/test/tools.test.ts passed (28 tests); npm run typecheck remains blocked by unrelated CLI TS errors recorded in comments. PR: https://github.com/jbongaarts/loreweaver/pull/38",
+  "comments": [
+    {
+      "id": "96faabf0-5a8d-5d5f-9895-818a92395878",
+      "issue_id": "eshyra-jzm",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npx vitest run packages/core/test/srd.test.ts packages/core/test/tools.test.ts -> passed (28 tests).",
+      "created_at": "2026-05-22T22:00:27Z"
+    },
+    {
+      "id": "610d5ff6-7336-56af-90d7-7d32e33eb2c1",
+      "issue_id": "eshyra-jzm",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/srd.test.ts -> failed as expected because package barrel still exports redundant lookupSrd facade (Object.hasOwn(core, 'lookupSrd') was true).",
+      "created_at": "2026-05-22T22:01:20Z"
+    },
+    {
+      "id": "44556feb-291c-587b-bebd-584e9c210c3a",
+      "issue_id": "eshyra-jzm",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: npx vitest run packages/core/test/srd.test.ts packages/core/test/tools.test.ts -> passed (28 tests). Verification caveat: npm run typecheck still fails on unrelated packages/cli/src/index.ts:111 TS2554/TS2339.",
+      "created_at": "2026-05-22T22:02:15Z"
+    },
+    {
+      "id": "1096600e-5c9b-5fe8-9cc8-5f81e51077ba",
+      "issue_id": "eshyra-jzm",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: npx vitest run packages/core/test/srd.test.ts packages/core/test/tools.test.ts -> passed (28 tests) after formatting cleanup.",
+      "created_at": "2026-05-22T22:02:45Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

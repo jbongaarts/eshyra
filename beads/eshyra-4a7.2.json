@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.2",
+  "title": "Refactor SRD parsers to consume bounded source spans",
+  "description": "Problem\r\n\r\nMultiple audit findings point to parser boundary failures:\r\n\r\n- Every subclass record description appears to swallow its subclass feature headings and feature bodies.\r\n- magic-item:feather-token swallows the following Figurine of Wondrous Power entry.\r\n- Flattened descriptions are masking places where structured records or child objects should exist.\r\n\r\nThese are not isolated content mistakes; they indicate that parsers are consuming source spans with brittle stop conditions.\r\n\r\nDepends on\r\n\r\nThis should build on the source inventory/coverage gate bead if possible. The coverage gate should expose the incorrect spans and provide regression cases.\r\n\r\nTask\r\n\r\nRefactor SRD importer parsing so major record parsers consume explicitly bounded source spans derived from the source structure inventory or equivalent deterministic heading map.\r\n\r\nParser spans should be explicit for at least:\r\n\r\n- classes,\r\n- subclasses,\r\n- class features,\r\n- subclass features,\r\n- magic items,\r\n- rules sections,\r\n- tables,\r\n- stat blocks.\r\n\r\nImplementation guidance\r\n\r\n- Avoid parser logic that reads until a loose text pattern happens to match.\r\n- Prefer start/end offsets, page ranges, or source item boundaries that are deterministic.\r\n- A subclass record description should contain only the subclass overview text, not the subclass feature records.\r\n- A magic-item record should stop before the next magic-item heading.\r\n- Feature records should own feature text once, not duplicate it through parent descriptions.\r\n- Preserve existing record ids unless a source item was genuinely missing.\r\n\r\nRegression cases\r\n\r\nAdd tests for:\r\n\r\n- subclass:champion does not include Improved Critical or later Champion feature bodies in its subclass description.\r\n- subclass:circle-of-the-land does not include Natural Recovery or later Circle of the Land feature bodies in its subclass description.\r\n- magic-item:feather-token does not include the Figurine of Wondrous Power heading or figurine variants.\r\n- Figurine of Wondrous Power has its own bounded source span, even if actual record emission is completed in the magic-item bead.\r\n\r\nAcceptance criteria\r\n\r\n- Major record parsers operate on explicit source spans.\r\n- Known subclass and magic-item boundary bleed cases are fixed or fail visibly in tests.\r\n- No existing valid records lose source-backed content.\r\n- Pack generation remains deterministic.",
+  "notes": "Fixed via PR #194 (branch work/eshyra-4a7.2). parseSubclasses + parseMagicItems now bound bodies at deterministic font-tier heading boundaries (gated on multi-tier slice). Eliminated all 12 swallowed-feature-heading audit findings; Feather Token no longer swallows Figurine of Wondrous Power / Giant Fly. 13 generated records changed (12 subclass descriptions + feather-token), 0 added/removed. verify:dnd5e-srd-pack matches; source-coverage artifacts unchanged (Figurine stays known-gap for 4a7.8). Awaiting review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T04:30:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-11T23:03:15Z",
+  "closed_at": "2026-06-11T23:54:26Z",
+  "close_reason": "Merged in PR #194 (sqaush 9f0fbf6)",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.2",
+      "depends_on_id": "eshyra-4a7.1",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:22:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.2",
+      "depends_on_id": "eshyra-4a7",
+      "type": "parent-child",
+      "created_at": "2026-06-10T23:30:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 3,
+  "comment_count": 0
+}

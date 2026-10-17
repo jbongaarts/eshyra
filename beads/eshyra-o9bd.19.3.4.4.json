@@ -1,0 +1,84 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.4",
+  "title": "opus:F-09 generalization: migrate remaining legacy rule rows under R0",
+  "description": "docs/design/rule-record-runtime-statements.md §8 step 3: re-derive and migrate every remaining legacy ENGINE_PROCEDURE_COVERAGE row (model-adjudicated-supported / partial / design-blocked, incl. externalClauses) into the runtime channels under R0. The census comes from the generated registries. Deliverable is a PR; stays in_progress until it merges. opus:F-09 registry update (§8 step 4) is a later step, not this bead.",
+  "notes": "2026-09-29: attempt 4 (.4.4.4, d3ebc8ad) integrated after supervisor review; design amendment A3 (92222762) in the same branch. PR #596 opened. verify:worktree 5566 passed / 3 skipped. Attempts 1-3 branches deleted (history in their bead notes). Stays in_progress until merge; next after merge: F-09 §8 step 4 registry update.\n2026-09-29: review @d3ebc8ad addressed: A3 revision e9ea7091, child .4.5 (70855423) integrated after review, supervisor HP sibling fix 8e434a2c, merged main d9397578. verify 5573/3. Awaiting re-review (finding 1 material).\n2026-09-30: re-review @8e434a2c (suffocation target domain; graded exhaustion vs add_condition) fixed inline in 62ff685b. verify 5575/3. Awaiting re-review.\n2026-09-30: re-review @62ff685b (combatant dying unrepresentable; no DM-held exhaustion) fixed inline in 07babd4d with sibling sweep (conflict end_effect; weapon-properties character-scoped). verify 5575/3. Awaiting re-review.\n2026-09-30: review @07babd4d + independent Sol review (eshyra-o9bd.19.3.4.4.6, F1-F15) -> full re-derivation of every statement in 44e2c3a4 (2 retired, 1 source-identity rewrite, 11 tool-contract/procedure fixes, 1 new trap limit, 2 limit fixes). Filed eshyra-o9bd.19.3.4.5 (importer ref). verify 5577/3. Awaiting re-review.\n2026-09-30: second supervisor pass with Sol's defect classes + tool-contract table in d3f4c61d (charges contract, ready scope/concentration + trap, hide, dodge, shove, crit, objects). verify 5577/3. Awaiting re-review.\n2026-09-30: A4 (retire adjudication context) implemented by .4.7 (3bd00a07); Sol pre-handback review .4.8 found 2 issues (fixed-total contest vs semantics; stale design text), fixed in 5e2b74ad. verify 5569/3. Handed back for review.\n2026-10-01: review @5e2b74ad (fixed-total contest fallback) + Sol sweeps (.4.9, .4.10) fixed through 02e4e9e8: descriptions state contracts only; hiding trap limit; ready/ammo no model arithmetic; cover as engine-summed negative roller modifier. Filed eshyra-o9bd.19.3.4.6 (reactionAllowance, pre-existing). verify 5571/3. Handed back.\n2026-10-01: F-09 amendment A5 at f0e82a32 (known limit discloses, never discharges). Every RULE_KNOWN_LIMITS entry re-derived. BLOCKING gaps (owner bead -> blocks eshyra-o9bd.19.3.4): rule:hiding -> eshyra-o9bd.19.5.10.3 (retained-total resolution); rule:food/water/speed -> eshyra-o9bd.19.5.7.3 (graded exhaustion increase); rule:suffocating -> eshyra-o9bd.19.5.7.4 (breathing-gated recovery incl. record_death_save) + eshyra-o9bd.19.5.7.5 (combatant dying state); rule:knocking-a-creature-out -> eshyra-o9bd.19.5.7.6 (nonlethal knockout); rule:weapon-properties -> eshyra-o9bd.19.5.11.4 (ammo recovery count). BOUNDED: action:ready (reclassified: ruling-sourced concentration effect carries the save), rule:conflict (resolve_check DC term as negative modifier, description generalized), rule:special-weapons (attack counting model-adjudicated by F2 design), nine ADR 0018 deferred limits. eshyra-o9bd.19.3.4.6 (reactionAllowance) wired as a blocker; its contract and set_surprised's are HELD UNCHANGED pending user decision (downgrade would regress accepted 2n1t.4 contracts). verify:worktree 5575 passed / 3 skipped. Handed back for review.\n2026-10-01: user decided to downgrade reactionAllowance now and accept the regression; done in 99212b8e (four producers disclose the gap; design A5 updated). eshyra-o9bd.19.3.4.6 re-scoped to the capability under engine:F2, still blocks eshyra-o9bd.19.3.4. set_surprised still held. verify:worktree 5577 passed / 3 skipped. Handed back.\n2026-10-01: user decided to downgrade set_surprised the same way; done in f8cf6322 (description + Hybrid Contract disclose the gap; new rule:surprise known limit on retained-check-total-resolution / eshyra-o9bd.19.5.10.3; design A5 updated). No contracts are held any more. verify:worktree 5579 passed / 3 skipped. Handed back.\n2026-10-02: review @f8cf6322 CHANGES REQUESTED, single finding (reactionAllowance and set_surprised still accept model-supplied results). User decision: permanently REJECTED for #596 (won't-fix). The engine state is already blocked and undeployable (eshyra-o9bd.19.3.4 blocked by the gap beads, which transitively blocks eshyra-o9bd.19.6.1), so interim enforcement is churn. Closing the write paths is explicit acceptance on the owning capability beads eshyra-o9bd.19.3.4.6 and eshyra-o9bd.19.5.10.3. No code change; head stays f8cf6322.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T21:41:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-02T03:22:27Z",
+  "started_at": "2026-09-29T21:43:22Z",
+  "closed_at": "2026-10-02T03:22:27Z",
+  "close_reason": "PR #596 merged as 3a0bb5d4 (merge commit; reviewed head f8cf6322). F-09 generalization under amendments A3-A5 landed.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4.4.4",
+      "type": "blocks",
+      "created_at": "2026-09-29T18:30:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4.4.3",
+      "type": "blocks",
+      "created_at": "2026-09-29T18:07:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4.4.2",
+      "type": "blocks",
+      "created_at": "2026-09-29T17:11:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4.4.5",
+      "type": "blocks",
+      "created_at": "2026-09-29T19:34:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4.4.7",
+      "type": "blocks",
+      "created_at": "2026-09-29T22:31:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4",
+      "type": "parent-child",
+      "created_at": "2026-09-29T16:41:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4.4.1",
+      "type": "blocks",
+      "created_at": "2026-09-29T16:43:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 6,
+  "dependent_count": 0,
+  "comment_count": 0
+}

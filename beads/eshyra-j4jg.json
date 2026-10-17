@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-j4jg",
+  "title": "Publish 'Agentic Anti-Patterns' essay on eshyra.app",
+  "description": "Add the approved essay (verbatim copy supplied by the user) as a site page following the rules-pack article convention: new template in site/src, registered in site/build.mjs, linked from the homepage. Copy must not be edited; presentation only.",
+  "notes": "PR: https://github.com/jbongaarts/eshyra/pull/579 (open; bead stays in_progress until merge)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-27T01:05:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-27T01:29:08Z",
+  "started_at": "2026-09-27T01:05:26Z",
+  "closed_at": "2026-09-27T01:29:08Z",
+  "close_reason": "Merged PR #579 (8a34377b); released as site-v2026.09.26",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

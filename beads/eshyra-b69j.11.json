@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.11",
+  "title": "Validate D&D class, ancestry, and spell choices from generated pack",
+  "description": "Add generated-rules-pack-backed validation for D&D class, ancestry, and spell choices in the new recipe/engine path. This may share code with the resolver migration bead but should be tested from the character creation engine perspective.\n\nRequirements\n- Class validation resolves generated class records and uses class hitDie where needed.\n- Ancestry validation resolves generated ancestry records by display name/common alias.\n- Spell validation resolves generated spell records and checks class availability and spell level from generated data.\n- Spell validation waits for class when class is not yet known.\n- Error messages are field-specific and actionable.\n\nAcceptance criteria\n- Fighter, Wood Elf, Wizard, and representative SRD spell names validate by display name.\n- Invalid spell for selected class explains the class mismatch.\n- Spell selection before class reports that class is required instead of cascading.\n- Tests cover generated data typed guards and invalid/missing prerequisite behavior.",
+  "notes": "PR #300 open for review: https://github.com/jbongaarts/eshyra/pull/300. Added level-1 spell-level validation (was missing; class availability already enforced) + sharper class-mismatch message in characterDraft.ts. Engine-perspective tests (display-name resolution, valid/over-level/off-list/unknown spells, spell-before-class pending no-cascade, invalid class/ancestry) and resolver typed-guard tests (malformed class/spell -> malformed vs not_found). Note: acceptance named 'Wood Elf' which is not in SRD 5.1 (pack ships High Elf); tests use High Elf. verify:worktree green (2466 passed/19 skipped). Unblocks b69j.8/.9.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-25T04:34:08Z",
+  "closed_at": "2026-06-25T05:00:57Z",
+  "close_reason": "Merged via PR #300. Added level-1 spell-level validation + sharper class-list mismatch message; engine-perspective tests for display-name resolution / over-level / off-list / unknown / spell-before-class pending / invalid class+ancestry; resolver typed-guard tests (malformed vs not_found). Wood Elf not in SRD 5.1 -> tests use High Elf.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.11",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

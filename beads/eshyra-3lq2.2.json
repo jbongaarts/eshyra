@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3lq2.2",
+  "title": "Review: Sol final review of PR #635 (eshyra-3lq2 @ 5fcf3bc5)",
+  "description": "Final read-only review of PR #635 (branch eshyra-3lq2, exact head 5fcf3bc55dcd72dd2ed7925c1752a31e72ec92f6) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #635 at exact head 5fcf3bc55dcd72dd2ed7925c1752a31e72ec92f6. Profile: rules-clause-complete. Reviewed the full origin/main...HEAD diff and commit log, AGENTS.md, review policy, ADR 0020, character-progression design, live parent/dispatch/review beads, vendored SRD 5.1 pp. 12-13 and 47-48, bundled feature filters/spells, descriptor production/validation, placements, spell union, preparation, persistence/registry and ledger consumers. refs/beads/state is stale (2026-09-10) and lacks these beads; live bd records govern. No importer/pack files changed.\n\nS1 — MATERIAL (P2), packages/core/src/character/levelUpSpells.ts:415 (also :421, :808, :993, :1208, :1306). Ritual ownership is still treated as ordinary spell ownership by the learning exclusion and sibling-distinctness consumers. Concrete scenario: a level-5 Tome warlock has Unseen Servant in ritualBook, not known, and chooses it as the newly learned Pact Magic spell at level 6. spellsUnion includes ritualBook, heldRefsOf uses that union, and the known descriptor excludes it; resolveSpellChoiceSelection rejects the legal selection as already held. Replacement into that spell is also excluded. SRD p.48 expressly permits casting these spells normally after learning them by another means; Pact Magic at level 6 is such a means. Reproduced against the actual source modules and bundled resolver for Unseen Servant, Comprehend Languages and Illusory Script. The same defect class rejects learning Unseen Servant normally and inscribing it via Book in the same level-up at level 5 (both descriptors reject sibling overlap); already-known rituals are likewise excluded from Book choices. Fix the consumers with destination/ownership-aware exclusion and sibling distinctness: permit independent known and ritualBook ownership, keep duplication within either ownership invalid, retain Book-only exclusion from replacement, and preserve the ritual entry when an independently known copy is replaced. The validator/placements already accommodate overlap. Permanent evidence: a generalized cross-bucket ownership invariant covering existing-state and same-step acquisition plus replacement preservation; proportionate to the loss of legal spell acquisition and casting rights. Owner: this PR's level-up spell implementation.\n\nS2 — MATERIAL (P2), packages/core/src/character/levelUpSpells.ts:989. The Magical Secrets no-change disposition is unsound for off-list leveled spells. Concrete scenario: a bard learns Fireball through Magical Secrets at level 10, then attempts to replace Fireball with Heroism at level 11. Fireball is in known, but its native classes are Sorcerer/Wizard, so replacementDescriptor omits it and resolveSpellChoiceSelection rejects it as not replaceable. SRD p.13 makes the chosen spells bard spells for this character; p.12 permits replacing one bard spell known, with the replacement drawn from the bard list. The OLD spell need not occur on the native bard list. Reproduced with Fireball and Counterspell; Dispel Magic is admitted solely because its native list includes Bard. This filter predates the diff, but source-semantic disposition of Magical Secrets and its replacement consumer is explicitly within the parent/dispatch scope; claiming its handling correct leaves that acceptance obligation unresolved. Fix old-spell eligibility to honor effective class-spell ownership (for this single-class known bucket, avoid requiring native-list membership), while retaining the class-list/level filter on NEW spells and excluding cantrips and Book-only rituals. No provenance schema is needed merely for its own sake. Permanent evidence: generalized invariant that leveled Magical Secrets known spells remain replaceable regardless of native-list membership, with negative controls for cantrips and ritualBook-only spells. Owner: this PR's source-semantic disposition/replacement implementation.\n\nVerification: git diff --check passed; exact head and clean worktree reconfirmed. Dependencies are absent in this worktree, so no Vitest/full verification was run or installed. File-free Node 24 probes imported the actual TypeScript source and bundled resolver to execute descriptor detection and selection validation; the final sibling probes used resolvable SRD spells. Existing CI checks at this head report success but do not cover these scenarios. No repository files were edited, no GitHub comments were posted, and no commit/push/merge occurred. Findings require repair and fresh review of the resulting head. Parent eshyra-3lq2 remains untouched.\nVERDICT: MATERIAL FINDINGS (2)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T07:45:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T07:50:43Z",
+  "closed_at": "2026-10-09T07:50:43Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-3lq2.2",
+      "depends_on_id": "eshyra-3lq2",
+      "type": "parent-child",
+      "created_at": "2026-10-09T02:45:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

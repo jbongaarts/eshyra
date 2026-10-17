@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-09co.1",
+  "title": "Dispatch: 09co Flexible Casting (Sonnet 5.5, attempt 1)",
+  "description": "Implementation plan for parent eshyra-09co (bd show eshyra-09co). Supervisor decisions below are made; STOP and record in notes if the code contradicts a premise.\n\nWORKTREE/BRANCH: .worktrees/eshyra-09co.1 on branch eshyra-09co.1 (cut from origin/main). Deps installed.\nFILE BOUNDARY: a parallel task edits packages/core/src/character/ (levelUpEngine.ts, finalizeCharacter.ts, spellPreparation.ts) and their tests. Do not edit packages/core/src/character/.\n\nSRD (feature:sorcerer:font-of-magic): \"Creating Spell Slots. You can transform unexpended sorcery points into one spell slot as a bonus action ... You can create spell slots no higher in level than 5th. Any spell slot you create with this feature vanishes when you finish a long rest. Converting a Spell Slot to Sorcery Points. As a bonus action ... expend one spell slot and gain a number of sorcery points equal to the slot's level.\" Sorcery Points: \"You can never have more sorcery points than shown on the table for your level.\"\n\nCODE SURVEY\n- Pure evaluator ALREADY EXISTS: packages/core/src/rules/boundedProcedures.ts (~line 1454) handles request kinds 'create-spell-slot' / 'convert-spell-slot' against the pack's curated procedure feature:sorcerer:font-of-magic data.mechanics.procedures[kind 'resource-conversion'] (costBySlotLevel 1:2 2:3 3:5 4:6 5:7, maximumSlotLevel 5, createdSlotExpires 'long-rest', pool.maximumByLevel). It returns {pointDelta, slotLevel, slotDelta, actionCost, createdSlotExpires}. Use it; do not duplicate the cost table.\n- Slots: packages/core/src/state/spellSlots.ts; table character_spell_slot(character_id, pool_kind 'spellcasting'|'pact_magic', spell_level, slots_max>=1, slots_used<=slots_max) (see packages/core/data/schema.snapshot.sql and packages/core/data/migrations/, latest 0042). syncSpellSlots rewrites slots_max from the sheet; spendSpellSlot (~138) picks the lowest legal slot; restoreSpellSlots (~243) is called by state/rest.ts on short/long rest.\n- Sorcery points: pack-bound counter ability:sorcery-points via packages/core/src/state/classResources.ts + usageCounters.ts (created on first spend from the class table; long_rest reset; spend refuses exceeding remaining).\n\nDECISIONS\n1. Created slots need their own storage (they can exceed slots_max and can exist at a level where the class has no slots). Add migration 0043 with table character_created_spell_slot(character_id, spell_level 1..5, created >= 1, used >= 0 and <= created, provenance, session_id, updated_at, PK(character_id, spell_level)); update schema.snapshot.sql and whatever schema tests pin the migration list.\n2. Long rest deletes all created slots for the character (inside restoreSpellSlots when event is long_rest). Short rest does not touch them.\n3. spendSpellSlot and readSpellSlots treat created slots as available slots at their level (spend uses a created slot first at a given level, since it vanishes anyway); results/context show created slots distinctly (e.g. a `created` field), and upcast/lowest-legal selection consider them.\n4. New state operation (new module packages/core/src/state/flexibleCasting.ts) in one transaction, for a character whose canonical sheet is a sorcerer at level >= 2:\n   - create(slotLevel): current points = counter max - used (counter absent => full table maximum); run the evaluator; spend `cost` points through the counter (create it via the pack-bound path if absent); add one created slot at slotLevel.\n   - convert(slotLevel): require one available slot (normal 'spellcasting' pool or created) at that level; evaluator refuses exceeding the maximum; expend the slot; restore `slotLevel` points (uses_used -= slotLevel).\n   Non-sorcerers, level 1, pact_magic pools: refuse with a clear reason. Bonus-action economy is not consumed by this tool; document that the DM tracks it with the existing turn-resource tool in combat.\n5. Tool `flexible_casting` {operation: 'create-slot'|'convert-slot', slotLevel, character?} using CHARACTER_TARGET_SCHEMA/resolveTargetCharacterId like spend_spell_slot; register in tools.ts; one concise protocol.ts sentence (no 'SRD' string in model-facing prompt).\n\nEVIDENCE (concise, real pack)\n- Sorcerer 3 (3 points): create 1st-level slot costs 2 (1 left); a second create of 1st level refused (needs 2); created slot is spent before normal ones and listed distinctly; long rest removes created slots and restores points; short rest keeps them.\n- Convert a 2nd-level slot at full points refused (would exceed max); after spending 2 points it succeeds and restores 2.\n- Create 6th-level refused; non-sorcerer refused; tool run() path with a character name.\n- Existing spellSlots / rest / usageCounters tests stay green.\n\nPROTOCOL: run `npm run verify:worktree` from the worktree root BEFORE committing (it rewrites files); commit on eshyra-09co.1; append a completion report with `bd update eshyra-09co.1 --append-notes`; file follow-ups with bd create; `bd close eshyra-09co.1`.",
+  "notes": "Committed b41787a9 on eshyra-09co.1. Migration 0043 character_created_spell_slot; state/flexibleCasting.ts (uses executeBoundedProcedure on feature:sorcerer:font-of-magic, spendUsage/restoreUsage for points); spellSlots.ts created-slot support (created flag, spent first, long-rest expiry via expiredCreated); flexible_casting tool + protocol sentence; context shows created slots. verify:worktree green. Premises held.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T03:50:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T03:58:42Z",
+  "closed_at": "2026-10-09T03:58:42Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-09co.1",
+      "depends_on_id": "eshyra-09co",
+      "type": "parent-child",
+      "created_at": "2026-10-08T22:50:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

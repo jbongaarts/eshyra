@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-67y",
+  "title": "Escape or replace world overlay prefix LIKE query",
+  "description": "Review finding from loreweaver-niw. worldQuery uses LIKE prefix matching for overlay keys without escaping, so ids containing _ or % can apply overlays to the wrong template record. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Overlay lookup handles ids containing _ and % safely; tests prove only exact target overlays are applied; implementation uses escaped LIKE with ESCAPE, stricter ids, or delimiter-safe lookup.",
+  "notes": "RED: new test matches overlay keys exactly when ids contain LIKE wildcards failed - id gob_lin folded in gobXlin overlay because _ was a LIKE wildcard. GREEN: escapeLikePrefix + LIKE ? ESCAPE in worldQuery; all 200 pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:43:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:45Z",
+  "closed_at": "2026-05-21T22:57:13Z",
+  "close_reason": "Verified merged: PR #19 (67y) and PR #22 (8uh) are merged to main; re-closing after beads-state drift reverted the original closes.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

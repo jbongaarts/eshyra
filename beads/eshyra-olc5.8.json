@@ -1,0 +1,42 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.8",
+  "title": "Capability: event-anchored cooldowns and soft-limit safe-use costs for magic items",
+  "description": "Selected under the user's 2026-10-12 rule (bd memory magic-item-faithful-or-absent): this structure stays TYPED in the SRD pack because a positive engine capability is more likely than not in the near future, so the capability must exist before the re-freeze (eshyra-o9bd.14). Capability contract per ADR 0020 / eshyra-olc5: operation, inputs, exclusions, residual DM interpretation, real binding to the pack fields, provider-neutral execution, state effects, conformance tests exercising the PACK representation, fail-closed for unsupported input. Pack shape is owned by eshyra-o9bd.19.4.6 (PR #656); coordinate field shapes with it rather than changing the pack later. Scope: item economies whose wait starts at a printed termination event rather than at activation (Ring of Djinni Summoning: 24 hours after the djinni departs; Wings of Flying: 1d12 hours after the wings disappear; Efreeti Bottle stopper sequence; and any sibling found by the #656 sweep). Extend usageCounters/itemState/itemResetExecutor so availableAt is scheduled from the anchoring event, with full/early-termination and nonzero-elapsed scenarios. Initiation-anchored cooldowns (Frost Brand, Horn of Valhalla) keep current behaviour.",
+  "notes": "STOP CONDITION (user, 2026-10-12): if any KEPT-typed category (economies incl. event anchors, action type, structured equipment prerequisites, kept state machines/duration toggles, grant creature/count/duration/reversion) or any capability bead eshyra-olc5.8-.12 turns out to be particularly difficult to verify in a way that makes convergence unlikely (e.g. repeated review findings in the same kept category, or verification that cannot distinguish faithful from unfaithful cheaply), the captain must SURFACE it to the user with evidence before proceeding - do not keep repairing it and do not silently reclassify it as DM-adjudicated.\nEXTENDED 2026-10-13 (user, S3 of review 19.4.6.7): soft-limit operation costs - a printed count of risk-free uses (Ring of X-ray Vision before a long rest; Wind Fan before dawn) spends a safe use while one remains; when none remain the operation is still permitted (no hard refusal) and the printed risk (DC 15 Con save or exhaustion; cumulative 20% tear) is DM-adjudicated. Bind to the soft-limit marker on the operation cost entry introduced by eshyra-o9bd.19.4.6.\nStarted 2026-10-14. Captain design: split cooldown hook by anchor (initiation / state-anchored / grant-anchored); state-entered wired live (Wings of Flying); grant-ended mechanism built+tested but hook NOT landed - staged for olc5.12 which must call it on grant end. Land elapsed-time, state-anchored, and the two soft-limit hooks after conformance tests; report exact ready-op delta. Parent branch eshyra-olc5.8 at e25b29cd; child eshyra-olc5.8.1 dispatched to Luna.\nUser 2026-10-14: review = brief captain review, then report back to user (no Sol).\nChild 5ba94d2a ff'd; PR https://github.com/jbongaarts/eshyra/pull/660. Captain brief review done; ready ops 19->23 (Frost Brand, X-ray, Rod of Security, Well of Many Worlds). Grant-anchored hook staged for olc5.12. Awaiting user.\nPR #660 MERGED 2026-10-14 as 017f427991c52ad57b946229e7d9a7b66e9d0002 (head 5ba94d2a, all checks green incl. CodeQL).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-12T23:09:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-14T03:09:21Z",
+  "started_at": "2026-10-14T02:33:33Z",
+  "closed_at": "2026-10-14T03:09:21Z",
+  "close_reason": "PR #660 merged",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.8",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-12T18:09:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.8",
+      "depends_on_id": "eshyra-olc5.8.1",
+      "type": "blocks",
+      "created_at": "2026-10-13T21:36:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

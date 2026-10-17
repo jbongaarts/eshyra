@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4jiu",
+  "title": "Replace brittle character creation prompts with guided session-zero flow",
+  "description": "Native Windows v0.1.1 smoke showed character creation is too brittle for real use. The revision loop loses prior answers, validation cascades into nonsensical messages such as 'level-1 hit point maximum must be -4', point-buy errors are reported only after the whole draft is entered, and users must manually derive level-1 HP. Rework character creation into a guided session-zero flow that preserves draft state between revisions, validates fields incrementally, computes derived values such as HP from class hit die + Constitution modifier, accepts common SRD display names where records exist, and produces actionable validation messages. Do not block /defer. Add tests for invalid class, invalid ancestry, non-integer scores, point-buy out-of-range scores, missing name after revision, and HP validation only when prerequisites are valid.",
+  "notes": "Superseded by epic eshyra-b69j. The guided session-zero flow this bead described is now delivered by the new child hierarchy: eshyra-b69j.7 (ability score UX), b69j.8 (concept-first flow), b69j.9 (ability-first flow), b69j.10 (navigation/review/save/resume). The SRD_CATALOG portion that overlapped here landed via b69j.3/x50w. Closing as superseded — no separate work remains under this bead. Reconciled via b69j.16.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T03:32:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:24:18Z",
+  "closed_at": "2026-06-24T03:24:18Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

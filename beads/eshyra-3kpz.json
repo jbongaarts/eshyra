@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3kpz",
+  "title": "Dispatch: durable desc-mechanics numeric-conservation gate + schema robustness (attempt 1)",
+  "description": "PR #455 review finding batch C — runs AFTER batches A/B1/B2 merge (their fixes must land first or the new gate will correctly fail). Two parts:\n1. Durable gate (importer test, e.g. packages/core/test/importers/dnd5e-srd-5.1/): numeric conservation between magic-item description prose and mechanics, both directions, covering base mechanics AND variants[*].mechanics: (a) forward — every dice token (NdM) and 'DC n' in a description must appear in that item's mechanics (dice normalized for spaces/minus-sign variants; DC accepted as dc/saveDc/'DC n' in strings) OR be covered by an explicit reviewed accept-list entry with a reason; seed the accept-list with: deck-of-many-things card dice (GM-mediated per reviewed disposition), figurine-of-wondrous-power 3d10 (lives in stat-block record), bead-of-force 1d4 found-count (loot metadata), ioun-stone 1d3 orbit distance (flavor), apparatus DC 20 only if batch B2 dispositioned it as adjudicated; (b) reverse — every dice token and numeric dc/saveDc in mechanics must appear in the description (same normalizations; accept-list for genuinely synthesized representations like deck-of-illusions 1d34 with documented reason). The deep audit deliberately excludes mechanics.* strings (isStrictProsePath), so this gate is the only defense for this class — that context belongs in the test header comment.\n2. Engine schema robustness (packages/core/src/rules/magicItemMechanics.ts): forbid a stateMachine transition from declaring BOTH onFailure and effects (today the engine returns the transition's success effects on transitionOutcome:'failure'; no pack item combines them, so fail closed at schema validation until outcome-scoped effects are designed). Add a regression test in the engine suite.\nFull verify:worktree; if part 1 finds NEW unexplained mismatches beyond the seeded accept-list, stop and report rather than accepting them.",
+  "notes": "Hard stop per task instruction (2026-07-19): the forward numeric-conservation scan found mismatches beyond the five permitted seed dispositions, so no accept-list entries were added and implementation was reverted. Concrete forward mismatches: bag-of-beans DC 15; bag-of-devouring DC 15/DC 20; cloak-of-arachnida DC 13; crystal-ball DC 17 (base and variant); cubic-gate DC 17; dagger-of-venom DC 15; decanter-of-endless-water DC 13; eyes-of-charming DC 13; figurine-of-wondrous-power DC 15; gem-of-brightness DC 15; giant-slayer DC 15; hammer-of-thunderbolts DC 17; helm-of-brilliance DC 18; helm-of-telepathy DC 13; horn-of-blasting DC 15; iron-flask DC 17; javelin-of-lightning DC 13; mace-of-disruption DC 15; mace-of-terror DC 15; medallion-of-thoughts DC 13; mirror-of-life-trapping DC 15; necklace-of-fireballs DC 15; nine-lives-stealer DC 15; orb-of-dragonkind DC 18; pipes-of-haunting DC 15; portable-hole DC 10; potion-of-animal-friendship DC 13; potion-of-mind-reading DC 13; potion-of-poison DC 13; ring-of-animal-influence DC 13; ring-of-shooting-stars DC 15; ring-of-x-ray-vision DC 15; robe-of-eyes DC 11/DC 15; robe-of-scintillating-colors DC 15; rod-of-lordly-might DC 17; rod-of-rulership DC 15; sphere-of-annihilation DC 13; staff-of-thunder-and-lightning DC 17; staff-of-withering DC 15; trident-of-fish-command DC 15; wand-of-binding DC 17; wand-of-fear DC 15; wand-of-fireballs DC 15; wand-of-lightning-bolts DC 15; wand-of-paralysis DC 15; wand-of-polymorph DC 15; wand-of-web DC 15; wind-fan DC 13. The reverse typed-mechanics scan additionally found ring-of-elemental-command DC 17. Focused command run: npx vitest run packages/core/test/magicItemMechanicsSchema.test.ts packages/core/test/itemState.test.ts packages/core/test/srdGeneratedPack.test.ts; baseline schema test passed, new uncommitted changes were reverted. Bead remains open; follow-up filed.\nFollow-up bead created: eshyra-01me.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T07:11:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-19T07:37:00Z",
+  "close_reason": "Attempt 1 failed on scanner spec interpretation (string-leaf-only matching); pack itself verified clean. Superseded by attempt 2.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-3kpz",
+      "depends_on_id": "eshyra-j1zq",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:11:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-3kpz",
+      "depends_on_id": "eshyra-as87",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:11:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-3kpz",
+      "depends_on_id": "eshyra-yfeb",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:11:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7p3k",
+  "title": "Disposition dependabot PRs #584-#588",
+  "description": "Review and merge (or disposition) open dependabot PRs 584-588: model-provider-sdks group, dev-tooling group, @modelcontextprotocol/sdk 1.30.1, @openai/codex-sdk 0.157.0, actions/upload-artifact v4->v7 in ci.yml (release.yml already on v7). Policy: docs/dependencies.md.",
+  "notes": "2026-09-29: merged #588 #587 #585 #584 #586 (merge commits, required checks green, local gates = CI build-test). New #592 (ip-address 10.4.0->10.7.2, lockfile-only transitive) arrived mid-session; rebase requested. FOUND: dependabot rebases of optional provider SDK bumps inject a spurious entry into package-lock.json packages/core 'dependencies' (main now lists @modelcontextprotocol/sdk 1.30.1 there although package.json has it only in optionalDependencies). npm install --package-lock-only removes it (1-line diff). Plan: normalizing PR on branch eshyra-7p3k after #592 lands.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T03:44:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-29T04:05:48Z",
+  "started_at": "2026-09-29T03:44:18Z",
+  "closed_at": "2026-09-29T04:05:48Z",
+  "close_reason": "All open dependabot PRs merged with merge commits after required checks: #588, #587, #585, #584, #586, and #592 (arrived mid-session). Lockfile drift from optional-dep rebases observed and normalized by #592; recurrence guard filed as eshyra-a92u.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

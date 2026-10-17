@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.9.2",
+  "title": "Dispatch: olc5.9 repair casting-time overrides after final review (attempt 2)",
+  "description": "Repair PR #661 (eshyra-olc5.9) after final review: CHANGES REQUESTED (1). Branch eshyra-olc5.9.2 from eshyra-olc5.9 at 936c0f62. Model gpt-6-luna.\n\nS1 (blocking): PRINTED_CASTING_TIME_OVERRIDES in packages/core/src/state/itemTurnResource.ts wrongly treats three typed 'action' costs as printed casting-time overrides. Authority: the SRD general rule `rule:spells` (in the pack): \"Some magic items allow the user to cast a spell from the item ... The spell uses its normal casting time, range, and duration ... Certain items make exceptions to these rules, changing the casting time ...\". Text that merely says \"you can use an action to (expend charges to) cast\" does NOT change the casting time. Wrong rows: Orb of Dragonkind cast-scrying (scrying 10 minutes), Staff of the Magi cast-conjure-elemental (conjure elemental 1 minute), Staff of the Woodlands cast-awaken (awaken 8 hours). Genuine overrides that stay: Ring of Jumping cast-jump (\"you can cast the jump spell from it as a bonus action\") and Elemental Gem break-gem (\"When you use an action to break the gem, an elemental is summoned as if you had cast the conjure elemental spell\": the action breaks the gem).\n\nCLOSURE (faithful-or-absent: the typed claim itself is wrong, so fix the PACK, not only the runtime):\n1. In the importer, remove the typed activation.cost from those three operations (keep any equipment/commandWord fields that are independently correct). The activation census (packages/core/scripts/importers/dnd5e-srd-5.1/magicItemActivationCensus.json) rows become cost null with noneReason.cost citing rule:spells normal casting time (follow the exact existing pattern used for other cost-null spell rows whose ordinary casting time governs). Follow docs/importer-fix-protocol.md; regenerate the pack; verify-dnd5e-srd-pack + inventory --check pass; update any census/count expectations only with this source-backed justification.\n2. Runtime: these three now take the existing cost-null spell path (casting time longer than a reaction/bonus action/action -> no automatic spend, reported as DM-adjudicated). PRINTED_CASTING_TIME_OVERRIDES shrinks to exactly Ring of Jumping cast-jump and Elemental Gem break-gem.\n3. SWEEP: check every other operation in the pack that has a typed activation.cost AND a bound castSpell spellRef. If any typed cost exists only because the item says \"use an action to cast\" while the spell's casting time is the same anyway, leave it (no contradiction, no behaviour difference). Report any additional contradiction rows (should be none beyond the five).\n4. N3 (test strength): replace the regex /use an action|as a bonus action/ evidence check with a per-row exact printed-phrase assertion: Ring of Jumping must contain \"cast the jump spell from it as a bonus action\"; Elemental Gem must contain \"When you use an action to break the gem\". Keep the test that the override set equals the computed contradiction set.\n5. Conformance tests: in combat, Staff of the Magi cast-conjure-elemental spends NO turn resource and reports DM-adjudicated casting time while still spending its charges; Ring of Jumping spends the bonus action.\n\nRun npm run verify:worktree before committing. Completion notes: rows changed (pack + census), sweep result, ready-op delta (expect 23 unchanged; report exact), test changes.\n",
+  "notes": "Dispatched gpt-6-luna effort high from 936c0f62; PGID 3899723.\nCompleted and committed as 084a510a on eshyra-olc5.9.2. Pack/census rows changed: Orb of Dragonkind cast-scrying, Staff of the Magi cast-conjure-elemental, and Staff of the Woodlands cast-awaken now have no typed activation cost; their verbatim activation clauses cite rule:spells normal casting time. Equipment/control and charge costs remain. Census noneReason cites the 10-minute, 1-minute, and 8-hour spell times. Full-pack contradiction sweep found no additional contradictions: only Ring of Jumping cast-jump and Elemental Gem break-gem remain in PRINTED_CASTING_TIME_OVERRIDES; exact printed phrases are asserted. Staff of the Magi combat conformance confirms no turn resource spent for conjure elemental, DM-adjudicated 1-minute casting time, and seven charges spent; Ring of Jumping bonus-action conformance remains. Pack totals: 240 magic items, 357 operations, 1,377 readiness clauses (360 adjudicated, 797 engine-pending, 219 green). Ready-operation count remains 19 per the repository's existing srdGeneratedPack baseline; dispatch anticipated 23. No follow-up bead was warranted. Tests: 362 files passed, 2 skipped; 6,769 tests passed, 3 skipped. npm run verify:worktree passed; npm run verify:dnd5e-srd-pack passed; npx tsx packages/core/scripts/inventory-semi-structured-boundary.ts --check passed at 1,853 rows. Added thaw note; freeze manifest not updated because the checkout reports thawed-reaudit.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-14T03:46:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-14T03:55:47Z",
+  "started_at": "2026-10-14T03:46:36Z",
+  "closed_at": "2026-10-14T03:55:47Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.9.2",
+      "depends_on_id": "eshyra-olc5.9",
+      "type": "parent-child",
+      "created_at": "2026-10-13T22:46:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

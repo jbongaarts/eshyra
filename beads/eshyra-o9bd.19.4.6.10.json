@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.6.10",
+  "title": "Dispatch: 19.4.6 kept-activation census + early-deletion spans (review 19.4.6.9 S1-S2) (attempt 6)",
+  "description": "Read review eshyra-o9bd.19.4.6.9 in full and bd recall magic-item-kept-activation-census and magic-item-faithful-or-absent FIRST. (S1, user decision: reviewed census) Build a checked-in census of EVERY magic-item operation (parent and variant, all ~362): for each, the typed activation cost (or none) and equipment DNF alternatives (or none), each with the VERBATIM governing printed sentence that authorizes it, or 'none' with a one-line reason. Read each operation's item text in full (governing headers and ability-granting sentences count: e.g. Winged Boots fly is worn-gated by 'While you wear these boots, you have a flying speed...'). A cost that differs by branch (Wand of Binding assisted-escape: reaction only on the saving-throw branch, none on the grapple-check branch) is recorded UNTYPED with its full sentence carried as an adjudicated span. Generate/derive the pack's kept cost+equipment from (or assert them against) the census; replace the lexical omission screen with a test asserting pack == census and that every census authorizing sentence is a verbatim substring of the item description; include a counterfactual proving a no-draft-activation operation (Winged Boots) enters the census. Ambiguous continuations already dispositioned untyped by the captain (Ring of the Ram break-object, Dragon Scale Mail sense, Dwarven Plate, Candle burn lighting) stay untyped with reason. (S2) Every activation field removed early (before triage) must still get an adjudicated-by-design clause carrying its governing printed sentence: Armor of Invulnerability activate-immunity ('make yourself immune...') and the 17-member Philter/Potion drink cohort ('When you drink this potion, you ...'); make the requirement survive compiler ordering (applyFaithfulMagicItemOperations runs before applyMagicItemTriage) and sweep both tables for other early deletions; generalized test: each early-null field has a replacement clause, with the already-covered controls. Keep the same 19 ready operations (readiness comparison). Regenerate pack (npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1) and inventory; verify:dnd5e-srd-pack; update registry text truthfully. Wait until pgrep -fc '^node .*verify-current-worktree' prints 0 or 1; npm run verify:worktree && git commit. Notes (census totals, S2 sweep, readiness), close this bead. If anything in the kept category looks unlikely to converge, record it with evidence instead of forcing it.",
+  "notes": "Dispatched Codex gpt-6-luna (script default, medium effort); PGID 3627298\nCompleted in commit 44b9caec. Added the 362-operation activation census: 264 typed costs, 129 equipment DNFs, with per-row governing printed sentence or explicit none reason. Replaced the lexical omission list with census parity and source-span checks, including the Winged Boots no-draft-activation counterfactual. Fixed Winged Boots worn gate; made Wand of Binding assisted-escape reaction branch-specific by leaving the combined cost untyped; preserved Armor of Invulnerability plus the 17 drink-cohort actor/delivery spans through early nulling; removed Sovereign Glue's unprinted consume activation cost. Readiness remains 19 ready operations; adjudicated clauses now 357 (+19), with 805 engine-pending, 1 design-blocked, and 212 green unchanged. Regenerated pack and semi-structured boundary inventory. Verification: npm run verify:worktree passed (360 files, 6747 tests passed, 2 files skipped / 3 tests skipped); npm run verify:dnd5e-srd-pack passed byte-for-byte. No follow-up bead identified. Branch remains unpushed per dispatch.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-13T23:39:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-13T23:53:48Z",
+  "closed_at": "2026-10-13T23:53:48Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.6.10",
+      "depends_on_id": "eshyra-o9bd.19.4.6",
+      "type": "parent-child",
+      "created_at": "2026-10-13T18:39:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

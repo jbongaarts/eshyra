@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-qzc6",
+  "title": "Efreeti Bottle serving-efreeti stopper cannot schedule its 24h wait (no depleting operation)",
+  "description": "olc5.12.1 finding. The stopper economy (cooldown, startsOn grant-ended serving-efreeti) has no operation that spends it. applyCooldownAnchorToState only schedules an anchored cooldown when the economy is already depleted (remaining 0), so the grant-ended event never starts the 24-hour wait. The pack needs a depletion representation at grant end (or a semantic change to the anchor, which is an itemState decision). Until then F5 grant-anchored stays unlanded for the stopper carrier. Pack change requires importer work and regeneration under docs/importer-fix-protocol.md.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-15T04:02:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-15T04:30:05Z",
+  "closed_at": "2026-10-15T04:30:05Z",
+  "close_reason": "Resolved on eshyra-olc5.12.2 (commit b205724d): remove-stopper now spends the stopper, so the grant-ended anchor schedules the 24 h wait for the serving-efreeti carrier; conformance in itemGrantSummons.test.ts. Non-serving outcomes are tracked in eshyra-olc5.12.4.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

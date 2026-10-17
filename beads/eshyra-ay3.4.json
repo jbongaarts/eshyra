@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ay3.4",
+  "title": "Document character import deferral and canonical mapper mandate",
+  "description": "Record that D&D Beyond, OCR, and VTT imports are deferred and that future importers must map into the single E3 canonical character schema without forking the model.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-20T22:49:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:06Z",
+  "started_at": "2026-05-20T22:49:50Z",
+  "closed_at": "2026-05-20T22:50:36Z",
+  "close_reason": "Documented deferred import scope and canonical mapper mandate; verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ay3.4",
+      "depends_on_id": "eshyra-ay3",
+      "type": "parent-child",
+      "created_at": "2026-05-20T17:49:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "6d292bce-1146-518d-8d45-8eb3b258f82b",
+      "issue_id": "eshyra-ay3.4",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: docs/character-creation.md records import deferral and pure mapper mandate; docs/game-state.md links it; npm run typecheck passed; npm run test passed with 21 files passed / 1 skipped (98 passed / 1 skipped).",
+      "created_at": "2026-05-20T22:50:28Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

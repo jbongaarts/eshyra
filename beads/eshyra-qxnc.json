@@ -1,0 +1,42 @@
+{
+  "_type": "issue",
+  "id": "eshyra-qxnc",
+  "title": "Bonded summons: record the spell that created the bond, and enforce one bond per caster per spell",
+  "description": "Found while integrating eshyra-71u1 (2026-10-07). SCOPE NARROWED the same day (captain): this bead now owns BOND IDENTITY only. The Pact of the Chain special forms moved to their own bead (discovered-from this one), which is blocked on pact-boon persistence and a curated form grant.\n\nDEFECT. Find Familiar and Find Steed have Duration \"Instantaneous\". createActiveEffect refuses an instantaneous spell as an effect source, so every bond is recorded as source kind 'ruling' (atZeroHitPoints 'vanish-bonded'). recastBondedSummon checks spellRef against the effect only when source_kind is 'spell'. So recast_bonded_summon { effectId: <steed effect>, spellRef: 'spell:find-familiar', form: 'creature:owl' } turns a bonded warhorse into an owl, from absent (s02z) and, since 71u1, from present. Sibling defect of the same class: nothing stops a second bond for the same caster and spell. The SRD says \"You can't have more than one familiar at a time. If you cast this spell while you already have a familiar, you instead cause it to adopt a new form\", and \"You can't have more than one steed bonded by this spell at a time\". Both records carry identity { kind: 'persistent-linked', maximumLinked: 1 }.\n\nDESIGN (captain): make these bonds spell-sourced, decided by the record, never by spell name.\n1. An instantaneous spell record may source a 'summoning' effect only when one of its summoning effects declares identity.kind 'persistent-linked' with initialState.link 'active'. The SRD record keeps that bond after the instant of casting. Such an effect must use duration until-removed and must have a source.actor (the caster the creature is bonded to). Every other instantaneous spell is still refused with today's message.\n2. At creation, the effect may link at most identity.maximumLinked actors. The same caster may not already hold an active effect from the same spell with an active actor link; the refusal points at recast_bonded_summon.\n3. recastBondedSummon refuses a bond that is not spell-sourced. The engine cannot tell which spell a ruling bond came from, and a homebrew bond has no SRD recast. The existing spell-source check then binds spellRef to the spell that created the bond.\n4. The derived 0-HP rule ('vanish-bonded' from zero-hp-absence) and the default cleanup (remove/remove: release and permanent dismissal make the creature disappear) come from the record path that already exists. Ruling-sourced 'vanish-bonded' stays legal for homebrew.\nDispatch spec: the child bead.",
+  "notes": "PR https://github.com/jbongaarts/eshyra/pull/606 opened 2026-10-08 (head 209cd02f); stays in_progress until it merges. Captain added inline: source.actor must be character/campaign_actor (not combatant). Pact forms split to eshyra-olv1.\nMerged to main via PR #606 (approved head 209cd02f, merge commit a073dd95) on 2026-10-08.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T00:00:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-08T01:24:32Z",
+  "started_at": "2026-10-08T00:10:26Z",
+  "closed_at": "2026-10-08T01:24:32Z",
+  "close_reason": "Delivered by PR #606, merged as a073dd95",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-qxnc",
+      "depends_on_id": "eshyra-qxnc.1",
+      "type": "blocks",
+      "created_at": "2026-10-07T19:13:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-qxnc",
+      "depends_on_id": "eshyra-71u1",
+      "type": "discovered-from",
+      "created_at": "2026-10-07T19:00:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6fw",
+  "title": "Class parser: Wizard 'Your Spellbook' prose bleeds into School of Evocation subclass/Overchannel feature",
+  "description": "The SRD 5.1 class/subclass/feature parser does not bound the LAST subclass feature (or the subclass body) at the start of the generic class section that follows it, so the Wizard 'Your Spellbook' section (Your Spellbook / Copying a Spell into the Book / Replacing the Book / The Book's Appearance, SRD p54) is absorbed into both subclass:school-of-evocation and feature:school-of-evocation:overchannel. Overchannel is the 14th-level (last) School of Evocation feature on the Wizard page; the parser runs its body to the next heading it recognizes, which here is generic class prose rather than another feature/subclass, so the whole spellbook section bleeds in. The subclass body absorbs the same trailing prose. This is a class-parser scoping issue, distinct from the spellcasting-rules import (loreweaver-3hp). It pre-dates 3hp and was surfaced during 3hp review; 3hp only corrected the EXTRACTOR column-split that had scrambled this prose's word order (the bleed itself is unchanged and now reads in correct source order). parseFeatures/parseSubclasses (packages/core/scripts/importers/dnd5e-srd-5.1/) need a boundary that stops a subclass/feature body at the end of the subclass's own content (e.g. the next non-feature class section heading like 'Your Spellbook').",
+  "design": "Bound the last subclass feature and the subclass description at the first following heading that is a generic class section (not a feature/subclass), e.g. the Wizard 'Your Spellbook' h-tier section. Likely reuse the heading-tier signal already available to the feature parser. Verify Champion (Fighter) and other subclasses stay unaffected; only the last-feature-on-page-followed-by-class-prose case should change.",
+  "acceptance_criteria": "subclass:school-of-evocation description ends at the Evocation subclass content (Empowered Evocation / Overchannel) and does NOT contain 'Your Spellbook', 'Copying a Spell into the Book', 'Replacing the Book', or 'The Book's Appearance'; feature:school-of-evocation:overchannel description is bounded to the Overchannel feature text only; the 'Your Spellbook' prose is either dropped (DM/class procedure) or attached to the Wizard class record, per reviewer decision; committed-pack regression assertion added; verify:dnd5e-srd-pack matches importer output; full suite green.",
+  "notes": "Handoff: PR https://github.com/jbongaarts/loreweaver/pull/162 open from work/loreweaver-6fw to main; branch pushed and synced. Routine handoff stops at review per AGENTS.md.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T21:34:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:48Z",
+  "started_at": "2026-06-06T05:42:04Z",
+  "closed_at": "2026-06-06T22:50:30Z",
+  "close_reason": "Merged via PR #162 (commit 86554e0). Feature/subclass parsers bound bodies at the SRD Classes-chapter callout-box font tier (gated on multi-tier structure); all 5 callout boxes corrected across 7 records; canonical pack regenerated and verified exact-match. Follow-up loreweaver-fak filed for the independent Paladin/Barbarian subclass-feature attribution bug.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-8v8",
+  "title": "Simplify CLI distribution and usage",
+  "description": "Make the local CLI easier for a fresh user to install, configure, and run after the distribution plan in loreweaver-0m5. Parent context: loreweaver-d4r. Scope should evaluate reducing required manual steps such as building from source, setting LOREWEAVER_DB_PATH before first run, invoking node packages/cli/dist/index.js directly, and manually discovering Dolt/checkpoint setup. Coordinate with loreweaver-ygm for default app-data locations.",
+  "acceptance_criteria": "A fresh-user path is implemented or documented that uses a simple loreweaver command after install; README getting-started instructions are updated; required configuration is minimized or clearly prompted; package/install smoke tests cover the chosen path; any remaining non-obvious setup is filed as follow-up beads.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T21:59:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:44Z",
+  "started_at": "2026-05-21T22:00:48Z",
+  "closed_at": "2026-05-21T22:53:02Z",
+  "close_reason": "Simplified documented CLI usage around npm install -g and the loreweaver command; improved config guidance; tightened package metadata and added package smoke coverage; verification: npm run typecheck and npm run test passed.",
+  "comments": [
+    {
+      "id": "1c828159-5754-594b-85ce-f30d95e97e94",
+      "issue_id": "eshyra-8v8",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> exit 0; npm run test -> exit 0 with 35 test files passed / 1 skipped and 213 tests passed / 1 skipped. Acceptance: README now leads fresh users to npm install -g @loreweaver/cli and the simple loreweaver/loreweaver play commands; CLI config errors print LOREWEAVER_DB_PATH, ANTHROPIC_API_KEY, and next command guidance; package files/engines metadata added; package smoke covers npm pack --dry-run contents for core and CLI. Filed loreweaver-v1w for the remaining clean-prefix global-install release workflow smoke.",
+      "created_at": "2026-05-21T22:52:57Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

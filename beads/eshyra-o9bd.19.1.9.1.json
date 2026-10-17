@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.9.1",
+  "title": "Dispatch: qualified engine ownership for capability targets (attempt 1)",
+  "description": "Decomposed out of PR #476 (eshyra-o9bd.19.1.6) when the churn stop rule\ntriggered at f75acb2. This worktree is cut from eshyra-o9bd.19.1.6.\n\n=== THE DEFECT ===\nA finding-registry target may be LABELLED target.kind='capability', but the\nidentity union can only express a record, clause, path or artifact. There is no\nengine:F1..F10 family, no primitive, no hook, and no qualified capability owner.\nSo a capability target names something that is not a capability, and engine\nfindings cannot be joined to the bootstrap capability ledger\n(eshyra-o9bd.19.5.1) or to the engine:F* family epics under eshyra-olc5. The\ncross-surface link the audit program depends on does not exist.\n\n=== FILES YOU OWN ===\n  docs/audits/dnd5e-srd-5.1-final/finding-registry.json\n  docs/audits/dnd5e-srd-5.1-final/finding-registry.md\n  packages/core/src/rules/findingRegistry.ts\n  packages/core/test/findingRegistry.test.ts\n\n=== REQUIRED ===\n * Extend the identity union so a capability target names a QUALIFIED\n   engine:F1..engine:F10 identity, its primitive, the relevant hook where one\n   exists, and its owning bead — and validate all four.\n * Reuse the capability identity shape the bootstrap capability ledger already\n   uses at PR #477 head 292b716. READ IT for the shape but DO NOT import across\n   branches: duplicate the small types locally and note the temporary\n   duplication and integration boundary in finding-registry.md. Do NOT invent a\n   third shape.\n * Owning beads are the engine:F* family epics under eshyra-olc5. They retain\n   historical eshyra-o9bd.19.5.* IDs, so judge ownership by actual bead identity,\n   never by ID prefix — a 'starts with eshyra-olc5' check is wrong.\n * Every engine finding must resolve to its family epic. Add tests for\n   unqualified family, unknown primitive, missing owner, and wrong-owner.\n\n=== SCOPE BOUNDARY ===\nDo NOT attempt executable violation predicates — that is eshyra-o9bd.19.1.8.\nDo NOT attempt membership derivation for prose-scoped rows — that is\neshyra-o9bd.19.1.7. If a change here would require either, report it instead.\n\n=== KNOWN OPEN DEFECTS IN THIS FILE SET — leave them alone ===\nThe ineffective anti-template guard and the fail-open\nfindingRegistryClosureReady() are recorded against the #476 rescope and are NOT\nyours. Do not fix them here; a parallel change would collide.\n\n=== ENVIRONMENT / CONSTRAINTS ===\nnpm ci first; npm run verify:worktree BEFORE committing — it rewrites files. If\nrulesPackAuditCli or dolt-gated suites time out under load, rerun that file in\nisolation before concluding a regression.\nEdit ONLY the files under FILES YOU OWN. A sibling dispatch runs in parallel on\na disjoint set. Do not touch package.json, packages/core/package.json,\npackages/core/src/internal.ts, AGENTS.md, CLAUDE.md, .github/, or any\nscript/protocol/CI file — review infrastructure is OUT OF SCOPE this session.\nDo not regenerate the rules pack or run the SRD importer.\nDo not modify any bead but your own. No bd dolt push. No push, PR comment, or\nmerge. Never delete a test to make a finding disappear; if a committed test\nencodes the defect, change it deliberately and say why in your notes.",
+  "acceptance_criteria": "\n• A capability target names a qualified engine:F1..F10 identity, primitive, hook where applicable, and owning bead, all validated.\n• The identity shape matches the bootstrap capability ledger and is mechanically joinable; no third shape is introduced.\n• Ownership is judged by actual bead identity, not ID prefix.\n• Every engine finding resolves to its family epic under eshyra-olc5.\n• Tests cover unqualified family, unknown primitive, missing owner and wrong owner.\n• No violation-predicate or membership-derivation work is absorbed.\n• npm run verify:worktree passes.",
+  "notes": "Completed in commit c73f6bc. Added a local bootstrap-ledger-compatible CapabilityIdentity with qualified engine:F1..engine:F10, canonical primitive, exact hookSelector, and exact historical family-epic owner validation. Capability target membership now uses a compact checked-in capability catalog and exact clause references; the parser expands grouped references back to every clause-hook identity, and generation validates all pending hooks without collapsing multi-family relationships. Added regression coverage for unqualified family, unknown primitive, missing owner, and wrong owner. Documented the temporary local type/roster duplication and integration boundary in finding-registry.md. No binding decision is disputed. No in-scope obligation is unsatisfied; violation predicates, prose membership derivation, anti-template guard, and closure-gate defects were intentionally left to their assigned beads. The first verification attempt exposed the 1 MiB Biome file-size ceiling after inline expansion; compact catalog encoding corrected it, and the required final npm run verify:worktree passed (263 files passed, 4 skipped; 4726 tests passed, 19 skipped). No push, PR comment, merge, or bd dolt push performed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T00:07:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T00:25:09Z",
+  "closed_at": "2026-07-28T00:25:09Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.9.1",
+      "depends_on_id": "eshyra-o9bd.19.1.9",
+      "type": "parent-child",
+      "created_at": "2026-07-27T19:07:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

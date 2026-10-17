@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.13.7",
+  "title": "Review: Sol r4 exact-head confirmation of PR #666 (@ 6bf9e85f)",
+  "description": "Exact-head confirmation after the S5 test-only repair. VERDICT line.",
+  "notes": "Dispatched gpt-6.1-sol effort medium; PGID 497670\nFinal read-only exact-head confirmation of PR #666 at 6bf9e85f0715bfbea1314dc6cf8f805aab9c4f79. Read round-3 review eshyra-olc5.13.6 and live owning/review beads and review policy. This is the authorized non-material S5 repair confirmation; prior whole-PR review at dbd80392f3ac17910cd4f887ec55a04dbc5bcba2 remains applicable. refs/beads/state remains the stale 9e4bb40c projection; live bd resolves current scope.\n\nS5 CLOSED. git rev-list confirms exactly one commit after the prior reviewed head. git show and diff confirm only packages/core/test/itemResetExecutor.test.ts changed (9 insertions, 7 deletions), replacing the outer six-amount loop with it.each. Same amounts in the same order: '1d4-2', '1d12', '2d20kh1-1', numeric 0, numeric 4, string '6'. The complete inner seed-loop body is byte-identical, as is the SEEDS declaration: s1-a through s1-i, still all 54 amount/seed combinations with independent fresh databases. All safe-integer, nonnegative amount/deducted, nonincreasing remaining, exact balance and complete-database atomic-refusal assertions are preserved. No timeout increase, seed removal, assertion weakening, or other file/production change. Permanent evidence remains the generalized resource-monotonicity/atomic-refusal invariant.\n\nRuntime sibling check: the PR changes only this one test file. Reran the entire file with verbose reporting: all 96 tests pass, 12.82s process duration, slowest single test 431ms; split cases 431/424/398/405/412/418ms in amount order. Inspected the full changed-file timing block from BOTH ordinary full CI runs. Push split cases 1119/1084/1052/1027/1023/1048ms; PR split cases 1271/1174/1233/1127/1155/1130ms. Those are also the slowest cases in the file; no sibling approaches the default 5000ms budget. Other six-seed refusal cases peak at 826ms, shared admission/execution cases at 431ms, remaining reported cases at 560ms across the two runs. File totals 28.885s push / 32.357s PR reflect cumulative work, not a single-test timeout.\n\nWaited with gh pr checks 666 --watch until exit 0 and all 13 checks passed. gh run list --branch eshyra-olc5.13 and individual run metadata confirm completed success at headSha 6bf9e85f0715bfbea1314dc6cf8f805aab9c4f79:\n- Push CI https://github.com/jbongaarts/eshyra/actions/runs/38689526367 (build-test 4m17s).\n- PR CI https://github.com/jbongaarts/eshyra/actions/runs/38689530538 (build-test 4m55s).\nBoth full test runs: 361 files passed, 4 skipped; 6850 tests passed, 18 skipped, zero failures. Both include forced typecheck, tests, CLI smoke, repository check, and all three platform install smoke jobs.\n- Reproducibility https://github.com/jbongaarts/eshyra/actions/runs/38689530550 passed.\n- Site https://github.com/jbongaarts/eshyra/actions/runs/38689530556 passed.\n- CodeQL https://github.com/jbongaarts/eshyra/actions/runs/38689527945 completed success at the same headSha; both Analyze jobs and CodeQL check passed.\nFinal gh pr view confirms unchanged exact PR head.\n\nNo new findings (no S6). Checkout HEAD, index, tracked contents and untracked status remain clean and unchanged. No edits, commits, pushes, PR comments, merges, or beads:sync; only this review bead is updated and closed as explicitly requested.\nVERDICT: CLEAN",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-15T05:56:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-15T06:02:38Z",
+  "closed_at": "2026-10-15T06:02:38Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.13.7",
+      "depends_on_id": "eshyra-olc5.13",
+      "type": "parent-child",
+      "created_at": "2026-10-15T00:56:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

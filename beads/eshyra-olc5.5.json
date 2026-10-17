@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.5",
+  "title": "Reconcile the bounded legacy capability backlog with accepted capability identities",
+  "description": "Build the migration bridge from legacy magic-item executionReadiness/engine:F backlog to\nthe positive capability contract. The result is a bounded backlog/candidate view, not\nauthority for all source mechanics. Do not couple audit-finding registry membership to\ncapability-universe membership.",
+  "acceptance_criteria": "- Every migrated legacy backlog entry has stable identity/source linkage sufficient to decide whether it is a positive capability candidate.\n- Selected capabilities use the accepted capability identity/contract; unselected entries remain explicit backlog.\n- The inventory does not infer source-negative absence or corpus completeness.\n- Finding-registry membership is not authority for capability-universe membership.\n- Evidence fields state their exact claim strength under Foundation 4.",
+  "notes": "ADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\nImplemented at 45c47f5: adds a bounded 794-entry legacy magic-item missingHooks candidate/backlog view with clause identity, record provenance, explicit unselected disposition, Foundation-4 claim-strength/non-claim fields, and the separately reported positive assertMagicItemOperationReady contract. It intentionally excludes the green Candle of Invocation hook observation and does not depend on finding-registry membership. Verification: npm run verify:worktree.\nReview handoff: https://github.com/jbongaarts/eshyra/pull/545 (head 45c47f5e4bca9f5db2955f7757743b8bb749e100). Bead remains in_progress until the PR merges.\nReview repair at 2abe7b9: F1 corrected the migration denominator to all 795 non-empty engineHooks clauses. The green Candle of Invocation F5 hook is retained as an explicit unselected candidate; missingHooks is unresolved-detail only. Regression coverage pins the full sorted candidate identity fingerprint and the green sibling. A1 addressed with npm run beads:sync, publishing refs/beads/state=6ee508d04e4a005125aa0e3e694449128fc9085a from refs/dolt/data=db36a1a3defb1b1b83114e6cf8fec84c6ed7b411.\nReview repair at ff22c7000e50e1df4b8091369873684da8d53afa: F1 validation-equivalence repair. buildMagicItemLegacyCapabilityBacklog now calls validateRulesPack before extraction, so only canonical derived-magic-item-clauses-v1 readiness data can become candidate evidence. Regression cases cover unknown readiness, unknown engine family, duplicate hook, missing-hook subset violation, and readiness/missing-hook inconsistency. Verification: npm run verify:worktree.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T03:08:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-12T05:16:24Z",
+  "started_at": "2026-09-12T04:19:16Z",
+  "closed_at": "2026-09-12T05:16:24Z",
+  "close_reason": "Merged via PR #545 (merge commit 67e06530887aed125d23b55bbb39be902633abdf).",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.5",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-07-27T22:08:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.5",
+      "depends_on_id": "eshyra-o9bd.19.1.16",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 3,
+  "comment_count": 0
+}
