@@ -24,6 +24,7 @@ import {
   writeCampaignRulesBinding,
   writeItemState,
 } from '../src/internal.js';
+import { ensureTestBindCredit } from './support/bindCredit.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
   DEFAULT_TEST_SESSION_ID,
@@ -111,8 +112,18 @@ function setup(
     at: NOW,
     resolveRulesPack: options.resolver ?? (() => resolvePack),
   };
-  const call = (name: string, args: unknown) =>
-    registry.invoke(name, args, ctx);
+  // These tests exercise grant validation, not the spend that pays for the
+  // bind; the credit is scaffolded (see support/bindCredit.ts).
+  const call = (name: string, args: unknown) => {
+    if (name === 'start_effect')
+      ensureTestBindCredit(
+        db,
+        DEFAULT_TEST_CAMPAIGN_ID,
+        ctx.resolveRulesPack,
+        (args as { source?: Record<string, unknown> }).source ?? {},
+      );
+    return registry.invoke(name, args, ctx);
+  };
   const must = (name: string, args: unknown) => {
     const result = call(name, args);
     if (!result.ok) throw new Error(`${name} failed: ${result.message}`);

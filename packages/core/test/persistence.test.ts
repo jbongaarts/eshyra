@@ -38,8 +38,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 48,
-      name: 'item_consumption_receipt',
+      version: 49,
+      name: 'item_grant_bind_credit',
     });
     db.close();
   });

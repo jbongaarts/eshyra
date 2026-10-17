@@ -71,8 +71,10 @@ import {
 } from './encounterCombatants.js';
 import {
   itemGrantColumn,
+  oldestOpenItemGrantBindCredit,
   readItemConsumptionReceipt,
   redeemItemConsumptionReceipt,
+  redeemItemGrantBindCredit,
 } from './itemGrantBinding.js';
 import {
   applyItemCooldownAnchorEvent,
@@ -3863,6 +3865,9 @@ interface ItemGrantBinding {
    *  its one-time receipt: the ISO consumption time. The binding is born
    *  tombstoned at that time. */
   readonly receiptConsumedAt?: string;
+  /** The bind credit (olc5.12.3) this non-anchored grant redeems with its
+   *  effect insert. */
+  readonly bindCreditId?: string;
 }
 
 function normalizedName(value: string): string {
@@ -4201,9 +4206,36 @@ function validateItemGrantBinding(
   // Djinni, Efreeti stopper) is paid for by that spend: the economy must be
   // spent and not yet scheduled, and one live effect may bind the grant at a
   // time. A spend that is never bound stays recoverable, since the DM can bind
-  // it late. Other cooldownEconomy references (per-day charges) are not
-  // anchored and bind unchanged.
+  // it late. A non-anchored cooldownEconomy grant redeems a bind credit below.
   const cooldownAnchored = grantCooldownAnchoredTo(mechanics, grant);
+  // A non-anchored cooldownEconomy grant on a live row is paid for by a bind
+  // credit that use_item issued when it charged that economy (olc5.12.3). The
+  // oldest open credit is redeemed with the effect insert, in one transaction.
+  let bindCreditId: string | undefined;
+  if (
+    !cooldownAnchored &&
+    receiptConsumedAt === undefined &&
+    typeof grant.cooldownEconomy === 'string'
+  ) {
+    const economyId = grant.cooldownEconomy;
+    bindCreditId = oldestOpenItemGrantBindCredit(db, {
+      campaignId: input.campaignId,
+      itemInstanceId,
+      packRef: record.key,
+      variantId: instanceVariant,
+      economyId,
+    });
+    if (bindCreditId === undefined) {
+      const spender = economySpender(mechanics, economyId);
+      throw new ActiveEffectError(
+        `${label} is paid for by the item's '${economyId}' economy, and item '${itemInstanceId}' holds no unredeemed use of it; use_item ${
+          typeof spender?.id === 'string'
+            ? `'${spender.id}'`
+            : 'the item operation'
+        } first (each use pays for one bind). To place a creature outside the item's economy, start a ruling-sourced summoning instead`,
+      );
+    }
+  }
   // A consumed source has no surviving item whose cooldown economy could be
   // spent or scheduled, and its receipt is the one-time guard.
   if (cooldownAnchored && receiptConsumedAt === undefined) {
@@ -4214,20 +4246,7 @@ function validateItemGrantBinding(
       economy.remaining !== 0 ||
       economy.availableAt !== undefined
     ) {
-      const spender = (
-        (mechanics?.operations as
-          | { id?: unknown; cost?: unknown }[]
-          | undefined) ?? []
-      ).find(
-        (operation) =>
-          Array.isArray(operation.cost) &&
-          operation.cost.some(
-            (cost) =>
-              typeof cost === 'object' &&
-              cost !== null &&
-              (cost as { economy?: unknown }).economy === economyId,
-          ),
-      );
+      const spender = economySpender(mechanics, economyId);
       throw new ActiveEffectError(
         `${label} is paid for by the item's '${economyId}' economy, which must be spent and not yet scheduled before it binds; use_item ${
           typeof spender?.id === 'string'
@@ -4268,7 +4287,28 @@ function validateItemGrantBinding(
     cleanup,
     cooldownAnchored,
     ...(receiptConsumedAt === undefined ? {} : { receiptConsumedAt }),
+    ...(bindCreditId === undefined ? {} : { bindCreditId }),
   };
+}
+
+/** The operation that charges this economy, for refusal messages. */
+function economySpender(
+  mechanics: Record<string, unknown> | undefined,
+  economyId: string,
+): { id?: unknown } | undefined {
+  return (
+    (mechanics?.operations as { id?: unknown; cost?: unknown }[] | undefined) ??
+    []
+  ).find(
+    (operation) =>
+      Array.isArray(operation.cost) &&
+      operation.cost.some(
+        (cost) =>
+          typeof cost === 'object' &&
+          cost !== null &&
+          (cost as { economy?: unknown }).economy === economyId,
+      ),
+  );
 }
 
 export function createActiveEffect(
@@ -5378,6 +5418,13 @@ export function createActiveEffect(
       redeemItemConsumptionReceipt(
         txnDb,
         itemGrant.itemInstanceId,
+        input.effectId,
+        input.at,
+      );
+    if (itemGrant?.bindCreditId !== undefined)
+      redeemItemGrantBindCredit(
+        txnDb,
+        itemGrant.bindCreditId,
         input.effectId,
         input.at,
       );

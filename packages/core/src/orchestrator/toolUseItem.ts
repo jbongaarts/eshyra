@@ -27,6 +27,7 @@ export const useItemTool: Tool = {
     'Do NOT also call spend_turn_resource for the same activation: that double-spends. If the resource is unavailable ' +
     '(already used, not their turn for an action or bonus action, surprised) use_item refuses and changes nothing. ' +
     "A spend that starts a typed entity grant's cooldown returns hint.bindGrant: that summon must then be bound with start_effect (source.grantRef = hint.bindGrant, source.itemInstanceId = this instance), and its cooldown starts only when that bound effect ends; an unbound spend stays recoverable until the summon is bound. " +
+    'A spend of a non-anchored cooldown economy (per-day uses, charges, single-use units) that a typed grant names returns hint.bindCredits [{creditId, economyId, grantIds}]: each credit pays for exactly one start_effect bind of one listed grant on this instance, and start_effect refuses such a bind without an unredeemed credit. ' +
     "The result's turnResource says what was spent or why nothing was (outside combat, free or consumed activation, a casting time " +
     'longer than a reaction that you adjudicate). A creature other than the acting character (a combatant, e.g. someone else ' +
     "releasing an Immovable Rod or smashing a Dust of Dryness pellet) is not charged by use_item; record that creature's " +

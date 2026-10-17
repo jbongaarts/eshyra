@@ -227,7 +227,7 @@ export function giveItem(
   db: Db,
   item: GiveItemInput,
   ctx: DomainMutationContext,
-): { id: string; variantId?: string } {
+): { id: string; variantId?: string; reassignedFrom?: string } {
   if (typeof item.id !== 'string' || item.id.length === 0) {
     throw new MutateStateError('item id must be a non-empty string');
   }
@@ -277,6 +277,7 @@ export function giveItem(
     }
 
     let rowId = item.id;
+    let reassignedFrom: string | undefined;
     let collision:
       | {
           character_id: string | null;
@@ -309,10 +310,15 @@ export function giveItem(
             unheld_disposition: string | null;
           }
         | undefined;
-      if (collision === undefined && itemInstanceIdRetired(txnDb, rowId))
-        throw new MutateStateError(
-          `inventory id '${rowId}' is retired: it identifies a consumed or destroyed item that a consumption receipt or item grant still names; choose another id`,
-        );
+      // A retired explicit id (named by a consumption receipt or an item-grant
+      // binding while no row holds it) is never reissued; the item takes the
+      // smallest free '<id>#n' and the result reports the reassignment.
+      if (collision === undefined && itemInstanceIdRetired(txnDb, rowId)) {
+        let suffix = 1;
+        while (itemInstanceIdTaken(txnDb, `${item.id}#${suffix}`)) suffix += 1;
+        reassignedFrom = item.id;
+        rowId = `${item.id}#${suffix}`;
+      }
       if (collision !== undefined) {
         const quarantine = itemAdoptionReviewBlockMessage(
           txnDb,
@@ -425,6 +431,7 @@ export function giveItem(
     return {
       id: rowId,
       ...(item.variantId === undefined ? {} : { variantId: item.variantId }),
+      ...(reassignedFrom === undefined ? {} : { reassignedFrom }),
     };
   });
 }
