@@ -1550,6 +1550,7 @@ export {
   formatActiveEffect,
   getCharacterConcentration,
   getConcentrationEffect,
+  ITEM_GRANT_REVERT_DISPOSITIONS,
   listActiveEffects,
   listEffectEvents,
   parseSpellDurationText,

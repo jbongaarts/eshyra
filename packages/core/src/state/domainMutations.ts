@@ -30,6 +30,10 @@ import {
   requireCurrentWorldLocation,
 } from './inventoryWorldLocation.js';
 import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
+import {
+  itemInstanceIdRetired,
+  itemInstanceIdTaken,
+} from './itemGrantBinding.js';
 import { ItemStateError, validatePackRef } from './itemState.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import {
@@ -55,6 +59,9 @@ export interface DomainMutationContext {
   sessionId: string;
   at: string;
   characterId?: string;
+  /** The campaign's exact rules stack: a character's incapacitation ends the
+   *  grants that stack resolves (S7). */
+  readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
 }
 
 export interface AddConditionInput {
@@ -117,17 +124,27 @@ export function addCondition(
     // duplicate-id no-op above never reaches here.
     let concentrationBroken: AddConditionResult['concentrationBroken'];
     if (
-      conditionImpliesIncapacitated(txnDb, condition.id) &&
+      conditionImpliesIncapacitated(
+        txnDb,
+        condition.id,
+        ctx.resolveRulesPack,
+      ) &&
       !anyConditionImpliesIncapacitated(
         txnDb,
         current.map((c) => c.id),
+        ctx.resolveRulesPack,
       )
     ) {
       const broken = breakConcentrationOnLifeEvent(
         txnDb,
         charId,
         'incapacitated',
-        { provenance: ctx.provenance, sessionId: ctx.sessionId, at: ctx.at },
+        {
+          provenance: ctx.provenance,
+          sessionId: ctx.sessionId,
+          at: ctx.at,
+          resolveRulesPack: ctx.resolveRulesPack,
+        },
       );
       if (broken.broken && broken.effectId !== undefined) {
         concentrationBroken = {
@@ -274,11 +291,7 @@ export function giveItem(
       }
       const base = item.packRef.slice('magic-item:'.length);
       let suffix = 1;
-      while (
-        txnDb
-          .prepare('SELECT 1 FROM inventory WHERE id = ?')
-          .get(`${base}#${suffix}`) !== undefined
-      ) {
+      while (itemInstanceIdTaken(txnDb, `${base}#${suffix}`)) {
         suffix += 1;
       }
       rowId = `${base}#${suffix}`;
@@ -296,6 +309,10 @@ export function giveItem(
             unheld_disposition: string | null;
           }
         | undefined;
+      if (collision === undefined && itemInstanceIdRetired(txnDb, rowId))
+        throw new MutateStateError(
+          `inventory id '${rowId}' is retired: it identifies a consumed or destroyed item that a consumption receipt or item grant still names; choose another id`,
+        );
       if (collision !== undefined) {
         const quarantine = itemAdoptionReviewBlockMessage(
           txnDb,
@@ -842,12 +859,7 @@ function nextRelinquishedItemId(
 ): string {
   const base = `${itemId}#${disposition}`;
   let suffix = 1;
-  while (
-    db
-      .prepare('SELECT 1 FROM inventory WHERE id = ?')
-      .get(`${base}-${suffix}`) !== undefined
-  )
-    suffix += 1;
+  while (itemInstanceIdTaken(db, `${base}-${suffix}`)) suffix += 1;
   return `${base}-${suffix}`;
 }
 

@@ -3306,7 +3306,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1376);
+      expect(clauses).toHaveLength(1377);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3378,11 +3378,19 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // item_state_event cannot deduct table-defined charges. The former
       // operation-bound candidate and duplicate adjudicated clause leave the
       // census, yielding 360 adjudicated, 792 pending, and 223 green.
+      // eshyra-olc5.12.2 lands the grant-anchored cooldown reset hook: the
+      // Ring of Djinni cooldown and the Efreeti Bottle stopper clause go
+      // engine-pending -> green (792 -> 790 pending, 223 -> 225 green), and the
+      // Efreeti remove-stopper operation adds one green operation-bound clause
+      // that carries the landed paid-operation hook (225 -> 226 green, 1376 ->
+      // 1377 total).
+      // The operation stays not ready because its entity-grant and
+      // random-procedure clauses remain engine-pending.
       expect(counts).toEqual({
         'adjudicated-by-design': 360,
         'design-blocked': 1,
-        'engine-pending': 792,
-        green: 223,
+        'engine-pending': 790,
+        green: 226,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

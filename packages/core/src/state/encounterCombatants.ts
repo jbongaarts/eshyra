@@ -188,7 +188,7 @@ export interface StartEncounterInput {
   readonly resolveAdventureModule?: (
     moduleId: string,
   ) => AdventureModule | undefined;
-  readonly resolveRulesPack?: CampaignRulesPackResolver;
+  readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
@@ -207,7 +207,7 @@ export interface CloseCombatInstanceInput {
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
-  readonly resolveRulesPack?: CampaignRulesPackResolver;
+  readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
 }
 
 export interface UpdateCombatantInput {
@@ -219,7 +219,9 @@ export interface UpdateCombatantInput {
   readonly clampToEffectiveMaximum?: boolean;
   /** Declared damage types returned by resolve_damage for a negative hpDelta. */
   readonly damageTypes?: readonly string[];
-  readonly resolveRulesPack?: CampaignRulesPackResolver;
+  readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
+  /** Minute of the triggering event when not the current clock (olc5.12.10). */
+  readonly eventElapsedMinutes?: number;
   readonly deathRules?: 'player-character';
   readonly critical?: boolean;
   /** Seeds the stable-recovery deadline when a knockout makes the combatant stable. */
@@ -245,7 +247,9 @@ export interface CampaignActorMutationInput {
   readonly hpCurrent?: number;
   readonly hpMax?: number;
   readonly currentLocationId?: string;
-  readonly resolveRulesPack?: CampaignRulesPackResolver;
+  readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
+  /** Minute of the triggering event when not the current clock (olc5.12.10). */
+  readonly eventElapsedMinutes?: number;
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
@@ -432,9 +436,10 @@ export function updateCampaignActor(
         ...(input.currentLocationId === undefined
           ? {}
           : { locationId: input.currentLocationId }),
-        ...(input.resolveRulesPack === undefined
+        resolveRulesPack: input.resolveRulesPack,
+        ...(input.eventElapsedMinutes === undefined
           ? {}
-          : { resolveRulesPack: input.resolveRulesPack }),
+          : { eventElapsedMinutes: input.eventElapsedMinutes }),
         provenance: input.provenance,
         sessionId: input.sessionId,
         at: input.at,
@@ -657,7 +662,7 @@ export function settleCombatantHeadsAtTurnEnd(
   input: {
     readonly campaignId: string;
     readonly combatantId: string;
-    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -1524,7 +1529,7 @@ function displayNameFromRulesRef(rulesRef: string): string {
 function lookupCreatureRecord(
   db: Db,
   rulesRef: string,
-  resolver?: CampaignRulesPackResolver,
+  resolver: CampaignRulesPackResolver | undefined,
 ): RulesRecord | undefined {
   return lookupCampaignRecord(db, 'creature', rulesRef, resolver);
 }
@@ -1963,7 +1968,7 @@ function admitCampaignActorToInstance(
   db: Db,
   input: {
     readonly campaignId: string;
-    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -2266,7 +2271,7 @@ export interface JoinCombatInput {
   readonly campaignId: string;
   readonly creatures?: readonly JoinCombatCreatureInput[];
   readonly actors?: readonly StartEncounterActorInput[];
-  readonly resolveRulesPack?: CampaignRulesPackResolver;
+  readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
@@ -2632,7 +2637,12 @@ export function resolveCombatantDeathSave(
   campaignId: string,
   combatantId: string,
   roll: number,
-  ctx: { provenance: string; sessionId: string; at: string },
+  ctx: {
+    provenance: string;
+    sessionId: string;
+    at: string;
+    resolveRulesPack: CampaignRulesPackResolver | undefined;
+  },
   rng: Rng = createSeededRng(0),
 ) {
   if (!Number.isInteger(roll) || roll < 1 || roll > 20)
@@ -2709,7 +2719,12 @@ export function stabilizeCombatant(
   db: Db,
   campaignId: string,
   combatantId: string,
-  ctx: { provenance: string; sessionId: string; at: string },
+  ctx: {
+    provenance: string;
+    sessionId: string;
+    at: string;
+    resolveRulesPack: CampaignRulesPackResolver | undefined;
+  },
   rng: Rng = createSeededRng(0),
 ) {
   return withTransaction(db, (txn) => {
@@ -2741,7 +2756,12 @@ export function setCombatantSuffocation(
   campaignId: string,
   combatantId: string,
   event: 'drop' | 'breathe',
-  ctx: { provenance: string; sessionId: string; at: string },
+  ctx: {
+    provenance: string;
+    sessionId: string;
+    at: string;
+    resolveRulesPack: CampaignRulesPackResolver | undefined;
+  },
   rng: Rng = createSeededRng(0),
 ) {
   return withTransaction(db, (txn) => {
@@ -2991,7 +3011,7 @@ function completeZeroHpVanish(
     provenance: string;
     sessionId: string;
     at: string;
-    resolveRulesPack?: CampaignRulesPackResolver;
+    resolveRulesPack: CampaignRulesPackResolver | undefined;
   },
 ): VanishedOutcome {
   const bonded = before.zeroHpRule === 'vanish-bonded';
@@ -3077,7 +3097,7 @@ type EffectCtx = {
   provenance: string;
   sessionId: string;
   at: string;
-  resolveRulesPack?: CampaignRulesPackResolver;
+  resolveRulesPack: CampaignRulesPackResolver | undefined;
 };
 
 function holderOf(c: EncounterCombatant): {
@@ -3142,7 +3162,7 @@ export function revertCombatantToNaturalForm(
     readonly campaignId: string;
     readonly combatantId: string;
     readonly naturalForm: NaturalForm;
-    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -3171,7 +3191,7 @@ export function revertCampaignActorToNaturalForm(
     readonly campaignId: string;
     readonly actorId: string;
     readonly naturalForm: NaturalForm;
-    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -3233,7 +3253,9 @@ export function removeCombatantFromPlay(
   input: {
     readonly campaignId: string;
     readonly combatantId: string;
-    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
+    /** Minute of the triggering event when not the current clock (olc5.12.10). */
+    readonly eventElapsedMinutes?: number;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -3279,9 +3301,10 @@ export function removeCombatantFromPlay(
           provenance: input.provenance,
           sessionId: input.sessionId,
           at: input.at,
-          ...(input.resolveRulesPack === undefined
+          ...(input.eventElapsedMinutes === undefined
             ? {}
-            : { resolveRulesPack: input.resolveRulesPack }),
+            : { eventElapsedMinutes: input.eventElapsedMinutes }),
+          resolveRulesPack: input.resolveRulesPack,
         },
       );
     return 'removed';
@@ -3295,7 +3318,9 @@ export function removeCampaignActorFromPlay(
   input: {
     readonly campaignId: string;
     readonly actorId: string;
-    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
+    /** Minute of the triggering event when not the current clock (olc5.12.10). */
+    readonly eventElapsedMinutes?: number;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -3374,7 +3399,7 @@ export function restoreBondedCampaignActor(
     readonly restore:
       | { readonly kind: 'maximum' }
       | { readonly kind: 'new-form'; readonly rulesRef: string };
-    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -3520,7 +3545,7 @@ export function moveBondedCreatureOutOfPlay(
     readonly campaignId: string;
     readonly actorId: string;
     readonly to: 'absent' | 'pocketed';
-    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -3549,9 +3574,7 @@ export function moveBondedCreatureOutOfPlay(
       removeCombatantFromPlay(txn, {
         campaignId: input.campaignId,
         combatantId: combatantLeft,
-        ...(input.resolveRulesPack === undefined
-          ? {}
-          : { resolveRulesPack: input.resolveRulesPack }),
+        resolveRulesPack: input.resolveRulesPack,
         provenance: input.provenance,
         sessionId: input.sessionId,
         at: input.at,
@@ -3598,7 +3621,7 @@ export function recallPocketedCampaignActor(
     readonly side?: string;
     readonly faction?: string;
     readonly placement?: string;
-    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
     readonly provenance: string;
     readonly sessionId: string;
     readonly at: string;
@@ -4229,9 +4252,10 @@ function updateCombatantInTxn(
         provenance: input.provenance,
         sessionId: input.sessionId,
         at: input.at,
-        ...(input.resolveRulesPack === undefined
+        ...(input.eventElapsedMinutes === undefined
           ? {}
-          : { resolveRulesPack: input.resolveRulesPack }),
+          : { eventElapsedMinutes: input.eventElapsedMinutes }),
+        resolveRulesPack: input.resolveRulesPack,
       },
     );
     if (broken.broken && broken.effectId !== undefined) {

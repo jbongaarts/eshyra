@@ -78,6 +78,9 @@ const elementalVessel = (
   hooks: CONTROLLED_HOOKS,
 });
 
+/** The printed Ivory Goats variant owns the three goat grants (S1). */
+const IVORY_GOATS = ['ivory-goats'] as const;
+
 const FIGURINE_REVERT = [
   'duration-ended',
   'reduced-to-0-hit-points',
@@ -98,6 +101,9 @@ const figurine = (
     duration: { amount: durationHours, unit: 'hour' },
     revertOn: FIGURINE_REVERT,
     exclusiveInstance: { scope: 'item', recast: 'blocked' },
+    // S1: a figurine grant belongs to the variant of the same printed id
+    // (Golden Lions, Onyx Dog, ...) unless the caller names another variant.
+    variants: [id],
     ...rest,
   });
 
@@ -309,6 +315,7 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
           {
             id: 'ebony-fly',
             kind: 'creature',
+            variants: ['ebony-fly'],
             statBlockRef: 'stat-block:giant-fly',
             control:
               'friendly; understands owner languages and obeys spoken commands; otherwise only defends itself',
@@ -323,6 +330,7 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
             note: 'The pair may transform separately or simultaneously; each lion has its own seven-day cooldown.',
           }),
           creature('goat-of-traveling', 'creature:riding-horse', {
+            variants: IVORY_GOATS,
             control:
               'friendly; understands owner languages and obeys spoken commands; otherwise only defends itself',
             revertOn: FIGURINE_REVERT,
@@ -331,9 +339,11 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
             note: 'Large goat using riding-horse statistics; duration is charged per hour or portion, with no fixed cap.',
           }),
           figurine('goat-of-travail', 'creature:giant-goat', 3, {
+            variants: IVORY_GOATS,
             note: 'Thirty-day cooldown begins on reversion.',
           }),
           figurine('goat-of-terror', 'creature:giant-goat', 3, {
+            variants: IVORY_GOATS,
             control: 'friendly and commanded but cannot attack',
             note: 'Fifteen-day cooldown begins on reversion; horns and terror aura are represented by their C2 clauses.',
           }),

@@ -297,7 +297,7 @@ describe('creature attack grammar over the committed pack', () => {
     // a missing Hit:, or a missing reach/range field fails the grammar instead
     // of shrinking the population or re-anchoring on later text. A block with
     // more than one lead-in is rejected as ambiguous.
-    const lead = String.raw`(?:Melee|Ranged|Melee or Ranged) (?:Weapon|Spell) Attack:`;
+    const lead = '(?:Melee|Ranged|Melee or Ranged) (?:Weapon|Spell) Attack:';
     const bonus = String.raw`[+\-\u2212]\d+ to hit(?: \([+\-\u2212]\d+ to hit [^)]*\))?`;
     const distance = String.raw`\d+(?:\/\d+| ft\.\/\d+)? ft\.`;
     const field = String.raw`(?:reach \d+ ft\.(?: (?:or|and) range ${distance})?|ranged? ${distance})`;

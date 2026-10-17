@@ -80,9 +80,7 @@ export const recastBondedSummonTool: Tool = {
           effectId: a.effectId,
           spellRef: a.spellRef,
           ...(a.form === undefined ? {} : { form: a.form }),
-          ...(ctx.resolveRulesPack === undefined
-            ? {}
-            : { resolveRulesPack: ctx.resolveRulesPack }),
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

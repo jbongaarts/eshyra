@@ -205,6 +205,9 @@ export interface MagicItemEntityGrant {
     readonly statBlockRef?: string;
     readonly creatureRefs?: readonly string[];
     readonly tableRefs?: readonly string[];
+    /** Variant ids (the item's own variant ids) this printed grant belongs to.
+     *  Required on every grant of an item that declares variants (S1). */
+    readonly variants?: readonly string[];
     readonly count?: number | string;
     readonly control?: string;
     readonly duration?: MagicItemDurationSpec;
@@ -1197,6 +1200,7 @@ function entityGrant(
         'statBlockRef',
         'creatureRefs',
         'tableRefs',
+        'variants',
         'count',
         'control',
         'duration',
@@ -1263,6 +1267,11 @@ function entityGrant(
         `${grantPath} must declare statBlockRef, creatureRefs, tableRefs, or an explicit note`,
       );
     }
+    if (grant.variants !== undefined)
+      strings(grant.variants, `${grantPath}.variants`, {
+        ids: true,
+        nonEmpty: true,
+      });
     if (grant.count !== undefined)
       numberOrDice(grant.count, `${grantPath}.count`);
     if (grant.control !== undefined)

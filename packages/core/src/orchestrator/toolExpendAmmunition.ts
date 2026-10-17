@@ -62,6 +62,7 @@ export const expendAmmunitionTool: Tool = {
             provenance: `model:${ctx.turnId}`,
             sessionId: ctx.sessionId,
             at: ctx.at,
+            resolveRulesPack: ctx.resolveRulesPack,
           },
         ),
       );

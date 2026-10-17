@@ -1,4 +1,7 @@
-import type { EffectDurationInput } from '../state/activeEffects.js';
+import type {
+  EffectDurationInput,
+  ItemDurationProvenance,
+} from '../state/activeEffects.js';
 import { refreshEffect } from '../state/activeEffects.js';
 import {
   EFFECT_DURATION_SCHEMA,
@@ -20,12 +23,23 @@ export const refreshEffectTool: Tool = {
     'start_effect. When the effect comes from a spell whose record has a ' +
     'timed duration, a supplied duration must equal it; other effects ' +
     'accept the supplied duration unchecked. Omit duration to re-anchor ' +
-    'the existing one from now.',
+    'the existing one from now. An item-power effect keeps its printed typed duration: a different duration needs durationOverride (basis and reason), which records it as a DM override. An effect bound to an item grant (a granted creature) never has its lifetime rewritten by refresh, with or without durationOverride: to change or cut it short, call end_effect for the whole grant with a ruling.',
   inputSchema: {
     type: 'object',
     properties: {
       effectId: { type: 'string', minLength: 1 },
       duration: EFFECT_DURATION_SCHEMA,
+      durationOverride: {
+        type: 'object',
+        description:
+          'Required to change a printed item-power duration: { basis: dm-adjudicated | house-rule, reason }. Never accepted for an item-grant effect (use end_effect).',
+        properties: {
+          basis: { enum: ['dm-adjudicated', 'house-rule'] },
+          reason: { type: 'string', minLength: 1 },
+        },
+        required: ['basis', 'reason'],
+        additionalProperties: false,
+      },
       note: {
         type: 'string',
         description: 'Audit note (what renewed it).',
@@ -39,6 +53,26 @@ export const refreshEffectTool: Tool = {
     const a = asRecord(args);
     if (a === undefined || typeof a.effectId !== 'string') {
       return err('invalid_args', 'refresh_effect requires { effectId }');
+    }
+    let durationProvenance: ItemDurationProvenance | undefined;
+    if (a.durationOverride !== undefined) {
+      const override = asRecord(a.durationOverride);
+      if (
+        override === undefined ||
+        (override.basis !== 'dm-adjudicated' &&
+          override.basis !== 'house-rule') ||
+        typeof override.reason !== 'string' ||
+        override.reason.trim().length === 0
+      )
+        return err(
+          'invalid_args',
+          'durationOverride requires basis (dm-adjudicated or house-rule) and a non-empty reason',
+        );
+      durationProvenance = {
+        kind: 'dm-override',
+        basis: override.basis,
+        reason: override.reason.trim(),
+      };
     }
     let duration: EffectDurationInput | undefined;
     if (a.duration !== undefined) {
@@ -54,6 +88,7 @@ export const refreshEffectTool: Tool = {
           campaignId: ctx.campaignId,
           effectId: a.effectId,
           ...(duration === undefined ? {} : { duration }),
+          ...(durationProvenance === undefined ? {} : { durationProvenance }),
           ...(typeof a.note === 'string' ? { note: a.note } : {}),
           resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,

@@ -70,6 +70,7 @@ export const transferItemTool: Tool = {
             provenance: `model:${ctx.turnId}`,
             sessionId: ctx.sessionId,
             at: ctx.at,
+            resolveRulesPack: ctx.resolveRulesPack,
             characterId: ctx.actingCharacterId,
           },
         ),

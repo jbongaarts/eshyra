@@ -2263,6 +2263,18 @@
     }
   },
   {
+    "scope": "Efreeti Bottle",
+    "operation": "remove-stopper",
+    "cost": "action",
+    "equipment": null,
+    "costSentence": "When you use an action to remove the stopper, a cloud of thick smoke flows out of the bottle.",
+    "equipmentSentences": [],
+    "noneReason": {
+      "cost": null,
+      "equipment": "No equipment prerequisite is printed for this operation."
+    }
+  },
+  {
     "scope": "Ring of Elemental Command",
     "operation": "cast-burning-hands",
     "cost": null,

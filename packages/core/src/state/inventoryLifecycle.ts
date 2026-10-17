@@ -1,6 +1,7 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import type { AttunementEntry } from './attunement.js';
+import { tombstoneItemGrantBindings } from './itemGrantBinding.js';
 
 export interface InventoryDestructionContext {
   readonly provenance: string;
@@ -60,6 +61,9 @@ export function destroyInventoryItem(
          WHERE owner_kind='item' AND owner_ref=?`,
       )
       .run(itemId);
+    // S11: a live grant bound to this instance outlives it: tombstone the
+    // binding so the grant still ends cleanly, with no cooldown to schedule.
+    tombstoneItemGrantBindings(txnDb, itemId, ctx.at);
     const deleted = txnDb
       .prepare('DELETE FROM inventory WHERE id = ?')
       .run(itemId);

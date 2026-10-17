@@ -1439,6 +1439,8 @@ const GRANT_KEEP = [
   'statBlockRef',
   'creatureRefs',
   'tableRefs',
+  // The printed variant identity a grant belongs to (S1): structural, not free text.
+  'variants',
   'count',
   'duration',
   'revertOn',
@@ -1583,6 +1585,16 @@ function efreetiStopper(projections: Projections): Projections {
       mechanics: {
         ...projection.mechanics,
         economies: { ...projection.mechanics.economies, stopper: economy },
+        // "When you use an action to remove the stopper" is the printed
+        // activation; its cost is the stopper pool, spent here and restored
+        // by the grant-anchored wait above.
+        operations: [
+          {
+            id: 'remove-stopper',
+            activation: { cost: 'action' },
+            cost: [{ economy: 'stopper', amount: 1 }],
+          },
+        ],
         entityGrant: {
           ...(projection.mechanics.entityGrant as MagicItemEntityGrant),
           grants: grants.map((grant) =>
@@ -1600,6 +1612,17 @@ function efreetiStopper(projections: Projections): Projections {
           representation: { block: 'economies', economyId: 'stopper' },
           engineHooks: [
             { engine: 'F5', hook: 'grant-anchored cooldown reset' },
+          ],
+        } as ItemClauseExpectation,
+        {
+          id: 'c1-remove-stopper',
+          tag: 'C1',
+          representation: {
+            block: 'operations',
+            operationId: 'remove-stopper',
+          },
+          engineHooks: [
+            { engine: 'F2', hook: 'olc5.11 pack-tested paid item operation' },
           ],
         } as ItemClauseExpectation,
       ],

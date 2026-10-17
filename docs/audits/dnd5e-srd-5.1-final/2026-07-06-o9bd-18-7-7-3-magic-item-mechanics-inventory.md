@@ -160,7 +160,7 @@ must subscribe to.
 | dwarven-plate | C2 | +2 AC; reaction reduce forced ground movement ≤10 ft: C2 |
 | dwarven-thrower | C2,M5,S | +3; thrown 20/60; +1d8 (2d8 vs giant) on ranged hit: C2; returns to hand: M5; dwarf attunement: S |
 | efficient-quiver | M6 | 3 extradimensional compartments w/ typed capacities, fixed 2-lb weight: M6 |
-| efreeti-bottle | M8,M4,S | first-open d100 outcome: M8; efreeti service/hostility/wish outcomes and re-use rules: M4; outcome table: S |
+| efreeti-bottle | M8,M4,S,C1 | first-open d100 outcome: M8; efreeti service/hostility/wish outcomes and re-use rules: M4; outcome table: S; remove-the-stopper action spends the stopper pool (olc5.12.2, printed activation): C1 |
 | elemental-gem | M1,M4,S | break → consumed: M1; conjure elemental summon: M4; gem-type table: S |
 | elven-chain | C2,M2 | +1 AC: C2; considered-proficient grant: M2 |
 | eversmoking-bottle | M5 | cloud radius growth 60→120, open/close command state, wind dispersal tiers: M5 |
@@ -353,7 +353,7 @@ deterministic clause is C1, C2, or S; any M-family clause makes it
 - **Design-blocked clauses: 1** (orb-of-dragonkind artifact Random
   Properties — SRD source gap, GM-supplied).
 - Row-tag frequencies (mechanically recomputed from the §2 table
-  2026-07-06; regenerate on change): C1 = 105, C2 = 169, S = 50, M1 = 31,
+  2026-07-06; regenerate on change; efreeti-bottle +C1 in olc5.12.2): C1 = 106, C2 = 169, S = 50, M1 = 31,
   M2 = 23, M3 = 38, M4 = 17, M5 = 50, M6 = 10, M7 = 12, M8 = 18, M9 = 7,
   M10 = 7, M11 = 9, DB = 1, NM = 3. (75 + 165 = 240.)
 

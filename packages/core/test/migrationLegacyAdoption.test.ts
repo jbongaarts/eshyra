@@ -265,7 +265,7 @@ describe('migration 0013 elapsed-world transition', () => {
     );
     expect(migrateDatabase(db, { now: NOW }).migrations.applied).toEqual([
       13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-      31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
+      31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
     ]);
     expect(
       db
@@ -328,7 +328,7 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.migrations.applied).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
       22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
-      40, 41, 42, 43, 44, 45, 46,
+      40, 41, 42, 43, 44, 45, 46, 47, 48,
     ]);
     expect(readMigrationLedger(db).map((r) => [r.version, r.name])).toEqual([
       [1, 'initial'],
@@ -377,6 +377,8 @@ describe('migrateDatabase (end to end)', () => {
       [44, 'inventory_held_state'],
       [45, 'active_effect_item_effect_ref'],
       [46, 'active_effect_duration_provenance'],
+      [47, 'active_effect_item_grant'],
+      [48, 'item_consumption_receipt'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -396,15 +398,14 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.migrations.applied).toEqual([
       2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
       22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
-      40, 41, 42, 43, 44, 45, 46,
+      40, 41, 42, 43, 44, 45, 46, 47, 48,
     ]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     expect(
       readMigrationLedger(db)
-        .slice(-15)
+        .slice(-16)
         .map((r) => [r.version, r.name]),
     ).toEqual([
-      [32, 'character_recovery_block'],
       [33, 'combatant_death_rules'],
       [34, 'ammunition_expenditure'],
       [35, 'retained_checks'],
@@ -419,6 +420,8 @@ describe('migrateDatabase (end to end)', () => {
       [44, 'inventory_held_state'],
       [45, 'active_effect_item_effect_ref'],
       [46, 'active_effect_duration_provenance'],
+      [47, 'active_effect_item_grant'],
+      [48, 'item_consumption_receipt'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -646,7 +649,7 @@ describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
     expect(result.migrations.applied).toEqual([
       5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
       25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
-      43, 44, 45, 46,
+      43, 44, 45, 46, 47, 48,
     ]);
     const row = db
       .prepare(

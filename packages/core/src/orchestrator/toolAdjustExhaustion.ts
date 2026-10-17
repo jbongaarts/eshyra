@@ -74,7 +74,10 @@ export const adjustExhaustionTool: Tool = {
                 campaignId: ctx.campaignId,
                 resolveRulesPack: ctx.resolveRulesPack,
               }
-            : { characterId: character?.id }),
+            : {
+                characterId: character?.id,
+                resolveRulesPack: ctx.resolveRulesPack,
+              }),
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

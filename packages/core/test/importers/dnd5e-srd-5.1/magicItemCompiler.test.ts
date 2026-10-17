@@ -54,6 +54,10 @@ describe('magic-item compiler family aggregation', () => {
           hook: 'state-anchored cooldown reset',
         }),
         magicItemEngineHookKey({
+          engine: 'F5',
+          hook: 'grant-anchored cooldown reset',
+        }),
+        magicItemEngineHookKey({
           engine: 'F7',
           hook: 'long-rest reset and early-reuse gate',
         }),
@@ -62,12 +66,6 @@ describe('magic-item compiler family aggregation', () => {
           hook: 'dawn reset with nonblocking early-reuse risk',
         }),
       ].sort(),
-    );
-    expect(LANDED_MAGIC_ITEM_ENGINE_HOOKS).not.toContain(
-      magicItemEngineHookKey({
-        engine: 'F5',
-        hook: 'grant-anchored cooldown reset',
-      }),
     );
     expect(LANDED_MAGIC_ITEM_ENGINE_HOOKS).not.toContain(
       magicItemEngineHookKey({

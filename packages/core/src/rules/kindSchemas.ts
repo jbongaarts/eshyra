@@ -6360,7 +6360,45 @@ function validateDnd5eMagicItem(record: RulesRecord, path: string): void {
       `${path}.data.mechanics`,
       validateMagicItemEffect,
     );
+    validateEntityGrantVariants(
+      data.mechanics as Obj,
+      variantIds,
+      `${path}.data.mechanics`,
+    );
   }
+}
+
+/** olc5.12 S1: a printed entity grant of a variant-bearing item must name the
+ *  variant(s) it belongs to (each one an id the item declares); a grant of an
+ *  item without variants names none. Pack load fails otherwise. */
+function validateEntityGrantVariants(
+  mechanics: Obj,
+  variantIds: ReadonlySet<string>,
+  path: string,
+): void {
+  const entityGrant = mechanics.entityGrant as Obj | undefined;
+  if (entityGrant === undefined || !Array.isArray(entityGrant.grants)) return;
+  entityGrant.grants.forEach((entry, index) => {
+    const grant = entry as Obj;
+    const grantPath = `${path}.entityGrant.grants[${index}]`;
+    if (variantIds.size === 0) {
+      if (grant.variants !== undefined)
+        throw new RulesPackError(
+          `${grantPath}.variants is only valid on an item that declares variants`,
+        );
+      return;
+    }
+    if (!Array.isArray(grant.variants) || grant.variants.length === 0)
+      throw new RulesPackError(
+        `${grantPath} must name its variants: the item declares variants`,
+      );
+    for (const variantId of grant.variants) {
+      if (!variantIds.has(String(variantId)))
+        throw new RulesPackError(
+          `${grantPath}.variants names '${String(variantId)}', which the item does not declare`,
+        );
+    }
+  });
 }
 
 function validatePf2eAncestry(record: RulesRecord, path: string): void {

@@ -22,7 +22,7 @@ CREATE TABLE "active_effect" (
   end_reason TEXT CHECK (end_reason IS NULL OR end_reason IN ('expired','dismissed','concentration-broken','dispelled','replaced','source-removed','ruled')),
   end_detail TEXT, ended_at TEXT, created_at TEXT NOT NULL, provenance TEXT NOT NULL, session_id TEXT NOT NULL, updated_at TEXT NOT NULL, anchor_elapsed_minutes INTEGER
   CHECK (anchor_elapsed_minutes IS NULL OR anchor_elapsed_minutes >= 0), deadline_elapsed_minutes INTEGER
-  CHECK (deadline_elapsed_minutes IS NULL OR deadline_elapsed_minutes >= anchor_elapsed_minutes), source_effect_ref TEXT, duration_provenance_json TEXT,
+  CHECK (deadline_elapsed_minutes IS NULL OR deadline_elapsed_minutes >= anchor_elapsed_minutes), source_effect_ref TEXT, duration_provenance_json TEXT, item_grant_json TEXT,
   PRIMARY KEY (campaign_id,effect_id),
   CHECK (requires_concentration = 0 OR (concentration_owner_kind IS NOT NULL AND concentration_owner_ref IS NOT NULL)),
   CHECK (requires_concentration = 1 OR (concentration_owner_kind IS NULL AND concentration_owner_ref IS NULL)),
@@ -682,6 +682,20 @@ CREATE TABLE inventory_wear_state (
   updated_at TEXT NOT NULL
 , held INTEGER NOT NULL DEFAULT 0 CHECK (held IN (0, 1)));
 
+CREATE TABLE item_consumption_receipt (
+  campaign_id TEXT NOT NULL,
+  item_instance_id TEXT PRIMARY KEY,
+  pack_ref TEXT NOT NULL,
+  variant_id TEXT,
+  operation_id TEXT NOT NULL,
+  consumed_at TEXT NOT NULL,
+  consumed_elapsed_minutes INTEGER,
+  redeemed_effect_id TEXT,
+  redeemed_at TEXT,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL
+);
+
 CREATE TABLE item_state (
   inventory_id TEXT PRIMARY KEY
     REFERENCES inventory(id) ON DELETE CASCADE,
@@ -1075,4 +1089,22 @@ WHEN
   (NEW.unheld_disposition = 'dropped' AND NEW.world_location_id IS NULL)
 BEGIN
   SELECT RAISE(ABORT, 'inventory custody/location invariant violated');
+END;
+
+CREATE TRIGGER inventory_refuse_retired_instance_id
+BEFORE INSERT ON inventory
+WHEN NOT EXISTS (SELECT 1 FROM inventory WHERE id = NEW.id)
+  AND (
+    EXISTS (
+      SELECT 1 FROM item_consumption_receipt
+      WHERE item_instance_id = NEW.id
+    )
+    OR EXISTS (
+      SELECT 1 FROM active_effect
+      WHERE item_grant_json IS NOT NULL
+        AND json_extract(item_grant_json, '$.itemInstanceId') = NEW.id
+    )
+  )
+BEGIN
+  SELECT RAISE(ABORT, 'inventory id is retired: a consumption receipt or item grant still names it');
 END;

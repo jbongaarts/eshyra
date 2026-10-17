@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(804);
+    expect(backlog.candidates).toHaveLength(805);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -109,9 +109,13 @@ describe('magic-item legacy capability backlog', () => {
     // eshyra-olc5.11.4 removes Cube of Force spell-contact-loss as an item
     // operation: item_state_event cannot deduct its table-defined charge loss,
     // so the external condition has no operation-bound capability (-1).
-    // The resulting candidate set contains 804 rows.
+    // eshyra-olc5.12.2 adds the Efreeti Bottle remove-stopper operation as one
+    // operation-bound candidate that carries the landed paid-operation hook
+    // (804 -> 805); the grant-anchored cooldown hook landed on two existing
+    // economy clauses, which were already candidates. The resulting candidate
+    // set contains 805 rows.
     expect(fingerprint).toBe(
-      '2bc1fb75139dc8707fd61530500e94d6e456dfef033aaece44332303b0b4469d',
+      '40c20310f86fd8cbe36a9baafb2f9dcca8b177ec4d94623d78ca66223ef42b73',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),
