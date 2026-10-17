@@ -12,6 +12,7 @@ import type {
 } from '../state/activeEffects.js';
 import { createActiveEffect } from '../state/activeEffects.js';
 import { lookupStrictCampaignRecord } from '../state/campaignRecordLookup.js';
+import { readItemConsumptionReceipt } from '../state/itemGrantBinding.js';
 import type { CharacterConditionEntry } from '../state/liveStateSchema.js';
 import { rollDice } from './dice.js';
 import {
@@ -141,7 +142,7 @@ export const startEffectTool: Tool = {
             type: 'string',
             minLength: 1,
             description:
-              'For a magic-item source creating a creature, the id of the printed entityGrant entry it realizes (olc5.12). Requires itemInstanceId; use instead of effectRef.',
+              'For a magic-item source creating a creature, the id of the printed entityGrant entry it realizes (olc5.12). Requires itemInstanceId; use instead of effectRef. An item that use_item consumed (a last-unit break-gem or token) still binds once through its consumption receipt.',
           },
           itemInstanceId: {
             type: 'string',
@@ -389,13 +390,16 @@ export const startEffectTool: Tool = {
         // Grants resolve through the instance's variant, as the engine does.
         const variant =
           typeof source.itemInstanceId === 'string' && itemRecord !== undefined
-            ? (
+            ? ((
                 ctx.db
                   .prepare('SELECT variant_id FROM inventory WHERE id = ?')
                   .get(source.itemInstanceId) as
                   | { variant_id: string | null }
                   | undefined
-              )?.variant_id
+              )?.variant_id ??
+              // A consumed instance has no row; its receipt keeps the variant.
+              readItemConsumptionReceipt(ctx.db, source.itemInstanceId)
+                ?.variantId)
             : undefined;
         if (
           itemRecord !== undefined &&

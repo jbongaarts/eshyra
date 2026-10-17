@@ -48,6 +48,7 @@ import {
   resolveItemDepletion,
 } from './itemDepletion.js';
 import type { ItemOperationReadinessInput } from './itemExecutionReadiness.js';
+import { writeItemConsumptionReceipt } from './itemGrantBinding.js';
 import {
   ItemRandomInitializationError,
   type ItemRandomInitializationState,
@@ -2324,6 +2325,11 @@ export function grantCooldownAnchoredTo(
   return startsOn?.event === 'grant-ended' && startsOn.grantId === grant.id;
 }
 
+function declaresEntityGrant(mechanics: Obj): boolean {
+  const grants = (mechanics.entityGrant as Obj | undefined)?.grants;
+  return Array.isArray(grants) && grants.length > 0;
+}
+
 /** The typed entity grant whose cooldown economy this spend actually charged. */
 function grantPaidBySpend(
   mechanics: Obj,
@@ -2476,6 +2482,24 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       operation,
     });
     const operationEffectIds = [...readinessInput.operationEffectIds];
+    // Receipt (olc5.12.13): a use that consumes the instance while the item
+    // declares an entity grant leaves a one-time receipt, written before
+    // destroyInventoryItem deletes the row, so start_effect can still bind the
+    // grant this consumption paid for. No other destruction route writes one.
+    const recordGrantConsumption = (): void => {
+      if (!declaresEntityGrant(mechanics)) return;
+      writeItemConsumptionReceipt(txnDb, {
+        campaignId: input.campaignId,
+        itemInstanceId: input.instanceId,
+        packRef,
+        variantId,
+        operationId: input.operationId,
+        consumedAt: input.at,
+        consumedElapsedMinutes: elapsedNow(txnDb),
+        provenance: input.provenance,
+        sessionId: input.sessionId,
+      });
+    };
     // The printed activation resource is spent BEFORE any item mutation and in
     // this same transaction: a refused spend throws, and nothing below runs.
     const turnResource = spendActivationTurnResource(txnDb, {
@@ -2718,13 +2742,14 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
           input,
         );
       }
-      if (quantity === 0)
+      if (quantity === 0) {
+        recordGrantConsumption();
         attunementsEnded = destroyInventoryItem(
           txnDb,
           input.instanceId,
           input,
         ).attunementsEnded;
-      else
+      } else
         txnDb
           .prepare(
             'UPDATE inventory SET quantity=?, provenance=?, session_id=?, updated_at=? WHERE id=?',
@@ -2811,6 +2836,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
           );
       }
       if (destroyed && !deferredDestroyed) {
+        recordGrantConsumption();
         attunementsEnded = destroyInventoryItem(
           txnDb,
           input.instanceId,
