@@ -2653,8 +2653,11 @@ export function isStatefulMagicItemMechanics(
  * admissible; each caller wraps the clause in its own error type.
  */
 
-/** Economy kinds whose live state is a numeric `remaining` pool. */
-const NUMERIC_POOL_KINDS: ReadonlySet<string> = new Set(['charges', 'per-day']);
+/** Economy kinds an external-event deduction may lower (eshyra-gxt7). Only
+ *  `charges`: the SRD's one deduction table (Cube of Force, table:cube-of-
+ *  force-charges-lost) drains charges, and no source text drains a per-day
+ *  use pool by an external event, so admitting per-day would invent rules. */
+const DEDUCTIBLE_POOL_KINDS: ReadonlySet<string> = new Set(['charges']);
 
 export interface EconomyDeductionCheck {
   /** The item's effective `mechanics.economies`, or `undefined` when it has none. */
@@ -2719,7 +2722,7 @@ export function economyDeductionViolation(
   const { economies, deduction, tableData } = check;
   const { economy, tableRef, keyColumn, amountColumn } = deduction;
 
-  // The economy must exist on the item and be a numeric pool.
+  // The economy must exist on the item and be a deductible (charges) pool.
   const declared = isRecord(economies) ? economies : {};
   if (typeof economy !== 'string' || !Object.hasOwn(declared, economy))
     return `references unknown economy ${quote(economy)}`;
@@ -2727,9 +2730,9 @@ export function economyDeductionViolation(
   if (
     !isRecord(definition) ||
     typeof definition.kind !== 'string' ||
-    !NUMERIC_POOL_KINDS.has(definition.kind)
+    !DEDUCTIBLE_POOL_KINDS.has(definition.kind)
   )
-    return `economy ${quote(economy)} must be a numeric pool (charges or per-day)`;
+    return `economy ${quote(economy)} must be a charges pool (the only economy kind a printed deduction drains)`;
 
   // The table reference must resolve to a table with the declared shape.
   if (typeof tableRef !== 'string' || tableData === undefined)
@@ -2774,6 +2777,52 @@ export function economyDeductionViolation(
     keys.add(key);
     const amount = amountViolation(row[amountIndex], tableRef, rowIndex);
     if (amount !== undefined) return amount;
+  }
+  return undefined;
+}
+
+/**
+ * The first violated deduction clause across a magic-item record's `data`: every
+ * `economyDeduction` on an effect of the item, or of one of its variants,
+ * checked against the economy that item actually has (variant economies extend
+ * the item's own, as the effective mechanics do) and the table `tableDataFor`
+ * resolves. Pack admission and effective-stack admission both call this, so
+ * neither re-derives which economies and tables a deduction sees (eshyra-w750).
+ */
+export function magicItemEconomyDeductionViolation(
+  itemData: unknown,
+  tableDataFor: (tableRef: string) => unknown,
+): string | undefined {
+  const data = isRecord(itemData) ? itemData : {};
+  const variants = Array.isArray(data.variants) ? data.variants : [];
+  const mechanicsOf = (value: unknown): Obj | undefined =>
+    isRecord(value) && isRecord(value.mechanics) ? value.mechanics : undefined;
+  const baseMechanics = mechanicsOf(data);
+  const baseEconomies = (baseMechanics?.economies ?? {}) as Obj;
+  const scopes: { mechanics: Obj | undefined; economies: Obj }[] = [
+    { mechanics: baseMechanics, economies: baseEconomies },
+    ...variants.map((variant) => {
+      const mechanics = mechanicsOf(variant);
+      const own = (mechanics?.economies ?? {}) as Obj;
+      return { mechanics, economies: { ...baseEconomies, ...own } };
+    }),
+  ];
+  for (const { mechanics, economies } of scopes) {
+    const effects = mechanics?.effects;
+    if (!Array.isArray(effects)) continue;
+    for (const effect of effects) {
+      const deduction = isRecord(effect) ? effect.economyDeduction : undefined;
+      if (!isRecord(deduction)) continue;
+      const violation = economyDeductionViolation({
+        economies,
+        deduction,
+        tableData:
+          typeof deduction.tableRef === 'string'
+            ? tableDataFor(deduction.tableRef)
+            : undefined,
+      });
+      if (violation !== undefined) return violation;
+    }
   }
   return undefined;
 }

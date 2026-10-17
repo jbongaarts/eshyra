@@ -1,3 +1,4 @@
+import { assertEffectiveEconomyDeductions } from './effectiveDeductionAdmission.js';
 import type {
   CompatibleBaseSystem,
   RulesPack,
@@ -72,13 +73,15 @@ export function resolveRulesStack(
     }
   }
 
-  return {
+  const stack: ResolvedRulesStack = {
     base: input.base,
     addons,
     packs,
     recordsByKey,
     recordsByKind: freezeKindIndexes(recordsByKind),
   };
+  assertEffectiveEconomyDeductions(stack);
+  return stack;
 }
 
 function assertBasePack(pack: RulesPack): void {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { RulesPack, RulesRecord } from '../src/internal.js';
 import {
   advanceWorldTime,
@@ -17,11 +17,20 @@ import {
   writeItemState,
 } from '../src/internal.js';
 import { writeCampaignRulesBinding } from '../src/rules/binding.js';
+import { economyDeductionViolation } from '../src/rules/magicItemMechanics.js';
 import {
   applyItemStateConditionEvent,
   ItemResetExecutorError,
 } from '../src/state/itemResetExecutor.js';
 import { freshDbWithSession } from './support/db.js';
+
+// Effective-stack admission (eshyra-w750) would refuse the violating table-only
+// add-on stacks below before the executor ran. This suite proves the
+// execution-side refusal as defence in depth, so it bypasses admission; the
+// admission itself is proved in effectiveDeductionAdmission.test.ts.
+vi.mock('../src/rules/effectiveDeductionAdmission.js', () => ({
+  assertEffectiveEconomyDeductions: () => undefined,
+}));
 
 const CTX = {
   campaignId: 'campaign-1',
@@ -1693,6 +1702,40 @@ describe('economyDeduction pack validation (eshyra-olc5.13.1)', () => {
     expect(() =>
       validateRulesPack({ meta: pack.meta, records: pack.records }),
     ).not.toThrow();
+  });
+
+  it('rejects a deduction that draws any economy kind but charges (eshyra-gxt7)', () => {
+    // The SRD's only printed deduction (Cube of Force) drains charges; no
+    // source text lets an external event drain a per-day or other pool.
+    const pack = getBundledDnd5eSrdPack();
+    const cube = pack.records.find((r) => r.key === 'magic-item:cube-of-force');
+    const table = pack.records.find(
+      (r) => r.key === 'table:cube-of-force-charges-lost',
+    );
+    if (cube === undefined || table === undefined)
+      throw new Error('bundled Cube record or table missing');
+    const deduction = {
+      economy: 'pool',
+      tableRef: 'table:cube-of-force-charges-lost',
+      keyColumn: 'Spell or Item',
+      amountColumn: 'Charges Lost',
+    };
+    for (const kind of ['per-day', 'single-use', 'doses', 'cooldown'])
+      expect(
+        economyDeductionViolation({
+          economies: { pool: { kind } },
+          deduction,
+          tableData: table.data,
+        }),
+      ).toMatch(/must be a charges pool/);
+    expect(
+      economyDeductionViolation({
+        economies: (cube.data as { mechanics: { economies: unknown } })
+          .mechanics.economies,
+        deduction: { ...deduction, economy: 'charges' },
+        tableData: table.data,
+      }),
+    ).toBeUndefined();
   });
 
   it('rejects a deduction that names an unknown economy, a missing column, or a mismatched table', () => {

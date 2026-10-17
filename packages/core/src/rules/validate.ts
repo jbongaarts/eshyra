@@ -1,6 +1,6 @@
 import { resolveJsonPointer } from './jsonPointer.js';
 import { validateRecordKindSchema } from './kindSchemas.js';
-import { economyDeductionViolation } from './magicItemMechanics.js';
+import { magicItemEconomyDeductionViolation } from './magicItemMechanics.js';
 import type {
   CompatibleBaseSystem,
   RecordProvenance,
@@ -324,38 +324,13 @@ function assertEconomyDeductionTables(pack: RulesPack): void {
     if (item.kind === 'table') tables.set(item.key, item.data);
   pack.records.forEach((item, recordIndex) => {
     if (item.kind !== 'magic-item') return;
-    const data = item.data as Obj;
-    const variants = Array.isArray(data.variants) ? data.variants : [];
-    const baseEconomies = ((data.mechanics as Obj | undefined)?.economies ??
-      {}) as Obj;
-    const mechanicsList: { mechanics: unknown; economies: Obj }[] = [
-      { mechanics: data.mechanics, economies: baseEconomies },
-      ...variants.map((variant) => {
-        const mechanics = (variant as Obj).mechanics;
-        const own = ((mechanics as Obj | undefined)?.economies ?? {}) as Obj;
-        return { mechanics, economies: { ...baseEconomies, ...own } };
-      }),
-    ];
-    for (const { mechanics, economies } of mechanicsList) {
-      const effects = (mechanics as Obj | undefined)?.effects;
-      if (!Array.isArray(effects)) continue;
-      for (const effect of effects) {
-        const deduction = (effect as Obj).economyDeduction as Obj | undefined;
-        if (deduction === undefined) continue;
-        const violation = economyDeductionViolation({
-          economies,
-          deduction,
-          tableData:
-            typeof deduction.tableRef === 'string'
-              ? tables.get(deduction.tableRef)
-              : undefined,
-        });
-        if (violation !== undefined)
-          throw new RulesPackError(
-            `records[${recordIndex}] ${item.key} economyDeduction ${violation}`,
-          );
-      }
-    }
+    const violation = magicItemEconomyDeductionViolation(item.data, (ref) =>
+      tables.get(ref),
+    );
+    if (violation !== undefined)
+      throw new RulesPackError(
+        `records[${recordIndex}] ${item.key} economyDeduction ${violation}`,
+      );
   });
 }
 
