@@ -2366,7 +2366,7 @@ function grantPaidBySpend(
 
 /**
  * One credit per distinct economy this use charged (amount > 0) that some
- * non-anchored grant of the effective mechanics names (olc5.12.3). Anchored
+ * non-anchored creature grant of the effective mechanics names (olc5.12.3). Anchored
  * grants keep their economy-state coupling and get no credit.
  */
 function issueBindCredits(
@@ -2394,6 +2394,10 @@ function issueBindCredits(
       return grant !== undefined &&
         typeof grant.id === 'string' &&
         grant.cooldownEconomy === economyId &&
+        // Only a creature grant can be bound (start_effect refuses illusion and
+        // object grants as DM-adjudicated), so only creature grants are owed a
+        // credit; advertising an unredeemable one would mislead the DM.
+        grant.kind === 'creature' &&
         !grantCooldownAnchoredTo(args.mechanics, grant)
         ? [grant.id]
         : [];

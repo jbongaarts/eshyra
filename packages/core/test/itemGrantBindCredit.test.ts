@@ -309,6 +309,18 @@ describe('olc5.12.3 the pack carriers, enumerated from the pack', () => {
       const used = s.use(id, carrier);
       expect(used, used.message).toMatchObject({ ok: true });
       const hint = hintOf(used);
+
+      if (carrier.grantKind !== 'creature') {
+        // Illusion and object grants are DM-adjudicated: start_effect binds
+        // creature grants only, so no credit is owed or advertised for them.
+        for (const credit of hint?.bindCredits ?? [])
+          expect(credit.grantIds).not.toContain(carrier.grantId);
+        const refused = s.bind('fx-adjudicated', id, carrier);
+        expect(refused).toMatchObject({ ok: false });
+        expect(refused.message).toMatch(/DM-adjudicated/);
+        return;
+      }
+
       expect(hint?.bindCredits).toEqual([
         {
           creditId: `${id}:${carrier.operationId}:1`,
@@ -317,16 +329,6 @@ describe('olc5.12.3 the pack carriers, enumerated from the pack', () => {
         },
       ]);
       expect(s.open()).toHaveLength(1);
-
-      if (carrier.grantKind !== 'creature') {
-        // Illusion and object grants are DM-adjudicated; start_effect binds
-        // creature grants only, and the refusal leaves the credit open.
-        const refused = s.bind('fx-adjudicated', id, carrier);
-        expect(refused).toMatchObject({ ok: false });
-        expect(refused.message).toMatch(/DM-adjudicated/);
-        expect(s.open()).toHaveLength(1);
-        return;
-      }
 
       const bound = s.bind('fx-1', id, carrier);
       expect(bound, bound.message).toMatchObject({ ok: true });
@@ -419,6 +421,21 @@ describe('olc5.12.3 credit ordering and scoping', () => {
     expect(s.open()).toHaveLength(1);
     expect(s.bind('fx-right', bag1, bag, 'c-m0')).toMatchObject({ ok: true });
     expect(s.open()).toEqual([]);
+  });
+  it('destroying the item voids its open credit, so a reissued id cannot redeem it', () => {
+    const s = setup([bag.creature]);
+    const bag1 = s.give('bag-1', bag);
+    s.nextTurn();
+    expect(s.use(bag1, bag)).toMatchObject({ ok: true });
+    expect(s.open()).toHaveLength(1);
+    s.must('remove_item', { id: bag1, disposition: 'destroyed' });
+    expect(s.credits()).toEqual([]);
+    // A new bag reusing the freed id owes nothing until it is itself used.
+    const again = s.give(bag1, bag);
+    expect(again).toBe(bag1);
+    expect(s.bind('fx-stale', again, bag, 'c-m0')).toMatchObject({
+      ok: false,
+    });
   });
 });
 

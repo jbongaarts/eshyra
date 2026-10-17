@@ -307,3 +307,18 @@ export function redeemItemGrantBindCredit(
   if (result.changes !== 1)
     throw new Error(`bind credit '${creditId}' was already redeemed`);
 }
+
+/** Voids (deletes) the unredeemed bind credits of an instance being destroyed:
+ *  a credit pays for a bind against that live item only, and a later item may
+ *  legitimately reuse the id (a credit does not retire it). Redeemed credits
+ *  stay as evidence; their effects' bindings retire the id themselves. */
+export function voidOpenItemGrantBindCredits(
+  db: Db,
+  itemInstanceId: string,
+): number {
+  return db
+    .prepare(
+      'DELETE FROM item_grant_bind_credit WHERE item_instance_id = ? AND redeemed_effect_id IS NULL',
+    )
+    .run(itemInstanceId).changes;
+}
