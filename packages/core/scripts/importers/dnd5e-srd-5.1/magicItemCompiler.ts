@@ -5,6 +5,7 @@ import type {
 } from '../../../src/rules/magicItemMechanics.js';
 import { mergeMagicItemVariantMechanics } from '../../../src/rules/magicItemVariants.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
+import { MAGIC_ITEM_ENTITY_GRANT_KEYS_WITH_DEATH_CONSEQUENCE } from './magicItemEntityGrants.js';
 import {
   CREATURE_GRANT_LIFECYCLE_HOOKS,
   creatureGrantLifecycleOwned,
@@ -941,6 +942,9 @@ export function validateMagicItemClausesAndClassify(input: {
       const grantMechanics = effectiveMechanicsFor(data, scope);
       const grantOwned =
         representation.block === 'entityGrant' &&
+        // The triaged mechanics no longer carry the printed death consequence
+        // (PR #673 P2-2), so it is read from the reviewed spec by item key.
+        !MAGIC_ITEM_ENTITY_GRANT_KEYS_WITH_DEATH_CONSEQUENCE.has(itemKey) &&
         creatureGrantLifecycleOwned(
           grantMechanics?.entityGrant,
           grantMechanics,

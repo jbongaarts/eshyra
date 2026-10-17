@@ -92668,25 +92668,34 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "green"
-          },
-          {
-            "clauseId": "magic-item:bowl-of-commanding-water-elementals/m4-control-bowl-of-commanding-water-elementals",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M4",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
-              "sourceText": "summon a water elemental, as if you had cast the conjure elemental spell"
-            },
-            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F3",
+                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
+              },
+              {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
+                "engine": "F5",
+                "hook": "item-instance cooldown and owned-entity identity link"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3",
+              "F5"
+            ]
           },
           {
             "clauseId": "magic-item:bowl-of-commanding-water-elementals/triage-activation-summon-water-elemental-0",
@@ -93002,25 +93011,34 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "green"
-          },
-          {
-            "clauseId": "magic-item:brazier-of-commanding-fire-elementals/m4-control-brazier-of-commanding-fire-elementals",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M4",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
-              "sourceText": "summon a fire elemental, as if you had cast the conjure elemental spell"
-            },
-            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F3",
+                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
+              },
+              {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
+                "engine": "F5",
+                "hook": "item-instance cooldown and owned-entity identity link"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3",
+              "F5"
+            ]
           },
           {
             "clauseId": "magic-item:brazier-of-commanding-fire-elementals/triage-activation-summon-fire-elemental-0",
@@ -94200,25 +94218,34 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "green"
-          },
-          {
-            "clauseId": "magic-item:censer-of-controlling-air-elementals/m4-control-censer-of-controlling-air-elementals",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M4",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
-              "sourceText": "summon an air elemental, as if you had cast the conjure elemental spell"
-            },
-            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F3",
+                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
+              },
+              {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
+                "engine": "F5",
+                "hook": "item-instance cooldown and owned-entity identity link"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3",
+              "F5"
+            ]
           },
           {
             "clauseId": "magic-item:censer-of-controlling-air-elementals/triage-activation-summon-air-elemental-0",
@@ -107986,20 +108013,6 @@
             "readiness": "green"
           },
           {
-            "clauseId": "magic-item:horn-of-valhalla/m4-control-horn-of-valhalla",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M4",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
-              "sourceText": "If you blow the horn without meeting its requirement, the summoned berserkers attack you. If you meet the requirement, they are friendly to you and your companions and follow your commands."
-            },
-            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
-          },
-          {
             "clauseId": "magic-item:horn-of-valhalla/m4-horn-of-valhalla",
             "scope": {
               "kind": "parent"
@@ -108014,11 +108027,34 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F3",
+                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
+              },
+              {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
+                "engine": "F5",
+                "hook": "item-instance cooldown and owned-entity identity link"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3",
+              "F5"
+            ]
           },
           {
             "clauseId": "magic-item:horn-of-valhalla/S:Horn of Valhalla:table:table:horn-of-valhalla",
@@ -120386,20 +120422,6 @@
             "readiness": "green"
           },
           {
-            "clauseId": "magic-item:ring-of-djinni-summoning/m4-control-ring-of-djinni-summoning",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M4",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
-              "sourceText": "While summoned, the djinni is friendly to you and your companions. It obeys any commands you give it, no matter what language you use. If you fail to command it, the djinni defends itself against attackers but takes no other actions."
-            },
-            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
-          },
-          {
             "clauseId": "magic-item:ring-of-djinni-summoning/m4-ring-of-djinni-summoning",
             "scope": {
               "kind": "parent"
@@ -120414,11 +120436,34 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F3",
+                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
+              },
+              {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
+                "engine": "F5",
+                "hook": "item-instance cooldown and owned-entity identity link"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3",
+              "F5"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-djinni-summoning/triage-activation-summon-djinni-0",
@@ -140434,20 +140479,6 @@
             ]
           },
           {
-            "clauseId": "magic-item:stone-of-controlling-earth-elementals/m4-control-stone-of-controlling-earth-elementals",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M4",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
-              "sourceText": "summon an earth elemental, as if you had cast the conjure elemental spell"
-            },
-            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
-          },
-          {
             "clauseId": "magic-item:stone-of-controlling-earth-elementals/m4-stone-of-controlling-earth-elementals",
             "scope": {
               "kind": "parent"
@@ -140462,11 +140493,34 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F3",
+                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
+              },
+              {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
+                "engine": "F5",
+                "hook": "item-instance cooldown and owned-entity identity link"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3",
+              "F5"
+            ]
           },
           {
             "clauseId": "magic-item:stone-of-controlling-earth-elementals/triage-activation-summon-earth-elemental-0",

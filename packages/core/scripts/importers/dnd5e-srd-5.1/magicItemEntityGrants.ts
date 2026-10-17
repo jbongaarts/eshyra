@@ -640,6 +640,35 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
 
 export const MAGIC_ITEM_ENTITY_GRANT_NAMES = Object.freeze([...SPECS.keys()]);
 
+/** Items whose reviewed grant spec prints a death-triggered item consequence
+ *  (`onEntityDeath`). The projection strips it from the pack (triage keeps
+ *  only typed fields), so a reader of the pack alone cannot see it; ownership
+ *  (`creatureGrantLifecycleOwned`) keeps these grants pending (PR #673 P2-2). */
+export const MAGIC_ITEM_ENTITY_GRANTS_WITH_DEATH_CONSEQUENCE: ReadonlySet<string> =
+  new Set(
+    [...SPECS.entries()]
+      .filter(([, spec]) =>
+        spec.entityGrant.grants.some(
+          (grant) => grant.onEntityDeath !== undefined,
+        ),
+      )
+      .map(([name]) => name),
+  );
+
+/** The same set keyed by pack record key (`magic-item:<slug>`), for the
+ *  compiler, which classifies the triaged pack mechanics the death consequence
+ *  was stripped from. */
+export const MAGIC_ITEM_ENTITY_GRANT_KEYS_WITH_DEATH_CONSEQUENCE: ReadonlySet<string> =
+  new Set(
+    [...MAGIC_ITEM_ENTITY_GRANTS_WITH_DEATH_CONSEQUENCE].map(
+      (name) =>
+        `magic-item:${name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')}`,
+    ),
+  );
+
 export const MAGIC_ITEM_ENTITY_GRANT_REFERENCES = Object.freeze(
   [...SPECS.values()].flatMap(({ entityGrant }) =>
     entityGrant.grants.flatMap((grant) => [

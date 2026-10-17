@@ -1825,10 +1825,6 @@ describe('runtime safety across the whole corpus', () => {
     'Boots of Levitation||cast-levitate',
     'Candle of Invocation||burn',
     'Frost Brand||extinguish-flames',
-    // eshyra-c58j.1: creature grants the runtime binds and ends; backed by
-    // itemGrantRealPackReadiness.test.ts (no readiness waiver).
-    'Horn of Valhalla||blow-horn',
-    'Ring of Djinni Summoning||summon-djinni',
     'Ring of X-ray Vision||activate-x-ray-vision',
     'Rod of Security||enter-paradise',
     'Rope of Entanglement||entangle-creature',

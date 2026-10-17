@@ -18,6 +18,7 @@ import {
   LANDED_MAGIC_ITEM_ENGINE_HOOKS,
   magicItemEngineHookKey,
 } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemCompiler.js';
+import { MAGIC_ITEM_ENTITY_GRANTS_WITH_DEATH_CONSEQUENCE } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemEntityGrants.js';
 import {
   CREATURE_GRANT_LIFECYCLE_HOOKS,
   creatureGrantLifecycleOwned,
@@ -49,7 +50,10 @@ const clausesOf = (record: { data: unknown }): Clause[] =>
   ((record.data as Obj).executionReadiness as { clauses: Clause[] }).clauses;
 
 /** The OWNED set, re-derived here independently of the compiler function. */
-function independentlyOwned(record: { data: unknown }): boolean {
+function independentlyOwned(record: { name: string; data: unknown }): boolean {
+  // The pack strips the printed death consequence; the reviewed spec keeps it.
+  if (MAGIC_ITEM_ENTITY_GRANTS_WITH_DEATH_CONSEQUENCE.has(record.name))
+    return false;
   const mechanics = (record.data as Obj).mechanics as Obj | undefined;
   const block = mechanics?.entityGrant as Obj | undefined;
   if (block === undefined || mechanics?.containment !== undefined) return false;
@@ -67,6 +71,10 @@ function independentlyOwned(record: { data: unknown }): boolean {
       const endings = (grant.revertOn as string[] | undefined) ?? [];
       return (
         grant.kind === 'creature' &&
+        // PR #673 review: only a fixed printed count is bound (P2-1), and a
+        // death-triggered item consequence is not applied by any runtime (P2-2).
+        typeof grant.count === 'number' &&
+        grant.onEntityDeath === undefined &&
         endings.length > 0 &&
         endings.every((ending) =>
           computed.includes(
@@ -78,18 +86,19 @@ function independentlyOwned(record: { data: unknown }): boolean {
   );
 }
 
-const OWNED_ITEMS = [
-  'Bowl of Commanding Water Elementals',
-  'Brazier of Commanding Fire Elementals',
-  'Censer of Controlling Air Elementals',
-  'Elemental Gem',
-  'Horn of Valhalla',
-  'Ring of Djinni Summoning',
-  'Stone of Controlling Earth Elementals',
-];
+const OWNED_ITEMS = ['Elemental Gem'];
 /** Every grant-bearing item that keeps the hooks, with the reason it does. */
 const KEPT_ITEMS: Record<string, string> = {
   'Bag of Tricks': 'next-dawn ending is DM-ended; bonus-action command budget',
+  'Bowl of Commanding Water Elementals':
+    'no fixed printed count ("an elemental" is untyped): any number of actors would bind',
+  'Brazier of Commanding Fire Elementals': 'no fixed printed count',
+  'Censer of Controlling Air Elementals': 'no fixed printed count',
+  'Horn of Valhalla':
+    'count is rolled on table:horn-of-valhalla (2d4+2 ... 5d4+5); the binder enforces no rolled count',
+  'Ring of Djinni Summoning':
+    'onEntityDeath (the ring becomes nonmagical when the djinni dies) is applied by no runtime',
+  'Stone of Controlling Earth Elementals': 'no fixed printed count',
   'Deck of Illusions': 'illusion grant, not bound by start_effect',
   'Efreeti Bottle': 'third-wish-granted ending is DM-ended; outcomes (.12.4)',
   'Feather Token': 'object whip grant mixed in; DM-ended endings',
@@ -102,6 +111,12 @@ const KEPT_ITEMS: Record<string, string> = {
 };
 
 describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
+  it('the death-consequence set is exactly the reviewed onEntityDeath grants', () => {
+    expect([...MAGIC_ITEM_ENTITY_GRANTS_WITH_DEATH_CONSEQUENCE].sort()).toEqual(
+      ['Efreeti Bottle', 'Ring of Djinni Summoning', 'Staff of the Python'],
+    );
+  });
+
   it('the hooks are not globally landed', () => {
     for (const key of CREATURE_GRANT_LIFECYCLE_HOOK_KEYS)
       expect(LANDED_MAGIC_ITEM_ENGINE_HOOKS.has(key)).toBe(false);
@@ -216,9 +231,14 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
   });
 
   describe('rule counterfactuals (synthetic entityGrant blocks)', () => {
-    const creature = (revertOn: string[] | undefined, kind = 'creature') => ({
+    const creature = (
+      revertOn: string[] | undefined,
+      kind = 'creature',
+      extra: Obj = { count: 1 },
+    ) => ({
       id: 'g',
       kind,
+      ...extra,
       ...(revertOn === undefined ? {} : { revertOn }),
     });
     const block = (grants: Obj[], runtimeOwner = 'encounter-combatant') => ({
@@ -282,6 +302,33 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
         ),
       ).toBe(false);
       expect(creatureGrantLifecycleOwned(undefined)).toBe(false);
+    });
+    it('keeps a grant without a fixed count, or with a death-triggered item consequence (PR #673 review)', () => {
+      const endings = ['reduced-to-0-hit-points', 'one-hour-ended'];
+      // No count (elemental vessels) and a table-rolled count (Horn).
+      expect(
+        creatureGrantLifecycleOwned(block([creature(endings, 'creature', {})])),
+      ).toBe(false);
+      expect(
+        creatureGrantLifecycleOwned(
+          block([
+            creature(endings, 'creature', {
+              tableRefs: ['table:horn-of-valhalla'],
+            }),
+          ]),
+        ),
+      ).toBe(false);
+      // A fixed count with a death consequence (Ring of Djinni Summoning).
+      expect(
+        creatureGrantLifecycleOwned(
+          block([
+            creature(endings, 'creature', {
+              count: 1,
+              onEntityDeath: 'make the ring nonmagical',
+            }),
+          ]),
+        ),
+      ).toBe(false);
     });
   });
 });

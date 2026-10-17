@@ -3306,7 +3306,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1384);
+      expect(clauses).toHaveLength(1378);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3391,19 +3391,19 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // (no global hook landing): the Staff of Swarming Insects insect-cloud
       // payload clause had that hook as its only blocker (engine-pending ->
       // green: 790 -> 789 pending, 226 -> 227 green). Total unchanged.
-      // eshyra-c58j.1 removes the F3 lifecycle and F5 identity-link hooks per
-      // clause from the seven creature grants the runtime binds and ends
-      // (four elemental vessels, Elemental Gem, Horn of Valhalla, Ring of
-      // Djinni Summoning), and carries their DM-adjudicated F2 control in a new
-      // hook-free adjudicated control clause each: seven pending -> green (789 -> 782
-      // pending, 227 -> 234 green) and seven added adjudicated clauses (360 ->
-      // 367; total 1377 -> 1384). Horn blow-horn and Ring summon-djinni become
-      // ready; nine grants keep their hooks.
+      // eshyra-c58j removes the F3 lifecycle and F5 identity-link hooks per
+      // clause only from creature grants the runtime binds and ends with a
+      // fixed printed count and no death-triggered item consequence: after the
+      // PR #673 review that is the Elemental Gem alone (the vessels and Horn
+      // print no fixed count; the Ring prints a death consequence). Its F2
+      // control moves to one hook-free adjudicated clause: one pending -> green
+      // (789 -> 788 pending, 227 -> 228 green) and one added adjudicated clause
+      // (360 -> 361; total 1377 -> 1378). No grant operation becomes ready.
       expect(counts).toEqual({
-        'adjudicated-by-design': 367,
+        'adjudicated-by-design': 361,
         'design-blocked': 1,
-        'engine-pending': 782,
-        green: 234,
+        'engine-pending': 788,
+        green: 228,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

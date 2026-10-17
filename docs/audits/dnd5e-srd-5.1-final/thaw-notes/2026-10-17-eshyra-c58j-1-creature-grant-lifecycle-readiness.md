@@ -44,3 +44,23 @@ regenerated (1859 rows unchanged; per-field counts only).
 Updated `records.json` SHA-256:
 
 `14650f7d66ee5306508c42a9df9b95214b64fa49704c5a25d6707e27dd996e3d`
+
+## Correction after the user review of PR #673 (2026-10-17)
+
+The review found that the first ownership predicate was too weak. Two
+conditions are now required, and the reviewed spec holds the evidence for both:
+
+- **A fixed printed `count` on every grant (P2-1).** The binder enforces only a
+  fixed count. The Horn of Valhalla rolls its berserkers on
+  `table:horn-of-valhalla` (2d4+2 to 5d4+5), and the four elemental vessels
+  type no count, so any number of linked actors would bind.
+- **No `onEntityDeath` item consequence (P2-2).** No runtime makes the Ring of
+  Djinni Summoning nonmagical when its djinni dies. The pack triage strips the
+  field, so the compiler reads it from the reviewed spec by item key
+  (`MAGIC_ITEM_ENTITY_GRANT_KEYS_WITH_DEATH_CONSEQUENCE`).
+
+Effect: the Elemental Gem is the only owned grant. One entityGrant clause moves
+from pending to green and one adjudicated control clause is added: 789 to 788
+pending, 227 to 228 green, 360 to 361 adjudicated, 1377 to 1378 total. No grant
+operation becomes ready. Horn `blow-horn` and Ring `summon-djinni` are back to
+engine-pending. `verify:dnd5e-srd-pack` is exact after regeneration.
