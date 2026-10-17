@@ -17519,7 +17519,7 @@
         "magic-item:amulet-of-health/m2-amulet-of-health-constitution-score-set",
         "magic-item:amulet-of-proof-against-detection-and-location/c2-residual-proof-against-divination"
       ],
-      "population": 1377,
+      "population": 1384,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17543,7 +17543,7 @@
         "F2",
         "F5"
       ],
-      "population": 1573,
+      "population": 1566,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17567,7 +17567,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1573,
+      "population": 1566,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17591,7 +17591,7 @@
         "F2",
         "F5"
       ],
-      "population": 789,
+      "population": 782,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17615,7 +17615,7 @@
         "F2",
         "F5"
       ],
-      "population": 1381,
+      "population": 1360,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17639,7 +17639,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1381,
+      "population": 1360,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17662,7 +17662,7 @@
         "adjudicated-by-design",
         "design-blocked"
       ],
-      "population": 1377,
+      "population": 1384,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17686,7 +17686,7 @@
         "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
         "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
       ],
-      "population": 361,
+      "population": 368,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17806,7 +17806,7 @@
         "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
         "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
       ],
-      "population": 360,
+      "population": 367,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17898,7 +17898,7 @@
         "The barrel has a hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check.",
         "Ten levers are set in a row at the far end, each in a neutral position, able to move either up or down. When certain levers are used, the apparatus transforms to resemble a giant lobster."
       ],
-      "population": 360,
+      "population": 367,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17919,7 +17919,7 @@
         "parent",
         "variant"
       ],
-      "population": 1377,
+      "population": 1384,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17967,7 +17967,7 @@
         "M8",
         "M5"
       ],
-      "population": 1377,
+      "population": 1384,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",

@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   ACTIVATION_ECONOMY_HOOK_KEYS,
+  CREATURE_GRANT_LIFECYCLE_HOOK_KEYS,
   magicItemEngineHookKey,
   validateMagicItemClausesAndClassify,
 } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemCompiler.js';
@@ -161,14 +162,17 @@ describe('authoritative magic-item family registry', () => {
       if (entry.clauseId !== undefined && hookedClauseIds.has(entry.clauseId)) {
         if (entry.readiness === 'engine-pending') continue;
         // No hook is landed in this call, so a hooked clause is green only
-        // when EVERY declared hook is an activation-economy hook the
-        // classifier removed for this clause because its operation carries a
-        // typed spent cost (eshyra-xwau.1). Anything else stays engine-pending.
+        // when EVERY declared hook is one the classifier removed for this
+        // clause: an activation-economy hook because its operation carries a
+        // typed spent cost (eshyra-xwau.1), or an F3/F5 creature-grant
+        // lifecycle/identity hook because the runtime binds and ends the grant
+        // (eshyra-c58j.1). Anything else stays engine-pending.
         expect(entry.readiness, entry.clauseId).toBe('green');
         for (const hook of hooksOf.get(entry.clauseId)?.engineHooks ?? []) {
           const key = magicItemEngineHookKey(hook);
           expect(
-            ACTIVATION_ECONOMY_HOOK_KEYS.has(key),
+            ACTIVATION_ECONOMY_HOOK_KEYS.has(key) ||
+              CREATURE_GRANT_LIFECYCLE_HOOK_KEYS.has(key),
             `${entry.clauseId} ${hook.hook}`,
           ).toBe(true);
         }

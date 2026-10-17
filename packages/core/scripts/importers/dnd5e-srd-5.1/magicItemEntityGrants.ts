@@ -12,6 +12,7 @@ import type {
   EngineHookBinding,
   MagicItemFamilyProjection,
 } from './magicItemCompiler.js';
+import { creatureGrantLifecycleOwned } from './magicItemGrantOwnership.js';
 import type { MagicItemExtraction } from './types.js';
 
 type EntityGrantEntry = MagicItemEntityGrant['grants'][number];
@@ -36,6 +37,50 @@ const F5_ITEM_LINK = {
 } as const;
 const CONTROLLED_HOOKS = [F3_ENTITY_OWNER, F2_COMMAND, F5_ITEM_LINK] as const;
 const LIFECYCLE_HOOKS = [F3_ENTITY_OWNER, F5_ITEM_LINK] as const;
+
+/**
+ * Verbatim printed control / obedience sentence(s) for the creature grants the
+ * runtime owns (eshyra-c58j.1; see {@link creatureGrantLifecycleOwned}). The
+ * recorded decision on eshyra-c58j / olc5.12 keeps CONTROL DM-adjudicated:
+ * the controlled-entity command action budget is therefore carried by an
+ * adjudicated clause (no engine hook, like every adjudicated clause) whose
+ * `sourceText` is this exact span, not by an engine-pending hook. An owned grant with no entry here keeps the hook on its
+ * entityGrant clause. Every span is checked verbatim against the printed
+ * description by the clause integrity check.
+ */
+const CONTROL_SPANS: ReadonlyMap<string, string> = new Map([
+  [
+    'Bowl of Commanding Water Elementals',
+    'summon a water elemental, as if you had cast the conjure elemental spell',
+  ],
+  [
+    'Brazier of Commanding Fire Elementals',
+    'summon a fire elemental, as if you had cast the conjure elemental spell',
+  ],
+  [
+    'Censer of Controlling Air Elementals',
+    'summon an air elemental, as if you had cast the conjure elemental spell',
+  ],
+  [
+    'Stone of Controlling Earth Elementals',
+    'summon an earth elemental, as if you had cast the conjure elemental spell',
+  ],
+  [
+    'Elemental Gem',
+    'an elemental is summoned as if you had cast the conjure elemental spell',
+  ],
+  [
+    'Horn of Valhalla',
+    'If you blow the horn without meeting its requirement, the summoned berserkers attack you. If you meet the requirement, they are friendly to you and your companions and follow your commands.',
+  ],
+  [
+    'Ring of Djinni Summoning',
+    'While summoned, the djinni is friendly to you and your companions. It obeys any commands you give it, no matter what language you use. If you fail to command it, the djinni defends itself against attackers but takes no other actions.',
+  ],
+]);
+
+const CONTROL_NOTE =
+  'Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.';
 
 const creature = (
   id: string,
@@ -618,6 +663,17 @@ export function projectMagicItemEntityGrants(
       );
     }
   }
+  const slug = item.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  const hooks = spec.hooks ?? LIFECYCLE_HOOKS;
+  // eshyra-c58j.1: for a grant the runtime owns, the F2 command-budget hook
+  // leaves the engine-pending entityGrant clause and the control is carried by
+  // an adjudicated control clause with the verbatim printed control sentence.
+  const controlSpan = CONTROL_SPANS.get(item.name);
+  const moveControl =
+    controlSpan !== undefined && creatureGrantLifecycleOwned(spec.entityGrant);
   return {
     family: 'm4-entity-lifecycles',
     mechanics: {
@@ -625,14 +681,28 @@ export function projectMagicItemEntityGrants(
     } satisfies Readonly<Partial<MagicItemMechanics>>,
     clauses: [
       {
-        id: `m4-${item.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '')}`,
+        id: `m4-${slug}`,
         tag: 'M4',
         representation: { block: 'entityGrant' },
-        engineHooks: spec.hooks ?? LIFECYCLE_HOOKS,
+        engineHooks: moveControl
+          ? hooks.filter((hook) => hook !== F2_COMMAND)
+          : hooks,
       },
+      ...(moveControl
+        ? [
+            {
+              id: `m4-control-${slug}`,
+              tag: 'M4' as const,
+              representation: {
+                adjudicated: true as const,
+                note: CONTROL_NOTE,
+                sourceText: controlSpan,
+              },
+              // No engineHooks: like every adjudicated clause (see the
+              // triage), the DM-adjudicated control carries no engine hook.
+            },
+          ]
+        : []),
     ],
   };
 }
