@@ -69,7 +69,11 @@ import {
   updateCampaignActor,
   updateCombatant,
 } from './encounterCombatants.js';
-import { itemGrantColumn } from './itemGrantBinding.js';
+import {
+  itemGrantColumn,
+  readItemConsumptionReceipt,
+  redeemItemConsumptionReceipt,
+} from './itemGrantBinding.js';
 import {
   applyItemCooldownAnchorEvent,
   grantCooldownAnchoredTo,
@@ -377,6 +381,17 @@ export interface ActiveEffectView {
   readonly concentrationOwner?: EffectParticipant;
   readonly duration: EffectDurationView;
   readonly durationProvenance?: ItemDurationProvenance;
+  /** Present only on effects bound to a printed item grant (including an
+   *  uncontrolled successor, which inherits the binding): which grant of which
+   *  item instance created this effect. `sourceDestroyedAt` is set once that
+   *  instance has been destroyed or was consumed by its activation. */
+  readonly itemGrant?: {
+    readonly grantId: string;
+    readonly itemInstanceId: string;
+    readonly packRef: string;
+    readonly spellRef?: string;
+    readonly sourceDestroyedAt?: string;
+  };
   readonly dismissible: boolean;
   readonly status: EffectStatus;
   readonly endReason?: EffectEndReason;
@@ -830,6 +845,7 @@ interface ActiveEffectRow {
   readonly duration_amount: number | null;
   readonly duration_unit: EffectDurationUnit | null;
   readonly duration_provenance_json: string | null;
+  readonly item_grant_json: string | null;
   readonly anchor_kind: EffectAnchorKind | null;
   readonly anchor_at: string | null;
   readonly anchor_game_time: string | null;
@@ -883,7 +899,7 @@ const durationProvenanceColumn = jsonColumn<ItemDurationProvenance>(
 const EFFECT_COLUMNS = `campaign_id, effect_id, kind, display_name,
   source_kind, source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
   requires_concentration, concentration_owner_kind, concentration_owner_ref,
-  duration_kind, duration_amount, duration_unit, duration_provenance_json,
+  duration_kind, duration_amount, duration_unit, duration_provenance_json, item_grant_json,
   anchor_kind, anchor_at,
   anchor_game_time, anchor_combat_instance_id, anchor_round,
   anchor_elapsed_minutes, deadline_elapsed_minutes,
@@ -1044,6 +1060,21 @@ function durationView(row: ActiveEffectRow): EffectDurationView {
   };
 }
 
+function itemGrantView(
+  json: string,
+): NonNullable<ActiveEffectView['itemGrant']> {
+  const binding = itemGrantColumn.decode(json);
+  return {
+    grantId: binding.grantId,
+    itemInstanceId: binding.itemInstanceId,
+    packRef: binding.packRef,
+    ...(binding.spellRef === undefined ? {} : { spellRef: binding.spellRef }),
+    ...(binding.sourceDestroyedAt === undefined
+      ? {}
+      : { sourceDestroyedAt: binding.sourceDestroyedAt }),
+  };
+}
+
 function effectView(
   row: ActiveEffectRow,
   targets: readonly EffectTargetRow[],
@@ -1163,6 +1194,9 @@ function effectView(
             row.duration_provenance_json,
           ),
         }),
+    ...(row.item_grant_json === null
+      ? {}
+      : { itemGrant: itemGrantView(row.item_grant_json) }),
     dismissible: row.dismissible === 1,
     status: row.status,
     ...(row.end_reason === null ? {} : { endReason: row.end_reason }),
@@ -3825,6 +3859,10 @@ interface ItemGrantBinding {
   readonly cleanup: DerivedSummonCleanup;
   /** Whether an item cooldown economy is anchored to this grant's end. */
   readonly cooldownAnchored: boolean;
+  /** Set when the source item was consumed by use_item and the binding rests on
+   *  its one-time receipt: the ISO consumption time. The binding is born
+   *  tombstoned at that time. */
+  readonly receiptConsumedAt?: string;
 }
 
 function normalizedName(value: string): string {
@@ -3919,12 +3957,40 @@ function validateItemGrantBinding(
     throw new ActiveEffectError(
       `${label} requires source.itemInstanceId so its grant-ended cooldown anchors reach the item`,
     );
-  const inventory = db
+  let inventory = db
     .prepare('SELECT pack_ref, variant_id FROM inventory WHERE id = ?')
     .get(itemInstanceId) as
     | { pack_ref: string | null; variant_id: string | null }
     | undefined;
-  if (inventory === undefined || inventory.pack_ref !== record.key)
+  // A live inventory row takes precedence. Only when the instance is gone does
+  // a one-time consumption receipt (written by use_item when the printed
+  // activation consumed the item) stand in for it (olc5.12.13).
+  let receiptConsumedAt: string | undefined;
+  if (inventory === undefined) {
+    const receipt = readItemConsumptionReceipt(db, itemInstanceId);
+    if (receipt === undefined)
+      throw new ActiveEffectError(
+        `item instance '${itemInstanceId}' is not an inventory item of '${record.key}', and no consumption receipt exists for it (a grant binds only to a held item or to one that use_item consumed)`,
+      );
+    if (receipt.campaignId !== input.campaignId)
+      throw new ActiveEffectError(
+        `item instance '${itemInstanceId}' was consumed in a different campaign; its consumption receipt cannot pay for a grant in campaign '${input.campaignId}'`,
+      );
+    if (receipt.redeemedEffectId !== undefined)
+      throw new ActiveEffectError(
+        `the consumption receipt of item instance '${itemInstanceId}' was already redeemed by effect '${receipt.redeemedEffectId}'; one consumption pays for one grant`,
+      );
+    if (receipt.packRef !== record.key)
+      throw new ActiveEffectError(
+        `item instance '${itemInstanceId}' was consumed as '${receipt.packRef}', not '${record.key}'`,
+      );
+    inventory = {
+      pack_ref: receipt.packRef,
+      variant_id: receipt.variantId ?? null,
+    };
+    receiptConsumedAt = receipt.consumedAt;
+  }
+  if (inventory.pack_ref !== record.key)
     throw new ActiveEffectError(
       `item instance '${itemInstanceId}' is not an inventory item of '${record.key}'`,
     );
@@ -4138,7 +4204,9 @@ function validateItemGrantBinding(
   // it late. Other cooldownEconomy references (per-day charges) are not
   // anchored and bind unchanged.
   const cooldownAnchored = grantCooldownAnchoredTo(mechanics, grant);
-  if (cooldownAnchored) {
+  // A consumed source has no surviving item whose cooldown economy could be
+  // spent or scheduled, and its receipt is the one-time guard.
+  if (cooldownAnchored && receiptConsumedAt === undefined) {
     const economyId = grant.cooldownEconomy as string;
     const economy = readItemState(db, itemInstanceId)?.economies?.[economyId];
     if (
@@ -4199,6 +4267,7 @@ function validateItemGrantBinding(
     spellRecord,
     cleanup,
     cooldownAnchored,
+    ...(receiptConsumedAt === undefined ? {} : { receiptConsumedAt }),
   };
 }
 
@@ -5283,6 +5352,9 @@ export function createActiveEffect(
                 ? {}
                 : { spellRef: itemGrant.spellRef }),
               cooldownAnchored: itemGrant.cooldownAnchored,
+              ...(itemGrant.receiptConsumedAt === undefined
+                ? {}
+                : { sourceDestroyedAt: itemGrant.receiptConsumedAt }),
             }),
         duration.anchorKind,
         duration.anchorAt,
@@ -5300,6 +5372,13 @@ export function createActiveEffect(
         input.at,
         input.provenance,
         input.sessionId,
+        input.at,
+      );
+    if (itemGrant?.receiptConsumedAt !== undefined)
+      redeemItemConsumptionReceipt(
+        txnDb,
+        itemGrant.itemInstanceId,
+        input.effectId,
         input.at,
       );
 
@@ -7384,6 +7463,15 @@ export function formatActiveEffect(effect: ActiveEffectView): string {
   const parts = [
     `${effect.effectId}: ${effect.displayName} [${effect.status}] (${effect.kind}, ${source})`,
   ];
+  if (effect.itemGrant !== undefined) {
+    parts.push(
+      `item grant ${effect.itemGrant.grantId} of ${effect.itemGrant.itemInstanceId}${
+        effect.itemGrant.sourceDestroyedAt === undefined
+          ? ''
+          : ' (source destroyed)'
+      }`,
+    );
+  }
   if (effect.concentrationOwner !== undefined) {
     parts.push(
       `concentration: ${effect.concentrationOwner.kind} ${effect.concentrationOwner.ref}`,

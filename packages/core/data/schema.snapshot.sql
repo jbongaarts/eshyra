@@ -682,6 +682,20 @@ CREATE TABLE inventory_wear_state (
   updated_at TEXT NOT NULL
 , held INTEGER NOT NULL DEFAULT 0 CHECK (held IN (0, 1)));
 
+CREATE TABLE item_consumption_receipt (
+  campaign_id TEXT NOT NULL,
+  item_instance_id TEXT PRIMARY KEY,
+  pack_ref TEXT NOT NULL,
+  variant_id TEXT,
+  operation_id TEXT NOT NULL,
+  consumed_at TEXT NOT NULL,
+  consumed_elapsed_minutes INTEGER,
+  redeemed_effect_id TEXT,
+  redeemed_at TEXT,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL
+);
+
 CREATE TABLE item_state (
   inventory_id TEXT PRIMARY KEY
     REFERENCES inventory(id) ON DELETE CASCADE,
