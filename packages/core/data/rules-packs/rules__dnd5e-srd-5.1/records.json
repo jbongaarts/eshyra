@@ -89645,10 +89645,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F6",
                 "hook": "hit points and condition lifecycle"
               },
@@ -89658,7 +89654,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F6",
               "F9"
             ]
@@ -90115,10 +90110,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "reaction and action economy"
-              },
-              {
                 "engine": "F8",
                 "hook": "roll mode and targeting modifiers"
               },
@@ -90128,7 +90119,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F8",
               "F9"
             ]
@@ -91213,10 +91203,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -91226,7 +91212,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -91258,10 +91243,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -91271,7 +91252,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -94047,10 +94027,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -94060,7 +94036,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -94419,10 +94394,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -94432,7 +94403,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -94770,10 +94740,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -94783,7 +94749,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -95131,10 +95096,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -95144,7 +95105,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -95176,10 +95136,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -95189,7 +95145,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -95500,10 +95455,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -95517,7 +95468,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -96674,10 +96624,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -96687,7 +96633,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -96932,10 +96877,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -96945,7 +96886,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -96977,10 +96917,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -96990,7 +96926,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -97515,10 +97450,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -97528,7 +97459,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -97560,10 +97490,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -97573,7 +97499,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -97759,10 +97684,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -97772,7 +97693,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -97804,10 +97724,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -97817,7 +97733,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -97849,10 +97764,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -97862,7 +97773,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -99098,10 +99008,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -99111,7 +99017,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -99143,10 +99048,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -99156,7 +99057,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -99979,10 +99879,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -99992,7 +99888,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -100024,10 +99919,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -100037,7 +99928,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -100324,10 +100214,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "reaction and action economy"
-              },
-              {
                 "engine": "F8",
                 "hook": "roll mode and targeting modifiers"
               },
@@ -100337,7 +100223,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F8",
               "F9"
             ]
@@ -101473,10 +101358,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -101486,7 +101367,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -101518,10 +101398,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -101531,7 +101407,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -101708,10 +101583,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -101721,7 +101592,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -102379,10 +102249,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -102392,7 +102258,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -102424,10 +102289,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -102437,7 +102298,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -102469,10 +102329,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -102482,7 +102338,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -102514,10 +102369,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -102527,7 +102378,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -102559,10 +102409,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -102572,7 +102418,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -102604,10 +102449,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -102617,7 +102458,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -103618,10 +103458,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -103631,7 +103467,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -103754,10 +103589,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -103767,7 +103598,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -103799,10 +103629,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -103812,7 +103638,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -103844,10 +103669,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -103857,7 +103678,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -104432,10 +104252,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F6",
                 "hook": "hit points and condition lifecycle"
               },
@@ -104449,7 +104265,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F6",
               "F8",
               "F9"
@@ -104486,10 +104301,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F6",
                 "hook": "hit points and condition lifecycle"
               },
@@ -104503,7 +104314,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F6",
               "F8",
               "F9"
@@ -104535,10 +104345,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -104548,7 +104354,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -105042,10 +104847,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -105055,7 +104856,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -105157,10 +104957,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "reaction and action economy"
-              },
-              {
                 "engine": "F8",
                 "hook": "roll mode and targeting modifiers"
               },
@@ -105170,7 +104966,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F8",
               "F9"
             ]
@@ -106029,10 +105824,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -106042,7 +105833,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -106625,10 +106415,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -106638,7 +106424,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -106670,10 +106455,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -106683,7 +106464,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -106715,10 +106495,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -106728,7 +106504,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -106760,10 +106535,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -106773,7 +106544,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -106954,10 +106724,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -106967,7 +106733,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -106999,10 +106764,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -107012,7 +106773,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -107131,10 +106891,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -107144,7 +106900,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -107336,10 +107091,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -107353,7 +107104,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -107386,10 +107136,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -107399,7 +107145,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -107608,10 +107353,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -107621,7 +107362,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -108083,10 +107823,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F6",
                 "hook": "hit points and condition lifecycle"
               },
@@ -108100,7 +107836,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F6",
               "F8",
               "F9"
@@ -108671,10 +108406,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -108684,7 +108415,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -108892,10 +108622,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -108905,7 +108631,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -108937,10 +108662,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -108950,7 +108671,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -109359,10 +109079,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -109372,7 +109088,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -110028,10 +109743,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -110041,7 +109752,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -110073,10 +109783,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -110086,7 +109792,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -110914,10 +110619,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -110927,7 +110628,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -111572,10 +111272,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F6",
                 "hook": "hit points and condition lifecycle"
               },
@@ -111589,7 +111285,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F6",
               "F8",
               "F9"
@@ -112687,10 +112382,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -112704,7 +112395,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -113277,10 +112967,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -113290,7 +112976,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -113451,10 +113136,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -113464,7 +113145,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -115338,10 +115018,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -115351,7 +115027,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -115383,10 +115058,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -115396,7 +115067,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -115428,10 +115098,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -115441,7 +115107,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -115473,10 +115138,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -115486,7 +115147,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -116621,10 +116281,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F6",
                 "hook": "hit points and condition lifecycle"
               },
@@ -116638,7 +116294,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F6",
               "F8",
               "F9"
@@ -120546,10 +120201,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -120559,7 +120210,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -120591,10 +120241,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -120604,7 +120250,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -120636,10 +120281,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -120649,7 +120290,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -124062,10 +123702,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -124075,7 +123711,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -124209,10 +123844,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -124222,7 +123853,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -124528,10 +124158,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -124541,7 +124167,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -125272,10 +124897,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -125289,7 +124910,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -125326,10 +124946,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -125343,7 +124959,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -125376,10 +124991,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -125389,7 +125000,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -125417,16 +125027,11 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F3",
                 "hook": "concentration lifecycle"
               }
             ],
             "missingEngines": [
-              "F2",
               "F3"
             ]
           },
@@ -125457,10 +125062,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F8",
                 "hook": "save DC and spell attack resolution"
               },
@@ -125470,7 +125071,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F8",
               "F9"
             ]
@@ -125610,10 +125210,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -125623,7 +125219,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -126572,10 +126167,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F8",
                 "hook": "save DC and spell attack resolution"
               },
@@ -126585,7 +126176,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F8",
               "F9"
             ]
@@ -126779,10 +126369,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -126792,7 +126378,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -127536,10 +127121,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F6",
                 "hook": "hit points and condition lifecycle"
               },
@@ -127553,7 +127134,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F6",
               "F8",
               "F9"
@@ -127744,10 +127324,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -127757,7 +127333,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -128281,10 +127856,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -128294,7 +127865,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -128932,10 +128502,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -128945,7 +128511,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -128977,10 +128542,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -128990,7 +128551,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -129022,10 +128582,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -129035,7 +128591,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -129067,10 +128622,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -129080,7 +128631,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -129123,10 +128673,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -129136,7 +128682,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -129712,10 +129257,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F6",
                 "hook": "hit points and condition lifecycle"
               },
@@ -129729,7 +129270,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F6",
               "F8",
               "F9"
@@ -129857,10 +129397,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -129870,7 +129406,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -129902,10 +129437,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -129915,7 +129446,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -129947,10 +129477,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -129960,7 +129486,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -129992,10 +129517,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -130005,7 +129526,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -130037,10 +129557,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -130050,7 +129566,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -130082,10 +129597,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "complex item state and duration processing"
               },
@@ -130095,7 +129606,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -130572,10 +130082,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -130585,7 +130091,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -132873,10 +132378,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -132886,7 +132387,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -132918,10 +132418,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -132931,7 +132427,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -132963,10 +132458,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -132976,7 +132467,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -133382,10 +132872,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -133395,7 +132881,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -133427,10 +132912,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -133440,7 +132921,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -133472,10 +132952,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -133485,7 +132961,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -133902,10 +133377,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -133915,7 +133386,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -133947,10 +133417,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -133960,7 +133426,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -133992,10 +133457,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -134005,7 +133466,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -134037,10 +133497,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -134050,7 +133506,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -134399,10 +133854,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -134412,7 +133863,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -134444,10 +133894,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -134457,7 +133903,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -134489,10 +133934,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -134502,7 +133943,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -135286,10 +134726,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -135299,7 +134735,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -135331,10 +134766,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -135344,7 +134775,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -135376,10 +134806,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -135389,7 +134815,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -135421,10 +134846,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -135434,7 +134855,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -135466,10 +134886,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -135479,7 +134895,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -135511,10 +134926,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -135524,7 +134935,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -135556,10 +134966,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -135569,7 +134975,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -135601,10 +135006,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -135614,7 +135015,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -135646,10 +135046,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -135659,7 +135055,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -136430,10 +135825,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -136443,7 +135834,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -136475,10 +135865,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -136488,7 +135874,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -136509,16 +135894,7 @@
                 "hook": "action-economy activation"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              }
-            ],
-            "missingEngines": [
-              "F2"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:staff-of-swarming-insects/m5-complex-staff-of-swarming-insects",
@@ -137825,10 +137201,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -137838,7 +137210,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -137915,10 +137286,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -137928,7 +137295,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -137960,10 +137326,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -137973,7 +137335,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138005,10 +137366,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138018,7 +137375,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138050,10 +137406,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138063,7 +137415,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138095,10 +137446,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138108,7 +137455,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138140,10 +137486,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138153,7 +137495,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138185,10 +137526,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138198,7 +137535,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138230,10 +137566,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138243,7 +137575,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138275,10 +137606,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138288,7 +137615,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138320,10 +137646,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138333,7 +137655,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138365,10 +137686,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138378,7 +137695,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138410,10 +137726,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138423,7 +137735,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138455,10 +137766,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138468,7 +137775,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138500,10 +137806,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138513,7 +137815,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138549,10 +137850,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138566,7 +137863,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -138599,10 +137895,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138612,7 +137904,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -138644,10 +137935,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -138657,7 +137944,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -139101,10 +138387,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -139114,7 +138396,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -139146,10 +138427,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -139159,7 +138436,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -139783,10 +139059,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -139796,7 +139068,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -139873,10 +139144,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -139886,7 +139153,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -139918,10 +139184,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -139931,7 +139193,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -139967,10 +139228,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -139984,7 +139241,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -140017,10 +139273,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -140030,7 +139282,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -140062,10 +139313,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -140075,7 +139322,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -140107,10 +139353,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -140120,7 +139362,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -140205,10 +139446,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -140218,7 +139455,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -141676,10 +140912,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
                 "engine": "F5",
                 "hook": "item state transition and duration processing"
               },
@@ -141689,7 +140921,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F5",
               "F9"
             ]
@@ -143908,10 +143139,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -143925,7 +143152,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -144643,10 +143869,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -144660,7 +143882,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -144697,10 +143918,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -144714,7 +143931,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -145232,10 +144448,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -145245,7 +144457,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -145281,10 +144492,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F6",
                 "hook": "hit points and condition lifecycle"
               },
@@ -145298,7 +144505,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F6",
               "F8",
               "F9"
@@ -145505,10 +144711,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -145518,7 +144720,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -145735,10 +144936,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -145748,7 +144945,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -145961,10 +145157,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -145974,7 +145166,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -146164,10 +145355,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -146177,7 +145364,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F4",
               "F8"
             ]
@@ -146385,10 +145571,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F6",
                 "hook": "hit points and condition lifecycle"
               },
@@ -146402,7 +145584,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F6",
               "F8",
               "F9"
@@ -146627,10 +145808,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -146644,7 +145821,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -147196,10 +146372,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -147213,7 +146385,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"
@@ -147855,10 +147026,6 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F2",
-                "hook": "action-economy activation"
-              },
-              {
                 "engine": "F4",
                 "hook": "canonical spell execution"
               },
@@ -147872,7 +147039,6 @@
               }
             ],
             "missingEngines": [
-              "F2",
               "F3",
               "F4",
               "F8"

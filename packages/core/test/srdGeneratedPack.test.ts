@@ -3386,11 +3386,16 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // 1377 total).
       // The operation stays not ready because its entity-grant and
       // random-procedure clauses remain engine-pending.
+      // eshyra-xwau.1 removes the F2 activation-economy hooks per clause only
+      // where the clause's operation(s) carry a typed spent activation cost
+      // (no global hook landing): the Staff of Swarming Insects insect-cloud
+      // payload clause had that hook as its only blocker (engine-pending ->
+      // green: 790 -> 789 pending, 226 -> 227 green). Total unchanged.
       expect(counts).toEqual({
         'adjudicated-by-design': 360,
         'design-blocked': 1,
-        'engine-pending': 790,
-        green: 226,
+        'engine-pending': 789,
+        green: 227,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

@@ -396,6 +396,30 @@ export const LANDED_MAGIC_ITEM_ENGINE_HOOKS: ReadonlySet<string> = new Set([
   }),
 ]);
 
+/**
+ * The F2 activation-economy hooks (eshyra-xwau.1). They are deliberately NOT
+ * in {@link LANDED_MAGIC_ITEM_ENGINE_HOOKS}: landing them globally would mark
+ * every clause naming them as owned, including clauses whose activation is
+ * untyped (DM-adjudicated). Instead the classifier removes one of them from a
+ * clause's `missingHooks` only under {@link activationEconomyOwned}.
+ */
+export const ACTIVATION_ECONOMY_HOOK_KEYS: ReadonlySet<string> = new Set(
+  [
+    'action-economy activation',
+    'activation action economy',
+    'reaction and action economy',
+    'item activation and action-budget ownership',
+  ].map((hook) => magicItemEngineHookKey({ engine: 'F2', hook })),
+);
+
+/** Typed activation costs `use_item` spends from the actor's turn resources
+ * (state/itemTurnResource.ts). `free` and `consume` spend nothing. */
+const SPENT_ACTIVATION_COSTS: ReadonlySet<string> = new Set([
+  'action',
+  'bonus-action',
+  'reaction',
+]);
+
 type Obj = Record<string, unknown>;
 
 function asObject(value: unknown): Obj | undefined {
@@ -550,6 +574,94 @@ function representationResolves(
     typeof block === 'string' &&
     scopes.some((scope) => scope[block] !== undefined)
   );
+}
+
+function effectiveMechanicsFor(
+  data: Obj,
+  scope: NonNullable<MagicItemReadinessEntry['scope']>,
+): Obj | undefined {
+  const parent = asObject(data.mechanics);
+  if (scope.kind === 'parent') return parent;
+  const child = asObject(selectedVariant(data, scope.variantKey)?.mechanics);
+  if (child === undefined) return parent;
+  return mergeMagicItemVariantMechanics(
+    parent as MagicItemMechanics | undefined,
+    child as MagicItemMechanics,
+  ) as Obj | undefined;
+}
+
+function operationSpendsTurnResource(operation: Obj | undefined): boolean {
+  const cost = asObject(operation?.activation)?.cost;
+  return typeof cost === 'string' && SPENT_ACTIVATION_COSTS.has(cost);
+}
+
+/**
+ * Per-clause ownership of the activation-economy hooks (eshyra-xwau.1).
+ *
+ * True only when the clause's activation is carried by operation(s) whose
+ * TYPED `activation.cost` is action / bonus-action / reaction, which `use_item`
+ * spends through the turn-resource path (eshyra-olc5.9). By representation:
+ *  - `operations`: that operation is typed.
+ *  - `stateMachine`: the machine has at least one operation-driven (`via`)
+ *    transition and EVERY `via` operation is typed. One untyped activate or
+ *    deactivate operation keeps the whole machine clause pending.
+ *  - `effects`: EXACTLY ONE operation references the effect (and no state
+ *    transition does), and that operation is typed. An effect shared by
+ *    several operations, or by none (a passive/residual effect), is not owned.
+ *  - every other block (interItem, containment, ...) is never owned here.
+ * An untyped (DM-adjudicated) operation or transition never loses the hook.
+ */
+function activationEconomyOwned(
+  data: Obj,
+  representation: Obj,
+  scope: NonNullable<MagicItemReadinessEntry['scope']>,
+): boolean {
+  const mechanics = effectiveMechanicsFor(data, scope);
+  if (mechanics === undefined) return false;
+  const operations = (
+    Array.isArray(mechanics.operations) ? mechanics.operations : []
+  )
+    .map(asObject)
+    .filter((operation): operation is Obj => operation !== undefined);
+  const rawTransitions = asObject(mechanics.stateMachine)?.transitions;
+  const transitions = (Array.isArray(rawTransitions) ? rawTransitions : [])
+    .map(asObject)
+    .filter((transition): transition is Obj => transition !== undefined);
+  const block = representation.block;
+  if (block === 'operations') {
+    return operationSpendsTurnResource(
+      operations.find(({ id }) => id === representation.operationId),
+    );
+  }
+  if (block === 'stateMachine') {
+    const vias = new Set(
+      transitions
+        .map(({ via }) => via)
+        .filter((via): via is string => typeof via === 'string'),
+    );
+    return (
+      vias.size > 0 &&
+      [...vias].every((via) =>
+        operationSpendsTurnResource(operations.find(({ id }) => id === via)),
+      )
+    );
+  }
+  if (block === 'effects') {
+    const effectId = representation.effectId;
+    if (typeof effectId !== 'string') return false;
+    const referencing = operations.filter(
+      ({ effects }) => Array.isArray(effects) && effects.includes(effectId),
+    );
+    const transitionReferences = transitions.some(
+      ({ effects }) => Array.isArray(effects) && effects.includes(effectId),
+    );
+    return (
+      referencing.length === 1 &&
+      !transitionReferences &&
+      operationSpendsTurnResource(referencing[0])
+    );
+  }
+  return false;
 }
 
 function operationIds(scope: Obj): Set<string> {
@@ -808,9 +920,15 @@ export function validateMagicItemClausesAndClassify(input: {
           `magic-item clause integrity: ${clause.id} representation binding does not resolve in ${itemKey}`,
         );
       }
-      const missingHooks = (declaredHooks ?? []).filter(
-        (hook) => !landed.has(magicItemEngineHookKey(hook)),
-      );
+      const activationOwned =
+        (declaredHooks ?? []).some((hook) =>
+          ACTIVATION_ECONOMY_HOOK_KEYS.has(magicItemEngineHookKey(hook)),
+        ) && activationEconomyOwned(data, representation, scope);
+      const missingHooks = (declaredHooks ?? []).filter((hook) => {
+        const key = magicItemEngineHookKey(hook);
+        if (landed.has(key)) return false;
+        return !(activationOwned && ACTIVATION_ECONOMY_HOOK_KEYS.has(key));
+      });
       const common = {
         itemKey,
         clauseId: clause.id,

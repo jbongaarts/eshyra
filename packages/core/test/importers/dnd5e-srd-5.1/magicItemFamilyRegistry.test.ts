@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { validateMagicItemClausesAndClassify } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemCompiler.js';
+import {
+  ACTIVATION_ECONOMY_HOOK_KEYS,
+  magicItemEngineHookKey,
+  validateMagicItemClausesAndClassify,
+} from '../../../scripts/importers/dnd5e-srd-5.1/magicItemCompiler.js';
 import {
   buildMagicItemClausesByItemKey,
   compileMagicItemFamilies,
@@ -150,9 +154,24 @@ describe('authoritative magic-item family registry', () => {
         .filter((clause) => (clause.engineHooks?.length ?? 0) > 0)
         .map((clause) => clause.id),
     );
+    const hooksOf = new Map(
+      [...clauses.values()].flat().map((clause) => [clause.id, clause]),
+    );
     for (const entry of readiness) {
       if (entry.clauseId !== undefined && hookedClauseIds.has(entry.clauseId)) {
-        expect(entry.readiness, entry.clauseId).toBe('engine-pending');
+        if (entry.readiness === 'engine-pending') continue;
+        // No hook is landed in this call, so a hooked clause is green only
+        // when EVERY declared hook is an activation-economy hook the
+        // classifier removed for this clause because its operation carries a
+        // typed spent cost (eshyra-xwau.1). Anything else stays engine-pending.
+        expect(entry.readiness, entry.clauseId).toBe('green');
+        for (const hook of hooksOf.get(entry.clauseId)?.engineHooks ?? []) {
+          const key = magicItemEngineHookKey(hook);
+          expect(
+            ACTIVATION_ECONOMY_HOOK_KEYS.has(key),
+            `${entry.clauseId} ${hook.hook}`,
+          ).toBe(true);
+        }
       }
     }
   });
