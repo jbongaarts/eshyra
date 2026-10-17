@@ -23,7 +23,7 @@ export const refreshEffectTool: Tool = {
     'start_effect. When the effect comes from a spell whose record has a ' +
     'timed duration, a supplied duration must equal it; other effects ' +
     'accept the supplied duration unchecked. Omit duration to re-anchor ' +
-    'the existing one from now. An effect bound to a printed item grant or item effect keeps its printed typed duration: a different duration needs durationOverride (basis and reason), which records it as a DM override.',
+    'the existing one from now. An item-power effect keeps its printed typed duration: a different duration needs durationOverride (basis and reason), which records it as a DM override. An effect bound to an item grant (a granted creature) never has its lifetime rewritten by refresh, with or without durationOverride: to change or cut it short, call end_effect for the whole grant with a ruling.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -32,7 +32,7 @@ export const refreshEffectTool: Tool = {
       durationOverride: {
         type: 'object',
         description:
-          'Required to change a printed item duration: { basis: dm-adjudicated | house-rule, reason }.',
+          'Required to change a printed item-power duration: { basis: dm-adjudicated | house-rule, reason }. Never accepted for an item-grant effect (use end_effect).',
         properties: {
           basis: { enum: ['dm-adjudicated', 'house-rule'] },
           reason: { type: 'string', minLength: 1 },

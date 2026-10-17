@@ -38,6 +38,7 @@ export const setPlotFlagTool: Tool = {
         provenance: `model:${ctx.turnId}`,
         sessionId: ctx.sessionId,
         at: ctx.at,
+        resolveRulesPack: ctx.resolveRulesPack,
       });
       return ok({ applied: true, key: a.key });
     } catch (e) {

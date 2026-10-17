@@ -1111,6 +1111,7 @@ const ITEMS_AND_CURRENCY: readonly DeterministicCapabilityInventoryEntry[] = [
       o('toolRemoveItem.ts'),
       s('domainMutations.ts'),
       s('inventoryLifecycle.ts'),
+      s('itemGrantBinding.ts'),
     ],
     evidence: [t('itemAdoption.test.ts'), t('inventoryQueryGuard.test.ts')],
   }),

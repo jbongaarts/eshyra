@@ -42,6 +42,7 @@ export const removeConditionTool: Tool = {
         provenance: `model:${ctx.turnId}`,
         sessionId: ctx.sessionId,
         at: ctx.at,
+        resolveRulesPack: ctx.resolveRulesPack,
         characterId: target.id,
       });
       return ok(result);

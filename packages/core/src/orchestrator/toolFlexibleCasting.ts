@@ -59,9 +59,7 @@ export const flexibleCastingTool: Tool = {
           operation: a.operation,
           slotLevel: a.slotLevel,
           ...(target.id === undefined ? {} : { characterId: target.id }),
-          ...(ctx.resolveRulesPack === undefined
-            ? {}
-            : { resolveRulesPack: ctx.resolveRulesPack }),
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

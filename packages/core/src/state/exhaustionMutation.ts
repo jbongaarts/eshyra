@@ -15,7 +15,6 @@ export interface AdjustExhaustionInput extends DomainMutationContext {
   delta: number;
   combatantId?: string;
   campaignId?: string;
-  resolveRulesPack?: import('./campaignRecordLookup.js').CampaignRulesPackResolver;
 }
 
 export interface AdjustExhaustionResult {

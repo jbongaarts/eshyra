@@ -1,6 +1,7 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
+import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
 import { claimItem, removeItem } from './domainMutations.js';
 import { destroyInventoryItem } from './inventoryLifecycle.js';
 import {
@@ -31,6 +32,7 @@ export interface AmmunitionMutationContext {
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
+  readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
 }
 
 export interface ExpendAmmunitionInput {
@@ -102,6 +104,7 @@ export function expendAmmunition(
         provenance: ctx.provenance,
         sessionId: ctx.sessionId,
         at: ctx.at,
+        resolveRulesPack: ctx.resolveRulesPack,
       },
     );
     if (!result.removed && result.relinquishedItemId === undefined)
@@ -333,6 +336,7 @@ export function recoverAmmunition(
             sessionId: ctx.sessionId,
             at: ctx.at,
             characterId,
+            resolveRulesPack: ctx.resolveRulesPack,
           });
           recovered += take;
         } else {

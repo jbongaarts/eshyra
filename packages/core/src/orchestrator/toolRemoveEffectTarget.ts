@@ -20,7 +20,7 @@ export const removeEffectTargetTool: Tool = {
     '(Giant Insect: the "action to dismiss the effect on it") returns to its ' +
     'recorded natural form and stays in play ("reverted"). This never ends the effect itself: when the rule ' +
     'ends the whole effect, use end_effect. Repeating the same removal is ' +
-    'a harmless no-op.',
+    'a harmless no-op. A target that carries the granted creature of an item-grant effect is refused: end the whole grant with end_effect.',
   inputSchema: {
     type: 'object',
     properties: {
