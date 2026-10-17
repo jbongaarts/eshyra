@@ -20,8 +20,17 @@ export const itemStateEventTool: Tool = {
     'Apply a printed external event to a rules-pack-bound item state machine. ' +
     'Use this when the named condition has occurred; the DM determines whether ' +
     'it occurred. The condition must exactly match one transition declared from ' +
-    'the item’s current state. This records no action, turn resource, or item ' +
-    'economy cost. Undeclared and ambiguous conditions are refused.',
+    'the item’s current state. This records no action, turn resource, or owner ' +
+    'cost. Undeclared, ambiguous, and non-executable conditions are refused with ' +
+    'no change. A condition whose printed effect deducts charges from the item’s ' +
+    'own economy (for example, a Cube of Force face losing charges when a listed ' +
+    'spell or effect contacts its barrier) also requires tableRow: the DM decides ' +
+    'that the barrier was targeted or contacted and which listed spell or item ' +
+    'did it. Send only rows the source table lists; unlisted spells or effects ' +
+    'cause no charge loss and must not be sent. The result reports the rolled ' +
+    'amount, the amount deducted, and the remaining charges; exhausted is true ' +
+    'when none remain. When exhausted, the DM then sends the printed condition ' +
+    '“the cube runs out of charges” as its own item_state_event.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -30,6 +39,12 @@ export const itemStateEventTool: Tool = {
         type: 'string',
         minLength: 1,
         description: 'Exact condition text from a declared state transition.',
+      },
+      tableRow: {
+        type: 'string',
+        minLength: 1,
+        description:
+          'Exact row key from the printed economy-deduction table (for example, a listed spell or item name). Required only for conditions that deduct charges; refused for all others.',
       },
       character: CHARACTER_TARGET_SCHEMA,
     },
@@ -41,11 +56,12 @@ export const itemStateEventTool: Tool = {
     if (
       a === undefined ||
       typeof a.instanceId !== 'string' ||
-      typeof a.condition !== 'string'
+      typeof a.condition !== 'string' ||
+      (a.tableRow !== undefined && typeof a.tableRow !== 'string')
     )
       return err(
         'invalid_args',
-        'item_state_event requires { instanceId, condition }',
+        'item_state_event requires { instanceId, condition } and an optional string tableRow',
       );
     const target = resolveTargetCharacterId(a.character, ctx);
     if ('ok' in target) return target;
@@ -63,6 +79,7 @@ export const itemStateEventTool: Tool = {
         applyItemStateConditionEvent(ctx.db, {
           instanceId: a.instanceId,
           condition: a.condition,
+          ...(a.tableRow === undefined ? {} : { tableRow: a.tableRow }),
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

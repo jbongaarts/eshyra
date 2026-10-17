@@ -109,6 +109,35 @@ export function parseDice(notation: string): DiceNotation {
   return { count, faces, modifier, keep: { mode, count: keepCount } };
 }
 
+/** Number of dice a notation sums after keep/drop, before the modifier. */
+function keptDiceCount(parsed: DiceNotation): number {
+  return parsed.keep === undefined
+    ? parsed.count
+    : parsed.keep.mode === 'kh' || parsed.keep.mode === 'kl'
+      ? parsed.keep.count
+      : parsed.count - parsed.keep.count;
+}
+
+/**
+ * Lowest total a parsed notation can produce: every kept die shows 1, then the
+ * flat modifier applies. Derived from the same keep/drop arithmetic that
+ * `selectKeptIndices` uses, so admission can refuse expressions whose floor is
+ * negative (eshyra-olc5.13.3) without changing how any expression rolls.
+ */
+export function minimumDiceTotal(parsed: DiceNotation): number {
+  return keptDiceCount(parsed) + parsed.modifier;
+}
+
+/**
+ * Highest total a parsed notation can produce: every kept die shows its face,
+ * then the flat modifier applies. The keep/drop arithmetic is shared with
+ * `minimumDiceTotal`, so the full possible range is `[min, max]`
+ * (eshyra-olc5.13.5).
+ */
+export function maximumDiceTotal(parsed: DiceNotation): number {
+  return keptDiceCount(parsed) * parsed.faces + parsed.modifier;
+}
+
 /**
  * Indices (ascending) of the dice to keep. `dhX`/`dlX` normalize to keeping
  * the complementary lowest/highest dice. Ties are deterministic: among equal

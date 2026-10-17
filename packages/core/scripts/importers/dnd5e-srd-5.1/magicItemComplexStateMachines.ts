@@ -259,7 +259,15 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
           'm5-complex-cube-contact',
           'the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects',
           'deduct the source-defined charges',
-          { tableRef: 'table:cube-of-force-charges-lost' },
+          {
+            tableRef: 'table:cube-of-force-charges-lost',
+            economyDeduction: {
+              economy: 'charges',
+              tableRef: 'table:cube-of-force-charges-lost',
+              keyColumn: 'Spell or Item',
+              amountColumn: 'Charges Lost',
+            },
+          },
         ),
       ],
       stateMachine: {
