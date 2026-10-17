@@ -7141,8 +7141,9 @@ export function refreshEffect(
     // that inherits the binding) never has its lifetime rewritten by the
     // engine, with or without a recorded override. The DM declares such a
     // transition through end_effect with a ruling. A refresh that leaves the
-    // duration unchanged still works; for an 'as spell' grant it must also
-    // keep the printed (spell-cast anchored) deadline.
+    // duration unchanged still works, but only if it also leaves the clock in
+    // place: re-anchoring a printed timer to now would extend the granted
+    // creature's lifetime, so a moved world deadline or round anchor refuses.
     const refreshGrant = readItemGrantBinding(
       txnDb,
       input.campaignId,
@@ -7158,15 +7159,13 @@ export function refreshEffect(
         txnDb,
         duration,
       );
-      const movesPrintedDeadline =
-        refreshGrant.spellRef !== undefined &&
-        row.deadline_elapsed_minutes !== null &&
-        refreshedDeadline !== row.deadline_elapsed_minutes;
-      if (
-        !unchanged ||
-        movesPrintedDeadline ||
-        input.durationProvenance !== undefined
-      )
+      const movesClock =
+        row.duration_kind === 'timed' &&
+        ((refreshedDeadline ?? null) !== row.deadline_elapsed_minutes ||
+          (duration.anchorCombatInstanceId ?? null) !==
+            row.anchor_combat_instance_id ||
+          (duration.anchorRound ?? null) !== row.anchor_round);
+      if (!unchanged || movesClock || input.durationProvenance !== undefined)
         throw new ActiveEffectError(
           `effect '${input.effectId}' is bound to item grant '${refreshGrant.grantId}': its lifetime is not rewritten by refresh_effect (with or without a durationOverride); to change or cut it short, call end_effect for the whole grant with a ruling`,
         );

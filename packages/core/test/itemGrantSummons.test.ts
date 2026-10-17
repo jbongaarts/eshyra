@@ -1445,6 +1445,15 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
       duration: { kind: 'timed', amount: 6, unit: 'hour' },
       durationProvenance: { kind: 'typed-fixed', amount: 6, unit: 'hour' },
     });
+    // Once time has passed, the same re-anchor would restart the printed
+    // six hours from now and extend the dog's lifetime: refused, and the
+    // creature still leaves at the original deadline.
+    s.must('advance_time', { minutes: 60 });
+    const reanchored = s.call('refresh_effect', { effectId: 'fx-s5' });
+    expect(reanchored).toMatchObject({ ok: false });
+    expect(reanchored.message).toMatch(/end_effect/);
+    s.must('advance_time', { minutes: 300 });
+    expect(s.effect('fx-s5')).toMatchObject({ status: 'ended' });
     // The Ring: until-removed would remove the timer, so it is refused too.
     const ring = waivedPack('magic-item:ring-of-djinni-summoning');
     const r = setup(ring, { extraActors: REPAIR_ACTORS });
