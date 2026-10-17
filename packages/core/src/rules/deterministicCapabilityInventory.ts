@@ -2972,6 +2972,7 @@ const NOT_A_DETERMINISTIC_COMMITMENT: Readonly<Record<string, string>> = {
     'this inventory: proof machinery that states capabilities and performs none',
   [core('rules/deterministicCapabilityLedger.ts')]:
     'rule-bound capability contracts and their model-facing rule bindings (presentation); the operations are the entries that quote them',
+  [core('rules/effectiveDeductionAdmission.ts')]: PACK_DATA,
   [core('rules/featureChoices.ts')]: PACK_DATA,
   [core('rules/fieldProvenance.ts')]: PACK_DATA,
   [core('rules/findingRegistry.ts')]:

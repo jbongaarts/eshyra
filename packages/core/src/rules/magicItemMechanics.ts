@@ -2756,3 +2756,49 @@ export function economyDeductionViolation(
   }
   return undefined;
 }
+
+/**
+ * The first violated deduction clause across a magic-item record's `data`: every
+ * `economyDeduction` on an effect of the item, or of one of its variants,
+ * checked against the economy that item actually has (variant economies extend
+ * the item's own, as the effective mechanics do) and the table `tableDataFor`
+ * resolves. Pack admission and effective-stack admission both call this, so
+ * neither re-derives which economies and tables a deduction sees (eshyra-w750).
+ */
+export function magicItemEconomyDeductionViolation(
+  itemData: unknown,
+  tableDataFor: (tableRef: string) => unknown,
+): string | undefined {
+  const data = isRecord(itemData) ? itemData : {};
+  const variants = Array.isArray(data.variants) ? data.variants : [];
+  const mechanicsOf = (value: unknown): Obj | undefined =>
+    isRecord(value) && isRecord(value.mechanics) ? value.mechanics : undefined;
+  const baseMechanics = mechanicsOf(data);
+  const baseEconomies = (baseMechanics?.economies ?? {}) as Obj;
+  const scopes: { mechanics: Obj | undefined; economies: Obj }[] = [
+    { mechanics: baseMechanics, economies: baseEconomies },
+    ...variants.map((variant) => {
+      const mechanics = mechanicsOf(variant);
+      const own = (mechanics?.economies ?? {}) as Obj;
+      return { mechanics, economies: { ...baseEconomies, ...own } };
+    }),
+  ];
+  for (const { mechanics, economies } of scopes) {
+    const effects = mechanics?.effects;
+    if (!Array.isArray(effects)) continue;
+    for (const effect of effects) {
+      const deduction = isRecord(effect) ? effect.economyDeduction : undefined;
+      if (!isRecord(deduction)) continue;
+      const violation = economyDeductionViolation({
+        economies,
+        deduction,
+        tableData:
+          typeof deduction.tableRef === 'string'
+            ? tableDataFor(deduction.tableRef)
+            : undefined,
+      });
+      if (violation !== undefined) return violation;
+    }
+  }
+  return undefined;
+}

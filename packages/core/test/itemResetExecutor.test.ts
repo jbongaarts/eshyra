@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { RulesPack, RulesRecord } from '../src/internal.js';
 import {
   advanceWorldTime,
@@ -22,6 +22,14 @@ import {
   ItemResetExecutorError,
 } from '../src/state/itemResetExecutor.js';
 import { freshDbWithSession } from './support/db.js';
+
+// Effective-stack admission (eshyra-w750) would refuse the violating table-only
+// add-on stacks below before the executor ran. This suite proves the
+// execution-side refusal as defence in depth, so it bypasses admission; the
+// admission itself is proved in effectiveDeductionAdmission.test.ts.
+vi.mock('../src/rules/effectiveDeductionAdmission.js', () => ({
+  assertEffectiveEconomyDeductions: () => undefined,
+}));
 
 const CTX = {
   campaignId: 'campaign-1',
