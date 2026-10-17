@@ -119,9 +119,7 @@ export const transitionBondedSummonTool: Tool = {
           ...(a.placement === undefined
             ? {}
             : { placement: a.placement as string }),
-          ...(ctx.resolveRulesPack === undefined
-            ? {}
-            : { resolveRulesPack: ctx.resolveRulesPack }),
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

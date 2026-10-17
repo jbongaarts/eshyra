@@ -69,6 +69,7 @@ import {
   updateCampaignActor,
   updateCombatant,
 } from './encounterCombatants.js';
+import { itemGrantColumn } from './itemGrantBinding.js';
 import {
   applyItemCooldownAnchorEvent,
   grantCooldownAnchoredTo,
@@ -208,7 +209,7 @@ export interface EffectMutationContext {
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
-  readonly resolveRulesPack?: CampaignRulesPackResolver;
+  readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
   /** The world-clock minute at which the event driving this mutation took
    *  effect, when that differs from the clock now: a world-time advance
    *  settles an expiry at its deadline although the clock already stands at
@@ -509,8 +510,8 @@ export interface RefreshEffectInput extends EffectMutationContext {
   readonly note?: string;
 }
 
-/** The printed typed duration of an item-bound effect (a granted creature or
- *  an item power), or undefined when the row is not item-bound (S5). */
+/** The printed typed duration of an item-power effect, or undefined when the
+ *  row is not item-bound (S5). Grant-bound effects are refused upstream. */
 function itemBoundTypedDuration(
   db: Db,
   row: ActiveEffectRow,
@@ -537,26 +538,8 @@ function itemBoundTypedDuration(
     typeof value === 'object' && value !== null && !Array.isArray(value)
       ? (value as Record<string, unknown>)
       : undefined;
-  const binding = readItemGrantBinding(db, row.campaign_id, row.effect_id);
-  if (binding !== undefined) {
-    const inventory = db
-      .prepare('SELECT variant_id FROM inventory WHERE id = ?')
-      .get(binding.itemInstanceId) as { variant_id: string | null } | undefined;
-    const mechanics = effectiveMagicItemMechanics(
-      record,
-      inventory?.variant_id ?? undefined,
-    ) as Record<string, unknown> | undefined;
-    const grants = (
-      mechanics?.entityGrant as Record<string, unknown> | undefined
-    )?.grants;
-    const grant = (Array.isArray(grants) ? grants : []).find(
-      (candidate) => asObject(candidate)?.id === binding.grantId,
-    ) as Record<string, unknown> | undefined;
-    return {
-      label: `item grant '${binding.grantId}'`,
-      typed: asObject(grant?.duration),
-    };
-  }
+  // Grant-bound effects never reach here: refresh refuses them before any
+  // duration check (S8), so no reader of this function needs the inventory row.
   if (row.source_effect_ref !== null) {
     const mechanics = asObject(
       (record.data as Record<string, unknown>).mechanics,
@@ -896,17 +879,6 @@ const detailColumn = jsonColumn<Record<string, unknown>>(
 const durationProvenanceColumn = jsonColumn<ItemDurationProvenance>(
   'active_effect.duration_provenance_json',
 );
-/** The item instance and printed grant a summoning effect was bound to (olc5.12). */
-const itemGrantColumn = jsonColumn<{
-  readonly grantId: string;
-  readonly itemInstanceId: string;
-  readonly packRef: string;
-  /** 'as spell:<id>': the spell whose lifetime the summoned creature follows (S2). */
-  readonly spellRef?: string;
-  /** Whether an item cooldown economy is anchored to this grant's end (S7: lets
-   *  unanchored grants end without resolving the item's rules). */
-  readonly cooldownAnchored?: boolean;
-}>('active_effect.item_grant_json');
 
 const EFFECT_COLUMNS = `campaign_id, effect_id, kind, display_name,
   source_kind, source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
@@ -1716,7 +1688,9 @@ export function auditActiveEffectIntegrity(
         });
       } else {
         try {
-          requireConcentrationCapableOwner(db, campaignId, owner);
+          // No resolver by construction: this read-only integrity audit's
+          // signature carries none (no production caller).
+          requireConcentrationCapableOwner(db, campaignId, owner, undefined);
         } catch (e) {
           issues.push({
             effectId: row.effect_id,
@@ -2170,7 +2144,7 @@ function conditionBaseName(conditionId: string): string {
 export function conditionImpliesIncapacitated(
   db: Db,
   conditionId: string,
-  resolver?: CampaignRulesPackResolver,
+  resolver: CampaignRulesPackResolver | undefined,
 ): boolean {
   const base = conditionBaseName(conditionId);
   if (base === 'incapacitated') {
@@ -2204,7 +2178,7 @@ export function conditionImpliesIncapacitated(
 export function anyConditionImpliesIncapacitated(
   db: Db,
   conditionIds: readonly string[],
-  resolver?: CampaignRulesPackResolver,
+  resolver: CampaignRulesPackResolver | undefined,
 ): boolean {
   return conditionIds.some((id) =>
     conditionImpliesIncapacitated(db, id, resolver),
@@ -2225,7 +2199,7 @@ function requireConcentrationCapableOwner(
   db: Db,
   campaignId: string,
   owner: EffectParticipant,
-  resolver?: CampaignRulesPackResolver,
+  resolver: CampaignRulesPackResolver | undefined,
 ): void {
   if (owner.kind === 'campaign_actor') {
     throw new ActiveEffectError(
@@ -3113,7 +3087,13 @@ function finalizeEnd(
   // expiry, otherwise the current clock. Unanchored grants never resolve item
   // rules here (S7), because the stored flag answers without a lookup.
   const grantBinding = readItemGrantBinding(db, row.campaign_id, row.effect_id);
-  if (grantBinding !== undefined && successorEffectId === undefined) {
+  // A tombstoned binding (its source instance was destroyed, S11) ends
+  // normally but has no item to cool down, and must not resolve the item.
+  if (
+    grantBinding !== undefined &&
+    grantBinding.sourceDestroyedAt === undefined &&
+    successorEffectId === undefined
+  ) {
     const anchored =
       grantBinding.cooldownAnchored ??
       grantHasCooldownAnchor(db, grantBinding, ctx);
@@ -3252,17 +3232,27 @@ function createUncontrolledSuccessor(
       `cannot create the uncontrolled successor of effect '${original.effect_id}': '${record.name}' transition '${removal.id}' removes the creature ${removal.amount} ${removal.unit}(s) after '${removal.anchor}', so the effect must be a ${removal.amount}-${removal.unit} timer anchored to '${removal.anchor}' with elapsed-world anchor evidence; it is ${original.duration_kind} ${original.duration_amount ?? ''} ${original.duration_unit ?? ''} anchored to '${original.anchor_kind ?? 'none'}' (elapsed evidence ${original.anchor_elapsed_minutes === null ? 'missing' : 'present'}); the engine will not guess the deadline`,
     );
   const displayName = `${original.display_name} (uncontrolled)`;
+  const originalGrantJson = (
+    db
+      .prepare(
+        'SELECT item_grant_json FROM active_effect WHERE campaign_id = ? AND effect_id = ?',
+      )
+      .get(original.campaign_id, original.effect_id) as {
+      item_grant_json: string | null;
+    }
+  ).item_grant_json;
   db.prepare(
     `INSERT INTO active_effect(
        campaign_id, effect_id, kind, display_name, source_kind,
        source_ref, source_effect_ref, source_actor_kind, source_actor_ref,
        requires_concentration, concentration_owner_kind,
        concentration_owner_ref, duration_kind, duration_amount,
-       duration_unit, anchor_kind, anchor_at, anchor_game_time,
+       duration_unit, duration_provenance_json, item_grant_json,
+       anchor_kind, anchor_at, anchor_game_time,
        anchor_elapsed_minutes, deadline_elapsed_minutes,
        dismissible, status, created_at, provenance, session_id, updated_at
      )
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 'timed', ?, ?, ?, ?, ?,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 'timed', ?, ?, ?, ?, ?, ?, ?,
              ?, ?, 0, 'active', ?, ?, ?, ?)`,
   ).run(
     original.campaign_id,
@@ -3276,6 +3266,11 @@ function createUncontrolledSuccessor(
     original.source_actor_ref,
     original.duration_amount,
     original.duration_unit,
+    // S8: the successor inherits the predecessor's duration provenance and
+    // item-grant binding verbatim, so its end still anchors the grant's
+    // cooldown and refresh still refuses to rewrite the printed lifetime.
+    original.duration_provenance_json,
+    originalGrantJson,
     original.anchor_kind,
     original.anchor_at,
     original.anchor_game_time,
@@ -5344,6 +5339,7 @@ export function createActiveEffect(
           sessionId: input.sessionId,
           at: input.at,
           characterId: projection.target.ref,
+          resolveRulesPack: input.resolveRulesPack,
         });
       } else if (projection.target.kind === 'combatant') {
         updateCombatant(txnDb, {
@@ -6058,6 +6054,32 @@ export function removeEffectTarget(
       );
     }
 
+    // S12: a grant-bound effect has no partial departure path. Removing the
+    // target that carries the granted creature's actor link would close that
+    // link while the grant stays active (its end, and the grant-ended cooldown
+    // anchor, are the DM's whole-grant call). Refuse before any mutation. Other
+    // targets of a grant-bound effect (plain condition targets that own no
+    // actor link) keep the ordinary partial-removal behaviour.
+    const removalGrant = readItemGrantBinding(
+      txnDb,
+      input.campaignId,
+      input.effectId,
+    );
+    if (
+      removalGrant !== undefined &&
+      input.target.kind !== 'scope' &&
+      readLinkRows(txnDb, input.campaignId, input.effectId).some(
+        (link) =>
+          link.link_kind === 'actor' &&
+          link.status === 'active' &&
+          link.target_kind === input.target.kind &&
+          link.target_ref === input.target.ref,
+      )
+    )
+      throw new ActiveEffectError(
+        `${input.target.kind} '${input.target.ref}' carries the granted creature of item grant '${removalGrant.grantId}' on effect '${input.effectId}': a grant-bound creature does not depart piecemeal; call end_effect for the whole grant with a ruling`,
+      );
+
     // Re-entrancy policy (F3 mutation audit, invariant 18): mark the target
     // removed FIRST, so if a nested cleanup cascade ends this very effect
     // mid-operation, the terminal sweep (which only touches ACTIVE targets)
@@ -6510,9 +6532,7 @@ export function recastBondedSummon(
           transition.operation === 'select-new-form' && input.form !== undefined
             ? { kind: 'new-form', rulesRef: input.form }
             : { kind: 'maximum' },
-        ...(input.resolveRulesPack === undefined
-          ? {}
-          : { resolveRulesPack: input.resolveRulesPack }),
+        resolveRulesPack: input.resolveRulesPack,
         provenance: input.provenance,
         sessionId: input.sessionId,
         at: input.at,
@@ -6776,9 +6796,7 @@ export function transitionBondedSummon(
       provenance: input.provenance,
       sessionId: input.sessionId,
       at: input.at,
-      ...(input.resolveRulesPack === undefined
-        ? {}
-        : { resolveRulesPack: input.resolveRulesPack }),
+      resolveRulesPack: input.resolveRulesPack,
     };
     let combatantLeft: string | undefined;
     let combatantEntered: string | undefined;
@@ -7119,15 +7137,54 @@ export function refreshEffect(
       }
     }
 
+    // S8: a grant-bound effect (a predecessor, or the uncontrolled successor
+    // that inherits the binding) never has its lifetime rewritten by the
+    // engine, with or without a recorded override. The DM declares such a
+    // transition through end_effect with a ruling. A refresh that leaves the
+    // duration unchanged still works, but only if it also leaves the clock in
+    // place: re-anchoring a printed timer to now would extend the granted
+    // creature's lifetime, so a moved world deadline or round anchor refuses.
+    const refreshGrant = readItemGrantBinding(
+      txnDb,
+      input.campaignId,
+      input.effectId,
+    );
+    if (refreshGrant !== undefined) {
+      const unchanged =
+        duration.kind === row.duration_kind &&
+        duration.amount === row.duration_amount &&
+        duration.unit === row.duration_unit &&
+        duration.expiryTrigger === row.expiry_trigger;
+      const { deadline: refreshedDeadline } = elapsedWorldDeadline(
+        txnDb,
+        duration,
+      );
+      const movesClock =
+        row.duration_kind === 'timed' &&
+        ((refreshedDeadline ?? null) !== row.deadline_elapsed_minutes ||
+          (duration.anchorCombatInstanceId ?? null) !==
+            row.anchor_combat_instance_id ||
+          (duration.anchorRound ?? null) !== row.anchor_round);
+      if (!unchanged || movesClock || input.durationProvenance !== undefined)
+        throw new ActiveEffectError(
+          `effect '${input.effectId}' is bound to item grant '${refreshGrant.grantId}': its lifetime is not rewritten by refresh_effect (with or without a durationOverride); to change or cut it short, call end_effect for the whole grant with a ruling`,
+        );
+    }
+
     // S5: an item-bound duration is revalidated exactly as at creation. A
     // re-anchor (no new duration) keeps the recorded provenance; a changed
     // duration must equal the printed typed duration, or carry a dm-override.
-    const itemBound = itemBoundTypedDuration(
-      txnDb,
-      row,
-      input.resolveRulesPack,
-    );
-    if (itemBound === undefined && input.durationProvenance !== undefined)
+    // (A grant-bound effect was settled above: its provenance is never
+    // rewritten.)
+    const itemBound =
+      refreshGrant === undefined
+        ? itemBoundTypedDuration(txnDb, row, input.resolveRulesPack)
+        : undefined;
+    if (
+      itemBound === undefined &&
+      refreshGrant === undefined &&
+      input.durationProvenance !== undefined
+    )
       throw new ActiveEffectError(
         'a durationOverride applies only to a duration bound to a printed item grant or item effect',
       );
@@ -7403,22 +7460,37 @@ export function expireElapsedWorldEffects(
       throw new ActiveEffectError(
         'elapsed world time must be a nonnegative safe integer',
       );
-    const rows = txnDb
+    // Every live row is validated up front (a malformed dormant row aborts the
+    // whole advance), then due rows are drained to a fixpoint (S9).
+    const liveRows = txnDb
       .prepare(
-        `SELECT ${EFFECT_COLUMNS} FROM active_effect WHERE campaign_id=? AND status IN ('active','suppressed') ORDER BY COALESCE(deadline_elapsed_minutes, 9223372036854775807), created_at, effect_id`,
+        `SELECT ${EFFECT_COLUMNS} FROM active_effect WHERE campaign_id=? AND status IN ('active','suppressed')`,
       )
       .all(input.campaignId) as ActiveEffectRow[];
+    for (const row of liveRows) validateElapsedWorldRow(row);
     const expired: ExpiredWorldEffectSummary[] = [];
-    for (const row of rows) {
+    // Fixpoint: each iteration selects the single earliest live due row and
+    // ends it at its own deadline. A cascade can create a NEW due row (the
+    // uncontrolled successor of a broken concentration, whose copied deadline
+    // may already lie inside this advance); selecting afresh each time settles
+    // it in effective-time order, so one advance equals any partition of it.
+    // Every iteration terminalizes the selected row (the claim succeeds on a
+    // live row), so the loop terminates; a non-performed claim on a row still
+    // selected would spin forever and is a bug, not a state to wait out.
+    for (;;) {
+      const row = txnDb
+        .prepare(
+          `SELECT ${EFFECT_COLUMNS} FROM active_effect
+           WHERE campaign_id=? AND status IN ('active','suppressed')
+             AND duration_kind='timed' AND duration_unit IN ('minute','hour','day')
+             AND deadline_elapsed_minutes <= ?
+           ORDER BY deadline_elapsed_minutes, created_at, effect_id LIMIT 1`,
+        )
+        .get(input.campaignId, input.elapsedMinutes) as
+        | ActiveEffectRow
+        | undefined;
+      if (row === undefined) break;
       validateElapsedWorldRow(row);
-      const world =
-        row.duration_kind === 'timed' &&
-        (row.duration_unit === 'minute' ||
-          row.duration_unit === 'hour' ||
-          row.duration_unit === 'day');
-      if (!world) continue;
-      if ((row.deadline_elapsed_minutes as number) > input.elapsedMinutes)
-        continue;
       const outcome = finalizeEnd(
         txnDb,
         row,
@@ -7432,13 +7504,16 @@ export function expireElapsedWorldEffects(
           eventElapsedMinutes: row.deadline_elapsed_minutes as number,
         },
       );
-      if (outcome.performed)
-        expired.push({
-          effectId: row.effect_id,
-          displayName: row.display_name,
-          deadlineElapsedMinutes: row.deadline_elapsed_minutes as number,
-          cleanup: outcome.cleanup,
-        });
+      if (!outcome.performed)
+        throw new ActiveEffectError(
+          `world-time sweep could not end due effect '${row.effect_id}' (deadline ${row.deadline_elapsed_minutes}); refusing to spin`,
+        );
+      expired.push({
+        effectId: row.effect_id,
+        displayName: row.display_name,
+        deadlineElapsedMinutes: row.deadline_elapsed_minutes as number,
+        cleanup: outcome.cleanup,
+      });
     }
     return expired;
   });

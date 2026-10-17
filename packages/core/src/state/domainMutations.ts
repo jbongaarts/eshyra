@@ -57,7 +57,7 @@ export interface DomainMutationContext {
   characterId?: string;
   /** The campaign's exact rules stack: a character's incapacitation ends the
    *  grants that stack resolves (S7). */
-  readonly resolveRulesPack?: CampaignRulesPackResolver;
+  readonly resolveRulesPack: CampaignRulesPackResolver | undefined;
 }
 
 export interface AddConditionInput {
@@ -120,10 +120,15 @@ export function addCondition(
     // duplicate-id no-op above never reaches here.
     let concentrationBroken: AddConditionResult['concentrationBroken'];
     if (
-      conditionImpliesIncapacitated(txnDb, condition.id) &&
+      conditionImpliesIncapacitated(
+        txnDb,
+        condition.id,
+        ctx.resolveRulesPack,
+      ) &&
       !anyConditionImpliesIncapacitated(
         txnDb,
         current.map((c) => c.id),
+        ctx.resolveRulesPack,
       )
     ) {
       const broken = breakConcentrationOnLifeEvent(

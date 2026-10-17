@@ -987,8 +987,12 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
   });
 
   it('S1 every figurine grant binds only to its own variant, and refuses an instance with no variant', () => {
+    // S13: one shared encounter/database; each grant runs inside a savepoint
+    // that is rolled back, so no per-grant setup repeats and no case sees
+    // another's installs or bound creatures.
+    const s = setup(pack, { extraActors: REPAIR_ACTORS });
     for (const grant of gridOf('magic-item:figurine-of-wondrous-power')) {
-      const s = setup(pack, { extraActors: REPAIR_ACTORS });
+      s.db.exec('SAVEPOINT figurine_case');
       const own = grant.variants?.[0] as string;
       const other = own === 'onyx-dog' ? 'silver-raven' : 'onyx-dog';
       const wrongId = s.install(
@@ -1027,7 +1031,10 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
       );
       expect(bare, grant.id).toMatchObject({ ok: false });
       expect(bare.message, grant.id).toMatch(/variant/);
-      if (grant.variants?.[0] === 'ebony-fly') continue;
+      if (grant.variants?.[0] === 'ebony-fly') {
+        s.db.exec('ROLLBACK TO figurine_case; RELEASE figurine_case');
+        continue;
+      }
       const id = s.install(
         'magic-item:figurine-of-wondrous-power',
         `own-${grant.id}`,
@@ -1058,6 +1065,7 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
         reason: 'ruled',
         note: 'test cleanup',
       });
+      s.db.exec('ROLLBACK TO figurine_case; RELEASE figurine_case');
     }
   });
 
@@ -1379,7 +1387,7 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
     expect(timeline([60, 1440, 120])).toEqual(whole);
   });
 
-  it('S5 refresh: a bound timed duration must stay typed; a change needs a recorded dm-override', () => {
+  it('S5/S8 refresh: a grant-bound duration is never rewritten (override or not); an unchanged re-anchor works', () => {
     const s = setup(pack, { extraActors: REPAIR_ACTORS });
     const dogId = s.install('magic-item:figurine-of-wondrous-power', 'fig-s5', {
       variantId: 'onyx-dog',
@@ -1421,6 +1429,8 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
     expect(s.effect('fx-s5')).toMatchObject({
       durationProvenance: { kind: 'typed-fixed', amount: 6, unit: 'hour' },
     });
+    // S8: a grant-bound effect's lifetime is never rewritten, with or without
+    // a recorded override; the route is end_effect.
     const overridden = s.call('refresh_effect', {
       effectId: 'fx-s5',
       duration: longer,
@@ -1429,11 +1439,21 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
         reason: 'the owner renewed the figurine',
       },
     });
-    expect(overridden).toMatchObject({ ok: true });
+    expect(overridden).toMatchObject({ ok: false });
+    expect(overridden.message).toMatch(/end_effect/);
     expect(s.effect('fx-s5')).toMatchObject({
-      duration: { kind: 'timed', amount: 24, unit: 'hour' },
-      durationProvenance: { kind: 'dm-override', basis: 'dm-adjudicated' },
+      duration: { kind: 'timed', amount: 6, unit: 'hour' },
+      durationProvenance: { kind: 'typed-fixed', amount: 6, unit: 'hour' },
     });
+    // Once time has passed, the same re-anchor would restart the printed
+    // six hours from now and extend the dog's lifetime: refused, and the
+    // creature still leaves at the original deadline.
+    s.must('advance_time', { minutes: 60 });
+    const reanchored = s.call('refresh_effect', { effectId: 'fx-s5' });
+    expect(reanchored).toMatchObject({ ok: false });
+    expect(reanchored.message).toMatch(/end_effect/);
+    s.must('advance_time', { minutes: 300 });
+    expect(s.effect('fx-s5')).toMatchObject({ status: 'ended' });
     // The Ring: until-removed would remove the timer, so it is refused too.
     const ring = waivedPack('magic-item:ring-of-djinni-summoning');
     const r = setup(ring, { extraActors: REPAIR_ACTORS });
@@ -2124,6 +2144,26 @@ const RING_TERMINAL_ENTRY_POINTS: readonly {
     },
   },
   {
+    name: 'start_effect projects an incapacitating condition onto the owner character',
+    owner: 'character',
+    endsAt: 0,
+    trigger: (r) => {
+      r.must('start_effect', {
+        effectId: 'fx-paralysis',
+        kind: 'condition-package',
+        displayName: 'paralysis',
+        source: { kind: 'ruling' },
+        duration: { kind: 'until-removed' },
+        conditions: [
+          {
+            target: { kind: 'character', ref: 'pc-1' },
+            condition: { id: 'paralyzed' },
+          },
+        ],
+      });
+    },
+  },
+  {
     name: 'set_suffocation drop on the owner character',
     owner: 'character',
     endsAt: 0,
@@ -2148,6 +2188,83 @@ describe('olc5.12.10 terminal entry points and cascade event time', () => {
         });
       }, 30_000);
     }
+  }
+
+  for (const addon of [false, true]) {
+    it(`S10 parity: start_effect projecting an incapacitating condition onto the owner character hands an as-spell carrier to its uncontrolled successor on the ${addon ? 'base plus add-on' : 'base'} stack`, () => {
+      const bowl = 'magic-item:bowl-of-commanding-water-elementals';
+      const addonPack = {
+        meta: {
+          ...pack.meta,
+          packId: 'review-addon',
+          version: '1.0.0',
+          role: 'addon',
+          order: 1,
+          compatibleBaseSystems: [
+            { systemId: pack.meta.systemId, versions: [pack.meta.version] },
+          ],
+        },
+        records: [],
+      };
+      const resolver = (binding: { packId: string; version: string }) =>
+        [pack, addonPack].find(
+          (candidate) =>
+            candidate.meta.packId === binding.packId &&
+            candidate.meta.version === binding.version,
+        ) as never;
+      const s = setup(pack, {
+        resolver: resolver as never,
+        extraActors: REPAIR_ACTORS,
+      });
+      if (addon)
+        writeCampaignRulesBinding(s.db, {
+          base: {
+            systemId: pack.meta.systemId,
+            packId: pack.meta.packId,
+            version: pack.meta.version,
+          },
+          addons: [
+            {
+              systemId: pack.meta.systemId,
+              packId: 'review-addon',
+              version: '1.0.0',
+            },
+          ],
+          resolvedAt: NOW,
+        });
+      const itemId = s.install(bowl, 'bowl-s10');
+      expect(
+        s.summon(
+          'fx-bowl-s10',
+          {
+            ref: bowl,
+            grantRef: 'water-elemental',
+            itemInstanceId: itemId,
+          },
+          {
+            concentrationOwner: { kind: 'character', ref: 'pc-1' },
+            actors: [{ combatantId: 'c-water' }],
+          },
+        ),
+      ).toMatchObject({ ok: true });
+      s.must('start_effect', {
+        effectId: 'fx-paralysis',
+        kind: 'condition-package',
+        displayName: 'paralysis',
+        source: { kind: 'ruling' },
+        duration: { kind: 'until-removed' },
+        conditions: [
+          {
+            target: { kind: 'character', ref: 'pc-1' },
+            condition: { id: 'paralyzed' },
+          },
+        ],
+      });
+      expect(s.effect('fx-bowl-s10')).toMatchObject({ status: 'ended' });
+      expect(s.effect('fx-bowl-s10:uncontrolled')).toMatchObject({
+        status: 'active',
+      });
+    }, 30_000);
   }
 
   it('S4 cascade: an effect expiry that removes the concentration owner anchors the wait at the expiry minute, whatever the partition', () => {
@@ -2247,4 +2364,311 @@ describe('olc5.12.10 Ebony Fly (stat block grant)', () => {
       endReason: 'expired',
     });
   });
+});
+
+// ---------------------------------------------------------------------------
+// olc5.12.12: lifecycle reconciliation (S8-S13). The DM declares transitions;
+// the engine computes only the printed clocks.
+// ---------------------------------------------------------------------------
+
+/** The five carriers whose grants print 'as spell:conjure-elemental'. */
+const AS_SPELL_CARRIERS = [
+  [
+    'magic-item:bowl-of-commanding-water-elementals',
+    'water-elemental',
+    'c-water',
+  ],
+  [
+    'magic-item:brazier-of-commanding-fire-elementals',
+    'fire-elemental',
+    'c-fire',
+  ],
+  ['magic-item:censer-of-controlling-air-elementals', 'air-elemental', 'c-air'],
+  [
+    'magic-item:stone-of-controlling-earth-elementals',
+    'earth-elemental',
+    'c-earth',
+  ],
+  ['magic-item:elemental-gem', 'gem-elemental', 'c-earth'],
+] as const;
+
+function combatantStatus(db: ReturnType<typeof setup>['db'], id: string) {
+  return (
+    db
+      .prepare(
+        'SELECT status FROM encounter_combatant WHERE combatant_id = ? AND campaign_id = ?',
+      )
+      .get(id, DEFAULT_TEST_CAMPAIGN_ID) as { status: string } | undefined
+  )?.status;
+}
+
+function liveEffects(s: ReturnType<typeof setup>) {
+  return listActiveEffects(s.db, DEFAULT_TEST_CAMPAIGN_ID, {})
+    .map((row) => `${row.effectId}:${row.status}`)
+    .sort();
+}
+
+const OVERRIDE = {
+  basis: 'dm-adjudicated',
+  reason: 'the owner wants it to last longer',
+};
+
+describe('olc5.12.12 as-spell lifetime (S8) and partition invariance (S9)', () => {
+  for (const [key, grantId, actor] of AS_SPELL_CARRIERS) {
+    it(`S8 ${grantId}: refresh of the predecessor and of the successor never rewrites the printed hour, and the creature leaves at the deadline`, () => {
+      const s = setup(pack, { extraActors: REPAIR_ACTORS });
+      const itemId = s.install(key, `item-${grantId}`);
+      const effectId = `fx-${grantId}`;
+      expect(
+        s.summon(
+          effectId,
+          { ref: key, grantRef: grantId, itemInstanceId: itemId },
+          {
+            concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+            actors: [{ combatantId: actor }],
+          },
+        ),
+      ).toMatchObject({ ok: true });
+      const changes = [
+        { kind: 'until-removed' },
+        { kind: 'timed', amount: 2, unit: 'hour', anchor: 'effect-created' },
+      ];
+      const refuseAll = (id: string) => {
+        for (const duration of changes)
+          for (const override of [undefined, OVERRIDE]) {
+            const refused = s.call('refresh_effect', {
+              effectId: id,
+              duration,
+              ...(override === undefined ? {} : { durationOverride: override }),
+            });
+            expect(refused, `${id} ${JSON.stringify(duration)}`).toMatchObject({
+              ok: false,
+            });
+            expect(refused.message).toMatch(/end_effect/);
+          }
+      };
+      refuseAll(effectId);
+      expect(s.effect(effectId)).toMatchObject({
+        status: 'active',
+        duration: { kind: 'timed', amount: 1, unit: 'hour' },
+      });
+      s.must('end_effect', {
+        effectId,
+        reason: 'concentration-broken',
+        detail: 'voluntary',
+      });
+      const successorId = `${effectId}:uncontrolled`;
+      expect(s.effect(successorId)).toMatchObject({
+        status: 'active',
+        duration: {
+          kind: 'timed',
+          amount: 1,
+          unit: 'hour',
+          deadlineElapsedMinutes: 60,
+        },
+      });
+      refuseAll(successorId);
+      // A re-anchor that would move the printed deadline is a rewrite too.
+      s.must('advance_time', { minutes: 10 });
+      const moved = s.call('refresh_effect', { effectId: successorId });
+      expect(moved).toMatchObject({ ok: false });
+      expect(moved.message).toMatch(/end_effect/);
+      expect(s.effect(successorId)).toMatchObject({
+        duration: { deadlineElapsedMinutes: 60 },
+      });
+      expect(combatantStatus(s.db, actor)).toBe('alive');
+      s.must('advance_time', { minutes: 50 });
+      expect(s.effect(successorId)).toMatchObject({
+        status: 'ended',
+        endReason: 'expired',
+      });
+      expect(combatantStatus(s.db, actor)).toBe('absent');
+    }, 30_000);
+
+    it(`S9 ${grantId}: a successor created inside one advance is settled in it, whatever the partition`, () => {
+      const timeline = (steps: readonly number[]) => {
+        const s = setup(pack, { extraActors: REPAIR_ACTORS });
+        const itemId = s.install(key, `item-${grantId}`);
+        expect(
+          s.summon(
+            `fx-${grantId}`,
+            { ref: key, grantRef: grantId, itemInstanceId: itemId },
+            {
+              concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+              actors: [{ combatantId: actor }],
+            },
+          ),
+        ).toMatchObject({ ok: true });
+        // A 30-minute effect owns the concentrating combatant: its expiry
+        // removes the owner, breaks the concentration and creates the
+        // successor, whose copied deadline (minute 60) lies in the advance.
+        s.must('start_effect', {
+          effectId: 'fx-owner-summon',
+          kind: 'summoning',
+          displayName: 'owner summon',
+          source: { kind: 'ruling' },
+          duration: {
+            kind: 'timed',
+            amount: 30,
+            unit: 'minute',
+            anchor: 'effect-created',
+          },
+          actors: [{ combatantId: 'c-wiz', cleanupOnEnd: 'remove' }],
+        });
+        for (const minutes of steps) s.must('advance_time', { minutes });
+        return {
+          presence: combatantStatus(s.db, actor),
+          effects: liveEffects(s),
+        };
+      };
+      const whole = timeline([120]);
+      expect(whole.presence).toBe('absent');
+      expect(whole.effects).toEqual([]);
+      expect(timeline([30, 90])).toEqual(whole);
+      expect(timeline([30, 30, 60])).toEqual(whole);
+      expect(timeline([45, 75])).toEqual(whole);
+      expect(timeline([61, 59])).toEqual(whole);
+    }, 30_000);
+  }
+});
+
+interface DestroyCarrier {
+  readonly name: string;
+  readonly key: string;
+  readonly grantId: string;
+  readonly actor: string;
+  readonly economy: 'cooldown' | 'stopper';
+  readonly operationId: string;
+  readonly worn: boolean;
+  readonly owner: boolean;
+}
+
+const ANCHORED_CARRIERS: readonly DestroyCarrier[] = [
+  {
+    name: 'Ring of Djinni Summoning',
+    key: RING,
+    grantId: 'particular-djinni',
+    actor: 'c-djinni',
+    economy: 'cooldown',
+    operationId: 'summon-djinni',
+    worn: true,
+    owner: true,
+  },
+  {
+    name: 'Efreeti Bottle serving grant',
+    key: 'magic-item:efreeti-bottle',
+    grantId: 'serving-efreeti',
+    actor: 'c-efreeti',
+    economy: 'stopper',
+    operationId: 'remove-stopper',
+    worn: false,
+    owner: false,
+  },
+];
+
+function anchoredScenario(carrier: DestroyCarrier) {
+  const waived = waivedPack(carrier.key);
+  const s = setup(waived, { extraActors: REPAIR_ACTORS });
+  const itemId = s.install(carrier.key, `item-${carrier.grantId}`, {
+    worn: carrier.worn,
+  });
+  s.must('begin_turn', { character: 'pc-1', round: 1 });
+  spend(s.db, itemId, carrier.operationId, waived);
+  const effectId = `fx-${carrier.grantId}`;
+  const bind = (extra: Record<string, unknown> = {}) =>
+    s.summon(
+      effectId,
+      { ref: carrier.key, grantRef: carrier.grantId, itemInstanceId: itemId },
+      {
+        ...(carrier.owner
+          ? { concentrationOwner: { kind: 'combatant', ref: 'c-wiz' } }
+          : {}),
+        actors: [{ combatantId: carrier.actor }],
+        ...extra,
+      },
+    );
+  const economy = () => {
+    const state = readItemState(s.db, itemId)?.economies?.[carrier.economy];
+    return state === undefined
+      ? undefined
+      : { remaining: state.remaining, availableAt: state.availableAt };
+  };
+  return { ...s, itemId, effectId, bind, economy };
+}
+
+describe('olc5.12.12 destroyed source tombstone (S11) and partial removal (S12)', () => {
+  for (const carrier of ANCHORED_CARRIERS) {
+    it(`S11 ${carrier.name}: a destroyed source instance still lets the grant expire and be ended, with no wait scheduled; a dropped one still anchors`, () => {
+      // Destroyed + advance_time past the deadline.
+      const a = anchoredScenario(carrier);
+      expect(a.bind()).toMatchObject({ ok: true });
+      a.must('remove_item', { id: a.itemId, disposition: 'destroyed' });
+      expect(a.economy()).toBeUndefined();
+      a.must('advance_time', { minutes: 120 });
+      expect(a.effect(a.effectId)).toMatchObject({
+        status: 'ended',
+        endReason: 'expired',
+      });
+      expect(combatantStatus(a.db, carrier.actor)).toBe('absent');
+      expect(a.economy()).toBeUndefined();
+      // Destroyed + explicit end_effect.
+      const b = anchoredScenario(carrier);
+      expect(b.bind()).toMatchObject({ ok: true });
+      b.must('remove_item', { id: b.itemId, disposition: 'destroyed' });
+      b.must('end_effect', {
+        effectId: b.effectId,
+        reason: 'ruled',
+        note: 'the source was destroyed',
+      });
+      expect(b.effect(b.effectId)).toMatchObject({ status: 'ended' });
+      expect(b.economy()).toBeUndefined();
+      // Contrast: a dropped instance keeps its identity, so the wait anchors.
+      const c = anchoredScenario(carrier);
+      expect(c.bind()).toMatchObject({ ok: true });
+      c.db.exec("UPDATE clock SET current_location_id='market' WHERE id=1");
+      c.must('remove_item', { id: c.itemId, disposition: 'dropped' });
+      c.must('advance_time', { minutes: 120 });
+      expect(c.effect(c.effectId)).toMatchObject({ status: 'ended' });
+      expect(c.economy()).toMatchObject({ availableAt: '1500' });
+    }, 30_000);
+
+    it(`S12 ${carrier.name}: remove_effect_target refuses the granted creature's target and leaves state unchanged; another target stays removable`, () => {
+      const r = anchoredScenario(carrier);
+      expect(
+        r.bind({
+          targets: [
+            { kind: 'combatant', ref: carrier.actor },
+            { kind: 'combatant', ref: 'c-goblin' },
+          ],
+        }),
+      ).toMatchObject({ ok: true });
+      const snapshot = () =>
+        JSON.stringify({
+          effects: listActiveEffects(r.db, DEFAULT_TEST_CAMPAIGN_ID, {
+            includeEnded: true,
+          }),
+          presence: combatantStatus(r.db, carrier.actor),
+          economy: r.economy(),
+        });
+      r.must('advance_time', { minutes: 10 });
+      const afterAdvance = snapshot();
+      const refused = r.call('remove_effect_target', {
+        effectId: r.effectId,
+        target: { kind: 'combatant', ref: carrier.actor },
+        reason: 'ruled',
+      });
+      expect(refused).toMatchObject({ ok: false });
+      expect(refused.message).toMatch(/end_effect/);
+      expect(snapshot()).toBe(afterAdvance);
+      expect(
+        r.call('remove_effect_target', {
+          effectId: r.effectId,
+          target: { kind: 'combatant', ref: 'c-goblin' },
+          reason: 'ruled',
+        }),
+      ).toMatchObject({ ok: true });
+      expect(r.effect(r.effectId)).toMatchObject({ status: 'active' });
+      expect(combatantStatus(r.db, carrier.actor)).toBe('alive');
+    }, 30_000);
+  }
 });

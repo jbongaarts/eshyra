@@ -223,6 +223,7 @@ export const finishShortRestRecoveryTool: Tool = {
         provenance: `model:${ctx.turnId}`,
         sessionId: ctx.sessionId,
         at: ctx.at,
+        resolveRulesPack: ctx.resolveRulesPack,
       });
       return ok({ restId: a.restId, characterId, closed: true });
     } catch (e) {

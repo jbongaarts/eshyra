@@ -45,7 +45,7 @@ export interface RestContext {
   sessionId: string;
   at: string;
   rng?: Rng;
-  resolveRulesPack?: CampaignRulesPackResolver;
+  resolveRulesPack: CampaignRulesPackResolver | undefined;
 }
 export interface AdvanceWorldTimeInput extends RestContext {
   campaignId: string;

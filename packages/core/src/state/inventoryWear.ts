@@ -119,6 +119,7 @@ function transition(
             sessionId: input.sessionId,
             at: input.at,
             characterId,
+            resolveRulesPack: input.resolveRulesPack,
           },
         );
         curseStateAttached = onset;
