@@ -696,6 +696,22 @@ CREATE TABLE item_consumption_receipt (
   session_id TEXT NOT NULL
 );
 
+CREATE TABLE item_grant_bind_credit (
+  credit_id TEXT PRIMARY KEY,
+  campaign_id TEXT NOT NULL,
+  item_instance_id TEXT NOT NULL,
+  pack_ref TEXT NOT NULL,
+  variant_id TEXT,
+  economy_id TEXT NOT NULL,
+  operation_id TEXT NOT NULL,
+  issued_at TEXT NOT NULL,
+  issued_elapsed_minutes INTEGER,
+  redeemed_effect_id TEXT,
+  redeemed_at TEXT,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL
+);
+
 CREATE TABLE item_state (
   inventory_id TEXT PRIMARY KEY
     REFERENCES inventory(id) ON DELETE CASCADE,
@@ -1031,6 +1047,10 @@ WHERE character_id IS NULL AND unheld_disposition = 'dropped';
 
 CREATE INDEX inventory_wear_state_character
   ON inventory_wear_state(character_id, wear_state, inventory_id);
+
+CREATE INDEX item_grant_bind_credit_open
+  ON item_grant_bind_credit(campaign_id, item_instance_id, economy_id)
+  WHERE redeemed_effect_id IS NULL;
 
 CREATE INDEX rest_event_long_benefit_time ON rest_event(campaign_id, kind, end_elapsed_minutes);
 

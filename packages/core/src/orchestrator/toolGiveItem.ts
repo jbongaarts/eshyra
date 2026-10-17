@@ -194,6 +194,12 @@ export const giveItemTool: Tool = {
           ? {}
           : { variantId: result.variantId }),
         ...(result.stateful ? { stateful: true } : {}),
+        ...(result.reassignedFrom === undefined
+          ? {}
+          : {
+              reassignedFrom: result.reassignedFrom,
+              note: `id '${result.reassignedFrom}' is retired (a consumed or destroyed item still bears it), so this item was created as '${result.id}'; use '${result.id}' from now on`,
+            }),
       });
     } catch (e) {
       if (

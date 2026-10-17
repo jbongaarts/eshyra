@@ -1,7 +1,10 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import type { AttunementEntry } from './attunement.js';
-import { tombstoneItemGrantBindings } from './itemGrantBinding.js';
+import {
+  tombstoneItemGrantBindings,
+  voidOpenItemGrantBindCredits,
+} from './itemGrantBinding.js';
 
 export interface InventoryDestructionContext {
   readonly provenance: string;
@@ -64,6 +67,9 @@ export function destroyInventoryItem(
     // S11: a live grant bound to this instance outlives it: tombstone the
     // binding so the grant still ends cleanly, with no cooldown to schedule.
     tombstoneItemGrantBindings(txnDb, itemId, ctx.at);
+    // olc5.12.3: an open credit is owed only by this live item; void it so a
+    // later item reissued this id cannot redeem it.
+    voidOpenItemGrantBindCredits(txnDb, itemId);
     const deleted = txnDb
       .prepare('DELETE FROM inventory WHERE id = ?')
       .run(itemId);

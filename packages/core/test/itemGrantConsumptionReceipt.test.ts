@@ -300,26 +300,24 @@ describe('olc5.12.13 consumed-source grant receipt (R1)', () => {
     const refused = gemStart(s, 'fx-destroyed', 'gem-3');
     expect(refused).toMatchObject({ ok: false });
     expect(refused.message).toMatch(/no consumption receipt/);
-    // The real gem and token are stateful (their grants name a cooldownEconomy),
-    // so a two-unit stack cannot be used at all today and no surviving-stack
-    // consumption exists for them. The contrast is therefore: a refused use
-    // writes no receipt, and an unconsumed gem binds through its live row.
+    // A stack of two gems is stateless (single-use economy): using one unit
+    // leaves the surviving row and a bind credit, and writes no receipt.
     s.give('gem-4', GEM, { quantity: 2 });
     const stack = s.call('use_item', {
       instanceId: 'gem-4',
       operationId: 'break-gem',
     });
-    expect(stack).toMatchObject({ ok: false });
-    expect(stack.message).toMatch(/must have quantity 1/);
-    expect(s.receipts()).toEqual([]);
-    s.give('gem-6', GEM, { quantity: 1 });
-    const live = gemStart(s, 'fx-live', 'gem-6');
-    expect(live).toMatchObject({ ok: true });
+    expect(stack).toMatchObject({ ok: true });
     expect(s.receipts()).toEqual([]);
     expect(
-      live.ok &&
-        (live.data as { effect: { itemGrant: object } }).effect.itemGrant,
-    ).not.toHaveProperty('sourceDestroyedAt');
+      s.db.prepare('SELECT quantity FROM inventory WHERE id=?').get('gem-4'),
+    ).toEqual({ quantity: 1 });
+    // A live gem that was never used holds no credit, so it cannot bind.
+    s.give('gem-6', GEM, { quantity: 1 });
+    const live = gemStart(s, 'fx-live', 'gem-6');
+    expect(live).toMatchObject({ ok: false });
+    expect(live.message).toMatch(/use_item 'break-gem' first/);
+    expect(s.receipts()).toEqual([]);
   });
 
   it('a refused effect insert leaves the receipt unredeemed', () => {
@@ -412,11 +410,20 @@ describe('olc5.12.13 retired instance ids (user review r2)', () => {
       }),
     ).toThrow(/never replaced/);
     expect(receiptRow(s, gem)).toEqual(before);
-    // An explicit retired id is refused by give_item, and the schema refuses
-    // any other insert path.
+    // An explicit retired id is reassigned by give_item to a fresh '<id>#n'
+    // (the result reports it) and the original receipt is untouched; the
+    // schema still refuses any other insert path.
     const explicit = s.call('give_item', { id: gem, name: 'Elemental Gem' });
-    expect(explicit).toMatchObject({ ok: false });
-    expect(explicit.message).toMatch(/retired/);
+    expect(explicit).toMatchObject({
+      ok: true,
+      data: { id: `${gem}#1`, reassignedFrom: gem },
+    });
+    expect(receiptRow(s, gem)).toEqual(before);
+    const again = s.call('give_item', { id: gem, name: 'Elemental Gem' });
+    expect(again).toMatchObject({
+      ok: true,
+      data: { id: `${gem}#2`, reassignedFrom: gem },
+    });
     expect(() =>
       s.db
         .prepare(

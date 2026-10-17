@@ -71,7 +71,8 @@ export const startEffectTool: Tool = {
     'Its printed endings are modeled automatically: timer expiry, reduced to 0 ' +
     'hit points (the creature vanishes), and concentration ending. A grant whose cooldown restarts when ' +
     "it ends (use_item's result hint.bindGrant names it) binds only after that " +
-    'spend, and only once per spend. A grant owned by a persistent ' +
+    'spend, and only once per spend. A grant naming any other cooldown economy ' +
+    "binds only against an unredeemed use_item credit (hint.bindCredits), oldest first; with none it is refused, and a creature outside the item's economy is a ruling-sourced summoning. A grant owned by a persistent " +
     'actor needs campaignActorId on each linked actor, so combat closure keeps ' +
     'it. Every other printed ending (owner ' +
     'commands, next dawn, card moved, wishes, flight distance, and so on) is ' +
