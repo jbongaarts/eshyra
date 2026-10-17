@@ -24,6 +24,7 @@ import {
   requiredItemAdoptionResolutionAction,
   writeItemAdoptionReview,
 } from './itemAdoptionReview.js';
+import { itemInstanceIdTaken } from './itemGrantBinding.js';
 import {
   createInitialItemState,
   type ItemInstanceState,
@@ -113,11 +114,7 @@ function nextSplitId(db: Db, sourceId: string, ordinal: number): string {
   let suffix = ordinal;
   while (true) {
     const candidate = `${sourceId}#${suffix}`;
-    if (
-      db.prepare('SELECT 1 FROM inventory WHERE id = ?').get(candidate) ===
-      undefined
-    )
-      return candidate;
+    if (!itemInstanceIdTaken(db, candidate)) return candidate;
     suffix += 1;
   }
 }

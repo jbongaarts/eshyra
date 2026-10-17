@@ -12,6 +12,7 @@ import {
   listActiveEffects,
   renderContextMessage,
 } from '../src/internal.js';
+import { writeItemConsumptionReceipt } from '../src/state/itemGrantBinding.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
   DEFAULT_TEST_CAMPAIGN_POSITION,
@@ -330,6 +331,124 @@ describe('olc5.12.13 consumed-source grant receipt (R1)', () => {
     expect(refused).toMatchObject({ ok: false });
     expect(s.receipts()[0]?.redeemed_effect_id).toBeNull();
     expect(gemStart(s, 'fx-good', 'gem-5')).toMatchObject({ ok: true });
+  });
+});
+
+describe('olc5.12.13 retired instance ids (user review r2)', () => {
+  const giveTool = (
+    s: ReturnType<typeof setup>,
+    packRef: string,
+    extra = {},
+  ) => {
+    const record = pack.records.find((entry) => entry.key === packRef);
+    const result = s.must('give_item', {
+      id: packRef.slice('magic-item:'.length),
+      name: record?.name,
+      packRef,
+      ...extra,
+    });
+    return (result.data as { id: string }).id;
+  };
+  const receiptRow = (s: ReturnType<typeof setup>, id: string) =>
+    s.db
+      .prepare(
+        'SELECT campaign_id, pack_ref, operation_id, consumed_at, redeemed_effect_id FROM item_consumption_receipt WHERE item_instance_id = ?',
+      )
+      .get(id);
+
+  for (const firstRedeemed of [false, true]) {
+    it(`two real give_item -> use_item cycles of identical gems keep distinct ids and independent receipts (first receipt ${firstRedeemed ? 'redeemed' : 'unredeemed'})`, () => {
+      const s = setup();
+      const first = giveTool(s, GEM);
+      s.must('use_item', { instanceId: first, operationId: 'break-gem' });
+      if (firstRedeemed)
+        expect(gemStart(s, 'fx-first', first)).toMatchObject({ ok: true });
+      const firstReceipt = receiptRow(s, first);
+      const second = giveTool(s, GEM);
+      expect(second).not.toBe(first);
+      s.must('begin_turn', { character: 'pc-1', round: 2 });
+      s.must('use_item', { instanceId: second, operationId: 'break-gem' });
+      // The first receipt is untouched by the second consumption.
+      expect(receiptRow(s, first)).toEqual(firstReceipt);
+      expect(gemStart(s, 'fx-second', second, 'c-fire')).toMatchObject({
+        ok: true,
+      });
+      if (!firstRedeemed)
+        expect(gemStart(s, 'fx-first', first)).toMatchObject({ ok: true });
+      // Each receipt redeems once, for its own effect.
+      expect(receiptRow(s, first)).toMatchObject({
+        redeemed_effect_id: 'fx-first',
+      });
+      expect(receiptRow(s, second)).toMatchObject({
+        redeemed_effect_id: 'fx-second',
+      });
+      expect(gemStart(s, 'fx-again', first, 'c-air')).toMatchObject({
+        ok: false,
+      });
+      const byEffect = new Map(
+        s.effects().map((e) => [e.effectId, e.itemGrant?.itemInstanceId]),
+      );
+      expect(byEffect.get('fx-first')).toBe(first);
+      expect(byEffect.get('fx-second')).toBe(second);
+    });
+  }
+
+  it('a receipt is never replaced, and no insert path can reissue a retired id', () => {
+    const s = setup();
+    const gem = giveTool(s, GEM);
+    s.must('use_item', { instanceId: gem, operationId: 'break-gem' });
+    const before = receiptRow(s, gem);
+    expect(() =>
+      writeItemConsumptionReceipt(s.db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        itemInstanceId: gem,
+        packRef: GEM,
+        variantId: undefined,
+        operationId: 'break-gem',
+        consumedAt: '2026-10-18T00:00:00.000Z',
+        consumedElapsedMinutes: 0,
+        provenance: 'test:dup',
+        sessionId: DEFAULT_TEST_SESSION_ID,
+      }),
+    ).toThrow(/never replaced/);
+    expect(receiptRow(s, gem)).toEqual(before);
+    // An explicit retired id is refused by give_item, and the schema refuses
+    // any other insert path.
+    const explicit = s.call('give_item', { id: gem, name: 'Elemental Gem' });
+    expect(explicit).toMatchObject({ ok: false });
+    expect(explicit.message).toMatch(/retired/);
+    expect(() =>
+      s.db
+        .prepare(
+          "INSERT INTO inventory(id, name, provenance, session_id, updated_at) VALUES (?, 'x', 'p', 's', 't')",
+        )
+        .run(gem),
+    ).toThrow(/retired/);
+  });
+
+  it('a destroyed source named by a live grant keeps its id: the next figurine gets a fresh one', () => {
+    const s = setup();
+    const first = giveTool(s, FIGURINE, { variantId: 'onyx-dog' });
+    expect(
+      s.call('start_effect', {
+        effectId: 'fx-dog',
+        kind: 'summoning',
+        displayName: 'dog',
+        source: {
+          kind: 'magic-item',
+          ref: FIGURINE,
+          grantRef: 'onyx-dog',
+          itemInstanceId: first,
+        },
+        actors: [{ combatantId: 'c-dog-a' }],
+      }),
+    ).toMatchObject({ ok: true });
+    s.must('remove_item', { id: first, disposition: 'destroyed' });
+    const second = giveTool(s, FIGURINE, { variantId: 'onyx-dog' });
+    expect(second).not.toBe(first);
+    expect(
+      s.effects().find((e) => e.effectId === 'fx-dog')?.itemGrant,
+    ).toMatchObject({ itemInstanceId: first, sourceDestroyedAt: NOW });
   });
 });
 

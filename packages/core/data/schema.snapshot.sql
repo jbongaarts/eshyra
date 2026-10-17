@@ -1090,3 +1090,21 @@ WHEN
 BEGIN
   SELECT RAISE(ABORT, 'inventory custody/location invariant violated');
 END;
+
+CREATE TRIGGER inventory_refuse_retired_instance_id
+BEFORE INSERT ON inventory
+WHEN NOT EXISTS (SELECT 1 FROM inventory WHERE id = NEW.id)
+  AND (
+    EXISTS (
+      SELECT 1 FROM item_consumption_receipt
+      WHERE item_instance_id = NEW.id
+    )
+    OR EXISTS (
+      SELECT 1 FROM active_effect
+      WHERE item_grant_json IS NOT NULL
+        AND json_extract(item_grant_json, '$.itemInstanceId') = NEW.id
+    )
+  )
+BEGIN
+  SELECT RAISE(ABORT, 'inventory id is retired: a consumption receipt or item grant still names it');
+END;

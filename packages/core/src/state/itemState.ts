@@ -48,7 +48,10 @@ import {
   resolveItemDepletion,
 } from './itemDepletion.js';
 import type { ItemOperationReadinessInput } from './itemExecutionReadiness.js';
-import { writeItemConsumptionReceipt } from './itemGrantBinding.js';
+import {
+  itemInstanceIdTaken,
+  writeItemConsumptionReceipt,
+} from './itemGrantBinding.js';
 import {
   ItemRandomInitializationError,
   type ItemRandomInitializationState,
@@ -2144,10 +2147,7 @@ function nextNonmagicalInventoryId(db: Db, sourceId: string): string {
   const base = `${sourceId}:nonmagical`;
   let candidate = base;
   let suffix = 2;
-  while (
-    db.prepare('SELECT 1 FROM inventory WHERE id = ?').get(candidate) !==
-    undefined
-  ) {
+  while (itemInstanceIdTaken(db, candidate)) {
     candidate = `${base}#${suffix}`;
     suffix += 1;
   }

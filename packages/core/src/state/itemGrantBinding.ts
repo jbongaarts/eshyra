@@ -107,8 +107,21 @@ export function writeItemConsumptionReceipt(
     readonly sessionId: string;
   },
 ): void {
+  // First write only: a receipt is durable evidence of one consumption, so an
+  // instance id that already carries one is never overwritten (allocators skip
+  // retired ids, see itemInstanceIdTaken).
+  if (
+    db
+      .prepare(
+        'SELECT 1 FROM item_consumption_receipt WHERE item_instance_id = ?',
+      )
+      .get(receipt.itemInstanceId) !== undefined
+  )
+    throw new Error(
+      `item instance '${receipt.itemInstanceId}' already has a consumption receipt; a receipt is never replaced`,
+    );
   db.prepare(
-    `INSERT OR REPLACE INTO item_consumption_receipt(
+    `INSERT INTO item_consumption_receipt(
        campaign_id, item_instance_id, pack_ref, variant_id, operation_id,
        consumed_at, consumed_elapsed_minutes, provenance, session_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -165,4 +178,35 @@ export function redeemItemConsumptionReceipt(
     throw new Error(
       `consumption receipt for '${itemInstanceId}' was already redeemed`,
     );
+}
+
+/**
+ * Whether an inventory instance id is taken: by a live inventory row, or
+ * retired by a consumption receipt or by any item-grant binding (live or ended)
+ * that names it. A retired id stays the identity of its consumed or destroyed
+ * source in receipts, effect views and the DM context, so it is never issued
+ * to another item. Every inventory id allocator probes through this.
+ */
+export function itemInstanceIdTaken(db: Db, itemInstanceId: string): boolean {
+  return (
+    db.prepare('SELECT 1 FROM inventory WHERE id = ?').get(itemInstanceId) !==
+      undefined || itemInstanceIdRetired(db, itemInstanceId)
+  );
+}
+
+/** Whether an id is retired (see itemInstanceIdTaken), ignoring live rows. */
+export function itemInstanceIdRetired(db: Db, itemInstanceId: string): boolean {
+  return (
+    db
+      .prepare(
+        `SELECT 1 WHERE EXISTS (
+           SELECT 1 FROM item_consumption_receipt WHERE item_instance_id = ?
+         ) OR EXISTS (
+           SELECT 1 FROM active_effect
+           WHERE item_grant_json IS NOT NULL
+             AND json_extract(item_grant_json, '$.itemInstanceId') = ?
+         )`,
+      )
+      .get(itemInstanceId, itemInstanceId) !== undefined
+  );
 }
