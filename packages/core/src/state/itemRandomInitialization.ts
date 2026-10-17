@@ -108,26 +108,56 @@ interface TableData {
   readonly rows: readonly (readonly string[])[];
 }
 
+/**
+ * The single table-shape contract random initialization needs: the first
+ * violated clause, or `undefined`. Execution (`tableData`) throws on exactly
+ * this and effective-stack admission (`effectiveRandomInitializationAdmission`)
+ * refuses on exactly this, so the two cannot disagree (eshyra-3xi0).
+ */
+export function randomInitializationTableViolation(
+  tableRef: string,
+  record: RulesRecord | undefined,
+): string | undefined {
+  if (record === undefined || record.kind !== 'table')
+    return `initial-state table ${JSON.stringify(tableRef)} does not resolve`;
+  const data = record.data;
+  if (typeof data !== 'object' || data === null || Array.isArray(data))
+    return `${tableRef}.data must be an object`;
+  const rows = (data as Obj).rows;
+  if (!Array.isArray(rows) || rows.length === 0)
+    return `${tableRef}.data.rows is empty`;
+  for (const [index, raw] of rows.entries())
+    if (!Array.isArray(raw) || !raw.every((cell) => typeof cell === 'string'))
+      return `${tableRef}.data.rows[${index}] must be a string row`;
+  return undefined;
+}
+
+/** Table refs named by `initial-state` procedures of one mechanics object. */
+export function initialStateTableRefs(mechanics: unknown): string[] {
+  if (typeof mechanics !== 'object' || mechanics === null) return [];
+  const random = (mechanics as Obj).randomProcedure;
+  if (typeof random !== 'object' || random === null) return [];
+  const procedures = (random as Obj).procedures;
+  if (!Array.isArray(procedures)) return [];
+  return procedures.flatMap((raw) =>
+    typeof raw === 'object' &&
+    raw !== null &&
+    (raw as Obj).kind === 'initial-state' &&
+    typeof (raw as Obj).tableRef === 'string'
+      ? [(raw as Obj).tableRef as string]
+      : [],
+  );
+}
+
 function tableData(
   tableRef: string,
   resolveTable: ((ref: string) => RulesRecord | undefined) | undefined,
 ): TableData {
   const record = resolveTable?.(tableRef);
-  if (record === undefined || record.kind !== 'table')
-    throw new ItemRandomInitializationError(
-      `initial-state table ${JSON.stringify(tableRef)} does not resolve`,
-    );
-  const data = object(record.data, `${tableRef}.data`);
-  if (!Array.isArray(data.rows) || data.rows.length === 0)
-    throw new ItemRandomInitializationError(`${tableRef}.data.rows is empty`);
-  const rows = data.rows.map((raw, index) => {
-    if (!Array.isArray(raw) || !raw.every((cell) => typeof cell === 'string'))
-      throw new ItemRandomInitializationError(
-        `${tableRef}.data.rows[${index}] must be a string row`,
-      );
-    return raw as string[];
-  });
-  return { rows };
+  const violation = randomInitializationTableViolation(tableRef, record);
+  if (violation !== undefined || record === undefined)
+    throw new ItemRandomInitializationError(violation ?? 'table missing');
+  return { rows: (record.data as { rows: string[][] }).rows };
 }
 
 function rangeBound(value: string): number {
