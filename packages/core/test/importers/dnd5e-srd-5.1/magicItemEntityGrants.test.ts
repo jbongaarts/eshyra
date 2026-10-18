@@ -78,12 +78,26 @@ describe('M4 magic-item entity lifecycle family projection', () => {
     for (const name of MAGIC_ITEM_ENTITY_GRANT_NAMES) {
       const projection = projectMagicItemEntityGrants(named(name));
       expect(projection?.family, name).toBe('m4-entity-lifecycles');
-      expect(projection?.clauses).toEqual([
+      // The entityGrant clause always leads. A grant the runtime owns
+      // (eshyra-c58j.1) adds exactly one adjudicated control clause (no
+      // engine hook, the F2 command budget stays DM-adjudicated); no other
+      // clause is ever added.
+      const [lead, ...rest] = projection?.clauses ?? [];
+      expect(lead, name).toEqual(
         expect.objectContaining({
           tag: 'M4',
           representation: { block: 'entityGrant' },
         }),
-      ]);
+      );
+      expect(rest.length, name).toBeLessThanOrEqual(1);
+      for (const control of rest)
+        expect(control, name).toEqual(
+          expect.objectContaining({
+            tag: 'M4',
+            representation: expect.objectContaining({ adjudicated: true }),
+          }),
+        );
+      for (const control of rest) expect(control.engineHooks).toBeUndefined();
     }
     expect(
       projectMagicItemEntityGrants(named('Bag of Holding')),

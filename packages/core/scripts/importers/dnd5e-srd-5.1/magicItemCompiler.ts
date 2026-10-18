@@ -5,6 +5,11 @@ import type {
 } from '../../../src/rules/magicItemMechanics.js';
 import { mergeMagicItemVariantMechanics } from '../../../src/rules/magicItemVariants.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
+import { MAGIC_ITEM_ENTITY_GRANT_KEYS_WITH_DEATH_CONSEQUENCE } from './magicItemEntityGrants.js';
+import {
+  CREATURE_GRANT_LIFECYCLE_HOOKS,
+  creatureGrantLifecycleOwned,
+} from './magicItemGrantOwnership.js';
 
 export const MAGIC_ITEM_ENGINE_FAMILIES = [
   'F1',
@@ -410,6 +415,16 @@ export const ACTIVATION_ECONOMY_HOOK_KEYS: ReadonlySet<string> = new Set(
     'reaction and action economy',
     'item activation and action-budget ownership',
   ].map((hook) => magicItemEngineHookKey({ engine: 'F2', hook })),
+);
+
+/**
+ * The F3 lifecycle and F5 identity-link hooks of a creature grant
+ * (eshyra-c58j.1). Not in {@link LANDED_MAGIC_ITEM_ENGINE_HOOKS}: the
+ * classifier removes them from an `entityGrant` clause's `missingHooks` only
+ * under `creatureGrantLifecycleOwned` (see magicItemGrantOwnership.ts).
+ */
+export const CREATURE_GRANT_LIFECYCLE_HOOK_KEYS: ReadonlySet<string> = new Set(
+  CREATURE_GRANT_LIFECYCLE_HOOKS.map(magicItemEngineHookKey),
 );
 
 /** Typed activation costs `use_item` spends from the actor's turn resources
@@ -924,9 +939,21 @@ export function validateMagicItemClausesAndClassify(input: {
         (declaredHooks ?? []).some((hook) =>
           ACTIVATION_ECONOMY_HOOK_KEYS.has(magicItemEngineHookKey(hook)),
         ) && activationEconomyOwned(data, representation, scope);
+      const grantMechanics = effectiveMechanicsFor(data, scope);
+      const grantOwned =
+        representation.block === 'entityGrant' &&
+        // The triaged mechanics no longer carry the printed death consequence
+        // (PR #673 P2-2), so it is read from the reviewed spec by item key.
+        !MAGIC_ITEM_ENTITY_GRANT_KEYS_WITH_DEATH_CONSEQUENCE.has(itemKey) &&
+        creatureGrantLifecycleOwned(
+          grantMechanics?.entityGrant,
+          grantMechanics,
+        );
       const missingHooks = (declaredHooks ?? []).filter((hook) => {
         const key = magicItemEngineHookKey(hook);
         if (landed.has(key)) return false;
+        if (grantOwned && CREATURE_GRANT_LIFECYCLE_HOOK_KEYS.has(key))
+          return false;
         return !(activationOwned && ACTIVATION_ECONOMY_HOOK_KEYS.has(key));
       });
       const common = {

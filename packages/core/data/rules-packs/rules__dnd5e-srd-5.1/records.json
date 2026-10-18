@@ -101086,6 +101086,20 @@
             ]
           },
           {
+            "clauseId": "magic-item:elemental-gem/m4-control-elemental-gem",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
+              "sourceText": "an elemental is summoned as if you had cast the conjure elemental spell"
+            },
+            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
+          },
+          {
             "clauseId": "magic-item:elemental-gem/m4-elemental-gem",
             "scope": {
               "kind": "parent"
@@ -101100,34 +101114,11 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F3",
-                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
-              },
-              {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
-                "engine": "F5",
-                "hook": "item-instance cooldown and owned-entity identity link"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F3",
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:elemental-gem/S:Elemental Gem:table:table:elemental-gem",
