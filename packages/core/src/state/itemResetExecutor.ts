@@ -7,6 +7,7 @@ import {
   type MagicItemEconomyDeduction,
 } from '../rules/magicItemMechanics.js';
 import { effectiveMagicItemMechanics } from '../rules/magicItemVariants.js';
+import { endItemGrantsOfNonmagicalSource } from './activeEffects.js';
 import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
 import { lookupStrictCampaignRecord } from './campaignRecordLookup.js';
 import {
@@ -421,6 +422,10 @@ export interface ItemStateConditionEventResult {
   };
   /** Present (true) only when a deduction drained the economy to zero. */
   readonly exhausted?: true;
+  /** Present (true) only when the transition made the item durably nonmagical. */
+  readonly becameNonmagical?: true;
+  /** With `becameNonmagical`: the live grant effects ended in the same transaction. */
+  readonly grantsEnded?: readonly string[];
 }
 
 /**
@@ -695,13 +700,39 @@ export function applyItemStateConditionEvent(
       };
       exhausted = remaining === 0;
     }
-    writeItemState(txnDb, input.instanceId, next, input);
+    // olc5.15: a transition whose printed event makes the item nonmagical (the
+    // Ring of Djinni Summoning's djinni dies) writes the durable lifecycle in
+    // this same transaction, then ends every live grant bound to the instance.
+    // The lifecycle is written first so the grant-ended cooldown anchor finds a
+    // nonmagical item and schedules no cooldown. The DM adjudicates that the
+    // event occurred; an ordinary grant ending never reaches this branch.
+    let grantsEnded: readonly string[] = [];
+    if (transition.becomes === 'nonmagical') {
+      next = validateItemStateForRecord(
+        { ...next, lifecycle: { status: 'nonmagical' } },
+        item.packRef,
+        item.record,
+        item.variantId,
+      );
+      writeItemState(txnDb, input.instanceId, next, input);
+      grantsEnded = endItemGrantsOfNonmagicalSource(txnDb, input.instanceId, {
+        provenance: input.provenance,
+        sessionId: input.sessionId,
+        at: input.at,
+        resolveRulesPack: input.resolveRulesPack,
+      });
+    } else {
+      writeItemState(txnDb, input.instanceId, next, input);
+    }
     return {
       instanceId: input.instanceId,
       from,
       to,
       ...(evidence === undefined ? {} : { deduction: evidence }),
       ...(exhausted ? { exhausted: true as const } : {}),
+      ...(transition.becomes === 'nonmagical'
+        ? { becameNonmagical: true as const, grantsEnded }
+        : {}),
     };
   });
 }

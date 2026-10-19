@@ -70,8 +70,10 @@ import {
   updateCampaignActor,
   updateCombatant,
 } from './encounterCombatants.js';
+import { destroyInventoryItem } from './inventoryLifecycle.js';
 import {
   itemGrantColumn,
+  liveItemGrantBindingEffects,
   oldestOpenItemGrantBindCredit,
   readItemConsumptionReceipt,
   readItemGrantRolledCount,
@@ -3033,6 +3035,42 @@ function readItemGrantBinding(
     : itemGrantColumn.decode(row.item_grant_json);
 }
 
+/**
+ * olc5.15: an item that has just become nonmagical (a declared external event,
+ * e.g. the Ring of Djinni Summoning's djinni dying) ends every live grant bound
+ * to that instance, in the caller's transaction, through the normal F3 end
+ * path. The ending records the cause (reason 'source-removed', detail
+ * 'creature-died'). The caller writes the nonmagical lifecycle BEFORE calling,
+ * so the grant-ended cooldown anchor finds a nonmagical item and schedules no
+ * cooldown (see applyItemCooldownAnchorEvent). Returns the ended effect ids.
+ */
+export function endItemGrantsOfNonmagicalSource(
+  db: Db,
+  itemInstanceId: string,
+  ctx: EffectMutationContext,
+): readonly string[] {
+  const ended: string[] = [];
+  for (const { campaignId, effectId } of liveItemGrantBindingEffects(
+    db,
+    itemInstanceId,
+  )) {
+    const row = readEffectRow(db, campaignId, effectId);
+    if (row === undefined || row.status === 'ended') continue;
+    const outcome = finalizeEnd(
+      db,
+      row,
+      {
+        reason: 'source-removed',
+        detail: 'creature-died',
+        note: `its source item '${itemInstanceId}' became nonmagical because the summoned creature died`,
+      },
+      ctx,
+    );
+    if (outcome.performed) ended.push(effectId);
+  }
+  return ended;
+}
+
 function finalizeEnd(
   db: Db,
   row: ActiveEffectRow,
@@ -3152,6 +3190,20 @@ function finalizeEnd(
         { event: 'grant-ended', grantId: grantBinding.grantId },
       );
   }
+  // olc5.15: a grant that prints its source item destroyed at the creature's
+  // 0-hit-point ending (Staff of the Python: "dies and reverts to its staff
+  // form. The staff then shatters and is destroyed") destroys the instance
+  // here, AFTER the effect has ended, in the same transaction. This is the one
+  // choke point every ending path reaches, so a 0-hit-point end reported as a
+  // removal, a dismissal or a ruling cannot bypass it; the bonus-action
+  // reversion reports no 0-hit-point detail and leaves the staff intact.
+  if (
+    grantBinding?.destroysSourceAtZeroHp === true &&
+    grantBinding.sourceDestroyedAt === undefined &&
+    successorEffectId === undefined &&
+    input.detail === 'zero-hit-points'
+  )
+    destroyInventoryItem(db, grantBinding.itemInstanceId, ctx);
   return { performed: true, cleanup };
 }
 
@@ -3863,6 +3915,9 @@ interface ItemGrantBinding {
   readonly cleanup: DerivedSummonCleanup;
   /** Whether an item cooldown economy is anchored to this grant's end. */
   readonly cooldownAnchored: boolean;
+  /** The grant prints that its source item is destroyed at the 0-hit-point
+   *  ending (olc5.15). */
+  readonly destroysSourceAtZeroHp: boolean;
   /** Set when the source item was consumed by use_item and the binding rests on
    *  its one-time receipt: the ISO consumption time. The binding is born
    *  tombstoned at that time. */
@@ -4311,6 +4366,7 @@ function validateItemGrantBinding(
     spellRecord,
     cleanup,
     cooldownAnchored,
+    destroysSourceAtZeroHp: grant.destroysItemOn === 'reduced-to-0-hit-points',
     ...(receiptConsumedAt === undefined ? {} : { receiptConsumedAt }),
     ...(bindCreditId === undefined ? {} : { bindCreditId }),
   };
@@ -5417,6 +5473,9 @@ export function createActiveEffect(
                 ? {}
                 : { spellRef: itemGrant.spellRef }),
               cooldownAnchored: itemGrant.cooldownAnchored,
+              ...(itemGrant.destroysSourceAtZeroHp
+                ? { destroysSourceAtZeroHp: true }
+                : {}),
               ...(itemGrant.receiptConsumedAt === undefined
                 ? {}
                 : { sourceDestroyedAt: itemGrant.receiptConsumedAt }),

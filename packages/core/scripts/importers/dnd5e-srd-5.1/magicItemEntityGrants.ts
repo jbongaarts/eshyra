@@ -7,6 +7,7 @@
 import type {
   MagicItemEntityGrant,
   MagicItemMechanics,
+  MagicItemStateMachine,
 } from '../../../src/rules/magicItemMechanics.js';
 import type {
   EngineHookBinding,
@@ -21,6 +22,9 @@ interface EntityGrantSpec {
   readonly sourcePhrases: readonly string[];
   readonly entityGrant: MagicItemEntityGrant;
   readonly hooks?: readonly EngineHookBinding[];
+  /** A typed external-event consequence of the grant's creature (eshyra-olc5.15),
+   *  applied through item_state_event rather than a grant ending. */
+  readonly stateMachine?: MagicItemStateMachine;
 }
 
 const F3_ENTITY_OWNER = {
@@ -34,6 +38,13 @@ const F2_COMMAND = {
 const F5_ITEM_LINK = {
   engine: 'F5',
   hook: 'item-instance cooldown and owned-entity identity link',
+} as const;
+/** Landed (olc5.15): item_state_event applies a declared external-event
+ *  transition whose printed effect is a durable lifecycle (nonmagical) and ends
+ *  the item's live grants in the same transaction. */
+export const EXTERNAL_EVENT_LIFECYCLE_HOOK = {
+  engine: 'F5',
+  hook: 'external-event item lifecycle consequence',
 } as const;
 const CONTROLLED_HOOKS = [F3_ENTITY_OWNER, F2_COMMAND, F5_ITEM_LINK] as const;
 const LIFECYCLE_HOOKS = [F3_ENTITY_OWNER, F5_ITEM_LINK] as const;
@@ -244,8 +255,14 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
             duration: { amount: 5, unit: 'round' },
             control: 'hostile; attacks opener',
             revertOn: ['five-rounds-ended'],
-            onEntityDeath:
-              'resolve the efreeti’s normal death; the bottle outcome remains spent',
+            // eshyra-olc5.15 source check: the printed text has NO death-
+            // triggered item transition. The former curated onEntityDeath
+            // ('resolve the efreeti’s normal death; the bottle outcome remains
+            // spent') was a curation note, not a source consequence, so it is
+            // removed and the grant is no longer held pending for it. The
+            // printed item consequences ('the bottle loses its magic') are
+            // table:efreeti-bottle outcomes, carried by that table and the
+            // random procedure; no item transition is invented for the death.
             exclusiveInstance: { scope: 'item', recast: 'blocked' },
           }),
           creature('serving-efreeti', 'creature:efreeti', {
@@ -594,12 +611,34 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
               'reduced-to-0-hit-points',
               'one-hour-ended',
             ],
-            onEntityDeath: 'make the ring nonmagical',
+            // eshyra-olc5.15: the printed 'the ring becomes nonmagical if the
+            // djinni dies' is TYPED as the stateMachine transition below and
+            // executed by item_state_event, so it is no longer a pending
+            // onEntityDeath note on the grant.
             cooldownEconomy: 'cooldown',
             exclusiveInstance: { scope: 'item', recast: 'blocked' },
             note: 'This is the same particular djinni on every successful summon; every departure returns it to its home plane and starts the 24-hour cooldown.',
           }),
         ],
+      },
+      // The djinni's DEATH is distinct from its return home at 0 hit points
+      // (an ordinary ending that only starts the cooldown). The DM adjudicates
+      // that it died, possibly with no summon active, and reports the exact
+      // condition through item_state_event. Any live summon ends in the same
+      // transaction and no cooldown is scheduled (the ring is nonmagical). Pack
+      // text stays verbatim: every state-machine note must quote the source.
+      stateMachine: {
+        initial: 'magical',
+        states: [{ id: 'magical' }, { id: 'nonmagical' }],
+        transitions: [
+          {
+            from: 'magical',
+            to: 'nonmagical',
+            condition: 'the djinni dies',
+            becomes: 'nonmagical',
+          },
+        ],
+        termination: 'the djinni dies',
       },
       hooks: CONTROLLED_HOOKS,
     },
@@ -620,8 +659,10 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
             control:
               'owner mentally commands within 60 feet while not incapacitated; otherwise follows its last general command',
             revertOn: ['owner-bonus-action-command', 'reduced-to-0-hit-points'],
-            onEntityDeath:
-              'on 0 hit points the snake dies, reverts, and the staff shatters and is destroyed',
+            // eshyra-olc5.15: typed and executed. The 0-hit-point ending
+            // destroys the source staff in the same transaction (the
+            // bonus-action reversion leaves it intact).
+            destroysItemOn: 'reduced-to-0-hit-points',
             exclusiveInstance: { scope: 'item', recast: 'dismiss-existing' },
             note: 'Early reversion restores all hit points; live snake HP belongs to the persistent actor, not item state.',
           }),
@@ -728,6 +769,9 @@ export function projectMagicItemEntityGrants(
     family: 'm4-entity-lifecycles',
     mechanics: {
       entityGrant: spec.entityGrant,
+      ...(spec.stateMachine === undefined
+        ? {}
+        : { stateMachine: spec.stateMachine }),
     } satisfies Readonly<Partial<MagicItemMechanics>>,
     clauses: [
       {
@@ -738,6 +782,18 @@ export function projectMagicItemEntityGrants(
           ? hooks.filter((hook) => hook !== F2_COMMAND)
           : hooks,
       },
+      ...(spec.stateMachine === undefined
+        ? []
+        : [
+            {
+              // Tagged M4 (the grant family's own consequence), not M5: the
+              // M5 census counts reviewed operation-driven state machines.
+              id: `m4-lifecycle-${slug}`,
+              tag: 'M4' as const,
+              representation: { block: 'stateMachine' as const },
+              engineHooks: [EXTERNAL_EVENT_LIFECYCLE_HOOK],
+            },
+          ]),
       ...(moveControl
         ? [
             {

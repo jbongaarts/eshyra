@@ -1377,7 +1377,37 @@ export function validateItemStateForRecord(
         `${packRef} economy '${resolution.economyId}' does not license depletion state`,
       );
   }
-  if (state.lifecycle !== undefined && (state.depletions?.length ?? 0) === 0)
+  // A nonmagical lifecycle is also licensed by a source-declared external-event
+  // transition (`becomes: 'nonmagical'`, eshyra-olc5.15) whose destination is
+  // the instance's current machine state (Ring of Djinni Summoning).
+  const licensedByTransition =
+    state.lifecycle?.status === 'nonmagical' &&
+    state.lifecycle.pendingTerminal === undefined &&
+    mechanics.stateMachine !== undefined &&
+    (() => {
+      const transitions = obj(
+        mechanics.stateMachine,
+        `${packRef}.mechanics.stateMachine`,
+      ).transitions as unknown;
+      return (
+        Array.isArray(transitions) &&
+        transitions.some((raw) => {
+          const transition = obj(
+            raw,
+            `${packRef}.mechanics.stateMachine.transitions[]`,
+          );
+          return (
+            transition.becomes === 'nonmagical' &&
+            transition.to === state.machineState
+          );
+        })
+      );
+    })();
+  if (
+    state.lifecycle !== undefined &&
+    (state.depletions?.length ?? 0) === 0 &&
+    !licensedByTransition
+  )
     throw new ItemStateError(
       `${packRef} lifecycle status requires a source-declared depletion resolution`,
     );
@@ -2046,6 +2076,11 @@ export function applyItemCooldownAnchorEvent(
     const state = readItemState(txnDb, input.instanceId);
     if (state === undefined)
       throw new ItemStateError(`item '${input.instanceId}' has no live state`);
+    // olc5.15: a nonmagical item has no economy left to cool down. A grant that
+    // ends because its creature died (the item became nonmagical in the same
+    // transaction) is a death, not an ordinary departure, so it schedules no
+    // 24-hour wait; the ring is never summoned again.
+    if (state.lifecycle?.status === 'nonmagical') return [];
     const elapsed = input.elapsedMinutes ?? elapsedNow(txnDb);
     if (!Number.isSafeInteger(elapsed) || elapsed < 0)
       throw new ItemStateError('cooldown anchor elapsed_minutes is malformed');

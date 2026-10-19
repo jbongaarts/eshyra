@@ -1596,8 +1596,9 @@ describe('state graph text and outcome-gated transitions, whole corpus (review 1
     // 49 machines before the triage; 21 stay typed (single-lifetime toggles
     // and the machines an existing consumer binds to), the other 28 are
     // withheld (review 19.4.6.7 S2 added the Staff of Swarming Insects, Helm
-    // of Brilliance and Ring of Shooting Stars).
-    expect(machines).toBe(21);
+    // of Brilliance and Ring of Shooting Stars). eshyra-olc5.15 adds the Ring of
+    // Djinni Summoning's one external-event machine (22).
+    expect(machines).toBe(22);
   });
 
   it('keeps the graph-text screen able to fail (counterfactual: a paraphrased condition and a mis-cited table cell)', () => {
@@ -1830,6 +1831,10 @@ describe('runtime safety across the whole corpus', () => {
     'Horn of Valhalla|bronze|blow-horn',
     'Horn of Valhalla|iron|blow-horn',
     'Horn of Valhalla|silver|blow-horn',
+    // eshyra-olc5.15: its printed death consequence is typed (the djinni-dies
+    // transition) and executed by item_state_event; real-pack conformance in
+    // itemStateEventNonmagical.test.ts.
+    'Ring of Djinni Summoning||summon-djinni',
     'Ring of X-ray Vision||activate-x-ray-vision',
     'Rod of Security||enter-paradise',
     'Rope of Entanglement||entangle-creature',

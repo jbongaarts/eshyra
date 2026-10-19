@@ -11,6 +11,10 @@ export interface ItemGrantBindingRecord {
   /** Whether an item cooldown economy is anchored to this grant's end (S7: lets
    *  unanchored grants end without resolving the item's rules). */
   readonly cooldownAnchored?: boolean;
+  /** eshyra-olc5.15: the grant prints that its source item is destroyed when
+   *  the creature is reduced to 0 hit points (Staff of the Python). Stored at
+   *  bind time, like `cooldownAnchored`, so the ending needs no pack lookup. */
+  readonly destroysSourceAtZeroHp?: boolean;
   /** S11 tombstone: the ISO time the bound inventory instance was destroyed.
    *  A tombstoned binding ends normally but schedules no cooldown (there is no
    *  item to cool down), and no reader may require the deleted inventory row
@@ -63,6 +67,32 @@ export function tombstoneItemGrantBindings(
     marked += 1;
   }
   return marked;
+}
+
+/** Live (active or suppressed) grant bindings of one inventory instance, as
+ *  [campaignId, effectId] pairs in a stable order. */
+export function liveItemGrantBindingEffects(
+  db: Db,
+  itemInstanceId: string,
+): readonly { campaignId: string; effectId: string }[] {
+  const rows = db
+    .prepare(
+      `SELECT campaign_id, effect_id, item_grant_json FROM active_effect
+       WHERE status IN ('active', 'suppressed') AND item_grant_json IS NOT NULL
+       ORDER BY campaign_id, effect_id`,
+    )
+    .all() as {
+    campaign_id: string;
+    effect_id: string;
+    item_grant_json: string;
+  }[];
+  return rows
+    .filter(
+      (row) =>
+        itemGrantColumn.decode(row.item_grant_json).itemInstanceId ===
+        itemInstanceId,
+    )
+    .map((row) => ({ campaignId: row.campaign_id, effectId: row.effect_id }));
 }
 
 /**
