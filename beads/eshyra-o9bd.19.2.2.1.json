@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.2.1",
+  "title": "Creature stat-block entry boundaries: restore swallowed Wererat Hand Crossbow and gate source-counted attack headers",
+  "description": "SCOPE (registry row wererat-crossbow, alias opus:F-30; plan B2 + D2 \"swallowed Wererat action\").\nClass: a creature stat-block ENTRY (action/reaction/legendary/trait/variant) whose text swallows a following printed entry header, so a whole attack is lost as its own entry.\n\nPack evidence (c53ba040): creature:wererat actions \"Shortsword (Humanoid or Hybrid Form Only)\" text contains \"... piercing damage. Hand Crossbow (Humanoid or Hybrid Form Only). Ranged Weapon Attack: +4 to hit, range 30/120 ft. ...\" — 2 attack headers in one entry. A pack scan for (>1 \"(Melee|Ranged) (Weapon|Spell) Attack:\" per entry) OR (\". <Title>[ (qual)]. Melee|Ranged\") finds exactly this one live instance (creature:giant-rat variant \"Diseased Giant Rats\" quotes \"Bite\" in prose - verify it is a prose reference, not a swallowed header).\n\nRoot cause: find in parseCreatures.ts / parseStatBlocks.ts entry segmentation - why the \"Hand Crossbow (…).\" header was not recognized as an entry start (likely the parenthetical qualifier / page-or-column break layout). Fix the segmenter, not the record.\n\nRequired invariant: every printed attack header in a creature stat block is its own entry. Denominator is SOURCE-derived: count \"(Melee|Ranged|Melee or Ranged) (Weapon|Spell) Attack:\" occurrences in each creature's extracted source text vs the count of parsed attack entries; exact equality per creature (with a reviewed, source-cited exception list only if the source itself embeds an attack in another entry's prose).\n\nRegression: parser test on the Wererat source slice (Hand Crossbow is its own action with ranged attack +4, 30/120, 1d6+2 piercing); corpus predicate test over the committed pack using the source-derived count. Regenerate the pack (npm run build:dnd5e-srd-pack or equivalent) and commit generated outputs; follow docs/importer-fix-protocol.md.\n",
+  "notes": "PR #571 (head 5751d799). Root cause: ENTRY_LABEL_RE required same-line body; label-only lead-ins swallowed. Source scan (creature pages) found 2 members: Wererat Hand Crossbow p.328 and Chain Devil Animate Chains p.275 (not in audit). Fixed in parseCreatures.ts; regenerated pack changes exactly those two; committed-pack predicate (≤1 attack lead-in, no embedded usage/form-qualified lead-in per entry) + parser tests incl. negatives. verify:worktree green 5389/3 skipped. Stays in_progress until merge.\nReview F1 (source-derived denominator) fixed at a6ecc402: importer gate creatureAttackLeadIns.ts, per-creature source slice count vs entries opening with attack lead-in; Giant Rat p.378 reviewed exception; negative proof fails on wererat 3 vs 2. Re-review requested.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-23T21:52:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-24T00:18:56Z",
+  "started_at": "2026-09-23T21:52:34Z",
+  "closed_at": "2026-09-24T00:18:56Z",
+  "close_reason": "PR #571 merged (c492c918): label-only creature lead-ins + source-derived attack lead-in gate",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.2.1",
+      "depends_on_id": "eshyra-o9bd.19.2.2",
+      "type": "parent-child",
+      "created_at": "2026-09-23T16:52:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4d.5",
+  "title": "CLI party UX",
+  "description": "Player-facing affordances for a party. ensureCharacterReady checks only the single active PC and there is no way to add PCs, list the party, or switch the active PC. Add: creation of additional PCs (reuse completeCharacterCreation with explicit characterId pc-2..N), /party (list roster), /switch <pc> (set meta.active_character_id), and relax ensureCharacterReady to require at least one canonical PC. Depends on party roster read API. Acceptance: can create a second PC, list the party, switch active PC across turns; ensureCharacterReady passes with >=1 complete PC; CLI tests for each command.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T17:54:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:54Z",
+  "started_at": "2026-05-28T18:17:51Z",
+  "closed_at": "2026-05-28T18:22:15Z",
+  "close_reason": "Added /party, /switch, /addpc session commands (playParty.ts + turn-loop wiring) and createAdditionalCharacter; relaxed readiness to any canonical PC. 5 CLI tests. Full suite green (764 passed). Committed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d4d.5",
+      "depends_on_id": "eshyra-d4d.1",
+      "type": "blocks",
+      "created_at": "2026-05-28T12:54:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d4d.5",
+      "depends_on_id": "eshyra-d4d",
+      "type": "parent-child",
+      "created_at": "2026-05-28T12:54:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

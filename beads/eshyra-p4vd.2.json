@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p4vd.2",
+  "title": "Define truth status for rumors, reports, observations, and confirmed facts",
+  "description": "Define truth-status semantics for campaign overlay lore.\n\nThe system needs to record that something was said, believed, observed, reported, confirmed, disproven, or lied about without collapsing all of those into \"true\".\n\nAcceptance criteria:\n- Define a constrained truth-status vocabulary.\n- Include at least:\n  - true or confirmed\n  - false or disproven\n  - unknown\n  - rumored\n  - reported\n  - observed\n  - believed\n  - lie\n  - exaggeration\n- Explain the difference between:\n  - \"Old Renn's mule returned alone\" as reported/observed evidence\n  - \"Old Renn was taken by goblins\" as rumor/belief unless confirmed\n- Define whether truth status is player-visible, DM-only, or can have separate public/private values.\n- Define how truth status changes over time when play confirms or disproves a rumor.\n- Include audit rules for truth status:\n  - a recorded rumor supports \"NPCs say X\"\n  - it does not support \"X is true\" unless separately confirmed",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:23:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:45:01Z",
+  "started_at": "2026-06-24T03:34:19Z",
+  "closed_at": "2026-06-24T03:45:01Z",
+  "close_reason": "Implemented campaign overlay canon, truth-statused lore recording, world_query retrieval/search, audit/prompt guidance, docs, and regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-p4vd.2",
+      "depends_on_id": "eshyra-p4vd",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:23:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

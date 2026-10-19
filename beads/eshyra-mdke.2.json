@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-mdke.2",
+  "title": "Review: Sol final review of PR #631 (eshyra-mdke @ d7c77f09)",
+  "description": "Final read-only review of PR #631 (branch eshyra-mdke, exact head d7c77f09ea781e13d9607c654d4b8776f2815ac1) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "FINAL REVIEW of PR #631 at exact head d7c77f09ea781e13d9607c654d4b8776f2815ac1; branch eshyra-mdke.2. Effective profile: rules-clause-complete.\n\nAuthority/context: read AGENTS.md, docs/design-and-pr-review-policy.md, docs/importer-fix-protocol.md, docs/rules-pack-compiler.md, ADRs 0017 and 0020, live owning bead eshyra-mdke and dispatch eshyra-mdke.1. refs/beads/state is stale (2026-09-09, no mdke records); live Beads supplies current scope and decisions. Reviewed complete origin/main...HEAD diff (all 17 files), origin/main..HEAD log, PR head/body, local vendored SRD PDF Favored Enemy text (printed p. 35), pack producers, schema validation, creation/finalization, level-up improvements/application, coverage, and CLI consumers.\n\nS1 — MATERIAL (P2), packages/core/src/character/creationClassChoices.ts:333-335; affected consumer packages/cli/src/characterWizard.ts:1006-1018 and :1047-1056. The new empty optional language choice is correctly satisfied for finalization, but the actual creation wizard equates satisfied with already answered. Concrete scenario: create a Human Ranger choosing humanoids and gnoll/orc, then enter the Favored Enemy language group with no language selected. Its entire display is \"Favored Enemy: choose 1 (favored-enemy-language)\" followed by \"Selected:  — Enter to keep, or clear to choose again.\"; no language options appear. Entering the advertised clear command prints \"Cleared.\" then \"Selected: .\" and returns advance without consuming the next intended language answer. Clearing an existing language likewise skips re-picking. Consequently the normal numbered-option/clear-to-repick flow cannot collect the language and can remove a previously selected grant. A player who guesses a legal name directly can still select it; the defect is specifically the hidden menu and broken advertised repick transition, not the core persistence API.\n\nInvariant/authority: the bead requires the associated language to be offered/collected at creation, with an intentional empty skip; the existing guided creation consumer promises numbered choices and clear-to-repick. Optional satisfaction must not stand in for a user decision to skip or for a populated answer. Owner/fix: adapt runChoiceGroup to recognize optional empty states, show available language options with an explicit blank-to-skip prompt, and keep clear/reset in the picker rather than auto-advancing. Preserve satisfied=true in the engine so optional choices still do not block finalization. Permanent evidence: a generalized optional-choice wizard regression covering initial empty display, explicit skip, legal selection/persistence, and clear/re-pick of a populated choice. One consumer-level invariant is proportionate; no broad snapshot is needed. Sibling/state analysis: initial empty and clear/reset states share the failure; both creation modes share this consumer. Ordinary required choices are not initially satisfied; the level-up CLI already displays optional choices and explicit skip behavior and does not share this failure.\n\nEvidence: read-only Node 24 source probes (native TypeScript and in-memory .js-to-.ts resolution, no repository files created) reproduced the actual wizard output/clear transition. Additional probes passed actual-pack Favored Enemy re-derivation equality, creation finalization with humanoid races/language, changing humanoids to beasts removing the dependent race pick, repeated humanoids at levels 6 and 14 with distinct/held-race exclusion and language application, duplicate-race rejection, and optional-language/Common exclusion for every bundled ancestry. auditSrdStructure and auditSrdPlayability returned []; git diff --check passed. Generated record comparison: 0 added, 0 removed, only feature:ranger:favored-enemy changed. Existing importer assertions are strengthened by the guarded full-text fixtures rather than weakened.\n\nVerification limit: this worktree has no node_modules, so Vitest, full gates, and PDF regeneration were not rerun. PR-reported full verification and reproducibility are claims inspected alongside the implementation; native probes above are bounded independent evidence, not a replacement full-suite claim. No source-fidelity, persistence, Natural Explorer, compatibility, or additional acceptance defect found in the remainder of the authorized scope. No NON-MATERIAL findings recorded. Repository files remain unchanged. Owning bead eshyra-mdke was not modified.\n\nVERDICT: MATERIAL FINDINGS (1)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:49:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:55:14Z",
+  "closed_at": "2026-10-09T04:55:14Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-mdke.2",
+      "depends_on_id": "eshyra-mdke",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:49:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

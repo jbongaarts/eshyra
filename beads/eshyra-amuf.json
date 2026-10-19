@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-amuf",
+  "title": "Support audit presentation-only repair without primary-DM regeneration",
+  "description": "Follow-up from eshyra-d8ap.3. The engine can deterministically replace model-authored roll ledgers from structured roll metadata, but there is not yet an explicit safe patch path for auditor verdicts that say all tool calls and state mutations are valid and only presentation is wrong. Design and implement a fail-closed auditor/orchestrator path that can repair presentation-only issues without full primary-DM regeneration when structured evidence is already valid. Acceptance criteria: auditor can distinguish presentation-only from state/tool/evidence failures; code-owned ledger replacement remains deterministic; missing or incorrect model-owned visibility/category metadata still requires model repair; true state/tool errors still fail closed; retry metrics show avoided primary-DM retries for presentation-only fixes.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-25T23:13:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T00:43:05Z",
+  "started_at": "2026-06-26T00:36:17Z",
+  "closed_at": "2026-06-26T00:43:05Z",
+  "close_reason": "Implemented presentation-only roll-ledger audit repair path with diagnostics and tests",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-amuf",
+      "depends_on_id": "eshyra-d8ap.3",
+      "type": "parent-child",
+      "created_at": "2026-06-25T18:13:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

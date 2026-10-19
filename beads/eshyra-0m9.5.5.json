@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.5",
+  "title": "SRD 5.1 importer: feat parser",
+  "description": "**Prerequisites (apply to all SRD 5.1 importer child issues):**\n- Vendored SRD 5.1 PDF must be in place at `packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf` — see that directory's README.md.\n- Reference implementation: mirror the structure of `packages/core/scripts/importers/dnd5e-srd-5.1/parseSpells.ts` (parser), `emit.ts` (record builder + manifest description), `index.ts` (pipeline wiring), and the test layout under `packages/core/test/importers/dnd5e-srd-5.1/`.\n- Depends on `loreweaver-0m9.5.9` (section detection + orchestrator) — run parsers over narrowed page slices, not the full PDF.\n\n---\n\nAdd a parser for SRD 5.1 feats (kind=feat). Captures prerequisites and benefit text.\n\nNote: SRD 5.1's feat coverage is small (Grappler is the only feat in the SRD 5.1 PDF; broader feat support comes from non-SRD sources). The parser should still be deterministic and provenance-tagged; if zero or one feats are extracted, that is the expected result and not a bug.",
+  "acceptance_criteria": "- Parser extracts every feat from the SRD feats section.\n- Records satisfy dnd5e-srd feat baseline kindSchema.\n- Manifest description includes 'feat' in Included record kinds (when records are emitted).\n- Unit tests cover the SRD's actual feat coverage (likely just Grappler, but the parser is general).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:07:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:57Z",
+  "started_at": "2026-05-28T03:26:04Z",
+  "closed_at": "2026-05-28T03:33:38Z",
+  "close_reason": "Parser implemented: parseFeats.ts with two-pass heuristic approach. FeatExtraction type added, emit/index/sections/kindSchemas all wired. 19 unit tests + pipeline integration test. Grappler (the only SRD 5.1 feat) extracted + validated end-to-end.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.5",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:07:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.5",
+      "depends_on_id": "eshyra-0m9.5.9",
+      "type": "blocks",
+      "created_at": "2026-05-27T18:16:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

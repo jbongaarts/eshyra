@@ -1,0 +1,86 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.4",
+  "title": "Provide canonical identities, aliases, and relationships for runtime discovery",
+  "description": "Provide pack-side stable identities, aliases, topics, and many-to-many relationships\nthat help runtime discovery find potentially governing material without exact kind/title\nlookup. Do not make this a universal search-completeness requirement. Relationships are\ndiscovery reasons, not exclusive ownership.",
+  "design": "2026-10-10 DESIGN (Claude Captain, main 013ec704). Profile: semantic-system (discovery architecture) within rules-clause-complete. Consumers: packages/core/src/discovery/signals.ts (name-mention extraction), candidates.ts, expansion/retention/packet, shadow traces and measurements (ambiguousNames), discovery probes (test/discovery/discoveryProbes.test.ts M1 must-consider / M3 no lost routes), lookup_rules (already returns kind-aware candidate lists on ambiguity).\nD1 AMBIGUOUS NAME-MENTION DROPS THE ROUTE (demonstrated discovery defect, AC4): signals.ts (~L149-188) pushes an AmbiguousNameObservation and emits NO signal when a mentioned name maps to more than one record key (77 colliding display names at main, e.g. hide = action:hide | equipment:hide; shield = equipment:shield | spell:shield; acolyte; druid; mounts creature vs equipment; potion of healing; ability score improvement x12). So player input naming such a thing surfaces nothing by name. Repair: emit a name-mention signal for EVERY matching key, each carrying evidence {matchedName, kind, ambiguousWith: [the sibling keys]} as a retrieval reason (ADR 0020 many-to-many: several paths may surface several clauses; the DM disambiguates). Keep the ambiguousNames observation for traces. Do not invent ranking by kind; if the existing ranking/retention budget needs a rule for multi-candidate mentions, keep every candidate within retention unless an existing documented budget forbids it, and report. Verify M1/M3 probes stay green and add a probe/test: player input 'I hide' yields action:hide (and equipment:hide) as candidates with the ambiguity reason; a unique name is unchanged.\nD2 F-22 display-name qualification: verify that every consumer that shows a colliding name to the DM shows kind and source with it (lookup_rules candidate summaries; packet rendering). If yes, disposition accepted with that evidence (qualification lives in presentation, not a pack field); if any consumer renders a bare colliding name, qualify it there.\nD3 SENSE DEFINITION PAIRS (absorbed 19.3.6): rule:senses-darkvision (p.257) vs rule:darkvision (p.86) and the truesight/blindsight/tremorsense pairs are distinct texts, not duplicates; do not alias. If D1 makes a name-mention surface both, that already satisfies discovery; otherwise record that no relation is emitted and why.\nD4 dispositions: CAP-011 canonical-discovery (canonical relationships and discovery durable) and fable:F8 rule-key-duplication (rule keying and duplication hygiene explicit): check rule records with the same or near-same titles (e.g. rule:spellcasting / rule:spellcasting-chapter / rule:special-traits-spellcasting) for true duplication vs distinct passages; repair a true duplicate, otherwise disposition with evidence. Registry rows updated with reasoning. EXCLUSIONS: no universal retrieval-completeness claim; no alias table invented without a source or consumer need.",
+  "acceptance_criteria": "- Known duplicate names and represented option identities resolve to stable unambiguous identities.\n- Runtime discovery can consume aliases/topics/relationships without exact normalized kind/title.\n- Relationship metadata preserves multiple meaningful retrieval reasons rather than exclusive neighborhoods.\n- A demonstrated missing alias/index entry can be a discovery defect; absence from an index never proves irrelevance or source absence.\n- This bead makes no universal retrieval-completeness claim.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\nADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): KEPT - discovery-side identities/aliases (recovery step 3); sequence after the Lane A source repairs so aliases are built on corrected records.\n2026-10-09 rebaseline: absorbs retired eshyra-o9bd.19.3.6. Parallel sense definitions across chapters (rule:senses-darkvision p.257 vs rule:darkvision p.86, and the truesight/blindsight/tremorsense pairs) are not duplicates - the texts differ and match the PDF - so they must not be aliased as one identity. If a discovery consumer needs to surface both, express it here as a source-supported many-to-many relationship (a retrieval reason, not ownership or duplicate-of); otherwise record that no relation is emitted. Do not infer edges from audit ownership or canonicalOwner.\nPR #655 at cf5b1018; Sol review eshyra-o9bd.19.2.4.2.\nRepair 19.2.4.3 integrated with main; PR #655 at 17fa8d98; fresh Sol review eshyra-o9bd.19.2.4.4.\nRepair 19.2.4.5 (transport error data) ff'd; PR #655 at 1ec28562; fresh full review eshyra-o9bd.19.2.4.6 by Opus fallback (Sol quota out until 14:57).\nReview 19.2.4.8 (Sol): punctuation class survived 2nd repair (internal apostrophe + external possessive, 45 keys). HARD STOP: subsystem review eshyra-o9bd.19.2.4.9, then ONE repair.\nSubsystem review 19.2.4.9 (Sol): S1 internal apostrophe + possessive (45 keys), S2 mid-name possessive (captain: brief artifact, not required, covered incidentally), S3 apostrophe glyph set. Captain-scoped repair eshyra-o9bd.19.2.4.10 (shared glyph set + per-token alternatives; Sol's lexer/automaton not adopted).\nRepair 19.2.4.10 + main merge pushed: PR #655 at aced3844; Sol fresh full review eshyra-o9bd.19.2.4.11.\nUser decision: review 19.2.4.11 S1 (glued quote) out of contract; typos handled by DM reasoning (bd memory typos-handled-by-dm-reasoning). Documented in CAP-011 + tokenizer comment; PR #655 at 28e77a7f; targeted review eshyra-o9bd.19.2.4.12 (Opus fallback).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T22:46:08Z",
+  "started_at": "2026-10-10T21:44:01Z",
+  "closed_at": "2026-10-11T22:46:08Z",
+  "close_reason": "PR #655 merged after approval at exact head 28e77a7f (targeted review eshyra-o9bd.19.2.4.12, Opus fallback, following Sol full review 19.2.4.11 whose sole finding was dispositioned out of contract by user decision). Ambiguous name-mentions surface every key with per-name reasons; lookup_rules ambiguous candidates qualified and delivered through every transport; punctuation/apostrophe grammar with supported glyph set; D2-D4 dispositions.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.2.4.1",
+      "type": "blocks",
+      "created_at": "2026-10-10T16:44:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.2",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.2.4.7",
+      "type": "blocks",
+      "created_at": "2026-10-11T11:01:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.2.4.5",
+      "type": "blocks",
+      "created_at": "2026-10-11T10:47:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.2.4.10",
+      "type": "blocks",
+      "created_at": "2026-10-11T16:57:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.1.4",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.2.4.3",
+      "type": "blocks",
+      "created_at": "2026-10-11T10:22:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 6,
+  "dependent_count": 1,
+  "comment_count": 0
+}

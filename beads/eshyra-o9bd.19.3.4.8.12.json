@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.8.12",
+  "title": "Dispatch: Sol fifth-pass repairs F1, combatant side (Sonnet 5.5, attempt 1)",
+  "description": "Repair batch F1 (combatant side) for the integration branch eshyra-o9bd.19.3.4.8, from the Sol fifth pass, bead eshyra-o9bd.19.3.4.8.11 (run `bd show eshyra-o9bd.19.3.4.8.11` and read S24, S25, S27, S28, S29, S30, S31, S32, S34 in full; batch E design D1-D9 is in `bd show eshyra-o9bd.19.3.4.8.10`). A parallel agent (F2) owns the CHARACTER side: do NOT edit packages/core/src/state/hpLifecycle.ts, domainMutations.ts, rest.ts, or hpLifecycle.test.ts. You own state/combatantLifecycle.ts, state/encounterCombatants.ts, state/activeEffects.ts, orchestrator/toolEndEffect.ts, orchestrator/toolStartEffect.ts, orchestrator/toolUpdateCombatant.ts, and their tests (combatantLifecycle.test.ts, encounterCombatants.test.ts, activeEffects.test.ts, exhaustion.test.ts combatant cases). Keep every fix inside nextCombatantLifecycle (D1) so writers stay routed through it.\n\nSUPERVISOR DECISIONS:\nS27 (blocker): own-turn head regrowth with positive actual HP gain is ordinary healing for lifecycle purposes: dying or stable → alive, both death-save counters reset, recovery schedule/settled cleared. Blocked (suffocating) regrowth keeps zero regain, keeps dying and counters (already correct — preserve). Fire/dead exclusions unchanged.\nS28: combatant ordinary death-save successes cap at 3 while blocked (like natural 20 and like characters); failures and breathe-triggered stabilization unchanged.\nS29: restore the default monster nonlethal knockout: under monster rules, update_combatant(hpDelta reducing to 0 or below, status 'unconscious') is a knockout — HP 0, status 'unconscious', no death — recognized BEFORE ordinary lethal damage is applied. Terminal causes (exhaustion 6, zero heads) still win. Reconcile the update_combatant description with the accepted behaviour (monster: 'unconscious'; player-character: 'stable').\nS30: nextEffectiveMax derives from the RESULTING base maximum (input hpMax ?? current) and resulting conditions; use it for heal cap, clamp (non-damage on decrease) and settled zero→positive rearm.\nS31: when the begin_turn accumulator reset's transition repairs HP/life state of a current actor projection, sync the actor in the same transaction (historical rows still never sync).\nS32: thread the exact resolveRulesPack through start_effect condition projection and end_effect / expiry / concentration cleanup paths that call updateCombatant or updateCampaignActor (add the resolver input to updateCampaignActor). Genuine unavailability still refuses atomically.\nS25: upsertCampaignActor validates the candidate actor (I1, I6, terminal transitions) BEFORE any SQL, and runs inside its own withTransaction when not already in one, so a refused write leaves the stored row unchanged; audit ensureCampaignActorFromCombatant the same way. Extend the existing D6 test to assert the stored row is unchanged after the error (absent/present combatLifecycle, exhaustion 4 and 6).\nS34 (combatant half): a natural 20 that cannot actually regain HP (zero effective max) counts as one success through the SAME capped-success path as an ordinary success, so a third success stabilizes (counters reset, recovery schedule armed) unless a recovery block is set. Positive-max natural 20 revival unchanged.\nS24: add the ordinary-state × profile full-next-state matrix to combatantLifecycle.test.ts: for monster and player-character profiles, prepare valid alive / dying (incl. nonzero counters) / stable / dead states WITHOUT terminal causes, and for every event assert the full next state or the meaningful refusal; include blocked/unblocked, zero/positive effective max, and the S27/S28/S29/S34 cases. Keep the terminal-priority cases and the state-aware sequence.\n\nEach fix needs a generalized regression as the review entry describes. Run `npm ci` if needed, then `npm run verify:worktree` before committing; commit on your branch; record a completion report (files, each finding → tests, verify result) with `bd update <your bead> --append-notes`, then `bd close <your bead>`. Do not push, open a PR, or modify any other bead.",
+  "acceptance_criteria": "Listed findings repaired with generalized regressions; npm run verify:worktree green before commit; completion report in bd notes; bead closed by the agent.",
+  "notes": "Completion (commits 7e87aafd, d4c60010). Files: state/combatantLifecycle.ts, state/encounterCombatants.ts, state/activeEffects.ts, orchestrator/toolEndEffect.ts, toolUpdateCombatant.ts (description), toolRemoveEffectTarget.ts, toolResolveConcentration.ts; tests combatantLifecycle, encounterCombatants, activeEffects, exhaustion, actionEconomy. S27: headsRegrown with positive actual regain settles dying/stable -> alive, counters+schedule reset (matrix 'pc dying/stable: regrowth', actionEconomy 'S27' hydra integration incl. blocked). S28+S34: ordinary and zero-regain nat20 share one capped-success path (matrix 'successes cap', 'zero max natural 20', 'third success through one path'). S29: monster knockout (unconscious) recognized before lethal damage via knockout event (encounterCombatants 'S29'; matrix knockout cases). S30: nextEffectiveMax from resulting base max ('S30'). S31: reset repair syncs current actor ('S31' in exhaustion.test). S32: resolver threaded through createActiveEffect projections, updateCampaignActor, end_effect/remove_effect_target/resolve_concentration tools, concentration break ('S32' activeEffects). S25: upsertCampaignActor validates candidate before SQL and owns a transaction; ensureCampaignActorFromCombatant wrapped; D6 test extended with stored-row-unchanged. S24: ordinary-state x profile matrix added. Deviations: update_combatant description keeps the existing pinned sentence (tools.test.ts) and appends the knockout clarification; not threaded (outside owned files): rest.ts/hpLifecycle/domainMutations callers, actionEconomy settleEffectsAtTurnBoundary, closeCombat closure. verify:worktree green (5795 passed, 3 skipped).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-03T22:07:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-03T22:16:19Z",
+  "closed_at": "2026-10-03T22:16:19Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8.12",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8",
+      "type": "parent-child",
+      "created_at": "2026-10-03T17:07:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

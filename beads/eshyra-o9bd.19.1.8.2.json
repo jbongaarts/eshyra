@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.8.2",
+  "title": "Add located regression predicates for known findings F-20, fable:F5, sol:CAP-001, sol:CAP-002 (eshyra-o9bd.19.1.8 follow-up)",
+  "description": "eshyra-o9bd.19.1.8.1 could not locate a permanent regression predicate with a reconstructable pre-repair defect state for these registry rows: opus:F-20 (stale manifest provenance removed), fable:F5 (synthesized table headers distinguished from source text; table /columns is source-prose before and after), sol:CAP-001 (rule corpus executable procedures), sol:CAP-002 (condition structure without regressing typed effects). Each needs a generalized predicate over its justified population plus a discrimination check against the pre-repair committed artifact. Also strengthen opus:F-09 (rules-prose-readiness), whose only evidence is registry status text in findingRegistry.test.ts.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T03:17:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T03:17:51Z",
+  "closed_at": "2026-10-10T03:17:51Z",
+  "close_reason": "Absorbed back into eshyra-o9bd.19.1.8 (attempt 2 dispatch): rows 3/5/16/17/18 are this bead's own population; findings discipline forbids deferring current-bead work to a follow-up.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.8.2",
+      "depends_on_id": "eshyra-o9bd.19.1.8",
+      "type": "parent-child",
+      "created_at": "2026-10-09T22:17:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

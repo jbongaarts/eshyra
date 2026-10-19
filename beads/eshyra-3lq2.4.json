@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3lq2.4",
+  "title": "Review: Sol final review of PR #635 (eshyra-3lq2 @ 2dbbb086)",
+  "description": "Final read-only review of PR #635 (branch eshyra-3lq2, exact head 2dbbb086e904c4ba3d73349c47b8395fed1f1713) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #635 at exact head 2dbbb086e904c4ba3d73349c47b8395fed1f1713, branch eshyra-3lq2.4. Profile: rules-clause-complete.\n\nReviewed all three changed files and the complete origin/main...HEAD diff/log; AGENTS.md; docs/design-and-pr-review-policy.md; ADR 0020; character-progression design; importer-fix protocol (no importer, audit or generated pack changes); live owning/dispatch/repair/prior-review beads; vendored SRD 5.1 pp.12-13 and 47-48; real bundled feature filters and spell records; descriptor production, canonical selection validation, sibling distinctness, placement, spell union, ledger construction, level-up normalization/application, preparation, sheet/registry persistence, and CLI descriptor consumers. refs/beads/state is stale (2026-09-10) and lacks these beads; live bd records govern. GitHub confirms the PR has this exact head. Its description predates the repair; implementation and corrected parent notes govern the Magical Secrets disposition.\n\nFindings: none (MATERIAL or NON-MATERIAL). Previous review blockers are fixed across their defect classes: Book-only ownership no longer excludes ordinary learning/replacement targets, Book acquisition permits independently known spells, same-step cross-destination acquisition works in either validation order, duplicate acquisition within a destination stays invalid, and replacing an independently known copy preserves the Book entry and flat union. Every resolved leveled spell in the single-class known bucket is eligible as the OLD replacement, including off-list Magical Secrets; the NEW spell retains class-list/level constraints. Cantrips and Book-only rituals remain ineligible as OLD replacements. Tome offers still use class-table deltas and its cantrips remain nonreplaceable. No additional per-spell provenance schema is required for these consumers.\n\nVerification: git diff --check passed; exact head and clean worktree reconfirmed. Dependencies are absent, so no Vitest, install, build, formatter or full verification was run. File-free Node 24 probes loaded the actual TypeScript modules and bundled resolver: 81 assertions passed over Comprehend Languages, Illusory Script and Unseen Servant; Fireball, Counterspell and Dispel Magic; existing-state/same-step ownership; replacement into and out of independently owned rituals; ordering; display-name/canonical-ref aliases; malformed/duplicate bucket rejection; and ledger/union preservation. This is bounded source-level evidence, not a SQLite integration or full-suite run. Observed CI includes successful checks and one build-test still in progress; no merge authorization is implied.\n\nNo repository files were edited or created; no GitHub comment, commit, push or merge occurred. Parent eshyra-3lq2 was not modified.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T07:58:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T08:04:13Z",
+  "closed_at": "2026-10-09T08:04:13Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-3lq2.4",
+      "depends_on_id": "eshyra-3lq2",
+      "type": "parent-child",
+      "created_at": "2026-10-09T02:58:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

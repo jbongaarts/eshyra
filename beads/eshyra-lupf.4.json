@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.4",
+  "title": "Define XP-vs-milestone advancement policy per campaign/rules binding",
+  "description": "Define and persist the advancement mode (XP-threshold vs milestone) bound to a campaign/rules pack. XP thresholds are sourced from the frozen pack: the SRD ships a 'table:character-advancement' record (XP-per-level) in rules__dnd5e-srd-5.1 — resolve thresholds from that canonical record rather than hardcoding or overlaying them. Provide a policy object consumed by eligibility (.7) and award (.6) logic. Depends on the design note and progression state/authority decisions.",
+  "acceptance_criteria": "- Advancement mode (XP-threshold vs milestone) is selectable and persisted per campaign/rules pack.\n- XP thresholds are resolved by reading the frozen pack's 'table:character-advancement' record (no hardcoded/overlay thresholds).\n- Tests prove the Character Advancement table is located in the pack AND that level -> XP-threshold mapping is deterministic and correct — threshold lookup is not shipped as untested glue.\n- Policy object is consumed by eligibility (.7) and award (.6) logic; tests cover both modes.",
+  "notes": "Review fix 3 (freeze guard): edits to two frozen importer files (ancestryOptions.ts, README.md) under packages/core/scripts/importers/dnd5e-srd-5.1/ tripped the SRD freeze thaw-policy check in CI. Added thaw note docs/audits/dnd5e-srd-5.1-final/thaw-notes/2026-06-27-strip-control-bytes-importer.md (mirrors 2026-06-23 biome-lint-hygiene precedent). Neither file is hash-pinned in freeze-manifest.json, so no manifest update needed; both freeze checks now pass (changed-path PASSED with thaw note, hash 13/13). Changes are cosmetic control-byte hygiene with no record/output change.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:20:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T21:53:18Z",
+  "closed_at": "2026-06-28T00:35:27Z",
+  "close_reason": "Merged via PR #337. XP-vs-milestone advancement policy: rules/advancementTable.ts resolves thresholds from the pack's table:character-advancement record (no hardcoding, fail-closed); state/advancementPolicy.ts binds mode+table to the campaign rules binding (fails closed for non-D&D XP). Includes reviewer-requested hidden-Unicode C0/DELETE guard hardening + thaw-noted control-byte cleanup in frozen importer files.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.4",
+      "depends_on_id": "eshyra-lupf.1",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.4",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:20:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.4",
+      "depends_on_id": "eshyra-lupf.2",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

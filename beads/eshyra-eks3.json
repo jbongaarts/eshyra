@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eks3",
+  "title": "Migration-0018 oversized-stack reviews with quantity <=100 are permanently unresolvable",
+  "description": "Post-merge review of PR #455 (verified against current main, 2026-07-19).\n\n## Defect\n\nA migrated `oversized-stack` adoption review whose row quantity is ≤ 100 is permanently unresolvable: the quarantine (which blocks item usage, resets, context projection, custody, and attunement) can never be lifted by any accepted resolution.\n\nCode facts (all verified):\n\n- Migration `packages/core/data/migrations/0018_inventory_adoption_review.sql` classifies migrated markers as `review_kind='oversized-stack'` purely by matching the legacy reason string (`LIKE 'stateful legacy stack quantity % exceeds the reviewed adoption maximum of % singleton instances'`). It never checks the row's *current* `inventory.quantity`.\n- The kind→action mapping is exclusive: `oversized-stack` accepts only `set-reviewed-quantity` (`itemAdoptionReview.ts:48-49`, and the SQL CHECK on `inventory_adoption_resolution` enforces the same pairing at the schema level).\n- The resolver rejects `set-reviewed-quantity` when `row.quantity <= MAX_MAGIC_ITEM_ADOPTION_SINGLETONS` (=100): `itemAdoption.ts:347-349` — \"set-reviewed-quantity applies only to a quarantined stack above 100\".\n\nSo any pre-migration marker carrying that reason string on a row whose quantity is now ≤ 100 (the legacy markers were model-writable advisory JSON, so the reason and the actual quantity were never atomically coupled; quantity could also have been legitimately corrected after the marker was written) becomes a permanent quarantine with no GM escape hatch.\n\n## Fix direction (per review recommendation)\n\nMigration checksums are immutable — do not edit 0018. Instead either:\n\n1. New migration that reclassifies `oversized-stack` reviews whose row quantity is ≤ 100 as `malformed-evidence` (whose `discard-evidence` resolution works and preserves the raw evidence in `discarded_structure_json`); or\n2. A resolver compatibility rule permitting an evidence-backed no-reduction resolution for this case — but note the `inventory_adoption_resolution` CHECK constrains kind→action pairs at the schema level, so option 1 (reclassification) is the cleaner path; option 2 would itself need a migration to widen the CHECK.\n\nAdd a regression test constructing the impossible state (oversized-stack review + quantity ≤ 100) and asserting it is resolvable after the fix.\n\nRelated: sold-item `returned` payment bypass and the numeric-conservation dice-modifier gate, filed from the same review.\n",
+  "notes": "Related beads from same PR #455 post-merge review: eshyra-4ygd (sold+returned payment bypass), eshyra-2n3n (dice-token gate).\nFix merged to branch eshyra-f0nz; PR #458 open (https://github.com/jbongaarts/eshyra/pull/458). Close after PR merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:03:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-20T04:40:23Z",
+  "started_at": "2026-07-20T00:21:23Z",
+  "closed_at": "2026-07-20T04:40:23Z",
+  "close_reason": "Fixed in PR #458 (merge commit 958d6d0b), including both review rounds: value-scoped conservation exceptions, zero-quantity review resolution with atomic attunement reconciliation, restored stateful repurchase regression.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

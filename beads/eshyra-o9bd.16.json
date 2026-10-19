@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16",
+  "title": "FINAL: independent ADR-0020 re-audit of the candidate SRD pack",
+  "description": "Perform the independent max-effort audit of the candidate after bounded automated gates\npass and before formal re-freeze. Adversarially inspect source fidelity/provenance,\ndiscovery-supporting relationships, adjudication boundaries, selected capability correctness,\nand state-integrity/runtime ownership as separate concerns. Automated green is entry evidence,\nnot universal completeness proof.",
+  "acceptance_criteria": "- Independent audit is performed against the exact candidate and current authority.\n- Source fidelity, discovery, adjudication support, deterministic capability, and state integrity are reported separately.\n- Known defect classes are attacked beyond original examples; any recurrence/new substantive defect blocks re-freeze and receives ownership.\n- Unknown/unrecognized/unenumerable scope is reported as a limit, not a green result.\n- A clean result means no blocker was found against the ADR-0020 truthfulness bar, not universal completeness.",
+  "notes": "2026-07-08 ADR 0017 adjustment: The final max-effort audit should use the compiler guide's dimensions explicitly: reproducibility, source completeness, structural fidelity, semantic modeling, runtime ownership/support, and end-to-end playable validation. Report them separately instead of collapsing them into a single 'represented somewhere' result.\n*** ORDER INVERTED (2026-07-25) ***\nThis bead previously depended on eshyra-o9bd.14, i.e. the final re-audit ran\nAFTER regeneration and re-freeze. That edge is removed. The corrected closure\nchain audits the CANDIDATE bundle BEFORE the formal re-freeze:\n\n  19.6.1 corpus migration -> 19.6.2 regression/finding closure\n  -> 19.6.3 candidate bundle + automated no-repeat gates\n  -> eshyra-o9bd.16 (THIS BEAD) independent max-effort re-audit\n  -> 19.6.4 accept results and certify zero-repeat closure\n  -> eshyra-o9bd.14 formal regeneration and re-freeze\n  -> eshyra-2zyy re-enable post-freeze thaw-note gating\n\nSCOPE CHANGE: this bead now audits a candidate, pre-freeze artifact rather than a\nfrozen one. Its original description (\"After ... the pack is regenerated/re-\nfrozen, perform a MAX-EFFORT re-audit\") reflects the old order — read the\ndependency graph, not that sentence, for sequencing. Everything else about the\nmax-effort standard stands.\n\nThis bead is deliberately NOT superseded by the new program: eshyra-o9bd.19.6.3\ngenerates the candidate and passes automated gates, but independent review\nbelongs here.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:53:40Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd.15",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:08:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd.19.6.3",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:29:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

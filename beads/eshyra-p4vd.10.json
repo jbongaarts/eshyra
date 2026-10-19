@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p4vd.10",
+  "title": "Expose canon-tier evidence in debug audit logs",
+  "description": "Improve debug/audit visibility for canon-tier evidence.\n\nWhen a turn is accepted or rejected, the debug artifacts should make it clear which claims were supported by which evidence tier.\n\nAcceptance criteria:\n- Debug output for audited turns shows relevant evidence sources by tier:\n  - module canon\n  - campaign state\n  - campaign overlay lore\n  - scene context\n  - tool result\n- Rejections identify whether missing support was:\n  - no successful query\n  - only failed query\n  - unsupported module contradiction\n  - rumor used as confirmed fact\n  - consequential improvisation not recorded\n- Accepted turns involving record_world_fact/record_lore show the newly recorded overlay fact IDs.\n- The output is concise enough to be useful in playtest logs.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:24:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:45:04Z",
+  "started_at": "2026-06-24T03:34:32Z",
+  "closed_at": "2026-06-24T03:45:04Z",
+  "close_reason": "Implemented campaign overlay canon, truth-statused lore recording, world_query retrieval/search, audit/prompt guidance, docs, and regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-p4vd.10",
+      "depends_on_id": "eshyra-p4vd",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:24:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

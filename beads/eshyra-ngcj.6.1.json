@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.6.1",
+  "title": "Project common spell mechanics from SRD spell records",
+  "description": "Problem:\nSpell records have useful top-level metadata such as level, school, casting time, range, duration, components, classes, ritual, and material. But concentration, saving throw, spell attack, damage, condition, area, and scaling mechanics are generally still prose-only.\n\nImplement:\n- Add optional typed mechanics projection fields for spells.\n- Start with high-confidence patterns:\n  - concentration derived from duration text.\n  - saving throw ability and DC relationship where explicit.\n  - spell attack indicator.\n  - damage dice/type where explicit and simple.\n  - condition application where explicit.\n  - higher-level scaling where regular and source-clear.\n- Emit projection diagnostics for spells not projected.\n\nAcceptance criteria:\n- Representative combat spells have typed attack/save/damage projections.\n- Concentration can be queried deterministically.\n- Ambiguous spells remain source-prose-backed rather than guessed.\n- Tests cover positive and negative examples.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T00:12:07Z",
+  "started_at": "2026-06-30T00:11:55Z",
+  "closed_at": "2026-06-30T00:12:07Z",
+  "close_reason": "Implemented first-pass source-backed mechanics projections for spells, creature/action entries, features/ancestry/feats, and hazards; regenerated SRD pack; added schema validation, report, thaw note, and tests.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.6.1",
+      "depends_on_id": "eshyra-ngcj.6",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

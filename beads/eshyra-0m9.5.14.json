@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.14",
+  "title": "SRD 5.1 importer: exact creature name-set coverage validation",
+  "description": "The creature coverage check added in loreweaver-0m9.5.1 currently uses a minimum-count floor (MIN_EXPECTED_SRD_5_1_CREATURES) plus an empty-result guard, because enumerating the full SRD 5.1 Monsters-chapter name set by hand (without the vendored PDF) is error-prone. Once the SRD 5.1 PDF is vendored and a full-PDF coverage pass exists, replace the min-count floor with validation against the exact expected creature name set so the importer fails closed on any specific missing/renamed creature, not just gross truncation. NPC stat blocks (the separate 'Nonplayer Characters' section) are intentionally out of scope for the creature kind unless a decision record says otherwise.",
+  "notes": "PR #141 open for review (branch feat/srd-exact-creature-coverage-0m9.5.14). Not yet merged — close on merge.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-29T21:19:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:15Z",
+  "started_at": "2026-06-01T04:13:35Z",
+  "closed_at": "2026-06-03T04:54:46Z",
+  "close_reason": "Closed",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.14",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-29T16:19:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.14",
+      "depends_on_id": "eshyra-60z",
+      "type": "blocks",
+      "created_at": "2026-05-31T23:28:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

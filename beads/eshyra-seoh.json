@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-seoh",
+  "title": "Normal CLI play never passes the adventure-module resolver to runTurn",
+  "description": "Verified at main f4b3461. packages/cli/src/playTypes.ts:35 PlayDeps declares no resolveAdventureModule; packages/cli/src/playTurnLoop.ts:96-107 builds RunTurnDeps without one. Consequently contextAssembler.assembleAdventureContext returns [] (an active adventure run contributes no context to the DM turn) and encounterCombatants.ts:638-642 throws 'start_encounter requires an active adventure module resolver' for an authored encounterId. packages/cli/src/adventures.ts:101 makeModuleResolver exists but its real consumer is the read-only 'adventures show' path.\n\nExisting CLI tests use a fake runTurn and core tests inject a resolver, so neither exercises the real handoff.\n\nDiscovered by eshyra-jued (2026-07-29-existing-discovery-substrate-map.md defect 2). Blocker B2 of 2026-07-30-integrated-transition-design.md: adventure-context discovery evidence (probe P9) is invalid until this is repaired.",
+  "acceptance_criteria": "Normal CLI play supplies resolveAdventureModule to runTurn; an active adventure run contributes its context slice on a real turn; start_encounter by authored encounterId succeeds; a test exercises the real selected-module-to-runTurn handoff rather than a fake runTurn.",
+  "notes": "2026-08-30: Began implementation in worktree eshyra-seoh. Added PlayDeps.resolveAdventureModule, forwarded it in playTurnLoop, and production resolver wiring from the selector's merged bundled/installed inventory. Added a real-runTurn regression test that selects the bundled module and asserts its DM-only context appears in the model turn context. npm run typecheck and npm run check pass. Focused play.test.ts is currently blocked before test execution by pre-existing RulesPackError: records[841].data.mechanics has unsupported key \"ambiguities\" from origin/main.\n2026-08-30 correction: The reported RulesPackError was NOT present on main. The seoh worktree initially inherited the parent checkout's stale compiled @eshyra/core via its ancestor node_modules, creating an old-validator/new-rules-pack mismatch. Evidence: CI succeeded on c6cf3a5 and current main 6015db0; after npm ci created worktree-local workspace links, npm run typecheck and focused play.test.ts passed (45 passed, 1 skipped).\n2026-08-30: Rebased onto origin/main 6015db0. Verification passed after worktree-local npm ci: npm run check, npm run typecheck, and npm run test (263 files passed, 4 skipped; 4732 tests passed, 19 skipped). Regression now also starts authored enc-mouth-ambush through real runTurn and asserts two combatants.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-30T23:29:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-08-30T02:01:07Z",
+  "started_at": "2026-08-30T01:34:27Z",
+  "closed_at": "2026-08-30T02:01:07Z",
+  "close_reason": "CLI now supplies the selected adventure-module resolver to real turns; regression covers context and authored encounter lookup.",
+  "labels": [
+    "adventure",
+    "cli",
+    "dm-context"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-seoh",
+      "depends_on_id": "eshyra-o9bd.19.8",
+      "type": "related",
+      "created_at": "2026-07-30T18:29:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

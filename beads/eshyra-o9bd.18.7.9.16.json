@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.9.16",
+  "title": "C9a — Model Shrieker sound alarm",
+  "description": "Model the Shrieker residual ref only: deterministic sound-alarm behavior from the classified source clause with a small closed typed effect, source gate, committed-pack assertion, exact membership removal, and standard slice verification.",
+  "notes": "Complete exact registry/membership removals and count reconciliation; verify readiness-report delta; regenerate through the importer; add committed-pack assertions; update thaw evidence and freeze hash as appropriate; run verify:dnd5e-srd-pack, verify:dnd5e-srd-freeze, relevant focused tests, full required worktree/check/typecheck tests, and audit-bundle verification where required.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T04:10:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-11T16:01:01Z",
+  "closed_at": "2026-07-11T16:01:01Z",
+  "close_reason": "Implemented in parent C9 rollout: exact source-gated contract, regenerated pack, membership removal, and verification.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.9.16",
+      "depends_on_id": "eshyra-o9bd.18.7.9.15",
+      "type": "parent-child",
+      "created_at": "2026-07-10T23:10:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

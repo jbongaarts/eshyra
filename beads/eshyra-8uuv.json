@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-8uuv",
+  "title": "Claude Captain seat never admits a session started by /clear (SessionStart payload lacks model)",
+  "description": "claude-captain-context.mjs admits a session only when the SessionStart payload carries a model matching CAPTAIN_MODEL_PATTERN; otherwise classifyClaudeOccupant returns no-model-identity, no ledger record is written, no charter/handoff is injected, and claude-captain-exit.mjs stays silent for the whole session. Observed 2026-09-28: session 8f913424 began via SessionStart:clear, received no seat context, merged PRs #582 and #589, and was never asked for a handoff (same failure class as eshyra-qqrr). Sandbox replay: identical clear payload is admitted with model and silently refused without it. Fix: admit a /clear (or compact) continuation of an already-admitted captain session without weakening the model gate for sessions with no provable identity (claude -p, unknown models, subagents, dispatched workers).",
+  "notes": "2026-09-28: fix in PR #591 (branch eshyra-8uuv-captain-clear-admission). Start side: clear-handover.json from SessionEnd(reason clear), consumed by SessionStart(source clear) with no model; a compact start with no model reuses its own record. Exit side: late admission from a transcript that begins with SessionStart:clear and has a captain main-thread model. Real replay of session 8f913424 confirms: main hook silent, fixed hook reminds. Stays in_progress until merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T03:23:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-29T03:32:44Z",
+  "started_at": "2026-09-29T03:24:02Z",
+  "closed_at": "2026-09-29T03:32:44Z",
+  "close_reason": "Fixed by PR #591 (merge ce9fa86e): /clear successors inherit the admitted captain identity via a single-use handover, or late admission from a transcript",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

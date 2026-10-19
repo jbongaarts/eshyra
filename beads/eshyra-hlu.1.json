@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-hlu.1",
+  "title": "Add pack license and allowed-use metadata",
+  "description": "Add license, attribution, provenance, and allowed-use metadata to the module/pack schema so product behavior can enforce whether content may be bundled, hosted, shared publicly, monetized, redistributed, or used only as user-private BYOK material.",
+  "acceptance_criteria": "Pack schema includes licenseClass, licenseName, attribution, commercialUseAllowed, hostedUseAllowed, redistributionAllowed, publicSharingAllowed, derivativeAllowed, user-supplied/trademark flags, source description, provenance policy, and output restrictions; policy validation rejects unsupported closed/public-hosted uses.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-18T03:00:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-19T05:14:41Z",
+  "close_reason": "Pack license/allowed-use metadata implemented: PackLicense type + evaluatePackPolicy/assertShippablePack, validated and tested. PR #5.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-hlu.1",
+      "depends_on_id": "eshyra-hlu",
+      "type": "parent-child",
+      "created_at": "2026-05-17T22:00:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

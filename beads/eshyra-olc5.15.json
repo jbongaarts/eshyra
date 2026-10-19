@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.15",
+  "title": "Grant death consequences: Ring of Djinni (nonmagical on the djinni's death), Staff of the Python (0-HP death/revert/destroy); Efreeti Bottle source check",
+  "description": "RECONCILED 2026-10-18 after the architectural boundary review. This supersedes the 2026-10-17 framing where the two differ; the original text is kept verbatim in NOTES.\n\nThis is a PRE-FREEZE resolution obligation: it blocks eshyra-o9bd.14 under the user rules of 2026-10-14 and 2026-10-17. The three items have DIFFERENT semantics, and this is not a general creature-death engine.\n\nRING OF DJINNI SUMMONING\n- Source: \"It remains as long as you concentrate ..., to a maximum of 1 hour, or until it drops to 0 hit points. It then returns to its home plane. ... After the djinni departs, it can't be summoned again for 24 hours, and the ring becomes nonmagical if the djinni dies.\"\n- Dropping to 0 HP is ordinary summon termination (the djinni returns home). The DEATH of the particular djinni is a distinct, qualifying event.\n- The curated spec has onEntityDeath 'make the ring nonmagical'. Triage strips that from the pack. The verbatim sentence survives only in an adjudicated span. No runtime applies the item transition.\n- Requirement: once a qualifying death is established, the ring becomes DURABLY nonmagical, and a later summon is refused. Ordinary endings (concentration, 1 hour, 0 HP return, dismissal) only start the 24-hour cooldown.\n- CORRECTED 2026-10-18 (user): the particular djinni may die while NO summon is active, so the ring transition is NOT required to coincide with a grant ending. It must be its own atomic, durable, attributable item-state consequence of the qualifying death. Only when a grant is active at that moment is the grant's ending included in the same transaction.\n\nSTAFF OF THE PYTHON\n- Source: \"If the snake is reduced to 0 hit points, it dies and reverts to its staff form. The staff then shatters and is destroyed. If the snake reverts to staff form before losing all its hit points, it regains all of them.\"\n- The pack's revertOn is [owner-bonus-action-command, reduced-to-0-hit-points]. The destruction exists only as a curated onEntityDeath that triage strips, plus the verbatim adjudicated m5 span.\n- Requirement: the 0-HP path (death, reversion, staff destroyed) must not be lost or conflated with the bonus-action reversion (staff intact, snake HP restored). The destruction should use the existing instance-destroy and tombstone path.\n- This bead does NOT have to make the Staff's other lifecycle terms green. Its owner-bonus-action-command ending and its mental-command control stay DM-ended/adjudicated under c58j.\n\nEFREETI BOTTLE\n- The source prints NO death-triggered item transition. Its item consequences are table outcomes:\n  - 01–10: \"After fighting for 5 rounds, the efreeti disappears, and the bottle loses its magic.\"\n  - 11–90: on the fourth opening, \"the efreeti escapes and disappears, and the bottle loses its magic.\"\n  - 91–00: \"It disappears when it grants the final wish or after 1 hour, and the bottle loses its magic.\"\n- The curated onEntityDeath ('resolve the efreeti's normal death; the bottle outcome remains spent') is a curation note, not a source transition. Do NOT invent an item-state transition for efreeti death merely because of it.\n- Verify that the real bottle-loses-magic outcomes are not lost: either they are owned (PR #671, olc5.12.4, bound outcome hints) or they are carried verbatim as adjudicated.\n\nBOUNDARY\n- Whether the qualifying event happened (the djinni died rather than returned home) may be DM-adjudicated. Where the engine has a trustworthy signal (the Staff's 0 HP), it may observe it.\n- The resulting canonical item-state transition must be correct, durable, attributable, idempotent and atomic. It must never be fabricated, and it must never be reachable through an ordinary ending.\n- It includes the grant's ending in the same transaction ONLY when a grant is active (corrected 2026-10-18). The Staff's 0-HP destruction stays coupled to its grant ending.\n\nCOMPILER\n- Source-grounded consequences must not be silently discarded by triage or hidden behind a green lifecycle classification.\n- Today the PR #673 guard (MAGIC_ITEM_ENTITY_GRANT_KEYS_WITH_DEATH_CONSEQUENCE keeping such grants pending) carries this. Keep that intent: a consequence is either typed and executed, or kept verbatim as adjudicated with the grant not green on lifecycle.\n\nNOT REQUIRED: a general creature-death interpretation engine; deterministic determination of \"died\" versus \"returned home\"; modelling efreeti death.\n\nDEPENDENCY: this bead edits the PR #673 ownership guard, so it depends on eshyra-c58j.\n",
+  "acceptance_criteria": "1. Ring: a qualifying-death event (DM-adjudicated) applies the nonmagical transition atomically, durably and attributably, whether or not a summon is active. When a summon is active, its grant ending is included in the same transaction. A later summon is refused. Concentration end, 1 hour, 0 HP return and dismissal do NOT apply it; they only start the 24-hour cooldown.\n2. Staff:\n   - The 0-HP ending destroys the staff instance in the same transaction as the grant ending.\n   - The bonus-action reversion does not destroy it, and the staff stays usable.\n   - No ordinary dismissal path bypasses the destruction.\n   - Until a Staff grant can execute, the existing readiness refusal stays, and the verbatim span stays.\n3. Efreeti:\n   - No death-triggered item transition is added.\n   - The curated onEntityDeath note is corrected, or reclassified as a non-transition, with a recorded reason.\n   - The death-consequence guard reflects real source consequences only.\n   - The bottle-loses-magic table outcomes are verified owned or verbatim-adjudicated.\n4. No grant becomes lifecycle-green while a source-grounded consequence on it is unowned and unrepresented.\n5. Minimum permanent evidence, real pack: the Ring's qualifying death contrasted with an ordinary end, and the Staff's 0 HP contrasted with the bonus-action reversion. This is not a death-semantics matrix.\n6. Not required: see NOT REQUIRED in the description.",
+  "notes": "2026-10-18 RECONCILIATION (architectural boundary review; user-authorized tracking-only reconciliation, no code). Description and acceptance rewritten; still REQUIRED PRE-FREEZE (blocks eshyra-o9bd.14; user rules 2026-10-14/17; olc5 stop condition 2026-10-12 applies). Facts verified against origin/main 318a7eb6 and PR #673 head 379c90f8 (OPEN).\nORIGINAL DESCRIPTION (2026-10-17, superseded where the reconciled description differs):\nFrom the user review of PR #673 (P2-2). The reviewed grant spec prints onEntityDeath 'make the ring nonmagical' (also Efreeti Bottle and Staff of the Python), which pack triage strips and no runtime applies. The options are to apply it deterministically when the grant ends by death, or to carry it as an explicit adjudicated clause with a verbatim span. Until then the grant stays pending (MAGIC_ITEM_ENTITY_GRANT_KEYS_WITH_DEATH_CONSEQUENCE). Evidence must contrast death with an ordinary grant end. NOT STARTED: user asked to discuss follow-ups after #673 converges.\n2026-10-18 addendum: PR #673 merged into main as dbbede8d at the same reviewed head 379c90f8, so every 'PR #673 head (OPEN)' fact in this description now holds on origin/main dbbede8d. The eshyra-c58j dependency is satisfied (c58j closed).\n2026-10-18 USER CORRECTION: the Ring of Djinni nonmagical transition need NOT be atomic with a grant ending (the djinni may die with no summon active). Required: an atomic, durable, attributable item-state consequence of a qualifying death, including the grant ending in the same transaction only when a grant is active. The Staff of the Python's coupled 0-HP destruction requirement is unchanged.\n2026-10-19: child olc5.15.1 (cd426bd9) reviewed by the captain and independently verified (verify:worktree exit 0, 7108 passed and 3 skipped; pack exact). Fast-forwarded into eshyra-olc5.15. Stacked PR https://github.com/jbongaarts/eshyra/pull/675 (base eshyra-olc5.14 / PR #674), open for user final review; stays in_progress until it merges. Review point: older saved Ring item-state rows lack machineState and now fail closed.",
+  "status": "in_progress",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-17T22:58:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-19T01:22:28Z",
+  "started_at": "2026-10-19T01:00:01Z",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.15",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-17T17:58:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.15",
+      "depends_on_id": "eshyra-olc5.15.1",
+      "type": "blocks",
+      "created_at": "2026-10-18T20:00:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.15",
+      "depends_on_id": "eshyra-c58j",
+      "type": "blocks",
+      "created_at": "2026-10-18T18:56:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1dey",
+  "title": "Admit roll-domain coverage of effective random-initialization tables",
+  "description": "RECONCILED 2026-10-18 after the architectural boundary review. This supersedes the 2026-10-17 framing where the two differ; the original text is kept verbatim in NOTES.\n\nThis is a PRE-FREEZE deterministic data-contract issue: it blocks eshyra-o9bd.14.\n\nCURRENT STATE (origin/main 318a7eb6, PR #672 merged)\n- assertEffectiveRandomInitializationTables (effectiveRandomInitializationAdmission.ts), called from stack resolution, checks add-on-contributed magic items and tables using only randomInitializationTableViolation (table shape).\n- Execution (itemRandomInitialization.ts) supports exactly three initial-state procedure kinds:\n  - table-pool: a removal-count roll against the declared entry ids;\n  - containment-occupant: one roll -> one row;\n  - table-results: a rolled count, then each roll -> one row.\n- Execution throws when no row matches a roll (tableResult: \"has no row for initialization roll N\"), or when a table-pool removal count exceeds the declared entries.\n- A WELL-SHAPED replacement table that omits possible roll results, or supplies too few entries, is therefore admitted and fails only at item creation.\n\nSCOPE\nAdmit roll-domain coverage for those three SUPPORTED procedure kinds only, using:\n- the declared roll notation's domain (min..max total);\n- the table's actual row semantics: every possible total maps to exactly one row, and for table-pool, entry count >= the maximum removal count.\nKeep execution's fail-closed refusal. Use one shared coverage predicate, so that admission and execution cannot disagree.\n\nNOT REQUIRED: a generalized table-expression language; a universal pack-completeness checker; coverage for tables no supported initial-state procedure references; procedures the engine does not execute.\n",
+  "acceptance_criteria": "1. One shared coverage predicate, used by stack admission and consistent with execution's throws.\n2. Admission refuses, with a message naming the add-on, the table and the procedure:\n   - containment-occupant / table-results: a possible roll total with no row, or with more than one row;\n   - table-pool: entry count below the maximum removal count.\n   Shape violations already refused stay refused.\n3. Execution keeps its own refusal; nothing is weakened to fail open.\n4. The unmodified base pack satisfies the predicate.\n5. Minimum permanent evidence: one admission refusal per supported procedure kind's coverage failure; one accepted well-formed replacement; the base pack passing.\n6. Not required: see NOT REQUIRED in the description.",
+  "notes": "2026-10-18 RECONCILIATION (architectural boundary review; user-authorized tracking-only reconciliation, no code). Description and acceptance rewritten; still REQUIRED PRE-FREEZE (blocks eshyra-o9bd.14; user rules 2026-10-14/17; olc5 stop condition 2026-10-12 applies). Facts verified against origin/main 318a7eb6 and PR #673 head 379c90f8 (OPEN).\nORIGINAL DESCRIPTION (2026-10-17, superseded where the reconciled description differs):\nSibling of eshyra-3xi0.1: admission checks only tableData shape (rows non-empty, string rows). Execution also throws at roll time when no row matches the initialization roll (tableResult) or a table-pool removal count exceeds declared entries; an add-on override that drops rows is admitted and fails only at item creation. Define a shared roll-domain coverage clause (procedure roll notation range vs row-0 ranges / entry count) and admit it in assertEffectiveRandomInitializationTables. Not fixed in 3xi0.1.\n2026-10-18 addendum: PR #673 merged into main as dbbede8d at the same reviewed head 379c90f8, so every 'PR #673 head (OPEN)' fact in this description now holds on origin/main dbbede8d. The eshyra-c58j dependency is satisfied (c58j closed).",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-17T21:02:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-19T00:01:22Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-1dey",
+      "depends_on_id": "eshyra-3xi0.1",
+      "type": "discovered-from",
+      "created_at": "2026-10-17T16:02:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-1dey",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-17T16:03:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

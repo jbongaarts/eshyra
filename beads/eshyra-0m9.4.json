@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.4",
+  "title": "Select D&D SRD source version and import policy",
+  "description": "Decide which D&D SRD version the initial complete pack targets and document import scope, exclusions, attribution, generated artifact policy, and whether older/newer SRD baselines are separate packs.",
+  "acceptance_criteria": "- Target SRD version is explicitly selected.\r\n- Import scope is documented.\r\n- Attribution and license metadata are specified.\r\n- Any excluded categories are documented.\r\n- Decision is recorded in docs or ADR form.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:01:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-25T05:34:42Z",
+  "closed_at": "2026-05-25T05:36:21Z",
+  "close_reason": "Decision recorded in ADR 0005; ships 5.1 and 5.2 as separate base packs.",
+  "labels": [
+    "dnd5e",
+    "ingestion",
+    "licensing",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.4",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:01:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

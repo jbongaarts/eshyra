@@ -1,0 +1,88 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.23.3",
+  "title": "Task 3: Document policy and verify worktree",
+  "description": "Objective:\nDocument the explicit all-callouts import policy and run the repository’s complete worktree gate before implementation handoff.\n\nFiles:\n- Modify: `packages/core/scripts/importers/dnd5e-srd-5.1/README.md`\n- Modify: `docs/audits/srd-5.1-rules-section-coverage.md`\n\nSteps:\n1. Update the README `subclass` and `feature` rows so they say callout prose is bounded out of those records and owned by the dedicated class-callout rule parser, rather than dropped.\n2. Update the README `rule` row from 166 to 171 records and state the composition: 127 core, 34 spellcasting, five gamemastering, five Classes callouts. Name the parent-qualified key policy and exact `EXPECTED_SRD_5_1_RULE_KEYS` guard.\n3. Add `parseClassCallouts.ts` to the parser/file overview and explain that every structurally detected Classes gray box is imported, including procedural, illustrative, and lore boxes; semantic filtering is intentionally not performed.\n4. Update `docs/audits/srd-5.1-rules-section-coverage.md` with a concise Classes-callout disposition: all five are imported as standalone `rule` records, while feature/subclass bodies remain uncontaminated. Record the five titles and the rationale that source structure, not semantic category, defines inclusion.\n5. Run `npm run verify:dnd5e-srd-pack`. Expected: committed pack exactly matches importer output.\n6. Run `npm run verify:worktree`. Expected: formatter, hidden-Unicode check, Biome validation, typecheck/build, tests, and repository verification all pass. If only the documented Dolt parallel timeout appears, rerun the affected checkpoint tests in isolation and record both results on the parent bead; otherwise fix real failures before continuing.\n7. Inspect `git diff --check`, `git status --short`, and `git log --oneline origin/main..HEAD`. Expected: no whitespace errors; only intended documentation remains uncommitted; parser and integration commits are present.\n8. Commit with `git add packages/core/scripts/importers/dnd5e-srd-5.1/README.md docs/audits/srd-5.1-rules-section-coverage.md && git commit -m \"docs(srd): define class callout import policy\"`.\n9. Run `git status --short --branch`. Expected: clean feature branch.",
+  "design": "Documentation is policy, not an implementation appendix. It must state the selected inclusion rule plainly: the importer imports all structurally identified Classes callout boxes, even when a box is lore or illustrative rather than mechanical, because deterministic source structure is the stable criterion. It must also state the ownership boundary: class/subclass/feature records stop before boxes; standalone rule records retain them.\n\nDo not rewrite the broader audit or claim semantic completeness beyond the five reviewed boxes. Preserve existing historical context and update only statements made obsolete by this implementation.",
+  "acceptance_criteria": "README and audit explicitly document all-five structural inclusion and standalone rule ownership; counts and parser map are current; verify:dnd5e-srd-pack and verify:worktree pass; diff has no whitespace errors; documentation commit created; branch is clean.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "estimated_minutes": 30,
+  "created_at": "2026-06-07T00:19:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:13Z",
+  "started_at": "2026-06-07T05:28:47Z",
+  "closed_at": "2026-06-07T05:42:25Z",
+  "close_reason": "Documented explicit all-five class-callout policy and parser ownership; final documentation review and full worktree/reproducibility verification passed.",
+  "labels": [
+    "dnd5e",
+    "documentation",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd",
+    "verification"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.23.3",
+      "depends_on_id": "eshyra-0m9.5.23.2",
+      "type": "blocks",
+      "created_at": "2026-06-06T19:19:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.23.3",
+      "depends_on_id": "eshyra-0m9.5.23",
+      "type": "parent-child",
+      "created_at": "2026-06-06T19:19:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "33fef724-a8f5-57bf-b04e-4e2f45ee2a03",
+      "issue_id": "eshyra-0m9.5.23.3",
+      "author": "Joseph Bongaarts",
+      "text": "Verification 2026-06-07: npm run verify:dnd5e-srd-pack -> exit 0; importer produced 171 rules and committed pack matched exactly (0 manifest changes, 0 records added/removed/changed). npm run verify:worktree -> exit 0; format/check/hidden-Unicode/typecheck passed, Vitest 93 files passed + 2 skipped, 1275 tests passed + 3 skipped. git diff --check -> exit 0. Pre-commit status contains only the two planned documentation files; origin/main..HEAD contains bb48acc, 60a8f80, 6ebd06c, and 8febc54.",
+      "created_at": "2026-06-07T05:32:36Z"
+    },
+    {
+      "id": "c2981b37-5630-5cac-9b82-ee4b7ada54eb",
+      "issue_id": "eshyra-0m9.5.23.3",
+      "author": "Joseph Bongaarts",
+      "text": "Documentation quality review: Assessment ready to merge; Critical/Important none. Minor accepted: audit line 168 says class bodies stop before boxes, but parseClasses emits labeled fields rather than a prose body. Correct wording to say subclass/feature bodies stop before boxes and base-class records do not absorb callout prose.",
+      "created_at": "2026-06-07T05:38:44Z"
+    },
+    {
+      "id": "85b0a47f-edf4-5902-b677-f2c6b74821f8",
+      "issue_id": "eshyra-0m9.5.23.3",
+      "author": "Joseph Bongaarts",
+      "text": "Review item accepted: the audit incorrectly groups base-class records with prose-bearing subclass/feature records. parseClasses extracts labeled fields and has no callout body boundary; correction will state that subclass/feature bodies stop before boxes and base-class records do not absorb callout prose.",
+      "created_at": "2026-06-07T05:39:17Z"
+    },
+    {
+      "id": "fb08b436-adab-5379-baf1-5bd177b029dd",
+      "issue_id": "eshyra-0m9.5.23.3",
+      "author": "Joseph Bongaarts",
+      "text": "Review correction verification 2026-06-07: changed only docs/audits/srd-5.1-rules-section-coverage.md to distinguish subclass/feature body boundaries from base-class labeled-field extraction. git diff --check -> exit 0. npm run check:hidden-unicode -> exit 0; 278 tracked text files scanned. npm run verify:dnd5e-srd-pack -> exit 0; 171 rules, 0 manifest changes, 0 records added/removed/changed. Self-review: policy, five-title scope, pages, standalone rule ownership, and README remain unchanged; obsolete overstatement is absent.",
+      "created_at": "2026-06-07T05:40:03Z"
+    },
+    {
+      "id": "f466d970-7a39-5a6e-96d9-641908abbb36",
+      "issue_id": "eshyra-0m9.5.23.3",
+      "author": "Joseph Bongaarts",
+      "text": "Final review summary for 8febc54..089ce4e: Assessment Ready to merge; no Critical/Important/Minor findings. Fresh close verification at final HEAD 089ce4e: npm run verify:worktree exit 0 (format/check/hidden-Unicode/typecheck passed; 93 test files passed, 2 skipped; 1275 tests passed, 3 skipped); npm run verify:dnd5e-srd-pack exit 0 with manifest 0 and records added/removed/changed 0; git diff --check clean; branch clean and pushed.",
+      "created_at": "2026-06-07T05:42:23Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 5
+}

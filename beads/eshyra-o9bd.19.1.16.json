@@ -1,0 +1,75 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.16",
+  "title": "Foundation 4: define evidence categories, trust models, and exact claims",
+  "description": "Define evidence categories across source fidelity, discovery, adjudication support,\ndeterministic capability, and state integrity, and state exactly what each proves and\ndoes not prove. Different responsibilities may legitimately use different trust models.\nInternal discovery telemetry may use producer-owned observations as primitives under\nan explicit internal trust model; source-fidelity and capability/state claims may\nrequire stronger independent evidence.",
+  "acceptance_criteria": "- Every evidence category names its claim, trust boundary, owner, and explicit non-claims.\n- Presence, ownership, candidacy, schema validity, or code-symbol existence cannot substitute for semantic implementation or runtime execution.\n- Diagnostic telemetry, source proof, capability execution evidence, finding evidence, and state evidence are not forced into one proof standard.\n- Positive absence is permitted only for an explicitly bounded property/population whose denominator makes absence provable.\n- Unresolvable/unrecognized input cannot become satisfied through an empty result.",
+  "notes": "ADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T03:08:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-12T04:16:12Z",
+  "started_at": "2026-09-12T03:03:12Z",
+  "closed_at": "2026-09-12T04:16:12Z",
+  "close_reason": "Delivered and merged by PR #544 at merge commit 0c5afc20e4b016945d28e5e619ec20720b48b9d4 after exact-head approval and green required checks.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.16",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-27T22:08:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.16",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "01a09395-f18a-7a12-bf08-11f85e786c48",
+      "issue_id": "eshyra-o9bd.19.1.16",
+      "author": "Joseph Bongaarts",
+      "text": "Implemented the accepted evidence-trust contract in docs/design/evidence-trust-model.md at b0df26b. It defines source fidelity, discovery telemetry, adjudication support, deterministic capability execution, finding evidence, and state integrity with exact claims, owners, trust boundaries, and non-claims; permits producer-owned discovery observations only under an explicit internal diagnostic model; specifies bounded positive absence and fail-closed indeterminate handling. Verification: npm run verify:worktree completed format/check/typecheck/test; repeated npm run test reported 295 passed / 3 skipped files and 5,395 passed / 20 skipped tests.",
+      "created_at": "2026-09-12T03:07:53Z"
+    },
+    {
+      "id": "01a09396-f6e1-71a4-b5e0-8666e71aea0f",
+      "issue_id": "eshyra-o9bd.19.1.16",
+      "author": "Joseph Bongaarts",
+      "text": "PR opened for review: https://github.com/jbongaarts/eshyra/pull/544 (head b0df26b). The bead remains in_progress until the PR merges.",
+      "created_at": "2026-09-12T03:08:59Z"
+    },
+    {
+      "id": "01a093c4-852c-7a73-a14d-67976f939865",
+      "issue_id": "eshyra-o9bd.19.1.16",
+      "author": "Joseph Bongaarts",
+      "text": "Review F1 repaired and pushed at 17734c99d5a4268c3ca7586f4f4d308989000587. The adjudication-support trust boundary now separately qualifies source material/ambiguities via source fidelity, campaign rules/rulings via the campaign owner lifecycle/read seam, and capability disclosures via the capability owner contract/preflight before proving delivery. Fresh npm run verify:worktree passed (295 files / 3 skips; 5,395 tests / 20 skips). Fresh full review requested on PR #544.",
+      "created_at": "2026-09-12T03:58:45Z"
+    },
+    {
+      "id": "01a093d0-e9e3-7474-aaba-7df6575851b2",
+      "issue_id": "eshyra-o9bd.19.1.16",
+      "author": "Joseph Bongaarts",
+      "text": "Fresh-review F1 repaired and pushed at 1b56c00965b23a026a9bfbd59a06376dd6c98407. Capability declarations now qualify only the declared boundary; bounded available/blocked claims require subject-specific preflight/admission evidence, with declaration-only not-evaluated-offline/indeterminate. Fresh npm run verify:worktree passed (295 files / 3 skips; 5,395 tests / 20 skips). Fresh full review requested on PR #544.",
+      "created_at": "2026-09-12T04:12:17Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 4
+}

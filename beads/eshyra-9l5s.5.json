@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9l5s.5",
+  "title": "Remeasure the verification suite after wave 1 and reassess audit tasks T3, T4, T7-T13",
+  "description": "GATE for materializing any further task from the merged audit at\ndocs/audits/test-suite-and-verification/2026-09-14-test-suite-and-verification-audit.md.\n\nWave 1 is the epic's own precondition: \"Remeasure the suite after wave 1 lands,\nthen reassess.\" Both wave-1 PRs must be on main first.\n\nSTATE AT FILING (2026-09-22):\n- Execution path T1/T2: PR #552 MERGED (merge commit 880d25e1, reviewed head\n  e3496e87). Beads eshyra-9l5s.1 and eshyra-9l5s.2 closed.\n- Policy path T5/T6: PR #553 OPEN at head 9c439373. Beads eshyra-9l5s.3 and\n  eshyra-9l5s.4 remain in_progress until it merges.\n\nBLOCKED until PR #553 merges. Do not start the remeasurement against a main\nthat carries only half of wave 1.\n\nWORK:\n\n1. Remeasure with the mechanism PR #552 landed, not an ad-hoc timing:\n   node scripts/measure-run.mjs --label test --out verification-metrics.jsonl -- npm run test\n   Report wall clock and PEAK process-tree RSS under the 6-worker cap that\n   vitest.config.ts now sets. Record the residual measurement limit PR #552\n   documented: a descendant that both detaches AND is orphaned before first\n   observation is unreachable by any /proc walk.\n\n2. Re-examine eshyra-da8d and eshyra-5g3d. Both are P3 load-dependent timeout\n   bugs filed before the worker cap existed and both lack a verified cause.\n   The audit supplies that cause. Determine whether the cap makes them\n   deterministic, and close, reclassify, or re-scope each on the evidence.\n   Do not close either on \"did not reproduce\" alone.\n\n3. Reassess T3, T4, and T7-T13 against the remeasured numbers. Materialize only\n   what the measurement still supports. T7 overlaps eshyra-o9bd.19.1.8 —\n   reconcile scope before either starts. eshyra-tba9 proposes new proof\n   machinery and must be re-dispositioned against the \"Permanent Test Evidence\"\n   section T5 adds to AGENTS.md before any of it is built.\n\nEXCLUSIONS: no test-count target. The epic carries none and the audit disclaims\none. This bead authorizes measurement and disposition, not test deletion.\n",
+  "notes": "REMEASUREMENT 2026-09-22, origin/main 83a4a3ac (both wave-1 PRs, #552 and #553, merged). Host: 20 CPU, 7,790 MB RAM, WSL2, Node 24. Local cap is 6 workers.\n\n1. SUITE, via node scripts/measure-run.mjs --label test -- npm run test (three runs, all exit 0):\n   wall 45.2 / 44.5 / 44.7 s; PEAK process-tree RSS 2,693 / 2,749 / 2,707 MB; 16-17 processes at peak.\n   307 files passed, 2 skipped; 5,619 tests passed, 3 skipped. That matches the documented skips.\n   Audit baseline at 6 workers (pre-F1): 48 s / 4,897 MB. Peak is down ~45%, to ~44% of the ~6.1 GB envelope.\n   Latest main CI (4-worker cap): Test step 118.4 s, peak 2,230 MB. Whole build-test job 3 m 08 s.\n   RESIDUAL MEASUREMENT LIMIT (PR #552, carried on every record as 'unmeasured'): a descendant that both detaches AND is orphaned before its first observation cannot be reached by any /proc walk. Closing it needs cgroup containment or PR_SET_CHILD_SUBREAPER, and neither is available unprivileged here. npm run test contains no such double-fork today.\n   Per-file (vitest json, 4 runs): summed file time 135-150 s. Top 10 files = 42% and top 25 = 62%.\n   Critical-path file is now measureRun.test.ts at 17.1 s (T2's own proof machinery), then captainSeats 10.7 s and activeEffects 6.4 s. contextAssembler.test.ts is down from 18 s to 1.4 s in-suite, and from 3,009 MB to 845 MB solo tree.\n   Solo tree peaks (these include the ~500 MB Vitest parent): activeEffects 1,054 MB, srdGeneratedPack 1,029, shadowRuntime 907, contextAssembler 845, measureRun 1,169, captainSeats 407.\n   OBSERVATION, dispositioned: measureRun.test.ts is the longest file but is off the wall-clock critical path. Two full runs excluding it measured 41.1 / 45.7 s (within noise of the full runs) and peaked at 2,533 / 2,409 MB, so it costs ~250 MB of peak and 0 s of wall. It protects measure-run's stated boundary, and measure-run gates CI instrumentation and the worker-cap decision. That cost is proportionate. No action.\n\n2. FLAKE BEADS, closed on measured headroom, not on non-reproduction (evidence is in each bead):\n   eshyra-da8d: hook 2.8-3.2 s under the capped suite, 2.4 s solo. The 60 s budget is kept deliberately.\n   eshyra-5g3d: pack test 1.43-1.55 s against its 10 s budget. No code change.\n\n3. AUDIT TASK REASSESSMENT. Only what the measurement or the new policy supports is materialized.\n   T3 (split contextAssembler mega-test), NOT MATERIALIZED. Its cost motive is gone (file 1.4 s). F2's remaining motive is failure localization, which is maintainability, not a defect. Under the T6 observation gate no requirement is named. Reopen if the bundled test misattributes a real regression.\n   T4 (Vitest projects + focused commands), NOT MATERIALIZED. The problem it addressed, the memory envelope, is solved by the cap: peak is 2.7 GB of ~6.1 GB and no single file exceeds ~1.05 GB, so the R2 condition ('contextAssembler still >1 GB') is not met. Focused runs already work via npx vitest run <path>. Reopen trigger: local peak tree RSS >4 GB, or suite wall >90 s, in measure-run records.\n   T7, T8: NOT MATERIALIZED. Reconciled into eshyra-o9bd.19.1.8, which now owns any change to the bead-named known-finding blocks in srdGeneratedPack.test.ts. A standalone C4 .each conversion is not authorized. See that bead's note.\n   T9: DONE IN PLACE. eshyra-o9bd.19.15 acceptance criteria amended with a Phase 4 exit-disposition clause. No new bead, per the audit.\n   T10 (decompose activeEffects), NOT MATERIALIZED. It is 6.4 s in-suite and ~1.05 GB solo tree, and there is no isolation need under the cap. The audit itself says it is not defective.\n   T11: MATERIALIZED as eshyra-9l5s.6 (P3). All three bare citations are still present.\n   T12 (ADR 0020 supersession audit of mechanics tests), NOT MATERIALIZED. The audit found no instance and named no test. It is an open-ended search with no observation behind it, which the T6 gate dispositions as no requirement. Open a bead when a specific test is observed to protect a superseded contract.\n   T13 (shard CI), NOT MATERIALIZED. It depends on T4. The CI test step is 118 s of a 3 m 08 s job, so sharding would save at most ~1 min.\n   eshyra-tba9: RETIRED. It extends clause-IR evidence that never reached main: PR #475 closed unmerged and eshyra-o9bd.19.1.1 is DESIGN_INVALIDATED.\n\nEXCLUSIONS HONORED: no test deleted, no test-count target, no code change. The only tree change was a temporary timing probe in foundation1ProcedureProof.test.ts, reverted and verified clean.\nLEAD, not acted on: open beads eshyra-icv8, eshyra-pk7e, and eshyra-r8r3 are titled against 'clause IR' / 'after PR #475', which never landed. They may need the same re-disposition as tba9. They are out of this bead's scope.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-22T01:27:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-22T22:48:26Z",
+  "started_at": "2026-09-22T22:35:36Z",
+  "closed_at": "2026-09-22T22:48:26Z",
+  "close_reason": "Remeasured (45 s, 2.7 GB peak tree RSS at 6 workers); da8d/5g3d closed on measured headroom; T9 applied in place, T11 materialized as eshyra-9l5s.6, T7/T8 reconciled into eshyra-o9bd.19.1.8, T3/T4/T10/T12/T13 not supported, tba9 retired.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-9l5s.5",
+      "depends_on_id": "eshyra-9l5s.4",
+      "type": "blocks",
+      "created_at": "2026-09-21T20:27:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-9l5s.5",
+      "depends_on_id": "eshyra-9l5s.3",
+      "type": "blocks",
+      "created_at": "2026-09-21T20:27:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-9l5s.5",
+      "depends_on_id": "eshyra-9l5s",
+      "type": "parent-child",
+      "created_at": "2026-09-21T20:27:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

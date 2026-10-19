@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-abt",
+  "title": "Populate structured turn trace fields from real turns",
+  "description": "Review finding from loreweaver-1ek. Orchestration records turn traces but leaves expected fields such as rulesResolution, acceptedStateDelta, rejectedCandidates, memoryUpdates, corrections, and flags as placeholders. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Orchestrator trace tests assert non-placeholder fields for turns with roll and mutate_state calls; accepted and rejected state deltas, rules/tool outcomes, memory updates, and quality flags are recorded when available.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:44:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:03Z",
+  "started_at": "2026-05-21T23:02:43Z",
+  "closed_at": "2026-05-22T02:35:32Z",
+  "close_reason": "Fixed in PR #27 (merged)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

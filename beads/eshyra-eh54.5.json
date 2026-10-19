@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eh54.5",
+  "title": "Feed adventure module context into DM runtime",
+  "description": "Feed bounded adventure module context into the DM runtime.\n\nThe DM runtime should receive the relevant module slice for the current situation, not the entire module. The context is derived from BOTH the immutable adventure module source AND the campaign-owned adventure run / module binding (eshyra-eh54.4). The context should help the model run the authored scenario while respecting campaign instance state, hidden-information boundaries, and player-driven divergence. When campaign truth conflicts with module source assumptions, campaign truth wins.\n",
+  "design": "The bounded context is composed from the immutable module source plus the campaign-owned progress object. Suggested bounded context fields:\n\n- current module id/title\n- current scene/location candidate\n- nearby locations and exits\n- relevant NPCs\n- active objectives (authored definition + campaign progress)\n- encounter/threat options (with campaign outcomes applied)\n- unrevealed secrets that may become relevant (filtered by campaign reveal state)\n- completed/bypassed module elements (from campaign progress)\n- module deviations (from campaign state)\n\nThe module should guide the DM, not railroad play. The runtime must prefer campaign truth over source-module assumptions when they conflict.\n",
+  "acceptance_criteria": "- The runtime context builder can include adventure module context when a campaign has an active adventure run / module binding.\n- The context slice is composed from both immutable module source and campaign-owned progress, and is bounded and situation-relevant.\n- The context includes current or likely scene/location, nearby exits or transitions, relevant NPCs, active objectives, pending encounters/threats, and relevant unrevealed secrets when appropriate for DM-only context.\n- The context reflects campaign progress and known deviations, and campaign truth overrides conflicting module assumptions.\n- The full module is not dumped into every turn by default.\n- Tests or golden fixtures verify the context slice for at least one active-module campaign state.\n- Existing campaigns without active modules continue to work.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T06:11:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-21T02:18:42Z",
+  "closed_at": "2026-06-21T02:38:59Z",
+  "close_reason": "Implemented bounded adventure module context slice (buildAdventureContextSlice + renderAdventureContextSlice), wired into context assembler via optional resolver and threaded through RunTurnDeps. Composes immutable module source + campaign run progress; campaign truth overrides module assumptions. Tests added. PR #265.",
+  "labels": [
+    "adventure-module",
+    "campaign-runtime",
+    "context",
+    "domain-model",
+    "runtime"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eh54.5",
+      "depends_on_id": "eshyra-eh54.4",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:12:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.5",
+      "depends_on_id": "eshyra-eh54",
+      "type": "parent-child",
+      "created_at": "2026-06-18T01:11:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 3,
+  "comment_count": 0
+}

@@ -1,0 +1,25 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq",
+  "title": "Refactor code organization and harden typed boundaries",
+  "description": "Address technical debt identified during code review of Loreweaver main.\r\n\r\nThe current architecture is coherent, but the code still has agent-built MVP debt:\r\n- long compressed source files reduce reviewability\r\n- several integration hubs own too many responsibilities\r\n- some documented seams are symbolic rather than enforced by types\r\n- state mutation is stringly typed and too close to persistence columns\r\n- JSON blobs and unknown payloads need stronger schemas\r\n- provider/tool abstractions should be prepared for multiple providers\r\n- checkpoint/Dolt internals need separation before they grow\r\n- the public package surface should be narrowed before first release\r\n\r\nThis epic is about making the codebase easier for future agents and humans to safely evolve.",
+  "design": "Refactor order should prioritize reviewability and safety:\r\n1. Format the repo.\r\n2. Split integration hubs.\r\n3. Replace symbolic seams.\r\n4. Harden domain schemas.\r\n5. Introduce domain-level state tools.\r\n6. Improve provider/tool abstractions.\r\n7. Isolate checkpoint/Dolt internals.\r\n8. Review public API surface.",
+  "acceptance_criteria": "- Repository formatting is enforced.\r\n- Major integration hubs are split along responsibility lines.\r\n- Architectural seams are either real contracts or removed.\r\n- Model-facing state mutation moves toward domain-level operations.\r\n- Important live-state and rules data gain stronger schemas.\r\n- Provider/tool interfaces are prepared for native tool schemas.\r\n- Persistence/checkpoint internals are better isolated.\r\n- Public export surface is reviewed before first package release.\r\n- Existing tests pass after refactors.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-21T05:01:03Z",
+  "close_reason": "Completed: all stated refactor and typed-boundary acceptance criteria are satisfied. The sole open child, eshyra-7kn, is an explicitly gated optional follow-up requiring a future history-UX consumer.",
+  "labels": [
+    "architecture",
+    "refactor",
+    "technical-debt"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.3.1",
+  "title": "Repair dropped successful-save half-damage branches in creature, hazard, and magic-item projections",
+  "description": "Defect class: finding-registry rows half-damage-branches (opus:F-25, owned by eshyra-o9bd.19.4.3) and hazard-success-branches (owned by eshyra-o9bd.19.4.4), plus the magic-item sibling magic-item:bag-of-beans (eshyra-o9bd.19.2.1 item 3, co-owned by eshyra-o9bd.19.4.5). The source says a creature that succeeds on the save takes half damage ('or half as much damage on a successful one'), but the typed projection drops that success branch (e.g. creature:adult-black-dragon Acid Breath has saves and damage but no damageOnSuccess) or contradicts it (bag-of-beans successfulSaveDamage 'none'). Spells already project saves[].damageOnSuccess 'half'; reuse that vocabulary and do not invent a new one.\n\nPopulation: enumerate half-damage success clauses independently from the pinned SRD source text and join each to its record and projection path. A pack-mechanics-derived population would miss branches the projection dropped.\n\nEvidence: one generalized invariant over the source-enumerated population (every projected save governing damage whose source clause carries the half-on-success branch represents it), not per-record reproducers. Update any discovery fixture or projection-limit expectation that recorded this defect only where the repair makes the old expectation false, with source evidence. Follow docs/importer-fix-protocol.md.\n\nOut of scope: multi-save entries (registry row multi-save-entries), rider/ongoing damage (creature-ongoing-riders), and deterministic execution of saves or damage (the capability lane).",
+  "notes": "PR #567 https://github.com/jbongaarts/eshyra/pull/567 (eshyra-o9bd.19.4.3.1, head e18e2bc8) opened. 100 typed success branches added (83 creature entries, 9 hazards, 8 spells) plus the Bag of Beans correction; two-directional pack invariant; verify:worktree green (5346/3). Bead stays in_progress until merge.\nReview F1 (review 5286699438 on e18e2bc8) addressed at c6d451e6: committed source census (164 broad-net PDF sentences, joined to container pointers with representations) plus a digest-pinned equality gate; the 8 broad-net extras are all non-members, so no missed phrasing. verify:worktree green (5348/3).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-23T03:27:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-23T04:28:56Z",
+  "started_at": "2026-09-23T03:27:06Z",
+  "closed_at": "2026-09-23T04:28:56Z",
+  "close_reason": "Merged in PR #567 (25631abf). 100 typed success branches added (83 creature entries, 9 hazards, 8 spells) plus the Bag of Beans correction; source-census evidence (164 PDF sentences, digest-pinned).",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.3.1",
+      "depends_on_id": "eshyra-o9bd.19.4.3",
+      "type": "parent-child",
+      "created_at": "2026-09-22T22:27:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

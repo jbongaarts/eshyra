@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.5",
+  "title": "action:use-an-object ordinaryInteractionRuleRef targets the environment passage, not the combat free-interaction rule",
+  "description": "Found during the PR #596 self-review (2026-09-30). packages/core/scripts/importers/dnd5e-srd-5.1/mechanicsProjections.ts:366 emits action:use-an-object effects[].ordinaryInteractionRuleRef = 'rule:interacting-with-objects'. That record's text is the ENVIRONMENT passage ('A character's interaction with objects in an environment is often simple to resolve...' — levers, GM-set Strength check DC, damaging objects). The ordinary free interaction the action's source text refers to ('You normally interact with an object while doing something else, such as when you draw a sword as part of an attack') is rule:interacting-with-objects-around-you ('things you can do in tandem with your movement and action: draw or sheathe a sword...'). The declared relationship (recordRelationshipDeclarations.ts:186) resolves, so the committed-pack gate is green, but discovery/ruleAwareness follow the edge to the wrong governing passage. Fix per docs/importer-fix-protocol.md: repoint to rule:interacting-with-objects-around-you, regenerate, extend the action projection test with the source clause; check sibling action ruleRefs from PR #582 for the same name-vs-passage mismatch.",
+  "notes": "2026-10-03: delivered in PR #599 (https://github.com/jbongaarts/eshyra/pull/599), branch eshyra-o9bd.19.3.4.8 @7414d014. Stays in_progress until the PR merges.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-30T02:19:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-04T06:22:20Z",
+  "started_at": "2026-10-02T03:42:01Z",
+  "closed_at": "2026-10-04T06:22:20Z",
+  "close_reason": "Landed on main via PR #599 (merge commit 12cdb1f8)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.5",
+      "depends_on_id": "eshyra-o9bd.19.3.4.5.1",
+      "type": "blocks",
+      "created_at": "2026-10-01T22:43:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.5",
+      "depends_on_id": "eshyra-o9bd.19.3.4",
+      "type": "parent-child",
+      "created_at": "2026-09-29T21:19:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

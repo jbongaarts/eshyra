@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.4.12",
+  "title": "Review: targeted final review of PR #655 after S1 disposition (@ 28e77a7f) [Opus fallback]",
+  "description": "Targeted read-only review of PR #655 at exact head 28e77a7f3c516d8b2345172c44a6dbb40e11b228: the only change since Sol's full review eshyra-o9bd.19.2.4.11 (@aced3844) dispositions its sole finding S1 as out of contract by user decision (bd memory typos-handled-by-dm-reasoning). Opus fallback (Sol quota out until 19:58). VERDICT line at end.",
+  "notes": "TARGETED READ-ONLY REVIEW (Claude Opus standing in for Sol) at exact head 28e77a7f3c516d8b2345172c44a6dbb40e11b228.\n(1) git diff aced3844..HEAD: 2 files, +6/-2 - doc comment on inputTokenAlternatives in packages/core/src/discovery/signals.ts and one appended sentence in CAP-011 statusReasoning (finding-registry.json:317). No code, test or data change; non-material.\n(2) Disposition truthful: matches bd memory typos-handled-by-dm-reasoning word-for-word in substance (same examples say'Land's Stride', Thieves'Cant; same precondition). Grammar claim verified against code: the input regex keeps an apostrophe between two word characters inside its token after glyph canonicalization, so a glued opening or closing quote (say'Shield', 'Land's Stride'after) joins the neighbouring word and is not recognized - exactly what the comment says; no over- or under-claim. Prior grammar sentences unchanged.\n(3) Precondition holds: contextAssembler.ts:1151 renders '## Player Input' from ctx.playerInput, passed unmodified from orchestrator input (contextAssembler.ts:713). lookup_rules (toolLookupRules.ts:152-153) calls lookupRulesRecord by name via normalizeRulesRecordName; nameMentionReasons.test.ts 'resolves exact kind-scoped lookup by name identically for every glyph' asserts every apostrophe-bearing indexed name (incl. Land's Stride -> ambiguous feature:circle-of-the-land:lands-stride/feature:ranger:lands-stride with re-query keys, Hunter's Mark -> spell:hunters-mark) is never not_found. Ran vitest on that file at head: 20/20 pass.\n(4) Review .11 recorded exactly one open finding (S1, now out of contract by user decision); all other classes (.9 S1 trailing possessive, .9 S3 glyph equivalence, .2 S1 D1 reasons, D2 qualified cards/transport, D3, D4/F8, main merge) were confirmed closed and are untouched by this comment/registry-only diff. Its no-requirement dispositions stand.\nFindings: none. Further malformed-input permutations: no requirement (user decision).\nNo edits, formatting, commits or pushes made; worktree status clean.\nVERDICT: APPROVED at exact head 28e77a7f3c516d8b2345172c44a6dbb40e11b228",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T22:41:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T22:43:07Z",
+  "closed_at": "2026-10-11T22:43:07Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.4.12",
+      "depends_on_id": "eshyra-o9bd.19.2.4",
+      "type": "parent-child",
+      "created_at": "2026-10-11T17:41:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

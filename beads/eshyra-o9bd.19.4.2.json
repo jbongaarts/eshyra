@@ -1,0 +1,70 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.2",
+  "title": "Harden creature attack/action source parsing and alternate-mode representation",
+  "description": "Repair demonstrated creature attack/action parser failures: alternate/swarm modes,\nparenthetical bonuses, Unicode minus, swallowed action boundaries, nonstandard ranges,\ninconsistent damage shapes, and truncated target qualifiers. An exhaustive attack/action\ninventory is a source-fidelity claim only when source stat-block structure independently\nestablishes the denominator.",
+  "design": "2026-10-09 DESIGN (Claude Captain, main 6f57be85). Lane A, profile rules-clause-complete. Creature attack mechanics (mechanics.attacks[].hitDamage, mechanics.damage) are source projections for discovery/adjudication; no deterministic capability consumes creature hitDamage today (verify with grep before relying on it), so this is source fidelity.\nDEFECT CLASSES (all in parseAttack / parseDamage, packages/core/scripts/importers/dnd5e-srd-5.1/mechanicsProjections.ts ~L84-100, ~L372-406):\n C1 Unicode minus (opus:F-29): parseDamage's dice grammar accepts only ASCII [+-]; 'Hit: 1 (1d4 − 1) piercing damage' (U+2212) yields no damage at all, and the flat-damage fallback also fails, so hitDamage is EMPTY. Population by query: every record whose text contains /\\d+d\\d+\\s*−\\s*\\d+/ (snapshot: 18 creatures incl. awakened-shrub, baboon, bat, frog, giant-fire-beetle, hawk, kobold, owl, quipper, rat, raven, scorpion, sea-horse, spider, swarm-of-quippers/rats/ravens, weasel; magic-items deck-of-illusions, ioun-stone, ring-of-spell-storing - check those items' own projections render the printed value, repair only if a value is lost or altered). Normalize U+2212 to '-' in the dice expression consistently (the printed dice string in `dice` should use ASCII ' - ' like ' + '), and also accept U+2212 in attack bonuses ('[+−-]\\d+ to hit') and every other shared numeric grammar in this file that reads signed modifiers (search the file for '[+-]' character classes and fix siblings; list them).\n C2 Parenthetical alternate attack bonus (opus:F-28): 'Melee Weapon Attack: +2 to hit (+4 to hit with shillelagh), reach 5 ft.' breaks the attack lead-in regex, so creature:druid Quarterstaff and creature:dryad Club have NO attacks[] and only a flattened damage list. Accept an optional '(<+N> to hit <condition>)' after the bonus and carry it on the matching alternative (C3).\n C3 Mutually exclusive damage alternatives flattened into cumulative arrays: in the 'Hit:' clause, ', or N (XdY + Z) <type> damage <condition>' is an ALTERNATIVE to the preceding damage, but hitDamage (and top-level mechanics.damage) list both as if cumulative (e.g. creature:drider Longsword hitDamage [1d8+3, 1d10+3] slashing). Population by query (snapshot 27 clauses): 'if used with two hands to make a melee attack' 9, 'if used with two hands' 6, 'if the swarm has half of its hit points or fewer' 6, 'with shillelagh' 2, 'while enlarged' 2, 'at range' 1, 'in Small or Medium form' 1.\nREPRESENTATION DECISION: attacks[i].hitDamage = the DEFAULT mode only (the first damage plus any trailing 'plus N (XdY) <type> damage' riders that apply to every mode, e.g. Azer's fire). attacks[i].alternatives = [{ condition: '<verbatim condition text>', hitDamage: [complete damage list for that mode, including shared riders], attackBonus?: N (only when the source prints a mode-specific bonus, e.g. shillelagh +4) }]. Top-level mechanics.damage on such an entry equals the default mode (so nothing reads cumulative). Condition text stays verbatim; no condition is interpreted. Entries without an alternative are byte-identical.\nF-31 (ranged-notation): currently no ranged weapon/spell attack lacks rangeFeet; verify the alternate notations present in the corpus ('range 30/120 ft.', 'reach 5 ft. or range 20/60 ft.', 'range 120 ft.' single value for spell attacks) all project; repair only if any is lost, and record the result.\nCAP-004 (creature-statblock-mechanics, 'Creature stat-block mechanics are complete'): narrowed under ADR 0020 (no completeness claim); surviving obligation = emitted creature attack/damage projections agree with the printed stat block (this repair + existing statline fidelity gate).\nCROSS-KIND (absorbed from retired 19.1.2): the same printed grammar must not project differently by kind; search spell, magic-item, equipment, hazard text for U+2212 dice and '(<+N> to hit ...)' and ', or N (XdY) ... damage <condition>' forms; repair or disposition each sibling with a source-backed reason in the report.\nREGISTRY: druid-dryad-attacks (F-28), unicode-minus-damage (F-29), ranged-notation (F-31) stay accepted with reasoning naming this repair (F-31: verified, no loss); creature-statblock-mechanics (CAP-004) -> narrowed. damage-alternatives (F-27) is owned by eshyra-o9bd.19.3.1; add a sentence to the 19.3.1 bead notes (not the registry) that creature attack alternatives were repaired here, so 19.3.1 handles only its remaining option-local scope.\nEVIDENCE: one new test file: (a) generalized invariant over the real pack: for every creature entry with an 'X Weapon/Spell Attack: ... Hit:' lead-in, attacks[] exists, attackBonus equals the printed bonus, and every printed damage expression in the Hit clause appears exactly once across hitDamage + alternatives (independent predicate in the test); (b) no projected dice string contains U+2212 and no record with a printed U+2212 dice expression has empty hitDamage; (c) exact source-fidelity regressions: druid Quarterstaff (default 1d6, alternatives two-hands 1d8 and shillelagh +4 1d8+2), drider Longsword, azer Warhammer (fire rider in both modes), a swarm half-HP case, baboon Bite 1d4 - 1. Update existing expectations only where this design proves them wrong; state preserves/strengthens/replaces.",
+  "acceptance_criteria": "- Every attack/action in the independently enumerated source structural population is represented with correct boundary and source values.\n- Unicode minus, alternate range notation, and parenthetical alternate bonuses cannot silently erase printed values.\n- Mutually exclusive modes remain alternatives, not cumulative arrays.\n- Target qualifiers and source relationships survive projection.\n- Passing this parser census does not prove complete creature mechanics or universal deterministic support.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F2, F6, F8, F9.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\nADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): RESHAPED. This bead is now LANE A (importer/source-fidelity and projection repair) only. The '*** PACK/ENGINE PAIRING (2026-07-25) ***' note above is SUPERSEDED: the reference engine is not the validator of this bead's representation, and this bead does not coordinate decomposition with engine:F epics. Capability-execution acceptance items were moved to the capability lane (eshyra-o9bd.19.5 family epics / eshyra-olc5.1-.2). Order of work: source -> capture -> identity/provenance -> emitted pack; attach generalized evidence per repaired defect class and search meaningful siblings (no bulk regression program). Every finding-registry row owned here stays owned here.\n2026-10-09 rebaseline: absorbs the cross-kind obligation of retired eshyra-o9bd.19.1.2. When repairing Unicode minus (opus:F-29), alternate range notation (opus:F-31) or parenthetical alternate bonuses, search every record kind that projects the same printed grammar (creature, spell, magic-item, equipment, hazard) and repair or explicitly disposition each sibling; the same normalized source grammar must not project differently by kind without a source-backed reason. Shared normalization code is a means, not an obligation. No longer blocked by 19.1.2.\n2026-10-09 pre-implementation probe (Claude Captain, main a961fb0b): F-29 STILL LIVE - creature entries printing 'Hit: N (XdY − Z)' with U+2212 minus lose hitDamage entirely (awakened-shrub Rake, baboon Bite, giant-fire-beetle Bite ...; 9 creature entries contain U+2212 before a digit, some are non-damage penalties like black-pudding Corrosive Form which is already typed -1). F-28 STILL LIVE - creature:druid Quarterstaff has no attacks[] and three cumulative damage entries (1d6 / 1d8 versatile / 1d8+2 shillelagh) i.e. alternatives flattened; creature:dryad Club same shape (1d4 / 1d8+4 shillelagh). F-31: no ranged weapon/spell attack entry currently lacks a range projection (check alternate notation siblings across kinds before closing). Cross-kind sibling search (spell, magic-item, equipment, hazard) for U+2212 and alternate notation is required per the 2026-10-09 note.\nPR #646 at head 596f5a68; Sol review eshyra-o9bd.19.4.2.2.\nSol review .3 at 9174166b: CHANGES REQUESTED (2), both accepted. S1 target qualifiers after the target noun truncated by parseAttack (9 attacks: giant-crocodile Tail, 5 swarm Bites, swarm-of-ravens Beaks, vampire Bite, vampire-spawn Bite) - AC 'Target qualifiers ... survive projection'. S2 swarm-of-poisonous-snakes top-level mechanics.damage includes the separate save-clause poison damage, violating the default-mode-only contract for alternative-bearing entries. Repair cycle 1 = attempt .4; material -> fresh full review.\nBounded review .7 at 353fa138: CHANGES REQUESTED (1) - test-evidence class survived two repair cycles (af11d9c2, 353fa138). Per policy hard stop, no third narrow patch: the proof mechanism was redesigned as an anchored lead-in grammar (58d44e30; admission by lead-in, exactly one lead-in per block, closed set of nine printed reach/range field forms, no sentence break in target, fail on non-conforming header; Sol's four mechanisms each verified to fail) and a FRESH FULL review of the PR follows.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T08:13:59Z",
+  "started_at": "2026-10-10T03:16:35Z",
+  "closed_at": "2026-10-10T08:13:59Z",
+  "close_reason": "PR #646 merged (f3ca1b6e) after GPT-6.1-Sol APPROVED at exact head 58d44e30 (fresh full review eshyra-o9bd.19.4.2.8). Unicode minus, parenthetical alternate bonuses, exclusive damage modes (attacks[].alternatives), whole target phrases incl. variants, ranged notation; F-28/F-29/F-31 repaired, CAP-004 narrowed; target evidence is an anchored lead-in grammar.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.2",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.2",
+      "depends_on_id": "eshyra-o9bd.19.4",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.2",
+      "depends_on_id": "eshyra-o9bd.19.4.2.4",
+      "type": "blocks",
+      "created_at": "2026-10-09T22:45:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.2",
+      "depends_on_id": "eshyra-o9bd.19.4.2.1",
+      "type": "blocks",
+      "created_at": "2026-10-09T22:16:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.2",
+      "depends_on_id": "eshyra-o9bd.19.1.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 1,
+  "comment_count": 0
+}

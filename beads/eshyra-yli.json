@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-yli",
+  "title": "Nesting-aware parseRules rewrite for SRD core-rules rule coverage",
+  "description": "The SRD 5.1 rule parser captures only 10 leaf rules because parseRules.ts:150-154 drops any heading whose next line is also a heading (the 'wrapper drop'), and the SRD core rules are deeply nested. Rewrite parseRules to be heading-level aware (use extract.ts headingLineIndexes/font levels) so it emits a rule per leaf subsection across the Combat, Adventuring, and Using Ability Scores chapters (Making an Attack, Damage and Healing, Saving Throws, Cover, Resting, The Environment, Order of Combat, etc.) without dropping parents. Land behind fixtures + a reviewed coverage baseline like the creature/magic-item name sets. See docs/audits/srd-5.1-rules-section-coverage.md (loreweaver-ars), root causes 1 and 4.",
+  "notes": "PR open: https://github.com/jbongaarts/loreweaver/pull/152 (awaiting review/merge).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T04:45:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:42Z",
+  "started_at": "2026-06-05T05:16:04Z",
+  "closed_at": "2026-06-05T06:11:13Z",
+  "close_reason": "Merged to main via PR #152 (squash 3b23d39). Nesting-aware parseRules: 10->127 rule records across font tiers incl. h≈10.8 callout boxes; parent-qualified keys; EXPECTED_SRD_5_1_RULE_KEYS + RuleCoverageError gate; committed-pack body-boundary regression assertions.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

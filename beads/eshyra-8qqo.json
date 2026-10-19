@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-8qqo",
+  "title": "codex-captain wrapper always bypasses approvals and sandbox",
+  "description": "The installed ~/.local/bin/codex-captain wrapper launched an interactive Captain session with default approvals and sandboxing, so every command stalled on a prompt. Add --dangerously-bypass-approvals-and-sandbox to the wrapper template in scripts/seats/install-captain-seats.mjs and document it in docs/agent-captain-seats.md. Scope is approvals/sandbox only: the wrapper still refuses --dangerously-bypass-hook-trust, since a bypassed run is not evidence the seat hook is trusted.",
+  "notes": "PR https://github.com/jbongaarts/eshyra/pull/533 open; bead stays in_progress until it merges.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-07T22:56:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-07T23:03:17Z",
+  "started_at": "2026-09-07T22:56:58Z",
+  "closed_at": "2026-09-07T23:03:17Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

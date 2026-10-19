@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7gkh",
+  "title": "Dawn per-period use economies (F5 per-period usage reset): execution vs readiness ownership; Bag of Tricks next-dawn grant ending",
+  "description": "RECONCILED 2026-10-18 after the architectural boundary review. This supersedes the 2026-10-17 framing where the two differ; the original text is kept verbatim in NOTES.\n\nThis is a PRE-FREEZE obligation: it blocks eshyra-o9bd.14 under the user rules of 2026-10-14 and 2026-10-17.\n\nSTALE PREMISE CORRECTED: the original says \"After eshyra-c58j.1 the Bowl/Brazier/Censer/Stone entityGrant clauses are green\". That was true at the c58j.1 commit 462bddad. But the final repair on PR #673 (379c90f8, user review P2-1; PR still OPEN) returned those m4 grants to engine-pending, because the vessels print an untyped count, which eshyra-olc5.14 owns. Fixing c1-uses alone therefore certifies NO vessel operation.\n\nThere are three separately owned responsibilities.\n\n(1) EXECUTION of the per-day economy shaped {kind: per-day, reset [{at: dawn, amount: all}]}.\n- itemResetExecutor already validates and executes dawn resets (validateResetShape accepts dawn/all, and there is dawn event handling), and usageCounters has dawn reset kinds.\n- Determine whether the hard-limit per-day spend plus the dawn restore are actually executed end to end for magic-item economies of this shape. If they are not, determine which binding is missing (instance economy -> reset schedule).\n- If something is missing, implement the missing binding, not a new reset engine.\n\n(2) READINESS OWNERSHIP\n- 'F5: per-period usage reset' (the perDawn helper in magicItemUseEconomies.ts) is NOT in LANDED_MAGIC_ITEM_ENGINE_HOOKS.\n- At PR #673 head it sits on c1-uses of 20 items, not only the summon items: armor of invulnerability, bag of tricks, the 4 vessels, cape of the mountebank, circlet of blasting, cloak of arachnida, cloak of the bat, crystal ball of telepathy, dagger of venom, dragon scale mail, helm of telepathy, iron bands, javelin of lightning, pearl of power, plate of etherealness, rod of alertness and rod of rulership.\n- If (1) shows execution is complete, the gap is only an inaccurate readiness classification. Land the hook globally only if the executed contract is identical for every clause that carries it; otherwise own it per clause.\n- Pipes of the Sewers carries a different hook, F5 'magic-item-usage-recharge'. Determine whether it is the same executed contract: if so, own it here; if not, record it as a residual. It is not silently dropped.\n\n(3) GRANT TERMINATION\n- Bag of Tricks: \"The creature vanishes at the next dawn or when it is reduced to 0 hit points.\"\n- next-dawn maps to {kind: dm-ended} in ITEM_GRANT_REVERT_DISPOSITIONS (activeEffects.ts). A fixed next-dawn ending is clock-determined. Examine whether the existing clock/dawn boundary service (the same boundary the reset executor sees) can end the grant deterministically. If it can, make next-dawn engine-computed (ENGINE_COMPUTED_GRANT_ENDINGS plus the runtime table). If the boundary is not trustworthy for effects, keep dm-ended and record why.\n- Do NOT assume that every context-dependent ending must be deterministic. Pipes of the Sewers (no printed ending) and the owner-command endings stay DM-ended.\n- The Bag's bonus-action command budget is F2 control, which stays DM-adjudicated per c58j.\n\nCOORDINATION with eshyra-olc5.14 (related, not serial)\n- The vessel operations need both this bead and .14. Bag of Tricks needs this bead (economy and ending); its grant already has count 1.\n- Whichever of the two lands SECOND adds the real-pack conformance rows for the vessel operations that become ready.\n\nDEPENDENCY: this bead edits the PR #673 ownership predicate and the real-pack readiness test, so it depends on eshyra-c58j.\n",
+  "acceptance_criteria": "1. The finding for (1) is recorded with code citations: either the economy is executed end to end, or the exact missing binding is named and implemented, with no new reset engine.\n2. Readiness for 'per-period usage reset' (and for Pipes' recharge hook, if it is the same contract) matches actual execution. A clause becomes green only where its contract is executed. The pack is regenerated with a thaw note.\n3. Bag of Tricks next-dawn: the decision is recorded. If engine-computed, the grant ends at the first dawn boundary after the bind and not on an earlier non-dawn clock advance; the 0-HP ending is unchanged.\n4. Minimum permanent evidence, real pack:\n   - ONE conformance for the shared per-day/dawn economy shape (spend to exhaustion, refuse, dawn restore), not one per item.\n   - If next-dawn becomes engine-computed, one Bag bind that dawn ends.\n   - No-waiver BIND rows in itemGrantRealPackReadiness.test.ts ONLY for operations that actually become ready.\n5. No vessel operation is claimed ready until eshyra-olc5.14 lands.\n6. Not required: a new reset engine; deterministic handling of DM-ended endings other than next-dawn; per-item reset tests for the 20 economy carriers.",
+  "notes": "2026-10-18 RECONCILIATION (architectural boundary review; user-authorized tracking-only reconciliation, no code). Description and acceptance rewritten; still REQUIRED PRE-FREEZE (blocks eshyra-o9bd.14; user rules 2026-10-14/17; olc5 stop condition 2026-10-12 applies). Facts verified against origin/main 318a7eb6 and PR #673 head 379c90f8 (OPEN).\nORIGINAL DESCRIPTION (2026-10-17, superseded where the reconciled description differs):\nAfter eshyra-c58j.1 the Bowl/Brazier/Censer/Stone entityGrant clauses are green, but summon-*-elemental stays refused only by c1-uses 'F5:per-period usage reset' (dawn-reset per-day uses economy). Bag of Tricks additionally keeps m4 (next-dawn ending is DM-ended). Pipes of the Sewers keeps F5 magic-item-usage-recharge and m4 (no printed ending). Land or per-clause-own the per-period reset for these single-use-per-dawn economies, then add a real-pack no-waiver conformance row (itemGrantRealPackReadiness.test.ts BIND table) for each newly ready operation.\n2026-10-18 addendum: PR #673 merged into main as dbbede8d at the same reviewed head 379c90f8, so every 'PR #673 head (OPEN)' fact in this description now holds on origin/main dbbede8d. The eshyra-c58j dependency is satisfied (c58j closed).",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-17T21:25:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-19T00:01:17Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7gkh",
+      "depends_on_id": "eshyra-olc5.14",
+      "type": "related",
+      "created_at": "2026-10-18T18:56:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7gkh",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-17T16:26:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7gkh",
+      "depends_on_id": "eshyra-c58j",
+      "type": "blocks",
+      "created_at": "2026-10-18T18:56:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

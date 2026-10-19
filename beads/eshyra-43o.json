@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-43o",
+  "title": "Fix flaky timeout in checkpoint.fork.test.ts when run in parallel",
+  "description": "During the 0jq.12 session, the test 'CheckpointStore.forkFromCheckpoint > forks a checkpoint into an isolated branch + working copy' in packages/core/test/checkpoint.fork.test.ts timed out at the default 5000ms when running the full suite in parallel, but passed reliably when run alone. The test involves a real Dolt binary and file system operations (mkdtempSync, DoltRepo init, commit), so it is sensitive to CPU/IO contention from parallel test execution. Either the timeout needs to be raised for this test, or the test needs isolation from the parallel suite.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-26T02:32:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:16Z",
+  "started_at": "2026-05-26T02:35:11Z",
+  "closed_at": "2026-05-26T02:36:14Z",
+  "close_reason": "Raised timeout to 30s on the Dolt fork test; PR #70 open",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

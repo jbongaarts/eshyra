@@ -1,0 +1,61 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.7",
+  "title": "Feature- and option-granted save/skill proficiencies never reach the character sheet, so derived checks and saves omit them",
+  "description": "Found by the 2026-10-09 engine/pack rebaseline (Claude Captain), verified against main a961fb0b.\n\nDEFECT (state integrity of capabilities in force): resolve_check now derives skill/ability/save modifiers from the character sheet (eshyra-r8en, PR #637; toolResolveCheck.ts reads sheet.savingThrows[ability].proficient and the sheet's skill proficiency), and the engine refuses a caller-declared proficiency when skill/ability is given. But level-up never sets a proficiency that a FEATURE or a chosen OPTION grants:\n- feature:rogue:slippery-mind (rogue 15): 'you gain proficiency in Wisdom saving throws'. levelUpEngine.ts (~L1550) copies each sheet.savingThrows[ability].proficient unchanged, so a level-15 rogue's derived Wisdom save omits proficiency.\n- feature:monk:diamond-soul (monk 14): 'proficiency in all saving throws'. Same path; never applied.\n- eldritch-invocation:beguiling-influence (option of feature:warlock:eldritch-invocations): 'You gain proficiency in the Deception and Persuasion skills.' levelUpFeatureChoices.ts records the chosen option (eshyra-ug4i.3) but applies no grant; the option carries only source text.\nConsequence: a deterministic check/save total that contradicts the SRD (hard blocker under the srd-fidelity rule). Pack side: the first two carry free-text effects {kind:'proficiency', grant:'Wisdom saving throws'} (the opus:F-13 'proficiency-grants' class owned by eshyra-o9bd.19.2.3); the invocation has no structured grant at all.\n\nSCOPE: make creation and level-up apply source-backed proficiency grants from class features, subclass features, and chosen options to the sheet (saves, skills; record armor/weapon/tool grants where the sheet carries them), with the minimal source-faithful typed grant on the pack side under docs/importer-fix-protocol.md where the current free text cannot be consumed. Sibling check (enumerate by query over feature/feat descriptions and option text, do not stop at these): feature:life-domain:bonus-proficiency (heavy armor, creation-time L1 subclass); other invocation options with sheet-state grants (e.g. Devil's Sight sense) only if the sheet models that state. Already handled elsewhere, verify not regressed: feature:college-of-lore:bonus-proficiencies (eshyra-91o0).\nEXCLUSIONS: no universal per-option mechanics projection; unconsumed option prose stays DM-adjudicated source material.",
+  "design": "DESIGN (Claude Captain, 2026-10-09, survey at main a961fb0b). Effective review profile: rules-clause-complete (pack typing) + semantic-system (durable sheet state).\n\nSIBLING ENUMERATION (query: every feature/subclass/feat record description + every choices[].options[].text sentence containing 'proficien'; plus every mechanics.effects[kind=proficiency]):\n APPLY (sheet models the state):\n  - feature:rogue:slippery-mind (L15) 'You gain proficiency in Wisdom saving throws.' -> savingThrows.wisdom.proficient\n  - feature:monk:diamond-soul (L14) 'proficiency in all saving throws' -> all six saves\n  - eldritch-invocation:beguiling-influence (option of feature:warlock:eldritch-invocations, choice id eldritch-invocations) -> skills Deception, Persuasion. REPLACEABLE (warlock may swap one invocation per level, levelUpFeatureChoices replacementDescriptor) so removal must be exact.\n  - feature:life-domain:bonus-proficiency (subclass L1, chosen at CREATION) 'proficiency with heavy armor' -> armorProficiencies += 'heavy armor'\n ALREADY HANDLED, must not regress: feature:college-of-lore:bonus-proficiencies (skill choice, levelUpSkillChoices.ts, eshyra-91o0); Expertise (levelUpExpertise.ts); ancestry fixed skills (srdAncestrySkills.ts).\n RECORDED NOT-APPLIED (reason: no sheet state / not a standing grant): feature:warlock:pact-boon Pact of the Blade 'proficient with it while you wield it' (conditional on wielding the pact weapon; attack-time DM adjudication, sheet has no per-weapon conditional proficiency); feature:monk:deflect-missiles (one attack 'with proficiency'); feature:druid:wild-shape (retain/gain creature proficiencies while transformed; no sheet form state); eldritch-invocation:devils-sight etc. (senses not modeled on the sheet); magic-item proficiency effects (attunement-scoped, owned by the magic-item backlog, not the sheet). Bard/Rogue Expertise are not grants.\n\nDECISIONS:\n D1 Pack: proficiency mechanics effects gain OPTIONAL typed fields alongside the verbatim free text (never replacing it): savingThrows: AbilityScoreName[] (lowercase), skills: string[] (canonical SRD skill names, Title Case as in the College of Lore from[] list), armor: string[] (subset of 'light armor'|'medium armor'|'heavy armor'|'shields'). Emitted ONLY when the whole grant phrase parses into that vocabulary; otherwise free text only (fail closed, no invention). Diamond Soul keeps scope:'all-saving-throws' and adds all six. Options: a FeatureChoiceOption may carry mechanics:{effects:[...]} containing ONLY typed proficiency effects derived from its own text (no other projectors run on option text, to avoid unrelated churn). Weapons/tools/languages stay untyped (no consumer).\n D2 Engine: resolver exposes typed grants per feature and per option. Grants apply at the acquisition boundary: creation finalize (all level-1 class + subclass features and level-1 chosen options) and level-up (newly gained features + newly chosen options). Level-up also RECONCILES legacy sheets: any held feature/option whose typed grant has no ledger entry is applied then (idempotent), so sheets created before the fix converge at their next level-up.\n D3 Durable provenance ledger: CharacterSheet.proficiencyGrants?: {sourceRef, savingThrows?, skills?, armor?}[] recording ONLY what each source newly ADDED (items already held from any source are not recorded and therefore never removed). Optional (legacy sheets omit it); validated with the other sheet validators. One entry per sourceRef; never duplicated.\n D4 Replacement: replacing an option removes exactly that option's recorded additions and drops its ledger entry; then the incoming option's grants apply. If a recorded skill to be removed is an expertise target on the sheet, the replacement is refused fail-closed with a clear message (SRD expertise presupposes the proficiency; the engine does not guess).\n D5 Saves recomputed in recomputeAfterChoices/changeSet so preview shows the delta and resolve_check (reads sheet.savingThrows[ability].proficient and sheet skill proficiency) needs no change.\nEXCLUSIONS: no universal option-mechanics projection; unconsumed option prose stays DM-adjudicated. No freeze-manifest hash changes, no thaw notes (re-freeze is reserved).\nDECOMPOSITION: child .1 pack typing (Haiku) -> child .2 engine consumption (Sonnet; durable state + replacement integrity), sequential on parent branch eshyra-olc5.7. One PR.",
+  "acceptance_criteria": "- A character who gains Slippery Mind, Diamond Soul, or Beguiling Influence (via level-up or creation) has the granted proficiency on the persisted sheet, and resolve_check's derived save/skill modifier includes it.\n- Every sibling found by the enumeration is either applied the same way or recorded with an explicit reason the sheet does not model that state; none is silently skipped.\n- Pack-side typing (if added) is source-faithful and regenerates byte-exactly; no proficiency is invented.\n- Evidence distinguishes the defective state (proficiency missing after level-up) from the repaired one.",
+  "notes": "PR #642 opened at head bb0d9eb2 (children .1, .2 integrated; captain fix bb0d9eb2 removal-before-addition). Sol review child eshyra-olc5.7.3.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T01:02:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T02:53:25Z",
+  "started_at": "2026-10-10T02:26:26Z",
+  "closed_at": "2026-10-10T02:53:25Z",
+  "close_reason": "PR #642 merged after GPT-6.1-Sol APPROVED at exact head bb0d9eb2 (eshyra-olc5.7.3). Typed pack grants + engine ledger; Slippery Mind, Diamond Soul, Beguiling Influence (with exact replacement removal), Life Domain heavy armor applied at creation/level-up; legacy sheets reconcile at next level-up.",
+  "labels": [
+    "engine-capability",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.7",
+      "depends_on_id": "eshyra-olc5.7.2",
+      "type": "blocks",
+      "created_at": "2026-10-09T21:36:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.7",
+      "depends_on_id": "eshyra-o9bd.19.2.3",
+      "type": "relates-to",
+      "created_at": "2026-10-09T20:05:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.7",
+      "depends_on_id": "eshyra-olc5.7.1",
+      "type": "blocks",
+      "created_at": "2026-10-09T21:27:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.7",
+      "depends_on_id": "eshyra-o9bd.19.5.9",
+      "type": "parent-child",
+      "created_at": "2026-10-09T20:03:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

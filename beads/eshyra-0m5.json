@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m5",
+  "title": "Plan CLI distribution and release path",
+  "description": "Decide how the local CLI should be packaged and distributed after MVP. Evaluate npm package shape, workspace build output, bin entrypoint, install/run commands, versioning, release automation, native dependency constraints, Dolt provisioning, and whether a one-command local install is needed. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "A distribution plan is recorded in docs or an ADR; it names the initial release channel, package contents, build/release commands, Node version policy, native dependency handling, Dolt install story, and smoke-test steps for a fresh user install.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:11:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:45Z",
+  "started_at": "2026-05-21T21:51:40Z",
+  "closed_at": "2026-05-21T21:54:51Z",
+  "close_reason": "Recorded CLI distribution plan in docs/cli-distribution.md and linked it from README; verification: npm run typecheck and npm run test passed.",
+  "comments": [
+    {
+      "id": "cd5749bd-f138-5ef0-8e4e-d80cbd5c6e65",
+      "issue_id": "eshyra-0m5",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded; npm run typecheck passed; npm run test passed with 35 test files passed / 1 skipped and 212 tests passed / 1 skipped.",
+      "created_at": "2026-05-21T21:53:08Z"
+    },
+    {
+      "id": "2b7ffb5c-df80-51bc-96ac-0f87826224d2",
+      "issue_id": "eshyra-0m5",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> exit 0; npm run test -> exit 0 with 35 test files passed / 1 skipped and 212 tests passed / 1 skipped. Acceptance: docs/cli-distribution.md records initial npm release channel, package contents, build/release commands, Node 22 runtime policy, better-sqlite3 native dependency handling, Dolt install/checkpoint story, one-command installer decision, and fresh install smoke-test steps; README links the plan.",
+      "created_at": "2026-05-21T21:54:44Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

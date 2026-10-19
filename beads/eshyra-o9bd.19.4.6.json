@@ -1,0 +1,92 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.6",
+  "title": "Magic-item operations, state machines, economies, grants and containment: faithful or absent",
+  "description": "Follow-up split from eshyra-o9bd.19.4.5 (PR #653) per user decision 2026-10-11 (bd memory magic-item-faithful-or-absent). Source: fresh full subsystem review eshyra-o9bd.19.4.5.7 (read its notes in full). Scope: every member of that review whose path is NOT mechanics.effects / variants[].mechanics.effects - i.e. operations and activation (S2, S3), stateMachine transitions/timers/terminations (S4), entityGrant lifecycle/control/revertOn (S5), economies/charges/daily gates and cross-operation composition (S6), containment (S1.16-S1.18), spellStore, rollManipulation. Rule: each typed claim states the printed predicate exactly or is removed from the typed structure and replaced by an executionReadiness clause with readiness 'adjudicated-by-design' carrying a verbatim source span; never invent defaults (activation cost 'action' where the text names none -> no typed cost, adjudicated); fix outright contradictions (Dagger of Venom coat prerequisite; elemental vessels/Elemental Gem revertOn concentration-ended vs conjure elemental; Rod of Alertness activate-aura vs activate-protective-aura; Luck Blade wish once per dawn; Nine Lives Stealer charge only when slain). Anything use_item can execute (green readiness) must be exactly faithful and keep working; check every runtime consumer (toolUseItem, itemState, itemExecutionReadiness, usage counters, reset executor) before removing a field. Absorbs eshyra-b0m4 (Glamoured bonus action). Evidence: the generalized source-agreement checks extended to these blocks plus verbatim-span validation for adjudicated clauses; representative eligible/ineligible scenarios per root-cause group from the review.",
+  "notes": "Folded in eshyra-vcm3 (from 19.4.5.8): operation-side wording still broad after the effects repair - Nine Lives Stealer slay-on-critical.cost unconditional charge; Rod of Lordly Might drain-life/paralyze activation trigger 'melee hit with rod' (missing 'a creature'); Hammer of Thunderbolts giant-slaying-critical activation trigger; Ring of Shooting Stars launch op. Infrastructure now available from 19.4.5.8: adjudicated-by-design clauses carry a required verbatim sourceText span (importer throws if not a substring; kindSchemas validates) and magicItemAdjudicatedEffects.ts provides a withholding table pattern - reuse it for non-effect blocks.\nStarted 2026-10-11. Branch cut from PR #653 head (origin/eshyra-o9bd.19.4.5) to reuse span infrastructure; merge origin/main after #653 merges. Child 1: eshyra-o9bd.19.4.6.1 (S2+S3 operations/activation). Child 2 (S4/S5/S6/containment) follows sequentially (shared producer files).\nNote: PR #653 head moved to ff51f6ec after child 19.4.6.1 was cut from 7fd7500c (talisman/elemental-ring/shackles effect fixes, new adjudicated clause). Merge origin/eshyra-o9bd.19.4.5 (or main after #653 merges) into this branch during integration; also: Ring of Elemental Command cast operations carry an invented 'action' cost and no plane/slay prerequisite (review 19.4.5.9 note) - in 19.4.6 scope.\nChild 1 (19.4.6.1, 121aed5d) integrated; #653 head ff51f6ec merged in (f18a1a51, verify 6607 pass, pushed). Child 2 eshyra-o9bd.19.4.6.2 dispatched (S4/S5/S6/containment + whole-corpus operations screen + Cloak of the Bat span).\nChild 2 (19.4.6.2, 01368315) integrated and pushed: S4/S5/S6/containment + whole-corpus operations screen (all 367 operations, 0 violations); readiness passing set identical (19). NEXT: when PR #653 merges, merge origin/main into this branch, verify, open PR, Sol fresh full review. Known limits recorded in 19.4.6.2 notes (lexical screen is item-level not per-operation; producers still draft invented stages removed by tables; state-graph strings outside the 9 reviewed graphs not asserted verbatim).\nFrom review 19.4.5.10 (non-effect, for this bead): Cube of Force spell-contact-loss.activation.trigger (magicItemComplexStateMachines.ts:245) repeats the spell-only narrowing - must include the printed magic-item-effect branch ('targeted by certain spells or comes into contact with certain spell or magic item effects'). Also: #653 now carries the nested Feather Token whip fix (superset of 19.4.6.2's: + attackAction/moveAndRepeat) - take #653's version when merging.\nPR https://github.com/jbongaarts/eshyra/pull/656 at 767ab4f6 (main merged after #653); Sol fresh full review eshyra-o9bd.19.4.6.3.\nReview 19.4.6.3 (Opus fallback): CHANGES REQUESTED (4) - S1 corpus-wide missing operation predicates, S2 state graphs, S3 spellStore costs, S4 prayer-bead economy. Repair eshyra-o9bd.19.4.6.4 dispatched.\nRepair 19.4.6.4 ff'd; PR #656 at 7d150a3c; Sol fresh full review eshyra-o9bd.19.4.6.5.\nReview 19.4.6.5 (Sol): CHANGES REQUESTED (4); S1/S2 hit the two-repair hard stop. User decision 2026-10-12: keep typed only where a positive capability is likely soon (capability beads eshyra-olc5.8-.12 block eshyra-o9bd.14), else DM-adjudicated. Restructure eshyra-o9bd.19.4.6.6 dispatched.\nSTOP CONDITION (user, 2026-10-12): if any KEPT-typed category (economies incl. event anchors, action type, structured equipment prerequisites, kept state machines/duration toggles, grant creature/count/duration/reversion) or any capability bead eshyra-olc5.8-.12 turns out to be particularly difficult to verify in a way that makes convergence unlikely (e.g. repeated review findings in the same kept category, or verification that cannot distinguish faithful from unfaithful cheaply), the captain must SURFACE it to the user with evidence before proceeding - do not keep repairing it and do not silently reclassify it as DM-adjudicated.\nRestructure 19.4.6.6 + captain DNF equipment ff'd; PR #656 at a357cf21; Sol fresh full review eshyra-o9bd.19.4.6.7.\nReview 19.4.6.7 (Sol): CHANGES REQUESTED (4); S2 convergence STOP surfaced to user. User decisions 2026-10-13: S2 single-lifetime-only machines (multi-instance -> DM-adjudicated via start_effect; olc5.11 re-scoped to bind item-power durations); S3 soft-limit safe-use cost. Repair eshyra-o9bd.19.4.6.8 dispatched.\nCaptain disposition of 19.4.6.8 candidates: Ring of the Ram break-object ('Alternatively ... as an action' after the 'While wearing the ring' attack sentence), Dragon Scale Mail sense ('Additionally') and Dwarven Plate reduce-forced-movement ('In addition') after a 'While wearing this armor' sentence, and Candle of Invocation burn's lighting action are ambiguous continuations; under faithful-or-absent they stay UNTYPED with the printed sentences carried verbatim (absent is always faithful). Revisit only if eshyra-olc5.9/.10 need them.\nRepair 19.4.6.8 ff'd; PR #656 at 7ad0fbe5; Sol fresh full review eshyra-o9bd.19.4.6.9.\nReview 19.4.6.9 (Sol): CHANGES REQUESTED (2). S1 stop condition surfaced; user chose a reviewed census of kept activation fields (bd memory magic-item-kept-activation-census). Repair eshyra-o9bd.19.4.6.10 dispatched to Codex Luna.\nCensus repair 19.4.6.10 ff'd; PR #656 at 44b9caec; Sol fresh full review eshyra-o9bd.19.4.6.11.\nReview 19.4.6.11 (Sol): CHANGES REQUESTED (1) - census cost citations: ~50 rows in magicItemActivationCensus.json quote an unrelated sentence as governing cost authority (e.g. Luck Blade cast-wish quotes the Luck '(no action required)' sentence; Rod of Lordly Might terrify quotes the bonus-action button sentence); typed VALUES are correct, only the evidence binding is wrong. STOP condition surfaced to user 2026-10-13; Sol judged it census construction, not intrinsic nonconvergence. USER: PAUSE. PLANNED NEXT (needs user go-ahead): one Luna repair correcting every cost citation to the operation's own governing sentence (full row list in 19.4.6.11 notes) + a cheap check that each quoted cost sentence contains and does not contradict the cost it authorizes; then fresh Sol review with watcher.\nUser go-ahead 2026-10-14 (Luna available): census citation repair eshyra-o9bd.19.4.6.12 dispatched to Luna.\nUser 2026-10-14: for the 19.4.6.12 repair, captain does a brief own review and reports back to the user instead of dispatching a Sol review.\nRepair 19.4.6.12 (+captain Dancing Sword fix) ff'd; PR #656 at 77426697. Per user, captain brief review instead of Sol; awaiting user decision.\nPR #656 MERGED 2026-10-14 as 9bbd120b (head 77426697, all checks green incl. CodeQL).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T21:51:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-14T00:39:56Z",
+  "started_at": "2026-10-11T22:47:49Z",
+  "closed_at": "2026-10-14T00:39:56Z",
+  "close_reason": "PR #656 merged (9bbd120b)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.6",
+      "depends_on_id": "eshyra-o9bd.19.4",
+      "type": "parent-child",
+      "created_at": "2026-10-11T16:51:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.6",
+      "depends_on_id": "eshyra-o9bd.19.4.6.12",
+      "type": "blocks",
+      "created_at": "2026-10-13T19:14:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.6",
+      "depends_on_id": "eshyra-o9bd.19.4.6.2",
+      "type": "blocks",
+      "created_at": "2026-10-11T19:43:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.6",
+      "depends_on_id": "eshyra-o9bd.19.4.6.4",
+      "type": "blocks",
+      "created_at": "2026-10-12T16:47:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.6",
+      "depends_on_id": "eshyra-o9bd.19.4.6.8",
+      "type": "blocks",
+      "created_at": "2026-10-13T17:58:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.6",
+      "depends_on_id": "eshyra-o9bd.19.4.6.1",
+      "type": "blocks",
+      "created_at": "2026-10-11T17:47:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.6",
+      "depends_on_id": "eshyra-o9bd.19.4.6.10",
+      "type": "blocks",
+      "created_at": "2026-10-13T18:39:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.6",
+      "depends_on_id": "eshyra-o9bd.19.4.6.6",
+      "type": "blocks",
+      "created_at": "2026-10-12T18:10:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 7,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xeu.3",
+  "title": "RED: CLI play requires character creation before turns",
+  "description": "Write failing CLI tests for accepted, rejected, EOF, and explicit deferral character creation paths.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T03:32:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T03:33:03Z",
+  "closed_at": "2026-05-23T03:34:39Z",
+  "close_reason": "RED tests added and verified failing for missing CLI character creation gate.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-xeu.3",
+      "depends_on_id": "eshyra-xeu",
+      "type": "parent-child",
+      "created_at": "2026-05-22T22:32:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "db90bd8e-3874-5754-bcaf-7763b530ec65",
+      "issue_id": "eshyra-xeu.3",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run packages/cli/test/play.test.ts -> failed for expected reason: runPlay treats character draft answers and /defer as normal turns, starts sessions on EOF, and never reports character validation.",
+      "created_at": "2026-05-23T03:34:18Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ecr.5",
+  "title": "Fix wrapped magic-item category attunement parsing",
+  "description": "PR #150 review feedback after commit 3efafff: Ring page interleaving is fixed, but wrapped category/attunement lines still corrupt committed magic-item records. Named failures: Ring of Shooting Stars, Holy Avenger, Pearl of Power, Talisman of Pure Good, Talisman of Ultimate Evil, Wand of Polymorph, Wand of Web, and Ring of Three Wishes description text. Add committed-pack assertions and fix wrapped attunement/category parsing.",
+  "notes": "Evidence: committed records.json reproduces review. Ring of Shooting Stars rarity is 'very rare (requires attunement outdoors at', requiresAttunement=false, description starts with 'night)'; Holy Avenger, Pearl of Power, Talisman of Pure Good, Talisman of Ultimate Evil, Wand of Polymorph, and Wand of Web likewise leave wrapped attunement continuation in description and fail requiresAttunement. Ring of Three Wishes description says 'cast the wish it'.\nRED: Focused vitest failed before production changes: parseMagicItems wrapped attunement test leaves Ring of Shooting Stars rarity as 'very rare (requires attunement outdoors at' with requiresAttunement=false and description starting 'night)'; extractor repeated-fragment test fails to produce 'cast the wish spell from'; committed pack assertions fail for wrapped attunement metadata and Ring of Three Wishes still says 'cast the wish it'.\nGREEN focused: npx vitest run extract.test.ts parseMagicItems.test.ts srdGeneratedPack.test.ts passed (3 files, 77 tests) after parser/extractor fixes and rules-pack regeneration.\nVerification local: npm run verify:dnd5e-srd-pack passed; npm run check passed; npm run typecheck passed; npm run test passed (88 files, 1160 tests; 2 files/3 tests skipped per suite gates).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T03:22:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:48Z",
+  "started_at": "2026-06-05T03:22:52Z",
+  "closed_at": "2026-06-05T03:42:47Z",
+  "close_reason": "Fixed wrapped magic-item attunement/category parsing, repaired Ring of Three Wishes extraction, regenerated SRD pack, and added committed-pack regressions; verification: verify:dnd5e-srd-pack, check, typecheck, and test passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ecr.5",
+      "depends_on_id": "eshyra-ecr",
+      "type": "parent-child",
+      "created_at": "2026-06-04T22:22:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "a6659364-d5ea-5656-af15-94b515f825fe",
+      "issue_id": "eshyra-ecr.5",
+      "author": "Joseph Bongaarts",
+      "text": "Review item: wrapped magic-item category/attunement lines corrupt committed pack data even after Ring page interleaving fix. Evaluation: accepted. Need reproduce named records, add committed-pack assertions that validate rarity/requiresAttunement/attunementRequirement/body boundaries, then fix parser and regenerate pack.",
+      "created_at": "2026-06-05T03:22:52Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

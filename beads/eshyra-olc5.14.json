@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.14",
+  "title": "Grant creature count: bind the source-backed count at use_item -> start_effect (Horn of Valhalla rolled horn-type count; elemental vessels' single elemental)",
+  "description": "RECONCILED 2026-10-18 after the architectural boundary review of magic-item deterministic ownership. This supersedes the 2026-10-17 framing where the two differ; the original text is kept verbatim in NOTES.\n\nThis is a PRE-FREEZE engine obligation: it blocks eshyra-o9bd.14 under the user rules of 2026-10-14 and 2026-10-17. The scope is only to enforce source-backed creature MULTIPLICITY at the real use_item -> start_effect grant-binding boundary. It is not summoning interpretation.\n\nSOURCE\n- Horn of Valhalla: \"The horn's type determines how many berserkers answer its summons, as well as the requirement for its use. The GM chooses the horn's type or determines it randomly.\" table:horn-of-valhalla rows: Silver 2d4 + 2, Brass 3d4 + 3, Bronze 4d4 + 4, Iron 5d4 + 5.\n- Bowl, Brazier, Censer and Stone of commanding/controlling elementals: each prints the summoning of ONE elemental of its type, \"as if you had cast the conjure elemental spell\".\n\nVERIFIED FACTS at PR #673 head 379c90f8 (still OPEN, under user review)\n- validateItemGrantBinding enforces only a fixed numeric grant.count.\n- The Horn grant has tableRefs [table:horn-of-valhalla] and no count.\n- The four vessel grants (the elementalVessel helper in magicItemEntityGrants.ts) carry no count.\n- creatureGrantLifecycleOwned requires a fixed numeric count, so these m4 entityGrant clauses stay engine-pending.\n- The Elemental Gem's count:1 is the precedent for a typed single creature.\n- HORN TYPE IS NOT REPRESENTED today: no variants on the record, and no initial-state procedure on the instance. It will be represented per the decision below.\n\nDETERMINISTIC COMMITMENT\n1. Vessels: type count 1 faithfully in the curated spec. The binder already enforces fixed counts.\n2. Horn: bind to the specific item use a count that the ENGINE rolled from the dice of that instance's horn type. Refuse a bind whose linked-actor count differs from that roll, or whose roll is not the engine roll attributed to that use (an unrelated or caller-supplied number).\n3. Preserve what already exists: actor identity, grant identity, variant restrictions, ownership validation, bind credits and consumption receipts.\n\nRETAINED BY THE DM: the horn type where the GM chooses it; whether the user meets the requirement, and therefore whether the berserkers are hostile or friendly; control, disposition, placement and combat decisions.\n\nDECIDED 2026-10-18 (user): option (a).\n- Horn type is a PERSISTENT property of the specific item instance. It is established once, when the item enters play (or when a previously unknown type is established), by DM choice or by deterministic random selection.\n- Prefer the existing source-backed magic-item variantId mechanism, if it faithfully represents the four horn types (Silver, Brass, Bronze, Iron). Introduce no separate storage mechanism without a demonstrated need.\n- Each activation rolls the count of that type's row through the deterministic engine, bound to that specific use.\n- The type is NEVER reselected on activation.\n\nNOT REQUIRED: generalized deterministic summoning; placement or geometry; deterministic requirement (proficiency) checking; hostility selection; a dice-count expression language beyond the four printed rows.\n\nDEPENDENCY: this bead edits the ownership predicate introduced by PR #673, so it depends on eshyra-c58j.\n",
+  "acceptance_criteria": "1. Source requirement: Horn count = the rolled dice of the instance's horn-type row; vessel count = 1. Both are traced to printed text in the curated spec.\n2. Horn type (decided 2026-10-18, option (a)):\n   - It is a persistent per-instance property, established once (DM choice or deterministic random selection), preferably through the existing magic-item variantId mechanism. If variantId cannot faithfully represent the four horn types, surface that specific limitation before adding any other storage.\n   - It is never reselected on activation; an activation reads the instance's established type.\n3. Engine commitment:\n   - The Horn count roll is made by the engine and bound durably and attributably to that item use, and it is replay-safe.\n   - start_effect refuses a count mismatch.\n   - start_effect refuses a roll that is not attributable to that use.\n   - Grant identity, variant admission, ownership, bind credit and receipt checks are unchanged.\n4. creatureGrantLifecycleOwned admits a rolled count only through this binding; the fixed-count rule is unchanged elsewhere. The vessels are certified for COUNT only; their c1-uses F5 hook is eshyra-7gkh.\n5. Truthful readiness: no operation becomes ready unless every other blocking clause on it is also resolved (vessels: eshyra-7gkh).\n6. Minimum permanent evidence, on the real unmodified pack with no readiness waiver:\n   - One Horn bind accepted with the engine-rolled count, refused for a mismatched count, and refused for an unrelated roll.\n   - One vessel bind accepted for one elemental and refused for two.\n   - The regenerated pack and its thaw note, per docs/importer-fix-protocol.md.\n   - No per-horn-type fixture matrix, unless the horn-type decision creates distinct code paths.\n7. Not required: see NOT REQUIRED in the description.\n8. The olc5 stop condition (user, 2026-10-12) applies: surface to the user if count verification cannot cheaply distinguish faithful from unfaithful.",
+  "notes": "2026-10-18 RECONCILIATION (architectural boundary review; user-authorized tracking-only reconciliation, no code). Description and acceptance rewritten; still REQUIRED PRE-FREEZE (blocks eshyra-o9bd.14; user rules 2026-10-14/17; olc5 stop condition 2026-10-12 applies). Facts verified against origin/main 318a7eb6 and PR #673 head 379c90f8 (OPEN).\nORIGINAL DESCRIPTION (2026-10-17, superseded where the reconciled description differs):\nFrom the user review of PR #673 (P2-1). validateItemGrantBinding enforces only a fixed numeric grant.count. The Horn of Valhalla grant takes its count from table:horn-of-valhalla (2d4+2/3d4+3/4d4+4/5d4+5, per horn type) and the four elemental vessels print 'an elemental' with no typed count. Until the binder enforces the source-backed count (a deterministic roll bound at the use_item -> start_effect boundary for the Horn; a faithful typed count for the vessels), creatureGrantLifecycleOwned keeps these grants' F3/F5 hooks pending. Positive and negative real-pack evidence is required. NOT STARTED: user asked to discuss follow-ups after #673 converges.\n2026-10-18 addendum: PR #673 merged into main as dbbede8d at the same reviewed head 379c90f8, so every 'PR #673 head (OPEN)' fact in this description now holds on origin/main dbbede8d. The eshyra-c58j dependency is satisfied (c58j closed).\n2026-10-18 USER DECISION: horn-type option (a). The type is a persistent per-instance property, established once (on entering play, or when an unknown type is established) by DM choice or deterministic random selection. Prefer the existing magic-item variantId mechanism if it faithfully represents the four horn types; add no separate storage without a demonstrated need. Each activation rolls the count through the engine, bound to that use; the type is never reselected per activation.\n2026-10-19: child olc5.14.1 (9d188ced) reviewed by the captain and independently verified (verify:worktree exit 0, 7095 passed and 3 skipped; pack exact). Fast-forwarded into eshyra-olc5.14. PR https://github.com/jbongaarts/eshyra/pull/674 open for user final review; stays in_progress until it merges. Discovered: eshyra-0xaq (establish type on an already-held untyped Horn; blocks o9bd.14).",
+  "status": "in_progress",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-17T22:58:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-19T01:00:00Z",
+  "started_at": "2026-10-19T00:38:16Z",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.14",
+      "depends_on_id": "eshyra-c58j",
+      "type": "blocks",
+      "created_at": "2026-10-18T18:56:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.14",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-17T17:58:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.14",
+      "depends_on_id": "eshyra-olc5.14.1",
+      "type": "blocks",
+      "created_at": "2026-10-18T19:39:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

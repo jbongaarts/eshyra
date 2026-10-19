@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-kn38.3",
+  "title": "Review: Sol final review of PR #626 (eshyra-kn38 @ 25f189a7)",
+  "description": "Final read-only review of PR #626 (branch eshyra-kn38, exact head 25f189a7bf2760dccd88cd31e6458b06ffea54c6) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "FINAL REVIEW of PR #626 at exact head 25f189a7bf2760dccd88cd31e6458b06ffea54c6. Effective profile: rules-clause-complete for the bounded always-prepared lifecycle change.\n\nRead AGENTS.md, docs/design-and-pr-review-policy.md, ADR 0020, docs/importer-fix-protocol.md, docs/design/character-progression.md, owning bead eshyra-kn38, dispatch eshyra-kn38.1, predecessor eshyra-odpc.1, and prior review eshyra-kn38.2. Reviewed the complete git diff origin/main...HEAD (all five files) and both commits in git log origin/main..HEAD. refs/beads/state is stale (2026-09-09 commit, missing kn38 records); current live Beads supplied scope and lifecycle authority. No importer or generated-pack changes require regeneration.\n\nChecked creation/finalization and subclass/feature-choice producers, spell-table resolution and canonical identities, caster-kind gating, target-level grants, same-step subclass/terrain application, optional preparation and legacy classification, spellsUnion consumers, guided preview/apply, sheet persistence, and progression-event serialization. Independently checked the vendored SRD Domain Spells and Life Domain table (pp.16-17), Circle Spells and terrain tables (pp.21-22), Oath Spells and Devotion table (pp.32-33), and Fiend expanded-list semantics (p.50), together with their real generated subclass/table projections.\n\nPrior review S1: FIXED. Prepared and alwaysPrepared are normalized independently of whether the grant list changes, including existing overlaps and optional picks. Prior review S2: FIXED. Preview normalizes spellSelections.resulting before publication, apply persists that same object, and the durable event records it consistently. The new regression evidence protects these representative invariants; independent sibling probes covered cleric, paladin, and druid rather than only replaying the author's examples.\n\nS1 — NON-MATERIAL (test-evidence nit), packages/core/test/levelUpSpellSelection.test.ts:1239-1244. Concrete scenario: the Fiend warlock fixture is level 2 with three known spells and preview receives choices={}; its 2->3 transition requires both Pact Boon and a fourth known spell. preview.ok is therefore false, changeSet is undefined, and the alwaysPrepared assertion passes without exercising a successful level-up. Suggested improvement: supply level.3.feature.warlock-pact-boon.pact-boon=[pact-boon:pact-of-the-blade] and level.3.spells.known=[spell:darkness], assert preview.ok, then check the successful result (or apply and persisted state). This is not a runtime or acceptance-criteria defect: the shared prepared-caster gate is correct, creation already exercises Fiend exclusion, and a separate real-resolver preview/apply probe with those valid decisions confirmed no automatic Fiend grants. Suggested evidence is one generalized caster-kind exclusion invariant, proportionate to this cheap shared boundary; no additional proof framework is warranted.\n\nValidation: six targeted Vitest files passed, 177 tests total: levelUpSpellSelection, creationClassChoices, spellPreparation, levelUpSubclassChoices, levelUpFeatureChoices, finalizeCharacter. Ran from this worktree with the already available ancestor dependency installation and --no-cache; installed nothing. Read-only inline probes exercised 84 cleric/paladin/druid combinations across changed/unchanged grant rows; current, missing, stale, reordered, existing-overlap and legacy state; with/without optional preparation. Four further scenarios checked same-step Forest terrain, missing-land clearing, an empty legacy caster receiving grants, and same-step Devotion plus preparation. A successful Fiend preview/apply supplied all required choices. These 89 lifecycle scenarios checked applicable grant refs, prepared/grant disjointness, derived union, preview/apply agreement, saved sheet, and serialized ledger result. Two additional failure probes verified missing table and missing granted spell fail closed in preview/apply without sheet or ledger writes. Initial probe harness assumptions about JSON undefined properties and required choice inputs were corrected; they were not product failures.\n\ngit diff --check passed; git status remained clean at the specified exact SHA. No repository edits, formatting, installation, builds, commits, pushes, GitHub comments, or merges performed. Owning bead eshyra-kn38 was not modified.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:00:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:06:37Z",
+  "closed_at": "2026-10-09T04:06:37Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-kn38.3",
+      "depends_on_id": "eshyra-kn38",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:00:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

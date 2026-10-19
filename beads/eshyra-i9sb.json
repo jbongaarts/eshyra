@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-i9sb",
+  "title": "Move OpenAI/Codex provider model defaults from GPT-5 to GPT-6",
+  "description": "Move Eshyra's OpenAI/Codex provider model defaults off the GPT-5 line onto GPT-6. User direction 2026-09-29: Codex usage should be GPT-6 only (luna and sol); a model audit found the product defaults are still GPT-5.\n\n## Current state (main @ 7452fbff; enumerate with `grep -rn \"gpt-5\" packages docs scripts`, excluding node_modules, dist, docs/audits, packages/core/data)\n- packages/core/src/config.ts:61 DEFAULT_DM_MODEL.openai = 'gpt-5.5' (primary DM, \"capability floor\", overridable by ESHYRA_MODEL)\n- packages/core/src/config.ts:74 DEFAULT_AUDIT_MODEL_BY_VENDOR.openai = 'gpt-5.4-mini' (mechanics audit, overridable by ESHYRA_AUDIT_MODEL)\n- packages/core/src/model/evaluation.ts:524/531 evaluation candidates gptPremiumPrimary 'gpt-5.5' (premium) and gptMiniAuditor 'gpt-5.4-mini' (economy)\n- packages/core/src/model/codexSdkMcpClient.ts:248 doc example `gpt-5.5`\n- docs/codex-adapter.md:114 ESHYRA_PROFILE_PREMIUM_DM_MODEL=gpt-5.5 example\n- tests pinning these: packages/core/test/config.test.ts:85-86, packages/cli/test/cli.test.ts:369/393, packages/core/test/codexSdkMcpClient.test.ts (constructor fixtures; 'gpt-5-codex' unsupported-model error text at ~293 is a verbatim upstream error string — leave it)\n- NOT in scope: packages/core/test/captainSeats.test.ts fixtures (gpt-5.6-luna/-sol as arbitrary non-captain model strings and TOML nux keys; they select nothing).\n\n## Decision to make first (record it in the bead notes before changing code)\nChoose the GPT-6 id per role, verified against what Codex accepts on the ChatGPT-account auth path (the codexSdkMcpClient path rejects unsupported models):\n- primary DM (AGENTS.md: premium frontier quality) — proposed gpt-6-sol;\n- mechanics audit (bounded tool-use judgement; fast tier where one exists) — proposed gpt-6-luna (or gpt-6-astra if it is the fast/economy tier; confirm tiering from current model availability, e.g. ~/.codex/models_cache.json, rather than from name guesses).\nEvaluation candidates follow the same mapping by tier.\n\n## Acceptance\n- No gpt-5* model id remains as a default, evaluation candidate, doc example, or test expectation in the enumerated files (except the verbatim upstream error string); membership re-derived by the grep above.\n- ESHYRA_MODEL / ESHYRA_AUDIT_MODEL overrides behave unchanged.\n- One live smoke through the Codex adapter with each new default id (not a permanent test), recorded in notes; gated live integration tests still skip without credentials.\n- npm run verify:worktree green. Deliverable is a PR; bead stays in_progress until it merges.\n",
+  "notes": "Branch eshyra-i9sb.1 @ 8e2bb1a5 verified (stray seat-probe change reverted). PR held pending user decision on eshyra-3aww (both 6.1 ids rejected by Codex ChatGPT auth today).\nPR #619 (head b00ddfeb): DM gpt-6.1-sol, audit gpt-6-luna. Depends on PR #620 (eshyra-6bua codex-sdk 0.162.0). Stays in_progress until merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T23:39:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T03:31:55Z",
+  "started_at": "2026-10-09T02:42:12Z",
+  "closed_at": "2026-10-09T03:31:55Z",
+  "close_reason": "Merged PR #619",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-i9sb",
+      "depends_on_id": "eshyra-i9sb.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T21:42:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

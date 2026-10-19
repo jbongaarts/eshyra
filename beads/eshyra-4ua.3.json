@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4ua.3",
+  "title": "06b-A T3: wire model-authored summary into CLI gracefulClose",
+  "description": "Objective:\nReplace the mechanical recaps.join(' ') in CLI rollupCampaignArc with composeArcSummary; make rollupCampaignArc async; make gracefulClose async; await it at its two call sites. Wrap the model call in try/catch — on any thrown error, write a warning via deps.io and return WITHOUT touching the arc_summary row (prior row stays as-is for next-close retry). Update the existing 'rolls the campaign arc up' test to assert the model's text lands in arc_summary.summary.\n\nFiles:\n- Modify: packages/cli/src/play.ts\n- Modify: packages/cli/test/play.test.ts\n\nSteps:\n1. In packages/cli/src/play.ts, add composeArcSummary to the existing core import block.\n2. Replace rollupCampaignArc with the async version in the Design field (try/catch around the model call; logs warning and returns on error).\n3. Change gracefulClose's signature to `async function gracefulClose(...): Promise<void>` and add `await` before `rollupCampaignArc(deps, db, campaignId)`.\n4. Find both call sites of `gracefulClose(deps, db, dbPath, ...)` (currently around play.ts:347 and play.ts:435). Both are already inside async functions; add `await` to each.\n5. In packages/cli/test/play.test.ts, change the default fake model in baseDeps (currently line 150) from `{ complete: async () => '' }` to return a known sentinel — see Design.\n6. Update the 'rolls the campaign arc up after a session closes' test (currently around play.test.ts:371) to assert `arc?.summary` is exactly the sentinel — see Design.\n7. Run: npx vitest run --reporter=verbose\n   Expected: all tests pass. If any existing test relied on the model returning '' it must also be updated; the only consumer is the arc-rollup path so just the one test above should need attention.\n8. Run: npm run typecheck\n   Expected: success.\n9. Commit:\n     git add packages/cli/src/play.ts packages/cli/test/play.test.ts\n     git commit -m \"Use composeArcSummary in CLI graceful close pipeline (loreweaver-4ua)\"",
+  "design": "play.ts imports (add to existing core import block):\n\n  import {\n    ...,\n    composeArcSummary,\n    composeSessionRecap,\n    ...,\n  } from '@loreweaver/core';\n\nReplacement rollupCampaignArc (replaces lines around 497-521):\n\n  /**\n   * Roll the campaign's closed sessions up into a model-authored arc summary,\n   * so the arc tier of the memory pyramid stays current and assembleContext\n   * can surface it as the DM model's continuity primer.\n   *\n   * On any model error we write a warning via deps.io and return early without\n   * touching arc_summary — the prior row stays as-is so the next successful\n   * close retries the rollup. Session close, recap, and checkpoint already\n   * committed before this function runs, so a skipped rollup never strands\n   * the session.\n   */\n  async function rollupCampaignArc(\n    deps: PlayDeps,\n    db: Db,\n    campaignId: string,\n  ): Promise<void> {\n    const recaps = listSessions(db, { campaignId })\n      .map((session) =>\n        getSessionRecap(db, { campaignId, sessionId: session.sessionId }),\n      )\n      .filter((recap): recap is SessionRecapRecord => recap !== undefined);\n    if (recaps.length === 0) {\n      return;\n    }\n    let summary: string;\n    try {\n      summary = await composeArcSummary(deps.model, {\n        campaignId,\n        arcId: CAMPAIGN_ARC_ID,\n        recaps,\n      });\n    } catch (error) {\n      const message = error instanceof Error ? error.message : String(error);\n      deps.io.write('Arc rollup skipped (model error): ' + message + '.');\n      return;\n    }\n    rollupArcSummary(db, {\n      campaignId,\n      arcId: CAMPAIGN_ARC_ID,\n      summary,\n      sourceSessionIds: recaps.map((recap) => recap.sessionId),\n      campaignBible: {\n        worldFacts: [],\n        majorNpcs: [],\n        factions: [],\n        openThreads: [],\n      },\n      createdAt: deps.now(),\n    });\n  }\n\ngracefulClose change: signature becomes async, the final line becomes:\n\n  await rollupCampaignArc(deps, db, campaignId);\n\nBoth call sites (currently around play.ts:347 and play.ts:435):\n  gracefulClose(deps, db, dbPath, campaign.campaignId, state.session.sessionId);\nbecomes:\n  await gracefulClose(deps, db, dbPath, campaign.campaignId, state.session.sessionId);\nand similarly for the second one.\n\nTest change in packages/cli/test/play.test.ts:\n\nbaseDeps default model (line ~150) becomes:\n\n  model: { complete: async () => 'FAKE_ARC_SUMMARY' } satisfies ModelClient,\n\nUpdate the 'rolls the campaign arc up after a session closes' test (around line 371) — replace the existing assertions on arc with:\n\n  expect(arc).toBeDefined();\n  const session = listSessions(db, { campaignId: cid })[0];\n  expect(arc?.sourceSessionIds).toContain(session.sessionId);\n  // The CLI close pipeline now hands the recap list to composeArcSummary, so\n  // arc.summary is exactly what the (fake) model returned — not a mechanical\n  // join of recap text.\n  expect(arc?.summary).toBe('FAKE_ARC_SUMMARY');\n\nRationale on the sentinel: fakeRunTurn does not invoke deps.model, so the only consumer of the default fake model is the arc-summary call. Switching the default from '' to a sentinel cleanly exercises the new path without bleeding into other tests.",
+  "acceptance_criteria": "1. rollupCampaignArc and gracefulClose in packages/cli/src/play.ts are async; both call sites of gracefulClose are awaited.\n2. composeArcSummary is imported from '@loreweaver/core' and used inside rollupCampaignArc; the recaps.map(...).join(' ') line is gone.\n3. Errors thrown by deps.model.complete are caught; deps.io receives a warning line and the function returns without calling rollupArcSummary.\n4. The default fake model in baseDeps returns 'FAKE_ARC_SUMMARY'; the 'rolls the campaign arc up' test asserts arc.summary === 'FAKE_ARC_SUMMARY'.\n5. npx vitest run passes the whole suite.\n6. npm run typecheck succeeds.\n7. The commit message references loreweaver-4ua.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:47:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T05:03:27Z",
+  "closed_at": "2026-05-23T05:10:01Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4ua.3",
+      "depends_on_id": "eshyra-4ua",
+      "type": "parent-child",
+      "created_at": "2026-05-22T23:47:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4ua.3",
+      "depends_on_id": "eshyra-4ua.2",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:47:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "e8206af4-a1d0-5363-ba18-6fbd198eba7b",
+      "issue_id": "eshyra-4ua.3",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for `408fb7d..1a123ad`:\n\nAssessment: Ready to merge\n\nCritical:\n- none\n\nImportant:\n- Catch scope is intentionally broad (catches `MemorySummaryError` from the empty-recaps guard and any non-`ModelClientError` throws). Since `rollupCampaignArc` already guards `recaps.length === 0` before calling `composeArcSummary`, the only realistic throws are network/provider errors from `model.complete`. The broad catch is acceptable here, but a comment acknowledging it catches more than `ModelClientError` would prevent future confusion.\n\nMinor:\n- Warning message `'Arc rollup skipped (model error): '` uses 'model error' but the catch fires on any thrown value, including non-model errors (e.g., a bad `MemorySummaryError` if the guard were ever bypassed). Low risk in practice.\n- The fake model returning `'FAKE_ARC_SUMMARY'` replaces the previous empty-string default; other tests that relied on the empty-string default should be checked (they appear unaffected by inspection, but no explicit comment documents the change's intent).\n\nFollow-up:\n- loreweaver-4ua.4 (model-failure path test) is the expected next step; no action needed here.\n- Consider narrowing the catch comment to document that broad catch is intentional.",
+      "created_at": "2026-05-23T05:09:03Z"
+    },
+    {
+      "id": "c57d78c6-8d26-5ab9-9d41-d096a73bc8b2",
+      "issue_id": "eshyra-4ua.3",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 408fb7d..1a123ad: Ready to merge. Critical: none. Important: catch in rollupCampaignArc is broad — fires on any throw, not just ModelClientError. Low risk because the recaps.length===0 guard prevents MemorySummaryError from reaching the catch; consider an inline comment acknowledging the catch scope. Minor: warning prefix says 'model error' but fires on any throw — 'Arc rollup skipped: ' would be more accurate; baseDeps default-model change to a sentinel is undocumented.",
+      "created_at": "2026-05-23T05:10:00Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 2
+}

@@ -1,0 +1,54 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fak.3",
+  "title": "REFACTOR: regenerate and verify SRD pack",
+  "description": "Regenerate the canonical SRD pack, review the diff, and run focused plus full worktree verification.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T23:19:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:46Z",
+  "started_at": "2026-06-06T23:27:26Z",
+  "closed_at": "2026-06-06T23:34:06Z",
+  "close_reason": "Canonical pack regenerated and exact-match/full worktree verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-fak.3",
+      "depends_on_id": "eshyra-fak.2",
+      "type": "blocks",
+      "created_at": "2026-06-06T18:19:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-fak.3",
+      "depends_on_id": "eshyra-fak",
+      "type": "parent-child",
+      "created_at": "2026-06-06T18:19:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "de826f4b-d64d-5fb6-8673-7e08dbcd2175",
+      "issue_id": "eshyra-fak.3",
+      "author": "Joseph Bongaarts",
+      "text": "Verification attempt: npm run verify:worktree reached typecheck and failed with TS7022 on expectedParent inference in both parser loops. Added explicit string annotations; rerunning full gate.",
+      "created_at": "2026-06-06T23:33:11Z"
+    },
+    {
+      "id": "7bf073d1-fc51-5635-b606-fb067524dd42",
+      "issue_id": "eshyra-fak.3",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: npm run verify:worktree -> exit 0 (Biome/check clean, typecheck passed, 1265 tests passed and 3 skipped across 94 files); npm run verify:dnd5e-srd-pack -> exit 0 with 0 manifest changes and 0 records added/removed/changed against regenerated output.",
+      "created_at": "2026-06-06T23:34:04Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 2
+}

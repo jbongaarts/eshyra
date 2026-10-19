@@ -1,0 +1,61 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ay3",
+  "title": "E7 Character creation and import",
+  "description": "MVP: agent-guided conversational, SRD-legal character creation producing the canonical character record. Deferred: import from D&D Beyond, OCR-scanned paper sheets, VTT exports - all map onto the single canonical schema (E3-owned), never forking the model.",
+  "design": "Creation: conversational flow where the model proposes choices and deterministic validation tools enforce legality (class/race/stat/equipment combos, point-buy/standard-array math, spell selection). Output written via mutate_state as canonical state. Reuses E1 build options. Import: explicitly deferred; mandate is one canonical character schema with future importers as pure mappers onto it (documented, not built).",
+  "acceptance_criteria": "1. A new player completes guided creation ending with an SRD-legal sheet persisted as canonical state. 2. Validation tool rejects illegal combinations and bad point-buy/array math. 3. Created character is compatible with the E3 canonical schema. 4. Import documented as deferred with the mapper-onto-canonical-schema mandate recorded.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:30:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-20T22:56:45Z",
+  "close_reason": "Implemented E7 character creation validation, guided completion persistence wrapper, and deferred import documentation; verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ay3",
+      "depends_on_id": "eshyra-zzy",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ay3",
+      "depends_on_id": "eshyra-c07",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "bdce0ff8-4be2-5b2f-8780-58a59fae7d3b",
+      "issue_id": "eshyra-ay3",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded; npm run typecheck passed; initial concurrent npm run test raced package output resolution, rerun after typecheck passed with 20 files passed / 1 skipped (95 passed / 1 skipped).",
+      "created_at": "2026-05-20T22:44:31Z"
+    },
+    {
+      "id": "5456f55c-029e-5fa8-a59e-641f17f55f6d",
+      "issue_id": "eshyra-ay3",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: E7 acceptance covered. Guided completion wrapper persists valid SRD character via mutateStateBatch; validator rejects illegal class, point-buy/standard-array, and spell choices; mutations target E3 canonical character fields; docs/character-creation.md records deferred importer pure-mapper mandate. npm run typecheck passed; npm run test passed with 21 files passed / 1 skipped (100 passed / 1 skipped).",
+      "created_at": "2026-05-20T22:56:38Z"
+    },
+    {
+      "id": "f533c9ae-486f-5ba4-8317-04298882a635",
+      "issue_id": "eshyra-ay3",
+      "author": "Joseph Bongaarts",
+      "text": "PR verification: npm run typecheck passed; npm run test passed with 21 files passed / 1 skipped and 100 tests passed / 1 skipped. Beads hygiene: bd orphans found none; bd stale found none; bd list --status=in_progress shows only separate ws9 work. bd preflight printed a non-applicable Go checklist for this TypeScript repo, so npm gates are the applicable project checks.",
+      "created_at": "2026-05-20T22:59:25Z"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 3
+}

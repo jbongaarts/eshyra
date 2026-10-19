@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.1.3",
+  "title": "Dispatch: 19.4.1 repair after Sol S1-S3 (attempt 2)",
+  "description": "Repair PR #651 per Sol review eshyra-o9bd.19.4.1.2 (read S1-S3 in full, incl. their sibling lists). Fix the CLASS: (1) enumerate the full printed-dimension family over all spell descriptions with an INDEPENDENT grammar (hyphenated and bare radius, 'radius of', cylinder radius+height, cube, cone, line length+width, hemisphere, sphere), then for each spell identify the DEFINING area clause and its printed anchor (point within range / centered on you / centered on a creature or object) and project it; subordinate dimensions (secondary light radius, burning 5-foot cubes, water squares) never veto a clearly identified primary area; genuine alternatives / multiple origins / non-effect dimensions (object or image bounds, sense radii, alternative modes) stay unprojected with a clause-level source reason. Expected repairs include spike-growth and sunburst (point-within-range radius), holy-aura (self), web (20-foot cube, point-within-range); dispose every sibling Sol listed (animate-objects, branding-smite, call-lightning, dancing-lights, fire-shield, flame-blade, flaming-sphere, light, plant-growth, produce-flame, storm-of-vengeance). (2) Rewrite the population evidence so it independently extracts the defining phrase and compares the COMPLETE projection (shape; radius vs height vs length vs width; origin vs the printed anchor) and rejects Sol's Moonbeam mutants (origin self; radius/height swapped) - demonstrate both fail. Do not reuse the production regex in the test. Keep the justified reviewed-unprojected map (with clause-level reasons) and the exact cases. Regenerate pack + inventory, verify:dnd5e-srd-pack, reconcile registry reasoning and the PR summary facts in notes. Importer protocol; HARD STOP if a new extractor strategy is needed. Host memory wait with pgrep -fc '^node .*verify-current-worktree'; verify:worktree then commit with &&; notes; close. No push/PR.",
+  "notes": "Commit cbbfca7f; verify:worktree passed; verify:dnd5e-srd-pack exit 0 (records changed 0 after regen).\nS1: root cause = recognizer only accepted hyphenated N-foot-radius and only point-within-range anchor. Change: mechanicsProjections.ts SPELL_SHAPE_RE now covers hyphenated/bare radius, 'radius of N feet', cylinder, cube, cone, hemisphere, sphere, line (both orders), mile-radius (veto only); anchors = point within range, 'that point' backref, or around/centered on you (self). New projections: spike-growth (radius 20 pwr), sunburst (radius 60 pwr), holy-aura (radius 30 self). Siblings animate-objects, branding-smite, call-lightning, dancing-lights, fire-shield, flame-blade, flaming-sphere, light, plant-growth, produce-flame, storm-of-vengeance all disposed in REVIEWED_UNPROJECTED with clause-level reasons. Also (source-checked) Self-range lines gain printed width: gust-of-wind 10, lightning-bolt 5, sunbeam 5.\nS2: root cause = every shape sentence had to agree. Change: only anchored single-shape sentences define the area; unanchored subordinate dimensions (web 5-foot burning cube, holy-aura 5-foot light radius) ignored; each-point, two shapes in a clause, or competing anchored definitions fail closed. web now cube 20 pwr; invalid web exclusion removed. Exact regressions for web/holy-aura/spike-growth/sunburst in the test.\nS3: test rewritten with an independent token-walking reader (no shared regex with production) comparing complete area (shape, size, height, width, unit, origin) for the whole dimension-family population plus exact reviewed-unprojected membership. Moonbeam mutants (origin self; size40/height5) both fail areaDisagreements (asserted in test).\nAlso: regenerated pack + docs/inventories/o9bd-18-8-8-semi-structured-boundary.*; registry F-08 statusReasoning reconciled. PR summary facts: area additions now 26 + 4 (holy-aura, spike-growth, sunburst, web) and 3 line widths; reviewed exclusions list rewritten with clause-level reasons; soft-hyphen literals in the test replaced by escapes (hidden-unicode check).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T21:38:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T14:57:36Z",
+  "closed_at": "2026-10-11T14:57:36Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.1.3",
+      "depends_on_id": "eshyra-o9bd.19.4.1",
+      "type": "parent-child",
+      "created_at": "2026-10-10T16:38:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}
