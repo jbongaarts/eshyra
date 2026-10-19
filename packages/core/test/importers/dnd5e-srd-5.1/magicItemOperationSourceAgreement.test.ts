@@ -1825,6 +1825,11 @@ describe('runtime safety across the whole corpus', () => {
     'Boots of Levitation||cast-levitate',
     'Candle of Invocation||burn',
     'Frost Brand||extinguish-flames',
+    // eshyra-olc5.14: the engine-rolled, binder-enforced count owns the grant.
+    'Horn of Valhalla|brass|blow-horn',
+    'Horn of Valhalla|bronze|blow-horn',
+    'Horn of Valhalla|iron|blow-horn',
+    'Horn of Valhalla|silver|blow-horn',
     'Ring of X-ray Vision||activate-x-ray-vision',
     'Rod of Security||enter-paradise',
     'Rope of Entanglement||entangle-creature',

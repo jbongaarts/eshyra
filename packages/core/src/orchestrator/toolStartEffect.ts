@@ -72,7 +72,7 @@ export const startEffectTool: Tool = {
     'hit points (the creature vanishes), and concentration ending. A grant whose cooldown restarts when ' +
     "it ends (use_item's result hint.bindGrant names it) binds only after that " +
     'spend, and only once per spend. A grant naming any other cooldown economy ' +
-    "binds only against an unredeemed use_item credit (hint.bindCredits), oldest first; with none it is refused, and a creature outside the item's economy is a ruling-sourced summoning. A grant owned by a persistent " +
+    "binds only against an unredeemed use_item credit (hint.bindCredits), oldest first; with none it is refused, and a creature outside the item's economy is a ruling-sourced summoning. A grant with a rolled count (Horn of Valhalla) binds exactly the total use_item rolled on that credit (rolledCounts). A grant owned by a persistent " +
     'actor needs campaignActorId on each linked actor, so combat closure keeps ' +
     'it. Every other printed ending (owner ' +
     'commands, next dawn, card moved, wishes, flight distance, and so on) is ' +

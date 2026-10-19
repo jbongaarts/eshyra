@@ -40,6 +40,7 @@ interface Carrier {
   readonly creature: string;
   readonly typedDuration: boolean;
   readonly concentration: boolean;
+  readonly rolledCount: boolean;
 }
 
 /** Every non-anchored cooldownEconomy grant of every variant, from the pack. */
@@ -95,6 +96,7 @@ function enumerateCarriers(): Carrier[] {
           concentration:
             typeof grant.control === 'string' &&
             grant.control.startsWith('as spell:'),
+          rolledCount: typeof grant.countRoll === 'string',
         });
       }
     }
@@ -285,7 +287,10 @@ describe('olc5.12.3 the pack carriers, enumerated from the pack', () => {
     ]);
   });
 
-  for (const carrier of CARRIERS) {
+  // A carrier whose count is engine-rolled (`countRoll`: the Horn of Valhalla
+  // variants) binds exactly the rolled total; its use/bind contract is driven
+  // in itemGrantRolledCount.test.ts on the unmodified pack.
+  for (const carrier of CARRIERS.filter((c) => !c.rolledCount)) {
     const label = `${carrier.key}${carrier.variantId === undefined ? '' : `/${carrier.variantId}`} ${carrier.grantId}`;
     it(`${label}: no bind without a use; use_item then bind redeems exactly one credit; a second bind needs another use`, () => {
       const s = setup([carrier.creature, carrier.creature]);

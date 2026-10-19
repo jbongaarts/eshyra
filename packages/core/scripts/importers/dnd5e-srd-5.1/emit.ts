@@ -80,6 +80,7 @@ import {
   type SpellGrantResolver,
 } from './mechanicsProjections.js';
 import { reconstructFeatureText } from './parseFeatures.js';
+import { assertHornOfValhallaTypesMatchTable } from './parseMagicItems.js';
 import { DND5E_RECORD_RELATIONSHIP_DECLARATIONS } from './recordRelationshipDeclarations.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
@@ -1600,6 +1601,14 @@ export function magicItemExtractionsToRecords(
 ): RulesRecord[] {
   const compileExecutableSemantics = magicItems.length === 240;
   const tableSpansByOwner = spansByOwner(tables);
+  if (compileExecutableSemantics) {
+    const hornTable = tables.find((table) => table.name === 'Horn of Valhalla');
+    if (hornTable === undefined)
+      throw new Error(
+        'magic-item variant extraction: table "Horn of Valhalla" is missing; the Horn variants cannot be checked against it',
+      );
+    assertHornOfValhallaTypesMatchTable(hornTable.rows, hornTable.columns);
+  }
   const out: RulesRecord[] = magicItems.map((item) => {
     const record: RulesRecord = {
       systemId: SYSTEM_ID,

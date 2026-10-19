@@ -1442,6 +1442,7 @@ const GRANT_KEEP = [
   // The printed variant identity a grant belongs to (S1): structural, not free text.
   'variants',
   'count',
+  'countRoll',
   'duration',
   'revertOn',
   'cooldownEconomy',

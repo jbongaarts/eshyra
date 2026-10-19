@@ -33,7 +33,8 @@ export const giveItemTool: Tool = {
     "Add a new item to a character's inventory or update an item already held by that same character. " +
     'Never changes custody of an existing row: use transfer_item for another holder or claim_item for a co-located dropped row. Sold, lost, and unknown-custody rows are not eligible for give_item or claim_item. ' +
     'Call ONLY when the player explicitly receives, purchases, or is granted an item — ' +
-    'never call to answer a question about what is currently equipped or carried.',
+    'never call to answer a question about what is currently equipped or carried. ' +
+    "A Horn of Valhalla is given with its type as variantId (silver, brass, bronze or iron; the type is fixed for that horn). When the type is determined randomly, roll the horn's d100 table with the roll tool and pass the matching row's variantId.",
   inputSchema: {
     type: 'object',
     properties: {
