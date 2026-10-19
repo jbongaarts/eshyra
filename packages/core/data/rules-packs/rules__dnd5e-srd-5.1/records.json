@@ -92580,6 +92580,7 @@
               "creatureRefs": [
                 "creature:water-elemental"
               ],
+              "count": 1,
               "duration": {
                 "amount": 1,
                 "unit": "hour"
@@ -92668,34 +92669,25 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F3",
-                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
-              },
-              {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
-                "engine": "F5",
-                "hook": "item-instance cooldown and owned-entity identity link"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F3",
-              "F5"
-            ]
+            "readiness": "green"
+          },
+          {
+            "clauseId": "magic-item:bowl-of-commanding-water-elementals/m4-control-bowl-of-commanding-water-elementals",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
+              "sourceText": "summon a water elemental, as if you had cast the conjure elemental spell"
+            },
+            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
           },
           {
             "clauseId": "magic-item:bowl-of-commanding-water-elementals/triage-activation-summon-water-elemental-0",
@@ -92923,6 +92915,7 @@
               "creatureRefs": [
                 "creature:fire-elemental"
               ],
+              "count": 1,
               "duration": {
                 "amount": 1,
                 "unit": "hour"
@@ -93011,34 +93004,25 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F3",
-                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
-              },
-              {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
-                "engine": "F5",
-                "hook": "item-instance cooldown and owned-entity identity link"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F3",
-              "F5"
-            ]
+            "readiness": "green"
+          },
+          {
+            "clauseId": "magic-item:brazier-of-commanding-fire-elementals/m4-control-brazier-of-commanding-fire-elementals",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
+              "sourceText": "summon a fire elemental, as if you had cast the conjure elemental spell"
+            },
+            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
           },
           {
             "clauseId": "magic-item:brazier-of-commanding-fire-elementals/triage-activation-summon-fire-elemental-0",
@@ -94130,6 +94114,7 @@
               "creatureRefs": [
                 "creature:air-elemental"
               ],
+              "count": 1,
               "duration": {
                 "amount": 1,
                 "unit": "hour"
@@ -94218,34 +94203,25 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F3",
-                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
-              },
-              {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
-                "engine": "F5",
-                "hook": "item-instance cooldown and owned-entity identity link"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F3",
-              "F5"
-            ]
+            "readiness": "green"
+          },
+          {
+            "clauseId": "magic-item:censer-of-controlling-air-elementals/m4-control-censer-of-controlling-air-elementals",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
+              "sourceText": "summon an air elemental, as if you had cast the conjure elemental spell"
+            },
+            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
           },
           {
             "clauseId": "magic-item:censer-of-controlling-air-elementals/triage-activation-summon-air-elemental-0",
@@ -107916,12 +107892,38 @@
       "rarity": "rare (silver or brass), very rare (bronze), or legendary (iron)",
       "requiresAttunement": false,
       "description": "You can use an action to blow this horn. In response, warrior spirits from the Valhalla appear within 60 feet of you. They use the statistics of a berserker. They return to Valhalla after 1 hour or when they drop to 0 hit points. Once you use the horn, it can’t be used again until 7 days have passed. Four types of horn of Valhalla are known to exist, each made of a different metal. The horn’s type determines how many berserkers answer its summons, as well as the requirement for its use. The GM chooses the horn’s type or determines it randomly. If you blow the horn without meeting its requirement, the summoned berserkers attack you. If you meet the requirement, they are friendly to you and your companions and follow your commands.",
+      "variants": [
+        {
+          "id": "silver",
+          "name": "Silver",
+          "rarity": "Rare",
+          "text": "Berserkers Summoned: 2d4 + 2. Requirement: None."
+        },
+        {
+          "id": "brass",
+          "name": "Brass",
+          "rarity": "Rare",
+          "text": "Berserkers Summoned: 3d4 + 3. Requirement: Proficiency with all simple weapons."
+        },
+        {
+          "id": "bronze",
+          "name": "Bronze",
+          "rarity": "Very Rare",
+          "text": "Berserkers Summoned: 4d4 + 4. Requirement: Proficiency with all medium armor."
+        },
+        {
+          "id": "iron",
+          "name": "Iron",
+          "rarity": "Legendary",
+          "text": "Berserkers Summoned: 5d4 + 5. Requirement: Proficiency with all martial weapons."
+        }
+      ],
       "mechanics": {
         "entityGrant": {
           "runtimeOwner": "encounter-combatant",
           "grants": [
             {
-              "id": "valhalla-berserkers",
+              "id": "silver-berserkers",
               "kind": "creature",
               "creatureRefs": [
                 "creature:berserker"
@@ -107929,6 +107931,79 @@
               "tableRefs": [
                 "table:horn-of-valhalla"
               ],
+              "variants": [
+                "silver"
+              ],
+              "countRoll": "2d4+2",
+              "duration": {
+                "amount": 1,
+                "unit": "hour"
+              },
+              "revertOn": [
+                "one-hour-ended",
+                "reduced-to-0-hit-points"
+              ],
+              "cooldownEconomy": "cooldown"
+            },
+            {
+              "id": "brass-berserkers",
+              "kind": "creature",
+              "creatureRefs": [
+                "creature:berserker"
+              ],
+              "tableRefs": [
+                "table:horn-of-valhalla"
+              ],
+              "variants": [
+                "brass"
+              ],
+              "countRoll": "3d4+3",
+              "duration": {
+                "amount": 1,
+                "unit": "hour"
+              },
+              "revertOn": [
+                "one-hour-ended",
+                "reduced-to-0-hit-points"
+              ],
+              "cooldownEconomy": "cooldown"
+            },
+            {
+              "id": "bronze-berserkers",
+              "kind": "creature",
+              "creatureRefs": [
+                "creature:berserker"
+              ],
+              "tableRefs": [
+                "table:horn-of-valhalla"
+              ],
+              "variants": [
+                "bronze"
+              ],
+              "countRoll": "4d4+4",
+              "duration": {
+                "amount": 1,
+                "unit": "hour"
+              },
+              "revertOn": [
+                "one-hour-ended",
+                "reduced-to-0-hit-points"
+              ],
+              "cooldownEconomy": "cooldown"
+            },
+            {
+              "id": "iron-berserkers",
+              "kind": "creature",
+              "creatureRefs": [
+                "creature:berserker"
+              ],
+              "tableRefs": [
+                "table:horn-of-valhalla"
+              ],
+              "variants": [
+                "iron"
+              ],
+              "countRoll": "5d4+5",
               "duration": {
                 "amount": 1,
                 "unit": "hour"
@@ -108013,6 +108088,20 @@
             "readiness": "green"
           },
           {
+            "clauseId": "magic-item:horn-of-valhalla/m4-control-horn-of-valhalla",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
+              "sourceText": "If you blow the horn without meeting its requirement, the summoned berserkers attack you. If you meet the requirement, they are friendly to you and your companions and follow your commands."
+            },
+            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
+          },
+          {
             "clauseId": "magic-item:horn-of-valhalla/m4-horn-of-valhalla",
             "scope": {
               "kind": "parent"
@@ -108027,34 +108116,11 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F3",
-                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
-              },
-              {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
-                "engine": "F5",
-                "hook": "item-instance cooldown and owned-entity identity link"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F3",
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:horn-of-valhalla/S:Horn of Valhalla:table:table:horn-of-valhalla",
@@ -140405,6 +140471,7 @@
               "creatureRefs": [
                 "creature:earth-elemental"
               ],
+              "count": 1,
               "duration": {
                 "amount": 1,
                 "unit": "hour"
@@ -140479,6 +140546,20 @@
             ]
           },
           {
+            "clauseId": "magic-item:stone-of-controlling-earth-elementals/m4-control-stone-of-controlling-earth-elementals",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
+              "sourceText": "summon an earth elemental, as if you had cast the conjure elemental spell"
+            },
+            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
+          },
+          {
             "clauseId": "magic-item:stone-of-controlling-earth-elementals/m4-stone-of-controlling-earth-elementals",
             "scope": {
               "kind": "parent"
@@ -140493,34 +140574,11 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F3",
-                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
-              },
-              {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
-                "engine": "F5",
-                "hook": "item-instance cooldown and owned-entity identity link"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F3",
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:stone-of-controlling-earth-elementals/triage-activation-summon-earth-elemental-0",

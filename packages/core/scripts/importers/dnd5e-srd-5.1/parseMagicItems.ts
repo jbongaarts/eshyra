@@ -300,6 +300,94 @@ function extractReviewedInlineVariants(
   });
 }
 
+/**
+ * Horn of Valhalla's four types (eshyra-olc5.14). The printed description says
+ * "Four types of horn of Valhalla are known to exist" and "The GM chooses the
+ * horn's type or determines it randomly"; the type table is
+ * `table:horn-of-valhalla` (Horn Type | Berserkers Summoned | Requirement) and
+ * the rarity line prints "rare (silver or brass), very rare (bronze), or
+ * legendary (iron)". A horn's type is a persistent per-instance property, so it
+ * is the instance's magic-item variant. Each row below is pinned: extraction
+ * aborts if the rarity line or description drifts, and
+ * `assertHornOfValhallaTypesMatchTable` aborts the emit if the table rows
+ * differ, so the variants cannot silently diverge from the source.
+ */
+export const HORN_OF_VALHALLA_RARITY_LINE =
+  'rare (silver or brass), very rare (bronze), or legendary (iron)';
+export const HORN_OF_VALHALLA_TYPES = [
+  {
+    name: 'Silver',
+    rarity: 'Rare',
+    count: '2d4 + 2',
+    requirement: 'None',
+  },
+  {
+    name: 'Brass',
+    rarity: 'Rare',
+    count: '3d4 + 3',
+    requirement: 'Proficiency with all simple weapons',
+  },
+  {
+    name: 'Bronze',
+    rarity: 'Very Rare',
+    count: '4d4 + 4',
+    requirement: 'Proficiency with all medium armor',
+  },
+  {
+    name: 'Iron',
+    rarity: 'Legendary',
+    count: '5d4 + 5',
+    requirement: 'Proficiency with all martial weapons',
+  },
+] as const;
+
+function extractHornOfValhallaVariants(
+  rarityLine: string,
+  description: string,
+): MagicItemVariant[] {
+  if (rarityLine !== HORN_OF_VALHALLA_RARITY_LINE) {
+    throw new Error(
+      `magic-item variant extraction: expected Horn of Valhalla rarity line ${JSON.stringify(HORN_OF_VALHALLA_RARITY_LINE)}, found ${JSON.stringify(rarityLine)}`,
+    );
+  }
+  for (const phrase of [
+    'Four types of horn of Valhalla are known to exist',
+    'The GM chooses the horn’s type or determines it randomly.',
+  ]) {
+    if (!description.includes(phrase)) {
+      throw new Error(
+        `magic-item variant extraction: expected ${JSON.stringify(phrase)} not found in "Horn of Valhalla" description`,
+      );
+    }
+  }
+  return HORN_OF_VALHALLA_TYPES.map(({ name, rarity, count, requirement }) => ({
+    name,
+    rarity,
+    text: `Berserkers Summoned: ${count}. Requirement: ${requirement}.`,
+  }));
+}
+
+/** Aborts when the emitted Horn of Valhalla table differs from the pinned
+ *  types the variants were built from. */
+export function assertHornOfValhallaTypesMatchTable(
+  rows: readonly (readonly unknown[])[],
+  columns: readonly string[],
+): void {
+  const expected = HORN_OF_VALHALLA_TYPES.map(
+    ({ name, count, requirement }) => [name, count, requirement],
+  );
+  const actual = rows.map((row) => row.slice(1).map(String));
+  if (
+    columns.slice(1).join('|') !==
+      'Horn Type|Berserkers Summoned|Requirement' ||
+    JSON.stringify(actual) !== JSON.stringify(expected)
+  ) {
+    throw new Error(
+      `magic-item variant extraction: Horn of Valhalla variants no longer match table:horn-of-valhalla (columns ${JSON.stringify(columns)}, rows ${JSON.stringify(actual)})`,
+    );
+  }
+}
+
 function categoryTextFromLine(line: string): string | undefined {
   const text = line.trim();
   for (const match of text.matchAll(ITEM_TYPE_WORD)) {
@@ -600,7 +688,9 @@ export function parseMagicItems(
     const variants =
       entry.name === 'Figurine of Wondrous Power'
         ? extractFigurineVariants(description)
-        : extractReviewedInlineVariants(entry.name, description);
+        : entry.name === 'Horn of Valhalla'
+          ? extractHornOfValhallaVariants(entry.rarity, description)
+          : extractReviewedInlineVariants(entry.name, description);
     out.push({
       name: entry.name,
       itemType: entry.itemType,

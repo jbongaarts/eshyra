@@ -65,11 +65,12 @@ function asObject(value: unknown): Obj | undefined {
  *    prints no ending (Pipes of the Sewers, Manual of Golems, Staff of the
  *    Python) leaves the engine's remove-on-end an inference, and any DM-ended
  *    value is a printed lifecycle term the runtime does not compute;
- *  - EVERY grant prints a fixed numeric `count`. The binder enforces only a
- *    fixed count; a count the source rolls on a table (Horn of Valhalla:
- *    2d4+2 ... 5d4+5 berserkers) or leaves untyped (the elemental vessels)
- *    would admit any number of linked actors, so it stays pending until a
- *    count capability owns it (user review of PR #673, P2-1);
+ *  - EVERY grant prints a fixed numeric `count`, or a `countRoll` (eshyra-olc5.14:
+ *    Horn of Valhalla's per-horn-type 2d4+2 ... 5d4+5). The binder enforces a
+ *    fixed count, and enforces a `countRoll` against the engine's own roll
+ *    persisted on the use's bind credit (never a caller-supplied number). A
+ *    grant with neither would admit any number of linked actors, so it stays
+ *    pending;
  *  - NO grant prints an `onEntityDeath` item consequence (Ring of Djinni
  *    Summoning: the ring becomes nonmagical when the djinni dies). No runtime
  *    applies it, so a green clause would hide it (PR #673 review, P2-2).
@@ -91,7 +92,8 @@ export function creatureGrantLifecycleOwned(
   return grants.every((raw) => {
     const grant = asObject(raw);
     if (grant === undefined || grant.kind !== 'creature') return false;
-    if (typeof grant.count !== 'number') return false;
+    if (typeof grant.count !== 'number' && typeof grant.countRoll !== 'string')
+      return false;
     if (grant.onEntityDeath !== undefined) return false;
     const revertOn = Array.isArray(grant.revertOn) ? grant.revertOn : [];
     return (

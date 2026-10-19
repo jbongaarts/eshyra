@@ -209,6 +209,11 @@ export interface MagicItemEntityGrant {
      *  Required on every grant of an item that declares variants (S1). */
     readonly variants?: readonly string[];
     readonly count?: number | string;
+    /** A dice expression the ENGINE rolls once per use (use_item) and persists
+     *  on the use's bind credit; start_effect then binds exactly that many
+     *  linked actors (Horn of Valhalla's horn-type row, eshyra-olc5.14).
+     *  Mutually exclusive with `count`. */
+    readonly countRoll?: string;
     readonly control?: string;
     readonly duration?: MagicItemDurationSpec;
     readonly revertOn?: readonly string[];
@@ -1202,6 +1207,7 @@ function entityGrant(
         'tableRefs',
         'variants',
         'count',
+        'countRoll',
         'control',
         'duration',
         'revertOn',
@@ -1274,6 +1280,17 @@ function entityGrant(
       });
     if (grant.count !== undefined)
       numberOrDice(grant.count, `${grantPath}.count`);
+    if (grant.countRoll !== undefined) {
+      if (grant.count !== undefined)
+        throw new RulesPackError(
+          `${grantPath}.countRoll and ${grantPath}.count are mutually exclusive`,
+        );
+      if (kind !== 'creature')
+        throw new RulesPackError(
+          `${grantPath}.countRoll is valid only on a creature grant`,
+        );
+      dice(grant.countRoll, `${grantPath}.countRoll`);
+    }
     if (grant.control !== undefined)
       string(grant.control, `${grantPath}.control`);
     if (grant.duration !== undefined)

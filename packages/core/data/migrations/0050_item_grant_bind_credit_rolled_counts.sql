@@ -1,0 +1,11 @@
+-- eshyra-olc5.14: a grant that prints a rolled creature count (Horn of
+-- Valhalla's horn-type row, `countRoll`) has that count rolled by the ENGINE
+-- when use_item issues the bind credit, in the same transaction. The roll
+-- (grant id, notation, every die, total) is persisted here as a JSON array, so
+-- the credit durably attributes it to that one use and a reload or replay reads
+-- it back instead of rolling again. start_effect refuses a bind whose linked
+-- actor count differs from the stored total, and a credit that holds no roll
+-- for the grant (NULL: every credit issued before this migration, and every
+-- credit for a grant with a fixed or no count). Nothing caller-supplied is
+-- ever accepted as the count.
+ALTER TABLE item_grant_bind_credit ADD COLUMN rolled_counts_json TEXT;
