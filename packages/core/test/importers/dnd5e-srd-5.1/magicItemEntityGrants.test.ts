@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  EXTERNAL_EVENT_LIFECYCLE_HOOK,
   MAGIC_ITEM_ENTITY_GRANT_NAMES,
   MAGIC_ITEM_ENTITY_GRANT_REFERENCES,
   projectMagicItemEntityGrants,
@@ -80,8 +81,10 @@ describe('M4 magic-item entity lifecycle family projection', () => {
       expect(projection?.family, name).toBe('m4-entity-lifecycles');
       // The entityGrant clause always leads. A grant the runtime owns
       // (eshyra-c58j.1) adds exactly one adjudicated control clause (no
-      // engine hook, the F2 command budget stays DM-adjudicated); no other
-      // clause is ever added.
+      // engine hook, the F2 command budget stays DM-adjudicated). The only
+      // other clause ever added is the typed external-event lifecycle
+      // consequence of the Ring of Djinni Summoning (eshyra-olc5.15): its
+      // stateMachine clause, bound to the landed item_state_event hook.
       const [lead, ...rest] = projection?.clauses ?? [];
       expect(lead, name).toEqual(
         expect.objectContaining({
@@ -89,15 +92,27 @@ describe('M4 magic-item entity lifecycle family projection', () => {
           representation: { block: 'entityGrant' },
         }),
       );
-      expect(rest.length, name).toBeLessThanOrEqual(1);
-      for (const control of rest)
+      const lifecycle = rest.filter(
+        (entry) =>
+          'block' in entry.representation &&
+          entry.representation.block === 'stateMachine',
+      );
+      expect(lifecycle.map(() => name)).toEqual(
+        name === 'Ring of Djinni Summoning' ? [name] : [],
+      );
+      for (const entry of lifecycle)
+        expect(entry.engineHooks).toEqual([EXTERNAL_EVENT_LIFECYCLE_HOOK]);
+      const controls = rest.filter((entry) => !lifecycle.includes(entry));
+      expect(controls.length, name).toBeLessThanOrEqual(1);
+      for (const control of controls)
         expect(control, name).toEqual(
           expect.objectContaining({
             tag: 'M4',
             representation: expect.objectContaining({ adjudicated: true }),
           }),
         );
-      for (const control of rest) expect(control.engineHooks).toBeUndefined();
+      for (const control of controls)
+        expect(control.engineHooks).toBeUndefined();
     }
     expect(
       projectMagicItemEntityGrants(named('Bag of Holding')),
@@ -176,7 +191,9 @@ describe('M4 magic-item entity lifecycle family projection', () => {
         id: 'python-form',
         creatureRefs: ['creature:giant-constrictor-snake'],
         revertOn: ['owner-bonus-action-command', 'reduced-to-0-hit-points'],
-        onEntityDeath: expect.stringContaining('staff shatters'),
+        // eshyra-olc5.15: typed and executed (the 0-hit-point ending destroys the
+        // source staff), no longer a pending onEntityDeath note.
+        destroysItemOn: 'reduced-to-0-hit-points',
         exclusiveInstance: { scope: 'item', recast: 'dismiss-existing' },
         note: expect.stringContaining(
           'Early reversion restores all hit points',
@@ -198,9 +215,22 @@ describe('M4 magic-item entity lifecycle family projection', () => {
       ],
       cooldownEconomy: 'cooldown',
       exclusiveInstance: { scope: 'item', recast: 'blocked' },
-      onEntityDeath: expect.stringContaining('make the ring nonmagical'),
       note: expect.stringContaining('same particular djinni'),
     });
+    // eshyra-olc5.15: the death consequence is TYPED as an external-event
+    // transition (executed by item_state_event), not a pending grant note.
+    expect(djinni).not.toHaveProperty('onEntityDeath');
+    const machine = projectMagicItemEntityGrants(
+      named('Ring of Djinni Summoning'),
+    )?.mechanics.stateMachine;
+    expect(machine?.transitions).toEqual([
+      {
+        from: 'magical',
+        to: 'nonmagical',
+        condition: 'the djinni dies',
+        becomes: 'nonmagical',
+      },
+    ]);
   });
 
   it('keeps deck results as harmless illusory entities, not creatures', () => {

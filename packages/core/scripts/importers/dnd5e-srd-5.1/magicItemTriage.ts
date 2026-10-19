@@ -130,6 +130,17 @@ export const KEPT_STATE_MACHINES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Machines kept typed that are NOT activation-entered lifetimes: a printed
+ * external event with a durable item consequence, applied by item_state_event
+ * (eshyra-olc5.15). The Ring of Djinni Summoning's `the djinni dies` makes the
+ * ring nonmagical (`becomes: 'nonmagical'`). They own no lifetime, so they sit
+ * outside the single-lifetime review of {@link KEPT_STATE_MACHINES}.
+ */
+export const KEPT_EXTERNAL_EVENT_MACHINES: ReadonlySet<string> = new Set([
+  'Ring of Djinni Summoning',
+]);
+
+/**
  * spellStore stays typed ONLY as the numeric stored-level core that item
  * initialization binds (the printed "when found, it contains 1d6 - 1 levels"
  * randomProcedure resolves against it): capacity, initial levels and the bound
@@ -1446,6 +1457,8 @@ const GRANT_KEEP = [
   'duration',
   'revertOn',
   'cooldownEconomy',
+  // olc5.15: the typed, executed source-item destruction (Staff of the Python).
+  'destroysItemOn',
 ] as const;
 
 function triageGrants(
@@ -1749,7 +1762,12 @@ export function applyMagicItemTriage(
       (projection) => projection.mechanics[block] !== undefined,
     );
     if (!present) continue;
-    if (block === 'stateMachine' && KEPT_STATE_MACHINES.has(scope)) continue;
+    if (
+      block === 'stateMachine' &&
+      (KEPT_STATE_MACHINES.has(scope) ||
+        KEPT_EXTERNAL_EVENT_MACHINES.has(scope))
+    )
+      continue;
     if (block === 'spellStore' && KEPT_SPELL_STORE_CORE.has(scope)) {
       result = spellStoreCore(
         scope,

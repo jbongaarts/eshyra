@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(805);
+    expect(backlog.candidates).toHaveLength(806);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -112,10 +112,15 @@ describe('magic-item legacy capability backlog', () => {
     // eshyra-olc5.12.2 adds the Efreeti Bottle remove-stopper operation as one
     // operation-bound candidate that carries the landed paid-operation hook
     // (804 -> 805); the grant-anchored cooldown hook landed on two existing
-    // economy clauses, which were already candidates. The resulting candidate
-    // set contains 805 rows.
+    // economy clauses, which were already candidates. eshyra-olc5.15 adds the
+    // Ring of Djinni Summoning's green stateMachine clause for its typed
+    // djinni-dies transition (m4-lifecycle-ring-of-djinni-summoning), which
+    // carries the landed external-event hook like the other green hook-backed
+    // clauses (805 -> 806); the Ring's entityGrant clause was already a
+    // candidate and keeps its identity. The resulting candidate set contains
+    // 806 rows.
     expect(fingerprint).toBe(
-      '40c20310f86fd8cbe36a9baafb2f9dcca8b177ec4d94623d78ca66223ef42b73',
+      '37e0be1615ff0815b00a8fa2d0f5a9cc0b13360f996392353c4ee791ae4ed94f',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

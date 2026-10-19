@@ -71,9 +71,14 @@ function asObject(value: unknown): Obj | undefined {
  *    persisted on the use's bind credit (never a caller-supplied number). A
  *    grant with neither would admit any number of linked actors, so it stays
  *    pending;
- *  - NO grant prints an `onEntityDeath` item consequence (Ring of Djinni
- *    Summoning: the ring becomes nonmagical when the djinni dies). No runtime
- *    applies it, so a green clause would hide it (PR #673 review, P2-2).
+ *  - NO grant prints an UNTYPED `onEntityDeath` item consequence. No runtime
+ *    applies a curated note, so a green clause would hide it (PR #673 review,
+ *    P2-2). A source-grounded consequence is either typed AND executed (the
+ *    Ring of Djinni Summoning's `becomes: 'nonmagical'` transition, run by
+ *    item_state_event; the Staff of the Python's `destroysItemOn`, run at the
+ *    grant ending -- eshyra-olc5.15), or its grant is kept pending here with the
+ *    verbatim span in an adjudicated clause. The set is empty today; the guard
+ *    stays as the fail-closed mechanism for any future `onEntityDeath` note.
  */
 export function creatureGrantLifecycleOwned(
   entityGrant: unknown,

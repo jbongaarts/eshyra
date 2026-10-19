@@ -180,6 +180,12 @@ export interface MagicItemStateMachine {
     readonly via?: string;
     readonly timer?: MagicItemDurationSpec;
     readonly condition?: string;
+    /** eshyra-olc5.15: the printed external event this `condition` names makes
+     *  the item durably nonmagical (Ring of Djinni Summoning: the ring becomes
+     *  nonmagical if the djinni dies). Valid only on a `condition` transition;
+     *  the item_state_event path applies it, ends every live grant bound to the
+     *  instance in the same transaction, and schedules no cooldown. */
+    readonly becomes?: 'nonmagical';
     readonly effects?: readonly string[];
     readonly onFailure?: {
       readonly retryAfter?: MagicItemDurationSpec;
@@ -218,6 +224,12 @@ export interface MagicItemEntityGrant {
     readonly duration?: MagicItemDurationSpec;
     readonly revertOn?: readonly string[];
     readonly onEntityDeath?: string;
+    /** eshyra-olc5.15: the printed ending after which the grant's SOURCE item
+     *  is destroyed (Staff of the Python: when the snake is reduced to 0 hit
+     *  points the staff "shatters and is destroyed"). Must be one of this
+     *  grant's `revertOn` values; the engine destroys the instance in the same
+     *  transaction as that ending. */
+    readonly destroysItemOn?: 'reduced-to-0-hit-points';
     readonly cooldownEconomy?: string;
     readonly exclusiveInstance?: {
       readonly scope: 'item' | 'owner';
@@ -1036,6 +1048,7 @@ function stateMachine(
         'via',
         'timer',
         'condition',
+        'becomes',
         'effects',
         'onFailure',
         'note',
@@ -1118,6 +1131,16 @@ function stateMachine(
     }
     if (transition.condition !== undefined)
       string(transition.condition, `${transitionPath}.condition`);
+    if (transition.becomes !== undefined) {
+      if (transition.becomes !== 'nonmagical')
+        throw new RulesPackError(
+          `${transitionPath}.becomes must be nonmagical`,
+        );
+      if (transition.condition === undefined)
+        throw new RulesPackError(
+          `${transitionPath}.becomes is valid only on a condition transition (an external printed event)`,
+        );
+    }
     if (transition.effects !== undefined && transition.onFailure !== undefined)
       throw new RulesPackError(
         `${transitionPath} cannot declare both effects and onFailure`,
@@ -1212,6 +1235,7 @@ function entityGrant(
         'duration',
         'revertOn',
         'onEntityDeath',
+        'destroysItemOn',
         'cooldownEconomy',
         'exclusiveInstance',
         'note',
@@ -1299,6 +1323,23 @@ function entityGrant(
       strings(grant.revertOn, `${grantPath}.revertOn`, { nonEmpty: true });
     if (grant.onEntityDeath !== undefined)
       string(grant.onEntityDeath, `${grantPath}.onEntityDeath`);
+    if (grant.destroysItemOn !== undefined) {
+      if (kind !== 'creature')
+        throw new RulesPackError(
+          `${grantPath}.destroysItemOn is valid only on a creature grant`,
+        );
+      if (grant.destroysItemOn !== 'reduced-to-0-hit-points')
+        throw new RulesPackError(
+          `${grantPath}.destroysItemOn must be reduced-to-0-hit-points`,
+        );
+      if (
+        !Array.isArray(grant.revertOn) ||
+        !grant.revertOn.includes(grant.destroysItemOn)
+      )
+        throw new RulesPackError(
+          `${grantPath}.destroysItemOn must also be one of the grant's revertOn endings`,
+        );
+    }
     if (grant.cooldownEconomy !== undefined) {
       const economyId = id(
         grant.cooldownEconomy,

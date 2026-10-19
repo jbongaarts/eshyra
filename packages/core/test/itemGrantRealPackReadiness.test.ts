@@ -8,8 +8,10 @@
  * Horn of Valhalla blow-horn (eshyra-olc5.14): its berserker count is rolled
  * per use by the engine and enforced by the binder; the use -> roll -> bind
  * contract is driven on the unmodified pack in itemGrantRolledCount.test.ts.
- * Ring of Djinni Summoning summon-djinni (its printed death consequence is
- * applied by no runtime) stays engine-pending. The elemental vessels' count is
+ * Ring of Djinni Summoning summon-djinni (eshyra-olc5.15): its printed death
+ * consequence is typed (the djinni-dies transition) and executed by
+ * item_state_event, so the operation is ready; use -> bind -> death is driven on
+ * the unmodified pack in itemStateEventNonmagical.test.ts. The elemental vessels' count is
  * certified (typed 1) but their operations stay not-ready on the c1-uses F5
  * per-period reset (eshyra-7gkh). */
 import { describe, expect, it } from 'vitest';
@@ -58,6 +60,9 @@ function readyGrantOperations(): string[] {
 const CONFORMANCE_BACKED: readonly string[] = [
   // itemGrantRolledCount.test.ts (no readiness waiver)
   'magic-item:horn-of-valhalla|blow-horn',
+  // itemStateEventNonmagical.test.ts (no readiness waiver): use -> bind -> the
+  // djinni dies -> nonmagical; contrasted with ordinary endings
+  'magic-item:ring-of-djinni-summoning|summon-djinni',
 ];
 
 describe('eshyra-c58j real-pack readiness gate for creature-grant operations', () => {

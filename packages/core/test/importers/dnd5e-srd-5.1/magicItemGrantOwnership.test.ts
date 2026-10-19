@@ -96,13 +96,15 @@ const OWNED_ITEMS = [
   'Elemental Gem',
   // countRoll per horn-type variant (eshyra-olc5.14)
   'Horn of Valhalla',
+  // eshyra-olc5.15: its printed death consequence is TYPED (a stateMachine
+  // condition transition with becomes: nonmagical) and executed by
+  // item_state_event, so the guard no longer holds the grant pending.
+  'Ring of Djinni Summoning',
   'Stone of Controlling Earth Elementals',
 ];
 /** Every grant-bearing item that keeps the hooks, with the reason it does. */
 const KEPT_ITEMS: Record<string, string> = {
   'Bag of Tricks': 'next-dawn ending is DM-ended; bonus-action command budget',
-  'Ring of Djinni Summoning':
-    'onEntityDeath (the ring becomes nonmagical when the djinni dies) is applied by no runtime',
   'Deck of Illusions': 'illusion grant, not bound by start_effect',
   'Efreeti Bottle': 'third-wish-granted ending is DM-ended; outcomes (.12.4)',
   'Feather Token': 'object whip grant mixed in; DM-ended endings',
@@ -115,10 +117,65 @@ const KEPT_ITEMS: Record<string, string> = {
 };
 
 describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
-  it('the death-consequence set is exactly the reviewed onEntityDeath grants', () => {
+  it('the death-consequence guard holds only untyped onEntityDeath notes, and none remain (eshyra-olc5.15)', () => {
+    // The Ring (typed transition), the Staff (typed destroysItemOn) and the
+    // Efreeti Bottle (the source prints no death-triggered item transition)
+    // left the guard; it stays as the fail-closed mechanism for any future
+    // curated onEntityDeath note.
     expect([...MAGIC_ITEM_ENTITY_GRANTS_WITH_DEATH_CONSEQUENCE].sort()).toEqual(
-      ['Efreeti Bottle', 'Ring of Djinni Summoning', 'Staff of the Python'],
+      [],
     );
+  });
+
+  it('every typed death consequence the pack carries is one the runtime executes (triage never strips an unexecuted one)', () => {
+    // A source-grounded consequence is either typed AND executed, or its grant
+    // stays pending (the guard above). Pin the typed forms and who runs them.
+    const ring = items.find(
+      (record) => record.name === 'Ring of Djinni Summoning',
+    );
+    const machine = (((ring as { data: unknown }).data as Obj).mechanics as Obj)
+      .stateMachine as Obj;
+    expect(
+      (machine.transitions as Obj[]).filter(
+        (transition) => transition.becomes !== undefined,
+      ),
+    ).toEqual([
+      {
+        from: 'magical',
+        to: 'nonmagical',
+        condition: 'the djinni dies',
+        becomes: 'nonmagical',
+      },
+    ]);
+    const typedForms = new Set<string>();
+    for (const record of items) {
+      const mechanics = (record.data as Obj).mechanics as Obj | undefined;
+      const scopes = [
+        mechanics,
+        ...(((record.data as Obj).variants as Obj[] | undefined) ?? []).map(
+          (variant) => variant.mechanics as Obj | undefined,
+        ),
+      ];
+      for (const scope of scopes) {
+        for (const transition of ((scope?.stateMachine as Obj | undefined)
+          ?.transitions ?? []) as Obj[])
+          if (transition.becomes !== undefined)
+            typedForms.add(`${record.name}|becomes:${transition.becomes}`);
+        for (const grant of ((scope?.entityGrant as Obj | undefined)?.grants ??
+          []) as Obj[])
+          if (grant.destroysItemOn !== undefined)
+            typedForms.add(
+              `${record.name}|destroysItemOn:${grant.destroysItemOn}`,
+            );
+      }
+    }
+    // Executed by item_state_event (becomes) and by the grant-ending choke
+    // point (destroysItemOn): itemStateEventNonmagical.test.ts and
+    // itemGrantDestroysSource.test.ts drive each on the real pack.
+    expect([...typedForms].sort()).toEqual([
+      'Ring of Djinni Summoning|becomes:nonmagical',
+      'Staff of the Python|destroysItemOn:reduced-to-0-hit-points',
+    ]);
   });
 
   it('the hooks are not globally landed', () => {

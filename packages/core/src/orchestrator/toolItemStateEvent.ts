@@ -30,7 +30,12 @@ export const itemStateEventTool: Tool = {
     'cause no charge loss and must not be sent. The result reports the rolled ' +
     'amount, the amount deducted, and the remaining charges; exhausted is true ' +
     'when none remain. When exhausted, the DM then sends the printed condition ' +
-    '“the cube runs out of charges” as its own item_state_event.',
+    '“the cube runs out of charges” as its own item_state_event. A condition ' +
+    'whose printed effect is that the item becomes nonmagical (the Ring of ' +
+    'Djinni Summoning: “the djinni dies”) makes the instance durably ' +
+    'nonmagical and ends every live grant bound to it in the same transaction, ' +
+    'with no cooldown. Send it only when the creature actually died, not when ' +
+    'it dropped to 0 hit points and returned home.',
   inputSchema: {
     type: 'object',
     properties: {
