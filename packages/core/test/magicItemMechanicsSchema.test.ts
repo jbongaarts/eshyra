@@ -168,6 +168,64 @@ describe('magic-item mechanics schema', () => {
     ).toThrow(/resetsDuration requires from and to to match/);
   });
 
+  it('validates the external-event nonmagical consequence and the source-item destruction coupling (eshyra-olc5.15)', () => {
+    const machine = (transition: Record<string, unknown>) => ({
+      initial: 'magical',
+      states: [{ id: 'magical' }, { id: 'nonmagical' }],
+      transitions: [{ from: 'magical', to: 'nonmagical', ...transition }],
+    });
+    expect(() =>
+      validate({
+        stateMachine: machine({
+          condition: 'the djinni dies',
+          becomes: 'nonmagical',
+        }),
+      }),
+    ).not.toThrow();
+    // Only a condition (external event) transition may carry the consequence.
+    expect(() =>
+      validate({
+        operations: [{ id: 'go' }],
+        stateMachine: machine({ via: 'go', becomes: 'nonmagical' }),
+      }),
+    ).toThrow(/becomes is valid only on a condition transition/);
+    expect(() =>
+      validate({
+        stateMachine: machine({ condition: 'x', becomes: 'destroyed' }),
+      }),
+    ).toThrow(/becomes must be nonmagical/);
+
+    const grant = (extra: Record<string, unknown>) => ({
+      entityGrant: {
+        runtimeOwner: 'persistent-actor',
+        grants: [
+          {
+            id: 'python-form',
+            kind: 'creature',
+            creatureRefs: ['creature:giant-constrictor-snake'],
+            count: 1,
+            revertOn: ['owner-bonus-action-command', 'reduced-to-0-hit-points'],
+            ...extra,
+          },
+        ],
+      },
+    });
+    expect(() =>
+      validate(grant({ destroysItemOn: 'reduced-to-0-hit-points' })),
+    ).not.toThrow();
+    expect(() => validate(grant({ destroysItemOn: 'dispelled' }))).toThrow(
+      /destroysItemOn must be reduced-to-0-hit-points/,
+    );
+    expect(() =>
+      validate(
+        grant({
+          destroysItemOn: 'reduced-to-0-hit-points',
+          revertOn: ['owner-bonus-action-command'],
+        }),
+      ),
+    ).toThrow(/destroysItemOn must also be one of the grant's revertOn/);
+  });
+
   it('gates source-ambiguous resets and requires operation transitions', () => {
     const ambiguity = {
       id: 'ambiguity:test-reset',

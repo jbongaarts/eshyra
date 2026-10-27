@@ -25,6 +25,7 @@ import {
   EQUIPMENT_EXTRA,
   equipmentFromPrintedText,
   GRANT_SPANS,
+  KEPT_EXTERNAL_EVENT_MACHINES,
   KEPT_STATE_MACHINES,
   OPERATION_SPANS,
   WITHHELD,
@@ -336,14 +337,23 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
       const machine = scope.mechanics.stateMachine as Obj | undefined;
       if (machine === undefined) continue;
       typed += 1;
-      expect(KEPT_STATE_MACHINES.has(scope.label), scope.label).toBe(true);
-      if (!CONSUMER_BOUND.has(scope.label))
+      expect(
+        KEPT_STATE_MACHINES.has(scope.label) ||
+          KEPT_EXTERNAL_EVENT_MACHINES.has(scope.label),
+        scope.label,
+      ).toBe(true);
+      if (
+        !CONSUMER_BOUND.has(scope.label) &&
+        !KEPT_EXTERNAL_EVENT_MACHINES.has(scope.label)
+      )
         expect(
           (machine.states as Obj[]).length,
           `${scope.label} is a simple two-state toggle`,
         ).toBe(2);
     }
-    expect(typed).toBe(KEPT_STATE_MACHINES.size);
+    expect(typed).toBe(
+      KEPT_STATE_MACHINES.size + KEPT_EXTERNAL_EVENT_MACHINES.size,
+    );
     // Every withheld machine is absent and has its disposition table entry.
     for (const [scope, spans] of WITHHELD)
       if (spans.stateMachine !== undefined)
@@ -416,7 +426,9 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
     expect(operationCount).toBe(358);
     expect(activations + withoutActivation).toBe(operationCount);
     expect(equipment).toBe(129);
-    expect(scopes.filter((s) => s.mechanics.stateMachine).length).toBe(21);
+    // 21 activation-entered machines + the Ring of Djinni Summoning's external
+    // event machine (eshyra-olc5.15).
+    expect(scopes.filter((s) => s.mechanics.stateMachine).length).toBe(22);
     expect(scopes.filter((s) => s.mechanics.containment).length).toBe(1);
     expect(scopes.filter((s) => s.mechanics.entityGrant).length).toBe(16);
   });

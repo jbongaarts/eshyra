@@ -58,6 +58,10 @@ describe('magic-item compiler family aggregation', () => {
           hook: 'grant-anchored cooldown reset',
         }),
         magicItemEngineHookKey({
+          engine: 'F5',
+          hook: 'external-event item lifecycle consequence',
+        }),
+        magicItemEngineHookKey({
           engine: 'F7',
           hook: 'long-rest reset and early-reuse gate',
         }),

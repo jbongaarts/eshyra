@@ -3322,7 +3322,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1383);
+      expect(clauses).toHaveLength(1385);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3426,11 +3426,23 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // Horn of Valhalla blow-horn becomes ready (all four type variants); the
       // vessel operations stay not ready on the c1-uses F5 per-period reset
       // (eshyra-7gkh).
+      // eshyra-olc5.15 types the Ring of Djinni Summoning's printed death
+      // consequence ('the ring becomes nonmagical if the djinni dies') as an
+      // external-event stateMachine transition (becomes: nonmagical) that
+      // item_state_event executes, so the Ring is no longer held by the
+      // death-consequence guard: its entityGrant clause goes engine-pending ->
+      // green (783 -> 782 pending, 233 -> 234 green), it gains one hook-free
+      // adjudicated control clause (366 -> 367) and one green lifecycle clause
+      // for the new machine (234 -> 235); total 1383 -> 1385. summon-djinni
+      // becomes ready (it was ready at c58j.1 before the guard). The Staff of
+      // the Python (typed destroysItemOn) and the Efreeti Bottle (the source
+      // prints no death-triggered item transition) move no clause: both stay
+      // pending on their DM-ended lifecycles.
       expect(counts).toEqual({
-        'adjudicated-by-design': 366,
+        'adjudicated-by-design': 367,
         'design-blocked': 1,
-        'engine-pending': 783,
-        green: 233,
+        'engine-pending': 782,
+        green: 235,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

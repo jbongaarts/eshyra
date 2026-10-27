@@ -389,6 +389,12 @@ export const LANDED_MAGIC_ITEM_ENGINE_HOOKS: ReadonlySet<string> = new Set([
     engine: 'F5',
     hook: 'grant-anchored cooldown reset',
   }),
+  // olc5.15: item_state_event applies an external-event transition that makes
+  // the item durably nonmagical and ends its live grants atomically.
+  magicItemEngineHookKey({
+    engine: 'F5',
+    hook: 'external-event item lifecycle consequence',
+  }),
   // Exhausted safe-use pools remain usable; long rest restores the safe use.
   magicItemEngineHookKey({
     engine: 'F7',
