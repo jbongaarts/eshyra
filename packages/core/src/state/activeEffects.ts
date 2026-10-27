@@ -4130,6 +4130,9 @@ function validateItemGrantBinding(
     throw new ActiveEffectError(
       `${label} creates ${grant.count}; ${actors.length} linked actor(s) were given`,
     );
+  const grantDuration = grant.duration as Record<string, unknown> | undefined;
+  const outlivesEncounter =
+    runtimeOwner === 'persistent-actor' || grantDuration?.unit !== 'round';
   const typedCreatures = [
     ...(Array.isArray(grant.creatureRefs) ? grant.creatureRefs : []),
     ...(typeof grant.statBlockRef === 'string' ? [grant.statBlockRef] : []),
@@ -4153,16 +4156,22 @@ function validateItemGrantBinding(
       throw new ActiveEffectError(
         `linked actor '${actor.combatantId}' is ${row.rules_ref}, which ${label} does not create (it creates: ${typedCreatures})`,
       );
-    // A persistent-actor grant outlives the encounter, so its creature needs
-    // a durable campaign actor; an instance-only combatant would be released
-    // by combat closure while the effect stayed active with no creature.
+    // A creature whose grant can outlive the encounter needs a durable
+    // campaign actor; an instance-only combatant would be released by combat
+    // closure while the effect stayed active with no creature, so its printed
+    // ending could never remove it (PR #690 review). Durability follows the
+    // grant's LIFETIME, not runtimeOwner: an encounter-combatant summon with a
+    // one-hour, next-dawn, concentration or untimed lifetime (Bag of Tricks,
+    // the elemental vessels, Horn of Valhalla) outlives a combat as surely as a
+    // persistent actor. Only a round-scale lifetime, which closure itself
+    // settles, stays inside the encounter.
     if (
-      runtimeOwner === 'persistent-actor' &&
+      outlivesEncounter &&
       actor.campaignActorId === undefined &&
       row.identity_kind !== 'campaign_actor'
     )
       throw new ActiveEffectError(
-        `${label} is owned by a persistent actor, so linked actor '${actor.combatantId}' needs campaignActorId; without a durable identity combat closure would release it from the effect`,
+        `${label} can outlive the encounter (${runtimeOwner === 'persistent-actor' ? 'a persistent actor' : 'its lifetime is not round-scale'}), so linked actor '${actor.combatantId}' needs campaignActorId; without a durable identity combat closure would release it before its printed ending`,
       );
   }
   // S2: the printed concentration rule. 'as spell:<id>' (elemental vessels,

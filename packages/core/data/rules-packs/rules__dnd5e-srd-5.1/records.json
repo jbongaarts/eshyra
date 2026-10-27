@@ -90838,25 +90838,34 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "green"
-          },
-          {
-            "clauseId": "magic-item:bag-of-tricks/m4-control-bag-of-tricks",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M4",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
-              "sourceText": "You can use a bonus action to command how the creature moves and what action it takes on its next turn, or to give it general orders, such as to attack your enemies. In the absence of such orders, the creature acts in a fashion appropriate to its nature."
-            },
-            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F3",
+                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
+              },
+              {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
+                "engine": "F5",
+                "hook": "item-instance cooldown and owned-entity identity link"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3",
+              "F5"
+            ]
           },
           {
             "clauseId": "magic-item:bag-of-tricks/S:Bag of Tricks:table:table:gray-bag-of-tricks",
@@ -100945,20 +100954,6 @@
             ]
           },
           {
-            "clauseId": "magic-item:elemental-gem/m4-control-elemental-gem",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M4",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
-              "sourceText": "an elemental is summoned as if you had cast the conjure elemental spell"
-            },
-            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
-          },
-          {
             "clauseId": "magic-item:elemental-gem/m4-elemental-gem",
             "scope": {
               "kind": "parent"
@@ -100973,11 +100968,34 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F3",
+                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
+              },
+              {
+                "engine": "F2",
+                "hook": "controlled-entity command action budget"
+              },
+              {
+                "engine": "F5",
+                "hook": "item-instance cooldown and owned-entity identity link"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F3",
+              "F5"
+            ]
           },
           {
             "clauseId": "magic-item:elemental-gem/S:Elemental Gem:table:table:elemental-gem",

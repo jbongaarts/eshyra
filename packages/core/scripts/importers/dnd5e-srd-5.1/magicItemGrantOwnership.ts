@@ -101,6 +101,21 @@ export function creatureGrantLifecycleOwned(
   return grants.every((raw) => {
     const grant = asObject(raw);
     if (grant === undefined || grant.kind !== 'creature') return false;
+    // The binder can verify the creature only when the grant names exactly one
+    // (PR #690 review). A grant whose creature is selected per instance or per
+    // use from a table (Bag of Tricks: a d8 on the bag's color table; the
+    // Elemental Gem: the gem's type) admits any listed creature, because that
+    // color or type is not bound to the instance and the roll is not bound to
+    // the use; it stays pending until that selection is bound (as Horn of
+    // Valhalla's type and count are, eshyra-olc5.14).
+    const creatureRefs = Array.isArray(grant.creatureRefs)
+      ? grant.creatureRefs
+      : [];
+    const oneCreature =
+      typeof grant.statBlockRef === 'string'
+        ? creatureRefs.length === 0
+        : creatureRefs.length === 1;
+    if (!oneCreature) return false;
     if (typeof grant.count !== 'number' && typeof grant.countRoll !== 'string')
       return false;
     if (grant.onEntityDeath !== undefined) return false;

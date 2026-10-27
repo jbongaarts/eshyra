@@ -55,3 +55,17 @@ Etherealness `gain-etherealness`; Rod of Rulership `command-obedience`.
 Updated `records.json` SHA-256:
 
 `19bb62635233507dd887a447235b904173073ef7f2e2d4f16577a27927ed7d44`
+
+## PR #690 review repair (2026-10-26)
+
+### P2: creature ownership through combat closure (runtime only, no pack change)
+- **Before:** `validateItemGrantBinding` required a durable campaign actor only for `runtimeOwner: persistent-actor`. An `encounter-combatant` summon with a lifetime longer than rounds could be bound to an instance-only combatant. Combat closure then released that creature while the effect stayed active, so its printed ending could no longer remove it. This affected the Bag of Tricks, the four elemental vessels and the Horn of Valhalla.
+- **Now:** durability follows the grant's lifetime. Any creature grant except a round-scale one needs a durable identity. Combat closure is not a printed ending, so the creature persists until its actual ending removes it.
+- **Evidence:** `itemGrantRealPackReadiness.test.ts`, run for the Bag (next dawn) and the Bowl (one hour, character-owned concentration). An instance-only bind is refused. A durable creature survives closure with an active link and is removed (`absent`) at its deadline. Negative-proofed against the old rule.
+
+### Creature identity (pack change)
+- **Before:** the binder admits any creature named by the grant's tables or refs. For the Bag of Tricks, that is any row of any of the three color tables: the bag's color is not bound to the instance, and the d8 roll is not bound to the use. For the Elemental Gem, it is any of the four elementals, whatever the gem's type.
+- **Now:** `creatureGrantLifecycleOwned` additionally requires that every grant names exactly ONE creature. The user decided, on 2026-10-26, to hold Bag readiness rather than leave the selection unbound.
+- **Effect:** Bag of Tricks and Elemental Gem return to engine-pending and lose their control clauses. Bag `pull-fuzzy-object` is not ready. Its dawn economy and engine-computed next-dawn ending remain, and are tested at binder level with a directly issued credit, without a readiness waiver.
+- **Counts:** engine-pending 761 → 763, green 256 → 254, adjudicated 368 → 366, total 1386 → 1384. Eleven operations become ready in this PR, not twelve.
+- **Follow-up:** binding the bag color and an engine-rolled d8 is filed as a pre-freeze bead. The Elemental Gem's type is folded into eshyra-xt6m.1.

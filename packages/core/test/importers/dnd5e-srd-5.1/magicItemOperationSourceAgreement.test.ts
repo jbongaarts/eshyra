@@ -1825,11 +1825,12 @@ describe('runtime safety across the whole corpus', () => {
     'Animated Shield||speak-command-word',
     // eshyra-7gkh.1: the hard-limit per-day dawn economy ('F5: per-period usage
     // reset') is executed (useItem spends and refuses at 0; the reset executor
-    // restores at dawn), so the operations it alone blocked are ready. The Bag
-    // of Tricks and the four elemental vessels are creature grants (real-pack
-    // conformance in itemGrantRealPackReadiness.test.ts); the rest are plain
-    // per-day spends (dawn conformance in itemPerDayDawnEconomy.test.ts).
-    'Bag of Tricks||pull-fuzzy-object',
+    // restores at dawn), so the operations it alone blocked are ready. The four
+    // elemental vessels are creature grants (real-pack conformance in
+    // itemGrantRealPackReadiness.test.ts); the rest are plain per-day spends
+    // (dawn conformance in itemPerDayDawnEconomy.test.ts). The Bag of Tricks is
+    // not ready: its creature is chosen from a table the binder cannot verify
+    // (PR #690 review).
     'Boots of Levitation||cast-levitate',
     'Bowl of Commanding Water Elementals||summon-water-elemental',
     'Brazier of Commanding Fire Elementals||summon-fire-elemental',

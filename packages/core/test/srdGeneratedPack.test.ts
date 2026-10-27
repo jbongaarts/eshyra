@@ -3322,7 +3322,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1386);
+      expect(clauses).toHaveLength(1384);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3445,15 +3445,20 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // Tricks next-dawn ending engine-computed, so its entityGrant clause goes
       // engine-pending -> green and gains one hook-free adjudicated control
       // clause (782 -> 761 pending, 235 -> 256 green, 367 -> 368; total 1385 ->
-      // 1386). Twelve operations become ready: the Bag, the four vessels, the
-      // Cape of the Mountebank, Circlet of Blasting, Crystal Ball (Telepathy),
-      // Dragon Scale Mail, Iron Bands, Plate Armor of Etherealness and Rod of
-      // Rulership.
+      // 1386). PR #690 review: ownership now requires that a grant name
+      // exactly ONE creature (the only creature the binder can verify), so the
+      // Bag of Tricks (a d8 on the bag's color table) and the Elemental Gem (its
+      // type picks one of four elementals) go back to pending and lose their
+      // control clauses (761 -> 763 pending, 256 -> 254 green, 368 -> 366;
+      // total 1386 -> 1384). Eleven operations become ready: the four vessels,
+      // the Cape of the Mountebank, Circlet of Blasting, Crystal Ball
+      // (Telepathy), Dragon Scale Mail, Iron Bands, Plate Armor of Etherealness
+      // and Rod of Rulership.
       expect(counts).toEqual({
-        'adjudicated-by-design': 368,
+        'adjudicated-by-design': 366,
         'design-blocked': 1,
-        'engine-pending': 761,
-        green: 256,
+        'engine-pending': 763,
+        green: 254,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

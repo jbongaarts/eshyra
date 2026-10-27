@@ -28,6 +28,7 @@ import {
   magicItemVariantDefinitions,
 } from '../src/internal.js';
 import { assertMagicItemOperationReady } from '../src/state/itemExecutionReadiness.js';
+import { issueItemGrantBindCredit } from '../src/state/itemGrantBinding.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
   DEFAULT_TEST_SESSION_ID,
@@ -76,7 +77,8 @@ const CONFORMANCE_BACKED: readonly string[] = [
   // djinni dies -> nonmagical; contrasted with ordinary endings
   'magic-item:ring-of-djinni-summoning|summon-djinni',
   // eshyra-7gkh.1 (below, no readiness waiver): use -> bind on the real pack.
-  'magic-item:bag-of-tricks|pull-fuzzy-object',
+  // Bag of Tricks is NOT ready (PR #690 review): its creature is chosen from
+  // the bag's color table, which the binder cannot verify.
   'magic-item:bowl-of-commanding-water-elementals|summon-water-elemental',
   'magic-item:brazier-of-commanding-fire-elementals|summon-fire-elemental',
   'magic-item:censer-of-controlling-air-elementals|summon-air-elemental',
@@ -142,11 +144,32 @@ function setup(creatures: readonly string[]) {
     must('use_item', { instanceId, operationId });
     return instanceId;
   };
+  // A held instance with one bind credit issued directly, for a grant whose
+  // operation is not ready (Bag of Tricks): the binder is exercised on the
+  // unmodified pack without waiving readiness.
+  const creditItem = (key: string, id = 'it-1') => {
+    const instanceId = (
+      must('give_item', { id, name: key, packRef: key }).data as { id: string }
+    ).id;
+    issueItemGrantBindCredit(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      itemInstanceId: instanceId,
+      packRef: key,
+      variantId: undefined,
+      economyId: 'uses',
+      operationId: 'direct',
+      issuedAt: NOW,
+      issuedElapsedMinutes: 0,
+      provenance: 'test:7gkh',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+    });
+    return instanceId;
+  };
   const effect = (effectId: string) =>
     listActiveEffects(db, DEFAULT_TEST_CAMPAIGN_ID, {
       includeEnded: true,
     }).find((row) => row.effectId === effectId);
-  return { db, call, must, useItem, effect };
+  return { db, call, must, useItem, creditItem, effect };
 }
 
 const VESSELS = [
@@ -200,10 +223,27 @@ describe('eshyra-7gkh.1 real-pack, no-waiver bind of the newly ready grant opera
     }
   });
 
+  it('Bag of Tricks (binder level; the operation is not ready): use_item is refused on the unmodified pack', () => {
+    const key = 'magic-item:bag-of-tricks';
+    const s = setup(['creature:weasel']);
+    const instanceId = (
+      s.must('give_item', { id: 'bag', name: key, packRef: key }).data as {
+        id: string;
+      }
+    ).id;
+    s.must('begin_turn', { character: 'pc-1', round: 1 });
+    const used = s.call('use_item', {
+      instanceId,
+      operationId: 'pull-fuzzy-object',
+    });
+    expect(used).toMatchObject({ ok: false });
+    s.db.close();
+  });
+
   it('Bag of Tricks: the grant ends at the first dawn after the bind, is still active on an advance that stops before dawn, and the engine fills the duration', () => {
     const key = 'magic-item:bag-of-tricks';
     const s = setup(['creature:weasel']);
-    const instanceId = s.useItem(key, 'pull-fuzzy-object');
+    const instanceId = s.creditItem(key);
     const bind = (effectId: string, extra: Record<string, unknown> = {}) =>
       s.call('start_effect', {
         effectId,
@@ -264,7 +304,7 @@ describe('eshyra-7gkh.1 real-pack, no-waiver bind of the newly ready grant opera
     const key = 'magic-item:bag-of-tricks';
     const s = setup(['creature:weasel']);
     s.must('advance_time', { minutes: 360 });
-    const instanceId = s.useItem(key, 'pull-fuzzy-object');
+    const instanceId = s.creditItem(key);
     const bound = s.call('start_effect', {
       effectId: 'fx-bag-dawn',
       kind: 'summoning',
@@ -291,7 +331,7 @@ describe('eshyra-7gkh.1 real-pack, no-waiver bind of the newly ready grant opera
   it('Bag of Tricks: the 0-hit-point ending is unchanged (the creature vanishes before dawn)', () => {
     const key = 'magic-item:bag-of-tricks';
     const s = setup(['creature:weasel']);
-    const instanceId = s.useItem(key, 'pull-fuzzy-object');
+    const instanceId = s.creditItem(key);
     s.must('start_effect', {
       effectId: 'fx-bag-hp',
       kind: 'summoning',
@@ -308,4 +348,116 @@ describe('eshyra-7gkh.1 real-pack, no-waiver bind of the newly ready grant opera
     expect(s.effect('fx-bag-hp')).toMatchObject({ status: 'ended' });
     s.db.close();
   });
+});
+
+/** PR #690 review: an encounter-combatant summon whose lifetime is longer than
+ *  rounds outlives combat closure, so its creature must hold a durable campaign
+ *  identity; an instance-only combatant would be released by closure and its
+ *  printed ending could never remove it. The two printed endings are distinct:
+ *  the Bag's engine-computed next dawn and a vessel's one hour under
+ *  character-owned concentration (which survives closure). */
+describe('PR #690 review: a newly ready summon keeps its creature through combat closure until its printed ending', () => {
+  const actorStatus = (s: ReturnType<typeof setup>, actorId: string) =>
+    (
+      s.db
+        .prepare(
+          'SELECT status FROM campaign_actor WHERE campaign_id = ? AND actor_id = ?',
+        )
+        .get(DEFAULT_TEST_CAMPAIGN_ID, actorId) as { status: string }
+    ).status;
+  const activeActorLink = (
+    s: ReturnType<typeof setup>,
+    effectId: string,
+    actorId: string,
+  ) =>
+    s
+      .effect(effectId)
+      ?.links.some(
+        (link) =>
+          link.linkKind === 'actor' &&
+          link.target.kind === 'campaign_actor' &&
+          link.target.ref === actorId &&
+          link.status === 'active',
+      ) ?? false;
+  const CASES = [
+    {
+      name: 'Bag of Tricks (next dawn)',
+      key: 'magic-item:bag-of-tricks',
+      operationId: 'pull-fuzzy-object',
+      grantRef: 'bag-creature',
+      creature: 'creature:weasel',
+      extra: {},
+      deadline: 360,
+      paid: 'credit',
+    },
+    {
+      name: 'Bowl of Commanding Water Elementals (one hour, character concentration)',
+      key: 'magic-item:bowl-of-commanding-water-elementals',
+      operationId: 'summon-water-elemental',
+      grantRef: 'water-elemental',
+      creature: 'creature:water-elemental',
+      extra: { concentrationOwner: { kind: 'character', ref: 'pc-1' } },
+      deadline: 60,
+      paid: 'use',
+    },
+  ] as const;
+  for (const c of CASES) {
+    it(`${c.name}: an instance-only creature is refused; a durable one survives closure and its printed ending removes it`, () => {
+      const s = setup([c.creature]);
+      const instanceId =
+        c.paid === 'use'
+          ? s.useItem(c.key, c.operationId)
+          : s.creditItem(c.key);
+      const source = {
+        kind: 'magic-item',
+        ref: c.key,
+        grantRef: c.grantRef,
+        itemInstanceId: instanceId,
+      };
+      const joined = s.must('join_combat', {
+        creatures: [{ rulesRef: c.creature, side: 'ally', displayLabel: 'x' }],
+      }) as unknown as { data: { joined: { combatantId: string }[] } };
+      const instanceOnly = joined.data.joined[0]?.combatantId as string;
+      const refused = s.call('start_effect', {
+        effectId: 'fx-instance-only',
+        kind: 'summoning',
+        displayName: 'instance only',
+        source,
+        actors: [{ combatantId: instanceOnly }],
+        ...c.extra,
+      });
+      expect(refused).toMatchObject({ ok: false });
+      expect(refused.message).toMatch(/needs campaignActorId/);
+
+      // c-m0 is the durable campaign actor m0.
+      const bound = s.call('start_effect', {
+        effectId: 'fx-durable',
+        kind: 'summoning',
+        displayName: 'durable',
+        source,
+        actors: [{ combatantId: 'c-m0' }],
+        ...c.extra,
+      });
+      expect(bound, bound.message).toMatchObject({ ok: true });
+      expect(
+        s.call('close_combat_instance', { status: 'completed' }),
+      ).toMatchObject({ ok: true });
+      // Closure is not a printed ending: the effect and its creature persist.
+      expect(s.effect('fx-durable')).toMatchObject({ status: 'active' });
+      expect(activeActorLink(s, 'fx-durable', 'm0')).toBe(true);
+      expect(actorStatus(s, 'm0')).toBe('alive');
+
+      s.must('advance_time', { minutes: c.deadline - 1 });
+      expect(s.effect('fx-durable')).toMatchObject({ status: 'active' });
+      expect(actorStatus(s, 'm0')).toBe('alive');
+      // The printed ending removes the creature it owns.
+      s.must('advance_time', { minutes: 1 });
+      expect(s.effect('fx-durable')).toMatchObject({
+        status: 'ended',
+        endReason: 'expired',
+      });
+      expect(actorStatus(s, 'm0')).toBe('absent');
+      s.db.close();
+    });
+  }
 });
