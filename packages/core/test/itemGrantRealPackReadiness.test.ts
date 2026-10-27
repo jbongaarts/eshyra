@@ -5,10 +5,13 @@
  * gate fails the moment a grant operation becomes ready without being listed
  * here with that conformance.
  *
- * Empty after the PR #673 review: Horn of Valhalla blow-horn (its berserker
- * count is rolled on table:horn-of-valhalla, which the binder does not
- * enforce) and Ring of Djinni Summoning summon-djinni (its printed death
- * consequence is applied by no runtime) went back to engine-pending. */
+ * Horn of Valhalla blow-horn (eshyra-olc5.14): its berserker count is rolled
+ * per use by the engine and enforced by the binder; the use -> roll -> bind
+ * contract is driven on the unmodified pack in itemGrantRolledCount.test.ts.
+ * Ring of Djinni Summoning summon-djinni (its printed death consequence is
+ * applied by no runtime) stays engine-pending. The elemental vessels' count is
+ * certified (typed 1) but their operations stay not-ready on the c1-uses F5
+ * per-period reset (eshyra-7gkh). */
 import { describe, expect, it } from 'vitest';
 import {
   deriveItemOperationReadinessInput,
@@ -52,7 +55,10 @@ function readyGrantOperations(): string[] {
 }
 
 /** Grant operations with real-pack, no-waiver conformance coverage. */
-const CONFORMANCE_BACKED: readonly string[] = [];
+const CONFORMANCE_BACKED: readonly string[] = [
+  // itemGrantRolledCount.test.ts (no readiness waiver)
+  'magic-item:horn-of-valhalla|blow-horn',
+];
 
 describe('eshyra-c58j real-pack readiness gate for creature-grant operations', () => {
   it('no grant-bearing operation is ready without unwaived conformance coverage', () => {

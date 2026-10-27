@@ -93,6 +93,16 @@ const creature = (
   ...rest,
 });
 
+/** Horn of Valhalla types (table:horn-of-valhalla, p. 226): variant id and the
+ *  row's printed count dice. The rows are checked verbatim against the emitted
+ *  table (see HORN_OF_VALHALLA_TYPES in parseMagicItems.ts). */
+const HORN_TYPES = [
+  { variant: 'silver', countRoll: '2d4+2' },
+  { variant: 'brass', countRoll: '3d4+3' },
+  { variant: 'bronze', countRoll: '4d4+4' },
+  { variant: 'iron', countRoll: '5d4+5' },
+] as const;
+
 const elementalVessel = (
   creatureRef: string,
   operationId: string,
@@ -100,6 +110,8 @@ const elementalVessel = (
 ): EntityGrantSpec => ({
   sourcePhrases: [
     requirement,
+    // The printed single elemental the typed count of 1 is traced to.
+    `summon ${/^[aeiou]/.test(creatureRef.slice('creature:'.length)) ? 'an' : 'a'} ${creatureRef.slice('creature:'.length).replace('-', ' ')}`,
     'as if you had cast the conjure elemental spell',
     'until the next dawn',
   ],
@@ -107,6 +119,8 @@ const elementalVessel = (
     runtimeOwner: 'encounter-combatant',
     grants: [
       creature(operationId, creatureRef, {
+        // Each vessel prints the summoning of ONE elemental ("an elemental").
+        count: 1,
         control: 'as spell:conjure-elemental',
         duration: { amount: 1, unit: 'hour' },
         revertOn: [
@@ -426,16 +440,23 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
       entityGrant: {
         runtimeOwner: 'encounter-combatant',
         grants: [
-          creature('valhalla-berserkers', 'creature:berserker', {
-            tableRefs: ['table:horn-of-valhalla'],
-            control:
-              'friendly and commanded if requirement is met; otherwise hostile to the user',
-            duration: { amount: 1, unit: 'hour' },
-            revertOn: ['one-hour-ended', 'reduced-to-0-hit-points'],
-            cooldownEconomy: 'cooldown',
-            exclusiveInstance: { scope: 'item', recast: 'blocked' },
-            note: 'Horn-type table supplies 2d4+2, 3d4+3, 4d4+4, or 5d4+5 and its proficiency requirement.',
-          }),
+          ...HORN_TYPES.map(({ variant, countRoll }) =>
+            creature(`${variant}-berserkers`, 'creature:berserker', {
+              tableRefs: ['table:horn-of-valhalla'],
+              // The horn's type is the instance's variant (S1); its row of
+              // table:horn-of-valhalla fixes the count, which the ENGINE rolls
+              // per use (countRoll) and the binder enforces.
+              variants: [variant],
+              countRoll,
+              control:
+                'friendly and commanded if requirement is met; otherwise hostile to the user',
+              duration: { amount: 1, unit: 'hour' },
+              revertOn: ['one-hour-ended', 'reduced-to-0-hit-points'],
+              cooldownEconomy: 'cooldown',
+              exclusiveInstance: { scope: 'item', recast: 'blocked' },
+              note: `The ${variant} horn summons ${countRoll} berserkers; the horn type's requirement is read from the variant text and checked by the DM.`,
+            }),
+          ),
         ],
       },
       hooks: CONTROLLED_HOOKS,

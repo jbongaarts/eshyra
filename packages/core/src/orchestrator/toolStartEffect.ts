@@ -72,7 +72,7 @@ export const startEffectTool: Tool = {
     'hit points (the creature vanishes), and concentration ending. A grant whose cooldown restarts when ' +
     "it ends (use_item's result hint.bindGrant names it) binds only after that " +
     'spend, and only once per spend. A grant naming any other cooldown economy ' +
-    "binds only against an unredeemed use_item credit (hint.bindCredits), oldest first; with none it is refused, and a creature outside the item's economy is a ruling-sourced summoning. A grant owned by a persistent " +
+    "binds only against an unredeemed use_item credit (hint.bindCredits), oldest first; with none it is refused, and a creature outside the item's economy is a ruling-sourced summoning. A grant with a rolled count (Horn of Valhalla) must name that use's credit in source.bindCreditId and binds exactly the total use_item rolled on it (rolledCounts). A grant owned by a persistent " +
     'actor needs campaignActorId on each linked actor, so combat closure keeps ' +
     'it. Every other printed ending (owner ' +
     'commands, next dawn, card moved, wishes, flight distance, and so on) is ' +
@@ -150,6 +150,12 @@ export const startEffectTool: Tool = {
             minLength: 1,
             description:
               'For a grantRef source, the inventory instance of the magic item that owns the grant. Its grant-ended cooldown anchors are scheduled when this effect ends.',
+          },
+          bindCreditId: {
+            type: 'string',
+            minLength: 1,
+            description:
+              "For a grantRef source paid by a use_item credit, the creditId from that use's hint.bindCredits. Required when the grant's count is rolled (rolledCounts); otherwise the oldest unredeemed credit is used.",
           },
           actor: EFFECT_PARTICIPANT_SCHEMA,
         },
@@ -476,6 +482,14 @@ export const startEffectTool: Tool = {
         'invalid_args',
         'a printed item grant or item instance needs source.kind magic-item with source.ref (the item rules-pack ref); it cannot bind without it',
       );
+    if (
+      source.bindCreditId !== undefined &&
+      (typeof source.bindCreditId !== 'string' || source.grantRef === undefined)
+    )
+      return err(
+        'invalid_args',
+        'source.bindCreditId is the string creditId of the use_item credit a printed item grant redeems; it requires source.grantRef',
+      );
     const override = asRecord(a.durationOverride);
     if (a.durationOverride !== undefined && override === undefined)
       return err('invalid_args', 'durationOverride must be an object');
@@ -770,6 +784,9 @@ export const startEffectTool: Tool = {
             : {}),
           ...(typeof source.itemInstanceId === 'string'
             ? { itemInstanceId: source.itemInstanceId }
+            : {}),
+          ...(typeof source.bindCreditId === 'string'
+            ? { bindCreditId: source.bindCreditId }
             : {}),
           ...(sourceActor === undefined ? {} : { actor: sourceActor }),
         },

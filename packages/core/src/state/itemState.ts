@@ -51,6 +51,7 @@ import {
 } from './itemDepletion.js';
 import type { ItemOperationReadinessInput } from './itemExecutionReadiness.js';
 import {
+  type ItemGrantRolledCount,
   issueItemGrantBindCredit,
   itemInstanceIdTaken,
   writeItemConsumptionReceipt,
@@ -187,6 +188,10 @@ export interface UseItemResult {
       readonly creditId: string;
       readonly economyId: string;
       readonly grantIds: readonly string[];
+      /** Engine rolls of the listed grants' printed `countRoll`, made by this
+       *  use and persisted on the credit (eshyra-olc5.14). start_effect binds
+       *  exactly `total` linked actors for that grant. */
+      readonly rolledCounts?: readonly ItemGrantRolledCount[];
     }[];
   };
   readonly turnResource?: UseItemTurnResource;
@@ -2383,11 +2388,20 @@ function issueBindCredits(
     readonly declaredVariants: readonly string[];
     readonly elapsedMinutes: number;
   },
-): { creditId: string; economyId: string; grantIds: string[] }[] {
+): {
+  creditId: string;
+  economyId: string;
+  grantIds: string[];
+  rolledCounts?: ItemGrantRolledCount[];
+}[] {
   const grants = (args.mechanics.entityGrant as Obj | undefined)?.grants;
   if (!Array.isArray(grants)) return [];
-  const credits: { creditId: string; economyId: string; grantIds: string[] }[] =
-    [];
+  const credits: {
+    creditId: string;
+    economyId: string;
+    grantIds: string[];
+    rolledCounts?: ItemGrantRolledCount[];
+  }[] = [];
   const charged = new Set(
     args.costs.filter((cost) => cost.amount > 0).map((cost) => cost.economy),
   );
@@ -2415,7 +2429,31 @@ function issueBindCredits(
         : [];
     });
     if (grantIds.length === 0) continue;
+    // eshyra-olc5.14: a grant that prints a `countRoll` has its count rolled
+    // here by the ENGINE, in this transaction, and persisted on the credit;
+    // start_effect enforces that stored total. No rng, no use: a rolled count
+    // is never left to the caller.
+    const rolledCounts: ItemGrantRolledCount[] = [];
+    for (const grantId of grantIds) {
+      const grant = grants.find(
+        (raw) => (raw as Obj | undefined)?.id === grantId,
+      ) as Obj;
+      if (typeof grant.countRoll !== 'string') continue;
+      if (args.input.rng === undefined)
+        throw new ItemStateError(
+          `use_item refused: grant '${grantId}' summons a rolled count (${grant.countRoll}), and seeded RNG is required to roll it; no item state was changed`,
+        );
+      const rolled = rollDice(grant.countRoll, args.input.rng);
+      rolledCounts.push({
+        grantId,
+        notation: rolled.notation,
+        rolls: rolled.rolls,
+        modifier: rolled.modifier,
+        total: rolled.total,
+      });
+    }
     const creditId = issueItemGrantBindCredit(db, {
+      rolledCounts,
       campaignId: args.input.campaignId,
       itemInstanceId: args.input.instanceId,
       packRef: args.packRef,
@@ -2427,7 +2465,12 @@ function issueBindCredits(
       provenance: args.input.provenance,
       sessionId: args.input.sessionId,
     });
-    credits.push({ creditId, economyId, grantIds });
+    credits.push({
+      creditId,
+      economyId,
+      grantIds,
+      ...(rolledCounts.length === 0 ? {} : { rolledCounts }),
+    });
   }
   return credits;
 }

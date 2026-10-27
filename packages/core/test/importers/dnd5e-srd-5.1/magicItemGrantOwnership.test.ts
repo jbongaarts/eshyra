@@ -73,7 +73,10 @@ function independentlyOwned(record: { name: string; data: unknown }): boolean {
         grant.kind === 'creature' &&
         // PR #673 review: only a fixed printed count is bound (P2-1), and a
         // death-triggered item consequence is not applied by any runtime (P2-2).
-        typeof grant.count === 'number' &&
+        // eshyra-olc5.14: a printed rolled count (`countRoll`) is bound too,
+        // against the engine's own roll persisted on the use's bind credit.
+        (typeof grant.count === 'number' ||
+          typeof grant.countRoll === 'string') &&
         grant.onEntityDeath === undefined &&
         endings.length > 0 &&
         endings.every((ending) =>
@@ -86,19 +89,20 @@ function independentlyOwned(record: { name: string; data: unknown }): boolean {
   );
 }
 
-const OWNED_ITEMS = ['Elemental Gem'];
+const OWNED_ITEMS = [
+  'Bowl of Commanding Water Elementals',
+  'Brazier of Commanding Fire Elementals',
+  'Censer of Controlling Air Elementals',
+  'Elemental Gem',
+  // countRoll per horn-type variant (eshyra-olc5.14)
+  'Horn of Valhalla',
+  'Stone of Controlling Earth Elementals',
+];
 /** Every grant-bearing item that keeps the hooks, with the reason it does. */
 const KEPT_ITEMS: Record<string, string> = {
   'Bag of Tricks': 'next-dawn ending is DM-ended; bonus-action command budget',
-  'Bowl of Commanding Water Elementals':
-    'no fixed printed count ("an elemental" is untyped): any number of actors would bind',
-  'Brazier of Commanding Fire Elementals': 'no fixed printed count',
-  'Censer of Controlling Air Elementals': 'no fixed printed count',
-  'Horn of Valhalla':
-    'count is rolled on table:horn-of-valhalla (2d4+2 ... 5d4+5); the binder enforces no rolled count',
   'Ring of Djinni Summoning':
     'onEntityDeath (the ring becomes nonmagical when the djinni dies) is applied by no runtime',
-  'Stone of Controlling Earth Elementals': 'no fixed printed count',
   'Deck of Illusions': 'illusion grant, not bound by start_effect',
   'Efreeti Bottle': 'third-wish-granted ending is DM-ended; outcomes (.12.4)',
   'Feather Token': 'object whip grant mixed in; DM-ended endings',
@@ -303,9 +307,38 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
       ).toBe(false);
       expect(creatureGrantLifecycleOwned(undefined)).toBe(false);
     });
+    it('admits a countRoll (the engine-rolled, binder-enforced count) exactly where it is present (eshyra-olc5.14)', () => {
+      const endings = ['reduced-to-0-hit-points', 'one-hour-ended'];
+      const withRoll = creature(endings, 'creature', {
+        tableRefs: ['table:horn-of-valhalla'],
+        countRoll: '2d4+2',
+      });
+      expect(creatureGrantLifecycleOwned(block([withRoll]))).toBe(true);
+      const { countRoll: _removed, ...withoutRoll } = withRoll;
+      expect(creatureGrantLifecycleOwned(block([withoutRoll]))).toBe(false);
+      // Every grant of the block must carry a count or a roll.
+      expect(
+        creatureGrantLifecycleOwned(
+          block([withRoll, creature(endings, 'creature', {})]),
+        ),
+      ).toBe(false);
+      // The rest of the rule is unchanged for a rolled count.
+      expect(
+        creatureGrantLifecycleOwned(
+          block([{ ...withRoll, onEntityDeath: 'make the horn nonmagical' }]),
+        ),
+      ).toBe(false);
+      expect(
+        creatureGrantLifecycleOwned(
+          block([{ ...withRoll, revertOn: ['next-dawn'] }]),
+        ),
+      ).toBe(false);
+    });
     it('keeps a grant without a fixed count, or with a death-triggered item consequence (PR #673 review)', () => {
       const endings = ['reduced-to-0-hit-points', 'one-hour-ended'];
-      // No count (elemental vessels) and a table-rolled count (Horn).
+      // No count at all, and a table-referenced count with no typed count or
+      // countRoll (the Horn before eshyra-olc5.14): either would admit any
+      // number of linked actors.
       expect(
         creatureGrantLifecycleOwned(block([creature(endings, 'creature', {})])),
       ).toBe(false);

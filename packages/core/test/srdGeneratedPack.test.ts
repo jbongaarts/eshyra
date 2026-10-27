@@ -865,7 +865,7 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'magic-item',
     field: 'variants',
-    missingCount: 236,
+    missingCount: 235,
     totalInKind: 240,
   },
   // Half-Dragon Template owns its two reconstructed reference tables; other
@@ -1175,6 +1175,22 @@ const DICE_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
     'card outcome dice are GM-mediated and represented by the linked card table/stat block',
   'magic-item:figurine-of-wondrous-power|parent|forward|3d10+3':
     'Giant Fly 3d10 is owned by the linked stat-block record',
+  'magic-item:horn-of-valhalla|variant:silver|forward|2d4+2':
+    'Each Horn type row printed count dice are the variant text; the engine-rolled count is the variant-restricted parent entityGrant countRoll (the Figurine precedent: parent grants carry `variants`), traced row by row in hornOfValhallaVariants.test.ts (eshyra-olc5.14)',
+  'magic-item:horn-of-valhalla|variant:brass|forward|3d4+3':
+    'Each Horn type row printed count dice are the variant text; the engine-rolled count is the variant-restricted parent entityGrant countRoll (the Figurine precedent: parent grants carry `variants`), traced row by row in hornOfValhallaVariants.test.ts (eshyra-olc5.14)',
+  'magic-item:horn-of-valhalla|variant:bronze|forward|4d4+4':
+    'Each Horn type row printed count dice are the variant text; the engine-rolled count is the variant-restricted parent entityGrant countRoll (the Figurine precedent: parent grants carry `variants`), traced row by row in hornOfValhallaVariants.test.ts (eshyra-olc5.14)',
+  'magic-item:horn-of-valhalla|variant:iron|forward|5d4+5':
+    'Each Horn type row printed count dice are the variant text; the engine-rolled count is the variant-restricted parent entityGrant countRoll (the Figurine precedent: parent grants carry `variants`), traced row by row in hornOfValhallaVariants.test.ts (eshyra-olc5.14)',
+  'magic-item:horn-of-valhalla|parent|reverse|2d4+2':
+    'Each Horn type row printed count dice are the variant text; the engine-rolled count is the variant-restricted parent entityGrant countRoll (the Figurine precedent: parent grants carry `variants`), traced row by row in hornOfValhallaVariants.test.ts (eshyra-olc5.14)',
+  'magic-item:horn-of-valhalla|parent|reverse|3d4+3':
+    'Each Horn type row printed count dice are the variant text; the engine-rolled count is the variant-restricted parent entityGrant countRoll (the Figurine precedent: parent grants carry `variants`), traced row by row in hornOfValhallaVariants.test.ts (eshyra-olc5.14)',
+  'magic-item:horn-of-valhalla|parent|reverse|4d4+4':
+    'Each Horn type row printed count dice are the variant text; the engine-rolled count is the variant-restricted parent entityGrant countRoll (the Figurine precedent: parent grants carry `variants`), traced row by row in hornOfValhallaVariants.test.ts (eshyra-olc5.14)',
+  'magic-item:horn-of-valhalla|parent|reverse|5d4+5':
+    'Each Horn type row printed count dice are the variant text; the engine-rolled count is the variant-restricted parent entityGrant countRoll (the Figurine precedent: parent grants carry `variants`), traced row by row in hornOfValhallaVariants.test.ts (eshyra-olc5.14)',
   'magic-item:ioun-stone|parent|forward|1d3':
     '1d3 orbit distance is flavor text, not an item mechanic',
   'magic-item:robe-of-useful-items|parent|reverse|4d4+12':
@@ -3306,7 +3322,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1378);
+      expect(clauses).toHaveLength(1383);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3399,11 +3415,22 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // control moves to one hook-free adjudicated clause: one pending -> green
       // (789 -> 788 pending, 227 -> 228 green) and one added adjudicated clause
       // (360 -> 361; total 1377 -> 1378). No grant operation becomes ready.
+      // eshyra-olc5.14 binds a printed creature count at the use_item ->
+      // start_effect boundary: the Horn of Valhalla count is rolled by the
+      // engine per use from the variant (horn type) row and enforced by the
+      // binder (countRoll), and the four elemental vessels print one elemental
+      // (count 1). creatureGrantLifecycleOwned therefore admits the Horn and
+      // the four vessels: their five entityGrant clauses go engine-pending ->
+      // green (788 -> 783 pending, 228 -> 233 green) and each gains one
+      // hook-free adjudicated control clause (361 -> 366; total 1378 -> 1383).
+      // Horn of Valhalla blow-horn becomes ready (all four type variants); the
+      // vessel operations stay not ready on the c1-uses F5 per-period reset
+      // (eshyra-7gkh).
       expect(counts).toEqual({
-        'adjudicated-by-design': 361,
+        'adjudicated-by-design': 366,
         'design-blocked': 1,
-        'engine-pending': 788,
-        green: 228,
+        'engine-pending': 783,
+        green: 233,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

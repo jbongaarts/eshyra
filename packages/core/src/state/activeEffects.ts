@@ -71,9 +71,11 @@ import {
   updateCombatant,
 } from './encounterCombatants.js';
 import {
+  itemGrantBindCreditOpenInScope,
   itemGrantColumn,
   oldestOpenItemGrantBindCredit,
   readItemConsumptionReceipt,
+  readItemGrantRolledCount,
   redeemItemConsumptionReceipt,
   redeemItemGrantBindCredit,
 } from './itemGrantBinding.js';
@@ -294,6 +296,11 @@ export interface CreateActiveEffectInput extends EffectMutationContext {
     /** The inventory instance of the magic item that owns grantRef; its
      *  grant-ended cooldown anchors are scheduled when the grant's effect ends. */
     readonly itemInstanceId?: string;
+    /** The use_item bind credit this grant redeems (hint.bindCredits[].creditId).
+     *  Required for a grant whose count the engine rolled per use (`countRoll`,
+     *  eshyra-olc5.14), so the bind is checked against the roll of the use it
+     *  realizes; optional otherwise, where the oldest open credit is redeemed. */
+    readonly bindCreditId?: string;
     readonly actor?: EffectParticipant;
   };
   /** Present iff the effect requires concentration. */
@@ -4218,13 +4225,28 @@ function validateItemGrantBinding(
     typeof grant.cooldownEconomy === 'string'
   ) {
     const economyId = grant.cooldownEconomy;
-    bindCreditId = oldestOpenItemGrantBindCredit(db, {
+    const creditScope = {
       campaignId: input.campaignId,
       itemInstanceId,
       packRef: record.key,
       variantId: instanceVariant,
       economyId,
-    });
+    };
+    // eshyra-olc5.14 (PR #674 review): a rolled count belongs to one use, so
+    // its bind names that use's credit; "oldest open" could check the count
+    // against an earlier, unbound use's roll or redeem the wrong credit.
+    const requestedCreditId = input.source.bindCreditId;
+    if (requestedCreditId === undefined && typeof grant.countRoll === 'string')
+      throw new ActiveEffectError(
+        `${label} summons a rolled count (${grant.countRoll}) that belongs to one use; give source.bindCreditId, the creditId use_item returned for the use this creature realizes`,
+      );
+    if (requestedCreditId !== undefined) {
+      if (!itemGrantBindCreditOpenInScope(db, requestedCreditId, creditScope))
+        throw new ActiveEffectError(
+          `${label}: bind credit '${requestedCreditId}' is not an unredeemed use of item '${itemInstanceId}''s '${economyId}' economy${instanceVariant === undefined ? '' : ` (variant '${instanceVariant}')`}`,
+        );
+      bindCreditId = requestedCreditId;
+    } else bindCreditId = oldestOpenItemGrantBindCredit(db, creditScope);
     if (bindCreditId === undefined) {
       const spender = economySpender(mechanics, economyId);
       throw new ActiveEffectError(
@@ -4235,6 +4257,34 @@ function validateItemGrantBinding(
         } first (each use pays for one bind). To place a creature outside the item's economy, start a ruling-sourced summoning instead`,
       );
     }
+  }
+  if (input.source.bindCreditId !== undefined && bindCreditId === undefined)
+    throw new ActiveEffectError(
+      `${label} is not paid for by a use_item bind credit here (it binds through its cooldown spend or a consumption receipt); source.bindCreditId is refused`,
+    );
+  // eshyra-olc5.14: a grant that prints a rolled count (`countRoll`) binds
+  // exactly the total the ENGINE rolled when use_item issued the credit this
+  // bind redeems. The count is never taken from the caller: only a credit that
+  // holds a well-formed engine roll of this very grant admits a bind, and the
+  // linked-actor count must equal its total.
+  if (typeof grant.countRoll === 'string') {
+    if (bindCreditId === undefined)
+      throw new ActiveEffectError(
+        `${label} summons a rolled count (${grant.countRoll}), which only a use_item bind credit can supply; it cannot bind from an anchored spend or a consumption receipt`,
+      );
+    const rolled = readItemGrantRolledCount(db, bindCreditId, grantId);
+    if (
+      rolled === undefined ||
+      rolled.notation.replace(/\s+/g, '').toLowerCase() !==
+        grant.countRoll.replace(/\s+/g, '').toLowerCase()
+    )
+      throw new ActiveEffectError(
+        `${label} summons a rolled count (${grant.countRoll}), and bind credit '${bindCreditId}' records no engine roll of it; use_item the operation again (each use rolls its own count)`,
+      );
+    if (actors.length !== rolled.total)
+      throw new ActiveEffectError(
+        `${label} summons ${rolled.total} (the engine rolled ${rolled.notation} = ${rolled.total} for use '${bindCreditId}'); ${actors.length} linked actor(s) were given`,
+      );
   }
   // A consumed source has no surviving item whose cooldown economy could be
   // spent or scheduled, and its receipt is the one-time guard.
