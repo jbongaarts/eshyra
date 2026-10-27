@@ -4269,6 +4269,25 @@ function validateItemGrantBinding(
   // spent and not yet scheduled, and one live effect may bind the grant at a
   // time. A spend that is never bound stays recoverable, since the DM can bind
   // it late. A non-anchored cooldownEconomy grant redeems a bind credit below.
+  // eshyra-olc5.15 (PR #675 review): an item made nonmagical by a printed
+  // external event (the Ring of Djinni Summoning's djinni died) can never
+  // summon again, including a use paid before the event but not yet bound. A
+  // nonmagical lifecycle that a depletion produced is the paying use's own
+  // outcome and is not refused here (no grant item in the pack depletes to
+  // nonmagical; the Figurine goat's last charge leaves it inert and still
+  // binds).
+  if (receiptConsumedAt === undefined) {
+    const sourceState = readItemState(db, itemInstanceId);
+    if (
+      sourceState?.lifecycle?.status === 'nonmagical' &&
+      !(sourceState.depletions ?? []).some(
+        (resolution) => resolution.becomes === 'nonmagical',
+      )
+    )
+      throw new ActiveEffectError(
+        `${label}: item '${itemInstanceId}' became nonmagical through a printed event and can no longer summon; an outstanding paid use is forfeited`,
+      );
+  }
   const cooldownAnchored = grantCooldownAnchoredTo(mechanics, grant);
   // A non-anchored cooldownEconomy grant on a live row is paid for by a bind
   // credit that use_item issued when it charged that economy (olc5.12.3). The

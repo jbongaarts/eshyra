@@ -14,6 +14,7 @@ import {
   type DestroyedItemAttunementEvidence,
   destroyInventoryItem,
 } from './inventoryLifecycle.js';
+import { voidOpenItemGrantBindCredits } from './itemGrantBinding.js';
 import {
   applyCooldownAnchorToState,
   type ItemInstanceState,
@@ -715,6 +716,10 @@ export function applyItemStateConditionEvent(
         item.variantId,
       );
       writeItemState(txnDb, input.instanceId, next, input);
+      // A paid use not yet bound is forfeited with the item's magic: its open
+      // bind credits are voided here (the binder also refuses an anchored
+      // spend on a nonmagical source).
+      voidOpenItemGrantBindCredits(txnDb, input.instanceId);
       grantsEnded = endItemGrantsOfNonmagicalSource(txnDb, input.instanceId, {
         provenance: input.provenance,
         sessionId: input.sessionId,

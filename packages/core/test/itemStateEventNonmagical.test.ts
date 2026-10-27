@@ -212,6 +212,39 @@ describe('Ring of Djinni Summoning: the djinni dies (real pack, no waiver)', () 
     expect(refused.message).toMatch(/nonmagical/);
   });
 
+  it('(b2) a summon paid before the death but not yet bound is forfeited: the bind is refused after the event', () => {
+    // PR #675 review: use_item spends the anchored cooldown, no start_effect
+    // yet; the DM reports the djinni's death; the late bind must not summon.
+    const s = setup();
+    s.nextTurn();
+    const used = s.call('use_item', {
+      instanceId: s.ringId,
+      operationId: 'summon-djinni',
+    });
+    expect(used, used.message).toMatchObject({ ok: true });
+    const died = s.event(DIES);
+    expect(died, died.message).toMatchObject({
+      ok: true,
+      data: { becameNonmagical: true, grantsEnded: [] },
+    });
+    const late = s.call('start_effect', {
+      effectId: 'fx-djinni',
+      kind: 'summoning',
+      displayName: 'The djinni',
+      source: {
+        kind: 'magic-item',
+        ref: RING,
+        grantRef: 'particular-djinni',
+        itemInstanceId: s.ringId,
+      },
+      actors: [{ combatantId: 'c-djinni' }],
+      concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+    });
+    expect(late).toMatchObject({ ok: false });
+    expect(late.message).toMatch(/became nonmagical through a printed event/);
+    expect(s.effect()).toBeUndefined();
+  });
+
   it('(c) an ordinary end leaves the ring magical and only starts the cooldown: 0 hit points, then the one-hour expiry', () => {
     const zero = setup();
     zero.summon();
