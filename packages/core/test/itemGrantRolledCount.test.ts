@@ -108,6 +108,7 @@ const bindHorn = (
   instanceId: string,
   grantRef: string,
   count: number,
+  creditId: string | undefined,
   extra: Record<string, unknown> = {},
 ) =>
   s.call('start_effect', {
@@ -119,6 +120,7 @@ const bindHorn = (
       ref: HORN,
       grantRef,
       itemInstanceId: instanceId,
+      ...(creditId === undefined ? {} : { bindCreditId: creditId }),
     },
     actors: Array.from({ length: count }, (_, index) => ({
       combatantId: `c-b${index}`,
@@ -154,6 +156,7 @@ describe('Horn of Valhalla: the engine-rolled count is bound to the use', () => 
       expect(die).toBeLessThanOrEqual(4);
     }
     const total = roll?.total as number;
+    const creditId = credit?.creditId as string;
     expect(total).toBe((roll?.rolls ?? []).reduce((a, b) => a + b, 0) + 2);
 
     // Persisted on the credit, reloaded identically (nothing re-rolls).
@@ -167,33 +170,66 @@ describe('Horn of Valhalla: the engine-rolled count is bound to the use', () => 
 
     // A mismatched count is refused and leaves the credit open.
     for (const wrong of [total - 1, total + 1]) {
-      const refused = bindHorn(s, 'fx-wrong', id, 'silver-berserkers', wrong);
+      const refused = bindHorn(
+        s,
+        'fx-wrong',
+        id,
+        'silver-berserkers',
+        wrong,
+        creditId,
+      );
       expect(refused).toMatchObject({ ok: false });
       expect(refused.message).toMatch(
         new RegExp(`summons ${total} .*${wrong} linked actor`),
       );
     }
     // The grant of another horn type is not this instance's.
-    const other = bindHorn(s, 'fx-other', id, 'iron-berserkers', total);
+    const other = bindHorn(
+      s,
+      'fx-other',
+      id,
+      'iron-berserkers',
+      total,
+      creditId,
+    );
     expect(other).toMatchObject({ ok: false });
     expect(other.message).toMatch(/belongs to variant\(s\) iron/);
 
     // A caller-supplied count or roll is not accepted: the tool schema has no
     // such field and refuses it.
-    const supplied = bindHorn(s, 'fx-supplied', id, 'silver-berserkers', 3, {
-      count: 3,
-      rolledCount: 3,
-    });
+    const supplied = bindHorn(
+      s,
+      'fx-supplied',
+      id,
+      'silver-berserkers',
+      3,
+      creditId,
+      { count: 3, rolledCount: 3 },
+    );
     expect(supplied).toMatchObject({ ok: false });
 
     // The exact engine count binds.
-    const bound = bindHorn(s, 'fx-ok', id, 'silver-berserkers', total);
+    const bound = bindHorn(
+      s,
+      'fx-ok',
+      id,
+      'silver-berserkers',
+      total,
+      creditId,
+    );
     expect(bound, bound.message).toMatchObject({ ok: true });
 
-    // One use pays for one bind.
-    const again = bindHorn(s, 'fx-again', id, 'silver-berserkers', total);
+    // One use pays for one bind: its credit is now redeemed.
+    const again = bindHorn(
+      s,
+      'fx-again',
+      id,
+      'silver-berserkers',
+      total,
+      creditId,
+    );
     expect(again).toMatchObject({ ok: false });
-    expect(again.message).toMatch(/holds no unredeemed use/);
+    expect(again.message).toMatch(/is not an unredeemed use/);
   });
 
   it('refuses a bind against a credit with no recorded engine roll, or one that records another grant or notation', () => {
@@ -207,7 +243,9 @@ describe('Horn of Valhalla: the engine-rolled count is bound to the use', () => 
       }).data as { id: string }
     ).id;
     s.nextTurn();
-    const roll = rolledOf(blow(s, id))?.rolledCounts?.[0];
+    const ironCredit = rolledOf(blow(s, id));
+    const roll = ironCredit?.rolledCounts?.[0];
+    const creditId = ironCredit?.creditId as string;
     expect(roll).toMatchObject({ notation: '5d4+5' });
     const total = roll?.total as number;
     expect(total).toBeGreaterThanOrEqual(10);
@@ -224,25 +262,25 @@ describe('Horn of Valhalla: the engine-rolled count is bound to the use', () => 
 
     // No roll recorded (a credit predating the roll, or tampered).
     setStored(null);
-    const none = bindHorn(s, 'fx-none', id, 'iron-berserkers', total);
+    const none = bindHorn(s, 'fx-none', id, 'iron-berserkers', total, creditId);
     expect(none).toMatchObject({ ok: false });
     expect(none.message).toMatch(/records no engine roll/);
     // A roll attributed to another grant, or another notation, is unrelated.
     setStored(stored.replace('iron-berserkers', 'silver-berserkers'));
-    expect(bindHorn(s, 'fx-g', id, 'iron-berserkers', total)).toMatchObject({
-      ok: false,
-    });
+    expect(
+      bindHorn(s, 'fx-g', id, 'iron-berserkers', total, creditId),
+    ).toMatchObject({ ok: false });
     setStored(stored.replace('5d4+5', '1d4'));
-    expect(bindHorn(s, 'fx-n', id, 'iron-berserkers', total)).toMatchObject({
-      ok: false,
-    });
+    expect(
+      bindHorn(s, 'fx-n', id, 'iron-berserkers', total, creditId),
+    ).toMatchObject({ ok: false });
     expect(s.db.prepare('SELECT 1 FROM active_effect').get()).toBeUndefined();
 
     // Restored, the same bind succeeds.
     setStored(stored);
-    expect(bindHorn(s, 'fx-ok', id, 'iron-berserkers', total)).toMatchObject({
-      ok: true,
-    });
+    expect(
+      bindHorn(s, 'fx-ok', id, 'iron-berserkers', total, creditId),
+    ).toMatchObject({ ok: true });
   });
 
   it('rolls each use anew, deterministically for a seed, and a different variant uses its own dice', () => {
@@ -265,6 +303,106 @@ describe('Horn of Valhalla: the engine-rolled count is bound to the use', () => 
       return [first?.rolls, second?.rolls];
     };
     expect(totals(21)).toEqual(totals(21));
+  });
+
+  it('binds the roll of the use it names: an earlier unbound use neither checks nor absorbs it', () => {
+    // PR #674 review: an unbound first use leaves credit A open; a second use a
+    // week later issues credit B with its own roll. The bind of B's creatures
+    // must be checked against B's roll and redeem B, whether A's total differs
+    // from B's or coincides with it.
+    for (const aOffset of [1, 0]) {
+      const s = setup(31, 40);
+      const id = (
+        s.must('give_item', {
+          id: 'horn',
+          name: 'Horn of Valhalla',
+          packRef: HORN,
+          variantId: 'brass',
+        }).data as { id: string }
+      ).id;
+      s.nextTurn();
+      const a = rolledOf(blow(s, id));
+      s.must('advance_time', { minutes: WEEK });
+      s.nextTurn();
+      const b = rolledOf(blow(s, id));
+      const aId = a?.creditId as string;
+      const bId = b?.creditId as string;
+      expect(aId).not.toBe(bId);
+      const bTotal = b?.rolledCounts?.[0]?.total as number;
+      // Fix A's stored total relative to B's so both cases are exercised
+      // deterministically (a different total, then an equal one).
+      const aRoll = { ...a?.rolledCounts?.[0], total: bTotal + aOffset };
+      s.db
+        .prepare(
+          'UPDATE item_grant_bind_credit SET rolled_counts_json = ? WHERE credit_id = ?',
+        )
+        .run(JSON.stringify([aRoll]), aId);
+
+      // Naming no credit is refused: a rolled count belongs to one use.
+      const unnamed = bindHorn(
+        s,
+        'fx-u',
+        id,
+        'brass-berserkers',
+        bTotal,
+        undefined,
+      );
+      expect(unnamed).toMatchObject({ ok: false });
+      expect(unnamed.message).toMatch(/give source\.bindCreditId/);
+      // A credit id outside a printed grant binding is refused.
+      const stray = s.call('start_effect', {
+        effectId: 'fx-s',
+        kind: 'summoning',
+        displayName: 'fx-s',
+        source: { kind: 'magic-item', ref: HORN, bindCreditId: bId },
+      });
+      expect(stray).toMatchObject({ ok: false });
+      expect(stray.message).toMatch(/grantRef/);
+      // A credit of another instance is refused.
+      const foreign = bindHorn(
+        s,
+        'fx-f',
+        'not-this-horn',
+        'brass-berserkers',
+        bTotal,
+        bId,
+      );
+      expect(foreign).toMatchObject({ ok: false });
+
+      // B's creatures checked against A's credit: refused on the count when the
+      // totals differ (A's roll is not B's).
+      if (aOffset !== 0) {
+        const crossed = bindHorn(
+          s,
+          'fx-x',
+          id,
+          'brass-berserkers',
+          bTotal,
+          aId,
+        );
+        expect(crossed).toMatchObject({ ok: false });
+        expect(crossed.message).toMatch(
+          new RegExp(`summons ${bTotal + aOffset} .*for use '${aId}'`),
+        );
+      }
+
+      const bound = bindHorn(s, 'fx-b', id, 'brass-berserkers', bTotal, bId);
+      expect(bound, bound.message).toMatchObject({ ok: true });
+      const redeemed = (creditId: string) =>
+        (
+          s.db
+            .prepare(
+              'SELECT redeemed_effect_id AS r FROM item_grant_bind_credit WHERE credit_id = ?',
+            )
+            .get(creditId) as { r: string | null }
+        ).r;
+      // B is redeemed, never A, even when the totals coincide.
+      expect(redeemed(bId)).toBe('fx-b');
+      expect(redeemed(aId)).toBeNull();
+      expect(
+        bindHorn(s, 'fx-b2', id, 'brass-berserkers', bTotal, bId),
+      ).toMatchObject({ ok: false });
+    }
   });
 
   it('fails closed for a horn with no established type', () => {
@@ -298,7 +436,7 @@ describe('Horn of Valhalla: the engine-rolled count is bound to the use', () => 
     expect(
       s2.db.prepare('SELECT 1 FROM item_grant_bind_credit').get(),
     ).toBeUndefined();
-    const bound = bindHorn(s2, 'fx', id, 'silver-berserkers', 4);
+    const bound = bindHorn(s2, 'fx', id, 'silver-berserkers', 4, undefined);
     expect(bound).toMatchObject({ ok: false });
   });
 });
