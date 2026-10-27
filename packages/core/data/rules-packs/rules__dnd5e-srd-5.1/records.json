@@ -89607,16 +89607,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:armor-of-invulnerability/c2-effect-activate-immunity-payload",
@@ -90830,16 +90821,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:bag-of-tricks/m4-bag-of-tricks",
@@ -90856,34 +90838,25 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F3",
-                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
-              },
-              {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
-                "engine": "F5",
-                "hook": "item-instance cooldown and owned-entity identity link"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F3",
-              "F5"
-            ]
+            "readiness": "green"
+          },
+          {
+            "clauseId": "magic-item:bag-of-tricks/m4-control-bag-of-tricks",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
+              "sourceText": "You can use a bonus action to command how the creature moves and what action it takes on its next turn, or to give it general orders, such as to attack your enemies. In the absence of such orders, the creature acts in a fashion appropriate to its nature."
+            },
+            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
           },
           {
             "clauseId": "magic-item:bag-of-tricks/S:Bag of Tricks:table:table:gray-bag-of-tricks",
@@ -92643,16 +92616,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:bowl-of-commanding-water-elementals/m4-bowl-of-commanding-water-elementals",
@@ -92978,16 +92942,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:brazier-of-commanding-fire-elementals/m4-brazier-of-commanding-fire-elementals",
@@ -93761,16 +93716,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cape-of-the-mountebank/c2-residual-dimension-door",
@@ -94177,16 +94123,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:censer-of-controlling-air-elementals/m4-censer-of-controlling-air-elementals",
@@ -94481,16 +94418,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:circlet-of-blasting/c2-residual-scorching-ray",
@@ -94678,16 +94606,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cloak-of-arachnida/c2-effect-cast-web",
@@ -95389,16 +95308,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cloak-of-the-bat/c2-effect-cast-polymorph",
@@ -95807,16 +95717,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:crystal-ball/variant:crystal-ball-of-telepathy/triage-activation-cast-suggestion-0",
@@ -97083,16 +96984,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:dagger-of-venom/c2-effect-coat-blade-payload",
@@ -99208,16 +99100,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:dragon-scale-mail/c2-residual-dragon-breath-save",
@@ -107016,16 +106899,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:helm-of-telepathy/c2-effect-cast-detect-thoughts",
@@ -109689,16 +109563,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:iron-bands-of-binding/c2-residual-bands-ranged-attack",
@@ -110293,16 +110158,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:javelin-of-lightning/c2-effect-hurl-lightning-payload",
@@ -115561,16 +115417,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:pearl-of-power/m9-pearl-slot",
@@ -116765,16 +116612,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:plate-armor-of-etherealness/c2-residual-etherealness",
@@ -128549,16 +128387,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:rod-of-alertness/c2-effect-cast-detect-evil-and-good",
@@ -129800,16 +129629,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:rod-of-rulership/c2-residual-rulership-charm",
@@ -140563,16 +140383,7 @@
                 "hook": "per-period usage reset"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "per-period usage reset"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:stone-of-controlling-earth-elementals/m4-control-stone-of-controlling-earth-elementals",

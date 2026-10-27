@@ -39,6 +39,9 @@ interface Carrier {
   readonly requiresAttunement: boolean;
   readonly creature: string;
   readonly typedDuration: boolean;
+  /** The printed ending is the engine-computed next dawn (eshyra-7gkh.1): the
+   *  bind omits duration and the engine fills the minutes to that dawn. */
+  readonly nextDawn: boolean;
   readonly concentration: boolean;
   readonly rolledCount: boolean;
 }
@@ -93,6 +96,9 @@ function enumerateCarriers(): Carrier[] {
           requiresAttunement: data.requiresAttunement === true,
           creature: creatureRefs[0] ?? 'creature:weasel',
           typedDuration: grant.duration !== undefined,
+          nextDawn:
+            Array.isArray(grant.revertOn) &&
+            grant.revertOn.includes('next-dawn'),
           concentration:
             typeof grant.control === 'string' &&
             grant.control.startsWith('as spell:'),
@@ -248,7 +254,9 @@ function setup(creatures: readonly string[] = []) {
         itemInstanceId: id,
       },
       actors: [{ combatantId: combatant }],
-      ...(carrier.typedDuration ? {} : { duration: { kind: 'until-removed' } }),
+      ...(carrier.typedDuration || carrier.nextDawn
+        ? {}
+        : { duration: { kind: 'until-removed' } }),
       ...(carrier.concentration
         ? { concentrationOwner: { kind: 'combatant', ref: 'c-wiz' } }
         : {}),

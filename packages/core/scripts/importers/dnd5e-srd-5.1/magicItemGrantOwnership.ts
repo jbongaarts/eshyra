@@ -28,11 +28,14 @@ export const CREATURE_GRANT_LIFECYCLE_HOOKS: readonly EngineHookBinding[] = [
 
 /**
  * The printed `revertOn` values whose ending the engine COMPUTES: fixed timers
- * (the effect's own expiry), the 0-hit-point vanish, and the concentration
- * break. Every other mapped value is `dm-ended` in
- * `ITEM_GRANT_REVERT_DISPOSITIONS`: the DM ends the grant with a ruling, so the
- * printed term (owner-command-while-touching, obeyed owner commands, next
- * dawn, owner dismissal, ...) is beyond what the runtime implements.
+ * (the effect's own expiry), the 0-hit-point vanish, the concentration break,
+ * and the next dawn (eshyra-7gkh.1: start_effect fills the minute timer to the
+ * first dawn boundary strictly after the bind, the same boundary the item reset
+ * executor uses, and the world-time expiry ends the grant there). Every other
+ * mapped value is `dm-ended` in `ITEM_GRANT_REVERT_DISPOSITIONS`: the DM ends
+ * the grant with a ruling, so the printed term (owner-command-while-touching,
+ * obeyed owner commands, owner dismissal, ...) is beyond what the runtime
+ * implements.
  * `magicItemGrantOwnership.test.ts` pins this set to the runtime table.
  */
 export const ENGINE_COMPUTED_GRANT_ENDINGS: ReadonlySet<string> = new Set([
@@ -41,6 +44,7 @@ export const ENGINE_COMPUTED_GRANT_ENDINGS: ReadonlySet<string> = new Set([
   'five-rounds-ended',
   'reduced-to-0-hit-points',
   'concentration-ended',
+  'next-dawn',
 ]);
 
 type Obj = Record<string, unknown>;

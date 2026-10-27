@@ -14,6 +14,7 @@ import { createActiveEffect } from '../state/activeEffects.js';
 import { lookupStrictCampaignRecord } from '../state/campaignRecordLookup.js';
 import { readItemConsumptionReceipt } from '../state/itemGrantBinding.js';
 import type { CharacterConditionEntry } from '../state/liveStateSchema.js';
+import { nextDawnAfter } from '../state/worldClockBoundaries.js';
 import { rollDice } from './dice.js';
 import {
   EFFECT_DURATION_SCHEMA,
@@ -69,13 +70,15 @@ export const startEffectTool: Tool = {
     'grant with no typed duration (goat of traveling) takes a DM-adjudicated ' +
     'timed duration through durationOverride, or an until-removed duration. ' +
     'Its printed endings are modeled automatically: timer expiry, reduced to 0 ' +
-    'hit points (the creature vanishes), and concentration ending. A grant whose cooldown restarts when ' +
+    'hit points (the creature vanishes), concentration ending, and the next ' +
+    'dawn (Bag of Tricks: omit duration and the engine fills the minutes to the ' +
+    'first dawn after now; no override). A grant whose cooldown restarts when ' +
     "it ends (use_item's result hint.bindGrant names it) binds only after that " +
     'spend, and only once per spend. A grant naming any other cooldown economy ' +
     "binds only against an unredeemed use_item credit (hint.bindCredits), oldest first; with none it is refused, and a creature outside the item's economy is a ruling-sourced summoning. A grant with a rolled count (Horn of Valhalla) must name that use's credit in source.bindCreditId and binds exactly the total use_item rolled on it (rolledCounts). A grant owned by a persistent " +
     'actor needs campaignActorId on each linked actor, so combat closure keeps ' +
     'it. Every other printed ending (owner ' +
-    'commands, next dawn, card moved, wishes, flight distance, and so on) is ' +
+    'commands, card moved, wishes, flight distance, and so on) is ' +
     'DM-adjudicated: end the effect with end_effect (reason "ruled" and a ' +
     'note). Illusion and object grants, control or obedience policy, and ' +
     'an Iron Flask capture are DM-adjudicated and are not bound here. A ' +
@@ -368,6 +371,7 @@ export const startEffectTool: Tool = {
       | undefined;
     let durationProvenance: ItemDurationProvenance | undefined;
     let typedItemDuration: Record<string, unknown> | undefined;
+    let endsAtNextDawn = false;
     if (source.kind === 'magic-item' && typeof source.ref === 'string') {
       if (
         typeof source.effectRef !== 'string' &&
@@ -440,6 +444,8 @@ export const startEffectTool: Tool = {
             `source.grantRef '${source.grantRef}' does not resolve to a grant on '${source.ref}'`,
           );
         typed = grant.duration;
+        endsAtNextDawn =
+          Array.isArray(grant.revertOn) && grant.revertOn.includes('next-dawn');
       } else {
         const mechanics = data?.mechanics as
           | Record<string, unknown>
@@ -631,7 +637,33 @@ export const startEffectTool: Tool = {
           'invalid_args',
           'durationOverride is only valid for a typed item duration',
         );
-      duration = parseEffectDuration(a.duration);
+      let rawDuration: unknown = a.duration;
+      if (endsAtNextDawn) {
+        // The printed next-dawn ending is engine-computed: the minutes from the
+        // clock to the first dawn boundary strictly after it. Omit duration to
+        // take it; a supplied duration must equal it (the engine checks).
+        if (override !== undefined)
+          return err(
+            'invalid_args',
+            'a grant that ends at the next dawn takes an engine-computed duration; durationOverride is refused (omit duration, or end the effect early with end_effect)',
+          );
+        if (rawDuration === undefined) {
+          const row = ctx.db
+            .prepare('SELECT elapsed_minutes FROM clock WHERE id = 1')
+            .get() as { elapsed_minutes?: number } | undefined;
+          if (row === undefined || !Number.isSafeInteger(row.elapsed_minutes))
+            return err('invalid_args', 'campaign clock is malformed');
+          const now = row.elapsed_minutes as number;
+          rawDuration = {
+            kind: 'timed',
+            amount: nextDawnAfter(now) - now,
+            unit: 'minute',
+            anchor: 'effect-created',
+          };
+        }
+        itemDurationBinding = { status: 'bound' };
+      }
+      duration = parseEffectDuration(rawDuration);
       if ('ok' in duration) return duration;
       if (override !== undefined) {
         // An item grant with no typed duration (a charge-driven lifetime) takes

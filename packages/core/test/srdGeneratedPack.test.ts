@@ -3322,7 +3322,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1385);
+      expect(clauses).toHaveLength(1386);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3438,11 +3438,22 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // the Python (typed destroysItemOn) and the Efreeti Bottle (the source
       // prints no death-triggered item transition) move no clause: both stay
       // pending on their DM-ended lifecycles.
+      // eshyra-7gkh.1 lands 'F5: per-period usage reset' (the hard-limit
+      // per-day dawn economy, identical on all 20 carriers: useItem spends and
+      // refuses at 0, the reset executor restores at the dawn boundary), so the
+      // 20 c1-uses clauses go engine-pending -> green; and makes the Bag of
+      // Tricks next-dawn ending engine-computed, so its entityGrant clause goes
+      // engine-pending -> green and gains one hook-free adjudicated control
+      // clause (782 -> 761 pending, 235 -> 256 green, 367 -> 368; total 1385 ->
+      // 1386). Twelve operations become ready: the Bag, the four vessels, the
+      // Cape of the Mountebank, Circlet of Blasting, Crystal Ball (Telepathy),
+      // Dragon Scale Mail, Iron Bands, Plate Armor of Etherealness and Rod of
+      // Rulership.
       expect(counts).toEqual({
-        'adjudicated-by-design': 367,
+        'adjudicated-by-design': 368,
         'design-blocked': 1,
-        'engine-pending': 782,
-        green: 235,
+        'engine-pending': 761,
+        green: 256,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

@@ -64,7 +64,12 @@ function independentlyOwned(record: { name: string; data: unknown }): boolean {
   )
     return false;
   const grants = block.grants as Obj[];
-  const computed = ['timer', 'zero-hit-points', 'concentration-ended'];
+  const computed = [
+    'timer',
+    'zero-hit-points',
+    'concentration-ended',
+    'next-dawn',
+  ];
   return (
     grants.length > 0 &&
     grants.every((grant) => {
@@ -90,6 +95,10 @@ function independentlyOwned(record: { name: string; data: unknown }): boolean {
 }
 
 const OWNED_ITEMS = [
+  // eshyra-7gkh.1: next-dawn is engine-computed (start_effect fills the minute
+  // timer to the first dawn strictly after the bind); the 0-hit-point ending is
+  // unchanged; its bonus-action command budget is the adjudicated control clause.
+  'Bag of Tricks',
   'Bowl of Commanding Water Elementals',
   'Brazier of Commanding Fire Elementals',
   'Censer of Controlling Air Elementals',
@@ -104,7 +113,6 @@ const OWNED_ITEMS = [
 ];
 /** Every grant-bearing item that keeps the hooks, with the reason it does. */
 const KEPT_ITEMS: Record<string, string> = {
-  'Bag of Tricks': 'next-dawn ending is DM-ended; bonus-action command budget',
   'Deck of Illusions': 'illusion grant, not bound by start_effect',
   'Efreeti Bottle': 'third-wish-granted ending is DM-ended; outcomes (.12.4)',
   'Feather Token': 'object whip grant mixed in; DM-ended endings',
@@ -321,6 +329,18 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
         ),
       ).toBe(true);
     });
+    it('owns a next-dawn ending (engine-computed, eshyra-7gkh.1) and keeps a DM-ended one beside it', () => {
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(['next-dawn', 'reduced-to-0-hit-points'])]),
+        ),
+      ).toBe(true);
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(['next-dawn', 'owner-dismisses-as-action'])]),
+        ),
+      ).toBe(false);
+    });
     it('keeps illusion, object, containment, DM-ended, empty and mixed grants', () => {
       expect(
         creatureGrantLifecycleOwned(
@@ -341,7 +361,6 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
         'owner-command-while-touching',
         'obeyed-owner-command-while-touching',
         'owner-bonus-action-command',
-        'next-dawn',
         'third-wish-granted',
       ])
         expect(
@@ -387,7 +406,7 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
       ).toBe(false);
       expect(
         creatureGrantLifecycleOwned(
-          block([{ ...withRoll, revertOn: ['next-dawn'] }]),
+          block([{ ...withRoll, revertOn: ['owner-dies'] }]),
         ),
       ).toBe(false);
     });

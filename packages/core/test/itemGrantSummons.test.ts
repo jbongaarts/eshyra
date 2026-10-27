@@ -385,12 +385,10 @@ describe('olc5.12 item-granted creatures', () => {
       itemInstanceId: bagId,
     };
     const refused = s.summon('fx-bag-djinni', bag, {
-      duration: { kind: 'until-removed' },
       actors: [{ combatantId: 'c-djinni' }],
     });
     expect(refused).toMatchObject({ ok: false });
     const accepted = s.summon('fx-bag-weasel', bag, {
-      duration: { kind: 'until-removed' },
       actors: [{ combatantId: 'c-weasel' }],
     });
     expect(accepted.ok).toBe(true);
@@ -1723,10 +1721,7 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
           grantRef: 'bag-creature',
           itemInstanceId: bagId,
         },
-        {
-          duration: { kind: 'until-removed' },
-          actors: [{ combatantId: 'c-weasel' }],
-        },
+        { actors: [{ combatantId: 'c-weasel' }] },
       ),
     ).toMatchObject({ ok: true });
     s.hit('c-weasel', -1);

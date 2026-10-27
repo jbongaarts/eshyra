@@ -356,6 +356,13 @@ export function magicItemEngineHookKey(binding: EngineHookBinding): string {
  * 0 hit points, concentration, DM end) calling applyItemCooldownAnchorEvent in
  * the same transaction, for a grant bound through start_effect whose spend is
  * coupled to that binding (olc5.12.2).
+ * `per-period usage reset` is the hard-limit per-day dawn economy
+ * `{kind: 'per-day', perDay: {uses: N}, reset: [{at: 'dawn', amount: 'all'}]}`
+ * (eshyra-7gkh.1): useItem spends the uses and refuses at 0 (no soft-limit
+ * marker), and the reset executor (state/itemResetExecutor.ts
+ * `resolveDueItemClockEvents`, via `crossedBoundaryEvents` at minute 360 of each
+ * day) restores them to the maximum at the dawn boundary. All 20 carriers print
+ * this identical economy shape, so the hook is landed globally.
  * The long-rest and dawn hooks own both the soft-limit spend rule (exhausted
  * uses remain permitted without spending) and the matching reset that restores
  * the safe use.
@@ -400,6 +407,9 @@ export const LANDED_MAGIC_ITEM_ENGINE_HOOKS: ReadonlySet<string> = new Set([
     engine: 'F7',
     hook: 'long-rest reset and early-reuse gate',
   }),
+  // Hard-limit per-day uses spend to 0 and refuse; the dawn boundary restores
+  // them (itemResetExecutor resolveDueItemClockEvents). eshyra-7gkh.1.
+  magicItemEngineHookKey({ engine: 'F5', hook: 'per-period usage reset' }),
   // Exhausted safe-use pools remain usable; dawn restores the safe use.
   magicItemEngineHookKey({
     engine: 'F5',
