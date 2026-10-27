@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ss08.6",
+  "title": "Character Creation Is a Program, Not a Form",
+  "description": "Tell the story of dependency-aware character creation.\n\nNarrative hook and core question: Why not just ask the model to make a legal character?\n\nResearch initial model-generated character blobs, unsupported class or ancestry choices, impossible ability-score arrays, and the level-one HP maximum of -4. Explain why validating a complete object after generation is insufficient. Cover concept-first and ability-first creation modes, CharacterDraft, incremental dependency-aware validation, rules-pack-backed legal choice enumeration, required-choice descriptors, prerequisites, derived values, equipment and spell-choice workflows, save/resume, and how the same architecture informs level-up and progression.\n\nExpected architectural conclusion: character creation is a stateful dependency graph disguised as a questionnaire.\n\nBoundary: the existing rules-pack story uses character creation as evidence that prose is not enough. Cover the larger workflow and state-machine architecture without repeating the compiler story.\n\nUse repository history, PRs, design docs, ADRs, audits, and playtest transcripts as evidence. Verify claims against artifacts rather than model memory; distinguish implemented behavior from planned architecture; preserve public readability and search indexing; and follow Joseph's voice rules: analytical and curious, concrete before abstraction, dry humor when earned, deliberate we/I attribution, reflect praise, absorb blame, no em dashes, and no generic LLM prose.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T04:27:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-10T04:29:44Z",
+  "labels": [
+    "docs",
+    "site",
+    "storytelling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ss08.6",
+      "depends_on_id": "eshyra-ss08",
+      "type": "parent-child",
+      "created_at": "2026-07-09T23:27:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

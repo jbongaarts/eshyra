@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ldtn",
+  "title": "Land dev-tooling group: Biome 2.5.12 config migration, CSS specificity fix, vitest 5",
+  "description": "PR #530 (dependabot dev-tooling group: @biomejs/biome 2.5.11->2.5.12, vitest ^4.1.7->^5.0.0, tsx 4.23.12->4.23.13) fails build-test on Biome twice: biome.json declares $schema 2.5.5 against CLI 2.5.12 (needs npx biome migrate --write), and Biome 2.5.12 newly emits style/noDescendingSpecificity at site/src/styles.css:555, which CI fails on under --error-on-warnings. Fix both on the dependabot branch and take the vitest 5 major in the same PR after a full local verify.",
+  "notes": "Fix pushed onto the dependabot branch; PR https://github.com/jbongaarts/eshyra/pull/530. Bead stays in_progress until it merges.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-07T23:41:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-07T23:50:38Z",
+  "started_at": "2026-09-07T23:41:20Z",
+  "closed_at": "2026-09-07T23:50:38Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

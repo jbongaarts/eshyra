@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj",
+  "title": "Close D&D SRD gameplay-modeling gaps from 2026-06-29 audit",
+  "description": "Follow-up epic from audit bundle dnd5e-srd-audit-bundle-062926.zip.\n\nAudit summary:\n- Generated pack is reproducible and source-complete at the current gate level.\n- verify:dnd5e-srd-pack, check, typecheck, and test passed.\n- Source coverage reported 2,258 inventory items and 0 unaccounted items.\n- Source region ledger reported 0 unrepresented prose and 0 broad structural ignores.\n- Pack contains 1,812 records across 16 kinds.\n- No high-confidence record/source text corruption was found in this pass.\n\nRemaining problem:\nThe importer is now healthy as a source-coverage milestone, but the pack is not yet gameplay-ready for deterministic character creation and tool-driven gameplay. Important gameplay choices and mechanics are still buried in prose rather than represented as addressable, queryable, and applicable data.\n\nScope:\n- Add audit gates for unstructured choice-bearing prose.\n- Model class/subclass option catalogs.\n- Resolve starting equipment into deterministic item grants.\n- Complete ancestry/background build choices.\n- Add first-pass mechanics projections for spells, actions, features, hazards, and creatures.\n- Clean up minor audit/reporting issues found in the 2026-06-29 bundle.\n\nNon-goals:\n- Do not re-run a broad source-accuracy importer rewrite unless a child bead finds concrete bad extraction.\n- Do not build a full combat rules engine in one step.\n- Do not use the LLM as source of truth; all modeled data must be derived deterministically from the vendored SRD source.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-30T01:24:40Z",
+  "close_reason": "All nine child beads completed and PR #373 merged to main; new audit bundle will be generated from merged main.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

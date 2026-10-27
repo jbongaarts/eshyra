@@ -1,0 +1,52 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.2",
+  "title": "Rebuild class progression model with typed advancement entries",
+  "description": "Deficiency #1 + PR #336. Frozen class-progression rows carry untyped table labels and unresolved markers (subclass feature slots, improvement labels, Wizard 'Signature Spell' alias, Rogue 'Thieves Cant', Ranger spellsKnown:null) that a level-up engine cannot safely apply. Replace raw table labels with typed advancement entries:\n  featureGrant: { ref }\n  subclassFeatureSlot: { slotName, subclassLevel }\n  featureImprovement: { targetRefs, label, rulesText? }\n  choiceGrant: { kind, choose, from }\n  resourceProgression: { resource, value }\n  spellcastingProgression: { cantripsKnown, spellsKnown, slots, pactSlots? }\nRe-freeze gate: FAIL if any class level row still has an untyped no-ref feature marker unless deliberately represented as a typed subclass slot or typed improvement; FAIL on null numeric spellcasting placeholders (e.g. Ranger spellsKnown:null).",
+  "notes": "DECISION (2026-06-28, user-approved): REPLACE the progression shape now, not additive. .2 becomes the canonical progression schema-migration bead: progression[].advancement[] discriminated union (featureGrant{ref}, subclassFeatureSlot{slotName,subclassLevel}, featureImprovement{targetRefs,label}, spellcastingProgression{cantripsKnown?,spellsKnown?,slots?,pactSlots?}, resourceProgression{resource,value}); no legacy {name,ref} markers; no null spellcasting (omit non-applicable). Fail-closed: importer/audit fails if a row can't be typed. Coordinated cutover in THIS bead: importer + regenerated pack + resolver + level-up engine + PR#336 lock test + .11 gate LOGIC (not just baselines; else vacuously green) + frozen-artifact hashes + thaw note. .3 (Thieves' Cant) folded in (its record is a prerequisite to type Rogue rows). .17 absorbed (replace == consumer cutover).\nImplemented in PR #353: progression[].advancement[] typed union in classProgression.ts; resolver+levelUpEngine+.11 gate cut over; PR#336 lock test rewritten to typed; pack regenerated (feature 183->184, total 1811->1812); freeze-manifest hashes + thaw note + design doc. verify:worktree green (2844 passed, structure audit 0); freeze guard green (13/13, thaw-note authorized). .2/.3 playability gates flipped green; overlay-dependence stays red for .5. Close when #353 merges.\nLanded on main: PR #353 merged (merge 99b9b71).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T15:39:47Z",
+  "closed_at": "2026-06-28T16:46:03Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.2",
+      "depends_on_id": "eshyra-o9bd.1",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.2",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.2",
+      "depends_on_id": "eshyra-o9bd.11",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 3,
+  "comment_count": 0
+}

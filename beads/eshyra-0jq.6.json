@@ -1,0 +1,64 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.6",
+  "title": "Introduce domain-level state mutation tools",
+  "description": "Keep low-level mutateState as an internal primitive, but stop making the model primarily reason in terms of storage columns and table fields.\r\n\r\nIntroduce higher-level domain operations for common canon-changing actions such as adjusting HP, adding/removing conditions, inventory changes, clock updates, plot flags, and world facts.",
+  "acceptance_criteria": "- Low-level mutateState remains available internally.\r\n- Model-facing tools or descriptors prefer domain actions over persistence-column fields.\r\n- Common operations have typed/domain-specific validation.\r\n- Existing state mutation tests are preserved or migrated.\r\n- Prompt/tool docs are updated to reflect the domain-level mutation path.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:42Z",
+  "started_at": "2026-05-26T22:35:17Z",
+  "closed_at": "2026-05-27T03:37:48Z",
+  "close_reason": "Replaced single mutate_state model-facing tool with 8 domain tools (adjust_hp, add/remove_condition, give/remove_item, update_clock, set_plot_flag, set_world_fact). Low-level mutateState stays internal. 23 new domain mutation tests + all existing tests pass. Verification: typecheck, test (564 pass), check all exit 0.",
+  "labels": [
+    "architecture",
+    "domain-model",
+    "refactor",
+    "state",
+    "technical-debt",
+    "tools"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.6",
+      "depends_on_id": "eshyra-0jq.3",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.6",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:31:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.6",
+      "depends_on_id": "eshyra-0jq.7",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "0161d72b-d96e-573b-aef8-4f0c8b0aa053",
+      "issue_id": "eshyra-0jq.6",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> exit 0; npm run test -> 564 passed, 3 skipped; npm run check -> exit 0, no fixes. All 5 acceptance criteria verified: mutateState internal, 8 domain tools in registry, typed validation (HP clamp, condition array ops, inventory qty), gameState.test.ts 7/7 pass unchanged, protocol prompt updated.",
+      "created_at": "2026-05-27T03:37:40Z"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 1
+}

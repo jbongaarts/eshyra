@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5.4",
+  "title": "Clean up minor SRD spell and item modeling defects from audit",
+  "description": "Combined low-priority cleanup from the 2026-06-30 SRD audit round.\n\nKnown minor modeling issues:\n- Enlarge/Reduce currently represents weapon-damage modifiers as mechanics.damage entries with fake damage types \"extra\" and \"less\". These are not real SRD damage types and should not appear in a field that deterministic damage tools interpret as dealt damage.\n- Potion of healing appears as equipment:potion-of-healing with display name \"Potion of healing\" and magic-item:potion-of-healing with display name \"Potion of Healing\". The duplicate across kinds is defensible, but display capitalization should be normalized if the importer can do so without losing source fidelity.\n- Add validation that spell mechanics.damage[].type only contains canonical SRD damage types unless the schema is explicitly expanded for non-damage deltas.\n\nAcceptance criteria:\n- Remodel Enlarge/Reduce as a typed weapon-damage delta/effect rather than fake direct damage types.\n- Validate that mechanics.damage damage types are canonical damage types.\n- Normalize Potion of Healing display name consistently across equipment and magic-item records, or document why source fidelity requires keeping the mismatch.\n- Add regression tests.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T05:58:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T13:57:16Z",
+  "started_at": "2026-07-01T13:48:09Z",
+  "closed_at": "2026-07-01T13:57:16Z",
+  "close_reason": "Remodeled Enlarge/Reduce's fake 'extra'/'less' damage types as typed mechanics.weaponDamageModifiers; validated mechanics.damage[].type against the 13 canonical SRD damage types; documented Potion of Healing's intentional per-kind capitalization (each spelling is source-accurate for its own physical location).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-erf5.4",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

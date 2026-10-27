@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b0m4",
+  "title": "Glamoured Studded Leather operations cost an action; source says bonus action",
+  "description": "Observed by review eshyra-o9bd.19.4.5.6 (NOT A FINDING there: operations trigger no effect, outside the magic-item-effects source-agreement scope). magic-item:glamoured-studded-leather operations are emitted with action cost 'action' while the printed SRD text says you can use a bonus action to change the armor's appearance. Verify against the printed sentence and repair the curated operation spec; regenerate pack; add to the source-agreement evidence if an operations-level screen exists. Check sibling operations for action-economy disagreements.",
+  "notes": "Absorbed into eshyra-o9bd.19.4.6 (magic-item operations faithful-or-absent).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T16:05:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T21:51:37Z",
+  "closed_at": "2026-10-11T21:51:37Z",
+  "close_reason": "Absorbed into eshyra-o9bd.19.4.6 (magic-item operations faithful-or-absent), which owns the Glamoured Studded Leather bonus-action defect (review 19.4.5.7 S3.01).",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

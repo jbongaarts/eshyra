@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4xx6",
+  "title": "Integrate runtime consumers for staged bounded-procedure request kinds (hazard-save, weapon-damage, feature-option)",
+  "description": "executeBoundedProcedure (packages/core/src/rules/boundedProcedures.ts) executes six request kinds; only create-spell-slot and convert-spell-slot have a production consumer (state/flexibleCasting.ts). hazard-save, weapon-damage, select-feature-option and feature-option-applicability have none, so the capability inventory (eshyra-o9bd.19.5.12.4) records the executor as retained-staged. This bead owns deciding and wiring (or demoting) their consumers. Found while tabulating the inventory.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T03:00:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T03:00:19Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

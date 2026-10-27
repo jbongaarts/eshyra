@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l3b3.1",
+  "title": "Make world_query discovery return module canon records",
+  "description": "Problem\n\nThe post-p4vd playtest showed that world_query discovery is too brittle for module canon. The model repeatedly tried queries such as:\n\n  {\"type\":\"npc\",\"query\":\"Warden Sela\"}\n\nand received not_found. Exact-id lookup such as:\n\n  {\"type\":\"npc\",\"id\":\"warden-sela\"}\n\ncan work, but the DM cannot reliably know exact module IDs during play. Search-style queries also tended to surface overlay lore more reliably than module NPCs, locations, or lore.\n\nThis causes ordinary follow-up dialogue to fail mechanics/world audit even when the target is authored module canon.\n\nAcceptance criteria\n\n- world_query search for \"Warden Sela\" returns the module NPC.\n- world_query search for \"authority figure Emberfall\" returns Warden Sela or enough metadata to query her exact ID.\n- search for \"watchtower\", \"north road\", \"hollow\", \"Emberfall incident\", and similar terms returns relevant module locations/lore plus overlay lore where applicable.\n- Module canon search results include enough metadata for safe follow-up:\n  - canon tier/source\n  - entity type\n  - entity id\n  - summary/name\n  - visibility where applicable\n- Overlay lore and module canon both participate in discovery; one does not crowd out the other.\n- Type-specific query misuse is handled gracefully:\n  - either {\"type\":\"npc\",\"query\":\"Warden Sela\"} performs a constrained NPC search\n  - or it fails with actionable guidance telling the DM to use type:\"search\" or an exact id\n- Add regression tests from the Emberfall playtest pattern:\n  - find Warden Sela by name\n  - find Warden Sela by \"authority figure\"\n  - find the watchtower/hollow by natural subject terms\n  - retrieve both module canon and overlay lore for a location-oriented query",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T23:07:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T23:16:34Z",
+  "closed_at": "2026-06-24T23:16:34Z",
+  "close_reason": "Implemented constrained typed world_query discovery and tokenized module search with Emberfall regressions.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-l3b3.1",
+      "depends_on_id": "eshyra-l3b3",
+      "type": "parent-child",
+      "created_at": "2026-06-24T18:07:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

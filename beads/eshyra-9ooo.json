@@ -1,0 +1,26 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9ooo",
+  "title": "Pipes of the Sewers: dice-regain charges recharge (F5 magic-item-usage-recharge) is a distinct unlanded contract",
+  "description": "Discovered in eshyra-7gkh.1. Pipes' charges economy regains 1d3 at dawn with a variable cost; the hook is shared by 207 clauses of 53 items and was NOT landed globally. Pipes also keeps m4 (no printed ending). Determine per-clause ownership if wanted.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-27T03:58:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-27T03:58:36Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-9ooo",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-26T23:01:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

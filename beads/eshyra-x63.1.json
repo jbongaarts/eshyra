@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x63.1",
+  "title": "Task 1: Schema bump v7->v8 + campaign_arc table + arc_id column",
+  "description": "## Objective\n\nBump `SCHEMA_VERSION` from 7 to 8, add the `campaign_arc` lifecycle table\nand its partial unique index, and add an `arc_id TEXT` column to\n`campaign_session`'s CREATE TABLE. No data migration code (per the project's\nbump-and-refuse-old-DBs convention).\n\n## Files\n\n- Modify: `packages/core/src/persistence/schema.ts` — bump version, add\n  CREATE TABLE and index, add column to `campaign_session`.\n- Test: `packages/core/test/persistence/schema.test.ts` (extend, or create\n  if absent — search the repo for existing schema-test patterns first).\n\n## Design notes\n\n```sql\nCREATE TABLE IF NOT EXISTS campaign_arc (\n  campaign_id  TEXT NOT NULL,\n  arc_id       TEXT NOT NULL,\n  sequence_no  INTEGER NOT NULL,\n  status       TEXT NOT NULL CHECK (status IN ('open', 'closed')),\n  opened_at    TEXT NOT NULL,\n  closed_at    TEXT,\n  PRIMARY KEY (campaign_id, arc_id)\n);\n\nCREATE UNIQUE INDEX IF NOT EXISTS campaign_arc_one_open\n  ON campaign_arc(campaign_id) WHERE status = 'open';\n```\n\n`campaign_session` table gains `arc_id TEXT` (nullable — sessions\nopened before they're stamped with the open arc have no arc_id).\n\n## Steps\n\n1. **Write failing schema tests.** In `packages/core/test/persistence/schema.test.ts` (or the\n   nearest existing schema-test file), add three tests after the existing\n   ones:\n   ```typescript\n   it('exports SCHEMA_VERSION 8', () => {\n     expect(SCHEMA_VERSION).toBe(8);\n   });\n\n   it('creates the campaign_arc table with the one-open partial index', () => {\n     const { db, dispose } = makeFreshDb();\n     const tables = db.prepare(\n       \"SELECT name FROM sqlite_master WHERE type='table' AND name='campaign_arc'\"\n     ).all();\n     expect(tables).toHaveLength(1);\n     const indexes = db.prepare(\n       \"SELECT name FROM sqlite_master WHERE type='index' AND name='campaign_arc_one_open'\"\n     ).all();\n     expect(indexes).toHaveLength(1);\n     dispose();\n   });\n\n   it('adds an arc_id column to campaign_session', () => {\n     const { db, dispose } = makeFreshDb();\n     const cols = db.prepare(\"PRAGMA table_info(campaign_session)\").all() as Array<{ name: string }>;\n     expect(cols.map(c => c.name)).toContain('arc_id');\n     dispose();\n   });\n   ```\n   Use whatever `makeFreshDb` helper the existing schema tests already use;\n   if there isn't one, look at neighboring tests (e.g. `summary.test.ts`)\n   for the in-memory DB pattern.\n\n2. **Verify all three tests fail.**\n   Command: `npm run test -- packages/core/test/persistence/schema.test.ts`\n   Expected: 3 FAIL (version mismatch, no table, no column).\n\n3. **Modify `packages/core/src/persistence/schema.ts`:**\n   - Change `export const SCHEMA_VERSION = 7;` to `8`.\n   - Add `arc_id TEXT` as the last column inside the `campaign_session`\n     `CREATE TABLE` (after `closed_at TEXT,`).\n   - Add the `campaign_arc` `CREATE TABLE` and the\n     `campaign_arc_one_open` partial unique index inside the same\n     `txnDb.exec(...)` block — near the other lifecycle tables (after\n     the `campaign_session` block).\n\n4. **Verify tests pass.**\n   Command: `npm run test -- packages/core/test/persistence/schema.test.ts`\n   Expected: all schema tests PASS.\n\n5. **Run the broader test gate.**\n   Command: `npm run test`\n   Expected: all non-skipped tests pass. The arc-summary keying tests\n   continue to pass (the `arc_summary` table is unchanged).\n\n6. **Commit.**\n   ```\n   git add packages/core/src/persistence/schema.ts packages/core/test/persistence/schema.test.ts\n   git commit -m \"Bump schema to v8: campaign_arc table + arc_id column (loreweaver-x63)\"\n   ```\n\n## Acceptance\n\n- `npm run typecheck` passes.\n- `npm run test` passes; the three new tests are green.\n- `grep \"SCHEMA_VERSION = 8\" packages/core/src/persistence/schema.ts` returns\n  one match.\n\n## Notes\n\n- No data migration. Pre-v8 DBs raise `SchemaCompatibilityError` per the\n  existing `assertSchemaCompatible` guard; that path is already covered by\n  the existing schema-compat tests and needs no extension.\n- If neighboring schema tests don't exist in\n  `packages/core/test/persistence/`, fall back to adding the tests to\n  whatever file currently exercises `initSchema` (search for\n  `import { initSchema }` in the test tree).\n",
+  "acceptance_criteria": "npm run typecheck && npm run test pass. campaign_arc table exists; campaign_session has arc_id column; SCHEMA_VERSION=8.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-24T21:11:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-24T21:15:06Z",
+  "closed_at": "2026-05-24T21:16:28Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x63.1",
+      "depends_on_id": "eshyra-x63",
+      "type": "parent-child",
+      "created_at": "2026-05-24T16:11:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "58f12bd1-ff97-54d6-86a2-b7b019103b8d",
+      "issue_id": "eshyra-x63.1",
+      "author": "Joseph Bongaarts",
+      "text": "Code review for `2eb2f2d..53dd87d`:\n\nAssessment: Ready to merge\n\nCritical:\n- none\n\nImportant:\n- Tests landed in `packages/core/test/persistence.test.ts` (appended) rather than the new `packages/core/test/persistence/schema.test.ts` the plan prescribed. Functionally correct and all tests pass; recommend a follow-up task to migrate schema tests to the subdirectory when the `persistence/` test folder is created for task 2+.\n\nMinor:\n- No enforcement test for the partial unique index (two open arcs should throw). Existence-only check matches the plan's prescribed test bodies; add enforcement as a follow-up.\n- Cosmetic: `campaign_arc` DDL uses padded column-name alignment inconsistent with adjacent tables.\n\nFollow-up:\n- Create a task to extract schema tests into `packages/core/test/persistence/schema.test.ts` when the persistence test subdirectory is introduced.\n- Consider an enforcement test for `campaign_arc_one_open` (insert two open arcs, assert UNIQUE constraint failure).",
+      "created_at": "2026-05-24T21:20:13Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

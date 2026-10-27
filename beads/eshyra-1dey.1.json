@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1dey.1",
+  "title": "Dispatch: 1dey roll-domain coverage of random-initialization tables at stack admission (attempt 1, Sonnet)",
+  "description": "Implements eshyra-1dey. Read `bd show eshyra-1dey` first: its description (RECONCILED 2026-10-18) and acceptance criteria are the spec. Locate code by symbol name. Base: origin/main eb52f97c. This is runtime/rules code only, and the generated pack should NOT change. If you find a base-pack table failing the new check, STOP and record it (leave the bead open), because that would be a source-fidelity finding.\n\nCODE SURVEY (verified by the captain)\n- Admission: assertEffectiveRandomInitializationTables (rules/effectiveRandomInitializationAdmission.ts), called from stack resolution (rules/stack.ts).\n  - It checks only add-on-contributed items and tables, through randomInitializationTableViolation (state/itemRandomInitialization.ts), which checks shape only.\n- Execution (state/itemRandomInitialization.ts), initializeDeclaredRandomState and validateDeclaredRandomState, supports three initial-state kinds:\n  - table-pool: a removal-count roll (procedure.roll) against tableEntryIds. A row may say \"(n)\" for n copies.\n  - containment-occupant: procedure.roll -> tableResult (one row).\n  - table-results: a rolled count (another procedure's roll), then each procedure.roll -> tableResult.\n- tableResult matches row[0] with /^(\\d+)(?:[–-](\\d+))?$/. rangeBound maps '00' (and 0) to 100. It throws \"has no row for initialization roll N\".\n- Dice parsing helpers live in orchestrator/dice.ts (parseDice/rollDice). Use them to get each notation's minimum and maximum total.\n\nDECISIONS\n1. Add ONE exported predicate next to randomInitializationTableViolation, e.g. randomInitializationCoverageViolation(procedure, tableRecord), returning a violation string or undefined.\n   - For containment-occupant and table-results: every integer total in [min, max] of procedure.roll matches EXACTLY one row, using tableResult's own range parsing (share the parsing; do not copy the regex). Report gaps and overlaps.\n   - For table-pool: the entry count (tableEntryIds) must be >= the maximum of the removal-count roll.\n2. Call it from assertEffectiveRandomInitializationTables for the same add-on-contributed scope, with an error naming the add-on, the item key, the table and the procedure.\n3. Execution keeps its own throws. Do not make anything fail open.\n4. The unmodified base pack must satisfy the predicate. Add one assertion over the real pack's initial-state procedures.\n\nNOT REQUIRED: a table-expression language; checking tables no supported procedure references; changing validateRulesPack.\n\nPERMANENT EVIDENCE (minimum)\n- Through stack resolution, one admission refusal per kind: a gap for containment-occupant, an overlap or gap for table-results, too few entries for table-pool.\n- One accepted well-formed add-on replacement table.\n- The base pack passes the predicate.\nUse the existing add-on test fixtures from eshyra-3xi0 (PR #672) as the pattern.\n\nVERIFY: run `npm run verify:worktree` BEFORE committing, and `npm run verify:dnd5e-srd-pack` (expect an exact match).\n",
+  "notes": "Dispatched 2026-10-26 as a Claude Sonnet 5.5 Agent in .worktrees/eshyra-1dey.1, on branch eshyra-1dey.1, cut from eshyra-1dey @ eb52f97c (runs in parallel with the other dispatch, on disjoint files).\nCommit e268d885 on eshyra-1dey.1 (not pushed). verify:worktree exit 0 (377 files passed, 7115 tests, 3 skipped); verify:dnd5e-srd-pack exact match; pack unchanged. Predicate randomInitializationCoverageViolation(mechanics, procedure, tableRecord) in state/itemRandomInitialization.ts: shape check first; kind classified by shared initialStateTableKind (same outcome/trigger/containment tests execution uses). containment-occupant and table-results: every total in [minimumDiceTotal,maximumDiceTotal] of procedure.roll matches exactly one row via shared rowRange (same regex/rangeBound as tableResult); gaps and overlaps reported. table-pool: tableEntryIds count >= max removal roll. Admission (assertEffectiveRandomInitializationAdmission) now iterates per mechanics/procedure with same add-on-contributed scope; message names add-on, table, item key, procedure id. Base pack: 4 table-backed procedures (deck-of-illusions pool, iron-flask occupant, prayer-beads and robe table-results) all pass. Tests: packages/core/test/randomInitializationCoverage.test.ts. Deviations: predicate takes mechanics as extra first arg (containment kind needs mechanics.containment); added exported initialStateProcedures helper; execution branches were NOT refactored to call initialStateTableKind (kept untouched to avoid risk), so classification is duplicated logic in the two places, and execution keeps its own throws.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-27T03:40:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-27T03:44:55Z",
+  "closed_at": "2026-10-27T03:44:55Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-1dey.1",
+      "depends_on_id": "eshyra-1dey",
+      "type": "parent-child",
+      "created_at": "2026-10-26T22:40:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

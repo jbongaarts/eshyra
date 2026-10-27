@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.1.5",
+  "title": "Review: Sol integration review of PR #651 main merge (@ 590c0a88)",
+  "description": "Targeted read-only review of the origin/main merge onto approved head 06b5c742 of PR #651 (new head 590c0a88424f5d51eb700dd5a18da41fdef19c28). Findings in notes; ends with a VERDICT line.",
+  "notes": "Dispatched gpt-6.1-sol effort high; PGID 2784876\nTargeted READ-ONLY integration review of PR #651 at exact head 590c0a88424f5d51eb700dd5a18da41fdef19c28. Effective profile: rules-clause-complete, bounded to the origin/main merge onto approved head 06b5c742f68c558a4ee55007d987443504c64dbc. No BLOCKING findings.\n\nAuthority/context: read live review, owning, and approved-review beads; AGENTS.md; design-and-pr-review-policy.md including From observation to finding and Findings discipline; importer guidance/protocol; compiler guide and ADRs 0017/0020. refs/beads/state still contains the obsolete July owning specification and lacks these reviews; live Beads and the reconciled owning DESIGN control. Neither owning bead state nor repository files were changed.\n\nS1 — NOT A FINDING. Invariant/authority: preserve both reviewed finding dispositions and truthful derived evidence (owning DESIGN REGISTRY; importer-fix-protocol.md; review-policy proof-mechanism duty). Locations: packages/core/test/findingRegistry.test.ts:49; docs/audits/dnd5e-srd-5.1-final/finding-registry.json:247 and :618. Scenario: combine the four PR #651 registry changes with the seven main/#654 changes. These identity sets are disjoint, and the entire combined registry equals their structural union. The actual registry validator passes: 68 canonical rows, 70 unique aliases, 44 reasoned rows = baseline 33 + PR 4 + main 7. The conflict resolution retains both narrowed spell dispositions and all main reasoning. Closure condition satisfied: exact membership/dispositions conserved and test count recomputed from actual rows.\n\nS2 — NOT A FINDING. Invariant/authority: generated inventory must describe the actual combined pack without stale or duplicated entries (ADR 0020 field-level bookkeeping; importer protocol reproducibility; review assignment). Locations: docs/inventories/o9bd-18-8-8-semi-structured-boundary.json:12; packages/core/scripts/inventory-semi-structured-boundary.ts:1171. Scenario: spell area/projectile additions coexist with madness duration and barding/taxonomy fields. Executed the actual generator/checkCommittedOutputs in memory using Node TypeScript resolution: both committed JSON and Markdown match byte-for-byte, with 1911 grouped paths and 1799 D&D records. Closure condition satisfied: regenerated artifacts, representative values, populations and dispositions match the combined input exactly.\n\nS3 — NOT A FINDING. Invariant/authority: source-faithful projections, identity/provenance conservation and reproducible generated pack composition (owning DESIGN A1/A2; ADR 0017 source authority as narrowed by ADR 0020; importer protocol; review assignment). Locations: packages/core/scripts/importers/dnd5e-srd-5.1/mechanicsProjections.ts:2908; packages/core/scripts/importers/dnd5e-srd-5.1/emit.ts:1833; packages/core/src/rules/kindSchemas.ts:6408. Scenario: #651 spell projections combine with #654 durations, tack/barding and printed class-table dashes. Across base, both parents and HEAD, all 1799 record keys are unique and unchanged. The 36 changed spell records and 26 changed main records are disjoint; HEAD records equal their exact union, preserving every other field and record order. All source/test additions and deletions in the approved PR delta are identical against current main, except the recomputed inventory and registry count. Shared schema edits occupy independent validators; main's class-progressions/creation-facts changes do not change the spell geometry grammar or its camelCase helper. Executed the actual current spell projector against all 319 retained spell inputs: every committed area/projectile field agrees (46 areas, 3 projectile entries). The real pack loader validates all 1799 combined records and field-provenance coverage passes for all 16 kinds. Closure condition satisfied: both reviewed populations and validation paths survive without record loss, duplication or projection drift.\n\nVerification limits: no dependencies installed in this worktree, so no Vitest or full PDF importer round trip was run. Node checks used real source modules; the unavailable pdfjs import was replaced only by a throwing extraction stub for the projection check, and PDF extraction was never called. Structural union and unchanged reviewed deltas establish merge conservation; they are not claimed as a fresh full source review. git diff --check passed; exact SHA reconfirmed and repository status remained clean. No edits, formatting, commits, pushes, GitHub comments or merge actions performed.\nVERDICT: APPROVED at exact head 590c0a88424f5d51eb700dd5a18da41fdef19c28",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T15:16:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T15:20:37Z",
+  "closed_at": "2026-10-11T15:20:37Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.1.5",
+      "depends_on_id": "eshyra-o9bd.19.4.1",
+      "type": "parent-child",
+      "created_at": "2026-10-11T10:16:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

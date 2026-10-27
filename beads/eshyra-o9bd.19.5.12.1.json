@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.12.1",
+  "title": "Promote bootstrap roster and finding registry into authoritative ledger",
+  "description": "Carry the versioned primitive roster, canonical audit-finding subject table, and real source-anchor/projection-absence evidence model from the bootstrap ledger into the clause-complete authoritative ledger. Preserve exact membership diffs and fail-closed evidence resolution rather than copying snapshot counts.",
+  "acceptance_criteria": "Authoritative ledger imports or formally supersedes bootstrap-capability-roster-v1; every authoritative primitive has source-backed membership and no synthetic absence proof; bootstrap-to-authoritative diff is executable and reviewed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T03:52:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-23T01:38:26Z",
+  "closed_at": "2026-09-23T01:38:26Z",
+  "close_reason": "ADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): RETIRED - orphaned child of the DESIGN_INVALIDATED bootstrap ledger (eshyra-o9bd.19.5.1, PR #477 closed unmerged). It requires a positive semantic-absence proof, a closed projection-shape registry for absence proofs, the unmerged bootstrap-capability-roster-v1, or the pre-F1 obl::: identity, all of which rest on the global negative claim ADR 0020 withdrew. Replacement: none needed for the claim; bounded backlog reconciliation was delivered by eshyra-olc5.5 (PR #545) and the capability contract by eshyra-olc5.6. No importer or state defect is owned here.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.12.1",
+      "depends_on_id": "eshyra-o9bd.19.5.12",
+      "type": "parent-child",
+      "created_at": "2026-07-25T22:52:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

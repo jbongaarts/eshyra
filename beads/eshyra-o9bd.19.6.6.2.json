@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.6.2",
+  "title": "Review: Sol final review of PR #641 (eshyra-o9bd.19.6.6 @ acf927f5)",
+  "description": "Final read-only review of PR #641 (branch eshyra-o9bd.19.6.6, exact head acf927f561dd4d1b916d54adbac98d67b7e717b7) by GPT-6.1-Sol, full review, profile rules-clause-complete. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Dispatched gpt-6.1-sol effort high via dispatch-codex.sh; PGID 1789039; log .worktrees/.dispatch/eshyra-o9bd.19.6.6.2.log\nFresh full FINAL REVIEW of PR #641, effective profile rules-clause-complete, at exact head acf927f561dd4d1b916d54adbac98d67b7e717b7.\n\nAuthority and scope: read AGENTS.md, design-and-pr-review-policy.md (including From observation to finding and Findings discipline), importer-fix-protocol.md, ADR 0020, applicable compiler/provenance authority, owning bead eshyra-o9bd.19.6.6 and dispatch child .1. Reviewed both commits and the complete origin/main...HEAD diff: all five registry rows, fieldProvenanceDeclarations.ts, generated field-provenance.json, and findingRegistry.test.ts. GitHub confirms the same PR head. The refs/beads/state projection is stale (2026-09-09, these review/owning beads absent); reconciled relevant ownership and lifecycle claims against live bd show records rather than treating the projection as current authority.\n\nDisposition checks:\n- audit-readiness-gate and readiness-integrity preserve their original audit invariants and explicitly narrow the withdrawn global claim under ADR 0020; their surviving bounded truthfulness obligations match integrated transition design section 5.9 bar #4 and live eshyra-o9bd.19.6.3 acceptance criteria.\n- readiness-artifacts retains the operative corpus/artifact agreement invariant and has live successor ownership in .19.6.3.\n- engine-capability-ownership remains a disclosed dependency, now owned by live .19.5.12. Its in-force inventory and separate legacy-backlog responsibility match that bead's current acceptance criteria. Independently checked all ten retired family-certification beads and eshyra-olc5.2; the revised September/October retirement chronology is factual. The row does not discharge positively selected execution/state responsibilities.\n- F-19 accurately records PR #566 / merge 77b2d475's reclassification, rather than claiming composed values became verbatim. Verified retired clause-IR follow-ups eshyra-r8r3 and eshyra-pk7e and the repaired owner's closure.\n\nSource and consumer evidence: independently extracted the vendored SRD_CC_v5.1.pdf to stdout and checked all eight class spellPreparation.sourceText values in records.json, including their individual sentences/leading clauses and PDF hyphen normalization. Bard alone is a single verbatim span; Cleric joins individually verbatim sentences; the remaining six include leading clauses ended at a period. All fragments are source-backed. Traced creationFacts.ts -> declaration builder -> generated manifest -> pack loader/classifier -> discovery packet and renderer. A read-only runtime probe over all eight actual class candidates confirms the complete sourceText values remain in sourceDerived and never sourceProse. The entire generated provenance manifest matches buildFieldProvenanceManifest(DND5E_FIELD_PROVENANCE_DECLARATIONS), not only the edited string.\n\nSibling and proof review: compared all 68 rows against the base; exactly the authorized five changed, with canonical IDs, aliases, invariant text, provenance, scopeKind and explicitNonClaims preserved. Inspected all current reasoning and live status/closure reasons for every distinct registry owner; other closed owners closed with repairs, while magic-item-effects remains separately owned by .19.4.5. Inspected real consumers ruleKnownLimits.ts and audit-bundle ruleDispositions.ts: they resolve canonical finding identities and do not depend on the replaced owners or accepted status. Permanent evidence retains roster/alias conservation, non-accepted reasoning, forbidden-membership checks, fail-closed field coverage, and the existing spell-preparation non-verbatim regression.\n\nNOT A FINDING: Retained pre-ADR invariant wording is historical audit identity; narrowed status plus explicit reasoning supplies the operative obligation as directed by the owning dispatch.\nNOT A FINDING: F-19's repaired closed owner is a historical disposition, not an unowned outstanding dependency; derived sourceText is retained with an explicit non-verbatim runtime presentation.\nNOT A FINDING: Additional permanent tests pinning every prose sentence or live Bead lifecycle, beyond the existing evidence and these bounded factual checks, have no requirement.\n\nValidation: npx --no-install vitest run packages/core/test/findingRegistry.test.ts packages/core/test/importers/dnd5e-srd-5.1/fieldProvenanceGate.test.ts packages/core/test/ruleDispositions.test.ts packages/core/test/rules/ruleAwareness.test.ts --no-cache --configLoader runner passed: 4 files, 76 tests. Dependencies resolved from the ancestor installation; test source and pack inputs were this exact worktree. Read-only producer and runtime probes passed; git diff --check passed; git status remained clean. No repository files edited or generated, no formatter/full mutating verification, and no commit/push/GitHub comment/merge performed.\n\nBlocking findings: none. Full declared scope reviewed; no unresolved blocking finding.\nVERDICT: APPROVED at exact head acf927f561dd4d1b916d54adbac98d67b7e717b7",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T02:40:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T02:45:51Z",
+  "closed_at": "2026-10-10T02:45:51Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.6.2",
+      "depends_on_id": "eshyra-o9bd.19.6.6",
+      "type": "parent-child",
+      "created_at": "2026-10-09T21:40:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

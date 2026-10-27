@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-47cm",
+  "title": "Vanish at 0 HP records endReason source-removed instead of reduced-to-0-hit-points",
+  "description": "Observed for Bag of Tricks weasel: effect status ended but endReason is source-removed. Pre-existing; the grant test only asserts status.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-15T05:15:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-15T05:15:45Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

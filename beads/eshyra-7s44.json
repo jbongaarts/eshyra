@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7s44",
+  "title": "Integrate redesigned eshyra.app landing page",
+  "description": "Incorporate the Vercel-exported redesigned website from ~/src/eshyra-app-landing into the existing Eshyra repo while preserving repo architecture, package manager, SEO basics, and reviewability.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T05:33:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-27T05:38:37Z",
+  "started_at": "2026-06-27T05:33:26Z",
+  "closed_at": "2026-06-27T05:38:37Z",
+  "close_reason": "Integrated redesigned eshyra.app landing page into the existing static site package while preserving build/deploy conventions.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

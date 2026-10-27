@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p4vd.8",
+  "title": "Teach the DM when to promote improvised lore",
+  "description": "Update DM runtime prompts/tool instructions to guide lore promotion.\n\nThe DM should understand when to record consequential lore and when to leave description as prose.\n\nAcceptance criteria:\n- Prompt/tool instructions define consequential lore:\n  - facts that affect player choices\n  - facts that create hooks\n  - facts that define NPC knowledge or motives\n  - facts that describe evidence/clues\n  - facts that may need to be recalled later\n  - consequences of player actions\n- Prompt/tool instructions define decorative color:\n  - sensory details\n  - mood\n  - incidental gestures\n  - mundane props\n  - non-recurring background detail\n- Instructions warn against promoting every descriptive flourish.\n- Instructions warn against using overlay lore to contradict module canon unless explicitly recording a consequence, reveal, or override with appropriate source/truth status.\n- Examples include:\n  - promote: Old Renn's mule returned alone\n  - promote: axe-cuts on the north gate\n  - promote: villagers may pay for investigation\n  - do not promote: chipped cup\n  - do not promote: damp wool smell",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:24:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:45:03Z",
+  "started_at": "2026-06-24T03:34:30Z",
+  "closed_at": "2026-06-24T03:45:03Z",
+  "close_reason": "Implemented campaign overlay canon, truth-statused lore recording, world_query retrieval/search, audit/prompt guidance, docs, and regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-p4vd.8",
+      "depends_on_id": "eshyra-p4vd",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:24:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

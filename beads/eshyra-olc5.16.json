@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.16",
+  "title": "Bag of Tricks creature selection: bag color as a variant + engine-rolled d8 bound to the use (olc5.14 pattern)",
+  "description": "From the PR #690 review (2026-10-26; user chose to hold Bag readiness). Source: 'it transforms into a creature you determine by rolling a d8 and consulting the table that corresponds to the bag's color' (gray/rust/tan tables). Today the binder admits any creature from any of the three tables: the bag's color is not on the record or the instance, and the d8 is not bound to the use. creatureGrantLifecycleOwned therefore keeps the Bag's m4 pending (it requires that a grant name exactly one creature), so pull-fuzzy-object is not ready.\nDETERMINISTIC: the bag color is a persistent per-instance property (a variant, the olc5.14 Horn decision); use_item rolls d8 with the engine and stores the resulting table row on the use's bind credit; start_effect admits only that row's creature (required source.bindCreditId, as for countRoll).\nDM: placement, the bonus-action commands (adjudicated control), and the creature's behaviour.\nEVIDENCE: a real-pack, no-waiver bind of the rolled creature, refusing another row's creature, another color's creature and an unrelated credit; ownership re-derivation updated.\nNOT REQUIRED: a generic table-selection engine.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-27T04:32:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-27T04:32:38Z",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.16",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-26T23:32:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

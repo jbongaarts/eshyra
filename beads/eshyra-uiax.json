@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-uiax",
+  "title": "Magic-item readiness silently skips a clause with an unrecognized scope kind",
+  "description": "Verified at main f4b3461. packages/core/src/state/itemExecutionReadiness.ts:19-31 inSelectedScope returns false for any clause scope whose kind is neither 'parent' nor a matching 'variant', and :76-77 then skips that clause entirely, so a clause with a malformed or unrecognized scope CANNOT block the operation. assertMagicItemOperationReady is the only live runtime capability gate (called from state/itemState.ts:1888) and is otherwise correctly fail-closed.\n\nNo such clause exists in the committed pack, so this is latent. ADR 0020 section 3 makes it a defect regardless: 'any gate, report, or predicate that reads an unbound or unrecognized item as satisfied is a defect, not a green.' Recorded as ar72 D-9b in docs/audits/rules-awareness-transition/2026-07-29-current-state-claim-and-defect-map.md.\n\nBlocker B5 of 2026-07-30-integrated-transition-design.md: the contract cannot serve as pilot capability evidence (probe P8, magic-item:ammunition-1-2-or-3 / hit-target) until an unrecognized scope fails closed.",
+  "acceptance_criteria": "An unrecognized clause scope kind fails closed rather than being skipped; a test feeds a malformed scope and asserts ItemExecutionReadinessError; existing parent/variant scope behavior is unchanged and its tests still pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-30T23:29:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-01T23:42:28Z",
+  "started_at": "2026-09-01T23:38:21Z",
+  "closed_at": "2026-09-01T23:42:28Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine-capability",
+    "rules",
+    "state"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-uiax",
+      "depends_on_id": "eshyra-o9bd.19.8",
+      "type": "related",
+      "created_at": "2026-07-30T18:29:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

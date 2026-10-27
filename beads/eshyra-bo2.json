@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-bo2",
+  "title": "Decide distribution channel: npm vs binary release vs hosted-first",
+  "description": "Decide how Loreweaver will be distributed once a business/licensing decision is made. Options to evaluate: publishing @loreweaver/* packages to npm, shipping a packaged binary release (e.g. standalone CLI executable), or a hosted-first model where the core is delivered as a service rather than as installable packages. This decision gates removing the private guards and finalizing publish metadata (see loreweaver-0jq.26).",
+  "acceptance_criteria": "A distribution channel (npm / binary release / hosted-first, or a combination) is chosen and recorded (ADR or bead note), with rationale and the implied changes to package privacy/publish metadata.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T03:18:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-17T04:18:45Z",
+  "closed_at": "2026-06-17T04:18:45Z",
+  "close_reason": "Accepted GitHub Releases as the initial public CLI distribution channel. Do not publish npm packages initially; keep root and workspace package private guards in place. Release packaged CLI artifacts for non-commercial use under PolyForm Noncommercial License 1.0.0, including required license/commercial-rights notices and any applicable third-party content notices. Do not publish @eshyra/core or treat it as a public SDK. npm publication may be reconsidered later only with an explicit developer-distribution and SDK/package support decision. Hosted service remains a future product direction, not the initial CLI distribution channel.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-bo2",
+      "depends_on_id": "eshyra-r00",
+      "type": "blocks",
+      "created_at": "2026-06-06T22:50:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-bo2",
+      "depends_on_id": "eshyra-14h",
+      "type": "blocks",
+      "created_at": "2026-06-06T22:50:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-bo2",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-06-06T22:18:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

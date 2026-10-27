@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3xi0.1",
+  "title": "Dispatch: 3xi0 admit effective random-initialization tables at stack resolution (attempt 1, Sonnet)",
+  "description": "Implements eshyra-3xi0, the sibling of eshyra-w750, which merged as PR #668. Read `bd show eshyra-3xi0` and `bd show eshyra-w750.1` (its completion notes), then follow the seam w750 built EXACTLY: resolveRulesStack (packages/core/src/rules/stack.ts) calls assertEffectiveEconomyDeductions (packages/core/src/rules/effectiveDeductionAdmission.ts) after layering. Locate code by symbol name.\n\nPROBLEM: magic-item randomInitialization procedures read tables through resolveTable (packages/core/src/state/itemRandomInitialization.ts: tableData, initializeDeclaredRandomState, validateDeclaredRandomState). Nothing at pack or stack admission checks the EFFECTIVE table, meaning the one after an add-on override. A table-only add-on that breaks the table shape those procedures need is admitted, and the violation surfaces only when an item is created or validated.\n\nDESIGN (decided):\n1. Find the exact table-shape contract the random-initialization procedures enforce at execution: whatever tableData / initializeDeclaredRandomState / validateDeclaredRandomState throw on. Factor it into ONE pure function, analogous to economyDeductionViolation, that returns the first violated clause or undefined. Make both execution and admission call it, so the two cannot disagree. Do not duplicate the rules.\n2. Extend effective-stack admission, in the same module or one beside it with the same calling pattern: for every magic item in the effective stack that declares randomInitialization, resolve each referenced table through the same layered precedence (`stack.recordsByKind` table byKey), then run the shared contract. Check only items whose winning record or winning table comes from an add-on, exactly as w750 does. Refuse with a RulesPackError naming the add-on, the item and the violated clause.\n3. Keep the execution-side refusals. Do not widen validateRulesPack for standalone packs beyond what it already checks. Add the inventory disposition for any new core module (deterministicCapabilityInventory.ts), as w750 did.\n4. If any other effective-table reader has the same gap, record it and file a bead. Do not fix it here.\nPERMANENT EVIDENCE: cover every violation class of the shared contract, generalized. Use a table-only add-on that overrides a REAL random-initialization table from the bundled pack; enumerate the items that declare randomInitialization from the pack. Each such add-on is valid on its own, and refused at both resolveRulesStack and resolveStrictCampaignRulesStack. A conforming override is admitted, and item initialization uses it. The execution-side refusal still holds when admission is bypassed. Prefer a directly built resolver over vi.mock if that is practical; if you use vi.mock, scope it to one file and say why.\nVERIFY: run the focused suites, then `npm run verify:worktree` BEFORE committing. No pack change is expected.\nIf a decided point conflicts with code or source, record the conflict, leave the bead open, and stop.",
+  "notes": "Dispatched 2026-10-17 as a Claude Sonnet 5.5 Agent in .worktrees/eshyra-3xi0.1, cut from eshyra-3xi0 @ 9a3c5cbf.\nCOMPLETION (Sonnet 5.5). Commit 2cc210ee on eshyra-3xi0.1 (not pushed). Shared contract: randomInitializationTableViolation(tableRef, record) in state/itemRandomInitialization.ts (clauses: does not resolve/not a table, data not object, rows empty/non-array, row not a string row); tableData (execution: initializeDeclaredRandomState + validateDeclaredRandomState) now throws exactly its result; admission calls it. initialStateTableRefs(mechanics) collects initial-state tableRefs. Admission seam: new assertEffectiveRandomInitializationTables (rules/effectiveRandomInitializationAdmission.ts) called by resolveRulesStack after assertEffectiveEconomyDeductions (covers resolveStrictCampaignRulesStack); same layered precedence (recordsByKind table byKey), add-on-contributed item or table only, base + variant mechanics, message names add-on, table, item, clause. validateRulesPack not widened. Inventory disposition added (PACK_DATA). Carriers enumerated from the bundled pack: deck-of-illusions/table:deck-of-illusions, iron-flask/table:iron-flask, necklace-of-prayer-beads/table:necklace-of-prayer-beads, robe-of-useful-items/table:robe-of-useful-items. Evidence: test/effectiveRandomInitializationAdmission.test.ts (35 tests): enumeration pin; per pair, standalone-valid violations (empty rows, non-string cell) refused at resolveRulesStack and resolveStrictCampaignRulesStack; add-on item with unresolvable table refused; conforming override admitted and used by createInitialItemState; execution refusal with admission bypassed via direct resolveTable for all 5 classes (non-array rows/row are already refused by validateRulesPack, so execution-only). No vi.mock used. Sibling gap filed: roll-domain coverage (no row for roll / table-pool removal exceeds entries) is execution-only. Other reader activeEffects grant tableRefs skips malformed tables leniently (no gap). Verify: npm run verify:worktree exit 0, 369 files passed/2 skipped, 7052 tests passed/3 skipped.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-17T20:57:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-17T21:02:59Z",
+  "closed_at": "2026-10-17T21:02:59Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-3xi0.1",
+      "depends_on_id": "eshyra-3xi0",
+      "type": "parent-child",
+      "created_at": "2026-10-17T15:57:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

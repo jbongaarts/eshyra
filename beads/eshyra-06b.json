@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-06b",
+  "title": "Upgrade arc rollup and campaign bible to authored content",
+  "description": "Follow-up to loreweaver-e0a (PR #26). e0a wired a deliberately mechanical campaign arc rollup: gracefulClose calls rollupCampaignArc with a single campaign arc (arc-1), an arc summary joined mechanically from session recaps, and an empty campaign bible row. This issue tracks upgrading that baseline to real content: (1) model-authored arc summaries - depends on the model-backed summarization machinery built for loreweaver-32m; (2) populating the campaign bible (worldFacts/majorNpcs/factions/openThreads) from an extraction source; (3) real multi-session arc boundaries instead of the single arc-1 assumption, which needs an arc-management feature. Full design analysis is in the loreweaver-e0a comments. Parent context: loreweaver-d4r.",
+  "notes": "Decomposed (2026-05-22): split into three child issues. 06b-A loreweaver-4ua (model-authored arc summary) — claimed this session. 06b-B loreweaver-5ze (model-extracted campaign bible) — depends on A. 06b-C loreweaver-x63 (multi-session arc boundaries) — independent, epic-sized, needs its own brainstorm. 06b stays open as parent tracker; the bd dep from 06b -> 06b-C couldn't be added (an epic can't block a non-epic in bd), but C is tracked manually as a child. 06b closes when all three children close.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T22:37:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T03:49:55Z",
+  "closed_at": "2026-05-24T03:25:51Z",
+  "close_reason": "Authored-content scope complete: 06b-A loreweaver-4ua (model-authored arc summary, merged #50) and 06b-B loreweaver-5ze (model-extracted campaign bible, merged #54) both shipped on main. 06b-C loreweaver-x63 (multi-session arc boundaries) was carved off as an independent epic needing its own brainstorming pass and continues to track that work; it is not blocking this parent tracker any further.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-06b",
+      "depends_on_id": "eshyra-4ua",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:28:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-06b",
+      "depends_on_id": "eshyra-32m",
+      "type": "blocks",
+      "created_at": "2026-05-21T17:37:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-06b",
+      "depends_on_id": "eshyra-5ze",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:28:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 0,
+  "comment_count": 0
+}

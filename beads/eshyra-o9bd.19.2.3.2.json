@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.3.2",
+  "title": "Review: Sol final review of PR #654 (eshyra-o9bd.19.2.3 @ 6a61cc6a)",
+  "description": "Final read-only review of PR #654 (branch eshyra-o9bd.19.2.3, exact head 6a61cc6ae6c7cae026cb37bdd252620e0d1f1665) by GPT-6.1-Sol, full review. Findings in notes; ends with a VERDICT line.",
+  "notes": "Dispatched gpt-6.1-sol effort high; PGID 2689511\nFINAL REVIEW — PR #654, exact head 6a61cc6ae6c7cae026cb37bdd252620e0d1f1665. Fresh full review, effective profile rules-clause-complete. Repository remained read-only; no format, build, verification writer, edit, commit, push, GitHub comment, or merge.\n\nAuthority/context: read AGENTS.md, docs/design-and-pr-review-policy.md (including From observation to finding and Findings discipline), docs/importer-fix-protocol.md, ADR 0020, compiler architecture/ADR 0017, live owning bead eshyra-o9bd.19.2.3 DESIGN/acceptance/notes, and closed dispatch eshyra-o9bd.19.2.3.1. refs/beads/state metadata and owning projection are stale (September 10); reconciled their obsolete acceptance criteria against live Beads, whose September 22 reshaping and October 10 DESIGN govern. Inspected both branch commits and the complete origin/main...HEAD diff.\n\nScope/source review: all 18 changed files and all 26 changed pack records accounted for; no added/removed records or unrelated field churn. Three madness projections agree with SRD pp.201–202 and rule:madness-effects: 1d10 minutes, 1d10 × 10 hours, until cured. Source rule references and retained sourceText agree. All 13 equipment records in the priced Tack/Harness/Drawn Vehicles population agree with p.72, including four qualified saddle rows, per-day qualifiers, and stabling's unavailable weight. Barding's 4× cost/2× weight/Armor-table transformation agrees with the p.71 sentence and p.72 multiplier row. Exactly 484 table-cell changes across Bard/Cleric/Druid/Paladin/Ranger/Sorcerer/Warlock/Wizard are empty string -> dash; PDF extraction with the supplied font CMaps independently confirms the U+0336 glyph population row-by-row for all 160 rows, with totals 74/77/80/44/45/79/5/80. AST comparison confirms these are the only 484 code-literal changes in classProgressionTables.ts; reconstruction pins, headers, and other syntax are unchanged. Sorcerer L1 gains only resourceProgression sorceryPoints = dash.\n\nProducer/consumer and sibling analysis: traced index -> tableProjections/parseEquipment -> emit/creationFacts -> kindSchemas -> generated pack/provenance; class-table consumers classProgression and foundation1ProcedureProjections; runtime rulesPackResolver, classResources and creation/level-up; equipment group resolution, catalogs, starting-equipment filters; loader, lookup_rules, field-provenance/discovery presentation and existing owner relationships. The duration/Barding projections add awareness data without declaring deterministic execution. Existing table/owner links and raw lookup delivery preserve access to source rules and residual clauses. All 240 resolved class levels retain prior feature/spellcasting/other resource meaning, apart from the explicit Sorcerer L1 none field; all 60 selected class-resource capacities are equal before/after. Equipment resolution audit results and tool catalogs are identical before/after. Reviewed all slot, Features, spell-named and resource column siblings, including half-caster L1, Warlock L1 invocations and Sorcerer L1/Font of Magic.\n\nRegistry dispositions: reviewed all seven owned rows under ADR 0020 §7 and R1–R5. Madness, equipment taxonomy and empty cells are repaired. All 30 progression details agree with printed class tables (27 contiguous source phrases; Barbarian's three Brutal Critical parentheticals are printed on continuation lines after the intervening resource cells). Cantrip scaling source clauses survive, with Eldritch Blast structured beam projection deliberately owned elsewhere. Choice scopes/caller identities are record + choice id; the 103 top-level choices and 91 inline options have no within-owner duplicate ids. Name/catalog resolution and typed save/skill/armor proficiency producers/consumers support the retained obligations. Distinct flat/dice/weapon-table damage shapes retain their source meaning. Reviewed regenerated inventory additions/count changes and provenance classifications; no readiness/completeness claim substitutes for support.\n\nPermanent evidence reviewed: source-backed madness and Barding assertions, exact tack membership/cells, generalized empty-cell and parenthetical-detail invariants, adjusted prior source-dash expectations and generated-pack baselines, plus registry disposition coverage. The prior blank assertions were incorrect against the vendored glyph evidence; the replacements preserve source fidelity. No extra per-record proof machinery is required.\n\nVerification: targeted Vitest run (srdTaxonomyDurations, srdGeneratedPack, findingRegistry, foundation1ProcedureProof, parseEquipment, srdEquipmentResolutionAudit, classResourceActiveCapacity, srdCreationChoices, proficiencyGrants) passed 9 files / 504 tests, --maxWorkers=2 --no-cache. 27 additional read-only in-memory projection/source-drift/schema probes passed. Exact-head GitHub importer reproducibility checks both succeeded. The author reports full merged-head verify:worktree 6472 passed / 3 documented skips; I did not rerun its mutating wrapper. HEAD and clean git status rechecked.\n\nFindings: no unresolved BLOCKING finding; no S-numbered defect to publish.\nNOT A FINDING: requiring a separate priced Barding item — no requirement; R2's typed transformation is source-faithful on the rule record.\nNOT A FINDING: requiring corpus-wide identifier/damage-shape normalization — no requirement under the operative consumer-driven DESIGN and ADR 0020.\nNOT A FINDING: requiring a per-PR thaw note — no requirement during this transition; live eshyra-nsd1 expressly suspends that requirement and THAW_NOTE_CHECK_ENABLED remains false.\nVERDICT: APPROVED at exact head 6a61cc6ae6c7cae026cb37bdd252620e0d1f1665",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T14:59:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T15:07:30Z",
+  "closed_at": "2026-10-11T15:07:30Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.3.2",
+      "depends_on_id": "eshyra-o9bd.19.2.3",
+      "type": "parent-child",
+      "created_at": "2026-10-11T09:59:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

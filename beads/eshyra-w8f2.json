@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-w8f2",
+  "title": "Replay DM's last output on session resume; invoke module selector for new sessions",
+  "description": "## Why this issue exists\n\nWhen a player reconnects to an existing campaign, they need immediate context — what the DM last said — before issuing their next command. Without this, the player must scroll back through history or re-read state manually, which breaks immersion and creates friction at every session boundary.\n\nIf no previous session exists (i.e. the campaign has no prior DM output), the player has nothing to replay, so the session-start flow should instead invoke the adventure module selector to begin a new adventure.\n\n## What needs to be done\n\n1. On CLI session start, check whether the active campaign has a recorded prior DM response (last turn's assistant message).\n2. If one exists, print it to the terminal before accepting the first player input, framed clearly as a recap (e.g. a 'Resuming session…' header followed by the DM's last message).\n3. If no prior DM response exists (fresh campaign, no turns yet), invoke the adventure module selector flow instead of replaying.\n4. Ensure this behaviour is gated by a clean session-start signal — it should fire once per `eshyra play` invocation, not on every turn.\n5. Add tests covering both branches: replay path and module-selector fallback path.",
+  "notes": "Depends on eshyra-eh54 (Add first-class adventure module support) — specifically the adventure module selector UI. The module-selector fallback path at session start requires that adventure modules are a first-class concept with a working selection flow. This bead cannot be implemented until eh54 (or its selector sub-task) is complete and the module selector is callable from the CLI session-start path.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-19T15:20:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-23T23:05:05Z",
+  "started_at": "2026-06-22T03:13:34Z",
+  "closed_at": "2026-06-23T23:05:05Z",
+  "close_reason": "Both session-start branches complete and merged: replay-on-resume (PR #277, commit 8c8e851) and the fresh-campaign module selector (eshyra-47ob, PR #280, commit 59ad611).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-w8f2",
+      "depends_on_id": "eshyra-47ob",
+      "type": "blocks",
+      "created_at": "2026-06-21T22:15:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "07a01c86-82cf-5d31-b0d2-83d654faa35b",
+      "issue_id": "eshyra-w8f2",
+      "author": "Joseph Bongaarts",
+      "text": "Replay-on-resume half implemented in PR #277 (branch eshyra-w8f2-replay-recap): getLastDmOutput in core, lastDmOutput on the start_new launch state, and renderResumeRecap in the CLI launch path. Module-selector fallback for fresh campaigns deferred to eshyra-47ob (blocks this bead). Keep w8f2 open until 47ob lands and the selector is wired into the start_new + no-prior-DM-output branch.",
+      "created_at": "2026-06-22T03:18:54Z"
+    },
+    {
+      "id": "5851f544-acb5-530c-a5c1-22724892ea62",
+      "issue_id": "eshyra-w8f2",
+      "author": "Joseph Bongaarts",
+      "text": "Second branch (module selector for fresh campaigns) implemented in eshyra-47ob / PR #280. Once #280 merges, both session-start branches from this bead are complete and w8f2 can close.",
+      "created_at": "2026-06-23T22:05:12Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 2
+}

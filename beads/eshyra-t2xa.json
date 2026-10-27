@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-t2xa",
+  "title": "Duplicate rule records for ten combat actions",
+  "description": "The SRD pack emits duplicate rule:* records with the same text as the ten combat action records. Do not delete them as part of eshyra-o9bd.19.2.2.5.1; determine source-grounded ownership/removal and the intended action:* record coverage in a separate change. Affected duplicate keys: rule:attack, rule:cast-a-spell, rule:dash, rule:disengage, rule:dodge, rule:help, rule:hide, rule:ready, rule:search, rule:use-an-object. Evidence: SRD 5.1 pp. 93-94 Actions in Combat headings now resolve to action:* through curated source inventory ownership, while the pack continues to emit duplicate rule:* records with matching text. Add membership regression evidence and regenerate/verify without weakening existing expectations.",
+  "acceptance_criteria": "Every listed duplicate has a source-backed disposition; permanent evidence protects the resulting action ownership; regenerated pack verification passes.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-26T23:46:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-26T23:49:45Z",
+  "closed_at": "2026-09-26T23:49:45Z",
+  "close_reason": "Duplicate of eshyra-t8gw (filed earlier by the supervisor for the same ten rule:* combat-action records).",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-t2xa",
+      "depends_on_id": "eshyra-o9bd.19.2.2.5.1",
+      "type": "discovered-from",
+      "created_at": "2026-09-26T18:46:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

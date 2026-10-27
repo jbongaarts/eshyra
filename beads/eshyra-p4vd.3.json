@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p4vd.3",
+  "title": "Add typed campaign overlay lore records",
+  "description": "Add campaign overlay lore records to campaign state/storage.\n\nThese records capture consequential improvised facts created during play. They must be queryable and auditable, but should not replace read-only module canon.\n\nSuggested shape, adjust during implementation:\n\nWorldFact:\n- id\n- kind: rumor | clue | npc_detail | location_detail | quest_hook | threat_report | scene_consequence | player_created_detail | other\n- subjectId or subjectText\n- locationId optional\n- npcId optional\n- factionId optional\n- text/fact\n- truthStatus\n- source: dm_improvised | player_declared | module_derived | tool_result | consequence\n- scope: scene | session | campaign\n- visibility: player_visible | dm_only | mixed\n- introducedAtTurnId/sessionId\n- supersedes/invalidates optional\n- tags optional\n\nAcceptance criteria:\n- Campaign overlay lore has a typed schema.\n- Records can be persisted in campaign state/checkpoints.\n- Records are append-friendly and auditable.\n- Records can be invalidated or superseded without destructive rewriting.\n- Records can distinguish player-visible knowledge from DM-only truth.\n- Tests cover serialization/deserialization and checkpoint persistence.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:23:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:45:02Z",
+  "started_at": "2026-06-24T03:34:21Z",
+  "closed_at": "2026-06-24T03:45:02Z",
+  "close_reason": "Implemented campaign overlay canon, truth-statused lore recording, world_query retrieval/search, audit/prompt guidance, docs, and regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-p4vd.3",
+      "depends_on_id": "eshyra-p4vd",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:23:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

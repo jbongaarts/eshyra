@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.12.4.2",
+  "title": "Review item 1: audit table importer docs",
+  "description": "Remove any stale duplicate scope/comment/README lines from PR #99. Done means index.ts and README.md contain only the current implemented-kind scope including tables, one table scope row, one coherent emit.ts bullet with TableExtraction[], and one coherent orchestrator slices paragraph.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T18:00:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:54Z",
+  "started_at": "2026-05-28T18:02:29Z",
+  "closed_at": "2026-05-28T18:03:14Z",
+  "close_reason": "Audited importer docs/comments; stale duplicate scope/docs variants are absent and current single variants remain.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.12.4.2",
+      "depends_on_id": "eshyra-0m9.5.12.4",
+      "type": "parent-child",
+      "created_at": "2026-05-28T13:00:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "cdd27c4b-2231-546d-8b99-6f7fcfa50de4",
+      "issue_id": "eshyra-0m9.5.12.4.2",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: rg found no old index scope line; exactly one current index scope line at index.ts:16; exactly one current table row at README.md:25; one coherent emit.ts bullet includes TableExtraction[] at README.md:110-113; one orchestrator paragraph states seven slices and table reuse at README.md:148-150.",
+      "created_at": "2026-05-28T18:03:14Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

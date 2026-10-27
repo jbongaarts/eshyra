@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-kn38.2",
+  "title": "Review: Sol final review of PR #626 (eshyra-kn38 @ 700f4acd)",
+  "description": "Final read-only review of PR #626 (branch eshyra-kn38, exact head 700f4acd8804a03b9390358c85bd147e322d7910) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "FINAL REVIEW of PR #626 at exact head 700f4acd8804a03b9390358c85bd147e322d7910. Profile: rules-clause-complete for the bounded always-prepared lifecycle change. Read AGENTS.md, review policy, ADR 0020, importer-fix protocol, owning bead eshyra-kn38, dispatch eshyra-kn38.1, predecessor eshyra-odpc.1, and character-progression design. Reviewed the complete origin/main...HEAD diff and commit log, creation/finalization, feature/subclass choice application, legacy classification, preparation descriptors/validation, guided preview/apply, sheet persistence, derived spell union and progression ledger. Local refs/beads/state is stale (2026-09-10) and lacks kn38 records; current live bd records were used. No importer or generated-pack changes require regeneration. Independently checked vendored SRD Domain Spells/Life Domain table (pp.16-17), Circle Spells/terrain tables (pp.21-22), Oath Spells/Devotion table (pp.31-32), and Fiend expanded-list semantics (p.50).\n\nS1 — MATERIAL (P2), packages/core/src/character/levelUpEngine.ts:674 and :1716. Always-prepared cleanup is conditional on the grant list changing. Concrete reproduced scenario using the real bundled resolver and applyLevelUp: a Life cleric at level 1 with alwaysPrepared=[spell:bless, spell:cure-wounds] chooses level.2.spells.prepare=[Bless, Bane]. The computed grant list is unchanged, so no alwaysPrepared delta or preparedRemoved is emitted, and the saved level-2 sheet contains Bless in BOTH prepared and alwaysPrepared. Reproduced siblings: Devotion paladin 5->6 selecting protection-from-evil-and-good and Forest druid 5->6 selecting barkskin also persist overlaps. This violates the non-counting subclass-grant semantics and the canonical ordinary-prepared/always-prepared separation this change implements; an always-prepared pick still consumes an ordinary selection slot on these transitions. Owner: level-up engine. Suggested fix: normalize the resulting ordinary prepared bucket against the effective target always-prepared refs on every level-up that writes spell state, independently of whether the alwaysPrepared delta changes; record actual prepared removals independently as needed. Preserve the requirement that the alwaysPrepared delta itself appears only on a list change. Keep preparation choices/count accounting consistent with that normalization. Permanent evidence: generalized invariant that prepared and alwaysPrepared remain disjoint across unchanged and changed grant rows, with optional preparation choices and existing overlap; representative cleric/paladin/druid transitions are proportionate because the same branch controls all three.\n\nS2 — MATERIAL (P2), packages/core/src/character/levelUpEngine.ts:695 (also spellStateAfterLevelUp at :1719). The change set publishes spellSelections.resulting before the always-prepared refresh/cleanup, then apply writes a different final spellcasting object. Concrete reproduced scenario: legacy Life cleric level 2 with flat spells=[spell:sacred-flame, spell:bless, spell:bane], no spellcasting, and no spell choices levels to 3. The persisted progression_event.applied_changes_json reports spellSelections.resulting={cantrips:[spell:sacred-flame],prepared:[spell:bless,spell:bane]} with no alwaysPrepared. The actual saved sheet instead has prepared=[spell:bane] and alwaysPrepared=[spell:bless,spell:cure-wounds,spell:lesser-restoration,spell:spiritual-weapon]. Extra sibling delta/removal fields do not fulfill the existing contract that resulting is the sheet's spellcasting after this level-up (levelUpSpells.ts:119 and LevelUpChangeSet documentation); the durable audit record contains a contradictory final-state snapshot. Authority: existing producer-consumer contract and docs/design/character-progression.md progression ledger/apply requirements. Owner: level-up preview/change-set assembly. Suggested fix: compute the normalized final spell state in preview, put it in spellSelections.resulting when that field exists, and have apply consume the same state; keep recorded bucket effects and separate grant/removal deltas consistent. Permanent evidence: generalized invariant asserting preview/result/event spellSelections.resulting equals persisted sheet.spellcasting for legacy classification and structured spell-choice transitions with refreshed subclass grants. This is cheap evidence at a durable state/audit boundary.\n\nValidation: 6 targeted files passed, 175 tests total (levelUpSpellSelection, creationClassChoices, spellPreparation, levelUpSubclassChoices, levelUpFeatureChoices, finalizeCharacter). Read-only inline runtime probes reproduced S1 for all three prepared classes and S2 in both return value and stored ledger; same-level Forest terrain selection correctly granted barkskin and spider-climb. git diff --check passed; worktree remained clean at the exact requested SHA. No repository edits, formatting, builds, commits, pushes, GitHub comments or merges performed. No non-material findings published.\nVERDICT: MATERIAL FINDINGS (2)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T03:53:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T03:57:16Z",
+  "closed_at": "2026-10-09T03:57:16Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-kn38.2",
+      "depends_on_id": "eshyra-kn38",
+      "type": "parent-child",
+      "created_at": "2026-10-08T22:53:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

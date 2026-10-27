@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ua0.4",
+  "title": "RED: session lifecycle persistence",
+  "description": "Write failing tests for campaign session start/resume/close persistence and the one-open-session invariant.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T00:24:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-21T00:24:15Z",
+  "closed_at": "2026-05-21T00:25:02Z",
+  "close_reason": "RED test added and failed for missing session lifecycle API as expected.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ua0.4",
+      "depends_on_id": "eshyra-ua0",
+      "type": "parent-child",
+      "created_at": "2026-05-20T19:24:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "7d61e712-156d-5082-92af-cd0c11a681e3",
+      "issue_id": "eshyra-ua0.4",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/session.test.ts -> failed for expected reason: startSession is not implemented/exported yet.",
+      "created_at": "2026-05-21T00:25:02Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

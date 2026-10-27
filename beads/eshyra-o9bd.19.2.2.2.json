@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.2.2",
+  "title": "Tools table: emit the missing Vehicles (land or water) row against source-counted rows",
+  "description": "SCOPE (registry row vehicle-tool-row, alias opus:F-17; plan B2/B3).\nPack evidence (c53ba040): no record/row carries \"Vehicles (land or water)\"; rule:tools cites p. 70; tool equipment records exist (e.g. equipment:navigators-tools pp. 70, 71). The SRD Tools table prints a \"Vehicles (land or water)\" row (cost/weight printed as \"*\" / varies - confirm against the extracted text).\nRequired invariant: the emitted Tools table rows equal the printed Tools table rows (denominator from source rows, not a hand count). Decide representation consistent with other tool rows (equipment record or tool-category row) without inventing cost/weight; preserve the source footnote marker semantics.\nRegression: parser test on the Tools table slice + committed-pack assertion that every printed Tools row has an emitted counterpart. Coordinate with eshyra-o9bd.19.2.3 (Tack/Harness/Drawn Vehicles taxonomy is theirs, not this bead's).\n",
+  "notes": "2026-09-23 PR #573 opened (head 7b469822): emits equipment:vehicles-land-or-water (tool, no cost/weight, description = table footnote), ToolsTableRowError fail-closed on unrecognized Tools lines / missing footnote / missing closing row; resolver excludes combined row from tool-proficiency domain (land/water per Vehicle Proficiency p.71). verify:worktree 5398/3 skipped; verify:dnd5e-srd-pack exact. Stays in_progress until merge.\n2026-09-23 review F1 (source-derived Tools-row parity) addressed at d1fc214b: toolsTableRows.ts gate in runImporter; count-only tool census retired. verify:worktree 5404/3 skipped; pack exact. Awaiting re-review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-23T21:52:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-24T01:59:50Z",
+  "started_at": "2026-09-24T00:28:36Z",
+  "closed_at": "2026-09-24T01:59:50Z",
+  "close_reason": "PR #573 merged (a0af3c0f)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.2.2",
+      "depends_on_id": "eshyra-o9bd.19.2.2",
+      "type": "parent-child",
+      "created_at": "2026-09-23T16:52:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

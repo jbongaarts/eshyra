@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wsv.5",
+  "title": "Implement structural memory drilldown",
+  "description": "Add memory_drilldown selector support for specific older scene/session slices without making them permanent always-on context.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T05:12:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:07Z",
+  "started_at": "2026-05-19T05:19:33Z",
+  "closed_at": "2026-05-19T05:21:08Z",
+  "close_reason": "Implemented structural memory drilldown without mutating always-on memory; focused test and typecheck pass with RED evidence recorded.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-wsv.5",
+      "depends_on_id": "eshyra-wsv",
+      "type": "parent-child",
+      "created_at": "2026-05-19T00:12:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "10364d72-228b-582a-b3b4-ff8ddb7eae28",
+      "issue_id": "eshyra-wsv.5",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/memorySummary.test.ts -> failed as expected; memoryDrilldown API is missing while scene/session/arc tests pass.",
+      "created_at": "2026-05-19T05:20:07Z"
+    },
+    {
+      "id": "c7b9d62d-1b65-5a41-a49e-e0ce4d7cfd9c",
+      "issue_id": "eshyra-wsv.5",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN/REFACTOR verification: npm run test -- packages/core/test/memorySummary.test.ts -> passed (4 tests); npm run typecheck -> passed. Added read-only memoryDrilldown selectors for scene/session/arc slices and verified campaign_bible remains unchanged.",
+      "created_at": "2026-05-19T05:21:09Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4ygd",
+  "title": "Sold-item 'returned' basis bypasses sale-proceeds reversal (economic dupe loop)",
+  "description": "Post-merge review of PR #455 (verified against current main, 2026-07-19).\n\n## Defect\n\nA sold inventory row can be restored payment-free via `basis: 'returned'`, leaving the character with both the item and the sale proceeds — the exact economic dupe loop the repurchase-payment work was built to close.\n\nCode facts (all verified):\n\n- `packages/core/src/state/domainMutations.ts` `reacquireItem`: the disposition/basis compatibility gate (~line 667) rejects only `sold+found` and `lost+repurchased`; `sold+returned` passes.\n- Payment is *required* for `repurchased` and *forbidden* for `found`/`returned` (~lines 628-635), so the `returned` path performs no wallet mutation by construction.\n- Schema agrees: `inventory_custody_event` CHECK `(basis='repurchased') = (payment_event_id IS NOT NULL)` (migration 0018).\n- Existing tests pin the payment-free sold-item return (\"The merchant rescinded the sale and handed it back\") as passing behavior.\n\nLoop: sell item → keep proceeds → narrate a return → `reacquire_item { basis: 'returned' }` → item + proceeds retained. In gameplay the DM model adjudicates the evidence string, so a player steering the narration is enough; there is no deterministic economic backstop on this path, unlike every other transition in this family.\n\n## Fix direction (per review recommendation)\n\n- Make `returned` valid only for `lost` rows (extend the compatibility gate).\n- For sold rows, require either `repurchased` (existing atomic payment) or a new `sale-reversed` basis that atomically reverses the original sale proceeds (credit debit mirroring the sale wallet event).\n- A genuinely gratuitous merchant gift-back, if it must be supported, should be its own explicit basis with a deliberate decision — not the default free path.\n\nNote: adding a payment-carrying basis (`sale-reversed`) conflicts with the immutable migration-0018 CHECK `(basis='repurchased') = (payment_event_id IS NOT NULL)` on `inventory_custody_event`, so a new migration is required to widen that constraint (and the basis enum CHECK). Update `toolReacquireItem.ts` schema/description, `listRecoverableItems` basis filtering (`domainMutations.ts` ~line 440-463), and the tests that currently pin the payment-free sold-return.\n\nRelated: eshyra follow-ups from the same review — migration-0018 oversized-stack unresolvable edge, and the numeric-conservation dice-modifier gate.\n",
+  "notes": "Related beads from same PR #455 post-merge review: eshyra-eks3 (migration-0018 oversized-stack), eshyra-2n3n (dice-token gate).\nFix merged to branch eshyra-f0nz; PR #458 open (https://github.com/jbongaarts/eshyra/pull/458). Close after PR merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:03:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-20T04:40:17Z",
+  "started_at": "2026-07-20T00:21:19Z",
+  "closed_at": "2026-07-20T04:40:17Z",
+  "close_reason": "Fixed in PR #458 (merge commit 958d6d0b), including both review rounds: value-scoped conservation exceptions, zero-quantity review resolution with atomic attunement reconciliation, restored stateful repurchase regression.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

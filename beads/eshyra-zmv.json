@@ -1,0 +1,64 @@
+{
+  "_type": "issue",
+  "id": "eshyra-zmv",
+  "title": "Dolt-gated checkpoint tests flake (Test timed out in 5000ms) under full-suite parallel load",
+  "description": "The Dolt-gated checkpoint tests intermittently fail with 'Test timed out in 5000ms' during the full parallel 'vitest run' on Windows when the dolt binary is present. Affected tests (varying subset, 3-5 per run observed): checkpoint.store.test.ts (checkpoints a live SQLite db and lists it), checkpoint.doltRepo.test.ts (init + applySnapshot + commit yields a listable checkpoint), checkpoint.restore.test.ts (restores a checkpoint into a new db identical to the source), packages/cli/test/checkpoints.test.ts (lists a campaign checkpoint), packages/cli/test/play.test.ts (writes a real Dolt checkpoint of the campaign on graceful exit).\n\nRoot cause: these tests spawn the slow dolt subprocess; under full-suite parallelism the per-test 5s testTimeout is exceeded nondeterministically. They pass reliably in isolation (e.g. 'npx vitest run checkpoint play' => 101/101). Not a logic regression. Documented in bd memory 'dolt-checkpoint-tests-flaky-under-parallel-load'.\n\nAcceptance: full 'npm run test' passes deterministically with the dolt binary present (no spurious timeouts). Likely fix: bump testTimeout for the dolt-gated suites, and/or reduce their parallelism (e.g. a vitest pool/sequence constraint or per-file timeout), without slowing the rest of the suite. Confirm by running the full suite several times with dolt installed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-29T21:30:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:52Z",
+  "started_at": "2026-05-30T03:42:38Z",
+  "closed_at": "2026-05-30T03:57:05Z",
+  "close_reason": "Added explicit 30s Vitest timeouts to real-Dolt checkpoint/play tests so Dolt subprocess work is not aborted by the 5s default under full-suite load; verification passed: focused checkpoint/play Vitest files, npm run typecheck, npm run check, and npm run test repeated 3x.",
+  "comments": [
+    {
+      "id": "332b02e0-4bae-572c-8888-1142a0d8aa80",
+      "issue_id": "eshyra-zmv",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded; Get-Command dolt reported dolt is not on PATH, so Dolt-gated timeout cannot be reproduced in this environment; npm run test passed with 78 files passed, 2 skipped, 893 tests passed, 3 skipped.",
+      "created_at": "2026-05-30T03:44:31Z"
+    },
+    {
+      "id": "4f25e73b-bd4a-52ad-9d29-8af431cf8d19",
+      "issue_id": "eshyra-zmv",
+      "author": "Joseph Bongaarts",
+      "text": "Debugging evidence: bead memory and issue show failures are Vitest timeouts at the 5000ms default when real Dolt subprocess tests run in the full parallel suite on Windows; isolated checkpoint/play runs pass. Local environment has no dolt, so the same tests skip and npm run test passes. vitest.config.ts only sets include, so these suites inherit the default timeout. Existing packages/cli/test/cli.test.ts EOF test documents the same failure mode and already uses a 30000ms per-test timeout. Hypothesis: the real-Dolt checkpoint suites need an explicit 30000ms timeout on the slow Dolt-backed tests/suites so subprocess work can finish under load without increasing the global timeout.",
+      "created_at": "2026-05-30T03:46:16Z"
+    },
+    {
+      "id": "f117d159-d9c2-5e82-a3a9-d9020645211e",
+      "issue_id": "eshyra-zmv",
+      "author": "Joseph Bongaarts",
+      "text": "Correction: Get-Command dolt only showed dolt is not on PATH. The focused Vitest run for checkpoint/play files reported 55 passed and no skips, so DoltRepo.available() is true via the managed Dolt cache and the real-Dolt cases executed here. Focused verification after the timeout changes: npx vitest run checkpoint/play files -> passed.",
+      "created_at": "2026-05-30T03:52:45Z"
+    },
+    {
+      "id": "257810a1-4125-542c-83e4-d72f0f666ab5",
+      "issue_id": "eshyra-zmv",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: focused npx vitest run packages/core/test/checkpoint.store.test.ts packages/core/test/checkpoint.doltRepo.test.ts packages/core/test/checkpoint.restore.test.ts packages/core/test/checkpoint.fork.test.ts packages/cli/test/checkpoints.test.ts packages/cli/test/play.test.ts -> exit 0; 6 files passed, 55 tests passed. npm run typecheck -> exit 0. npm run check -> exit 0; 211 files checked. npm run test repeated 3x -> exit 0 each time; each run reported 78 files passed, 2 skipped, 893 tests passed, 3 skipped. TDD note: RED evidence was the existing bead/memory intermittent full-suite timeout at Vitest's 5000ms default; local pre-fix baseline did not fail in one run because the bug is intermittent.",
+      "created_at": "2026-05-30T03:54:48Z"
+    },
+    {
+      "id": "507e2044-411d-565f-a690-b4f54c5e5710",
+      "issue_id": "eshyra-zmv",
+      "author": "Joseph Bongaarts",
+      "text": "Final verification on final diff: npx vitest run packages/core/test/checkpoint.store.test.ts packages/core/test/checkpoint.doltRepo.test.ts packages/core/test/checkpoint.restore.test.ts packages/core/test/checkpoint.fork.test.ts packages/cli/test/checkpoints.test.ts packages/cli/test/play.test.ts -> exit 0; 6 files passed, 55 tests passed. npm run typecheck -> exit 0. npm run check -> exit 0; 211 files checked. npm run test repeated 3x -> exit 0 each time; each run reported 78 files passed, 2 skipped, 893 tests passed, 3 skipped.",
+      "created_at": "2026-05-30T03:56:53Z"
+    },
+    {
+      "id": "97ceecc9-7cfb-5273-b35c-6a84d144ce39",
+      "issue_id": "eshyra-zmv",
+      "author": "Joseph Bongaarts",
+      "text": "Post-rebase verification: npm run typecheck -> exit 0; npm run check -> exit 0; npm run test -> exit 0 with 78 files passed, 2 skipped, 896 tests passed, 3 skipped.",
+      "created_at": "2026-05-30T03:58:41Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 6
+}

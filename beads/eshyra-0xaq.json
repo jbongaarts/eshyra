@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0xaq",
+  "title": "Horn of Valhalla already-held instance with no variant has no path to establish its type",
+  "description": "Found in eshyra-olc5.14.1. A Horn of Valhalla inventory row held before the horn-type variants existed has variant_id NULL; use_item and start_effect refuse it (fail-closed). adopt_item only adopts pack_ref IS NULL rows and give_item cannot change an existing row's variant, so there is no path to establish its type. Decide whether a narrow 'establish variant once' path is needed (only matters for pre-existing saves; the Horn was not bindable before).",
+  "notes": "2026-10-19 captain: parented under eshyra-olc5 and made to block eshyra-o9bd.14 (user rule 2026-10-14). In scope of the user's olc5.14 decision, which names establishing 'its previously unknown type'. A narrow, one-time path to establish a variant on an already-held pack-bound row with variant_id NULL; no type reselection.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-19T00:55:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-19T00:59:18Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0xaq",
+      "depends_on_id": "eshyra-olc5.14.1",
+      "type": "discovered-from",
+      "created_at": "2026-10-18T19:59:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0xaq",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-18T19:59:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

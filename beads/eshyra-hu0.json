@@ -1,0 +1,51 @@
+{
+  "_type": "issue",
+  "id": "eshyra-hu0",
+  "title": "Validate mutate_state values before canonical writes",
+  "description": "Review finding from loreweaver-niw. Runtime validation is missing for typed canonical state fields; SQLite accepts text in numeric columns and invalid JSON strings in JSON columns. Example: hp_current='dead' can persist and later violate TypeScript state contracts. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Invalid numeric, text, and JSON values are rejected with structured tool errors before persistence; regression tests prove hp_current='dead' and quantity='many' do not persist through mutate_state or mutateState.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:43:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:41Z",
+  "started_at": "2026-05-21T04:57:38Z",
+  "closed_at": "2026-05-21T05:00:55Z",
+  "close_reason": "Added field-specific runtime validation before canonical mutate_state writes; invalid numeric/text/JSON values now reject before persistence and tool calls return structured mutate_error. Verification: git diff --check, npm run typecheck, and npm run test passed; TDD evidence recorded.",
+  "comments": [
+    {
+      "id": "1b471a3d-84bf-5a85-8685-ae67d7350f20",
+      "issue_id": "eshyra-hu0",
+      "author": "Joseph Bongaarts",
+      "text": "Debug evidence: mutateState validates target/field/provenance/session/timestamp but setCharacterField, setInventoryField, and setClockField pass input.value directly to SQLite. Root cause hypothesis confirmed from packages/core/src/state/mutateState.ts: field-specific runtime validation is missing before canonical writes.",
+      "created_at": "2026-05-21T04:58:02Z"
+    },
+    {
+      "id": "0c33a1a2-b4d8-5473-9ae8-46e5ce10ee32",
+      "issue_id": "eshyra-hu0",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npm run test -- packages/core/test/gameState.test.ts packages/core/test/tools.test.ts -> failed as expected. gameState invalid hp_current did not throw; mutate_state tool returned ok=true for hp_current='dead'.",
+      "created_at": "2026-05-21T04:58:37Z"
+    },
+    {
+      "id": "72e4062b-99b9-561d-8194-edd3b81bb646",
+      "issue_id": "eshyra-hu0",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: npm run test -- packages/core/test/gameState.test.ts packages/core/test/tools.test.ts -> passed; 2 files, 27 tests. Invalid hp_current and quantity now reject before persistence; mutate_state returns structured mutate_error.",
+      "created_at": "2026-05-21T05:00:11Z"
+    },
+    {
+      "id": "964eb8e7-d98e-5179-9ad6-5497dbdbbda0",
+      "issue_id": "eshyra-hu0",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: git diff --check -> exit 0. npm run typecheck -> exit 0. npm run test -> exit 0; 35 test files passed, 197 tests passed, 1 skipped. TDD evidence: RED focused tests failed for missing validation; GREEN focused tests passed after field-specific validators.",
+      "created_at": "2026-05-21T05:00:47Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

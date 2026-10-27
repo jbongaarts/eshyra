@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l3b3.4",
+  "title": "Sanitize invalid auditor disallowed-tool classifications",
+  "description": "Problem\n\nIn the post-p4vd playtest, the auditor classified set_plot_flag as a disallowed tool in a case where the real issue was that the DM used insufficient/wrong support for a consequential world fact that should have been recorded as overlay lore.\n\nThat is semantically wrong. set_plot_flag may be the wrong or insufficient tool for a given assertion, but it should not be labeled as disallowed unless it is actually part of the configured explicit-action-only/disallowed mutation set.\n\nGoal\n\nSanitize or constrain auditor output so disallowedToolCalls is reserved for genuinely disallowed tools, while wrong-tool or insufficient-evidence cases are reported as missing required tools or unsupported assertions.\n\nAcceptance criteria\n\n- Auditor cannot mark set_plot_flag as disallowed unless it is explicitly configured as disallowed.\n- Non-explicit-action-only tools may still be rejected as insufficient evidence or wrong support.\n- If set_plot_flag is used where record_world_fact is needed, the rejection says missing record_world_fact or insufficient lore evidence, not disallowed set_plot_flag.\n- Add deterministic post-processing or schema validation that filters invalid disallowedToolCalls.\n- Debug output preserves the auditor's useful reasoning while correcting invalid disallowed-tool classification.\n- Regression:\n  - DM calls set_plot_flag for \"Bob learned Sela lost two scouts\"\n  - Response asserts missing scouts as a consequential world fact\n  - Audit rejects due to missing record_world_fact, not due to disallowed set_plot_flag\n- Regression:\n  - Truly explicit-action-only violations still appear in disallowedToolCalls.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T23:07:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T23:53:33Z",
+  "started_at": "2026-06-24T23:51:38Z",
+  "closed_at": "2026-06-24T23:53:33Z",
+  "close_reason": "Sanitized auditor disallowedToolCalls to explicit-action-only tools and remapped invalid set_plot_flag lore classifications to record_world_fact repair guidance.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-l3b3.4",
+      "depends_on_id": "eshyra-l3b3",
+      "type": "parent-child",
+      "created_at": "2026-06-24T18:07:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-menn",
+  "title": "Wire a runtime consumer for awardXp and grantMilestone",
+  "description": "awardXp and grantMilestone (packages/core/src/state/domainMutations.ts) are the policy-guarded, atomic XP and milestone award operations, but no tool or CLI path calls them (only tests); getLevelUpEligibility is consumed by packages/cli/src/playProgression.ts and guidedLevelUpFlow. The capability inventory (eshyra-o9bd.19.5.12.6) records both awards as retained and staged. This bead owns deciding how awards reach play (model tool, CLI command, or both) or demoting them. Found while re-deriving the inventory.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T03:32:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T03:32:46Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}
