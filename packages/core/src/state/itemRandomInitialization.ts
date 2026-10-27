@@ -423,11 +423,13 @@ export function initializeDeclaredRandomState(input: {
       continue;
     }
     const table = tableData(tableRef, input.resolveTable);
-    const outcome =
-      typeof procedure.outcome === 'string'
-        ? procedure.outcome.toLowerCase()
-        : '';
-    if (outcome.startsWith('remove that many randomly selected')) {
+    // A malformed containment block is refused as before; the kind itself is
+    // classified by the same function admission uses (eshyra-1dey), so the
+    // two cannot disagree about which coverage rule a procedure needs.
+    if (input.mechanics.containment !== undefined)
+      object(input.mechanics.containment, 'mechanics.containment');
+    const kind = initialStateTableKind(procedure, input.mechanics);
+    if (kind === 'table-pool') {
       const count =
         reused ??
         recordRoll(
@@ -454,14 +456,7 @@ export function initializeDeclaredRandomState(input: {
       };
       continue;
     }
-    const containment =
-      input.mechanics.containment === undefined
-        ? undefined
-        : object(input.mechanics.containment, 'mechanics.containment');
-    if (
-      containment?.tracksOccupancy === true &&
-      outcome.includes('rolled creature')
-    ) {
+    if (kind === 'containment-occupant') {
       const roll = recordRoll(
         purpose,
         procedure.roll,
@@ -476,11 +471,7 @@ export function initializeDeclaredRandomState(input: {
       };
       continue;
     }
-    if (
-      typeof procedure.trigger === 'string' &&
-      procedure.trigger.toLowerCase().startsWith('each ') &&
-      outcome.startsWith('add the rolled')
-    ) {
+    if (kind === 'table-results') {
       const countProcedure = procedures.find(
         (candidate) =>
           candidate !== procedure &&
