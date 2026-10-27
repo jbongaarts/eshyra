@@ -376,6 +376,39 @@ export function oldestOpenItemGrantBindCredit(
   return row?.credit_id;
 }
 
+/** Whether `creditId` is an unredeemed credit of exactly this campaign,
+ *  instance, pack record, variant and economy (an explicitly named credit,
+ *  eshyra-olc5.14). */
+export function itemGrantBindCreditOpenInScope(
+  db: Db,
+  creditId: string,
+  scope: {
+    readonly campaignId: string;
+    readonly itemInstanceId: string;
+    readonly packRef: string;
+    readonly variantId: string | undefined;
+    readonly economyId: string;
+  },
+): boolean {
+  return (
+    db
+      .prepare(
+        `SELECT 1 FROM item_grant_bind_credit
+         WHERE credit_id = ? AND campaign_id = ? AND item_instance_id = ?
+           AND economy_id = ? AND pack_ref = ? AND variant_id IS ?
+           AND redeemed_effect_id IS NULL`,
+      )
+      .get(
+        creditId,
+        scope.campaignId,
+        scope.itemInstanceId,
+        scope.economyId,
+        scope.packRef,
+        scope.variantId ?? null,
+      ) !== undefined
+  );
+}
+
 export function redeemItemGrantBindCredit(
   db: Db,
   creditId: string,
