@@ -1,4 +1,6 @@
 import {
+  maximumDiceTotal,
+  minimumDiceTotal,
   parseDice,
   resolveParsedDiceRoll,
   rollDice,
@@ -132,20 +134,25 @@ export function randomInitializationTableViolation(
   return undefined;
 }
 
-/** Table refs named by `initial-state` procedures of one mechanics object. */
-export function initialStateTableRefs(mechanics: unknown): string[] {
+/** `initial-state` procedures of one mechanics object. */
+export function initialStateProcedures(mechanics: unknown): Obj[] {
   if (typeof mechanics !== 'object' || mechanics === null) return [];
   const random = (mechanics as Obj).randomProcedure;
   if (typeof random !== 'object' || random === null) return [];
   const procedures = (random as Obj).procedures;
   if (!Array.isArray(procedures)) return [];
-  return procedures.flatMap((raw) =>
-    typeof raw === 'object' &&
-    raw !== null &&
-    (raw as Obj).kind === 'initial-state' &&
-    typeof (raw as Obj).tableRef === 'string'
-      ? [(raw as Obj).tableRef as string]
-      : [],
+  return procedures.filter(
+    (raw): raw is Obj =>
+      typeof raw === 'object' &&
+      raw !== null &&
+      (raw as Obj).kind === 'initial-state',
+  );
+}
+
+/** Table refs named by `initial-state` procedures of one mechanics object. */
+export function initialStateTableRefs(mechanics: unknown): string[] {
+  return initialStateProcedures(mechanics).flatMap((procedure) =>
+    typeof procedure.tableRef === 'string' ? [procedure.tableRef] : [],
   );
 }
 
@@ -165,17 +172,26 @@ function rangeBound(value: string): number {
   return parsed === 0 ? 100 : parsed;
 }
 
+/** Inclusive roll range a table row's first cell covers, if it has one. */
+function rowRange(
+  row: readonly string[],
+): { readonly low: number; readonly high: number } | undefined {
+  const match = /^(\d+)(?:[–-](\d+))?$/.exec(row[0]);
+  if (match === null) return undefined;
+  return {
+    low: rangeBound(match[1]),
+    high: rangeBound(match[2] ?? match[1]),
+  };
+}
+
 function tableResult(
   table: TableData,
   total: number,
   tableRef: string,
 ): ItemRandomTableResult {
   const rowIndex = table.rows.findIndex((row) => {
-    const match = /^(\d+)(?:[–-](\d+))?$/.exec(row[0]);
-    if (match === null) return false;
-    const low = rangeBound(match[1]);
-    const high = rangeBound(match[2] ?? match[1]);
-    return total >= low && total <= high;
+    const range = rowRange(row);
+    return range !== undefined && total >= range.low && total <= range.high;
   });
   if (rowIndex < 0)
     throw new ItemRandomInitializationError(
@@ -192,6 +208,99 @@ function tableEntryIds(table: TableData): string[] {
       (_, copy) => `row-${rowIndex + 1}-copy-${copy + 1}`,
     );
   });
+}
+
+type InitialStateTableKind =
+  | 'table-pool'
+  | 'containment-occupant'
+  | 'table-results';
+
+/** Which supported table-backed initial-state kind a procedure is, if any. */
+function initialStateTableKind(
+  procedure: Obj,
+  mechanics: Obj,
+): InitialStateTableKind | undefined {
+  const outcome =
+    typeof procedure.outcome === 'string'
+      ? procedure.outcome.toLowerCase()
+      : '';
+  if (outcome.startsWith('remove that many randomly selected'))
+    return 'table-pool';
+  const containment =
+    typeof mechanics.containment === 'object' && mechanics.containment !== null
+      ? (mechanics.containment as Obj)
+      : undefined;
+  if (
+    containment?.tracksOccupancy === true &&
+    outcome.includes('rolled creature')
+  )
+    return 'containment-occupant';
+  if (
+    typeof procedure.trigger === 'string' &&
+    procedure.trigger.toLowerCase().startsWith('each ') &&
+    outcome.startsWith('add the rolled')
+  )
+    return 'table-results';
+  return undefined;
+}
+
+/**
+ * Roll-domain coverage of one table-backed `initial-state` procedure: the
+ * first violated clause, or `undefined`. For `containment-occupant` and
+ * `table-results` every total of the procedure's roll must match exactly one
+ * row (by the same row-range parsing `tableResult` uses); for `table-pool` the
+ * declared entry count must reach the roll's maximum removal count. Execution
+ * throws on exactly these conditions, so admission and execution cannot
+ * disagree (eshyra-1dey). Table shape is checked first.
+ */
+export function randomInitializationCoverageViolation(
+  mechanics: unknown,
+  procedure: Obj,
+  tableRecord: RulesRecord | undefined,
+): string | undefined {
+  const tableRef =
+    typeof procedure.tableRef === 'string' ? procedure.tableRef : '';
+  const shape = randomInitializationTableViolation(tableRef, tableRecord);
+  if (shape !== undefined) return shape;
+  const kind = initialStateTableKind(
+    procedure,
+    typeof mechanics === 'object' && mechanics !== null
+      ? (mechanics as Obj)
+      : {},
+  );
+  if (kind === undefined || tableRecord === undefined) return undefined;
+  if (typeof procedure.roll !== 'string')
+    return `procedure ${String(procedure.id)} has no roll to cover ${tableRef}`;
+  let min: number;
+  let max: number;
+  try {
+    const parsed = parseDice(procedure.roll);
+    min = minimumDiceTotal(parsed);
+    max = maximumDiceTotal(parsed);
+  } catch {
+    return `procedure ${String(procedure.id)} roll ${JSON.stringify(procedure.roll)} is not valid dice notation`;
+  }
+  const table: TableData = {
+    rows: (tableRecord.data as { rows: string[][] }).rows,
+  };
+  if (kind === 'table-pool') {
+    const entries = tableEntryIds(table).length;
+    return entries < max
+      ? `procedure ${String(procedure.id)} can remove ${max} entries (${procedure.roll}) but ${tableRef} declares only ${entries}`
+      : undefined;
+  }
+  const ranges = table.rows.map(rowRange);
+  for (let total = min; total <= max; total += 1) {
+    const matches = ranges.filter(
+      (range) =>
+        range !== undefined && total >= range.low && total <= range.high,
+    ).length;
+    if (matches === 0)
+      return `procedure ${String(procedure.id)} roll ${procedure.roll} can total ${total} but ${tableRef} has no row for it`;
+    if (matches > 1)
+      return `procedure ${String(procedure.id)} roll ${procedure.roll} can total ${total} but ${tableRef} has ${matches} rows for it`;
+  }
+  return undefined;
 }
 
 function initializeCardPool(
@@ -314,11 +423,13 @@ export function initializeDeclaredRandomState(input: {
       continue;
     }
     const table = tableData(tableRef, input.resolveTable);
-    const outcome =
-      typeof procedure.outcome === 'string'
-        ? procedure.outcome.toLowerCase()
-        : '';
-    if (outcome.startsWith('remove that many randomly selected')) {
+    // A malformed containment block is refused as before; the kind itself is
+    // classified by the same function admission uses (eshyra-1dey), so the
+    // two cannot disagree about which coverage rule a procedure needs.
+    if (input.mechanics.containment !== undefined)
+      object(input.mechanics.containment, 'mechanics.containment');
+    const kind = initialStateTableKind(procedure, input.mechanics);
+    if (kind === 'table-pool') {
       const count =
         reused ??
         recordRoll(
@@ -345,14 +456,7 @@ export function initializeDeclaredRandomState(input: {
       };
       continue;
     }
-    const containment =
-      input.mechanics.containment === undefined
-        ? undefined
-        : object(input.mechanics.containment, 'mechanics.containment');
-    if (
-      containment?.tracksOccupancy === true &&
-      outcome.includes('rolled creature')
-    ) {
+    if (kind === 'containment-occupant') {
       const roll = recordRoll(
         purpose,
         procedure.roll,
@@ -367,11 +471,7 @@ export function initializeDeclaredRandomState(input: {
       };
       continue;
     }
-    if (
-      typeof procedure.trigger === 'string' &&
-      procedure.trigger.toLowerCase().startsWith('each ') &&
-      outcome.startsWith('add the rolled')
-    ) {
+    if (kind === 'table-results') {
       const countProcedure = procedures.find(
         (candidate) =>
           candidate !== procedure &&

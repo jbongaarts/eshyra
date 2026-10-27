@@ -1,6 +1,6 @@
 import {
-  initialStateTableRefs,
-  randomInitializationTableViolation,
+  initialStateProcedures,
+  randomInitializationCoverageViolation,
 } from '../state/itemRandomInitialization.js';
 import type { ResolvedRulesStack } from './stack.js';
 import { RulesPackError } from './types.js';
@@ -31,29 +31,34 @@ export function assertEffectiveRandomInitializationTables(
       variants?: unknown;
     } | null;
     const variants = Array.isArray(data?.variants) ? data.variants : [];
-    const refs = new Set([
-      ...initialStateTableRefs(data?.mechanics),
-      ...variants.flatMap((variant) =>
-        initialStateTableRefs((variant as { mechanics?: unknown })?.mechanics),
+    const mechanicsList = [
+      data?.mechanics,
+      ...variants.map(
+        (variant) => (variant as { mechanics?: unknown })?.mechanics,
       ),
-    ]);
-    for (const tableRef of refs) {
-      const table = tables?.get(tableRef);
-      const contributor =
-        item.pack !== stack.base
-          ? item.pack.meta.packId
-          : table !== undefined && table.pack !== stack.base
-            ? table.pack.meta.packId
-            : undefined;
-      if (contributor === undefined) continue;
-      const violation = randomInitializationTableViolation(
-        tableRef,
-        table?.record,
-      );
-      if (violation !== undefined)
-        throw new RulesPackError(
-          `add-on ${contributor} yields an effective randomInitialization table ${tableRef} on ${key} that is invalid in the layered stack: ${violation}`,
+    ];
+    for (const mechanics of mechanicsList) {
+      for (const procedure of initialStateProcedures(mechanics)) {
+        if (typeof procedure.tableRef !== 'string') continue;
+        const tableRef = procedure.tableRef;
+        const table = tables?.get(tableRef);
+        const contributor =
+          item.pack !== stack.base
+            ? item.pack.meta.packId
+            : table !== undefined && table.pack !== stack.base
+              ? table.pack.meta.packId
+              : undefined;
+        if (contributor === undefined) continue;
+        const violation = randomInitializationCoverageViolation(
+          mechanics,
+          procedure,
+          table?.record,
         );
+        if (violation !== undefined)
+          throw new RulesPackError(
+            `add-on ${contributor} yields an effective randomInitialization table ${tableRef} on ${key} that is invalid in the layered stack: ${violation}`,
+          );
+      }
     }
   }
 }
