@@ -117,9 +117,9 @@ describe('Node runtime policy', () => {
     const core = readPackageJson('packages/core/package.json');
     const cli = readPackageJson('packages/cli/package.json');
 
-    expect(root.engines?.node).toBe('>=24 <25');
-    expect(core.engines?.node).toBe('>=24 <25');
-    expect(cli.engines?.node).toBe('>=24 <25');
+    expect(root.engines?.node).toBe('>=24.22.1 <25');
+    expect(core.engines?.node).toBe('>=24.22.1 <25');
+    expect(cli.engines?.node).toBe('>=24.22.1 <25');
     expect(core.dependencies?.['better-sqlite3']).toMatch(/^\^12\./);
     expect(root.devDependencies?.['@types/node']).toMatch(/^\^24\./);
   });

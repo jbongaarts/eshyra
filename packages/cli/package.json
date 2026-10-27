@@ -14,7 +14,7 @@
     "directory": "packages/cli"
   },
   "engines": {
-    "node": ">=24 <25"
+    "node": ">=24.22.1 <25"
   },
   "bin": {
     "eshyra": "./dist/index.js"

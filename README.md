@@ -188,7 +188,7 @@ capture modes.
 
 Prerequisites for repository work:
 
-- Node.js 24 LTS (`>=24 <25`).
+- Node.js 24 LTS (`>=24.22.1 <25`).
 - npm.
 - A C++ toolchain only if `better-sqlite3` cannot use its Node 24 prebuild.
 - Dolt is optional; Dolt-gated tests skip when the binary is absent.
