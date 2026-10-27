@@ -26,7 +26,7 @@
 #
 #   NODE SUPPORT DECISION (intentional, documented):
 #   ADR 0008 makes Node 24 LTS the supported runtime. The root and workspace
-#   package engines stay at >=24 <25, CI uses Node 24, and better-sqlite3 stays
+#   package engines stay at >=24.22.1 <25, CI uses Node 24, and better-sqlite3 stays
 #   on the 12.x line for Node 24 native prebuild support.
 #
 #   DOCUMENTED FALLBACK (if a prebuilt is ever unavailable for the chosen

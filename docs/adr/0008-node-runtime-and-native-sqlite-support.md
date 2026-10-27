@@ -23,7 +23,7 @@ failures harder to diagnose.
 The root package and both workspaces already declare:
 
 ```json
-{ "engines": { "node": ">=24 <25" } }
+{ "engines": { "node": ">=24.22.1 <25" } }
 ```
 
 That engine range communicates the supported runtime boundary.
@@ -33,7 +33,12 @@ That engine range communicates the supported runtime boundary.
 Node 24 LTS is the supported runtime for the first local CLI release.
 
 The workspace uses `better-sqlite3` 12.x for Node 24 native prebuild support.
-The root package and both workspaces declare `>=24 <25`, and CI runs on Node 24.
+The root package and both workspaces declare `>=24.22.1 <25`, and CI runs on Node 24.
+
+The `24.22.1` floor (raised 2026-10-26, eshyra-yavy) excludes Node builds
+vulnerable to CVE-2026-111497 ("Node2Shell"), a memory-corruption flaw in the
+Brotli decoder bundled with the runtime. It is a patch-level floor within the
+same Node 24 LTS line; it does not change the supported major.
 
 CI and release jobs keep `npm_config_build_from_source=false` when installing
 dependencies so prebuild-install does not intentionally skip native prebuilds.

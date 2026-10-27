@@ -45,7 +45,7 @@ check asserting that build output exists. Reset with `npm run clean` (clears
 `dist` **and** `tsbuildinfo`) or use `npm run typecheck` (`--force`, as CI does).
 
 **Native dep — `better-sqlite3`** (the only compiled dependency): Node 24 LTS,
-workspace engines pinned `>=24 <25`, `@types/node` on 24.x, and
+workspace engines pinned `>=24.22.1 <25`, `@types/node` on 24.x, and
 `better-sqlite3` 12.x (the line shipping Node 24 prebuilds). CI pins Node 24, sets
 `npm_config_build_from_source=false`, and runs the CLI install smoke on Linux,
 Windows, and macOS. **An accidental source-build fallback is a regression**

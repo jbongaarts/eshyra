@@ -64,7 +64,7 @@ For every dependency PR:
 with the supported Node runtime:
 
 - Node 24 LTS is the supported runtime for this release line.
-- Root and workspace `engines.node` ranges stay at `>=24 <25`.
+- Root and workspace `engines.node` ranges stay at `>=24.22.1 <25`.
 - `@types/node` stays on 24.x while the engine range targets Node 24.
 - CI runs on Node 24 and sets `npm_config_build_from_source=false`.
 - The selected `better-sqlite3` line must provide prebuilt binaries for the
