@@ -61,6 +61,10 @@ const LIFECYCLE_HOOKS = [F3_ENTITY_OWNER, F5_ITEM_LINK] as const;
  */
 const CONTROL_SPANS: ReadonlyMap<string, string> = new Map([
   [
+    'Bag of Tricks',
+    'You can use a bonus action to command how the creature moves and what action it takes on its next turn, or to give it general orders, such as to attack your enemies. In the absence of such orders, the creature acts in a fashion appropriate to its nature.',
+  ],
+  [
     'Bowl of Commanding Water Elementals',
     'summon a water elemental, as if you had cast the conjure elemental spell',
   ],

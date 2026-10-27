@@ -64,13 +64,24 @@ function independentlyOwned(record: { name: string; data: unknown }): boolean {
   )
     return false;
   const grants = block.grants as Obj[];
-  const computed = ['timer', 'zero-hit-points', 'concentration-ended'];
+  const computed = [
+    'timer',
+    'zero-hit-points',
+    'concentration-ended',
+    'next-dawn',
+  ];
   return (
     grants.length > 0 &&
     grants.every((grant) => {
       const endings = (grant.revertOn as string[] | undefined) ?? [];
+      const creatureRefs = (grant.creatureRefs as unknown[] | undefined) ?? [];
       return (
         grant.kind === 'creature' &&
+        // PR #690 review: the binder verifies the creature only when the grant
+        // names exactly one (one creatureRef, or one statBlockRef).
+        (typeof grant.statBlockRef === 'string'
+          ? creatureRefs.length === 0
+          : creatureRefs.length === 1) &&
         // PR #673 review: only a fixed printed count is bound (P2-1), and a
         // death-triggered item consequence is not applied by any runtime (P2-2).
         // eshyra-olc5.14: a printed rolled count (`countRoll`) is bound too,
@@ -93,7 +104,6 @@ const OWNED_ITEMS = [
   'Bowl of Commanding Water Elementals',
   'Brazier of Commanding Fire Elementals',
   'Censer of Controlling Air Elementals',
-  'Elemental Gem',
   // countRoll per horn-type variant (eshyra-olc5.14)
   'Horn of Valhalla',
   // eshyra-olc5.15: its printed death consequence is TYPED (a stateMachine
@@ -104,7 +114,12 @@ const OWNED_ITEMS = [
 ];
 /** Every grant-bearing item that keeps the hooks, with the reason it does. */
 const KEPT_ITEMS: Record<string, string> = {
-  'Bag of Tricks': 'next-dawn ending is DM-ended; bonus-action command budget',
+  // PR #690 review: next-dawn is engine-computed (eshyra-7gkh.1), but the
+  // creature is a d8 on the bag's color table; the color is not bound to the
+  // instance nor the roll to the use, so the binder admits any table creature.
+  'Bag of Tricks': 'creature selected from a table (bag color + d8) not bound',
+  'Elemental Gem':
+    'creature selected by the gem type (four elementals) not bound to the instance',
   'Deck of Illusions': 'illusion grant, not bound by start_effect',
   'Efreeti Bottle': 'third-wish-granted ending is DM-ended; outcomes (.12.4)',
   'Feather Token': 'object whip grant mixed in; DM-ended endings',
@@ -295,7 +310,7 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
     const creature = (
       revertOn: string[] | undefined,
       kind = 'creature',
-      extra: Obj = { count: 1 },
+      extra: Obj = { count: 1, creatureRefs: ['creature:x'] },
     ) => ({
       id: 'g',
       kind,
@@ -321,6 +336,46 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
         ),
       ).toBe(true);
     });
+    it('owns a next-dawn ending (engine-computed, eshyra-7gkh.1) and keeps a DM-ended one beside it', () => {
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(['next-dawn', 'reduced-to-0-hit-points'])]),
+        ),
+      ).toBe(true);
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(['next-dawn', 'owner-dismisses-as-action'])]),
+        ),
+      ).toBe(false);
+    });
+    it('keeps a grant that does not name exactly one creature (PR #690 review)', () => {
+      const ends = ['one-hour-ended'];
+      // A creature chosen from a table (Bag of Tricks) or among several refs
+      // (Elemental Gem) is not verified by the binder.
+      for (const extra of [
+        { count: 1, tableRefs: ['table:t'] },
+        { count: 1, creatureRefs: ['creature:x', 'creature:y'] },
+        {
+          count: 1,
+          creatureRefs: ['creature:x'],
+          statBlockRef: 'stat-block:s',
+        },
+      ])
+        expect(
+          creatureGrantLifecycleOwned(
+            block([creature(ends, 'creature', extra)]),
+          ),
+        ).toBe(false);
+      for (const extra of [
+        { count: 1, creatureRefs: ['creature:x'] },
+        { count: 1, statBlockRef: 'stat-block:s' },
+      ])
+        expect(
+          creatureGrantLifecycleOwned(
+            block([creature(ends, 'creature', extra)]),
+          ),
+        ).toBe(true);
+    });
     it('keeps illusion, object, containment, DM-ended, empty and mixed grants', () => {
       expect(
         creatureGrantLifecycleOwned(
@@ -341,7 +396,6 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
         'owner-command-while-touching',
         'obeyed-owner-command-while-touching',
         'owner-bonus-action-command',
-        'next-dawn',
         'third-wish-granted',
       ])
         expect(
@@ -367,6 +421,7 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
     it('admits a countRoll (the engine-rolled, binder-enforced count) exactly where it is present (eshyra-olc5.14)', () => {
       const endings = ['reduced-to-0-hit-points', 'one-hour-ended'];
       const withRoll = creature(endings, 'creature', {
+        creatureRefs: ['creature:berserker'],
         tableRefs: ['table:horn-of-valhalla'],
         countRoll: '2d4+2',
       });
@@ -387,7 +442,7 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
       ).toBe(false);
       expect(
         creatureGrantLifecycleOwned(
-          block([{ ...withRoll, revertOn: ['next-dawn'] }]),
+          block([{ ...withRoll, revertOn: ['owner-dies'] }]),
         ),
       ).toBe(false);
     });

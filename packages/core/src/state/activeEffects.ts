@@ -90,6 +90,7 @@ import type { CharacterConditionEntry } from './liveStateSchema.js';
 import { validateConditionsJson } from './liveStateSchema.js';
 import { MutateStateError } from './mutateState.js';
 import { readAnchorTurnOrdinal } from './turnClock.js';
+import { nextDawnAfter } from './worldClockBoundaries.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -3874,6 +3875,10 @@ export type ItemGrantRevertDisposition =
     }
   | { readonly kind: 'zero-hit-points' }
   | { readonly kind: 'concentration-ended' }
+  /** Ends at the first dawn boundary strictly after the bind (eshyra-7gkh.1):
+   *  the engine computes the timer from the same dawn the item reset executor
+   *  uses, so the ordinary world-time expiry ends the grant. */
+  | { readonly kind: 'next-dawn' }
   | { readonly kind: 'dm-ended' };
 
 export const ITEM_GRANT_REVERT_DISPOSITIONS: Readonly<
@@ -3887,7 +3892,7 @@ export const ITEM_GRANT_REVERT_DISPOSITIONS: Readonly<
   'card-moved': { kind: 'dm-ended' },
   dispelled: { kind: 'dm-ended' },
   'maximum-daily-flight-distance-reached': { kind: 'dm-ended' },
-  'next-dawn': { kind: 'dm-ended' },
+  'next-dawn': { kind: 'next-dawn' },
   'obeyed-owner-command-while-touching': { kind: 'dm-ended' },
   'owner-bonus-action-command': { kind: 'dm-ended' },
   'owner-command-while-touching': { kind: 'dm-ended' },
@@ -3909,6 +3914,9 @@ interface ItemGrantBinding {
   readonly printedTimer:
     | { readonly amount: number; readonly unit: EffectDurationUnit }
     | undefined;
+  /** The grant prints that it ends at the next dawn: the engine computes the
+   *  minute timer that reaches the first dawn strictly after the bind. */
+  readonly untilNextDawn: boolean;
   /** Actors whose 0-hit-point rule the grant's printed revertOn sets. */
   readonly zeroHpActorIds: ReadonlySet<string>;
   /** Printed concentration (S2): required when the grant is summoned 'as
@@ -4122,6 +4130,9 @@ function validateItemGrantBinding(
     throw new ActiveEffectError(
       `${label} creates ${grant.count}; ${actors.length} linked actor(s) were given`,
     );
+  const grantDuration = grant.duration as Record<string, unknown> | undefined;
+  const outlivesEncounter =
+    runtimeOwner === 'persistent-actor' || grantDuration?.unit !== 'round';
   const typedCreatures = [
     ...(Array.isArray(grant.creatureRefs) ? grant.creatureRefs : []),
     ...(typeof grant.statBlockRef === 'string' ? [grant.statBlockRef] : []),
@@ -4145,16 +4156,22 @@ function validateItemGrantBinding(
       throw new ActiveEffectError(
         `linked actor '${actor.combatantId}' is ${row.rules_ref}, which ${label} does not create (it creates: ${typedCreatures})`,
       );
-    // A persistent-actor grant outlives the encounter, so its creature needs
-    // a durable campaign actor; an instance-only combatant would be released
-    // by combat closure while the effect stayed active with no creature.
+    // A creature whose grant can outlive the encounter needs a durable
+    // campaign actor; an instance-only combatant would be released by combat
+    // closure while the effect stayed active with no creature, so its printed
+    // ending could never remove it (PR #690 review). Durability follows the
+    // grant's LIFETIME, not runtimeOwner: an encounter-combatant summon with a
+    // one-hour, next-dawn, concentration or untimed lifetime (Bag of Tricks,
+    // the elemental vessels, Horn of Valhalla) outlives a combat as surely as a
+    // persistent actor. Only a round-scale lifetime, which closure itself
+    // settles, stays inside the encounter.
     if (
-      runtimeOwner === 'persistent-actor' &&
+      outlivesEncounter &&
       actor.campaignActorId === undefined &&
       row.identity_kind !== 'campaign_actor'
     )
       throw new ActiveEffectError(
-        `${label} is owned by a persistent actor, so linked actor '${actor.combatantId}' needs campaignActorId; without a durable identity combat closure would release it from the effect`,
+        `${label} can outlive the encounter (${runtimeOwner === 'persistent-actor' ? 'a persistent actor' : 'its lifetime is not round-scale'}), so linked actor '${actor.combatantId}' needs campaignActorId; without a durable identity combat closure would release it before its printed ending`,
       );
   }
   // S2: the printed concentration rule. 'as spell:<id>' (elemental vessels,
@@ -4203,6 +4220,7 @@ function validateItemGrantBinding(
       ? (typed as Record<string, unknown>)
       : undefined;
   let zeroHp = false;
+  let untilNextDawn = false;
   let printedTimer: ItemGrantBinding['printedTimer'];
   for (const value of revertOn) {
     if (!Object.hasOwn(ITEM_GRANT_REVERT_DISPOSITIONS, value))
@@ -4230,6 +4248,12 @@ function validateItemGrantBinding(
         );
     } else if (disposition.kind === 'zero-hit-points') {
       zeroHp = true;
+    } else if (disposition.kind === 'next-dawn') {
+      if (typedDuration !== undefined)
+        throw new ActiveEffectError(
+          `${label} ends at the next dawn and also prints a typed duration; the engine computes one timer, so it refuses to guess which governs`,
+        );
+      untilNextDawn = true;
     }
   }
   for (const actor of actors) {
@@ -4404,6 +4428,7 @@ function validateItemGrantBinding(
     packRef: record.key,
     typedDuration,
     printedTimer,
+    untilNextDawn,
     zeroHpActorIds: new Set(zeroHp ? actors.map((a) => a.combatantId) : []),
     concentration,
     spellRef,
@@ -4668,10 +4693,31 @@ export function createActiveEffect(
         }
       }
     }
-    // S6: a grant with no typed duration takes a DM-supplied timed duration,
-    // recorded as a dm-override (unbound), and never an invented cap. A
-    // printed fixed timer still fixes the amount. Until-removed needs no record.
-    if (
+    // A grant that ends at the next dawn takes an ENGINE-computed minute
+    // timer: the minutes from the bind clock to the first dawn boundary strictly
+    // after it (the boundary the item reset executor uses). No DM override and
+    // no until-removed lifetime: the world-time expiry ends it at that dawn.
+    if (itemGrant?.untilNextDawn === true) {
+      const clock = txnDb
+        .prepare('SELECT elapsed_minutes FROM clock WHERE id=1')
+        .get() as { elapsed_minutes?: number } | undefined;
+      const now = clock?.elapsed_minutes;
+      if (!Number.isSafeInteger(now) || (now as number) < 0)
+        throw new ActiveEffectError(
+          'campaign clock elapsed_minutes is malformed',
+        );
+      const minutes = nextDawnAfter(now as number) - (now as number);
+      if (
+        input.duration.kind !== 'timed' ||
+        input.duration.unit !== 'minute' ||
+        input.duration.amount !== minutes ||
+        input.duration.anchor !== 'effect-created' ||
+        input.durationProvenance !== undefined
+      )
+        throw new ActiveEffectError(
+          `item grant '${itemGrant.grantId}' ends at the next dawn, which the engine computes: its duration is exactly ${minutes} minute(s) anchored to effect-created (no override), reaching the first dawn after elapsed minute ${now}`,
+        );
+    } else if (
       itemGrant !== undefined &&
       itemGrant.typedDuration === undefined &&
       input.duration.kind === 'timed'

@@ -1823,8 +1823,23 @@ describe('runtime safety across the whole corpus', () => {
     'Ammunition, +1, +2, or +3||hit-target',
     'Animated Shield||end-animation',
     'Animated Shield||speak-command-word',
+    // eshyra-7gkh.1: the hard-limit per-day dawn economy ('F5: per-period usage
+    // reset') is executed (useItem spends and refuses at 0; the reset executor
+    // restores at dawn), so the operations it alone blocked are ready. The four
+    // elemental vessels are creature grants (real-pack conformance in
+    // itemGrantRealPackReadiness.test.ts); the rest are plain per-day spends
+    // (dawn conformance in itemPerDayDawnEconomy.test.ts). The Bag of Tricks is
+    // not ready: its creature is chosen from a table the binder cannot verify
+    // (PR #690 review).
     'Boots of Levitation||cast-levitate',
+    'Bowl of Commanding Water Elementals||summon-water-elemental',
+    'Brazier of Commanding Fire Elementals||summon-fire-elemental',
     'Candle of Invocation||burn',
+    'Cape of the Mountebank||cast-dimension-door',
+    'Censer of Controlling Air Elementals||summon-air-elemental',
+    'Circlet of Blasting||cast-scorching-ray',
+    'Crystal Ball|crystal-ball-of-telepathy|cast-suggestion',
+    'Dragon Scale Mail||sense-nearest-dragon',
     'Frost Brand||extinguish-flames',
     // eshyra-olc5.14: the engine-rolled, binder-enforced count owns the grant.
     'Horn of Valhalla|brass|blow-horn',
@@ -1834,11 +1849,15 @@ describe('runtime safety across the whole corpus', () => {
     // eshyra-olc5.15: its printed death consequence is typed (the djinni-dies
     // transition) and executed by item_state_event; real-pack conformance in
     // itemStateEventNonmagical.test.ts.
+    'Iron Bands of Binding||throw-bands',
+    'Plate Armor of Etherealness||gain-etherealness',
     'Ring of Djinni Summoning||summon-djinni',
     'Ring of X-ray Vision||activate-x-ray-vision',
+    'Rod of Rulership||command-obedience',
     'Rod of Security||enter-paradise',
     'Rope of Entanglement||entangle-creature',
     'Rope of Entanglement||release-creature',
+    'Stone of Controlling Earth Elementals||summon-earth-elemental',
     'Well of Many Worlds||open-portal',
     'Wings of Flying||dismiss-wings',
     'Wings of Flying||manifest-wings',
