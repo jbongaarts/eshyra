@@ -44,6 +44,9 @@ interface Carrier {
   readonly nextDawn: boolean;
   readonly concentration: boolean;
   readonly rolledCount: boolean;
+  /** The creature is chosen by an engine roll (`creatureRoll`: the Bag of
+   *  Tricks' d8 on its color's table, eshyra-olc5.16.1). */
+  readonly rolledCreature: boolean;
 }
 
 /** Every non-anchored cooldownEconomy grant of every variant, from the pack. */
@@ -103,6 +106,7 @@ function enumerateCarriers(): Carrier[] {
             typeof grant.control === 'string' &&
             grant.control.startsWith('as spell:'),
           rolledCount: typeof grant.countRoll === 'string',
+          rolledCreature: typeof grant.creatureRoll === 'string',
         });
       }
     }
@@ -214,7 +218,12 @@ function setup(creatures: readonly string[] = []) {
   const effects = () =>
     listActiveEffects(db, DEFAULT_TEST_CAMPAIGN_ID, { includeEnded: true });
   /** Returns the instance id the engine issued (stateful items get '<base>#n'). */
-  const give = (id: string, carrier: Carrier, quantity?: number): string => {
+  const give = (
+    id: string,
+    carrier: Carrier,
+    quantity?: number,
+    attune = true,
+  ): string => {
     const given = must('give_item', {
       id,
       name: carrier.name,
@@ -225,7 +234,7 @@ function setup(creatures: readonly string[] = []) {
       ...(quantity === undefined ? {} : { quantity }),
     });
     const issued = (given.data as { id: string }).id;
-    if (carrier.requiresAttunement)
+    if (carrier.requiresAttunement && attune)
       must('attune_item', { character: 'pc-1', itemId: issued });
     return issued;
   };
@@ -297,8 +306,12 @@ describe('olc5.12.3 the pack carriers, enumerated from the pack', () => {
 
   // A carrier whose count is engine-rolled (`countRoll`: the Horn of Valhalla
   // variants) binds exactly the rolled total; its use/bind contract is driven
-  // in itemGrantRolledCount.test.ts on the unmodified pack.
-  for (const carrier of CARRIERS.filter((c) => !c.rolledCount)) {
+  // in itemGrantRolledCount.test.ts on the unmodified pack. A carrier whose
+  // creature is engine-rolled (`creatureRoll`: the Bag of Tricks colors) binds
+  // exactly the rolled creature, driven in itemGrantBagOfTricks.test.ts.
+  for (const carrier of CARRIERS.filter(
+    (c) => !c.rolledCount && !c.rolledCreature,
+  )) {
     const label = `${carrier.key}${carrier.variantId === undefined ? '' : `/${carrier.variantId}`} ${carrier.grantId}`;
     it(`${label}: no bind without a use; use_item then bind redeems exactly one credit; a second bind needs another use`, () => {
       const s = setup([carrier.creature, carrier.creature]);
@@ -372,8 +385,12 @@ describe('olc5.12.3 the pack carriers, enumerated from the pack', () => {
 });
 
 describe('olc5.12.3 credit ordering and scoping', () => {
+  // The Pipes of the Sewers: three charges, one rat-swarm creature, a fixed
+  // creature, so an unnamed bind redeems the OLDEST open credit. (The Bag of
+  // Tricks' creature is rolled per use, so its bind names its own credit;
+  // eshyra-olc5.16.1.)
   const bag = CARRIERS.find(
-    (c) => c.key === 'magic-item:bag-of-tricks',
+    (c) => c.key === 'magic-item:pipes-of-the-sewers',
   ) as Carrier;
 
   it('two uses then two binds succeed, the oldest credit redeems first, a third bind is refused', () => {
@@ -408,11 +425,15 @@ describe('olc5.12.3 credit ordering and scoping', () => {
   it('refuses a credit of the wrong campaign, instance or economy, and a refused insert leaves it unredeemed', () => {
     const s = setup([bag.creature, 'creature:djinni']);
     const bag1 = s.give('bag-1', bag);
-    const bag2 = s.give('bag-2', bag);
+    // A character attunes to one copy only; the second instance is never used,
+    // so it owes no credit either way.
+    const bag2 = s.give('bag-2', bag, undefined, false);
     s.nextTurn();
     expect(s.use(bag1, bag)).toMatchObject({ ok: true });
     // Wrong instance: the credit belongs to bag-1.
-    expect(s.bind('fx-i', bag2, bag)).toMatchObject({ ok: false });
+    const foreign = s.bind('fx-i', bag2, bag);
+    expect(foreign).toMatchObject({ ok: false });
+    expect(foreign.message).toMatch(/holds no unredeemed use/);
     // Wrong campaign, then wrong economy: scoped columns do not match.
     for (const [column, value] of [
       ['campaign_id', 'other-campaign'],

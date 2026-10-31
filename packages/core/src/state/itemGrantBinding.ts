@@ -252,6 +252,18 @@ export interface ItemGrantRolledCount {
   readonly total: number;
 }
 
+/** The engine roll of a grant's printed `creatureRoll` (a die roll on a
+ *  table whose rows name the creatures), made when the use issued its bind
+ *  credit and persisted on that credit (eshyra-olc5.16). */
+export interface ItemGrantRolledCreature {
+  readonly grantId: string;
+  readonly notation: string;
+  /** The table row rolled (1..N). */
+  readonly roll: number;
+  /** The creature ref of that row. */
+  readonly creatureRef: string;
+}
+
 /** One use of an item that paid for a non-anchored entity grant (olc5.12.3). */
 export interface ItemGrantBindCredit {
   readonly creditId: string;
@@ -274,6 +286,8 @@ export function issueItemGrantBindCredit(
     readonly sessionId: string;
     /** Engine rolls of the credit's grants that print a `countRoll`. */
     readonly rolledCounts?: readonly ItemGrantRolledCount[];
+    /** Engine rolls of the credit's grants that print a `creatureRoll`. */
+    readonly rolledCreatures?: readonly ItemGrantRolledCreature[];
   },
 ): string {
   const prefix = `${credit.itemInstanceId}:${credit.operationId}:`;
@@ -287,8 +301,8 @@ export function issueItemGrantBindCredit(
     `INSERT INTO item_grant_bind_credit(
        credit_id, campaign_id, item_instance_id, pack_ref, variant_id,
        economy_id, operation_id, issued_at, issued_elapsed_minutes,
-       provenance, session_id, rolled_counts_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       provenance, session_id, rolled_counts_json, rolled_creatures_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     creditId,
     credit.campaignId,
@@ -304,6 +318,9 @@ export function issueItemGrantBindCredit(
     credit.rolledCounts === undefined || credit.rolledCounts.length === 0
       ? null
       : JSON.stringify(credit.rolledCounts),
+    credit.rolledCreatures === undefined || credit.rolledCreatures.length === 0
+      ? null
+      : JSON.stringify(credit.rolledCreatures),
   );
   return creditId;
 }
@@ -341,6 +358,50 @@ export function readItemGrantRolledCount(
     typeof hit.notation !== 'string' ||
     !Number.isInteger(hit.total) ||
     hit.total < 1
+  )
+    return undefined;
+  return hit;
+}
+
+/** The engine-rolled creature persisted on a credit for a grant, or undefined
+ *  when the credit holds none (a credit issued before the roll existed, or one
+ *  whose stored value is not a well-formed roll of this grant). Never throws:
+ *  an unreadable value is "no recorded roll" and the bind is refused. */
+export function readItemGrantRolledCreature(
+  db: Db,
+  creditId: string,
+  grantId: string,
+): ItemGrantRolledCreature | undefined {
+  const row = db
+    .prepare(
+      'SELECT rolled_creatures_json FROM item_grant_bind_credit WHERE credit_id = ?',
+    )
+    .get(creditId) as { rolled_creatures_json: string | null } | undefined;
+  if (row?.rolled_creatures_json == null) return undefined;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(row.rolled_creatures_json);
+  } catch {
+    return undefined;
+  }
+  if (!Array.isArray(parsed)) return undefined;
+  const hit = parsed.find(
+    (entry) =>
+      typeof entry === 'object' &&
+      entry !== null &&
+      (entry as { grantId?: unknown }).grantId === grantId,
+  ) as ItemGrantRolledCreature | undefined;
+  if (hit === undefined || typeof hit.notation !== 'string') return undefined;
+  const sides = /^1d(\d+)$/.exec(
+    hit.notation.replace(/\s+/g, '').toLowerCase(),
+  );
+  if (
+    sides === null ||
+    !Number.isInteger(hit.roll) ||
+    hit.roll < 1 ||
+    hit.roll > Number(sides[1]) ||
+    typeof hit.creatureRef !== 'string' ||
+    hit.creatureRef === ''
   )
     return undefined;
   return hit;

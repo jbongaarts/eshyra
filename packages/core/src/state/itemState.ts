@@ -52,6 +52,7 @@ import {
 import type { ItemOperationReadinessInput } from './itemExecutionReadiness.js';
 import {
   type ItemGrantRolledCount,
+  type ItemGrantRolledCreature,
   issueItemGrantBindCredit,
   itemInstanceIdTaken,
   writeItemConsumptionReceipt,
@@ -192,6 +193,10 @@ export interface UseItemResult {
        *  use and persisted on the credit (eshyra-olc5.14). start_effect binds
        *  exactly `total` linked actors for that grant. */
       readonly rolledCounts?: readonly ItemGrantRolledCount[];
+      /** Engine rolls of the listed grants' printed `creatureRoll`, made by
+       *  this use and persisted on the credit (eshyra-olc5.16).
+       *  start_effect binds exactly `creatureRef` for that grant. */
+      readonly rolledCreatures?: readonly ItemGrantRolledCreature[];
     }[];
   };
   readonly turnResource?: UseItemTurnResource;
@@ -2428,6 +2433,7 @@ function issueBindCredits(
   economyId: string;
   grantIds: string[];
   rolledCounts?: ItemGrantRolledCount[];
+  rolledCreatures?: ItemGrantRolledCreature[];
 }[] {
   const grants = (args.mechanics.entityGrant as Obj | undefined)?.grants;
   if (!Array.isArray(grants)) return [];
@@ -2436,6 +2442,7 @@ function issueBindCredits(
     economyId: string;
     grantIds: string[];
     rolledCounts?: ItemGrantRolledCount[];
+    rolledCreatures?: ItemGrantRolledCreature[];
   }[] = [];
   const charged = new Set(
     args.costs.filter((cost) => cost.amount > 0).map((cost) => cost.economy),
@@ -2487,8 +2494,40 @@ function issueBindCredits(
         total: rolled.total,
       });
     }
+    // eshyra-olc5.16: likewise a grant that prints a `creatureRoll` (Bag of
+    // Tricks' d8 on the bag color's table) has its table row rolled here by the
+    // ENGINE and the row's creature persisted on the credit; start_effect
+    // admits only that creature. Only variant-admitted grants are listed, so a
+    // gray bag's credit rolls only the gray table.
+    const rolledCreatures: ItemGrantRolledCreature[] = [];
+    for (const grantId of grantIds) {
+      const grant = grants.find(
+        (raw) => (raw as Obj | undefined)?.id === grantId,
+      ) as Obj;
+      if (typeof grant.creatureRoll !== 'string') continue;
+      if (args.input.rng === undefined)
+        throw new ItemStateError(
+          `use_item refused: grant '${grantId}' summons a creature chosen by a ${grant.creatureRoll} roll, and seeded RNG is required to roll it; no item state was changed`,
+        );
+      const creatureRefs = Array.isArray(grant.creatureRefs)
+        ? grant.creatureRefs
+        : [];
+      const rolled = rollDice(grant.creatureRoll, args.input.rng);
+      const creatureRef = creatureRefs[rolled.total - 1];
+      if (typeof creatureRef !== 'string')
+        throw new ItemStateError(
+          `use_item refused: grant '${grantId}' rolled ${rolled.total} on ${grant.creatureRoll}, which selects no creature; no item state was changed`,
+        );
+      rolledCreatures.push({
+        grantId,
+        notation: rolled.notation,
+        roll: rolled.total,
+        creatureRef,
+      });
+    }
     const creditId = issueItemGrantBindCredit(db, {
       rolledCounts,
+      rolledCreatures,
       campaignId: args.input.campaignId,
       itemInstanceId: args.input.instanceId,
       packRef: args.packRef,
@@ -2505,6 +2544,7 @@ function issueBindCredits(
       economyId,
       grantIds,
       ...(rolledCounts.length === 0 ? {} : { rolledCounts }),
+      ...(rolledCreatures.length === 0 ? {} : { rolledCreatures }),
     });
   }
   return credits;

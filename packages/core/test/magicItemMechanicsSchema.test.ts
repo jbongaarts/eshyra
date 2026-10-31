@@ -856,6 +856,104 @@ describe('magic-item mechanics schema', () => {
       /scope must be item or owner/,
     ],
     [
+      'creatureRoll on a non-creature grant',
+      {
+        runtimeOwner: 'encounter-combatant',
+        grants: [
+          {
+            id: 'x',
+            kind: 'object',
+            note: 'generic',
+            count: 1,
+            creatureRoll: '1d2',
+            creatureRefs: ['creature:a', 'creature:b'],
+          },
+        ],
+      },
+      /creatureRoll is valid only on a creature grant/,
+    ],
+    [
+      'creatureRoll whose N differs from the creatureRefs',
+      {
+        runtimeOwner: 'encounter-combatant',
+        grants: [
+          {
+            id: 'x',
+            kind: 'creature',
+            count: 1,
+            creatureRoll: '1d8',
+            creatureRefs: ['creature:a', 'creature:b'],
+          },
+        ],
+      },
+      /requires exactly 8 creatureRefs/,
+    ],
+    [
+      'creatureRoll that is not 1dN',
+      {
+        runtimeOwner: 'encounter-combatant',
+        grants: [
+          {
+            id: 'x',
+            kind: 'creature',
+            count: 1,
+            creatureRoll: '2d4',
+            creatureRefs: ['creature:a'],
+          },
+        ],
+      },
+      /1dN expression/,
+    ],
+    [
+      'creatureRoll with countRoll',
+      {
+        runtimeOwner: 'encounter-combatant',
+        grants: [
+          {
+            id: 'x',
+            kind: 'creature',
+            creatureRoll: '1d2',
+            countRoll: '2d4',
+            creatureRefs: ['creature:a', 'creature:b'],
+          },
+        ],
+      },
+      /creatureRoll and .*countRoll are mutually exclusive/,
+    ],
+    [
+      'creatureRoll with statBlockRef',
+      {
+        runtimeOwner: 'encounter-combatant',
+        grants: [
+          {
+            id: 'x',
+            kind: 'creature',
+            count: 1,
+            creatureRoll: '1d2',
+            statBlockRef: 'creature:a',
+            creatureRefs: ['creature:a', 'creature:b'],
+          },
+        ],
+      },
+      /cannot be combined with statBlockRef/,
+    ],
+    [
+      'creatureRoll without a count of 1',
+      {
+        runtimeOwner: 'encounter-combatant',
+        grants: [
+          {
+            id: 'x',
+            kind: 'creature',
+            count: 2,
+            creatureRoll: '1d2',
+            creatureRefs: ['creature:a', 'creature:b'],
+          },
+        ],
+      },
+      /numeric count of 1/,
+    ],
+    [
       'unknown grant field',
       {
         runtimeOwner: 'encounter-combatant',
@@ -865,6 +963,25 @@ describe('magic-item mechanics schema', () => {
     ],
   ])('rejects entity grant %s', (_name, entityGrant, message) => {
     expect(() => validate({ entityGrant })).toThrow(message as RegExp);
+  });
+
+  it('accepts a creatureRoll over exactly N creatureRefs with a count of 1', () => {
+    expect(() =>
+      validate({
+        entityGrant: {
+          runtimeOwner: 'encounter-combatant',
+          grants: [
+            {
+              id: 'x',
+              kind: 'creature',
+              count: 1,
+              creatureRoll: '1d2',
+              creatureRefs: ['creature:a', 'creature:b'],
+            },
+          ],
+        },
+      }),
+    ).not.toThrow();
   });
 
   it.each([

@@ -1454,6 +1454,7 @@ const GRANT_KEEP = [
   'variants',
   'count',
   'countRoll',
+  'creatureRoll',
   'duration',
   'revertOn',
   'cooldownEconomy',

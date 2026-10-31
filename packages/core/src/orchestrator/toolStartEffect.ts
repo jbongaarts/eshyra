@@ -158,7 +158,7 @@ export const startEffectTool: Tool = {
             type: 'string',
             minLength: 1,
             description:
-              "For a grantRef source paid by a use_item credit, the creditId from that use's hint.bindCredits. Required when the grant's count is rolled (rolledCounts); otherwise the oldest unredeemed credit is used.",
+              "For a grantRef source paid by a use_item credit, the creditId from that use's hint.bindCredits. Required when the grant's count or creature is rolled (rolledCounts, rolledCreatures); otherwise the oldest unredeemed credit is used.",
           },
           actor: EFFECT_PARTICIPANT_SCHEMA,
         },

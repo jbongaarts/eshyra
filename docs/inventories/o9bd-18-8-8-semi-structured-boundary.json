@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1862,
+  "rowCount": 1863,
   "dispositionCounts": {
     "complete": 443,
-    "model-adjudicated": 1213,
+    "model-adjudicated": 1214,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -17519,7 +17519,7 @@
         "magic-item:amulet-of-health/m2-amulet-of-health-constitution-score-set",
         "magic-item:amulet-of-proof-against-detection-and-location/c2-residual-proof-against-divination"
       ],
-      "population": 1384,
+      "population": 1385,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17543,7 +17543,7 @@
         "F2",
         "F5"
       ],
-      "population": 1568,
+      "population": 1567,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17567,7 +17567,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1568,
+      "population": 1567,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17591,7 +17591,7 @@
         "F2",
         "F5"
       ],
-      "population": 763,
+      "population": 762,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17615,7 +17615,7 @@
         "F2",
         "F5"
       ],
-      "population": 1343,
+      "population": 1340,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17639,7 +17639,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1343,
+      "population": 1340,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17662,7 +17662,7 @@
         "adjudicated-by-design",
         "design-blocked"
       ],
-      "population": 1384,
+      "population": 1385,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17686,7 +17686,7 @@
         "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
         "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
       ],
-      "population": 367,
+      "population": 368,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17806,7 +17806,7 @@
         "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
         "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
       ],
-      "population": 366,
+      "population": 367,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17898,7 +17898,7 @@
         "The barrel has a hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check.",
         "Ten levers are set in a row at the far end, each in a neutral position, able to move either up or down. When certain levers are used, the apparatus transforms to resemble a giant lobster."
       ],
-      "population": 366,
+      "population": 367,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17919,7 +17919,7 @@
         "parent",
         "variant"
       ],
-      "population": 1384,
+      "population": 1385,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17967,7 +17967,7 @@
         "M8",
         "M5"
       ],
-      "population": 1384,
+      "population": 1385,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -25170,7 +25170,7 @@
         "quantity",
         "goat-of-traveling-hour-charges"
       ],
-      "population": 18,
+      "population": 20,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25211,17 +25211,37 @@
       ],
       "fieldPath": "data.mechanics.entityGrant.grants[].creatureRefs[]",
       "representativeValues": [
-        "creature:water-elemental",
-        "creature:fire-elemental",
-        "creature:air-elemental",
-        "creature:efreeti",
-        "creature:earth-elemental"
+        "creature:weasel",
+        "creature:giant-rat",
+        "creature:badger",
+        "creature:boar",
+        "creature:panther"
       ],
-      "population": 27,
+      "population": 30,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.entityGrant.grants[].creatureRefs[]",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.entityGrant.grants[].creatureRoll",
+      "representativeValues": [
+        "1d8"
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.entityGrant.grants[].creatureRoll",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -25276,13 +25296,13 @@
       ],
       "fieldPath": "data.mechanics.entityGrant.grants[].id",
       "representativeValues": [
-        "bag-creature",
+        "gray-bag-creature",
+        "rust-bag-creature",
+        "tan-bag-creature",
         "water-elemental",
-        "fire-elemental",
-        "air-elemental",
-        "card-illusion"
+        "fire-elemental"
       ],
-      "population": 32,
+      "population": 34,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25304,7 +25324,7 @@
         "illusion",
         "object"
       ],
-      "population": 32,
+      "population": 34,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25328,7 +25348,7 @@
         "card-moved",
         "dispelled"
       ],
-      "population": 29,
+      "population": 31,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25372,7 +25392,7 @@
         "table:deck-of-illusions",
         "table:efreeti-bottle"
       ],
-      "population": 14,
+      "population": 16,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the reference-bearing field",
       "deterministicConsumers": "mechanics projection reference validation and the named effect resolver",
@@ -25390,13 +25410,13 @@
       ],
       "fieldPath": "data.mechanics.entityGrant.grants[].variants[]",
       "representativeValues": [
+        "gray",
+        "rust",
+        "tan",
         "bronze-griffon",
-        "ebony-fly",
-        "golden-lions",
-        "ivory-goats",
-        "marble-elephant"
+        "ebony-fly"
       ],
-      "population": 15,
+      "population": 18,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -26945,13 +26965,13 @@
       ],
       "fieldPath": "data.variants[].id",
       "representativeValues": [
+        "gray",
+        "rust",
+        "tan",
         "crystal-ball-of-mind-reading",
-        "crystal-ball-of-telepathy",
-        "crystal-ball-of-true-seeing",
-        "bronze-griffon",
-        "ebony-fly"
+        "crystal-ball-of-telepathy"
       ],
-      "population": 34,
+      "population": 37,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "D&D magic-item validator requires a canonical unique id for every variant",
       "deterministicConsumers": "canonicalMagicItemVariantId / MagicItemVariantDefinition.id",
@@ -27479,13 +27499,13 @@
       ],
       "fieldPath": "data.variants[].name",
       "representativeValues": [
+        "Gray",
+        "Rust",
+        "Tan",
         "Crystal Ball of Mind Reading",
-        "Crystal Ball of Telepathy",
-        "Crystal Ball of True Seeing",
-        "Bronze Griffon",
-        "Ebony Fly"
+        "Crystal Ball of Telepathy"
       ],
-      "population": 34,
+      "population": 37,
       "valueClass": "source prose",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "display and navigation only",
@@ -27503,12 +27523,12 @@
       ],
       "fieldPath": "data.variants[].rarity",
       "representativeValues": [
+        "Uncommon",
         "Legendary",
         "Rare",
-        "Very Rare",
-        "Uncommon"
+        "Very Rare"
       ],
-      "population": 34,
+      "population": 37,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -27526,13 +27546,13 @@
       ],
       "fieldPath": "data.variants[].text",
       "representativeValues": [
+        "d8 creatures: 1 Weasel; 2 Giant rat; 3 Badger; 4 Boar; 5 Panther; 6 Giant badger; 7 Dire wolf; 8 Giant elk.",
+        "d8 creatures: 1 Rat; 2 Owl; 3 Mastiff; 4 Goat; 5 Giant goat; 6 Giant boar; 7 Lion; 8 Brown bear.",
+        "d8 creatures: 1 Jackal; 2 Ape; 3 Baboon; 4 Axe beak; 5 Black bear; 6 Giant weasel; 7 Giant hyena; 8 Tiger.",
         "You can use an action to cast the detect thoughts spell (save DC 17) while you are scrying with the crystal ball, targeting creatures you can see within 30 feet of the spell’s sensor. You don’t need to concentrate on this detect thoughts to maintain it during its duration, but it ends if scrying ends.",
-        "While scrying with the crystal ball, you can communicate telepathically with creatures you can see within 30 feet of the spell’s sensor. You can also use an action to cast the suggestion spell (save DC 17) through the sensor on one of those creatures. You don’t need to concentrate on this suggestion to maintain it during its duration, but it ends if scrying ends. Once used, the suggestion power of the crystal ball can’t be used again until the next dawn.",
-        "While scrying with the crystal ball, you have truesight with a radius of 120 feet centered on the spell’s sensor.",
-        "This bronze statuette is of a griffon rampant. It can become a griffon for up to 6 hours. Once it has been used, it can’t be used again until 5 days have passed.",
-        "This ebony statuette is carved in the likeness of a horsefly. It can become a giant fly for up to 12 hours and can be ridden as a mount. Once it has been used, it can’t be used again until 2 days have passed."
+        "While scrying with the crystal ball, you can communicate telepathically with creatures you can see within 30 feet of the spell’s sensor. You can also use an action to cast the suggestion spell (save DC 17) through the sensor on one of those creatures. You don’t need to concentrate on this suggestion to maintain it during its duration, but it ends if scrying ends. Once used, the suggestion power of the crystal ball can’t be used again until the next dawn."
       ],
-      "population": 34,
+      "population": 37,
       "valueClass": "source prose",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",

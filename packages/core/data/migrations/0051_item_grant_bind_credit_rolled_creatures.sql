@@ -1,0 +1,11 @@
+-- eshyra-olc5.16: a grant that prints a creature chosen by a die roll on a
+-- table (Bag of Tricks' d8 on the bag color's table, `creatureRoll`) has that
+-- roll made by the ENGINE when use_item issues the bind credit, in the same
+-- transaction. The roll (grant id, notation, row rolled, creature ref of that
+-- row) is persisted here as a JSON array, so the credit durably attributes the
+-- selected creature to that one use and a reload or replay reads it back
+-- instead of rolling again. start_effect admits only that creature, and
+-- refuses a credit that holds no roll for the grant (NULL: every credit issued
+-- before this migration, and every credit for a grant with a fixed creature).
+-- Nothing caller-supplied is ever accepted as the creature.
+ALTER TABLE item_grant_bind_credit ADD COLUMN rolled_creatures_json TEXT;

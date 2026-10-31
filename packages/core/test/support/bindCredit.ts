@@ -65,6 +65,10 @@ export function ensureTestBindCredit(
     variantId: row.variant_id ?? undefined,
     economyId: grant.cooldownEconomy,
   };
+  // A grant whose creature is chosen by an engine roll (`creatureRoll`) can
+  // only be paid by the credit of a real use_item (its roll cannot be
+  // scaffolded); itemGrantBagOfTricks.test.ts drives that on the real pack.
+  if (typeof grant.creatureRoll === 'string') return;
   if (oldestOpenItemGrantBindCredit(db, scope) !== undefined) return;
   issueItemGrantBindCredit(db, {
     ...scope,

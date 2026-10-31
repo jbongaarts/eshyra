@@ -220,6 +220,14 @@ export interface MagicItemEntityGrant {
      *  linked actors (Horn of Valhalla's horn-type row, eshyra-olc5.14).
      *  Mutually exclusive with `count`. */
     readonly countRoll?: string;
+    /** A `1dN` expression the ENGINE rolls once per use (use_item); row k of
+     *  the roll selects `creatureRefs[k - 1]` (Bag of Tricks' d8 on the bag
+     *  color's table, eshyra-olc5.16). The selected creature is persisted on
+     *  the use's bind credit and start_effect admits only it. Valid only on a
+     *  creature grant with exactly N `creatureRefs` in table-row order, no
+     *  `statBlockRef`, a numeric `count` of 1; mutually exclusive with
+     *  `countRoll`. */
+    readonly creatureRoll?: string;
     readonly control?: string;
     readonly duration?: MagicItemDurationSpec;
     readonly revertOn?: readonly string[];
@@ -1231,6 +1239,7 @@ function entityGrant(
         'variants',
         'count',
         'countRoll',
+        'creatureRoll',
         'control',
         'duration',
         'revertOn',
@@ -1314,6 +1323,39 @@ function entityGrant(
           `${grantPath}.countRoll is valid only on a creature grant`,
         );
       dice(grant.countRoll, `${grantPath}.countRoll`);
+    }
+    if (grant.creatureRoll !== undefined) {
+      if (kind !== 'creature')
+        throw new RulesPackError(
+          `${grantPath}.creatureRoll is valid only on a creature grant`,
+        );
+      if (grant.countRoll !== undefined)
+        throw new RulesPackError(
+          `${grantPath}.creatureRoll and ${grantPath}.countRoll are mutually exclusive`,
+        );
+      const rolled = /^1d(\d+)$/.exec(
+        string(grant.creatureRoll, `${grantPath}.creatureRoll`),
+      );
+      const sides = rolled === null ? 0 : Number(rolled[1]);
+      if (!Number.isInteger(sides) || sides < 2)
+        throw new RulesPackError(
+          `${grantPath}.creatureRoll must be a 1dN expression with N >= 2`,
+        );
+      if (grant.statBlockRef !== undefined)
+        throw new RulesPackError(
+          `${grantPath}.creatureRoll selects among creatureRefs and cannot be combined with statBlockRef`,
+        );
+      if (
+        !Array.isArray(grant.creatureRefs) ||
+        grant.creatureRefs.length !== sides
+      )
+        throw new RulesPackError(
+          `${grantPath}.creatureRoll ${String(grant.creatureRoll)} requires exactly ${sides} creatureRefs, one per row in table order`,
+        );
+      if (grant.count !== 1)
+        throw new RulesPackError(
+          `${grantPath}.creatureRoll requires a numeric count of 1`,
+        );
     }
     if (grant.control !== undefined)
       string(grant.control, `${grantPath}.control`);

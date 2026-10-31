@@ -75,13 +75,22 @@ function independentlyOwned(record: { name: string; data: unknown }): boolean {
     grants.every((grant) => {
       const endings = (grant.revertOn as string[] | undefined) ?? [];
       const creatureRefs = (grant.creatureRefs as unknown[] | undefined) ?? [];
+      // eshyra-olc5.16.1: or the creature is selected by the engine's `1dN`
+      // roll over exactly N creatureRefs (the table rows), bound to the use.
+      const rolled =
+        typeof grant.creatureRoll === 'string'
+          ? /^1d(\d+)$/.exec(grant.creatureRoll)
+          : null;
       return (
         grant.kind === 'creature' &&
         // PR #690 review: the binder verifies the creature only when the grant
         // names exactly one (one creatureRef, or one statBlockRef).
-        (typeof grant.statBlockRef === 'string'
-          ? creatureRefs.length === 0
-          : creatureRefs.length === 1) &&
+        (rolled !== null
+          ? grant.statBlockRef === undefined &&
+            creatureRefs.length === Number(rolled[1])
+          : typeof grant.statBlockRef === 'string'
+            ? creatureRefs.length === 0
+            : creatureRefs.length === 1) &&
         // PR #673 review: only a fixed printed count is bound (P2-1), and a
         // death-triggered item consequence is not applied by any runtime (P2-2).
         // eshyra-olc5.14: a printed rolled count (`countRoll`) is bound too,
@@ -101,6 +110,9 @@ function independentlyOwned(record: { name: string; data: unknown }): boolean {
 }
 
 const OWNED_ITEMS = [
+  // eshyra-olc5.16.1: the color is the variant; the d8 row is rolled per use
+  // (creatureRoll) and the binder admits only that row's creature
+  'Bag of Tricks',
   'Bowl of Commanding Water Elementals',
   'Brazier of Commanding Fire Elementals',
   'Censer of Controlling Air Elementals',
@@ -114,10 +126,6 @@ const OWNED_ITEMS = [
 ];
 /** Every grant-bearing item that keeps the hooks, with the reason it does. */
 const KEPT_ITEMS: Record<string, string> = {
-  // PR #690 review: next-dawn is engine-computed (eshyra-7gkh.1), but the
-  // creature is a d8 on the bag's color table; the color is not bound to the
-  // instance nor the roll to the use, so the binder admits any table creature.
-  'Bag of Tricks': 'creature selected from a table (bag color + d8) not bound',
   'Elemental Gem':
     'creature selected by the gem type (four elementals) not bound to the instance',
   'Deck of Illusions': 'illusion grant, not bound by start_effect',
@@ -375,6 +383,35 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
             block([creature(ends, 'creature', extra)]),
           ),
         ).toBe(true);
+    });
+    it('owns a creatureRoll over exactly N creatureRefs and keeps any other multi-creature grant (eshyra-olc5.16.1)', () => {
+      const endings = ['next-dawn', 'reduced-to-0-hit-points'];
+      const refs8 = Array.from({ length: 8 }, (_, i) => `creature:c${i}`);
+      const rolled = {
+        count: 1,
+        creatureRefs: refs8,
+        tableRefs: ['table:t'],
+        creatureRoll: '1d8',
+      };
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(endings, 'creature', rolled)]),
+        ),
+      ).toBe(true);
+      // Counterfactuals: a roll whose N differs from the number of rows, a
+      // statBlockRef beside the roll, and the same refs without the roll are
+      // all not owned (the binder could not verify the creature).
+      for (const extra of [
+        { ...rolled, creatureRoll: '1d6' },
+        { ...rolled, creatureRefs: refs8.slice(0, 7) },
+        { ...rolled, statBlockRef: 'stat-block:s' },
+        { ...rolled, creatureRoll: undefined },
+      ])
+        expect(
+          creatureGrantLifecycleOwned(
+            block([creature(endings, 'creature', extra)]),
+          ),
+        ).toBe(false);
     });
     it('keeps illusion, object, containment, DM-ended, empty and mixed grants', () => {
       expect(
