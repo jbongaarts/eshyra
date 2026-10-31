@@ -78,6 +78,7 @@ import {
   oldestOpenItemGrantBindCredit,
   readItemConsumptionReceipt,
   readItemGrantRolledCount,
+  readItemGrantRolledCreature,
   redeemItemConsumptionReceipt,
   redeemItemGrantBindCredit,
 } from './itemGrantBinding.js';
@@ -4152,7 +4153,13 @@ function validateItemGrantBinding(
       throw new ActiveEffectError(
         `linked actor '${actor.combatantId}' is not a combatant of this campaign`,
       );
-    if (!grantAdmitsCreature(db, input, grant, row.rules_ref))
+    // A grant whose creature is chosen by an engine roll (`creatureRoll`) is
+    // checked against that use's rolled row below, once the credit is known;
+    // the generic table-name admit must not let another row of the table in.
+    if (
+      typeof grant.creatureRoll !== 'string' &&
+      !grantAdmitsCreature(db, input, grant, row.rules_ref)
+    )
       throw new ActiveEffectError(
         `linked actor '${actor.combatantId}' is ${row.rules_ref}, which ${label} does not create (it creates: ${typedCreatures})`,
       );
@@ -4338,6 +4345,13 @@ function validateItemGrantBinding(
       throw new ActiveEffectError(
         `${label} summons a rolled count (${grant.countRoll}) that belongs to one use; give source.bindCreditId, the creditId use_item returned for the use this creature realizes`,
       );
+    if (
+      requestedCreditId === undefined &&
+      typeof grant.creatureRoll === 'string'
+    )
+      throw new ActiveEffectError(
+        `${label} summons a rolled creature (${grant.creatureRoll}) that belongs to one use; give source.bindCreditId, the creditId use_item returned for the use this creature realizes`,
+      );
     if (requestedCreditId !== undefined) {
       if (!itemGrantBindCreditOpenInScope(db, requestedCreditId, creditScope))
         throw new ActiveEffectError(
@@ -4383,6 +4397,55 @@ function validateItemGrantBinding(
       throw new ActiveEffectError(
         `${label} summons ${rolled.total} (the engine rolled ${rolled.notation} = ${rolled.total} for use '${bindCreditId}'); ${actors.length} linked actor(s) were given`,
       );
+  }
+  // eshyra-olc5.16: a grant whose creature is chosen by a roll on a table
+  // (`creatureRoll`: Bag of Tricks' d8 on the bag color's table) admits exactly
+  // the creature of the row the ENGINE rolled when use_item issued the credit
+  // this bind redeems. The creature is never taken from the caller, and no
+  // other row of the table (nor another color's table) is admitted.
+  if (typeof grant.creatureRoll === 'string') {
+    if (bindCreditId === undefined)
+      throw new ActiveEffectError(
+        `${label} summons a rolled creature (${grant.creatureRoll}), which only a use_item bind credit can supply; it cannot bind from an anchored spend or a consumption receipt`,
+      );
+    const rolled = readItemGrantRolledCreature(db, bindCreditId, grantId);
+    const rowCreatures = Array.isArray(grant.creatureRefs)
+      ? grant.creatureRefs.map(String)
+      : [];
+    // The stored creature must be the grant's own row for the stored roll, so
+    // a credit can never name a creature the printed table does not put there.
+    if (
+      rolled === undefined ||
+      rolled.notation.replace(/\s+/g, '').toLowerCase() !==
+        grant.creatureRoll.replace(/\s+/g, '').toLowerCase() ||
+      rowCreatures[rolled.roll - 1] !== rolled.creatureRef
+    )
+      throw new ActiveEffectError(
+        `${label} summons a rolled creature (${grant.creatureRoll}), and bind credit '${bindCreditId}' records no engine roll of it; use_item the operation again (each use rolls its own creature)`,
+      );
+    // statBlockRef carries the selected ref only so a record with the same
+    // printed name is admitted as that row's creature (no tableRefs: another
+    // row of the table is not).
+    const selected = {
+      creatureRefs: [rolled.creatureRef],
+      statBlockRef: rolled.creatureRef,
+    };
+    for (const actor of actors) {
+      const row = db
+        .prepare(
+          'SELECT rules_ref FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+        )
+        .get(input.campaignId, actor.combatantId) as
+        | { rules_ref: string }
+        | undefined;
+      if (
+        row === undefined ||
+        !grantAdmitsCreature(db, input, selected, row.rules_ref)
+      )
+        throw new ActiveEffectError(
+          `linked actor '${actor.combatantId}' is ${row?.rules_ref}; use '${bindCreditId}' rolled ${rolled.notation} = ${rolled.roll}: ${rolled.creatureRef}`,
+        );
+    }
   }
   // A consumed source has no surviving item whose cooldown economy could be
   // spent or scheduled, and its receipt is the one-time guard.

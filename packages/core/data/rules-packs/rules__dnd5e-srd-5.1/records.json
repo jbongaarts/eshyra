@@ -90733,19 +90733,105 @@
       "rarity": "uncommon",
       "requiresAttunement": false,
       "description": "This ordinary bag, made from gray, rust, or tan cloth, appears empty. Reaching inside the bag, however, reveals the presence of a small, fuzzy object. The bag weighs 1/2 pound. You can use an action to pull the fuzzy object from the bag and throw it up to 20 feet. When the object lands, it transforms into a creature you determine by rolling a d8 and consulting the table that corresponds to the bag’s color. The creature vanishes at the next dawn or when it is reduced to 0 hit points. The creature is friendly to you and your companions, and it acts on your turn. You can use a bonus action to command how the creature moves and what action it takes on its next turn, or to give it general orders, such as to attack your enemies. In the absence of such orders, the creature acts in a fashion appropriate to its nature. Once three fuzzy objects have been pulled from the bag, the bag can’t be used again until the next dawn.",
+      "variants": [
+        {
+          "id": "gray",
+          "name": "Gray",
+          "rarity": "Uncommon",
+          "text": "d8 creatures: 1 Weasel; 2 Giant rat; 3 Badger; 4 Boar; 5 Panther; 6 Giant badger; 7 Dire wolf; 8 Giant elk."
+        },
+        {
+          "id": "rust",
+          "name": "Rust",
+          "rarity": "Uncommon",
+          "text": "d8 creatures: 1 Rat; 2 Owl; 3 Mastiff; 4 Goat; 5 Giant goat; 6 Giant boar; 7 Lion; 8 Brown bear."
+        },
+        {
+          "id": "tan",
+          "name": "Tan",
+          "rarity": "Uncommon",
+          "text": "d8 creatures: 1 Jackal; 2 Ape; 3 Baboon; 4 Axe beak; 5 Black bear; 6 Giant weasel; 7 Giant hyena; 8 Tiger."
+        }
+      ],
       "mechanics": {
         "entityGrant": {
           "runtimeOwner": "encounter-combatant",
           "grants": [
             {
-              "id": "bag-creature",
+              "id": "gray-bag-creature",
               "kind": "creature",
+              "creatureRefs": [
+                "creature:weasel",
+                "creature:giant-rat",
+                "creature:badger",
+                "creature:boar",
+                "creature:panther",
+                "creature:giant-badger",
+                "creature:dire-wolf",
+                "creature:giant-elk"
+              ],
               "tableRefs": [
-                "table:gray-bag-of-tricks",
-                "table:rust-bag-of-tricks",
-                "table:tan-bag-of-tricks"
+                "table:gray-bag-of-tricks"
+              ],
+              "variants": [
+                "gray"
               ],
               "count": 1,
+              "creatureRoll": "1d8",
+              "revertOn": [
+                "next-dawn",
+                "reduced-to-0-hit-points"
+              ],
+              "cooldownEconomy": "uses"
+            },
+            {
+              "id": "rust-bag-creature",
+              "kind": "creature",
+              "creatureRefs": [
+                "creature:rat",
+                "creature:owl",
+                "creature:mastiff",
+                "creature:goat",
+                "creature:giant-goat",
+                "creature:giant-boar",
+                "creature:lion",
+                "creature:brown-bear"
+              ],
+              "tableRefs": [
+                "table:rust-bag-of-tricks"
+              ],
+              "variants": [
+                "rust"
+              ],
+              "count": 1,
+              "creatureRoll": "1d8",
+              "revertOn": [
+                "next-dawn",
+                "reduced-to-0-hit-points"
+              ],
+              "cooldownEconomy": "uses"
+            },
+            {
+              "id": "tan-bag-creature",
+              "kind": "creature",
+              "creatureRefs": [
+                "creature:jackal",
+                "creature:ape",
+                "creature:baboon",
+                "creature:axe-beak",
+                "creature:black-bear",
+                "creature:giant-weasel",
+                "creature:giant-hyena",
+                "creature:tiger"
+              ],
+              "tableRefs": [
+                "table:tan-bag-of-tricks"
+              ],
+              "variants": [
+                "tan"
+              ],
+              "count": 1,
+              "creatureRoll": "1d8",
               "revertOn": [
                 "next-dawn",
                 "reduced-to-0-hit-points"
@@ -90838,34 +90924,25 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F3",
-                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
-              },
-              {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
-                "engine": "F5",
-                "hook": "item-instance cooldown and owned-entity identity link"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F3",
-              "F5"
-            ]
+            "readiness": "green"
+          },
+          {
+            "clauseId": "magic-item:bag-of-tricks/m4-control-bag-of-tricks",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
+              "sourceText": "You can use a bonus action to command how the creature moves and what action it takes on its next turn, or to give it general orders, such as to attack your enemies. In the absence of such orders, the creature acts in a fashion appropriate to its nature."
+            },
+            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
           },
           {
             "clauseId": "magic-item:bag-of-tricks/S:Bag of Tricks:table:table:gray-bag-of-tricks",

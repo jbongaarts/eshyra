@@ -376,25 +376,26 @@ describe('olc5.12 item-granted creatures', () => {
     });
   });
 
-  it('accepts a table row creature for the Bag of Tricks and refuses a non-row creature', () => {
+  it('refuses a Bag of Tricks bind that names no use, even for a creature on the bag color table (eshyra-olc5.16.1)', () => {
+    // The generic table-row admit no longer applies to a rolled grant: the
+    // creature is the row the engine rolled for the use (driven end to end in
+    // itemGrantBagOfTricks.test.ts).
     const s = setup();
-    const bagId = s.install('magic-item:bag-of-tricks', 'bag-1');
+    const bagId = s.install('magic-item:bag-of-tricks', 'bag-1', {
+      variantId: 'gray',
+    });
     const bag = {
       ref: 'magic-item:bag-of-tricks',
-      grantRef: 'bag-creature',
+      grantRef: 'gray-bag-creature',
       itemInstanceId: bagId,
     };
-    const refused = s.summon('fx-bag-djinni', bag, {
-      actors: [{ combatantId: 'c-djinni' }],
-    });
-    expect(refused).toMatchObject({ ok: false });
-    const accepted = s.summon('fx-bag-weasel', bag, {
-      actors: [{ combatantId: 'c-weasel' }],
-    });
-    expect(accepted.ok).toBe(true);
-    // Reduced to 0 hit points is a modeled ending: the weasel vanishes and the effect ends.
-    s.hit('c-weasel', -1);
-    expect(s.effect('fx-bag-weasel')).toMatchObject({ status: 'ended' });
+    for (const combatantId of ['c-djinni', 'c-weasel']) {
+      const refused = s.summon(`fx-bag-${combatantId}`, bag, {
+        actors: [{ combatantId }],
+      });
+      expect(refused).toMatchObject({ ok: false });
+      expect(refused.message).toMatch(/bindCreditId/);
+    }
   });
 
   it('ends a timed grant automatically at expiry', () => {
@@ -762,7 +763,24 @@ describe('olc5.12 item-granted creatures', () => {
 
 /** olc5.12.6 repair (Sol r1 S1-S7). Each finding has a generalized invariant
  * over the bundled pack's real carriers, plus its named failure probe. */
+const GRAY_BAG_CREATURES = [
+  'creature:weasel',
+  'creature:giant-rat',
+  'creature:badger',
+  'creature:boar',
+  'creature:panther',
+  'creature:giant-badger',
+  'creature:dire-wolf',
+  'creature:giant-elk',
+];
 const REPAIR_ACTORS: readonly Record<string, unknown>[] = [
+  ...GRAY_BAG_CREATURES.map((rulesRef, index) => ({
+    actorId: `gray${index}`,
+    rulesRef,
+    hpMax: 40,
+    hpCurrent: 40,
+    side: 'ally',
+  })),
   {
     actorId: 'griffon',
     rulesRef: 'creature:griffon',
@@ -1639,6 +1657,14 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
       resolver: resolver as never,
       extraActors: REPAIR_ACTORS,
     });
+    // The bag's real use is spent on the bundled stack before the add-on
+    // binding is written (the spend helper resolves the bundled pack only).
+    const bagId = s.install('magic-item:bag-of-tricks', 'bag-s7', {
+      variantId: 'gray',
+    });
+    s.must('begin_turn', { character: 'pc-1', round: 1 });
+    const used = spend(s.db, bagId, 'pull-fuzzy-object', pack);
+    const credit = used.hint?.bindCredits?.[0];
     writeCampaignRulesBinding(s.db, {
       base: {
         systemId: pack.meta.systemId,
@@ -1712,19 +1738,22 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
       endReason: 'ruled',
     });
     // Life event: a Bag of Tricks creature reduced to 0 hit points ends the grant.
-    const bagId = s.install('magic-item:bag-of-tricks', 'bag-s7');
+    // The creature is the row the engine rolled for a real use (eshyra-olc5.16.1).
+    const rolled = credit?.rolledCreatures?.[0]?.creatureRef as string;
+    const combatantId = `c-gray${GRAY_BAG_CREATURES.indexOf(rolled)}`;
     expect(
       s.summon(
         'fx-s7-hp',
         {
           ref: 'magic-item:bag-of-tricks',
-          grantRef: 'bag-creature',
+          grantRef: 'gray-bag-creature',
           itemInstanceId: bagId,
+          bindCreditId: credit?.creditId,
         },
-        { actors: [{ combatantId: 'c-weasel' }] },
+        { actors: [{ combatantId }] },
       ),
     ).toMatchObject({ ok: true });
-    s.hit('c-weasel', -1);
+    s.hit(combatantId, -1000);
     expect(s.effect('fx-s7-hp')).toMatchObject({ status: 'ended' });
   });
   it('S7 anchored Ring on an add-on stack: the 0 hit point ending schedules the wait through the campaign resolver', () => {

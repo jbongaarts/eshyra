@@ -160,26 +160,71 @@ describe('M4 magic-item entity lifecycle family projection', () => {
     ).not.toHaveProperty('duration');
   });
 
-  it('projects table-selected bag creatures without leaking live combatant state into item data', () => {
+  it('projects one variant-restricted, engine-rolled grant per bag color without leaking live combatant state into item data', () => {
     expect(grantBlock('Bag of Tricks').runtimeOwner).toBe(
       'encounter-combatant',
     );
-    expect(grants('Bag of Tricks')).toEqual([
-      expect.objectContaining({
-        id: 'bag-creature',
-        kind: 'creature',
-        tableRefs: [
-          'table:gray-bag-of-tricks',
-          'table:rust-bag-of-tricks',
-          'table:tan-bag-of-tricks',
+    const colors = [
+      [
+        'gray',
+        [
+          'weasel',
+          'giant-rat',
+          'badger',
+          'boar',
+          'panther',
+          'giant-badger',
+          'dire-wolf',
+          'giant-elk',
         ],
-        revertOn: ['next-dawn', 'reduced-to-0-hit-points'],
-        cooldownEconomy: 'uses',
-      }),
-    ]);
-    expect(grants('Bag of Tricks')[0]).not.toHaveProperty('hitPoints');
-    expect(grants('Bag of Tricks')[0]).not.toHaveProperty('initiative');
-    expect(grants('Bag of Tricks')[0]).not.toHaveProperty('combatantId');
+      ],
+      [
+        'rust',
+        [
+          'rat',
+          'owl',
+          'mastiff',
+          'goat',
+          'giant-goat',
+          'giant-boar',
+          'lion',
+          'brown-bear',
+        ],
+      ],
+      [
+        'tan',
+        [
+          'jackal',
+          'ape',
+          'baboon',
+          'axe-beak',
+          'black-bear',
+          'giant-weasel',
+          'giant-hyena',
+          'tiger',
+        ],
+      ],
+    ] as const;
+    expect(grants('Bag of Tricks')).toEqual(
+      colors.map(([color, creatures]) =>
+        expect.objectContaining({
+          id: `${color}-bag-creature`,
+          kind: 'creature',
+          variants: [color],
+          creatureRefs: creatures.map((name) => `creature:${name}`),
+          tableRefs: [`table:${color}-bag-of-tricks`],
+          creatureRoll: '1d8',
+          count: 1,
+          revertOn: ['next-dawn', 'reduced-to-0-hit-points'],
+          cooldownEconomy: 'uses',
+        }),
+      ),
+    );
+    for (const grant of grants('Bag of Tricks')) {
+      expect(grant).not.toHaveProperty('hitPoints');
+      expect(grant).not.toHaveProperty('initiative');
+      expect(grant).not.toHaveProperty('combatantId');
+    }
   });
 
   it('projects staff-python death destruction separately from early healing reversion', () => {

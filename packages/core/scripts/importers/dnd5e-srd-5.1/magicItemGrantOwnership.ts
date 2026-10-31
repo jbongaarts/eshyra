@@ -69,6 +69,10 @@ function asObject(value: unknown): Obj | undefined {
  *    prints no ending (Pipes of the Sewers, Manual of Golems, Staff of the
  *    Python) leaves the engine's remove-on-end an inference, and any DM-ended
  *    value is a printed lifecycle term the runtime does not compute;
+ *  - A grant names exactly one creature, or selects it by a `creatureRoll`
+ *    (`1dN` over exactly N `creatureRefs` in table order): the engine rolls the
+ *    row per use, persists it on the bind credit, and the binder admits only
+ *    that creature. The bag's color is the instance's variant;
  *  - EVERY grant prints a fixed numeric `count`, or a `countRoll` (eshyra-olc5.14:
  *    Horn of Valhalla's per-horn-type 2d4+2 ... 5d4+5). The binder enforces a
  *    fixed count, and enforces a `countRoll` against the engine's own roll
@@ -102,19 +106,27 @@ export function creatureGrantLifecycleOwned(
     const grant = asObject(raw);
     if (grant === undefined || grant.kind !== 'creature') return false;
     // The binder can verify the creature only when the grant names exactly one
-    // (PR #690 review). A grant whose creature is selected per instance or per
-    // use from a table (Bag of Tricks: a d8 on the bag's color table; the
-    // Elemental Gem: the gem's type) admits any listed creature, because that
-    // color or type is not bound to the instance and the roll is not bound to
-    // the use; it stays pending until that selection is bound (as Horn of
-    // Valhalla's type and count are, eshyra-olc5.14).
+    // (PR #690 review) or its table row is selected by an ENGINE roll bound to
+    // the use (`creatureRoll`, eshyra-olc5.16: Bag of Tricks binds the bag's
+    // color as the variant and the d8 per use on the bag's own table). A grant
+    // whose creature is selected per instance or per use from a table WITHOUT
+    // that binding (the Elemental Gem: the gem's type) admits any listed
+    // creature, so it stays pending until that selection is bound
+    // (eshyra-xt6m.1).
     const creatureRefs = Array.isArray(grant.creatureRefs)
       ? grant.creatureRefs
       : [];
+    const rolledRows =
+      typeof grant.creatureRoll === 'string'
+        ? /^1d(\d+)$/.exec(grant.creatureRoll)
+        : null;
     const oneCreature =
-      typeof grant.statBlockRef === 'string'
-        ? creatureRefs.length === 0
-        : creatureRefs.length === 1;
+      rolledRows !== null
+        ? grant.statBlockRef === undefined &&
+          creatureRefs.length === Number(rolledRows[1])
+        : typeof grant.statBlockRef === 'string'
+          ? creatureRefs.length === 0
+          : creatureRefs.length === 1;
     if (!oneCreature) return false;
     if (typeof grant.count !== 'number' && typeof grant.countRoll !== 'string')
       return false;

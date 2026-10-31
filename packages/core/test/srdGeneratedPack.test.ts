@@ -864,8 +864,10 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   },
   {
     kind: 'magic-item',
+    // Horn of Valhalla types (eshyra-olc5.14) and, with eshyra-olc5.16.1, the
+    // Bag of Tricks colors join the Figurine and the reviewed inline variants.
     field: 'variants',
-    missingCount: 235,
+    missingCount: 234,
     totalInKind: 240,
   },
   // Half-Dragon Template owns its two reconstructed reference tables; other
@@ -1191,6 +1193,8 @@ const DICE_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
     'Each Horn type row printed count dice are the variant text; the engine-rolled count is the variant-restricted parent entityGrant countRoll (the Figurine precedent: parent grants carry `variants`), traced row by row in hornOfValhallaVariants.test.ts (eshyra-olc5.14)',
   'magic-item:horn-of-valhalla|parent|reverse|5d4+5':
     'Each Horn type row printed count dice are the variant text; the engine-rolled count is the variant-restricted parent entityGrant countRoll (the Figurine precedent: parent grants carry `variants`), traced row by row in hornOfValhallaVariants.test.ts (eshyra-olc5.14)',
+  'magic-item:bag-of-tricks|parent|reverse|1d8':
+    'The printed "rolling a d8" (the die written without a count) is the parent entityGrant creatureRoll 1d8, which the engine rolls per use on the bag color variant\'s own table; each color table is pinned row by row in bagOfTricksVariants.test.ts (eshyra-olc5.16.1)',
   'magic-item:ioun-stone|parent|forward|1d3':
     '1d3 orbit distance is flavor text, not an item mechanic',
   'magic-item:robe-of-useful-items|parent|reverse|4d4+12':
@@ -3322,7 +3326,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1384);
+      expect(clauses).toHaveLength(1385);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3454,11 +3458,19 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // the Cape of the Mountebank, Circlet of Blasting, Crystal Ball
       // (Telepathy), Dragon Scale Mail, Iron Bands, Plate Armor of Etherealness
       // and Rod of Rulership.
+      // eshyra-olc5.16.1 binds the Bag of Tricks' selection: its cloth color
+      // is the instance's variant and the d8 on that color's table is rolled
+      // by the engine per use and enforced by the binder (creatureRoll), so
+      // the Bag is owned again: its entityGrant clause goes engine-pending ->
+      // green and gains one hook-free adjudicated control clause (763 -> 762
+      // pending, 254 -> 255 green, 366 -> 367; total 1384 -> 1385).
+      // pull-fuzzy-object becomes ready again. The Elemental Gem stays pending
+      // (eshyra-xt6m.1).
       expect(counts).toEqual({
-        'adjudicated-by-design': 366,
+        'adjudicated-by-design': 367,
         'design-blocked': 1,
-        'engine-pending': 763,
-        green: 254,
+        'engine-pending': 762,
+        green: 255,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

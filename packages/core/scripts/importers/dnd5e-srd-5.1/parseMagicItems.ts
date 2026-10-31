@@ -388,6 +388,114 @@ export function assertHornOfValhallaTypesMatchTable(
   }
 }
 
+/**
+ * Bag of Tricks' three cloth colors (eshyra-olc5.16). The printed description
+ * says "This ordinary bag, made from gray, rust, or tan cloth" and that the
+ * fuzzy object "transforms into a creature you determine by rolling a d8 and
+ * consulting the table that corresponds to the bag's color"; the tables are
+ * `table:gray-bag-of-tricks`, `table:rust-bag-of-tricks` and
+ * `table:tan-bag-of-tricks` (d8 | Creature). A bag's color is a persistent
+ * per-instance property, so it is the instance's magic-item variant. The rows
+ * below are pinned: extraction aborts if the description drifts, and
+ * `assertBagOfTricksTablesMatch` aborts the emit if any table's rows differ.
+ */
+export const BAG_OF_TRICKS_TABLES = [
+  {
+    name: 'Gray',
+    table: 'gray-bag-of-tricks',
+    creatures: [
+      'Weasel',
+      'Giant rat',
+      'Badger',
+      'Boar',
+      'Panther',
+      'Giant badger',
+      'Dire wolf',
+      'Giant elk',
+    ],
+  },
+  {
+    name: 'Rust',
+    table: 'rust-bag-of-tricks',
+    creatures: [
+      'Rat',
+      'Owl',
+      'Mastiff',
+      'Goat',
+      'Giant goat',
+      'Giant boar',
+      'Lion',
+      'Brown bear',
+    ],
+  },
+  {
+    name: 'Tan',
+    table: 'tan-bag-of-tricks',
+    creatures: [
+      'Jackal',
+      'Ape',
+      'Baboon',
+      'Axe beak',
+      'Black bear',
+      'Giant weasel',
+      'Giant hyena',
+      'Tiger',
+    ],
+  },
+] as const;
+
+function extractBagOfTricksVariants(description: string): MagicItemVariant[] {
+  for (const phrase of [
+    'made from gray, rust, or tan cloth',
+    'rolling a d8 and consulting the table that corresponds to the bag’s color',
+  ]) {
+    if (!description.includes(phrase)) {
+      throw new Error(
+        `magic-item variant extraction: expected ${JSON.stringify(phrase)} not found in "Bag of Tricks" description`,
+      );
+    }
+  }
+  return BAG_OF_TRICKS_TABLES.map(({ name, creatures }) => ({
+    name,
+    rarity: 'Uncommon',
+    text: `d8 creatures: ${creatures.map((creature, index) => `${index + 1} ${creature}`).join('; ')}.`,
+  }));
+}
+
+/** Aborts when any emitted Bag of Tricks color table (named "<Color> Bag of
+ *  Tricks") differs from the pinned rows the variants were built from. */
+export function assertBagOfTricksTablesMatch(
+  tables: readonly {
+    readonly name: string;
+    readonly columns: readonly string[];
+    readonly rows: readonly (readonly unknown[])[];
+  }[],
+): void {
+  for (const { name, table, creatures } of BAG_OF_TRICKS_TABLES) {
+    const found = tables.find(
+      (candidate) => candidate.name === `${name} Bag of Tricks`,
+    );
+    if (found === undefined) {
+      throw new Error(
+        `magic-item variant extraction: table "${table}" is missing; the ${name} Bag of Tricks variant cannot be checked against it`,
+      );
+    }
+    const actual = found.rows.map((row) => row.map(String));
+    const expected = creatures.map((creature, index) => [
+      String(index + 1),
+      creature,
+    ]);
+    if (
+      found.columns.join('|') !== 'd8|Creature' ||
+      JSON.stringify(actual) !== JSON.stringify(expected)
+    ) {
+      throw new Error(
+        `magic-item variant extraction: Bag of Tricks variants no longer match table:${table} (columns ${JSON.stringify(found.columns)}, rows ${JSON.stringify(actual)})`,
+      );
+    }
+  }
+}
+
 function categoryTextFromLine(line: string): string | undefined {
   const text = line.trim();
   for (const match of text.matchAll(ITEM_TYPE_WORD)) {
@@ -690,7 +798,9 @@ export function parseMagicItems(
         ? extractFigurineVariants(description)
         : entry.name === 'Horn of Valhalla'
           ? extractHornOfValhallaVariants(entry.rarity, description)
-          : extractReviewedInlineVariants(entry.name, description);
+          : entry.name === 'Bag of Tricks'
+            ? extractBagOfTricksVariants(description)
+            : extractReviewedInlineVariants(entry.name, description);
     out.push({
       name: entry.name,
       itemType: entry.itemType,

@@ -1828,9 +1828,14 @@ describe('runtime safety across the whole corpus', () => {
     // restores at dawn), so the operations it alone blocked are ready. The four
     // elemental vessels are creature grants (real-pack conformance in
     // itemGrantRealPackReadiness.test.ts); the rest are plain per-day spends
-    // (dawn conformance in itemPerDayDawnEconomy.test.ts). The Bag of Tricks is
-    // not ready: its creature is chosen from a table the binder cannot verify
-    // (PR #690 review).
+    // (dawn conformance in itemPerDayDawnEconomy.test.ts). The Bag of Tricks
+    // (eshyra-olc5.16.1) is ready again: its color is the instance's variant
+    // and its d8 creature is rolled by the engine per use and enforced by the
+    // binder (real-pack conformance in itemGrantBagOfTricks.test.ts); it was
+    // held in the PR #690 review while that selection was unbound.
+    'Bag of Tricks|gray|pull-fuzzy-object',
+    'Bag of Tricks|rust|pull-fuzzy-object',
+    'Bag of Tricks|tan|pull-fuzzy-object',
     'Boots of Levitation||cast-levitate',
     'Bowl of Commanding Water Elementals||summon-water-elemental',
     'Brazier of Commanding Fire Elementals||summon-fire-elemental',

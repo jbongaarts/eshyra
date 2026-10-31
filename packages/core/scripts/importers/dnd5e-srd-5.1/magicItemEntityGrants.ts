@@ -14,6 +14,7 @@ import type {
   MagicItemFamilyProjection,
 } from './magicItemCompiler.js';
 import { creatureGrantLifecycleOwned } from './magicItemGrantOwnership.js';
+import { BAG_OF_TRICKS_TABLES } from './parseMagicItems.js';
 import type { MagicItemExtraction } from './types.js';
 
 type EntityGrantEntry = MagicItemEntityGrant['grants'][number];
@@ -193,21 +194,25 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
       entityGrant: {
         runtimeOwner: 'encounter-combatant',
         grants: [
-          {
-            id: 'bag-creature',
-            kind: 'creature',
-            tableRefs: [
-              'table:gray-bag-of-tricks',
-              'table:rust-bag-of-tricks',
-              'table:tan-bag-of-tricks',
-            ],
+          ...BAG_OF_TRICKS_TABLES.map(({ name, table, creatures }) => ({
+            id: `${name.toLowerCase()}-bag-creature`,
+            kind: 'creature' as const,
+            // The bag's cloth color is the instance's variant; the engine rolls
+            // the d8 per use and the binder admits only that row's creature.
+            variants: [name.toLowerCase()],
+            creatureRefs: creatures.map(
+              (creatureName) =>
+                `creature:${creatureName.toLowerCase().replace(/ /g, '-')}`,
+            ),
+            tableRefs: [`table:${table}`],
+            creatureRoll: '1d8',
             count: 1,
             control:
               'friendly; acts on owner turn; bonus-action specific or general commands; otherwise acts according to its nature',
             revertOn: ['next-dawn', 'reduced-to-0-hit-points'],
             cooldownEconomy: 'uses',
-            note: 'Each pull creates a separately owned combatant; item state stores only the three-pulls-per-dawn economy.',
-          },
+            note: `A ${name.toLowerCase()} bag's pull creates the creature its d8 selects on table:${table}; item state stores only the three-pulls-per-dawn economy.`,
+          })),
         ],
       },
       hooks: CONTROLLED_HOOKS,
