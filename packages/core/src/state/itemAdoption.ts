@@ -18,6 +18,7 @@ import {
 import {
   clearItemAdoptionReview,
   type ItemAdoptionResolution,
+  type ItemAdoptionReview,
   type ItemAdoptionReviewKind,
   readItemAdoptionReview,
   recordItemAdoptionResolution,
@@ -29,6 +30,7 @@ import {
   createInitialItemState,
   type ItemInstanceState,
   isStatefulMagicItem,
+  readItemState,
   validateItemStateForRecord,
   validatePackRef,
   writeItemState,
@@ -79,6 +81,7 @@ export interface AdoptMagicItemResult {
   readonly variantId?: string;
   readonly stateful: boolean;
   readonly alreadyBound?: boolean;
+  readonly establishedVariant?: boolean;
   readonly liftedLegacyState?: boolean;
   readonly reason?: string;
   readonly reviewKind?: ItemAdoptionReviewKind;
@@ -230,6 +233,149 @@ function reviewResultOrFail(
     reason,
     rawPropertiesJson,
   );
+}
+
+type CampaignMagicItemHit = NonNullable<
+  ReturnType<typeof lookupStrictCampaignRecord>
+>;
+
+/**
+ * eshyra-0xaq.2: establish, once, the variant of a held row that is already
+ * bound to its canonical pack ref but was held with no variant (before the item
+ * declared variants). The row's identity is then fixed; no later call changes
+ * it. Every fact created under the variant-less identity is a refusal, so
+ * nothing already issued is reinterpreted under the new variant.
+ */
+function establishHeldVariant(
+  txnDb: Db,
+  input: AdoptMagicItemInput,
+  row: LegacyInventoryRow,
+  establish: {
+    readonly hit: CampaignMagicItemHit;
+    readonly packRef: string;
+    readonly variantId: string;
+    readonly stateful: boolean;
+    readonly existingReview: ItemAdoptionReview | undefined;
+  },
+): AdoptMagicItemResult {
+  const { hit, packRef, variantId, stateful, existingReview } = establish;
+  const refuse = (reason: string): never => {
+    throw new ItemAdoptionError(
+      `inventory instance '${row.id}' cannot establish variant '${variantId}': ${reason}`,
+    );
+  };
+  if (existingReview !== undefined) refuse('it has an open adoption review');
+  if (stateful && row.quantity !== 1)
+    refuse('a stateful variant requires quantity 1');
+  if (
+    txnDb
+      .prepare('SELECT 1 FROM item_variant_establishment WHERE inventory_id=?')
+      .get(row.id) !== undefined
+  )
+    refuse('its variant was already established');
+  const priorFacts: [string, string, unknown[]][] = [
+    [
+      'SELECT 1 FROM item_grant_bind_credit WHERE item_instance_id=? LIMIT 1',
+      'a bind credit was issued for it',
+      [row.id],
+    ],
+    [
+      'SELECT 1 FROM item_consumption_receipt WHERE item_instance_id=? LIMIT 1',
+      'a consumption receipt was issued for it',
+      [row.id],
+    ],
+    [
+      "SELECT 1 FROM active_effect WHERE item_grant_json IS NOT NULL AND json_extract(item_grant_json, '$.itemInstanceId') = ? LIMIT 1",
+      'an active effect was granted by it',
+      [row.id],
+    ],
+    [
+      'SELECT 1 FROM attunement WHERE item_id=? LIMIT 1',
+      'it is attuned under the variant-less identity',
+      [row.id],
+    ],
+  ];
+  for (const [sql, reason, params] of priorFacts)
+    if (txnDb.prepare(sql).get(...params) !== undefined) refuse(reason);
+
+  const resolveTable = (ref: string) => {
+    const result = lookupRulesRecord(hit.stack, { kind: 'table', ref });
+    return result.ok ? result.record : undefined;
+  };
+  const storedState = readItemState(txnDb, row.id);
+  if (storedState !== undefined) {
+    if (!stateful)
+      refuse('a stored item state is not valid for a stateless variant');
+    const candidate: ItemInstanceState =
+      storedState.variantId === undefined
+        ? { ...storedState, variantId }
+        : storedState;
+    const rebound = validateItemStateForRecord(
+      candidate,
+      packRef,
+      hit.record,
+      variantId,
+      { resolveTable },
+    );
+    writeItemState(txnDb, row.id, rebound, input);
+  } else if (stateful) {
+    writeItemState(
+      txnDb,
+      row.id,
+      createInitialItemState(packRef, hit.record, {
+        variantId,
+        rng: input.rng,
+        resolveTable,
+      }),
+      input,
+    );
+  }
+
+  const updated = txnDb
+    .prepare(
+      `UPDATE inventory
+       SET variant_id=?, provenance=?, session_id=?, updated_at=?
+       WHERE id=? AND character_id=? AND pack_ref=? AND variant_id IS NULL`,
+    )
+    .run(
+      variantId,
+      input.provenance,
+      input.sessionId,
+      input.at,
+      row.id,
+      input.characterId,
+      packRef,
+    );
+  if (updated.changes !== 1)
+    refuse('the held row changed before its variant could be established');
+  txnDb
+    .prepare(
+      `INSERT INTO item_variant_establishment(
+         inventory_id, campaign_id, pack_ref, variant_id, established_at,
+         provenance, session_id
+       ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      row.id,
+      input.campaignId,
+      packRef,
+      variantId,
+      input.at,
+      input.provenance,
+      input.sessionId,
+    );
+
+  return {
+    adopted: true,
+    reviewRequired: false,
+    originalInstanceId: row.id,
+    instanceIds: [row.id],
+    packRef,
+    variantId,
+    stateful,
+    alreadyBound: true,
+    establishedVariant: true,
+  };
 }
 
 /**
@@ -476,6 +622,18 @@ export function adoptMagicItem(
         `inventory instance '${row.id}' has attunement outside asserted campaign '${input.campaignId}' and holder '${input.characterId}' (found campaign '${staleAttunement.campaign_id}', character '${staleAttunement.character_id}')`,
       );
     if (row.pack_ref !== null) {
+      if (
+        row.pack_ref === packRef &&
+        row.variant_id === null &&
+        variantId !== undefined
+      )
+        return establishHeldVariant(txnDb, input, row, {
+          hit,
+          packRef,
+          variantId,
+          stateful,
+          existingReview,
+        });
       if (row.pack_ref !== packRef || row.variant_id !== (variantId ?? null))
         throw new ItemAdoptionError(
           `inventory instance '${input.inventoryId}' is already bound to a different canonical item`,
