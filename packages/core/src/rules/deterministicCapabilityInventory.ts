@@ -1407,8 +1407,13 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
       s('rest.ts'),
       s('turnClock.ts'),
       s('itemResetExecutor.ts'),
+      s('worldClockBoundaries.ts'),
     ],
-    evidence: [t('rest.test.ts'), t('exhaustion.test.ts')],
+    evidence: [
+      t('rest.test.ts'),
+      t('exhaustion.test.ts'),
+      t('itemPerDayDawnEconomy.test.ts'),
+    ],
   }),
 ];
 

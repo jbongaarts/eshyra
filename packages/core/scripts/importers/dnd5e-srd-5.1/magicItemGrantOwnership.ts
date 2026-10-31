@@ -28,11 +28,14 @@ export const CREATURE_GRANT_LIFECYCLE_HOOKS: readonly EngineHookBinding[] = [
 
 /**
  * The printed `revertOn` values whose ending the engine COMPUTES: fixed timers
- * (the effect's own expiry), the 0-hit-point vanish, and the concentration
- * break. Every other mapped value is `dm-ended` in
- * `ITEM_GRANT_REVERT_DISPOSITIONS`: the DM ends the grant with a ruling, so the
- * printed term (owner-command-while-touching, obeyed owner commands, next
- * dawn, owner dismissal, ...) is beyond what the runtime implements.
+ * (the effect's own expiry), the 0-hit-point vanish, the concentration break,
+ * and the next dawn (eshyra-7gkh.1: start_effect fills the minute timer to the
+ * first dawn boundary strictly after the bind, the same boundary the item reset
+ * executor uses, and the world-time expiry ends the grant there). Every other
+ * mapped value is `dm-ended` in `ITEM_GRANT_REVERT_DISPOSITIONS`: the DM ends
+ * the grant with a ruling, so the printed term (owner-command-while-touching,
+ * obeyed owner commands, owner dismissal, ...) is beyond what the runtime
+ * implements.
  * `magicItemGrantOwnership.test.ts` pins this set to the runtime table.
  */
 export const ENGINE_COMPUTED_GRANT_ENDINGS: ReadonlySet<string> = new Set([
@@ -41,6 +44,7 @@ export const ENGINE_COMPUTED_GRANT_ENDINGS: ReadonlySet<string> = new Set([
   'five-rounds-ended',
   'reduced-to-0-hit-points',
   'concentration-ended',
+  'next-dawn',
 ]);
 
 type Obj = Record<string, unknown>;
@@ -97,6 +101,21 @@ export function creatureGrantLifecycleOwned(
   return grants.every((raw) => {
     const grant = asObject(raw);
     if (grant === undefined || grant.kind !== 'creature') return false;
+    // The binder can verify the creature only when the grant names exactly one
+    // (PR #690 review). A grant whose creature is selected per instance or per
+    // use from a table (Bag of Tricks: a d8 on the bag's color table; the
+    // Elemental Gem: the gem's type) admits any listed creature, because that
+    // color or type is not bound to the instance and the roll is not bound to
+    // the use; it stays pending until that selection is bound (as Horn of
+    // Valhalla's type and count are, eshyra-olc5.14).
+    const creatureRefs = Array.isArray(grant.creatureRefs)
+      ? grant.creatureRefs
+      : [];
+    const oneCreature =
+      typeof grant.statBlockRef === 'string'
+        ? creatureRefs.length === 0
+        : creatureRefs.length === 1;
+    if (!oneCreature) return false;
     if (typeof grant.count !== 'number' && typeof grant.countRoll !== 'string')
       return false;
     if (grant.onEntityDeath !== undefined) return false;

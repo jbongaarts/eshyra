@@ -29,6 +29,11 @@ import {
   ItemTimerError,
   resolveItemStateTimers,
 } from './itemTimers.js';
+import {
+  crossedBoundaries,
+  DAWN_MINUTE_OF_DAY,
+  DUSK_MINUTE_OF_DAY,
+} from './worldClockBoundaries.js';
 
 type Obj = Record<string, unknown>;
 
@@ -800,19 +805,6 @@ function canRegain(state: ItemInstanceState, economyId: string): boolean {
   );
 }
 
-function crossedBoundaries(
-  previousElapsedMinutes: number,
-  elapsedMinutes: number,
-  minuteOfDay: number,
-): number[] {
-  const firstDay = Math.floor(previousElapsedMinutes / 1_440);
-  const first = firstDay * 1_440 + minuteOfDay;
-  const result: number[] = [];
-  for (let boundary = first; boundary <= elapsedMinutes; boundary += 1_440)
-    if (boundary > previousElapsedMinutes) result.push(boundary);
-  return result;
-}
-
 interface CrossedBoundary {
   readonly event: 'dawn' | 'dusk';
   readonly elapsedMinutes: number;
@@ -823,18 +815,22 @@ function crossedBoundaryEvents(
   elapsedMinutes: number,
 ): CrossedBoundary[] {
   return [
-    ...crossedBoundaries(previousElapsedMinutes, elapsedMinutes, 360).map(
-      (boundaryElapsedMinutes) => ({
-        event: 'dawn' as const,
-        elapsedMinutes: boundaryElapsedMinutes,
-      }),
-    ),
-    ...crossedBoundaries(previousElapsedMinutes, elapsedMinutes, 1_080).map(
-      (boundaryElapsedMinutes) => ({
-        event: 'dusk' as const,
-        elapsedMinutes: boundaryElapsedMinutes,
-      }),
-    ),
+    ...crossedBoundaries(
+      previousElapsedMinutes,
+      elapsedMinutes,
+      DAWN_MINUTE_OF_DAY,
+    ).map((boundaryElapsedMinutes) => ({
+      event: 'dawn' as const,
+      elapsedMinutes: boundaryElapsedMinutes,
+    })),
+    ...crossedBoundaries(
+      previousElapsedMinutes,
+      elapsedMinutes,
+      DUSK_MINUTE_OF_DAY,
+    ).map((boundaryElapsedMinutes) => ({
+      event: 'dusk' as const,
+      elapsedMinutes: boundaryElapsedMinutes,
+    })),
   ].sort((a, b) => a.elapsedMinutes - b.elapsedMinutes);
 }
 

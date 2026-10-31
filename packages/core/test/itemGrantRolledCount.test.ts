@@ -7,8 +7,10 @@
  *    printed count dice, persists the roll on the use's bind credit and shows
  *    it in the hint; start_effect binds exactly that many actors.
  *  - The four elemental vessels print ONE elemental (typed count 1). Their
- *    operations stay not-ready (c1-uses F5 reset, eshyra-7gkh), so the binder
- *    is reached with a credit issued directly, never through a waived pack. */
+ *    operations became ready with the dawn per-day economy (eshyra-7gkh.1; their
+ *    real-pack use -> bind is driven in itemGrantRealPackReadiness.test.ts). This
+ *    test exercises the binder's count rule with a credit issued directly,
+ *    never through a waived pack. */
 import { describe, expect, it } from 'vitest';
 import type { ToolContext } from '../src/internal.js';
 import {
@@ -459,8 +461,8 @@ describe('Elemental vessels: the printed single elemental is count 1', () => {
         packRef: key,
       });
       const id = (given.data as { id: string }).id;
-      // Binder-level: the vessel operation is not ready (c1-uses F5 reset,
-      // eshyra-7gkh), so the credit the use would issue is issued directly.
+      // Binder-level: the count rule is exercised with a credit issued directly
+      // (the real use -> bind is in itemGrantRealPackReadiness.test.ts).
       issueItemGrantBindCredit(s.db, {
         campaignId: DEFAULT_TEST_CAMPAIGN_ID,
         itemInstanceId: id,

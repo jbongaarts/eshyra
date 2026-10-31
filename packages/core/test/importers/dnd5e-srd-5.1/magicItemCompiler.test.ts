@@ -69,6 +69,10 @@ describe('magic-item compiler family aggregation', () => {
           engine: 'F5',
           hook: 'dawn reset with nonblocking early-reuse risk',
         }),
+        magicItemEngineHookKey({
+          engine: 'F5',
+          hook: 'per-period usage reset',
+        }),
       ].sort(),
     );
     expect(LANDED_MAGIC_ITEM_ENGINE_HOOKS).not.toContain(
