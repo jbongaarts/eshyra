@@ -201,4 +201,37 @@ describe('adopt_item establishes a held row variant once', () => {
     expect(refused).toMatchObject({ ok: false });
     expect(variantOf(s, 'pre-horn')).toBeNull();
   });
+
+  it('an establishment record retires its instance id after the row is destroyed', () => {
+    const s = setup();
+    const OLD = 'horn-of-valhalla#1';
+    insertPreVariantHorn(s, OLD);
+    expect(adopt(s, OLD, 'brass')).toMatchObject({ ok: true });
+    s.must('remove_item', { id: OLD, disposition: 'destroyed' });
+
+    // Neither an automatic nor an explicit allocation reissues the id, so the
+    // brass trace keeps naming only the destroyed horn.
+    const fresh = s.must('give_item', {
+      id: 'horn-of-valhalla',
+      name: 'Horn of Valhalla',
+      packRef: HORN,
+      variantId: 'iron',
+    }) as { data: { id: string } };
+    expect(fresh.data.id).not.toBe(OLD);
+    const explicit = s.must('give_item', {
+      id: OLD,
+      name: 'Horn of Valhalla',
+      packRef: HORN,
+      variantId: 'silver',
+    }) as { data: { id: string } };
+    expect(explicit.data.id).not.toBe(OLD);
+    expect(variantOf(s, fresh.data.id)).toBe('iron');
+    expect(
+      s.db
+        .prepare(
+          'SELECT variant_id FROM item_variant_establishment WHERE inventory_id = ?',
+        )
+        .get(OLD),
+    ).toEqual({ variant_id: 'brass' });
+  });
 });
