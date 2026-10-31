@@ -34,7 +34,7 @@ export const giveItemTool: Tool = {
     'Never changes custody of an existing row: use transfer_item for another holder or claim_item for a co-located dropped row. Sold, lost, and unknown-custody rows are not eligible for give_item or claim_item. ' +
     'Call ONLY when the player explicitly receives, purchases, or is granted an item — ' +
     'never call to answer a question about what is currently equipped or carried. ' +
-    "A Horn of Valhalla is given with its type as variantId (silver, brass, bronze or iron; the type is fixed for that horn). When the type is determined randomly, roll the horn's d100 table with the roll tool and pass the matching row's variantId. " +
+    "A Horn of Valhalla is given with its type as variantId (silver, brass, bronze or iron; the type is fixed for that horn). When the type is determined randomly, roll the horn's d100 table with the roll tool and pass the matching row's variantId. A horn already held with no type gets it once through adopt_item. " +
     'A Bag of Tricks is given with its cloth color as variantId (gray, rust or tan; the color is fixed for that bag, and the DM chooses it). ' +
     'An Elemental Gem is given with its gem type as variantId (blue-sapphire, yellow-diamond, red-corundum or emerald); a stack holds gems of one type.',
   inputSchema: {

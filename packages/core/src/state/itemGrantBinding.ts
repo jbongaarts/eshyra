@@ -212,8 +212,9 @@ export function redeemItemConsumptionReceipt(
 
 /**
  * Whether an inventory instance id is taken: by a live inventory row, or
- * retired by a consumption receipt or by any item-grant binding (live or ended)
- * that names it. A retired id stays the identity of its consumed or destroyed
+ * retired by a consumption receipt, by any item-grant binding (live or ended)
+ * that names it, or by a variant establishment record (eshyra-0xaq: that trace
+ * outlives the row and attributes the variant to this id). A retired id stays the identity of its consumed or destroyed
  * source in receipts, effect views and the DM context, so it is never issued
  * to another item. Every inventory id allocator probes through this.
  */
@@ -235,9 +236,11 @@ export function itemInstanceIdRetired(db: Db, itemInstanceId: string): boolean {
            SELECT 1 FROM active_effect
            WHERE item_grant_json IS NOT NULL
              AND json_extract(item_grant_json, '$.itemInstanceId') = ?
+         ) OR EXISTS (
+           SELECT 1 FROM item_variant_establishment WHERE inventory_id = ?
          )`,
       )
-      .get(itemInstanceId, itemInstanceId) !== undefined
+      .get(itemInstanceId, itemInstanceId, itemInstanceId) !== undefined
   );
 }
 
