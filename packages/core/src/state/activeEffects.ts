@@ -4409,10 +4409,16 @@ function validateItemGrantBinding(
         `${label} summons a rolled creature (${grant.creatureRoll}), which only a use_item bind credit can supply; it cannot bind from an anchored spend or a consumption receipt`,
       );
     const rolled = readItemGrantRolledCreature(db, bindCreditId, grantId);
+    const rowCreatures = Array.isArray(grant.creatureRefs)
+      ? grant.creatureRefs.map(String)
+      : [];
+    // The stored creature must be the grant's own row for the stored roll, so
+    // a credit can never name a creature the printed table does not put there.
     if (
       rolled === undefined ||
       rolled.notation.replace(/\s+/g, '').toLowerCase() !==
-        grant.creatureRoll.replace(/\s+/g, '').toLowerCase()
+        grant.creatureRoll.replace(/\s+/g, '').toLowerCase() ||
+      rowCreatures[rolled.roll - 1] !== rolled.creatureRef
     )
       throw new ActiveEffectError(
         `${label} summons a rolled creature (${grant.creatureRoll}), and bind credit '${bindCreditId}' records no engine roll of it; use_item the operation again (each use rolls its own creature)`,

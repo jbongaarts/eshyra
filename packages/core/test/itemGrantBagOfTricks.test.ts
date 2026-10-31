@@ -335,15 +335,23 @@ describe('Bag of Tricks: the bag color is the variant and the engine-rolled d8 c
       ['row 0', stored.replace(/"roll":\d/, '"roll":0')],
       ['row 9', stored.replace(/"roll":\d/, '"roll":9')],
       ['creature', stored.replace(/"creatureRef":"[^"]*"/, '"creatureRef":7')],
+      [
+        'off-row creature',
+        stored.replace(
+          /"creatureRef":"[^"]*"/,
+          '"creatureRef":"creature:tiger"',
+        ),
+      ],
     ];
     for (const [label, value] of tampered) {
       setStored(value);
       const refused = attempt(`fx-${label}`);
       expect(refused, label).toMatchObject({ ok: false });
       expect(refused.message, label).toMatch(/records no engine roll/);
-      // A well-formed roll of another notation is readable; the binder refuses
-      // it on the grant's own notation.
-      if (label !== 'notation')
+      // A well-formed roll of another notation, or of a creature off the
+      // rolled row, is readable; the binder refuses it against the grant's own
+      // notation and table row.
+      if (label !== 'notation' && label !== 'off-row creature')
         expect(
           readItemGrantRolledCreature(s.db, creditId, 'gray-bag-creature'),
           label,
