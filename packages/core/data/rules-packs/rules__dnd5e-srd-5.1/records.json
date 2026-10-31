@@ -95824,16 +95824,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cube-of-force/c1-operation-press-face-1",
@@ -95851,16 +95842,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cube-of-force/c1-operation-press-face-2",
@@ -95878,16 +95860,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cube-of-force/c1-operation-press-face-3",
@@ -95905,16 +95878,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cube-of-force/c1-operation-press-face-4",
@@ -95932,16 +95896,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cube-of-force/c1-operation-press-face-5",
@@ -95959,16 +95914,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cube-of-force/c1-operation-press-face-6",
@@ -96184,16 +96130,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cubic-gate/c1-operation-cast-gate",
@@ -96211,16 +96148,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cubic-gate/c1-operation-cast-plane-shift",
@@ -96238,16 +96166,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:cubic-gate/c2-effect-cast-gate",
@@ -100991,16 +100910,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:eyes-of-charming/c1-operation-cast-charm-person",
@@ -101018,16 +100928,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:eyes-of-charming/c2-effect-cast-charm-person",
@@ -103954,16 +103855,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:gem-of-seeing/c1-operation-gain-truesight",
@@ -103981,16 +103873,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:gem-of-seeing/m3-gem-of-seeing-sense-truesight",
@@ -104836,16 +104719,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:hammer-of-thunderbolts/c1-operation-hurl-thunderclap",
@@ -104863,16 +104737,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:hammer-of-thunderbolts/c2-effect-giant-slaying-critical-payload",
@@ -106752,16 +106617,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:helm-of-teleportation/c1-operation-cast-teleport",
@@ -106779,16 +106635,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:helm-of-teleportation/c2-effect-cast-teleport",
@@ -110739,16 +110586,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:mace-of-terror/c1-operation-release-terror-wave",
@@ -110766,16 +110604,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:mace-of-terror/c2-effect-release-terror-wave-payload",
@@ -111849,16 +111678,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:medallion-of-thoughts/c1-operation-cast-detect-thoughts",
@@ -111876,16 +111696,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:medallion-of-thoughts/c2-effect-cast-detect-thoughts",
@@ -114381,16 +114192,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:orb-of-dragonkind/c1-operation-cast-cure-wounds",
@@ -114408,16 +114210,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:orb-of-dragonkind/c1-operation-cast-daylight",
@@ -114435,16 +114228,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:orb-of-dragonkind/c1-operation-cast-death-ward",
@@ -114462,16 +114246,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:orb-of-dragonkind/c1-operation-cast-detect-magic",
@@ -114516,16 +114291,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:orb-of-dragonkind/c2-effect-cast-cure-wounds",
@@ -115739,16 +115505,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:pipes-of-haunting/c1-operation-play-haunting-tune",
@@ -115766,16 +115523,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:pipes-of-haunting/c2-effect-play-haunting-tune-payload",
@@ -115959,16 +115707,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:pipes-of-the-sewers/c1-operation-call-rat-swarms",
@@ -115986,16 +115725,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:pipes-of-the-sewers/c2-residual-rat-indifference",
@@ -119600,16 +119330,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-animal-influence/c1-operation-cast-animal-friendship",
@@ -119627,16 +119348,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-animal-influence/c1-operation-cast-fear",
@@ -119654,16 +119366,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-animal-influence/c1-operation-cast-speak-with-animals",
@@ -119681,16 +119384,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-animal-influence/c2-effect-cast-animal-friendship",
@@ -120955,16 +120649,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-burning-hands",
@@ -120982,16 +120667,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-chain-lightning",
@@ -121009,16 +120685,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-control-water",
@@ -121036,16 +120703,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-create-or-destroy-water",
@@ -121063,16 +120721,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-fireball",
@@ -121090,16 +120739,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-gust-of-wind",
@@ -121117,16 +120757,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-ice-storm",
@@ -121144,16 +120775,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-stone-shape",
@@ -121171,16 +120793,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-stoneskin",
@@ -121198,16 +120811,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-wall-of-fire",
@@ -121225,16 +120829,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-wall-of-ice",
@@ -121252,16 +120847,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-wall-of-stone",
@@ -121279,16 +120865,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-cast-wind-wall",
@@ -121306,16 +120883,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-dominate-air-elemental",
@@ -121333,16 +120901,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-dominate-earth-elemental",
@@ -121360,16 +120919,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-dominate-fire-elemental",
@@ -121387,16 +120937,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c1-operation-dominate-water-elemental",
@@ -121414,16 +120955,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/c2-effect-cast-burning-hands",
@@ -122759,16 +122291,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-evasion/c1-operation-turn-failed-dex-save-into-success",
@@ -122786,16 +122309,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-evasion/m10-evasion",
@@ -124320,16 +123834,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-shooting-stars/c1-operation-cast-faerie-fire",
@@ -124347,16 +123852,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-shooting-stars/c1-operation-create-ball-lightning",
@@ -124374,16 +123870,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-shooting-stars/c1-operation-launch-shooting-stars",
@@ -124401,16 +123888,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-shooting-stars/c2-effect-cast-dancing-lights",
@@ -125621,16 +125099,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-the-ram/c1-operation-break-object",
@@ -125648,16 +125117,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-the-ram/c1-operation-spectral-ram-attack",
@@ -125675,16 +125135,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:ring-of-the-ram/c2-effect-spectral-ram-attack-payload",
@@ -126598,16 +126049,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:robe-of-scintillating-colors/c1-operation-display-scintillating-colors",
@@ -126625,16 +126067,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:robe-of-scintillating-colors/c2-effect-display-scintillating-colors-payload",
@@ -126805,16 +126238,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:robe-of-stars/c1-operation-cast-magic-missile",
@@ -126832,16 +126256,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:robe-of-stars/c2-effect-cast-magic-missile",
@@ -139781,16 +139196,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:staff-of-withering/c1-operation-withering-strike",
@@ -139808,16 +139214,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:staff-of-withering/c2-effect-withering-strike-payload",
@@ -142582,16 +141979,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:trident-of-fish-command/c1-operation-cast-dominate-beast",
@@ -142609,16 +141997,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:trident-of-fish-command/c2-effect-cast-dominate-beast",
@@ -144604,16 +143983,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:wand-of-magic-detection/c1-operation-cast-detect-magic",
@@ -144631,16 +144001,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:wand-of-magic-detection/c2-effect-cast-detect-magic",
@@ -145475,16 +144836,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:wand-of-secrets/c1-operation-detect-secret",
@@ -145502,16 +144854,7 @@
                 "hook": "magic-item-usage-recharge"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "magic-item-usage-recharge"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:wand-of-secrets/m3-wand-of-secrets-sense-nearest-secret-door-or-trap",

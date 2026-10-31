@@ -1388,11 +1388,13 @@ describe('magic-item live instance state', () => {
     db.close();
   });
 
-  it('rejects insufficient charges without changing state', () => {
+  it('rejects an unaffordable variable charge cost without changing state', () => {
     const db = freshDbWithSession();
     const record = item('charged-test', {
       economies: { charges: { kind: 'charges', charges: { max: 1 } } },
-      operations: [{ id: 'burst', cost: [{ economy: 'charges', amount: 2 }] }],
+      operations: [
+        { id: 'burst', cost: [{ economy: 'charges', amount: 'variable' }] },
+      ],
     });
     const granted = giveItem(
       db,
@@ -1412,7 +1414,12 @@ describe('magic-item live instance state', () => {
     );
 
     expect(() =>
-      useItem(db, useInput(pack(record), granted.id, 'burst')),
+      useItem(
+        db,
+        useInput(pack(record), granted.id, 'burst', {
+          costs: { charges: 2 },
+        }),
+      ),
     ).toThrow(/insufficient charges/);
     expect(readItemState(db, granted.id)?.economies?.charges.remaining).toBe(1);
     db.close();

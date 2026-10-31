@@ -315,6 +315,91 @@ describe('magic-item compiler family aggregation', () => {
   });
 });
 
+describe('charge-recharge ownership is narrow and per clause', () => {
+  const rechargeHook = {
+    engine: 'F5' as const,
+    hook: 'magic-item-usage-recharge',
+  };
+  const classifyCharge = (
+    economy: Record<string, unknown>,
+    operationCost: unknown = { economy: 'charges', amount: 'variable' },
+    operationId = 'use',
+  ) => {
+    const record = itemRecord({
+      description: 'Fixture.',
+      mechanics: {
+        economies: { charges: economy },
+        operations: [{ id: operationId, cost: [operationCost] }],
+      },
+    });
+    return validateMagicItemClausesAndClassify({
+      records: [record],
+      clausesByItemKey: new Map([
+        [
+          record.key,
+          [
+            {
+              id: 'fixture/economy',
+              tag: 'C1',
+              representation: { block: 'economies', economyId: 'charges' },
+              engineHooks: [rechargeHook],
+            },
+            {
+              id: 'fixture/operation',
+              tag: 'C1',
+              representation: { block: 'operations', operationId },
+              engineHooks: [rechargeHook],
+            },
+          ],
+        ],
+      ]),
+      landedEngineHooks: LANDED_MAGIC_ITEM_ENGINE_HOOKS,
+    });
+  };
+  const economy = (reset: unknown = [{ at: 'dawn', amount: '1d3' }]) => ({
+    kind: 'charges',
+    charges: { max: 3 },
+    reset,
+  });
+
+  it('owns a dice regain economy and its supported fixed or variable costs', () => {
+    expect(
+      classifyCharge(economy(), { economy: 'charges', amount: 'variable' }).map(
+        ({ readiness }) => readiness,
+      ),
+    ).toEqual(['green', 'green']);
+    expect(
+      classifyCharge(economy(), { economy: 'charges', amount: 2 }).map(
+        ({ readiness }) => readiness,
+      ),
+    ).toEqual(['green', 'green']);
+  });
+
+  it('keeps the hook for depletion consequences, a 7-day reset, or multiple reset entries', () => {
+    const depleted = {
+      ...economy(),
+      onDepleted: { roll: 'd20', regainOn: 20, regainAmount: '1d8' },
+    };
+    const weekly = economy([{ at: 'days', days: 7, amount: '1d3' }]);
+    const multiple = economy([
+      { at: 'dawn', amount: '1d3' },
+      { at: 'dusk', amount: '1d3' },
+    ]);
+    for (const counterfactual of [depleted, weekly, multiple])
+      expect(
+        classifyCharge(counterfactual).map(({ readiness }) => readiness),
+      ).toEqual(['engine-pending', 'engine-pending']);
+  });
+
+  it('keeps operations pending when any cost is outside the supported spend contract', () => {
+    expect(
+      classifyCharge(economy(), { economy: 'charges', amount: '1d4' }).map(
+        ({ readiness }) => readiness,
+      ),
+    ).toEqual(['green', 'engine-pending']);
+  });
+});
+
 describe('magic-item clause integrity and readiness', () => {
   const effectClause: ItemClauseExpectation = {
     id: 'test-item/flight',

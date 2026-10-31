@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ACTIVATION_ECONOMY_HOOK_KEYS,
   CREATURE_GRANT_LIFECYCLE_HOOK_KEYS,
+  chargeRechargeOwned,
   magicItemEngineHookKey,
   validateMagicItemClausesAndClassify,
 } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemCompiler.js';
@@ -168,11 +169,25 @@ describe('authoritative magic-item family registry', () => {
         // lifecycle/identity hook because the runtime binds and ends the grant
         // (eshyra-c58j.1). Anything else stays engine-pending.
         expect(entry.readiness, entry.clauseId).toBe('green');
+        const item = sourceMagicItems.find(
+          (record) => record.key === entry.itemKey,
+        );
+        if (item === undefined) throw new Error(`missing ${entry.itemKey}`);
         for (const hook of hooksOf.get(entry.clauseId)?.engineHooks ?? []) {
           const key = magicItemEngineHookKey(hook);
           expect(
             ACTIVATION_ECONOMY_HOOK_KEYS.has(key) ||
-              CREATURE_GRANT_LIFECYCLE_HOOK_KEYS.has(key),
+              CREATURE_GRANT_LIFECYCLE_HOOK_KEYS.has(key) ||
+              (key ===
+                magicItemEngineHookKey({
+                  engine: 'F5',
+                  hook: 'magic-item-usage-recharge',
+                }) &&
+                chargeRechargeOwned(
+                  item.data as Record<string, unknown>,
+                  entry.representation as Record<string, unknown>,
+                  entry.scope as NonNullable<typeof entry.scope>,
+                )),
             `${entry.clauseId} ${hook.hook}`,
           ).toBe(true);
         }

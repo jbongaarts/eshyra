@@ -1864,6 +1864,10 @@ describe('runtime safety across the whole corpus', () => {
     'Elemental Gem|red-corundum|break-gem',
     'Elemental Gem|yellow-diamond|break-gem',
     'Frost Brand||extinguish-flames',
+    // eshyra-9ooo.1: recharge ownership removes the sole remaining operation
+    // blocker for these simple real-pack operations. Their real-item spend and
+    // seeded dawn regain are covered by itemChargeDawnRecharge.test.ts.
+    'Gem of Seeing||gain-truesight',
     // eshyra-olc5.14: the engine-rolled, binder-enforced count owns the grant.
     'Horn of Valhalla|brass|blow-horn',
     'Horn of Valhalla|bronze|blow-horn',
@@ -1875,13 +1879,16 @@ describe('runtime safety across the whole corpus', () => {
     'Iron Bands of Binding||throw-bands',
     'Plate Armor of Etherealness||gain-etherealness',
     'Ring of Djinni Summoning||summon-djinni',
+    'Ring of Evasion||turn-failed-dex-save-into-success',
     'Ring of X-ray Vision||activate-x-ray-vision',
+    'Ring of the Ram||break-object',
     'Rod of Rulership||command-obedience',
     'Rod of Security||enter-paradise',
     'Rope of Entanglement||entangle-creature',
     'Rope of Entanglement||release-creature',
     'Stone of Controlling Earth Elementals||summon-earth-elemental',
     'Well of Many Worlds||open-portal',
+    'Wand of Secrets||detect-secret',
     'Wings of Flying||dismiss-wings',
     'Wings of Flying||manifest-wings',
   ].sort();
