@@ -10,6 +10,7 @@ import {
   getActiveCharacterId,
   getBundledDnd5eSrdPack,
   giveItem,
+  planItemTurnResource,
   readCombatTurnState,
   readItemState,
   startAdventureRun,
@@ -136,6 +137,9 @@ const budgetOf = (db: TestDb, pcId: string) =>
 
 const APPARATUS = 'magic-item:apparatus-of-the-crab';
 const CANDLE = 'magic-item:candle-of-invocation';
+/** Readiness refusal for cast-gate: spell:gate execution is not owned (F4). */
+const CAST_GATE_REFUSAL =
+  /operation 'cast-gate' is not safely executable: magic-item:candle-of-invocation\/c2-effect-cast-gate \(engine-pending: F4:canonical spell execution\)/;
 
 describe('Apparatus of the Crab: one action moves up to two levers (real pack)', () => {
   it('types the lever move once: one operation, one action, a bounded selection', () => {
@@ -276,10 +280,9 @@ describe('Candle of Invocation: light, burn, snuff and the first-light gate (rea
     expect(() => use(db, pcId, id, 'burn')).toThrow(
       /requires machineState 'lit', but the item is 'snuffed'/,
     );
-    // The first-light gate: the candle has been lit (and burned), so it is refused.
-    expect(() => use(db, pcId, id, 'cast-gate')).toThrow(
-      /invalid from machineState 'snuffed'/,
-    );
+    // The first-light gate is refused by readiness before any state guard:
+    // spell:gate execution is not owned (c2-effect-cast-gate, F4).
+    expect(() => use(db, pcId, id, 'cast-gate')).toThrow(CAST_GATE_REFUSAL);
     // It can be relit for the time that remains.
     use(db, pcId, id, 'light');
     expect(use(db, pcId, id, 'burn').state?.economies['burn-time']).toEqual({
@@ -292,30 +295,65 @@ describe('Candle of Invocation: light, burn, snuff and the first-light gate (rea
     const id = install(db, pcId, CANDLE);
     use(db, pcId, id, 'light');
     use(db, pcId, id, 'burn');
-    expect(() => use(db, pcId, id, 'cast-gate')).toThrow(
-      /invalid from machineState 'lit'/,
-    );
+    expect(() => use(db, pcId, id, 'cast-gate')).toThrow(CAST_GATE_REFUSAL);
+    expect(readItemState(db, id)?.machineState).toBe('lit');
     expect(() => use(db, pcId, id, 'light')).toThrow(
       /invalid from machineState 'lit'/,
     );
   });
 
-  it('cast-gate on a fresh candle spends the lighting action and destroys the candle', () => {
+  it('cast-gate on a fresh candle is refused by readiness and leaves the candle, its state and the action unchanged', () => {
     const { db, pcId } = setup(true);
     const id = install(db, pcId, CANDLE);
-    const result = use(db, pcId, id, 'cast-gate');
-    expect(result.turnResource).toMatchObject({
-      status: 'spent',
-      resource: 'action',
-      source: 'activation-cost',
-    });
-    expect(result.consumed).toBe(true);
-    expect(result.costs).toEqual([{ economy: 'gate-use', amount: 1 }]);
+    const budgetBefore = budgetOf(db, pcId);
+    expect(() => use(db, pcId, id, 'cast-gate')).toThrow(CAST_GATE_REFUSAL);
     expect(
       db.prepare('SELECT id FROM inventory WHERE id = ?').get(id),
-    ).toBeUndefined();
+    ).toMatchObject({ id });
     expect(readItemState(db, id)).toBeUndefined();
+    expect(budgetOf(db, pcId)).toEqual(budgetBefore);
+    expect(budgetOf(db, pcId)?.actionUsed).toBe(false);
+    // The action is still available: lighting succeeds and spends it.
+    const light = use(db, pcId, id, 'light');
+    expect(light.turnResource).toMatchObject({
+      status: 'spent',
+      resource: 'action',
+    });
+    expect(readItemState(db, id)?.machineState).toBe('lit');
     expect(budgetOf(db, pcId)?.actionUsed).toBe(true);
+  });
+
+  it('the real pack binds cast-gate to spell:gate, so an owned cast is accounted as a spell', () => {
+    const record = bundled.records.find((r) => r.key === CANDLE);
+    if (record === undefined) throw new Error(`missing ${CANDLE}`);
+    const mechanics = (record.data as { mechanics: Record<string, unknown> })
+      .mechanics;
+    const operation = (mechanics.operations as Record<string, unknown>[]).find(
+      (op) => op.id === 'cast-gate',
+    );
+    if (operation === undefined) throw new Error('cast-gate is not typed');
+    const plan = planItemTurnResource({
+      itemKey: CANDLE,
+      operation: operation as Parameters<
+        typeof planItemTurnResource
+      >[0]['operation'],
+      effects: mechanics.effects as Parameters<
+        typeof planItemTurnResource
+      >[0]['effects'],
+      inCombat: true,
+      castingTimeOf: (ref) =>
+        (
+          bundled.records.find((r) => r.key === ref)?.data as
+            | { castingTime?: string }
+            | undefined
+        )?.castingTime,
+    });
+    expect(plan).toMatchObject({
+      kind: 'spend',
+      resource: 'action',
+      source: 'activation-cost',
+      spellRef: 'spell:gate',
+    });
   });
 
   it('light refuses when the action is already spent, leaving the candle unlit', () => {

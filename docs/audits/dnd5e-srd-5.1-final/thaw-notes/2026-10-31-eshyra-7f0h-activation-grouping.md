@@ -116,3 +116,78 @@ refused; cast-gate on a fresh candle spends the action and destroys it.
 validator refusals), `magicItemActivationEconomy.test.ts` (ledger equality),
 `itemTransitionTurnResource.test.ts` (the driven `cast-gate` transition into
 the destroyed state).
+
+## Review repair (eshyra-7f0h.3)
+
+Repairs Sol review finding S1 on PR #694 (eshyra-7f0h.2): the Candle's
+`cast-gate` became executable with an action cost but no bound spell identity,
+so use_item recorded it as a non-spell item action and a bonus-action spell
+could be cast in the same turn. Decision (supervisor): type the printed spell
+and keep the operation truthfully refused until spell execution is owned, as
+the pack already does for Cubic Gate's `cast-gate`.
+
+Source changes (`magicItemCandleLifecycle.ts`):
+
+- `cast-gate` operation gains `effects: ['c2-cast-gate']`.
+- New castSpell effect `c2-cast-gate` with `spellRef: 'spell:gate'`, merged
+  with the existing `c2-residual-invocation-zone` effect from the residual
+  family.
+- New clause `c2-effect-cast-gate` (tag C2, block `effects`, engine-pending on
+  F4 `canonical spell execution`).
+
+Generated records: only `records.json` changes among the pack files, and only
+in the Candle of Invocation record (+40 lines): the `cast-gate` operation's
+`effects`, the castSpell effect (its duration `1 minute` and concentration
+`true` are derived from `spell:gate`, "Concentration, up to 1 minute", as for
+the other timed spell effects), and the new engine-pending clause. No record is
+added or removed. Pack verification (`npm run verify:dnd5e-srd-pack`): records
+added 0, removed 0, changed 0; committed pack matches importer output exactly.
+
+Updated `records.json` SHA-256:
+
+`84c326453f92ba93e3599fbb5d5f90b449eed0ff75cfea7547d7e712561cc0b5`
+
+Clause counts (corrected from the original section above): engine-pending 749
+to 750 (`c2-effect-cast-gate`), green 260 unchanged, adjudicated-by-design 358
+unchanged, design-blocked 1 unchanged, total 1368 to 1369. The ready set falls
+from 40 to 39: `cast-gate` is no longer newly ready. Newly ready operations are
+now `move-levers` (Apparatus), `light` and `snuff` (Candle). Operation census
+350 (unchanged); legacy backlog candidates 797 to 798 (+1 `c2-effect-cast-gate`, the F4 engine-hook clause; the backlog test pins were updated to 798 and the new fingerprint).
+
+Semi-structured boundary inventory (`docs/inventories/o9bd-18-8-8-semi-structured-boundary.{json,md}`)
+regenerated: row count 1865 unchanged; magic-item population counts +1 for
+clause/engine/hook fields, and `spell:gate` joins the castSpell `spellRef`
+samples (`spell:web` drops out of the sample set). Written with the script's
+own CLI (`npx tsx packages/core/scripts/inventory-semi-structured-boundary.ts`),
+which calls `writeCommittedOutputs()`; `--check` passes afterwards.
+
+Evidence (`candleAndApparatus.test.ts`, unmodified pack, real readiness):
+
+- `cast-gate` on a fresh candle in combat is refused by readiness, naming
+  `c2-effect-cast-gate` and `canonical spell execution`; the candle row, its
+  unlit state and the turn's action are unchanged; `light` then succeeds and
+  spends that action.
+- `cast-gate` after snuff, and after a burn while lit, is refused by the same
+  readiness gate (previously the state-machine guard). The state-machine guard
+  for `cast-gate` is therefore not reachable through use_item until spell
+  execution is owned; it remains typed in the pack.
+- `planItemTurnResource` on the real pack's `cast-gate` operation binds
+  `spellRef: 'spell:gate'` with `source: 'activation-cost'`, so once owned the
+  cast is accounted as a spell.
+- Negative proof: with the F4 engineHooks entry removed from the source (pack
+  regenerated), three Candle tests fail because `cast-gate` becomes executable.
+  The source was restored and the pack regenerated; the records diff returned
+  to the same +40 lines.
+
+Test pins updated to actual values (none weakened; each still asserts every
+item it counted):
+
+- `srdGeneratedPack.test.ts`: clause total 1368 to 1369; readiness
+  engine-pending 749 to 750, green/adjudicated/design-blocked unchanged.
+- `magicItemTriage.test.ts`: operation-bound castSpell duration check 94 to 95
+  (the new `spell:gate` effect, whose timed duration is verified).
+- `magicItemOperationSourceAgreement.test.ts`: `Candle of Invocation||cast-gate`
+  removed from the executable operation READY set (39 entries).
+- `itemState.test.ts`: the bundled pending-operation refusal on the granted
+  candle now asserts the readiness refusal (same intent: refused before any
+  mutation; state, inventory row and attunement unchanged).

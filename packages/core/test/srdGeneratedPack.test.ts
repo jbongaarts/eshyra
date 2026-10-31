@@ -3327,7 +3327,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1368);
+      expect(clauses).toHaveLength(1369);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3363,6 +3363,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // Efreeti Bottle stopper cooldown added one economy clause (790 ->
       // 803). No green clause moved: the 212 green clauses and the 19 ready
       // operations are unchanged.
+      // eshyra-7f0h.3 (review repair of S1): the Candle of Invocation's
+      // cast-gate operation binds spell:gate through a castSpell effect and
+      // one engine-pending clause (F4 canonical spell execution), so it stays
+      // refused (total 1368 -> 1369). No green clause moved.
       // eshyra-o9bd.19.4.6.10: 18 actor/delivery sentences erased by early
       // nulling now survive as adjudicated clauses; Wand of Binding's branch-
       // dependent reaction is carried without a composite typed cost; Winged
@@ -3481,11 +3485,15 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // makes light, snuff and the first-light cast-gate executable, and burn
       // is gated on the candle being lit. Net: total 1387 -> 1368, pending
       // 760 -> 749, green 258 -> 260, adjudicated 368 -> 358. move-levers,
-      // light, snuff and cast-gate are newly ready.
+      // light, snuff and cast-gate are newly ready. eshyra-7f0h.3 (review
+      // repair of S1): cast-gate is typed to spell:gate (castSpell) and carries
+      // one engine-pending clause (F4 canonical spell execution), so it is NOT
+      // ready; engine-pending 749 -> 750, total 1368 -> 1369. light and snuff
+      // remain newly ready.
       expect(counts).toEqual({
         'adjudicated-by-design': 358,
         'design-blocked': 1,
-        'engine-pending': 749,
+        'engine-pending': 750,
         green: 260,
       });
       // The shared Orb spell sentence stays governed by one triage clause for

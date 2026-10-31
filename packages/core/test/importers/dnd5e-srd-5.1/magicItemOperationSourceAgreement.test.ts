@@ -1848,10 +1848,11 @@ describe('runtime safety across the whole corpus', () => {
     'Bowl of Commanding Water Elementals||summon-water-elemental',
     'Brazier of Commanding Fire Elementals||summon-fire-elemental',
     'Candle of Invocation||burn',
-    // eshyra-7f0h: the Candle's lit/unlit machine makes light, snuff and the
-    // first-light gate executable (real-pack conformance in
-    // candleAndApparatus.test.ts); burn is gated on the candle being lit.
-    'Candle of Invocation||cast-gate',
+    // eshyra-7f0h: the Candle's lit/unlit machine makes light and snuff
+    // executable (real-pack conformance in candleAndApparatus.test.ts); burn
+    // is gated on the candle being lit. cast-gate is typed to spell:gate and
+    // stays refused (c2-effect-cast-gate, engine-pending F4) until spell
+    // execution is owned, so it is not in this executable set.
     'Candle of Invocation||light',
     'Candle of Invocation||snuff',
     'Cape of the Mountebank||cast-dimension-door',

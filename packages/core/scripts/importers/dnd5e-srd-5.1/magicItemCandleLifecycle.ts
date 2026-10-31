@@ -15,9 +15,16 @@
  *    `lit` (`requiresState`);
  *  - `cast-gate` is the first-light alternative: the lighting action, valid
  *    only from `unlit` (the candle has never been lit, hence never burned),
- *    and it destroys the candle.
- * The gate spell's effects, the light zone and the free casting stay
- * DM-adjudicated (their own clauses).
+ *    and it destroys the candle. It casts `spell:gate`, so its castSpell
+ *    effect binds that spell identity for turn-resource accounting. Casting
+ *    gate is not an owned engine capability yet: the spell's execution
+ *    (engine hook F4 'canonical spell execution') is pending, so the
+ *    operation stays refused by readiness (`c2-effect-cast-gate`) until it is
+ *    owned. Until then the candle, its state and the turn's action are
+ *    unchanged by a refused cast-gate.
+ * The lighting action, the first-light-only transition and destruction are
+ * typed for when that execution is owned. The gate spell's effects, the light
+ * zone and the free casting stay DM-adjudicated (their own clauses).
  */
 import type { MagicItemFamilyProjection } from './magicItemCompiler.js';
 import type { MagicItemExtraction } from './types.js';
@@ -44,7 +51,14 @@ export function projectMagicItemCandleLifecycle(
         { id: 'light', activation: { cost: 'action' } },
         { id: 'snuff' },
         { id: 'burn', requiresState: 'lit' },
-        { id: 'cast-gate', activation: { cost: 'action' } },
+        {
+          id: 'cast-gate',
+          activation: { cost: 'action' },
+          effects: ['c2-cast-gate'],
+        },
+      ],
+      effects: [
+        { id: 'c2-cast-gate', kind: 'castSpell', spellRef: 'spell:gate' },
       ],
       stateMachine: {
         initial: 'unlit',
@@ -76,6 +90,12 @@ export function projectMagicItemCandleLifecycle(
             hook: 'olc5.11 pack-tested item state and timer transition',
           },
         ],
+      },
+      {
+        id: 'c2-effect-cast-gate',
+        tag: 'C2',
+        representation: { block: 'effects', effectId: 'c2-cast-gate' },
+        engineHooks: [{ engine: 'F4', hook: 'canonical spell execution' }],
       },
     ],
   };

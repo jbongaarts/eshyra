@@ -1802,7 +1802,9 @@ describe('magic-item live instance state', () => {
       .get('campaign-1', grantedCandle.id);
     expect(() =>
       useItem(db, useInput(bundled, grantedCandle.id, 'cast-gate')),
-    ).toThrow(/is invalid from machineState 'lit'/);
+    ).toThrow(
+      /operation 'cast-gate' is not safely executable: .*c2-effect-cast-gate \(engine-pending: F4:canonical spell execution\)/,
+    );
     expect(readItemState(db, grantedCandle.id)).toEqual(
       candleStateBeforeUnsupportedSpend,
     );
