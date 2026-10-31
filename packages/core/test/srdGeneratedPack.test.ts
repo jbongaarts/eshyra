@@ -864,10 +864,11 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   },
   {
     kind: 'magic-item',
-    // Horn of Valhalla types (eshyra-olc5.14) and, with eshyra-olc5.16.1, the
-    // Bag of Tricks colors join the Figurine and the reviewed inline variants.
+    // Horn of Valhalla types (eshyra-olc5.14), Bag of Tricks colors
+    // (eshyra-olc5.16.1), and Elemental Gem types (eshyra-xt6m.1.1) join the
+    // Figurine and the reviewed inline variants.
     field: 'variants',
-    missingCount: 234,
+    missingCount: 233,
     totalInKind: 240,
   },
   // Half-Dragon Template owns its two reconstructed reference tables; other
@@ -3326,7 +3327,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1385);
+      expect(clauses).toHaveLength(1387);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3464,13 +3465,17 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // the Bag is owned again: its entityGrant clause goes engine-pending ->
       // green and gains one hook-free adjudicated control clause (763 -> 762
       // pending, 254 -> 255 green, 366 -> 367; total 1384 -> 1385).
-      // pull-fuzzy-object becomes ready again. The Elemental Gem stays pending
-      // (eshyra-xt6m.1).
+      // pull-fuzzy-object becomes ready again. eshyra-xt6m.1.1 binds the gem
+      // type as its variant, owns each exact grant, and adds the exact
+      // castSpell effect owner: the two prior gem pending clauses go green,
+      // one new effect clause is green, and the control span is restored as an
+      // adjudicated clause (762 -> 760 pending, 255 -> 258 green, 367 -> 368
+      // adjudicated; total 1385 -> 1387). break-gem is newly ready.
       expect(counts).toEqual({
-        'adjudicated-by-design': 367,
+        'adjudicated-by-design': 368,
         'design-blocked': 1,
-        'engine-pending': 762,
-        green: 255,
+        'engine-pending': 760,
+        green: 258,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

@@ -35,7 +35,8 @@ export const giveItemTool: Tool = {
     'Call ONLY when the player explicitly receives, purchases, or is granted an item — ' +
     'never call to answer a question about what is currently equipped or carried. ' +
     "A Horn of Valhalla is given with its type as variantId (silver, brass, bronze or iron; the type is fixed for that horn). When the type is determined randomly, roll the horn's d100 table with the roll tool and pass the matching row's variantId. " +
-    'A Bag of Tricks is given with its cloth color as variantId (gray, rust or tan; the color is fixed for that bag, and the DM chooses it).',
+    'A Bag of Tricks is given with its cloth color as variantId (gray, rust or tan; the color is fixed for that bag, and the DM chooses it). ' +
+    'An Elemental Gem is given with its gem type as variantId (blue-sapphire, yellow-diamond, red-corundum or emerald); a stack holds gems of one type.',
   inputSchema: {
     type: 'object',
     properties: {

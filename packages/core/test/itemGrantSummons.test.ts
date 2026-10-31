@@ -198,7 +198,9 @@ function setup(
         packRef: record.key,
         stateful: true,
         ...(options.variantId === undefined
-          ? {}
+          ? key === 'magic-item:elemental-gem'
+            ? { variantId: 'yellow-diamond' }
+            : {}
           : { variantId: options.variantId }),
       },
       domainCtx,
@@ -209,7 +211,9 @@ function setup(
         created.id,
         createInitialItemState(record.key, record, {
           ...(options.variantId === undefined
-            ? {}
+            ? key === 'magic-item:elemental-gem'
+              ? { variantId: 'yellow-diamond' }
+              : {}
             : { variantId: options.variantId }),
         }),
         domainCtx,
@@ -1184,7 +1188,7 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
         'earth-elemental',
         'c-earth',
       ],
-      ['magic-item:elemental-gem', 'gem-elemental', 'c-earth'],
+      ['magic-item:elemental-gem', 'yellow-diamond-elemental', 'c-earth'],
     ] as const;
     for (const [key, grantId, actor] of vessels) {
       const s = setup(pack, { extraActors: REPAIR_ACTORS });
@@ -2424,7 +2428,7 @@ const AS_SPELL_CARRIERS = [
     'earth-elemental',
     'c-earth',
   ],
-  ['magic-item:elemental-gem', 'gem-elemental', 'c-earth'],
+  ['magic-item:elemental-gem', 'yellow-diamond-elemental', 'c-earth'],
 ] as const;
 
 function combatantStatus(db: ReturnType<typeof setup>['db'], id: string) {

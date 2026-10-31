@@ -14,7 +14,10 @@ import type {
   MagicItemFamilyProjection,
 } from './magicItemCompiler.js';
 import { creatureGrantLifecycleOwned } from './magicItemGrantOwnership.js';
-import { BAG_OF_TRICKS_TABLES } from './parseMagicItems.js';
+import {
+  BAG_OF_TRICKS_TABLES,
+  ELEMENTAL_GEM_TYPES,
+} from './parseMagicItems.js';
 import type { MagicItemExtraction } from './types.js';
 
 type EntityGrantEntry = MagicItemEntityGrant['grants'][number];
@@ -307,28 +310,22 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
       entityGrant: {
         runtimeOwner: 'encounter-combatant',
         grants: [
-          {
-            id: 'gem-elemental',
-            kind: 'creature',
-            creatureRefs: [
-              'creature:air-elemental',
-              'creature:earth-elemental',
-              'creature:fire-elemental',
-              'creature:water-elemental',
-            ],
-            tableRefs: ['table:elemental-gem'],
-            count: 1,
-            control: 'as spell:conjure-elemental',
-            duration: { amount: 1, unit: 'hour' },
-            revertOn: [
-              'concentration-ended',
-              'reduced-to-0-hit-points',
-              'one-hour-ended',
-            ],
-            cooldownEconomy: 'quantity',
-            exclusiveInstance: { scope: 'item', recast: 'blocked' },
-            note: 'Gem type selects exactly one elemental; breaking the gem consumes it.',
-          },
+          ...ELEMENTAL_GEM_TYPES.map(
+            ({ id, creature }): EntityGrantEntry => ({
+              id: `${id}-elemental`,
+              kind: 'creature',
+              variants: [id],
+              creatureRefs: [`creature:${creature}`],
+              tableRefs: ['table:elemental-gem'],
+              count: 1,
+              control: 'as spell:conjure-elemental',
+              duration: { amount: 1, unit: 'hour' },
+              revertOn: ['reduced-to-0-hit-points', 'one-hour-ended'],
+              cooldownEconomy: 'quantity',
+              exclusiveInstance: { scope: 'item', recast: 'blocked' },
+              note: 'Gem type selects exactly one elemental; breaking the gem consumes it.',
+            }),
+          ),
         ],
       },
       hooks: CONTROLLED_HOOKS,

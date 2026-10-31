@@ -237,9 +237,6 @@ const specs: ReadonlyMap<string, ConsumableSpec> = new Map([
         }),
       ],
       primaryEconomy: 'quantity',
-      engineHooks: [
-        { engine: 'F4', hook: 'spell execution and summoned entity ownership' },
-      ],
       extraClauses: [
         {
           id: 's-gem-type-table',
@@ -249,6 +246,17 @@ const specs: ReadonlyMap<string, ConsumableSpec> = new Map([
             field: 'effects.summon-elemental.gemTypeTableRef',
             ref: 'table:elemental-gem',
           },
+        },
+        {
+          id: 'm1-effect-summon-elemental',
+          tag: 'M1',
+          representation: { block: 'effects', effectId: 'summon-elemental' },
+          engineHooks: [
+            {
+              engine: 'F4',
+              hook: 'castSpell effect realized by an owned creature grant',
+            },
+          ],
         },
       ],
     },

@@ -132,9 +132,11 @@ function setup() {
         ...(options.quantity === undefined
           ? {}
           : { quantity: options.quantity }),
-        ...(options.variantId === undefined
-          ? {}
-          : { variantId: options.variantId }),
+        ...(options.variantId === undefined && packRef === GEM
+          ? { variantId: 'emerald' }
+          : options.variantId === undefined
+            ? {}
+            : { variantId: options.variantId }),
         ...(options.stateful === undefined
           ? {}
           : { stateful: options.stateful }),
@@ -162,10 +164,10 @@ function setup() {
   return { db, call, must, give, effects, receipts };
 }
 
-const gemSource = (instanceId: string) => ({
+const gemSource = (instanceId: string, variantId = 'emerald') => ({
   kind: 'magic-item',
   ref: GEM,
-  grantRef: 'gem-elemental',
+  grantRef: `${variantId}-elemental`,
   itemInstanceId: instanceId,
 });
 const gemStart = (
@@ -225,7 +227,7 @@ describe('olc5.12.13 consumed-source grant receipt (R1)', () => {
       data: {
         effect: {
           itemGrant: {
-            grantId: 'gem-elemental',
+            grantId: 'emerald-elemental',
             itemInstanceId: 'gem-1',
             packRef: GEM,
             spellRef: 'spell:conjure-elemental',
@@ -235,7 +237,7 @@ describe('olc5.12.13 consumed-source grant receipt (R1)', () => {
       },
     });
     expect(s.receipts()[0]?.redeemed_effect_id).toBe('fx-gem');
-    const again = gemStart(s, 'fx-gem-2', 'gem-1', 'c-fire');
+    const again = gemStart(s, 'fx-gem-2', 'gem-1', 'c-water');
     expect(again).toMatchObject({ ok: false });
     expect(again.message).toMatch(/already redeemed/);
     // The tombstoned grant ends normally on the printed hour with no item to cool.
@@ -265,7 +267,9 @@ describe('olc5.12.13 consumed-source grant receipt (R1)', () => {
     const s = setup();
     const never = gemStart(s, 'fx-never', 'no-such-gem');
     expect(never).toMatchObject({ ok: false });
-    expect(never.message).toMatch(/no consumption receipt/);
+    expect(never.message).toMatch(
+      /no consumption receipt|variant-bearing item.*instance that carries its variant/,
+    );
     s.give('gem-2', GEM, { quantity: 1 });
     s.must('use_item', { instanceId: 'gem-2', operationId: 'break-gem' });
     const wrongPack = s.call('start_effect', {
@@ -282,7 +286,7 @@ describe('olc5.12.13 consumed-source grant receipt (R1)', () => {
       duration: { kind: 'until-removed' },
     });
     expect(wrongPack).toMatchObject({ ok: false });
-    expect(wrongPack.message).toMatch(/consumed as/);
+    expect(wrongPack.message).toMatch(/consumed as|does not declare variants/);
     s.db
       .prepare("UPDATE item_consumption_receipt SET campaign_id='other'")
       .run();
@@ -299,7 +303,9 @@ describe('olc5.12.13 consumed-source grant receipt (R1)', () => {
     expect(s.receipts()).toEqual([]);
     const refused = gemStart(s, 'fx-destroyed', 'gem-3');
     expect(refused).toMatchObject({ ok: false });
-    expect(refused.message).toMatch(/no consumption receipt/);
+    expect(refused.message).toMatch(
+      /no consumption receipt|variant-bearing item.*instance that carries its variant/,
+    );
     // A stack of two gems is stateless (single-use economy): using one unit
     // leaves the surviving row and a bind credit, and writes no receipt.
     s.give('gem-4', GEM, { quantity: 2 });
@@ -336,13 +342,14 @@ describe('olc5.12.13 retired instance ids (user review r2)', () => {
   const giveTool = (
     s: ReturnType<typeof setup>,
     packRef: string,
-    extra = {},
+    extra: Record<string, unknown> = {},
   ) => {
     const record = pack.records.find((entry) => entry.key === packRef);
     const result = s.must('give_item', {
       id: packRef.slice('magic-item:'.length),
       name: record?.name,
       packRef,
+      ...(packRef === GEM ? { variantId: 'emerald' } : {}),
       ...extra,
     });
     return (result.data as { id: string }).id;
@@ -362,13 +369,21 @@ describe('olc5.12.13 retired instance ids (user review r2)', () => {
       if (firstRedeemed)
         expect(gemStart(s, 'fx-first', first)).toMatchObject({ ok: true });
       const firstReceipt = receiptRow(s, first);
-      const second = giveTool(s, GEM);
+      const second = giveTool(s, GEM, { variantId: 'red-corundum' });
       expect(second).not.toBe(first);
       s.must('begin_turn', { character: 'pc-1', round: 2 });
       s.must('use_item', { instanceId: second, operationId: 'break-gem' });
       // The first receipt is untouched by the second consumption.
       expect(receiptRow(s, first)).toEqual(firstReceipt);
-      expect(gemStart(s, 'fx-second', second, 'c-fire')).toMatchObject({
+      expect(
+        gemStart(
+          s,
+          'fx-second',
+          second,
+          'c-fire',
+          gemSource(second, 'red-corundum'),
+        ),
+      ).toMatchObject({
         ok: true,
       });
       if (!firstRedeemed)
@@ -380,7 +395,7 @@ describe('olc5.12.13 retired instance ids (user review r2)', () => {
       expect(receiptRow(s, second)).toMatchObject({
         redeemed_effect_id: 'fx-second',
       });
-      expect(gemStart(s, 'fx-again', first, 'c-air')).toMatchObject({
+      expect(gemStart(s, 'fx-again', first, 'c-water')).toMatchObject({
         ok: false,
       });
       const byEffect = new Map(

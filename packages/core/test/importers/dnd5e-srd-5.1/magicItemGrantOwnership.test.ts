@@ -10,7 +10,8 @@
  * creature-grant clauses and stays everywhere else, with the illusion, object,
  * containment, DM-ended and no-printed-ending grants explicitly kept. The F2
  * control hook moves to an adjudicated clause (control stays DM-adjudicated);
- * F4 on the Elemental Gem quantity clause stays.
+ * the Elemental Gem castSpell effect is realized only through its matching
+ * owned grant, without owning spell execution.
  */
 import { describe, expect, it } from 'vitest';
 import {
@@ -21,6 +22,7 @@ import {
 import { MAGIC_ITEM_ENTITY_GRANTS_WITH_DEATH_CONSEQUENCE } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemEntityGrants.js';
 import {
   CREATURE_GRANT_LIFECYCLE_HOOKS,
+  castSpellRealizedByOwnedGrant,
   creatureGrantLifecycleOwned,
   ENGINE_COMPUTED_GRANT_ENDINGS,
 } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemGrantOwnership.js';
@@ -31,7 +33,6 @@ import {
 
 type Obj = Record<string, unknown>;
 const F2_HOOK = 'controlled-entity command action budget';
-const F4_HOOK = 'spell execution and summoned entity ownership';
 const LIFECYCLE_KEYS = new Set(
   CREATURE_GRANT_LIFECYCLE_HOOKS.map(magicItemEngineHookKey),
 );
@@ -116,6 +117,7 @@ const OWNED_ITEMS = [
   'Bowl of Commanding Water Elementals',
   'Brazier of Commanding Fire Elementals',
   'Censer of Controlling Air Elementals',
+  'Elemental Gem',
   // countRoll per horn-type variant (eshyra-olc5.14)
   'Horn of Valhalla',
   // eshyra-olc5.15: its printed death consequence is TYPED (a stateMachine
@@ -126,8 +128,6 @@ const OWNED_ITEMS = [
 ];
 /** Every grant-bearing item that keeps the hooks, with the reason it does. */
 const KEPT_ITEMS: Record<string, string> = {
-  'Elemental Gem':
-    'creature selected by the gem type (four elementals) not bound to the instance',
   'Deck of Illusions': 'illusion grant, not bound by start_effect',
   'Efreeti Bottle': 'third-wish-granted ending is DM-ended; outcomes (.12.4)',
   'Feather Token': 'object whip grant mixed in; DM-ended endings',
@@ -303,15 +303,21 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
     }
   });
 
-  it('the Elemental Gem quantity clause keeps F4 spell execution (not the as-spell lifetime)', () => {
+  it('the Elemental Gem quantity and exact castSpell effect are owned', () => {
     const gem = items.find((record) => record.name === 'Elemental Gem');
-    const quantity = clausesOf(gem as never).find(
-      (clause) => clause.representation.economyId === 'quantity',
-    );
-    expect(quantity?.readiness).toBe('engine-pending');
-    expect((quantity?.missingHooks ?? []).map((h) => h.hook)).toEqual([
-      F4_HOOK,
-    ]);
+    const clauses = clausesOf(gem as never);
+    expect(
+      clauses.find((clause) => clause.representation.economyId === 'quantity')
+        ?.readiness,
+    ).toBe('green');
+    expect(
+      clauses.find((clause) =>
+        clause.clauseId.endsWith('m1-effect-summon-elemental'),
+      )?.readiness,
+    ).toBe('green');
+    expect(
+      clauses.filter((clause) => clause.representation.block === 'entityGrant'),
+    ).toHaveLength(1);
   });
 
   describe('rule counterfactuals (synthetic entityGrant blocks)', () => {
@@ -512,5 +518,77 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
         ),
       ).toBe(false);
     });
+  });
+});
+
+describe('castSpell effect ownership by a matching creature grant (eshyra-xt6m.1.1)', () => {
+  const effect = {
+    id: 'summon-elemental',
+    kind: 'castSpell',
+    spellRef: 'spell:conjure-elemental',
+    duration: { amount: 1, unit: 'hour' },
+    concentrationRequired: true,
+  };
+  const operations = [
+    {
+      id: 'break-gem',
+      effects: ['summon-elemental'],
+      cost: [{ economy: 'quantity', amount: 1 }],
+    },
+  ];
+  const grant = {
+    id: 'emerald-elemental',
+    kind: 'creature',
+    variants: ['emerald'],
+    creatureRefs: ['creature:water-elemental'],
+    count: 1,
+    control: 'as spell:conjure-elemental',
+    duration: { amount: 1, unit: 'hour' },
+    revertOn: ['reduced-to-0-hit-points', 'one-hour-ended'],
+    cooldownEconomy: 'quantity',
+  };
+  const mechanics = {
+    entityGrant: { runtimeOwner: 'encounter-combatant', grants: [grant] },
+  };
+  it('owns only the bound castSpell lifecycle when operation, grant, spell and duration agree', () => {
+    expect(castSpellRealizedByOwnedGrant(effect, operations, mechanics)).toBe(
+      true,
+    );
+    expect(
+      castSpellRealizedByOwnedGrant(
+        { ...effect, id: 'staff-effect' },
+        operations,
+        mechanics,
+      ),
+    ).toBe(false);
+    expect(
+      castSpellRealizedByOwnedGrant(
+        effect,
+        [{ ...operations[0], cost: [] }],
+        mechanics,
+      ),
+    ).toBe(false);
+    for (const changedGrant of [
+      undefined,
+      { ...grant, duration: { amount: 10, unit: 'minute' } },
+      { ...grant, control: 'as spell:other-spell' },
+    ]) {
+      const changedMechanics = {
+        entityGrant: {
+          runtimeOwner: 'encounter-combatant',
+          grants: changedGrant === undefined ? [] : [changedGrant],
+        },
+      };
+      expect(
+        castSpellRealizedByOwnedGrant(effect, operations, changedMechanics),
+      ).toBe(false);
+    }
+    expect(
+      castSpellRealizedByOwnedGrant(
+        { ...effect, spellRef: 'spell:other-spell' },
+        operations,
+        mechanics,
+      ),
+    ).toBe(false);
   });
 });

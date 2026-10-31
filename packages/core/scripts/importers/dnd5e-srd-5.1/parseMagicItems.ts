@@ -388,6 +388,73 @@ export function assertHornOfValhallaTypesMatchTable(
   }
 }
 
+/** Source-pinned per-instance gem type and elemental mapping (SRD 5.1 p. 220). */
+export const ELEMENTAL_GEM_TYPES = [
+  {
+    name: 'Blue Sapphire',
+    tableGem: 'Blue sapphire',
+    id: 'blue-sapphire',
+    elemental: 'Air elemental',
+    creature: 'air-elemental',
+  },
+  {
+    name: 'Yellow Diamond',
+    tableGem: 'Yellow diamond',
+    id: 'yellow-diamond',
+    elemental: 'Earth elemental',
+    creature: 'earth-elemental',
+  },
+  {
+    name: 'Red Corundum',
+    tableGem: 'Red corundum',
+    id: 'red-corundum',
+    elemental: 'Fire elemental',
+    creature: 'fire-elemental',
+  },
+  {
+    name: 'Emerald',
+    tableGem: 'Emerald',
+    id: 'emerald',
+    elemental: 'Water elemental',
+    creature: 'water-elemental',
+  },
+] as const;
+
+function extractElementalGemVariants(description: string): MagicItemVariant[] {
+  const phrase =
+    'The type of gem determines the elemental summoned by the spell.';
+  if (!description.includes(phrase)) {
+    throw new Error(
+      `magic-item variant extraction: expected ${JSON.stringify(phrase)} not found in "Elemental Gem" description`,
+    );
+  }
+  return ELEMENTAL_GEM_TYPES.map(({ name, elemental }) => ({
+    name,
+    rarity: 'Uncommon',
+    text: `Summoned elemental: ${elemental}.`,
+  }));
+}
+
+/** Aborts if table:elemental-gem no longer matches the pinned source mapping. */
+export function assertElementalGemTypesMatchTable(
+  rows: readonly (readonly unknown[])[],
+  columns: readonly string[],
+): void {
+  const actual = rows.map((row) => row.map(String));
+  const expected = ELEMENTAL_GEM_TYPES.map(({ tableGem, elemental }) => [
+    tableGem,
+    elemental,
+  ]);
+  if (
+    columns.join('|') !== 'Gem|Summoned Elemental' ||
+    JSON.stringify(actual) !== JSON.stringify(expected)
+  ) {
+    throw new Error(
+      `magic-item variant extraction: Elemental Gem variants no longer match table:elemental-gem (columns ${JSON.stringify(columns)}, rows ${JSON.stringify(actual)})`,
+    );
+  }
+}
+
 /**
  * Bag of Tricks' three cloth colors (eshyra-olc5.16). The printed description
  * says "This ordinary bag, made from gray, rust, or tan cloth" and that the
@@ -798,9 +865,11 @@ export function parseMagicItems(
         ? extractFigurineVariants(description)
         : entry.name === 'Horn of Valhalla'
           ? extractHornOfValhallaVariants(entry.rarity, description)
-          : entry.name === 'Bag of Tricks'
-            ? extractBagOfTricksVariants(description)
-            : extractReviewedInlineVariants(entry.name, description);
+          : entry.name === 'Elemental Gem'
+            ? extractElementalGemVariants(description)
+            : entry.name === 'Bag of Tricks'
+              ? extractBagOfTricksVariants(description)
+              : extractReviewedInlineVariants(entry.name, description);
     out.push({
       name: entry.name,
       itemType: entry.itemType,

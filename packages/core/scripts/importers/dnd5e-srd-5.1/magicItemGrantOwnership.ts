@@ -110,9 +110,8 @@ export function creatureGrantLifecycleOwned(
     // the use (`creatureRoll`, eshyra-olc5.16: Bag of Tricks binds the bag's
     // color as the variant and the d8 per use on the bag's own table). A grant
     // whose creature is selected per instance or per use from a table WITHOUT
-    // that binding (the Elemental Gem: the gem's type) admits any listed
-    // creature, so it stays pending until that selection is bound
-    // (eshyra-xt6m.1).
+    // that binding admits any listed creature, so it stays pending until that
+    // selection is bound.
     const creatureRefs = Array.isArray(grant.creatureRefs)
       ? grant.creatureRefs
       : [];
@@ -140,4 +139,79 @@ export function creatureGrantLifecycleOwned(
       )
     );
   });
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (typeof value === 'object' && value !== null)
+    return `{${Object.entries(value as Obj)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, child]) => `${JSON.stringify(key)}:${stableJson(child)}`)
+      .join(',')}}`;
+  return JSON.stringify(value);
+}
+
+/**
+ * The engine's owned creature grant can realize the bound creature lifecycle
+ * of a castSpell effect, without claiming to execute the spell. This owner is
+ * intentionally per-clause and requires a concentration-bound `as spell:`
+ * grant whose fixed duration matches the effect, plus a spent economy on every
+ * operation that lists the effect. Residual spell behavior remains adjudicated.
+ */
+export function castSpellRealizedByOwnedGrant(
+  effect: unknown,
+  operations: unknown,
+  mechanics: unknown,
+): boolean {
+  const candidate = asObject(effect);
+  const mechanicBlock = asObject(mechanics);
+  const grantBlock = asObject(mechanicBlock?.entityGrant);
+  if (
+    candidate?.kind !== 'castSpell' ||
+    typeof candidate.spellRef !== 'string' ||
+    candidate.concentrationRequired !== true ||
+    candidate.duration === undefined ||
+    !creatureGrantLifecycleOwned(grantBlock, mechanicBlock) ||
+    !Array.isArray(operations)
+  )
+    return false;
+  const effectId = candidate.id;
+  if (typeof effectId !== 'string') return false;
+  const users = operations
+    .map(asObject)
+    .filter(
+      (operation) =>
+        Array.isArray(operation?.effects) &&
+        operation.effects.includes(effectId),
+    );
+  if (users.length === 0) return false;
+  const economies = new Set<string>();
+  for (const operation of users) {
+    if (!Array.isArray(operation?.cost) || operation.cost.length === 0)
+      return false;
+    for (const rawCost of operation.cost) {
+      const cost = asObject(rawCost);
+      if (typeof cost?.economy !== 'string') return false;
+      economies.add(cost.economy);
+    }
+  }
+  const grants = Array.isArray(grantBlock?.grants)
+    ? grantBlock.grants.map(asObject)
+    : [];
+  for (const economy of economies) {
+    const matching = grants.filter(
+      (grant) =>
+        grant?.kind === 'creature' && grant.cooldownEconomy === economy,
+    );
+    if (
+      matching.length === 0 ||
+      matching.some(
+        (grant) =>
+          grant?.control !== `as ${candidate.spellRef}` ||
+          stableJson(grant.duration) !== stableJson(candidate.duration),
+      )
+    )
+      return false;
+  }
+  return true;
 }
