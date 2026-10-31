@@ -117,10 +117,12 @@ describe('magic-item legacy capability backlog', () => {
     // djinni-dies transition (m4-lifecycle-ring-of-djinni-summoning), which
     // carries the landed external-event hook like the other green hook-backed
     // clauses (805 -> 806); the Ring's entityGrant clause was already a
-    // candidate and keeps its identity. The resulting candidate set contains
-    // 806 rows.
+    // candidate and keeps its identity. eshyra-xt6m.1.1 moves the Gem's F4
+    // responsibility from the quantity clause to the exact castSpell effect
+    // clause; its legacy candidate identity changes while the candidate set
+    // remains 806 rows.
     expect(fingerprint).toBe(
-      '37e0be1615ff0815b00a8fa2d0f5a9cc0b13360f996392353c4ee791ae4ed94f',
+      '6ea980ed45110ea6a93ef807ec41467d299b226fbf0274d047bcd270e16f6447',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

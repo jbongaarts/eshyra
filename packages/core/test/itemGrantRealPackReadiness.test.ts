@@ -94,6 +94,9 @@ const CONFORMANCE_BACKED: readonly string[] = [
   // variant, the d8 creature is rolled by the engine per use and bound by the
   // binder (eshyra-olc5.16.1).
   'magic-item:bag-of-tricks|pull-fuzzy-object',
+  // itemGrantElementalGem.test.ts (no readiness waiver): per-instance gem
+  // variant selects exactly one owned, as-spell creature grant.
+  'magic-item:elemental-gem|break-gem',
   // eshyra-7gkh.1 (below, no readiness waiver): use -> bind on the real pack.
   'magic-item:bowl-of-commanding-water-elementals|summon-water-elemental',
   'magic-item:brazier-of-commanding-fire-elementals|summon-fire-elemental',
@@ -148,11 +151,17 @@ function setup(creatures: readonly string[]) {
     ],
   });
   let round = 0;
-  const useItem = (key: string, operationId: string, id = 'it-1') => {
+  const useItem = (
+    key: string,
+    operationId: string,
+    id = 'it-1',
+    variantId?: string,
+  ) => {
     const given = must('give_item', {
       id,
       name: key,
       packRef: key,
+      ...(variantId === undefined ? {} : { variantId }),
     });
     const instanceId = (given.data as { id: string }).id;
     round += 1;
@@ -251,6 +260,163 @@ describe('eshyra-7gkh.1 real-pack, no-waiver bind of the newly ready grant opera
       expect(s.effect('fx-vessel')).toMatchObject({ status: 'active' });
       s.db.close();
     }
+  });
+
+  it("Elemental Gem: a gem's grant refuses another gem's elemental named on the same table", () => {
+    const s = setup(['creature:fire-elemental']);
+    const instanceId = s.useItem(
+      'magic-item:elemental-gem',
+      'break-gem',
+      'emerald-gem',
+      'emerald',
+    );
+    const bound = s.call('start_effect', {
+      effectId: 'fx-emerald-fire',
+      kind: 'summoning',
+      displayName: 'emerald-elemental',
+      source: {
+        kind: 'magic-item',
+        ref: 'magic-item:elemental-gem',
+        grantRef: 'emerald-elemental',
+        itemInstanceId: instanceId,
+      },
+      actors: [{ combatantId: 'c-m0' }],
+      concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+    });
+    expect(bound).toMatchObject({ ok: false });
+    expect(bound.message).toMatch(
+      /creature:fire-elemental, which item grant 'emerald-elemental' does not create/,
+    );
+    s.db.close();
+  });
+
+  it('Elemental Gem: emerald use consumes a typed receipt and binds only its water elemental with concentration', () => {
+    const s = setup(['creature:water-elemental', 'creature:fire-elemental']);
+    const instanceId = s.useItem(
+      'magic-item:elemental-gem',
+      'break-gem',
+      'emerald-gem',
+      'emerald',
+    );
+    expect(
+      s.db
+        .prepare(
+          'SELECT variant_id, operation_id FROM item_consumption_receipt WHERE item_instance_id = ?',
+        )
+        .get(instanceId),
+    ).toEqual({ variant_id: 'emerald', operation_id: 'break-gem' });
+    const bound = s.call('start_effect', {
+      effectId: 'fx-emerald',
+      kind: 'summoning',
+      displayName: 'emerald-elemental',
+      source: {
+        kind: 'magic-item',
+        ref: 'magic-item:elemental-gem',
+        grantRef: 'emerald-elemental',
+        itemInstanceId: instanceId,
+      },
+      actors: [{ combatantId: 'c-m0' }],
+      concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+    });
+    expect(bound, bound.message).toMatchObject({ ok: true });
+    expect(s.effect('fx-emerald')).toMatchObject({
+      status: 'active',
+      concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'hour',
+        deadlineElapsedMinutes: 60,
+      },
+      itemGrant: {
+        grantId: 'emerald-elemental',
+        spellRef: 'spell:conjure-elemental',
+      },
+    });
+    expect(
+      s.call('start_effect', {
+        effectId: 'fx-wrong-creature',
+        kind: 'summoning',
+        displayName: 'wrong',
+        source: {
+          kind: 'magic-item',
+          ref: 'magic-item:elemental-gem',
+          grantRef: 'emerald-elemental',
+          itemInstanceId: instanceId,
+        },
+        actors: [{ combatantId: 'c-m1' }],
+        concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+      }),
+    ).toMatchObject({ ok: false });
+    expect(
+      s.call('start_effect', {
+        effectId: 'fx-wrong-variant',
+        kind: 'summoning',
+        displayName: 'wrong',
+        source: {
+          kind: 'magic-item',
+          ref: 'magic-item:elemental-gem',
+          grantRef: 'red-corundum-elemental',
+          itemInstanceId: instanceId,
+        },
+        actors: [{ combatantId: 'c-m1' }],
+        concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+      }),
+    ).toMatchObject({ ok: false });
+    expect(
+      s.call('start_effect', {
+        effectId: 'fx-no-concentration',
+        kind: 'summoning',
+        displayName: 'no concentration',
+        source: {
+          kind: 'magic-item',
+          ref: 'magic-item:elemental-gem',
+          grantRef: 'emerald-elemental',
+          itemInstanceId: instanceId,
+        },
+        actors: [{ combatantId: 'c-m0' }],
+      }),
+    ).toMatchObject({ ok: false });
+    expect(
+      s.call('start_effect', {
+        effectId: 'fx-repeat',
+        kind: 'summoning',
+        displayName: 'repeat',
+        source: {
+          kind: 'magic-item',
+          ref: 'magic-item:elemental-gem',
+          grantRef: 'emerald-elemental',
+          itemInstanceId: instanceId,
+        },
+        actors: [{ combatantId: 'c-m0' }],
+        concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+      }),
+    ).toMatchObject({ ok: false });
+    const unspent = s.must('give_item', {
+      id: 'unspent-gem',
+      name: 'Elemental Gem',
+      packRef: 'magic-item:elemental-gem',
+      variantId: 'emerald',
+    });
+    const unspentId = (unspent.data as { id: string }).id;
+    const noReceipt = s.call('start_effect', {
+      effectId: 'fx-no-receipt',
+      kind: 'summoning',
+      displayName: 'unpaid',
+      source: {
+        kind: 'magic-item',
+        ref: 'magic-item:elemental-gem',
+        grantRef: 'emerald-elemental',
+        itemInstanceId: unspentId,
+      },
+      actors: [{ combatantId: 'c-m0' }],
+      concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+    });
+    expect(noReceipt).toMatchObject({ ok: false });
+    expect(noReceipt.message).toMatch(
+      /use_item 'break-gem' first|consumption receipt/i,
+    );
+    s.db.close();
   });
 
   const bagBind = (

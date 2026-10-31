@@ -20,6 +20,7 @@ export const useItemTool: Tool = {
     'Use one rules-pack-bound inventory instance through an operation declared by its magic-item record. ' +
     'The engine validates the operation and all economy/effect references, enforces its printed worn/held/attuned/on-person prerequisites, refuses insufficient resources, ' +
     'and applies deterministic costs. Use the instance id shown in inventory context, not the pack ref. ' +
+    "An item that casts or summons 'as if you had cast' a spell uses the item's printed activation (for example, the Elemental Gem's action), not the spell's casting time. " +
     'Before use, call don_item, hold_item, or attune_item as needed. A refusal names the unmet equipment alternatives and leaves the turn budget and item state unchanged. ' +
     'TURN RESOURCE: when the operation prints an action, bonus-action or reaction activation, and the acting character is in the active combat, ' +
     'use_item spends that resource itself (for a spell the operation casts it passes the spell, so the bonus-action-spell rule applies; ' +

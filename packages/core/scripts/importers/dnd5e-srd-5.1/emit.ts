@@ -82,6 +82,7 @@ import {
 import { reconstructFeatureText } from './parseFeatures.js';
 import {
   assertBagOfTricksTablesMatch,
+  assertElementalGemTypesMatchTable,
   assertHornOfValhallaTypesMatchTable,
 } from './parseMagicItems.js';
 import { DND5E_RECORD_RELATIONSHIP_DECLARATIONS } from './recordRelationshipDeclarations.js';
@@ -1612,6 +1613,17 @@ export function magicItemExtractionsToRecords(
       );
     assertHornOfValhallaTypesMatchTable(hornTable.rows, hornTable.columns);
     assertBagOfTricksTablesMatch(tables);
+    const elementalGemTable = tables.find(
+      (table) => table.name === 'Elemental Gem',
+    );
+    if (elementalGemTable === undefined)
+      throw new Error(
+        'magic-item variant extraction: table "Elemental Gem" is missing; the gem variants cannot be checked against it',
+      );
+    assertElementalGemTypesMatchTable(
+      elementalGemTable.rows,
+      elementalGemTable.columns,
+    );
   }
   const out: RulesRecord[] = magicItems.map((item) => {
     const record: RulesRecord = {

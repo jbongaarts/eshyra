@@ -8,6 +8,7 @@ import type { RulesRecord } from '../../../src/rules/types.js';
 import { MAGIC_ITEM_ENTITY_GRANT_KEYS_WITH_DEATH_CONSEQUENCE } from './magicItemEntityGrants.js';
 import {
   CREATURE_GRANT_LIFECYCLE_HOOKS,
+  castSpellRealizedByOwnedGrant,
   creatureGrantLifecycleOwned,
 } from './magicItemGrantOwnership.js';
 
@@ -965,10 +966,33 @@ export function validateMagicItemClausesAndClassify(input: {
           grantMechanics?.entityGrant,
           grantMechanics,
         );
+      const castSpellOwned = (() => {
+        if (representation.block !== 'effects' || grantMechanics === undefined)
+          return false;
+        const effect = Array.isArray(grantMechanics.effects)
+          ? grantMechanics.effects
+              .map(asObject)
+              .find((candidate) => candidate?.id === representation.effectId)
+          : undefined;
+        return castSpellRealizedByOwnedGrant(
+          effect,
+          grantMechanics.operations,
+          grantMechanics,
+        );
+      })();
       const missingHooks = (declaredHooks ?? []).filter((hook) => {
         const key = magicItemEngineHookKey(hook);
         if (landed.has(key)) return false;
         if (grantOwned && CREATURE_GRANT_LIFECYCLE_HOOK_KEYS.has(key))
+          return false;
+        if (
+          castSpellOwned &&
+          key ===
+            magicItemEngineHookKey({
+              engine: 'F4',
+              hook: 'castSpell effect realized by an owned creature grant',
+            })
+        )
           return false;
         return !(activationOwned && ACTIVATION_ECONOMY_HOOK_KEYS.has(key));
       });

@@ -100927,21 +100927,119 @@
       "rarity": "uncommon",
       "requiresAttunement": false,
       "description": "This gem contains a mote of elemental energy. When you use an action to break the gem, an elemental is summoned as if you had cast the conjure elemental spell, and the gem’s magic is lost. The type of gem determines the elemental summoned by the spell.",
+      "variants": [
+        {
+          "id": "blue-sapphire",
+          "name": "Blue Sapphire",
+          "rarity": "Uncommon",
+          "text": "Summoned elemental: Air elemental."
+        },
+        {
+          "id": "yellow-diamond",
+          "name": "Yellow Diamond",
+          "rarity": "Uncommon",
+          "text": "Summoned elemental: Earth elemental."
+        },
+        {
+          "id": "red-corundum",
+          "name": "Red Corundum",
+          "rarity": "Uncommon",
+          "text": "Summoned elemental: Fire elemental."
+        },
+        {
+          "id": "emerald",
+          "name": "Emerald",
+          "rarity": "Uncommon",
+          "text": "Summoned elemental: Water elemental."
+        }
+      ],
       "mechanics": {
         "entityGrant": {
           "runtimeOwner": "encounter-combatant",
           "grants": [
             {
-              "id": "gem-elemental",
+              "id": "blue-sapphire-elemental",
               "kind": "creature",
               "creatureRefs": [
-                "creature:air-elemental",
-                "creature:earth-elemental",
-                "creature:fire-elemental",
+                "creature:air-elemental"
+              ],
+              "tableRefs": [
+                "table:elemental-gem"
+              ],
+              "variants": [
+                "blue-sapphire"
+              ],
+              "count": 1,
+              "duration": {
+                "amount": 1,
+                "unit": "hour"
+              },
+              "revertOn": [
+                "reduced-to-0-hit-points",
+                "one-hour-ended"
+              ],
+              "cooldownEconomy": "quantity",
+              "control": "as spell:conjure-elemental"
+            },
+            {
+              "id": "yellow-diamond-elemental",
+              "kind": "creature",
+              "creatureRefs": [
+                "creature:earth-elemental"
+              ],
+              "tableRefs": [
+                "table:elemental-gem"
+              ],
+              "variants": [
+                "yellow-diamond"
+              ],
+              "count": 1,
+              "duration": {
+                "amount": 1,
+                "unit": "hour"
+              },
+              "revertOn": [
+                "reduced-to-0-hit-points",
+                "one-hour-ended"
+              ],
+              "cooldownEconomy": "quantity",
+              "control": "as spell:conjure-elemental"
+            },
+            {
+              "id": "red-corundum-elemental",
+              "kind": "creature",
+              "creatureRefs": [
+                "creature:fire-elemental"
+              ],
+              "tableRefs": [
+                "table:elemental-gem"
+              ],
+              "variants": [
+                "red-corundum"
+              ],
+              "count": 1,
+              "duration": {
+                "amount": 1,
+                "unit": "hour"
+              },
+              "revertOn": [
+                "reduced-to-0-hit-points",
+                "one-hour-ended"
+              ],
+              "cooldownEconomy": "quantity",
+              "control": "as spell:conjure-elemental"
+            },
+            {
+              "id": "emerald-elemental",
+              "kind": "creature",
+              "creatureRefs": [
                 "creature:water-elemental"
               ],
               "tableRefs": [
                 "table:elemental-gem"
+              ],
+              "variants": [
+                "emerald"
               ],
               "count": 1,
               "duration": {
@@ -101004,6 +101102,24 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
+            "clauseId": "magic-item:elemental-gem/m1-effect-summon-elemental",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M1",
+            "representation": {
+              "block": "effects",
+              "effectId": "summon-elemental"
+            },
+            "engineHooks": [
+              {
+                "engine": "F4",
+                "hook": "castSpell effect realized by an owned creature grant"
+              }
+            ],
+            "readiness": "green"
+          },
+          {
             "clauseId": "magic-item:elemental-gem/m1-quantity",
             "scope": {
               "kind": "parent"
@@ -101013,22 +101129,21 @@
               "block": "economies",
               "economyId": "quantity"
             },
-            "engineHooks": [
-              {
-                "engine": "F4",
-                "hook": "spell execution and summoned entity ownership"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F4",
-                "hook": "spell execution and summoned entity ownership"
-              }
-            ],
-            "missingEngines": [
-              "F4"
-            ]
+            "readiness": "green"
+          },
+          {
+            "clauseId": "magic-item:elemental-gem/m4-control-elemental-gem",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M4",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.",
+              "sourceText": "an elemental is summoned as if you had cast the conjure elemental spell"
+            },
+            "reason": "Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model."
           },
           {
             "clauseId": "magic-item:elemental-gem/m4-elemental-gem",
@@ -101045,34 +101160,11 @@
                 "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
               },
               {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
                 "engine": "F5",
                 "hook": "item-instance cooldown and owned-entity identity link"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F3",
-                "hook": "encounter combatant, persistent actor, and owned-entity lifecycle"
-              },
-              {
-                "engine": "F2",
-                "hook": "controlled-entity command action budget"
-              },
-              {
-                "engine": "F5",
-                "hook": "item-instance cooldown and owned-entity identity link"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F3",
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:elemental-gem/S:Elemental Gem:table:table:elemental-gem",

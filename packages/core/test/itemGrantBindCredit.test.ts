@@ -513,11 +513,7 @@ describe('olc5.12.3 stacks of single-use carriers (eshyra-xt6m)', () => {
   ) as Carrier;
 
   it('a 3-gem stack is used one unit at a time: credits on the surviving row, a receipt on the last unit', () => {
-    const s = setup([
-      'creature:water-elemental',
-      'creature:fire-elemental',
-      'creature:air-elemental',
-    ]);
+    const s = setup([gem.creature, gem.creature, gem.creature]);
     s.give('gem-1', gem, 3);
     expect(
       s.db
@@ -579,7 +575,7 @@ describe('olc5.12.3 stacks of single-use carriers (eshyra-xt6m)', () => {
     ).toEqual(['fx-1', 'fx-2', 'fx-3']);
     for (const effectId of ['fx-1', 'fx-2', 'fx-3'])
       expect(grants.get(effectId)).toMatchObject({
-        grantId: 'gem-elemental',
+        grantId: gem.grantId,
         itemInstanceId: 'gem-1',
       });
     expect(grants.get('fx-3')).toMatchObject({ sourceDestroyedAt: NOW });

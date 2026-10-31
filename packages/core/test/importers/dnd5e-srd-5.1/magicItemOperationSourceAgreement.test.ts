@@ -951,7 +951,10 @@ describe('entity grants state the printed lifecycle and control (S5)', () => {
     ['Brazier of Commanding Fire Elementals', 'fire-elemental'],
     ['Censer of Controlling Air Elementals', 'air-elemental'],
     ['Stone of Controlling Earth Elementals', 'earth-elemental'],
-    ['Elemental Gem', 'gem-elemental'],
+    ['Elemental Gem', 'blue-sapphire-elemental'],
+    ['Elemental Gem', 'yellow-diamond-elemental'],
+    ['Elemental Gem', 'red-corundum-elemental'],
+    ['Elemental Gem', 'emerald-elemental'],
   ] as const)(
     '%s never reverts on concentration-ended (conjure elemental: concentration broken does not end the elemental)',
     (name, grantId) => {
@@ -1845,6 +1848,10 @@ describe('runtime safety across the whole corpus', () => {
     'Circlet of Blasting||cast-scorching-ray',
     'Crystal Ball|crystal-ball-of-telepathy|cast-suggestion',
     'Dragon Scale Mail||sense-nearest-dragon',
+    'Elemental Gem|blue-sapphire|break-gem',
+    'Elemental Gem|emerald|break-gem',
+    'Elemental Gem|red-corundum|break-gem',
+    'Elemental Gem|yellow-diamond|break-gem',
     'Frost Brand||extinguish-flames',
     // eshyra-olc5.14: the engine-rolled, binder-enforced count owns the grant.
     'Horn of Valhalla|brass|blow-horn',
