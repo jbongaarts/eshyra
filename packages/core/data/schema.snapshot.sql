@@ -721,6 +721,16 @@ CREATE TABLE item_state (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE item_variant_establishment (
+  inventory_id TEXT PRIMARY KEY,
+  campaign_id TEXT NOT NULL,
+  pack_ref TEXT NOT NULL CHECK (pack_ref GLOB 'magic-item:*'),
+  variant_id TEXT NOT NULL,
+  established_at TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL
+);
+
 CREATE TABLE meta (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL

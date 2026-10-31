@@ -19,7 +19,8 @@ export const adoptItemTool: Tool = {
   description:
     'Recognize one legacy held inventory row as an exact canonical magic item from the active campaign rules stack. ' +
     'Supply the inventory id and exact packRef (plus required variantId); this tool never guesses from the display name. ' +
-    'It safely splits stateful legacy stacks of at most 100 instances and quarantines incompatible or malformed legacy evidence for GM review. Resolve a quarantine only with one typed resolution action and durable GM evidence; the action and canonical adoption commit atomically.',
+    'It safely splits stateful legacy stacks of at most 100 instances and quarantines incompatible or malformed legacy evidence for GM review. Resolve a quarantine only with one typed resolution action and durable GM evidence; the action and canonical adoption commit atomically. ' +
+    "A held row already bound to the packRef but with no variant (held before the item's variants existed) can have its variant established ONCE by adopt_item with that packRef and variantId; it can never be changed afterwards (establishedVariant is true in that result).",
   inputSchema: {
     type: 'object',
     properties: {
