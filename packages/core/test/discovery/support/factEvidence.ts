@@ -100,8 +100,9 @@ export const ASSERTIONS: Readonly<
   },
   'cube-blocked-by-readiness': ({ candidate }) => {
     const item = candidate('magic-item:cube-of-force');
-    // The cube declares several operations (F1 repair,
-    // `eshyra-o9bd.19.12.9`); this note is specifically about press-face-1.
+    // The five simple charge operations now pass their recharge clause; the
+    // sixth still has an unowned charge cost and the shared M5 machine remains
+    // pending. This note records the actual whole-item readiness blockers.
     const capability = item?.capabilities.find(
       (entry) => entry.operationId === 'press-face-1',
     );
@@ -109,7 +110,10 @@ export const ASSERTIONS: Readonly<
     const note = item?.projectionLimits.find(
       (limit) => limit.kind === 'execution-readiness',
     );
-    expect(JSON.stringify(note?.evidence ?? {})).toContain('press-face-1');
+    expect(JSON.stringify(note?.evidence ?? {})).toContain('press-face-6');
+    expect(JSON.stringify(note?.evidence ?? {})).toContain(
+      'm5-complex-cube-of-force',
+    );
   },
   'ammunition-c2-engine-pending-disclosed': ({ candidate }) => {
     const note = candidate(

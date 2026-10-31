@@ -1418,6 +1418,43 @@ describe('magic-item live instance state', () => {
     db.close();
   });
 
+  it('rejects an unaffordable variable charge cost without changing state', () => {
+    const db = freshDbWithSession();
+    const record = item('charged-test', {
+      economies: { charges: { kind: 'charges', charges: { max: 1 } } },
+      operations: [
+        { id: 'burst', cost: [{ economy: 'charges', amount: 'variable' }] },
+      ],
+    });
+    const granted = giveItem(
+      db,
+      {
+        id: 'ignored',
+        name: 'Charged Test',
+        packRef: record.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    writeItemState(
+      db,
+      granted.id,
+      createInitialItemState(record.key, record),
+      MUTATION,
+    );
+
+    expect(() =>
+      useItem(
+        db,
+        useInput(pack(record), granted.id, 'burst', {
+          costs: { charges: 2 },
+        }),
+      ),
+    ).toThrow(/insufficient charges/);
+    expect(readItemState(db, granted.id)?.economies?.charges.remaining).toBe(1);
+    db.close();
+  });
+
   it('requires seeded initialization and persists exact rolled duration evidence', () => {
     const record = item('rolled-duration-test', {
       economies: {

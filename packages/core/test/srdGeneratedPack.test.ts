@@ -3490,12 +3490,42 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // one engine-pending clause (F4 canonical spell execution), so it is NOT
       // ready; engine-pending 749 -> 750, total 1368 -> 1369. light and snuff
       // remain newly ready.
+      // eshyra-9ooo.1 removes the F5 dawn/dusk charge-recharge hook only from
+      // a charge economy with a positive maximum, exactly one simple reset,
+      // and no depletion consequence, plus its operations whose every cost is
+      // supported by useItem. 73 clauses move pending -> green (750 -> 677;
+      // 260 -> 333); total and adjudicated counts stay fixed. Pipes of the
+      // Sewers' economy and operation clauses turn green, while m4 remains
+      // pending, so call-rat-swarms remains refused. gain-truesight,
+      // turn-failed-dex-save-into-success, break-object and detect-secret become
+      // newly ready (the exact census is pinned in
+      // magicItemOperationSourceAgreement.test.ts).
       expect(counts).toEqual({
         'adjudicated-by-design': 358,
         'design-blocked': 1,
-        'engine-pending': 750,
-        green: 260,
+        'engine-pending': 677,
+        green: 333,
       });
+      const pipesReadiness = clauses.filter(({ clauseId }) =>
+        clauseId.startsWith('magic-item:pipes-of-the-sewers/'),
+      );
+      expect(pipesReadiness).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            clauseId: 'magic-item:pipes-of-the-sewers/c1-economy-charges',
+            readiness: 'green',
+          }),
+          expect.objectContaining({
+            clauseId:
+              'magic-item:pipes-of-the-sewers/c1-operation-call-rat-swarms',
+            readiness: 'green',
+          }),
+          expect.objectContaining({
+            clauseId: 'magic-item:pipes-of-the-sewers/m4-pipes-of-the-sewers',
+            readiness: 'engine-pending',
+          }),
+        ]),
+      );
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).
       const orbShared = clauses.find(

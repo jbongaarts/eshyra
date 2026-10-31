@@ -1,3 +1,4 @@
+import { parseDice } from '../../../src/orchestrator/dice.js';
 import type {
   MagicItemEffect,
   MagicItemMechanics,
@@ -710,6 +711,86 @@ function activationEconomyOwned(
   return false;
 }
 
+/**
+ * Per-clause ownership of dice-regain charge recharge (eshyra-9ooo.1).
+ * Ownership is narrower than the shared F5 hook: the economy must have a
+ * positive integer maximum, exactly one dawn/dusk reset entry with only `at`
+ * and `amount`, and no depletion consequence. The reset executor rolls the
+ * regain with seeded RNG and caps state at the maximum. Operation clauses are
+ * owned only when every cost spends a qualifying economy at a supported
+ * positive integer or `variable` amount.
+ */
+function rechargeEconomyOwned(economy: Obj | undefined): boolean {
+  if (economy === undefined || economy.kind !== 'charges') return false;
+  const charges = asObject(economy.charges);
+  const resets = Array.isArray(economy.reset) ? economy.reset : [];
+  if (
+    typeof charges?.max !== 'number' ||
+    !Number.isInteger(charges.max) ||
+    charges.max <= 0 ||
+    economy.onDepleted !== undefined ||
+    resets.length !== 1
+  )
+    return false;
+  const reset = asObject(resets[0]);
+  let diceAmount = false;
+  if (typeof reset?.amount === 'string' && reset.amount !== 'all') {
+    try {
+      parseDice(reset.amount);
+      diceAmount = true;
+    } catch {
+      diceAmount = false;
+    }
+  }
+  return (
+    reset !== undefined &&
+    Object.keys(reset).length === 2 &&
+    (reset.at === 'dawn' || reset.at === 'dusk') &&
+    (reset.amount === 'all' || diceAmount)
+  );
+}
+
+/**
+ * Applies the per-clause F5 recharge ownership contract to a C1 economy or
+ * operation binding. The shared hook is removed only for the exact charge
+ * shape accepted by {@link rechargeEconomyOwned}; other clauses retain it.
+ */
+export function chargeRechargeOwned(
+  data: Obj,
+  representation: Obj,
+  scope: NonNullable<MagicItemReadinessEntry['scope']>,
+): boolean {
+  const mechanics = effectiveMechanicsFor(data, scope);
+  if (mechanics === undefined) return false;
+  const economies = asObject(mechanics.economies) ?? {};
+  if (representation.block === 'economies')
+    return rechargeEconomyOwned(
+      asObject(economies[representation.economyId as string]),
+    );
+  if (representation.block !== 'operations') return false;
+  const operation = (
+    Array.isArray(mechanics.operations) ? mechanics.operations : []
+  )
+    .map(asObject)
+    .find((candidate) => candidate?.id === representation.operationId);
+  const costs = Array.isArray(operation?.cost) ? operation.cost : [];
+  return (
+    costs.length > 0 &&
+    costs.every((rawCost) => {
+      const cost = asObject(rawCost);
+      return (
+        cost !== undefined &&
+        typeof cost.economy === 'string' &&
+        rechargeEconomyOwned(asObject(economies[cost.economy])) &&
+        ((typeof cost.amount === 'number' &&
+          Number.isInteger(cost.amount) &&
+          cost.amount > 0) ||
+          cost.amount === 'variable')
+      );
+    })
+  );
+}
+
 function operationIds(scope: Obj): Set<string> {
   return new Set(
     (Array.isArray(scope.operations) ? scope.operations : [])
@@ -970,6 +1051,15 @@ export function validateMagicItemClausesAndClassify(input: {
         (declaredHooks ?? []).some((hook) =>
           ACTIVATION_ECONOMY_HOOK_KEYS.has(magicItemEngineHookKey(hook)),
         ) && activationEconomyOwned(data, representation, scope);
+      const rechargeOwned =
+        (declaredHooks ?? []).some(
+          (hook) =>
+            magicItemEngineHookKey(hook) ===
+            magicItemEngineHookKey({
+              engine: 'F5',
+              hook: 'magic-item-usage-recharge',
+            }),
+        ) && chargeRechargeOwned(data, representation, scope);
       const grantMechanics = effectiveMechanicsFor(data, scope);
       const grantOwned =
         representation.block === 'entityGrant' &&
@@ -1005,6 +1095,15 @@ export function validateMagicItemClausesAndClassify(input: {
             magicItemEngineHookKey({
               engine: 'F4',
               hook: 'castSpell effect realized by an owned creature grant',
+            })
+        )
+          return false;
+        if (
+          rechargeOwned &&
+          key ===
+            magicItemEngineHookKey({
+              engine: 'F5',
+              hook: 'magic-item-usage-recharge',
             })
         )
           return false;
