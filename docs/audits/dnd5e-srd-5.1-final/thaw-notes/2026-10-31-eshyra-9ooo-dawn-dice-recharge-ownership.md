@@ -115,3 +115,13 @@ Semi-structured inventory outputs were regenerated with the temporary tsx
 script calling `writeCommittedOutputs()` (1865 rows). The regenerated
 `records.json` SHA-256 is
 `faf690c134f10ffb461918476e2b064a8efe7f037d80e740eccf427787caa142`.
+
+## Integration note (supervisor, eshyra-9ooo)
+
+This branch was cut from PR #694 before its review repair (eshyra-7f0h.3), which
+types Candle of Invocation `cast-gate` as a `spell:gate` castSpell with one
+engine-pending clause. Merged with that repair and regenerated, the counts above
+shift by that one clause: engine-pending 750 -> 677, green 260 -> 333, total
+1369 (unchanged by this bead). The 73 clauses moved by this bead and the four
+newly ready operations are unchanged. records.json SHA-256 after integration:
+`11c671e96040ab6db21457dcc4afeb65bc32eb51b34244443aaebe112dac576a`.
