@@ -1180,7 +1180,9 @@ describe('E. kept state machines own exactly one lifetime at a time (review 19.4
         checked += 1;
       }
     }
-    expect(checked).toBe(94);
+    // eshyra-7f0h.3: the Candle's cast-gate castSpell (spell:gate, timed
+    // "Concentration, up to 1 minute") is the 95th checked operation-bound spell.
+    expect(checked).toBe(95);
   });
 });
 

@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(797);
+    expect(backlog.candidates).toHaveLength(798);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -124,8 +124,11 @@ describe('magic-item legacy capability backlog', () => {
     // per-lever operation-bound candidates with the single move-levers one
     // (-10; its only hook is the landed paid-operation hook) and adds the
     // Candle of Invocation's lit/unlit state-machine clause (+1): 806 -> 797.
+    // eshyra-7f0h.3 (review repair of S1): the Candle's cast-gate castSpell
+    // effect carries one engine-pending F4 clause (c2-effect-cast-gate), a new
+    // legacy engine-hook candidate (797 -> 798); no other identity changed.
     expect(fingerprint).toBe(
-      'f73666bbcf41ca6e790b97ad365410b6c5362e015ecd72b2320c1a536165a15a',
+      'dc9e17141a25218951d8ba917369f4acadd7eb482db3acfddde50505157ba990',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

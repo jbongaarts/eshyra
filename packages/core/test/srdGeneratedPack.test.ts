@@ -3327,7 +3327,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1368);
+      expect(clauses).toHaveLength(1369);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3363,6 +3363,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // Efreeti Bottle stopper cooldown added one economy clause (790 ->
       // 803). No green clause moved: the 212 green clauses and the 19 ready
       // operations are unchanged.
+      // eshyra-7f0h.3 (review repair of S1): the Candle of Invocation's
+      // cast-gate operation binds spell:gate through a castSpell effect and
+      // one engine-pending clause (F4 canonical spell execution), so it stays
+      // refused (total 1368 -> 1369). No green clause moved.
       // eshyra-o9bd.19.4.6.10: 18 actor/delivery sentences erased by early
       // nulling now survive as adjudicated clauses; Wand of Binding's branch-
       // dependent reaction is carried without a composite typed cost; Winged
@@ -3481,11 +3485,15 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // makes light, snuff and the first-light cast-gate executable, and burn
       // is gated on the candle being lit. Net: total 1387 -> 1368, pending
       // 760 -> 749, green 258 -> 260, adjudicated 368 -> 358. move-levers,
-      // light, snuff and cast-gate are newly ready.
+      // light, snuff and cast-gate are newly ready. eshyra-7f0h.3 (review
+      // repair of S1): cast-gate is typed to spell:gate (castSpell) and carries
+      // one engine-pending clause (F4 canonical spell execution), so it is NOT
+      // ready; engine-pending 749 -> 750, total 1368 -> 1369. light and snuff
+      // remain newly ready.
       // eshyra-9ooo.1 removes the F5 dawn/dusk charge-recharge hook only from
       // a charge economy with a positive maximum, exactly one simple reset,
       // and no depletion consequence, plus its operations whose every cost is
-      // supported by useItem. 73 clauses move pending -> green (749 -> 676;
+      // supported by useItem. 73 clauses move pending -> green (750 -> 677;
       // 260 -> 333); total and adjudicated counts stay fixed. Pipes of the
       // Sewers' economy and operation clauses turn green, while m4 remains
       // pending, so call-rat-swarms remains refused. gain-truesight,
@@ -3495,7 +3503,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(counts).toEqual({
         'adjudicated-by-design': 358,
         'design-blocked': 1,
-        'engine-pending': 676,
+        'engine-pending': 677,
         green: 333,
       });
       const pipesReadiness = clauses.filter(({ clauseId }) =>
