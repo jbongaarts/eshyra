@@ -988,10 +988,10 @@ export function validateMagicItemClausesAndClassify(input: {
         if (
           castSpellOwned &&
           key ===
-            JSON.stringify([
-              'F4',
-              'castSpell effect realized by an owned creature grant',
-            ])
+            magicItemEngineHookKey({
+              engine: 'F4',
+              hook: 'castSpell effect realized by an owned creature grant',
+            })
         )
           return false;
         return !(activationOwned && ACTIVATION_ECONOMY_HOOK_KEYS.has(key));

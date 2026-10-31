@@ -3987,6 +3987,11 @@ function grantAdmitsCreature(
     )
       return true;
   }
+  // A grant that types its creature (creatureRefs or statBlockRef) admits only
+  // that identity; its tableRefs are evidence, not a second identity source.
+  // Otherwise a table listing several creatures (Elemental Gem: every gem's
+  // elemental) would admit another row's creature (xt6m.1 supervisor review).
+  if (creatureRefs.length > 0 || statBlockRef !== undefined) return false;
   const tableRefs = Array.isArray(grant.tableRefs)
     ? grant.tableRefs.map(String)
     : [];

@@ -262,6 +262,34 @@ describe('eshyra-7gkh.1 real-pack, no-waiver bind of the newly ready grant opera
     }
   });
 
+  it("Elemental Gem: a gem's grant refuses another gem's elemental named on the same table", () => {
+    const s = setup(['creature:fire-elemental']);
+    const instanceId = s.useItem(
+      'magic-item:elemental-gem',
+      'break-gem',
+      'emerald-gem',
+      'emerald',
+    );
+    const bound = s.call('start_effect', {
+      effectId: 'fx-emerald-fire',
+      kind: 'summoning',
+      displayName: 'emerald-elemental',
+      source: {
+        kind: 'magic-item',
+        ref: 'magic-item:elemental-gem',
+        grantRef: 'emerald-elemental',
+        itemInstanceId: instanceId,
+      },
+      actors: [{ combatantId: 'c-m0' }],
+      concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+    });
+    expect(bound).toMatchObject({ ok: false });
+    expect(bound.message).toMatch(
+      /creature:fire-elemental, which item grant 'emerald-elemental' does not create/,
+    );
+    s.db.close();
+  });
+
   it('Elemental Gem: emerald use consumes a typed receipt and binds only its water elemental with concentration', () => {
     const s = setup(['creature:water-elemental', 'creature:fire-elemental']);
     const instanceId = s.useItem(
