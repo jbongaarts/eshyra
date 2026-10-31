@@ -200,6 +200,36 @@ function mergeOperation(
     ...(union(left.effects, right.effects) === undefined
       ? {}
       : { effects: union(left.effects, right.effects) }),
+    ...(compatibleScalar(
+      left.id,
+      'requiresState',
+      left.requiresState,
+      right.requiresState,
+    ) === undefined
+      ? {}
+      : {
+          requiresState: compatibleScalar(
+            left.id,
+            'requiresState',
+            left.requiresState,
+            right.requiresState,
+          ),
+        }),
+    ...(compatibleScalar(
+      left.id,
+      'leverSelection',
+      left.leverSelection,
+      right.leverSelection,
+    ) === undefined
+      ? {}
+      : {
+          leverSelection: compatibleScalar(
+            left.id,
+            'leverSelection',
+            left.leverSelection,
+            right.leverSelection,
+          ),
+        }),
     ...(compatibleScalar(left.id, 'note', left.note, right.note) === undefined
       ? {}
       : { note: compatibleScalar(left.id, 'note', left.note, right.note) }),

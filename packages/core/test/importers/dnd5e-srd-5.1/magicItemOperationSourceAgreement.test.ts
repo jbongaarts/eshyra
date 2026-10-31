@@ -354,7 +354,8 @@ describe('root-cause scenarios: printed-eligible versus ineligible', () => {
       ['Rope of Climbing', 'knot-rope'],
       ['Sword of Sharpness', 'end-light'],
       ['Boots of Speed', 'deactivate-speed'],
-      ['Apparatus of the Crab', 'set-lever-4'],
+      ['Candle of Invocation', 'snuff'],
+      ['Candle of Invocation', 'burn'],
       ['Candle of Invocation', 'm9-cast-candle-spell'],
       ['Cloak of the Bat', 'end-polymorph'],
     ] as const)
@@ -1600,8 +1601,9 @@ describe('state graph text and outcome-gated transitions, whole corpus (review 1
     // and the machines an existing consumer binds to), the other 28 are
     // withheld (review 19.4.6.7 S2 added the Staff of Swarming Insects, Helm
     // of Brilliance and Ring of Shooting Stars). eshyra-olc5.15 adds the Ring of
-    // Djinni Summoning's one external-event machine (22).
-    expect(machines).toBe(22);
+    // Djinni Summoning's one external-event machine (22); eshyra-7f0h adds the
+    // Candle of Invocation's lit/unlit machine (23).
+    expect(machines).toBe(23);
   });
 
   it('keeps the graph-text screen able to fail (counterfactual: a paraphrased condition and a mis-cited table cell)', () => {
@@ -1826,6 +1828,9 @@ describe('runtime safety across the whole corpus', () => {
     'Ammunition, +1, +2, or +3||hit-target',
     'Animated Shield||end-animation',
     'Animated Shield||speak-command-word',
+    // eshyra-7f0h: one action moves up to two levers; the lever effects are
+    // DM-adjudicated (real-pack conformance in candleAndApparatus.test.ts).
+    'Apparatus of the Crab||move-levers',
     // eshyra-7gkh.1: the hard-limit per-day dawn economy ('F5: per-period usage
     // reset') is executed (useItem spends and refuses at 0; the reset executor
     // restores at dawn), so the operations it alone blocked are ready. The four
@@ -1843,6 +1848,13 @@ describe('runtime safety across the whole corpus', () => {
     'Bowl of Commanding Water Elementals||summon-water-elemental',
     'Brazier of Commanding Fire Elementals||summon-fire-elemental',
     'Candle of Invocation||burn',
+    // eshyra-7f0h: the Candle's lit/unlit machine makes light and snuff
+    // executable (real-pack conformance in candleAndApparatus.test.ts); burn
+    // is gated on the candle being lit. cast-gate is typed to spell:gate and
+    // stays refused (c2-effect-cast-gate, engine-pending F4) until spell
+    // execution is owned, so it is not in this executable set.
+    'Candle of Invocation||light',
+    'Candle of Invocation||snuff',
     'Cape of the Mountebank||cast-dimension-door',
     'Censer of Controlling Air Elementals||summon-air-elemental',
     'Circlet of Blasting||cast-scorching-ray',

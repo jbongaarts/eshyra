@@ -88,9 +88,18 @@ describe('activation-cost evidence ledger (faithful-or-absent)', () => {
       );
       expect((operation?.activation as Obj | undefined)?.cost).toBe(entry.cost);
     }
-    // The audit found no operation left untyped whose own text prints its
-    // action type; the earlier faithful-or-absent corpus already typed them.
-    expect(TYPED_ACTIVATION_COST_EVIDENCE).toEqual([]);
+    // The xwau.1 audit found nothing left untyped; the only entries since are
+    // eshyra-7f0h's: the Apparatus's one action for up to two levers, and the
+    // Candle's lighting action (also the first-light gate's action).
+    expect(
+      TYPED_ACTIVATION_COST_EVIDENCE.map(
+        ({ item, operationId, cost }) => `${item}/${operationId}/${cost}`,
+      ),
+    ).toEqual([
+      'Apparatus of the Crab/move-levers/action',
+      'Candle of Invocation/light/action',
+      'Candle of Invocation/cast-gate/action',
+    ]);
   });
 
   it('dispositions exactly the untyped operations whose item text contains a strict action-type phrase', () => {

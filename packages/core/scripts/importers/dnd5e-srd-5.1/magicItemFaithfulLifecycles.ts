@@ -283,38 +283,6 @@ const SPECS: ReadonlyMap<string, LifecycleSpec> = new Map<
     },
   ],
   [
-    'Apparatus of the Crab',
-    {
-      // Lever 10 opens/closes the rear hatch (Up unseals and opens, Down closes
-      // and seals); lever 1 extends/retracts the legs and tail and never moves
-      // the hatch. The direction lives in the printed lever table, so each
-      // transition quotes the table cell that governs it.
-      apply: (projections, ctx) =>
-        editBlock(projections, ctx.itemName, 'stateMachine', (machine) => ({
-          ...machine,
-          transitions: [
-            ...Array.from({ length: 9 }, (_, index) =>
-              ['sealed', 'open'].map((state) =>
-                transition(state, state, { via: `set-lever-${index + 1}` }),
-              ),
-            ).flat(),
-            // The direction is typed in the transition's own `via`: Up opens a
-            // sealed hatch, Down seals an open one. Up while open and Down
-            // while sealed declare no transition.
-            transition('sealed', 'open', {
-              via: 'set-lever-10-up',
-              note: 'table:apparatus-of-the-crab-levers lever 10, Up: The rear hatch unseals and opens.',
-            }),
-            transition('open', 'sealed', {
-              via: 'set-lever-10-down',
-              note: 'table:apparatus-of-the-crab-levers lever 10, Down: The rear hatch closes and seals.',
-            }),
-            ...machine.transitions.filter((entry) => entry.via === undefined),
-          ],
-        })),
-    },
-  ],
-  [
     'Dagger of Venom',
     {
       apply: (projections, ctx) =>

@@ -2,6 +2,7 @@ import type { MagicItemMechanics } from '../../../src/rules/magicItemMechanics.j
 import type { RulesRecord } from '../../../src/rules/types.js';
 import { projectMagicItemActivatedEffects } from './magicItemActivatedEffects.js';
 import { applyAdjudicatedMagicItemEffects } from './magicItemAdjudicatedEffects.js';
+import { projectMagicItemCandleLifecycle } from './magicItemCandleLifecycle.js';
 import { projectMagicItemChargeEconomies } from './magicItemChargeEconomies.js';
 import {
   projectMagicItemStaticCombatModifiers,
@@ -53,6 +54,7 @@ type VariantProjector = (
 /** The sole authoritative ordering-independent registry of family projectors. */
 const PARENT_PROJECTORS: readonly ParentProjector[] = [
   projectMagicItemActivatedEffects,
+  projectMagicItemCandleLifecycle,
   projectMagicItemChargeEconomies,
   projectMagicItemStaticCombatModifiers,
   projectMagicItemComplexStateMachine,

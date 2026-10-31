@@ -1769,6 +1769,13 @@ describe('magic-item live instance state', () => {
     );
 
     expect(readItemState(db, grantedCandle.id)).toBeUndefined();
+    // burn is refused until the candle is lit (eshyra-7f0h); lighting is a
+    // typed action, covered end to end in candleAndApparatus.test.ts.
+    expect(() =>
+      useItem(db, useInput(bundled, grantedCandle.id, 'burn')),
+    ).toThrow(/requires machineState 'lit'/);
+    expect(readItemState(db, grantedCandle.id)).toBeUndefined();
+    useItem(db, useInput(bundled, grantedCandle.id, 'light'));
     expect(
       useItem(db, useInput(bundled, grantedCandle.id, 'burn')),
     ).toMatchObject({
@@ -1795,7 +1802,9 @@ describe('magic-item live instance state', () => {
       .get('campaign-1', grantedCandle.id);
     expect(() =>
       useItem(db, useInput(bundled, grantedCandle.id, 'cast-gate')),
-    ).toThrow(/economy 'gate-use' has no trusted semantic owner/);
+    ).toThrow(
+      /operation 'cast-gate' is not safely executable: .*c2-effect-cast-gate \(engine-pending: F4:canonical spell execution\)/,
+    );
     expect(readItemState(db, grantedCandle.id)).toEqual(
       candleStateBeforeUnsupportedSpend,
     );
@@ -1861,7 +1870,7 @@ describe('magic-item live instance state', () => {
     db.close();
   });
 
-  it('finds Candle gate-use as the only bundled spend newly refused for missing semantic ownership', () => {
+  it('finds no bundled spend newly refused for missing semantic ownership (the Candle gate-use is owned by its cast-gate transition)', () => {
     const newlyRefused: string[] = [];
     const newlyRefusedForMissingEffectCoverage: string[] = [];
     for (const record of getBundledDnd5eSrdPack().records) {
@@ -1918,7 +1927,7 @@ describe('magic-item live instance state', () => {
         }
       }
     }
-    expect(newlyRefused).toEqual(['magic-item:candle-of-invocation/cast-gate']);
+    expect(newlyRefused).toEqual([]);
     expect(newlyRefusedForMissingEffectCoverage).toEqual([
       'magic-item:dust-of-disappearance/throw-dust',
       'magic-item:philter-of-love/drink',

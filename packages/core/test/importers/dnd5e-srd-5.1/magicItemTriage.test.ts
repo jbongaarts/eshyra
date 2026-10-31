@@ -26,6 +26,7 @@ import {
   equipmentFromPrintedText,
   GRANT_SPANS,
   KEPT_EXTERNAL_EVENT_MACHINES,
+  KEPT_GATE_MACHINES,
   KEPT_STATE_MACHINES,
   OPERATION_SPANS,
   WITHHELD,
@@ -129,7 +130,7 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
     // olc5.11.4 removes Rod of Alertness pull-rod and Cube of Force
     // spell-contact-loss: any-creature/external-event predicates are condition
     // transitions, not operations charged to the item owner.
-    expect(activationCensus).toHaveLength(358);
+    expect(activationCensus).toHaveLength(350);
     expect(actual).toHaveLength(activationCensus.length);
     const censusByKey = new Map(
       activationCensus.map((row) => [`${row.scope}/${row.operation}`, row]),
@@ -339,12 +340,14 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
       typed += 1;
       expect(
         KEPT_STATE_MACHINES.has(scope.label) ||
-          KEPT_EXTERNAL_EVENT_MACHINES.has(scope.label),
+          KEPT_EXTERNAL_EVENT_MACHINES.has(scope.label) ||
+          KEPT_GATE_MACHINES.has(scope.label),
         scope.label,
       ).toBe(true);
       if (
         !CONSUMER_BOUND.has(scope.label) &&
-        !KEPT_EXTERNAL_EVENT_MACHINES.has(scope.label)
+        !KEPT_EXTERNAL_EVENT_MACHINES.has(scope.label) &&
+        !KEPT_GATE_MACHINES.has(scope.label)
       )
         expect(
           (machine.states as Obj[]).length,
@@ -352,7 +355,9 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
         ).toBe(2);
     }
     expect(typed).toBe(
-      KEPT_STATE_MACHINES.size + KEPT_EXTERNAL_EVENT_MACHINES.size,
+      KEPT_STATE_MACHINES.size +
+        KEPT_EXTERNAL_EVENT_MACHINES.size +
+        KEPT_GATE_MACHINES.size,
     );
     // Every withheld machine is absent and has its disposition table entry.
     for (const [scope, spans] of WITHHELD)
@@ -423,12 +428,13 @@ describe('A. DM-adjudicated categories carry no typed predicate (whole corpus)',
         else activations += 1;
         if (typed?.equipment !== undefined) equipment += 1;
       }
-    expect(operationCount).toBe(358);
+    expect(operationCount).toBe(350);
     expect(activations + withoutActivation).toBe(operationCount);
     expect(equipment).toBe(129);
     // 21 activation-entered machines + the Ring of Djinni Summoning's external
-    // event machine (eshyra-olc5.15).
-    expect(scopes.filter((s) => s.mechanics.stateMachine).length).toBe(22);
+    // event machine (eshyra-olc5.15) + the Candle of Invocation's lit/unlit
+    // gate machine (eshyra-7f0h).
+    expect(scopes.filter((s) => s.mechanics.stateMachine).length).toBe(23);
     expect(scopes.filter((s) => s.mechanics.containment).length).toBe(1);
     expect(scopes.filter((s) => s.mechanics.entityGrant).length).toBe(16);
   });
@@ -890,7 +896,7 @@ describe('D. kept activation fields agree with the governing printed passage, se
       .map(({ id }) => id);
   }
 
-  it('types the printed action cost of every non-spell operation whose own sentence prints one (sweep of all 359 operations)', () => {
+  it('types the printed action cost of every non-spell operation whose own sentence prints one (sweep of all 350 operations)', () => {
     const missing: string[] = [];
     for (const scope of scopes)
       for (const id of missingPrintedCosts(
@@ -903,12 +909,11 @@ describe('D. kept activation fields agree with the governing printed passage, se
         })),
       ))
         missing.push(`${scope.label}::${id}`);
-    // Reviewed lexical false positives: one action moves up to TWO Apparatus
-    // levers (the print gives the action to the group, not to one lever), and
-    // the Staff of Charming failed-save flip prints no action (the matching
-    // sentence is the staff's separate charge-spending spell casts).
+    // Reviewed lexical false positive: the Staff of Charming failed-save flip
+    // prints no action (the matching sentence is the staff's separate
+    // charge-spending spell casts). The Apparatus's one action for up to two
+    // levers is now typed once on move-levers (eshyra-7f0h).
     expect(missing.sort()).toEqual([
-      'Apparatus of the Crab::set-lever-10-down',
       'Staff of Charming::m10-flip-enchantment-save',
     ]);
   });
@@ -1175,7 +1180,9 @@ describe('E. kept state machines own exactly one lifetime at a time (review 19.4
         checked += 1;
       }
     }
-    expect(checked).toBe(94);
+    // eshyra-7f0h.3: the Candle's cast-gate castSpell (spell:gate, timed
+    // "Concentration, up to 1 minute") is the 95th checked operation-bound spell.
+    expect(checked).toBe(95);
   });
 });
 

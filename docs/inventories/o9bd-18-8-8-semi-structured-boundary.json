@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1863,
+  "rowCount": 1865,
   "dispositionCounts": {
-    "complete": 443,
-    "model-adjudicated": 1214,
+    "complete": 444,
+    "model-adjudicated": 1215,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -17519,7 +17519,7 @@
         "magic-item:amulet-of-health/m2-amulet-of-health-constitution-score-set",
         "magic-item:amulet-of-proof-against-detection-and-location/c2-residual-proof-against-divination"
       ],
-      "population": 1387,
+      "population": 1369,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17543,7 +17543,7 @@
         "F2",
         "F5"
       ],
-      "population": 1566,
+      "population": 1537,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17567,7 +17567,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1566,
+      "population": 1537,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17588,10 +17588,10 @@
         "F8",
         "F1",
         "F9",
-        "F2",
+        "F6",
         "F5"
       ],
-      "population": 760,
+      "population": 750,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17612,10 +17612,10 @@
         "F8",
         "F1",
         "F9",
-        "F2",
+        "F6",
         "F5"
       ],
-      "population": 1336,
+      "population": 1304,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17639,7 +17639,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1336,
+      "population": 1304,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17662,7 +17662,7 @@
         "adjudicated-by-design",
         "design-blocked"
       ],
-      "population": 1387,
+      "population": 1369,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17682,11 +17682,11 @@
       "representativeValues": [
         "The shield’s destination on termination depends on whether the wielder has a free hand; the state-machine vocabulary does not encode object placement, so the DM model interprets this printed outcome.",
         "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
-        "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+        "The typed activation states the printed action once and the typed lever selection bounds one use to as many as two distinct levers; who may use it and what each lever does stay in this printed text and the lever table, interpreted by the DM model.",
         "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
         "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
       ],
-      "population": 369,
+      "population": 359,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17710,7 +17710,7 @@
         "stateMachine",
         "structuredField"
       ],
-      "population": 1018,
+      "population": 1010,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17758,7 +17758,7 @@
         "c2-residual-proof-against-divination",
         "c2-residual-plane-shift-check"
       ],
-      "population": 454,
+      "population": 455,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17802,11 +17802,11 @@
       "representativeValues": [
         "The shield’s destination on termination depends on whether the wielder has a free hand; the state-machine vocabulary does not encode object placement, so the DM model interprets this printed outcome.",
         "The typed activation states only the printed action cost, command word and worn/held/attuned/on-person equipment; every other printed condition, trigger, target, range and limit of this activation is in this printed sentence, which the DM model interprets from the printed text.",
-        "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+        "The typed activation states the printed action once and the typed lever selection bounds one use to as many as two distinct levers; who may use it and what each lever does stay in this printed text and the lever table, interpreted by the DM model.",
         "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
         "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
       ],
-      "population": 368,
+      "population": 358,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17824,13 +17824,13 @@
       ],
       "fieldPath": "data.executionReadiness.clauses[].representation.operationId",
       "representativeValues": [
-        "set-lever-1",
-        "set-lever-10-down",
-        "set-lever-10-up",
-        "set-lever-2",
-        "set-lever-3"
+        "move-levers",
+        "move-force-sphere",
+        "throw-bead",
+        "mount-broom",
+        "recall-broom"
       ],
-      "population": 233,
+      "population": 223,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17898,7 +17898,7 @@
         "The barrel has a hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check.",
         "Ten levers are set in a row at the far end, each in a neutral position, able to move either up or down. When certain levers are used, the apparatus transforms to resemble a giant lobster."
       ],
-      "population": 368,
+      "population": 358,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17919,7 +17919,7 @@
         "parent",
         "variant"
       ],
-      "population": 1387,
+      "population": 1369,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17967,7 +17967,7 @@
         "M8",
         "M5"
       ],
-      "population": 1387,
+      "population": 1369,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -22200,7 +22200,7 @@
         "hour",
         "round"
       ],
-      "population": 128,
+      "population": 129,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -22960,7 +22960,7 @@
         "c2-residual-proof-against-divination",
         "c2-residual-plane-shift-check"
       ],
-      "population": 465,
+      "population": 466,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -23106,7 +23106,7 @@
         "immunity",
         "acBonus"
       ],
-      "population": 465,
+      "population": 466,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -24139,11 +24139,11 @@
       "representativeValues": [
         "spell:plane-shift",
         "spell:levitate",
+        "spell:gate",
         "spell:dimension-door",
-        "spell:scorching-ray",
-        "spell:web"
+        "spell:scorching-ray"
       ],
-      "population": 141,
+      "population": 142,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25799,7 +25799,7 @@
         "free",
         "consume"
       ],
-      "population": 256,
+      "population": 259,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25932,9 +25932,9 @@
         "c2-residual-redirect-ranged-attack",
         "c2-residual-slaying-damage",
         "bead-force-payload",
-        "c2-cast-web"
+        "c2-cast-gate"
       ],
-      "population": 186,
+      "population": 187,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25975,10 +25975,10 @@
         "hit-target",
         "speak-command-word",
         "end-animation",
-        "set-lever-1",
-        "set-lever-2"
+        "move-levers",
+        "activate-immunity"
       ],
-      "population": 353,
+      "population": 345,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25987,6 +25987,26 @@
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
       "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.operations[].leverSelection.tableRef",
+      "representativeValues": [
+        "table:apparatus-of-the-crab-levers"
+      ],
+      "population": 1,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "domain-specific mechanics schema validates the reference-bearing field",
+      "deterministicConsumers": "mechanics projection reference validation and the named effect resolver",
+      "currentAuditReadiness": "reference reachability and mechanics audits validate the declared target",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "domain-specific mechanics reference contract",
+      "retainedProseBoundary": null,
+      "owner": "mechanicsProjections.ts and the owning rules/audit domain",
       "futureWork": false
     },
     {
@@ -26007,6 +26027,26 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
       "currentAuditReadiness": "qualifier remains source/entry prose and is not claimed as typed gameplay support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.operations[].requiresState",
+      "representativeValues": [
+        "lit"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.operations[].requiresState",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -26484,12 +26524,12 @@
       "fieldPath": "data.mechanics.stateMachine.initial",
       "representativeValues": [
         "inactive",
+        "unlit",
         "uncoated",
         "stowed",
-        "normal",
-        "magical"
+        "normal"
       ],
-      "population": 22,
+      "population": 23,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -26549,11 +26589,11 @@
       "representativeValues": [
         "inactive",
         "active",
-        "face-1",
-        "face-2",
-        "face-3"
+        "unlit",
+        "lit",
+        "snuffed"
       ],
-      "population": 50,
+      "population": 54,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -26573,11 +26613,11 @@
       "representativeValues": [
         "shield hovers in wielder space, grants its normal protection, and leaves both hands free",
         "walking speed is doubled and opportunity attacks against wearer have disadvantage",
-        "wearer is a bat but retains Intelligence, Wisdom, and Charisma",
-        "barrier face 1 active",
-        "barrier face 2 active"
+        "never lit",
+        "lit before and snuffed out for later use",
+        "wearer is a bat but retains Intelligence, Wisdom, and Charisma"
       ],
-      "population": 21,
+      "population": 23,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -26685,11 +26725,11 @@
       "representativeValues": [
         "inactive",
         "active",
-        "face-1",
-        "face-2",
-        "face-3"
+        "unlit",
+        "snuffed",
+        "lit"
       ],
-      "population": 113,
+      "population": 117,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -26850,11 +26890,11 @@
       "representativeValues": [
         "active",
         "inactive",
-        "face-1",
-        "face-2",
-        "face-3"
+        "lit",
+        "snuffed",
+        "destroyed"
       ],
-      "population": 113,
+      "population": 117,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -26876,9 +26916,9 @@
         "end-animation",
         "activate-speed",
         "deactivate-speed",
-        "cast-polymorph"
+        "light"
       ],
-      "population": 71,
+      "population": 75,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",

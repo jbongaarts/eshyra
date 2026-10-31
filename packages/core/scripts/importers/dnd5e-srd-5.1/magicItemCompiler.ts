@@ -204,6 +204,18 @@ function mergeOperations(
   const excludes = unionStrings(left.excludes, right.excludes);
   const doesNotExpend = unionStrings(left.doesNotExpend, right.doesNotExpend);
   const effects = unionStrings(left.effects, right.effects);
+  const requiresState = mergeOptionalScalar(
+    left.id,
+    'requiresState',
+    left.requiresState,
+    right.requiresState,
+  );
+  const leverSelection = mergeOptionalScalar(
+    left.id,
+    'leverSelection',
+    left.leverSelection,
+    right.leverSelection,
+  );
   return {
     id: left.id,
     ...(activation === undefined ? {} : { activation }),
@@ -211,6 +223,8 @@ function mergeOperations(
     ...(excludes === undefined ? {} : { excludes }),
     ...(doesNotExpend === undefined ? {} : { doesNotExpend }),
     ...(effects === undefined ? {} : { effects }),
+    ...(requiresState === undefined ? {} : { requiresState }),
+    ...(leverSelection === undefined ? {} : { leverSelection }),
     ...(note === undefined ? {} : { note }),
   };
 }

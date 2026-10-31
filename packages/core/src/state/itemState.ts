@@ -119,6 +119,12 @@ export interface UseItemInput {
   readonly instanceId: string;
   readonly operationId: string;
   readonly args?: Readonly<Record<string, unknown>>;
+  /**
+   * The rows of the operation's printed table to move in this ONE use
+   * (`leverSelection`, eshyra-7f0h): required for an operation that declares
+   * one, refused for any other. Validated here, never trusted from the caller.
+   */
+  readonly levers?: unknown;
   readonly characterId: string;
   readonly resolveRulesPack?: CampaignRulesPackResolver;
   readonly provenance: string;
@@ -200,6 +206,13 @@ export interface UseItemResult {
     }[];
   };
   readonly turnResource?: UseItemTurnResource;
+  /** The validated lever selection of this one use, with each selected row's
+   *  printed cell for the chosen direction (the DM adjudicates the result). */
+  readonly levers?: readonly {
+    readonly lever: number;
+    readonly direction: 'up' | 'down';
+    readonly text: string;
+  }[];
   readonly transition?: {
     readonly from: string;
     readonly to: string;
@@ -2550,6 +2563,106 @@ function issueBindCredits(
   return credits;
 }
 
+type LeverSelection = NonNullable<UseItemResult['levers']>;
+
+/**
+ * Validates `levers` against the operation's `leverSelection` (eshyra-7f0h):
+ * required when declared, refused otherwise; 1..max entries, DISTINCT integer
+ * row keys present in the printed table, each `up` or `down`. Returns each
+ * selected row's printed cell for DM adjudication; stores nothing (every lever
+ * returns to neutral after each use).
+ */
+function resolveLeverSelection(
+  operation: Obj,
+  levers: unknown,
+  packRef: string,
+  lookupTable: (ref: string) => RulesRecord | undefined,
+): LeverSelection | undefined {
+  const declared = operation.leverSelection;
+  if (declared === undefined) {
+    if (levers !== undefined)
+      throw new ItemStateError(
+        `${packRef} operation '${String(operation.id)}' selects no levers; omit levers`,
+      );
+    return undefined;
+  }
+  const selection = obj(declared, `${packRef} operation leverSelection`);
+  const min = Number(selection.min);
+  const max = Number(selection.max);
+  if (!Array.isArray(levers))
+    throw new ItemStateError(
+      `${packRef} operation '${String(operation.id)}' requires levers: ${min} to ${max} of { lever, direction: 'up' | 'down' }`,
+    );
+  if (levers.length < min || levers.length > max)
+    throw new ItemStateError(
+      `${packRef} operation '${String(operation.id)}' moves ${min} to ${max} levers in one use, not ${levers.length}; another use costs another action`,
+    );
+  const table = lookupTable(String(selection.tableRef));
+  const data = table === undefined ? undefined : obj(table.data, 'table data');
+  const columns = Array.isArray(data?.columns)
+    ? data.columns.map((column) => String(column).toLowerCase())
+    : [];
+  const rows = Array.isArray(data?.rows) ? data.rows : [];
+  const upColumn = columns.indexOf('up');
+  const downColumn = columns.indexOf('down');
+  if (data === undefined || upColumn < 0 || downColumn < 0)
+    throw new ItemStateError(
+      `${packRef} lever table '${String(selection.tableRef)}' is unavailable or lacks Up/Down columns`,
+    );
+  const seen = new Set<number>();
+  return levers.map((raw): LeverSelection[number] => {
+    const entry =
+      typeof raw === 'object' && raw !== null && !Array.isArray(raw)
+        ? (raw as Obj)
+        : {};
+    const lever = entry.lever;
+    const direction = entry.direction;
+    if (typeof lever !== 'number' || !Number.isInteger(lever))
+      throw new ItemStateError('each lever must be an integer row key');
+    if (direction !== 'up' && direction !== 'down')
+      throw new ItemStateError(
+        `lever ${lever} direction must be 'up' or 'down'`,
+      );
+    if (seen.has(lever))
+      throw new ItemStateError(
+        `lever ${lever} is selected twice; a use moves distinct levers`,
+      );
+    seen.add(lever);
+    const row = rows.find(
+      (candidate) => Array.isArray(candidate) && candidate[0] === lever,
+    );
+    if (!Array.isArray(row))
+      throw new ItemStateError(
+        `lever ${lever} is not a row of '${String(selection.tableRef)}'`,
+      );
+    return {
+      lever,
+      direction,
+      text: String(row[direction === 'up' ? upColumn : downColumn]),
+    };
+  });
+}
+
+/** The machine state an operation's `requiresState` is checked against. */
+function assertRequiredState(
+  operation: Obj,
+  mechanics: Obj,
+  packRef: string,
+  current: string | undefined,
+): void {
+  if (typeof operation.requiresState !== 'string') return;
+  const initial =
+    mechanics.stateMachine === undefined
+      ? undefined
+      : obj(mechanics.stateMachine, `${packRef}.mechanics.stateMachine`)
+          .initial;
+  const actual = current ?? (typeof initial === 'string' ? initial : undefined);
+  if (actual !== operation.requiresState)
+    throw new ItemStateError(
+      `${packRef} operation '${String(operation.id)}' requires machineState '${operation.requiresState}', but the item is '${actual ?? 'uninitialized'}'`,
+    );
+}
+
 export function useItem(db: Db, input: UseItemInput): UseItemResult {
   return withTransaction(db, (txnDb) => {
     const row = txnDb
@@ -2677,6 +2790,23 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       packRef,
       operation,
     });
+    // Both guards run before the activation resource is spent or any state is
+    // written (eshyra-7f0h), so a refusal leaves the turn budget untouched.
+    assertRequiredState(
+      operation,
+      mechanics,
+      packRef,
+      readItemState(txnDb, input.instanceId)?.machineState,
+    );
+    const selectedLevers = resolveLeverSelection(
+      operation,
+      input.levers,
+      packRef,
+      (ref) => {
+        const result = lookupRulesRecord(hit.stack, { kind: 'table', ref });
+        return result.ok ? result.record : undefined;
+      },
+    );
     const operationEffectIds = [...readinessInput.operationEffectIds];
     // Receipt (olc5.12.13): a use that consumes the instance while the item
     // declares an entity grant leaves a one-time receipt, written before
@@ -3078,6 +3208,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
             },
           }),
       ...(turnResource === undefined ? {} : { turnResource }),
+      ...(selectedLevers === undefined ? {} : { levers: selectedLevers }),
       ...(selectedTransition === undefined
         ? {}
         : { transition: selectedTransition.result }),

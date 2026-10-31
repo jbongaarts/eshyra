@@ -141,6 +141,18 @@ export const KEPT_EXTERNAL_EVENT_MACHINES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Machines kept typed because executable operations bind to them as a state
+ * GATE, not as an activation-entered lifetime (eshyra-7f0h): the Candle of
+ * Invocation's lit/unlit machine drives `light`, `snuff` and the first-light
+ * `cast-gate`, and `burn` (`requiresState: 'lit'`) is refused unless it is
+ * lit. A candle can be lit, snuffed and relit, so it is not a single
+ * lifetime and sits outside {@link KEPT_STATE_MACHINES}' review.
+ */
+export const KEPT_GATE_MACHINES: ReadonlySet<string> = new Set([
+  'Candle of Invocation',
+]);
+
+/**
  * spellStore stays typed ONLY as the numeric stored-level core that item
  * initialization binds (the printed "when found, it contains 1d6 - 1 levels"
  * randomProcedure resolves against it): capacity, initial levels and the bound
@@ -1766,7 +1778,8 @@ export function applyMagicItemTriage(
     if (
       block === 'stateMachine' &&
       (KEPT_STATE_MACHINES.has(scope) ||
-        KEPT_EXTERNAL_EVENT_MACHINES.has(scope))
+        KEPT_EXTERNAL_EVENT_MACHINES.has(scope) ||
+        KEPT_GATE_MACHINES.has(scope))
     )
       continue;
     if (block === 'spellStore' && KEPT_SPELL_STORE_CORE.has(scope)) {

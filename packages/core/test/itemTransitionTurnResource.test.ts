@@ -239,6 +239,21 @@ function use(
   });
 }
 
+/** A transition into the printed destroyed state destroys the instance in the
+ * same use (Candle of Invocation's first-light gate): no state row survives
+ * and the use reports it consumed. Every other transition lands on `to`. */
+function expectArrivedAt(
+  db: TestDb,
+  id: string,
+  drive: Drive,
+  result: { readonly consumed: boolean },
+): void {
+  if (drive.to === 'destroyed') {
+    expect(result.consumed).toBe(true);
+    expect(readItemState(db, id)).toBeUndefined();
+  } else expect(readItemState(db, id)?.machineState).toBe(drive.to);
+}
+
 const budgetOf = (db: TestDb, pcId: string) =>
   readCombatTurnState(db, CAMPAIGN)?.budgets.find(
     (b) => b.participant.kind === 'character' && b.participant.ref === pcId,
@@ -305,7 +320,7 @@ describe('state-machine transitions spend the printed turn resource (real pack)'
             `${other} used`,
           ).toBe(other === resource);
         }
-        expect(readItemState(db, id)?.machineState).toBe(drive.to);
+        expectArrivedAt(db, id, drive, result);
       }
 
       // Refuses when the resource is already spent; nothing mutates.
@@ -338,7 +353,7 @@ describe('state-machine transitions spend the printed turn resource (real pack)'
           status: 'not-spent',
           reason: 'not-in-combat',
         });
-        expect(readItemState(db, id)?.machineState).toBe(drive.to);
+        expectArrivedAt(db, id, drive, result);
       }
     },
   );
