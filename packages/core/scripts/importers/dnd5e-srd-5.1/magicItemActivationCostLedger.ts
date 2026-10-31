@@ -9,11 +9,10 @@
  * exception below.
  *
  * Two ledgers:
- *  - {@link TYPED_ACTIVATION_COST_EVIDENCE}: every cost this bead typed, with
- *    the exact printed phrase. EMPTY: the audit found no operation left untyped
- *    by the earlier faithful-or-absent corpus (o9bd.19.4.6.x) whose own text
- *    prints its action type. Every operation that prints one already carries
- *    it, so xwau.1 adds none and lands only the per-clause readiness rule.
+ *  - {@link TYPED_ACTIVATION_COST_EVIDENCE}: every cost typed by a later
+ *    bead, with the exact printed phrase. xwau.1's audit found none left
+ *    untyped by the earlier faithful-or-absent corpus (o9bd.19.4.6.x); the
+ *    entries are eshyra-7f0h's Apparatus move-levers and Candle light/cast-gate.
  *  - {@link UNTYPED_ACTIVATION_PHRASE_DISPOSITIONS}: every operation that stays
  *    untyped although its item text contains a strict action-type phrase,
  *    with the reason that phrase does not type THIS operation. A test asserts
@@ -37,7 +36,31 @@ export interface TypedActivationCostEvidence {
 }
 
 export const TYPED_ACTIVATION_COST_EVIDENCE: readonly TypedActivationCostEvidence[] =
-  [];
+  [
+    {
+      item: 'Apparatus of the Crab',
+      operationId: 'move-levers',
+      cost: 'action',
+      phrase:
+        'A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down',
+    },
+    {
+      item: 'Candle of Invocation',
+      operationId: 'light',
+      cost: 'action',
+      phrase:
+        'The candle’s magic is activated when the candle is lit, which requires an action',
+    },
+    // The first-light gate is the lighting action; the gate spell’s own casting
+    // time is also 1 action, so the two do not conflict (eshyra-7f0h).
+    {
+      item: 'Candle of Invocation',
+      operationId: 'cast-gate',
+      cost: 'action',
+      phrase:
+        'The candle’s magic is activated when the candle is lit, which requires an action',
+    },
+  ];
 
 /**
  * Strict action-type phrase (at least as strict as the olc5.9 N3 override
@@ -55,25 +78,13 @@ const OTHER_OPERATION =
 export const UNTYPED_ACTIVATION_PHRASE_DISPOSITIONS: Readonly<
   Record<string, string>
 > = {
-  'Apparatus of the Crab/set-lever-1':
-    'One printed action moves as many as TWO levers, while each operation moves one: typing it would bill one action per lever. Ambiguous, so absent.',
-  'Apparatus of the Crab/set-lever-2': 'See set-lever-1.',
-  'Apparatus of the Crab/set-lever-3': 'See set-lever-1.',
-  'Apparatus of the Crab/set-lever-4': 'See set-lever-1.',
-  'Apparatus of the Crab/set-lever-5': 'See set-lever-1.',
-  'Apparatus of the Crab/set-lever-6': 'See set-lever-1.',
-  'Apparatus of the Crab/set-lever-7': 'See set-lever-1.',
-  'Apparatus of the Crab/set-lever-8': 'See set-lever-1.',
-  'Apparatus of the Crab/set-lever-9': 'See set-lever-1.',
-  'Apparatus of the Crab/set-lever-10-up': 'See set-lever-1.',
-  'Apparatus of the Crab/set-lever-10-down': 'See set-lever-1.',
   'Boots of Speed/maintain-speed': OTHER_OPERATION,
   'Boots of Speed/deactivate-speed':
     'The bonus action is printed for the first click; ending the effect restates no action (magicItemFaithfulOperations).',
   'Candle of Invocation/burn':
-    'Lighting requires an action, but this operation models continuous burn-time deduction, not the single lighting act. Ambiguous, so absent.',
-  'Candle of Invocation/cast-gate':
-    'The action lights the candle; the gate cast is a separate effect with its own casting time. Ambiguous, so absent.',
+    'Burn-time deduction spends no action: only the lighting (typed on light) requires one.',
+  'Candle of Invocation/snuff':
+    'The printed text names no action for snuffing the candle out early, so none is typed.',
   'Candle of Invocation/m9-cast-candle-spell':
     'Casting is free of slots and prints no action type for the cast.',
   'Cape of the Mountebank/cast-dimension-door': SPELL_CASTING_TIME,

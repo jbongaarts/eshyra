@@ -88634,37 +88634,15 @@
       "mechanics": {
         "operations": [
           {
-            "id": "set-lever-1"
-          },
-          {
-            "id": "set-lever-2"
-          },
-          {
-            "id": "set-lever-3"
-          },
-          {
-            "id": "set-lever-4"
-          },
-          {
-            "id": "set-lever-5"
-          },
-          {
-            "id": "set-lever-6"
-          },
-          {
-            "id": "set-lever-7"
-          },
-          {
-            "id": "set-lever-8"
-          },
-          {
-            "id": "set-lever-9"
-          },
-          {
-            "id": "set-lever-10-up"
-          },
-          {
-            "id": "set-lever-10-down"
+            "id": "move-levers",
+            "leverSelection": {
+              "tableRef": "table:apparatus-of-the-crab-levers",
+              "min": 1,
+              "max": 2
+            },
+            "activation": {
+              "cost": "action"
+            }
           }
         ],
         "effects": [
@@ -88694,7 +88672,7 @@
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
           {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-1",
+            "clauseId": "magic-item:apparatus-of-the-crab/activation-move-levers",
             "scope": {
               "kind": "parent"
             },
@@ -88702,150 +88680,10 @@
             "readiness": "adjudicated-by-design",
             "representation": {
               "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
+              "note": "The typed activation states the printed action once and the typed lever selection bounds one use to as many as two distinct levers; who may use it and what each lever does stay in this printed text and the lever table, interpreted by the DM model.",
               "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
             },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-10-down",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
-              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
-            },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-10-up",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
-              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
-            },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-2",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
-              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
-            },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-3",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
-              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
-            },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-4",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
-              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
-            },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-5",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
-              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
-            },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-6",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
-              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
-            },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-7",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
-              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
-            },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-8",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
-              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
-            },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/activation-set-lever-9",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "readiness": "adjudicated-by-design",
-            "representation": {
-              "adjudicated": true,
-              "note": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.",
-              "sourceText": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down."
-            },
-            "reason": "The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence."
+            "reason": "The typed activation states the printed action once and the typed lever selection bounds one use to as many as two distinct levers; who may use it and what each lever does stay in this printed text and the lever table, interpreted by the DM model."
           },
           {
             "clauseId": "magic-item:apparatus-of-the-crab/m5-complex-apparatus-hidden-catch",
@@ -88903,499 +88741,22 @@
             "reason": "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
           },
           {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-1",
+            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-move-levers",
             "scope": {
               "kind": "parent"
             },
             "tag": "M5",
             "representation": {
               "block": "operations",
-              "operationId": "set-lever-1"
+              "operationId": "move-levers"
             },
             "engineHooks": [
               {
                 "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
+                "hook": "olc5.11 pack-tested paid item operation"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-10-down",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "representation": {
-              "block": "operations",
-              "operationId": "set-lever-10-down"
-            },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-10-up",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "representation": {
-              "block": "operations",
-              "operationId": "set-lever-10-up"
-            },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-2",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "representation": {
-              "block": "operations",
-              "operationId": "set-lever-2"
-            },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-3",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "representation": {
-              "block": "operations",
-              "operationId": "set-lever-3"
-            },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-4",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "representation": {
-              "block": "operations",
-              "operationId": "set-lever-4"
-            },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-5",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "representation": {
-              "block": "operations",
-              "operationId": "set-lever-5"
-            },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-6",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "representation": {
-              "block": "operations",
-              "operationId": "set-lever-6"
-            },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-7",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "representation": {
-              "block": "operations",
-              "operationId": "set-lever-7"
-            },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-8",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "representation": {
-              "block": "operations",
-              "operationId": "set-lever-8"
-            },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
-          },
-          {
-            "clauseId": "magic-item:apparatus-of-the-crab/triage-stateMachine-op-set-lever-9",
-            "scope": {
-              "kind": "parent"
-            },
-            "tag": "M5",
-            "representation": {
-              "block": "operations",
-              "operationId": "set-lever-9"
-            },
-            "engineHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F2",
-                "hook": "activation action economy"
-              },
-              {
-                "engine": "F5",
-                "hook": "complex item state and duration processing"
-              },
-              {
-                "engine": "F9",
-                "hook": "geometry, targeting, movement, and contest resolution"
-              }
-            ],
-            "missingEngines": [
-              "F2",
-              "F5",
-              "F9"
-            ]
+            "readiness": "green"
           }
         ]
       }
@@ -93513,6 +92874,47 @@
       "requiresAttunement": true,
       "description": "This slender taper is dedicated to a deity and shares that deity’s alignment. The candle’s alignment can be detected with the detect evil and good spell. The GM chooses the god and associated alignment or determines the alignment randomly. The candle’s magic is activated when the candle is lit, which requires an action. After burning for 4 hours, the candle is destroyed. You can snuff it out early for use at a later time. Deduct the time it burned in increments of 1 minute from the candle’s total burn time. While lit, the candle sheds dim light in a 30-foot radius. Any creature within that light whose alignment matches that of the candle makes attack rolls, saving throws, and ability checks with advantage. In addition, a cleric or druid in the light whose alignment matches the candle’s can cast 1st-level spells he or she has prepared without expending spell slots, though the spell’s effect is as if cast with a 1st-level slot. Alternatively, when you light the candle for the first time, you can cast the gate spell with it. Doing so destroys the candle.",
       "mechanics": {
+        "stateMachine": {
+          "initial": "unlit",
+          "states": [
+            {
+              "id": "unlit",
+              "note": "never lit"
+            },
+            {
+              "id": "lit"
+            },
+            {
+              "id": "snuffed",
+              "note": "lit before and snuffed out for later use"
+            },
+            {
+              "id": "destroyed"
+            }
+          ],
+          "transitions": [
+            {
+              "from": "unlit",
+              "to": "lit",
+              "via": "light"
+            },
+            {
+              "from": "snuffed",
+              "to": "lit",
+              "via": "light"
+            },
+            {
+              "from": "lit",
+              "to": "snuffed",
+              "via": "snuff"
+            },
+            {
+              "from": "unlit",
+              "to": "destroyed",
+              "via": "cast-gate"
+            }
+          ]
+        },
         "economies": {
           "burn-time": {
             "kind": "budget",
@@ -93546,10 +92948,14 @@
                 "economy": "burn-time",
                 "amount": 1
               }
-            ]
+            ],
+            "requiresState": "lit"
           },
           {
             "id": "cast-gate",
+            "activation": {
+              "cost": "action"
+            },
             "cost": [
               {
                 "economy": "gate-use",
@@ -93559,6 +92965,15 @@
             "excludes": [
               "burn"
             ]
+          },
+          {
+            "id": "light",
+            "activation": {
+              "cost": "action"
+            }
+          },
+          {
+            "id": "snuff"
           },
           {
             "id": "m9-cast-candle-spell",
@@ -93610,6 +93025,27 @@
               {
                 "engine": "F5",
                 "hook": "duration-budget accounting"
+              }
+            ],
+            "readiness": "green"
+          },
+          {
+            "clauseId": "magic-item:candle-of-invocation/c1-candle-lit-state",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C1",
+            "representation": {
+              "block": "stateMachine"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "olc5.11 pack-tested paid item operation"
+              },
+              {
+                "engine": "F5",
+                "hook": "olc5.11 pack-tested item state and timer transition"
               }
             ],
             "readiness": "green"

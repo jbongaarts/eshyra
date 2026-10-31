@@ -3327,7 +3327,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1387);
+      expect(clauses).toHaveLength(1368);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3471,11 +3471,22 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // one new effect clause is green, and the control span is restored as an
       // adjudicated clause (762 -> 760 pending, 255 -> 258 green, 367 -> 368
       // adjudicated; total 1385 -> 1387). break-gem is newly ready.
+      // eshyra-7f0h replaces the Apparatus of the Crab's 11 per-lever
+      // operations (each pending on F2/F5/F9 and each with its own adjudicated
+      // activation clause) with ONE move-levers operation: its action is
+      // typed once, its operation-bound clause carries only the landed paid-
+      // operation hook (green, +1) and one adjudicated activation clause
+      // replaces eleven (-10); the 11 pending clauses leave. The Candle of
+      // Invocation gains a lit/unlit state-machine clause (green, +1) that
+      // makes light, snuff and the first-light cast-gate executable, and burn
+      // is gated on the candle being lit. Net: total 1387 -> 1368, pending
+      // 760 -> 749, green 258 -> 260, adjudicated 368 -> 358. move-levers,
+      // light, snuff and cast-gate are newly ready.
       expect(counts).toEqual({
-        'adjudicated-by-design': 368,
+        'adjudicated-by-design': 358,
         'design-blocked': 1,
-        'engine-pending': 760,
-        green: 258,
+        'engine-pending': 749,
+        green: 260,
       });
       // The shared Orb spell sentence stays governed by one triage clause for
       // every cast it prints (cloud review r2 of PR #661, S1).

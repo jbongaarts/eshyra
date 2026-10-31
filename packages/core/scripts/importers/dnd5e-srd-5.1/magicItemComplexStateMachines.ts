@@ -48,13 +48,19 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         'hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check',
         'Below that, the vehicle takes 2d6 bludgeoning damage per minute from pressure',
       ],
-      // Lever 10 is the only lever whose direction matters to the state graph
-      // (Up unseals and opens the rear hatch, Down closes and seals it), so
-      // its two directions are two operations (review 19.4.6.3 S2).
+      // ONE action moves as many as two levers (eshyra-7f0h), so the lever
+      // moves are one operation that takes 1..2 distinct table rows and pays
+      // the printed action once. Levers return to neutral after each use, so
+      // no lever position is stored; the vehicle state is DM-adjudicated.
       operations: [
-        ...Array.from({ length: 9 }, (_, i) => op(`set-lever-${i + 1}`)),
-        op('set-lever-10-up'),
-        op('set-lever-10-down'),
+        {
+          ...op('move-levers'),
+          leverSelection: {
+            tableRef: 'table:apparatus-of-the-crab-levers',
+            min: 1,
+            max: 2,
+          },
+        },
       ],
       effects: [
         procedure(
@@ -84,19 +90,12 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
           state('open', 'hatch open'),
           state('disabled', 'apparatus reduced to 0 hit points'),
         ],
+        // The machine is WITHHELD by the triage layer (the lever effects are
+        // DM-adjudicated), so these self-loops are never executed: they only
+        // bind `move-levers` so triage emits its operation-bound clause.
         transitions: [
-          { from: 'sealed', to: 'open', via: 'set-lever-1' },
-          { from: 'open', to: 'sealed', via: 'set-lever-1' },
-          { from: 'sealed', to: 'sealed', via: 'set-lever-2' },
-          { from: 'sealed', to: 'sealed', via: 'set-lever-3' },
-          { from: 'sealed', to: 'sealed', via: 'set-lever-4' },
-          { from: 'sealed', to: 'sealed', via: 'set-lever-5' },
-          { from: 'sealed', to: 'sealed', via: 'set-lever-6' },
-          { from: 'sealed', to: 'sealed', via: 'set-lever-7' },
-          { from: 'sealed', to: 'sealed', via: 'set-lever-8' },
-          { from: 'sealed', to: 'sealed', via: 'set-lever-9' },
-          { from: 'sealed', to: 'open', via: 'set-lever-10-up' },
-          { from: 'open', to: 'sealed', via: 'set-lever-10-down' },
+          { from: 'sealed', to: 'sealed', via: 'move-levers' },
+          { from: 'open', to: 'open', via: 'move-levers' },
           {
             from: 'sealed',
             to: 'disabled',
@@ -946,14 +945,29 @@ export function projectMagicItemComplexStateMachine(
           .replace(/^-|-$/g, '')}`,
         tag: 'M5',
         representation: { block: 'stateMachine' },
-        engineHooks: [
-          { engine: 'F2', hook: 'activation action economy' },
-          { engine: 'F5', hook: 'complex item state and duration processing' },
-          {
-            engine: 'F9',
-            hook: 'geometry, targeting, movement, and contest resolution',
-          },
-        ],
+        // Apparatus of the Crab (eshyra-7f0h): the only engine work is the
+        // paid action and the lever-count validation (use_item, pack-tested);
+        // the lever effects (F5 state, F9 geometry/movement) are DM-adjudicated
+        // through the verbatim clauses, so they are not pending hooks.
+        engineHooks:
+          item.name === 'Apparatus of the Crab'
+            ? [
+                {
+                  engine: 'F2',
+                  hook: 'olc5.11 pack-tested paid item operation',
+                },
+              ]
+            : [
+                { engine: 'F2', hook: 'activation action economy' },
+                {
+                  engine: 'F5',
+                  hook: 'complex item state and duration processing',
+                },
+                {
+                  engine: 'F9',
+                  hook: 'geometry, targeting, movement, and contest resolution',
+                },
+              ],
       },
       ...(item.name === 'Apparatus of the Crab'
         ? [

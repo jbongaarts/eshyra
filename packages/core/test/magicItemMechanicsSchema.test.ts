@@ -1008,6 +1008,47 @@ describe('magic-item mechanics schema', () => {
       /unknown effect/,
     ],
     [
+      'requiresState without a state machine',
+      { operations: [{ id: 'burn', requiresState: 'lit' }] },
+      /requiresState references unknown state "lit"/,
+    ],
+    [
+      'requiresState naming an undeclared state',
+      {
+        operations: [{ id: 'burn', requiresState: 'blazing' }, { id: 'light' }],
+        stateMachine: {
+          initial: 'unlit',
+          states: [{ id: 'unlit' }, { id: 'lit' }],
+          transitions: [{ from: 'unlit', to: 'lit', via: 'light' }],
+        },
+      },
+      /requiresState references unknown state "blazing"/,
+    ],
+    [
+      'leverSelection with min above max',
+      {
+        operations: [
+          {
+            id: 'move',
+            leverSelection: { tableRef: 'table:levers', min: 3, max: 2 },
+          },
+        ],
+      },
+      /min cannot exceed its max/,
+    ],
+    [
+      'leverSelection whose tableRef is not a table reference',
+      {
+        operations: [
+          {
+            id: 'move',
+            leverSelection: { tableRef: 'levers', min: 1, max: 2 },
+          },
+        ],
+      },
+      /must be a table: reference/,
+    ],
+    [
       'id-less bound effect',
       {
         operations: [{ id: 'use', effects: ['passive'] }],

@@ -55,6 +55,22 @@ export const useItemTool: Tool = {
         description:
           'Operation-specific validated inputs. Variable costs use { costs: { <economyId>: <positive integer> } }. Ambiguous state transitions require transitionTo; declared failure paths use transitionOutcome: "failure".',
       },
+      levers: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 2,
+        description:
+          "Only for an operation that moves rows of a printed table in one use (the Apparatus of the Crab's move-levers: as many as two levers up or down for one action): [{ lever: <row number>, direction: 'up' | 'down' }] with DISTINCT lever numbers. Required for that operation and refused for any other. A third lever is another use_item call and another action. The result returns each selected lever's printed cell; the resulting state is yours to adjudicate (every lever returns to neutral after each use).",
+        items: {
+          type: 'object',
+          properties: {
+            lever: { type: 'integer' },
+            direction: { type: 'string', enum: ['up', 'down'] },
+          },
+          required: ['lever', 'direction'],
+          additionalProperties: false,
+        },
+      },
       character: CHARACTER_TARGET_SCHEMA,
     },
     required: ['instanceId', 'operationId'],
@@ -87,6 +103,7 @@ export const useItemTool: Tool = {
             !Array.isArray(a.args)
               ? (a.args as Record<string, unknown>)
               : undefined,
+          levers: a.levers,
           characterId: resolveCharacterId(ctx.db, target.id),
           // Bridges the item-domain capability event to the turn's observer,
           // adding only what the tool layer knows. The item domain neither

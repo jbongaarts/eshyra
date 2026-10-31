@@ -139,6 +139,24 @@ export interface MagicItemOperation {
   readonly excludes?: readonly string[];
   readonly doesNotExpend?: readonly string[];
   readonly effects?: readonly string[];
+  /**
+   * The state-machine state the item must be in for `use_item` to run this
+   * operation (eshyra-7f0h). Refused otherwise, before any cost is spent. It
+   * gates only; it does not move the machine (a `via` transition does).
+   */
+  readonly requiresState?: string;
+  /**
+   * The operation moves 1..max rows of a printed table in one use
+   * (eshyra-7f0h: Apparatus of the Crab, "move as many as two of the
+   * apparatus's levers up or down"). `use_item` then requires a `levers`
+   * input of that many DISTINCT row keys of `tableRef`, each with a direction.
+   * Item-local by design: not a general selection framework.
+   */
+  readonly leverSelection?: {
+    readonly tableRef: string;
+    readonly min: number;
+    readonly max: number;
+  };
   readonly note?: string;
 }
 
@@ -960,11 +978,33 @@ function operation(value: unknown, path: string): MagicItemOperation {
       'excludes',
       'doesNotExpend',
       'effects',
+      'requiresState',
+      'leverSelection',
       'note',
     ],
     path,
   );
   const operationId = id(obj.id, `${path}.id`);
+  if (obj.requiresState !== undefined)
+    id(obj.requiresState, `${path}.requiresState`);
+  if (obj.leverSelection !== undefined) {
+    const selection = object(obj.leverSelection, `${path}.leverSelection`);
+    only(selection, ['tableRef', 'min', 'max'], `${path}.leverSelection`);
+    const tableRef = string(
+      selection.tableRef,
+      `${path}.leverSelection.tableRef`,
+    );
+    if (!tableRef.startsWith('table:'))
+      throw new RulesPackError(
+        `${path}.leverSelection.tableRef must be a table: reference`,
+      );
+    const min = integer(selection.min, `${path}.leverSelection.min`, 1);
+    const max = integer(selection.max, `${path}.leverSelection.max`, 1);
+    if (min > max)
+      throw new RulesPackError(
+        `${path}.leverSelection.min cannot exceed its max`,
+      );
+  }
   if (obj.activation !== undefined)
     activation(obj.activation, `${path}.activation`);
   if (obj.cost !== undefined) {
@@ -2606,6 +2646,20 @@ export function validateMagicItemMechanics(
       effectIds,
       new Set(operations.keys()),
     );
+  for (const [operationId, parsed] of operations) {
+    if (parsed.requiresState === undefined) continue;
+    const states = new Set(
+      (
+        ((mechanics.stateMachine as Obj | undefined)?.states as
+          | Obj[]
+          | undefined) ?? []
+      ).map((state) => state.id),
+    );
+    if (!states.has(parsed.requiresState))
+      throw new RulesPackError(
+        `${path}.operations.${operationId}.requiresState references unknown state ${JSON.stringify(parsed.requiresState)}`,
+      );
+  }
   if (mechanics.entityGrant !== undefined) {
     entityGrant(mechanics.entityGrant, `${path}.entityGrant`, economies);
   }

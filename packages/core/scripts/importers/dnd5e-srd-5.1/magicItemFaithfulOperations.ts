@@ -80,11 +80,6 @@ const FIGURINE_CREATION =
   'If you use an action to speak the command word and throw the figurine to a point on the ground within 60 feet of you, the figurine becomes a living creature. If the space where the creature would appear is occupied by other creatures or objects, or if there isn’t enough space for the creature, the figurine doesn’t become a creature.';
 const FIGURINE_REVERSION =
   'It reverts to a figurine early if it drops to 0 hit points or if you use an action to speak the command word again while touching it.';
-const APPARATUS_LEVERS = [
-  ...Array.from({ length: 9 }, (_, index) => `set-lever-${index + 1}`),
-  'set-lever-10-up',
-  'set-lever-10-down',
-];
 const TALISMAN_TARGET =
   'one creature you can see on the ground within 120 feet of you';
 
@@ -785,17 +780,23 @@ const BASE_SPECS: ReadonlyMap<string, FaithfulItemSpec> = new Map([
   [
     'Apparatus of the Crab',
     {
-      // One action moves as many as two levers; a per-lever action cost is not
-      // printed.
-      operations: APPARATUS_LEVERS.map((id) =>
-        op(id, { cost: null, requirement: 'A creature in the compartment' }),
-      ),
-      clauses: clausesFor(
-        'activation',
-        APPARATUS_LEVERS,
-        'A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down.',
-        'The printed action moves as many as two levers; no per-lever cost is typed, so the DM model interprets the printed sentence.',
-      ),
+      // One printed action moves as many as two levers, so the single
+      // move-levers operation types that action once (eshyra-7f0h); the lever
+      // count and selection are validated by use_item.
+      operations: [
+        op('move-levers', {
+          cost: 'action',
+          requirement: 'A creature in the compartment',
+        }),
+      ],
+      clauses: [
+        clause(
+          'activation-move-levers',
+          { operation: 'move-levers' },
+          'A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down.',
+          'The typed activation states the printed action once and the typed lever selection bounds one use to as many as two distinct levers; who may use it and what each lever does stay in this printed text and the lever table, interpreted by the DM model.',
+        ),
+      ],
     },
   ],
   [

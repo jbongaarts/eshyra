@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(806);
+    expect(backlog.candidates).toHaveLength(797);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -120,9 +120,12 @@ describe('magic-item legacy capability backlog', () => {
     // candidate and keeps its identity. eshyra-xt6m.1.1 moves the Gem's F4
     // responsibility from the quantity clause to the exact castSpell effect
     // clause; its legacy candidate identity changes while the candidate set
-    // remains 806 rows.
+    // remains 806 rows. eshyra-7f0h replaces the Apparatus of the Crab's 11
+    // per-lever operation-bound candidates with the single move-levers one
+    // (-10; its only hook is the landed paid-operation hook) and adds the
+    // Candle of Invocation's lit/unlit state-machine clause (+1): 806 -> 797.
     expect(fingerprint).toBe(
-      '6ea980ed45110ea6a93ef807ec41467d299b226fbf0274d047bcd270e16f6447',
+      'f73666bbcf41ca6e790b97ad365410b6c5362e015ecd72b2320c1a536165a15a',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

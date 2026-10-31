@@ -39,133 +39,13 @@
   },
   {
     "scope": "Apparatus of the Crab",
-    "operation": "set-lever-1",
-    "cost": null,
+    "operation": "move-levers",
+    "cost": "action",
     "equipment": null,
-    "costSentence": null,
+    "costSentence": "A creature in the compartment can use an action to move as many as two of the apparatus’s levers up or down",
     "equipmentSentences": [],
     "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Apparatus of the Crab",
-    "operation": "set-lever-10-down",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Apparatus of the Crab",
-    "operation": "set-lever-10-up",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Apparatus of the Crab",
-    "operation": "set-lever-2",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Apparatus of the Crab",
-    "operation": "set-lever-3",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Apparatus of the Crab",
-    "operation": "set-lever-4",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Apparatus of the Crab",
-    "operation": "set-lever-5",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Apparatus of the Crab",
-    "operation": "set-lever-6",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Apparatus of the Crab",
-    "operation": "set-lever-7",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Apparatus of the Crab",
-    "operation": "set-lever-8",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
-      "equipment": "No equipment prerequisite is retained for this operation."
-    }
-  },
-  {
-    "scope": "Apparatus of the Crab",
-    "operation": "set-lever-9",
-    "cost": null,
-    "equipment": null,
-    "costSentence": null,
-    "equipmentSentences": [],
-    "noneReason": {
-      "cost": "No typed activation cost is retained for this operation.",
+      "cost": null,
       "equipment": "No equipment prerequisite is retained for this operation."
     }
   },
@@ -392,6 +272,30 @@
   {
     "scope": "Candle of Invocation",
     "operation": "cast-gate",
+    "cost": "action",
+    "equipment": null,
+    "costSentence": "The candle’s magic is activated when the candle is lit, which requires an action",
+    "equipmentSentences": [],
+    "noneReason": {
+      "cost": null,
+      "equipment": "No equipment prerequisite is retained for this operation."
+    }
+  },
+  {
+    "scope": "Candle of Invocation",
+    "operation": "light",
+    "cost": "action",
+    "equipment": null,
+    "costSentence": "The candle’s magic is activated when the candle is lit, which requires an action",
+    "equipmentSentences": [],
+    "noneReason": {
+      "cost": null,
+      "equipment": "No equipment prerequisite is retained for this operation."
+    }
+  },
+  {
+    "scope": "Candle of Invocation",
+    "operation": "m9-cast-candle-spell",
     "cost": null,
     "equipment": null,
     "costSentence": null,
@@ -403,7 +307,7 @@
   },
   {
     "scope": "Candle of Invocation",
-    "operation": "m9-cast-candle-spell",
+    "operation": "snuff",
     "cost": null,
     "equipment": null,
     "costSentence": null,
