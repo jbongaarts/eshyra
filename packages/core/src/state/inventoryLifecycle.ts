@@ -69,7 +69,18 @@ export function destroyInventoryItem(
     tombstoneItemGrantBindings(txnDb, itemId, ctx.at);
     // olc5.12.3: an open credit is owed only by this live item; void it so a
     // later item reissued this id cannot redeem it.
-    voidOpenItemGrantBindCredits(txnDb, itemId);
+    // eshyra-o9bd.16.10.1: EXCEPT when use_item consumed the final unit (it
+    // wrote a consumption receipt, which retires the id so no later item can
+    // reuse it): the credits earlier units issued stay redeemable, exactly
+    // once, each with its own instance/variant/operation identity.
+    if (
+      txnDb
+        .prepare(
+          'SELECT 1 FROM item_consumption_receipt WHERE item_instance_id = ?',
+        )
+        .get(itemId) === undefined
+    )
+      voidOpenItemGrantBindCredits(txnDb, itemId);
     const deleted = txnDb
       .prepare('DELETE FROM inventory WHERE id = ?')
       .run(itemId);
