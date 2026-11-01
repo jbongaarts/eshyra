@@ -417,6 +417,10 @@ describe('magic-item clause integrity and readiness', () => {
       validateMagicItemClausesAndClassify({
         records: [record],
         clausesByItemKey: new Map([[record.key, [effectClause]]]),
+        // Binding-resolution test: model a reviewed runtime consumer for
+        // speedSet so the clause is green (the default registry is empty;
+        // see magicItemPassiveEffectReadiness.test.ts for the default).
+        passiveEffectConsumers: new Map([['speedSet', 'test consumer']]),
       }),
     ).toEqual([
       {

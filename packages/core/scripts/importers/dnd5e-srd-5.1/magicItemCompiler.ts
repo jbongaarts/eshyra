@@ -346,6 +346,43 @@ export interface MagicItemExecutionReadiness {
   readonly clauses: readonly Omit<MagicItemReadinessEntry, 'itemKey'>[];
 }
 
+/**
+ * Reviewed registry (eshyra-o9bd.16.8.1, L3-F1): passive magic-item effect
+ * kinds that a live runtime path actually reads, effect kind -> the consumer
+ * (file + symbol) that proves it. A hook-free `effects` clause is green ONLY
+ * if its kind is listed here; "no hook declared" is not evidence of execution.
+ *
+ * Review result (packages/core/src searched for every kind in the 92 formerly
+ * green hook-free clauses): the registry is EMPTY. The only readers of
+ * `mechanics.effects[].kind` are feature/option proficiency grants
+ * (character/rulesPackResolver.ts parseProficiencyGrants - feature records,
+ * never worn items), start_effect duration lookup by effect id
+ * (orchestrator/toolStartEffect.ts - reads `duration`, not the kind), and
+ * summoning/entityGrant paths. No derived-stat code reads a worn or attuned
+ * item's AC, save, ability, speed, sense, movement, or healing effect. Add an
+ * entry only with the cited consumer and a test that exercises it.
+ */
+export const MAGIC_ITEM_PASSIVE_EFFECT_RUNTIME_CONSUMERS: ReadonlyMap<
+  string,
+  string
+> = new Map();
+
+const PASSIVE_EFFECT_F6_KINDS: ReadonlySet<string> = new Set([
+  'regeneration',
+  'stabilize',
+  'healingMultiplier',
+  'hitPointMaximumIncrease',
+]);
+
+/** Missing owner of a hook-free passive effect: F6 (death/HP/healing clock)
+ * for healing-state kinds, otherwise F8 (derived character modifiers). */
+function passiveEffectOwnerHook(kind: string): EngineHookBinding {
+  return {
+    engine: PASSIVE_EFFECT_F6_KINDS.has(kind) ? 'F6' : 'F8',
+    hook: `passive item effect runtime consumer: ${kind}`,
+  };
+}
+
 /** Stable identity for exact runtime-hook evidence. Family-only evidence is
  * intentionally insufficient: F5 owning one clock path does not imply that
  * every unrelated F5 hook has landed. */
@@ -906,6 +943,8 @@ export function validateMagicItemClausesAndClassify(input: {
   >;
   readonly landedEngineHooks?: ReadonlySet<string>;
   readonly transitionalItemKeys?: ReadonlySet<string>;
+  /** Test seam: defaults to {@link MAGIC_ITEM_PASSIVE_EFFECT_RUNTIME_CONSUMERS}. */
+  readonly passiveEffectConsumers?: ReadonlyMap<string, string>;
 }): readonly MagicItemReadinessEntry[] {
   const items = new Map(
     input.records
@@ -928,6 +967,8 @@ export function validateMagicItemClausesAndClassify(input: {
   }
   const landed = input.landedEngineHooks ?? new Set<string>();
   const transitional = input.transitionalItemKeys ?? new Set<string>();
+  const passiveConsumers =
+    input.passiveEffectConsumers ?? MAGIC_ITEM_PASSIVE_EFFECT_RUNTIME_CONSUMERS;
   const engineVocabulary = new Set<string>(MAGIC_ITEM_ENGINE_FAMILIES);
   const result: MagicItemReadinessEntry[] = [];
 
@@ -1070,20 +1111,23 @@ export function validateMagicItemClausesAndClassify(input: {
           grantMechanics?.entityGrant,
           grantMechanics,
         );
-      const castSpellOwned = (() => {
+      const clauseEffect = (() => {
         if (representation.block !== 'effects' || grantMechanics === undefined)
-          return false;
-        const effect = Array.isArray(grantMechanics.effects)
+          return undefined;
+        return Array.isArray(grantMechanics.effects)
           ? grantMechanics.effects
               .map(asObject)
               .find((candidate) => candidate?.id === representation.effectId)
           : undefined;
-        return castSpellRealizedByOwnedGrant(
-          effect,
+      })();
+      const castSpellOwned =
+        representation.block === 'effects' &&
+        grantMechanics !== undefined &&
+        castSpellRealizedByOwnedGrant(
+          clauseEffect,
           grantMechanics.operations,
           grantMechanics,
         );
-      })();
       const missingHooks = (declaredHooks ?? []).filter((hook) => {
         const key = magicItemEngineHookKey(hook);
         if (landed.has(key)) return false;
@@ -1117,6 +1161,24 @@ export function validateMagicItemClausesAndClassify(input: {
         representation: clause.representation,
         ...(declaredHooks === undefined ? {} : { engineHooks: declaredHooks }),
       };
+      // eshyra-o9bd.16.8.1 (L3-F1): a no-hook effect is green only when a
+      // reviewed runtime consumer reads its kind. Declaring no hook proves
+      // nothing executes it, so any other kind names its missing owner here.
+      if (
+        representation.block === 'effects' &&
+        declaredHooks === undefined &&
+        !passiveConsumers.has(String(clauseEffect?.kind))
+      ) {
+        const hook = passiveEffectOwnerHook(String(clauseEffect?.kind));
+        result.push({
+          ...common,
+          readiness: 'engine-pending',
+          engineHooks: [hook],
+          missingHooks: [hook],
+          missingEngines: [hook.engine],
+        });
+        continue;
+      }
       result.push(
         missingHooks.length === 0
           ? { ...common, readiness: 'green' }
