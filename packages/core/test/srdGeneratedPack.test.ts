@@ -5912,7 +5912,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         ]),
       });
       expect((lifestyle?.data as { rows: unknown[] })?.rows).toHaveLength(7);
-      expect(lifestyle?.provenance.locator).toBe('p. 72');
+      expect(lifestyle?.provenance.locator).toBe('pp. 72, 73');
 
       const food = table('table:food-drink-and-lodging');
       expect(food?.data).toMatchObject({
@@ -5927,7 +5927,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         ]),
       });
       expect((food?.data as { rows: unknown[] })?.rows).toHaveLength(20);
-      expect(food?.provenance.locator).toBe('p. 73');
+      expect(food?.provenance.locator).toBe('pp. 73, 74');
 
       const services = table('table:services');
       expect(services?.data).toMatchObject({
@@ -6121,7 +6121,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         undefined,
       );
       expect((bloodline?.data as { rows: unknown[] })?.rows).toHaveLength(10);
-      expect(bloodline?.provenance.locator).toBe('p. 44');
+      expect(bloodline?.provenance.locator).toBe('pp. 44, 45');
     });
 
     it('pins the Barbarian progression table (eshyra-4a7.3)', () => {
@@ -6682,7 +6682,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           [8, 'Giant elk'],
         ],
       });
-      expect(gray?.provenance.locator).toBe('p. 210');
+      expect(gray?.provenance.locator).toBe('pp. 210, 211');
       expect(
         (table('table:rust-bag-of-tricks')?.data as { rows: unknown[] })?.rows,
       ).toHaveLength(8);
@@ -6750,7 +6750,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(beanRows[9][1]).toBe(
         'A nest of 1d4 + 3 eggs springs up. Any creature that eats an egg must make a DC 20 Constitution saving throw. On a successful save, a creature permanently increases its lowest ability score by 1, randomly choosing among equally low scores. On a failed save, the creature takes 10d6 force damage from an internal magical explosion.',
       );
-      expect(beans?.provenance.locator).toBe('p. 209');
+      expect(beans?.provenance.locator).toBe('pp. 209, 210');
 
       const robe = table('table:robe-of-useful-items');
       expect(robe?.data).toMatchObject({ columns: ['d100', 'Patch'] });

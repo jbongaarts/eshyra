@@ -43,6 +43,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { excludeActionOwnedRuleDuplicates } from './actionOwnedRuleDedup.js';
+import { enrichProvenanceFromContentSpans } from './contentSpanPages.js';
 import { assertCreatureAttackLeadInsSegmented } from './creatureAttackLeadIns.js';
 import {
   buildPack,
@@ -89,7 +90,10 @@ import { parseSubclassOverviews } from './parseSubclassOverviews.js';
 import { parseTables } from './parseTables.js';
 import { parseTraps } from './parseTraps.js';
 import { assertRecordLocatorCompleteness } from './recordLocatorCompleteness.js';
-import { assertRecordsAnchoredInSource } from './recordSourceAnchors.js';
+import {
+  assertRecordsAnchoredInSource,
+  normalizedPageTextByNumber,
+} from './recordSourceAnchors.js';
 import {
   type SectionAnchorOptions,
   SectionNotFoundError,
@@ -3643,7 +3647,10 @@ export async function runImporter(
     // read record.data, not provenance) so it cannot affect their pass/fail.
     pack = {
       ...pack,
-      records: enrichProvenanceFromRegionLedger(pack.records, regionLedger),
+      records: enrichProvenanceFromContentSpans(
+        enrichProvenanceFromRegionLedger(pack.records, regionLedger),
+        normalizedPageTextByNumber(pages),
+      ),
     };
     // Complete imports also enforce that automatic owners cite the source
     // page using FINAL enriched locators. Structural page-locality resolution

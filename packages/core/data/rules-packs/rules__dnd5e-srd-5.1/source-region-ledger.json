@@ -1,13 +1,12 @@
 {
   "summary": {
-    "entries": 2685,
-    "proseRegions": 2658,
+    "entries": 2787,
+    "proseRegions": 2760,
     "pureStructure": 27,
-    "record": 2110,
+    "record": 2213,
     "childOf": 460,
     "structuredField": 83,
     "intentionallyIgnored": {
-      "deity-table-column-header": 1,
       "front-matter": 2,
       "table-rows-emitted-as-records": 2
     },
@@ -453,6 +452,27 @@
       "emission": "sentences-contained"
     },
     {
+      "id": "p5-l68-table-rows",
+      "pageStart": 5,
+      "pageEnd": 5,
+      "lineStart": 68,
+      "lineEnd": 78,
+      "headingPath": [
+        "Races",
+        "Dragonborn",
+        "Dragonborn Traits",
+        "Draconic Ancestry"
+      ],
+      "sourceContext": "Draconic Ancestry",
+      "regionType": "table-rows",
+      "firstPhrase": "Dragon Damage Type Breath Weapon Black Acid 5 by 30 ft. line (Dex. save)",
+      "lastPhrase": "Silver Cold 15 ft. cone (Con. save) White Cold 15 ft. cone (Con. save)",
+      "normalizedCharCount": 418,
+      "classification": "record:table:draconic-ancestry",
+      "targetKey": "table:draconic-ancestry",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p5-l79-prose",
       "pageStart": 5,
       "pageEnd": 5,
@@ -741,6 +761,27 @@
       "targetKey": "class:barbarian",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p8-l23-table-rows",
+      "pageStart": 8,
+      "pageEnd": 8,
+      "lineStart": 23,
+      "lineEnd": 62,
+      "headingPath": [
+        "Barbarian",
+        "Class Features",
+        "Hit Points",
+        "The Barbarian"
+      ],
+      "sourceContext": "The Barbarian",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Rage Level Bonus Features Rages Damage 1st +2 Rage, 2 +2 Unarmored Defense",
+      "lastPhrase": "Might 19th +6 Ability Score 6 +4 Improvement 20th +6 Primal Unlimited +4 Champion",
+      "normalizedCharCount": 727,
+      "classification": "record:table:the-barbarian",
+      "targetKey": "table:the-barbarian",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p8-l64-prose",
@@ -1207,6 +1248,27 @@
       "targetKey": "class:bard",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p11-l12-table-rows",
+      "pageStart": 11,
+      "pageEnd": 11,
+      "lineStart": 12,
+      "lineEnd": 12,
+      "headingPath": [
+        "Bard",
+        "Class Features",
+        "Hit Points",
+        "The Bard"
+      ],
+      "sourceContext": "The Bard",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Cantrips Spells",
+      "lastPhrase": "Proficiency Cantrips Spells",
+      "normalizedCharCount": 27,
+      "classification": "record:table:the-bard",
+      "targetKey": "table:the-bard",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p11-l13-prose",
@@ -1809,6 +1871,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p15-l13-table-rows",
+      "pageStart": 15,
+      "pageEnd": 15,
+      "lineStart": 13,
+      "lineEnd": 14,
+      "headingPath": [
+        "Cleric",
+        "Class Features",
+        "Hit Points",
+        "The Cleric"
+      ],
+      "sourceContext": "The Cleric",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Cantrips Level Bonus Features Known",
+      "lastPhrase": "Proficiency Cantrips Level Bonus Features Known",
+      "normalizedCharCount": 47,
+      "classification": "record:table:the-cleric",
+      "targetKey": "table:the-cleric",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p15-l15-prose",
       "pageStart": 15,
       "pageEnd": 15,
@@ -2133,6 +2216,27 @@
       "emission": "contained"
     },
     {
+      "id": "p17-l14-table-rows",
+      "pageStart": 17,
+      "pageEnd": 17,
+      "lineStart": 14,
+      "lineEnd": 19,
+      "headingPath": [
+        "Cleric",
+        "Class Features",
+        "Destroy Undead",
+        "Destroy Undead"
+      ],
+      "sourceContext": "Destroy Undead",
+      "regionType": "table-rows",
+      "firstPhrase": "Cleric Level Destroys Undead of CR . . . 5th 1/2 or lower 8th",
+      "lastPhrase": "or lower 11th 2 or lower 14th 3 or lower 17th 4 or lower",
+      "normalizedCharCount": 120,
+      "classification": "record:table:destroy-undead",
+      "targetKey": "table:destroy-undead",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p17-l21-prose",
       "pageStart": 17,
       "pageEnd": 17,
@@ -2194,6 +2298,27 @@
       "targetKey": "subclass:life-domain",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p17-l50-table-rows",
+      "pageStart": 17,
+      "pageEnd": 17,
+      "lineStart": 50,
+      "lineEnd": 55,
+      "headingPath": [
+        "Cleric",
+        "Class Features",
+        "Life Domain",
+        "Life Domain Spells"
+      ],
+      "sourceContext": "Life Domain Spells",
+      "regionType": "table-rows",
+      "firstPhrase": "Cleric Level Spells 1st bless, cure wounds 3rd lesser restoration, spiritual weapon 5th beacon",
+      "lastPhrase": "hope, revivify 7th death ward, guardian of faith 9th mass cure wounds, raise dead",
+      "normalizedCharCount": 179,
+      "classification": "record:table:life-domain-spells",
+      "targetKey": "table:life-domain-spells",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p17-l57-prose",
@@ -2411,6 +2536,27 @@
       "targetKey": "class:druid",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p19-l13-table-rows",
+      "pageStart": 19,
+      "pageEnd": 19,
+      "lineStart": 13,
+      "lineEnd": 14,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Hit Points",
+        "The Druid"
+      ],
+      "sourceContext": "The Druid",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Cantrips Level Bonus Features Known",
+      "lastPhrase": "Proficiency Cantrips Level Bonus Features Known",
+      "normalizedCharCount": 47,
+      "classification": "record:table:the-druid",
+      "targetKey": "table:the-druid",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p19-l15-prose",
@@ -2649,6 +2795,27 @@
       "targetKey": "feature:druid:wild-shape",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p20-l60-table-rows",
+      "pageStart": 20,
+      "pageEnd": 20,
+      "lineStart": 60,
+      "lineEnd": 66,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Wild Shape",
+        "Beast Shapes"
+      ],
+      "sourceContext": "Beast Shapes",
+      "regionType": "table-rows",
+      "firstPhrase": "Max. Level CR Limitations Example 2nd 1/4 No flying or swimming Wolf speed 4th",
+      "lastPhrase": "swimming Wolf speed 4th 1/2 No flying speed Crocodile 8th 1 — Giant eagle",
+      "normalizedCharCount": 128,
+      "classification": "record:table:beast-shapes",
+      "targetKey": "table:beast-shapes",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p20-l67-prose",
@@ -2930,6 +3097,153 @@
       "emission": "contained"
     },
     {
+      "id": "p22-l7-table-rows",
+      "pageStart": 22,
+      "pageEnd": 22,
+      "lineStart": 7,
+      "lineEnd": 11,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Circle of the Land",
+        "Arctic"
+      ],
+      "sourceContext": "Arctic",
+      "regionType": "table-rows",
+      "firstPhrase": "Druid Level Circle Spells 3rd hold person, spike growth 5th sleet storm, slow 7th",
+      "lastPhrase": "slow 7th freedom of movement, ice storm 9th commune with nature, cone of cold",
+      "normalizedCharCount": 150,
+      "classification": "record:table:circle-of-the-land-arctic",
+      "targetKey": "table:circle-of-the-land-arctic",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p22-l13-table-rows",
+      "pageStart": 22,
+      "pageEnd": 22,
+      "lineStart": 13,
+      "lineEnd": 17,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Circle of the Land",
+        "Coast"
+      ],
+      "sourceContext": "Coast",
+      "regionType": "table-rows",
+      "firstPhrase": "Druid Level Circle Spells 3rd mirror image, misty step 5th water breathing, water walk",
+      "lastPhrase": "water breathing, water walk 7th control water, freedom of movement 9th conjure elemental, scrying",
+      "normalizedCharCount": 156,
+      "classification": "record:table:circle-of-the-land-coast",
+      "targetKey": "table:circle-of-the-land-coast",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p22-l19-table-rows",
+      "pageStart": 22,
+      "pageEnd": 22,
+      "lineStart": 19,
+      "lineEnd": 24,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Circle of the Land",
+        "Desert"
+      ],
+      "sourceContext": "Desert",
+      "regionType": "table-rows",
+      "firstPhrase": "Druid Level Circle Spells 3rd blur, silence 5th create food and water, protection from",
+      "lastPhrase": "water, protection from energy 7th blight, hallucinatory terrain 9th insect plague, wall of stone",
+      "normalizedCharCount": 160,
+      "classification": "record:table:circle-of-the-land-desert",
+      "targetKey": "table:circle-of-the-land-desert",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p22-l26-table-rows",
+      "pageStart": 22,
+      "pageEnd": 22,
+      "lineStart": 26,
+      "lineEnd": 30,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Circle of the Land",
+        "Forest"
+      ],
+      "sourceContext": "Forest",
+      "regionType": "table-rows",
+      "firstPhrase": "Druid Level Circle Spells 3rd barkskin, spider climb 5th call lightning, plant growth 7th",
+      "lastPhrase": "lightning, plant growth 7th divination, freedom of movement 9th commune with nature, tree stride",
+      "normalizedCharCount": 158,
+      "classification": "record:table:circle-of-the-land-forest",
+      "targetKey": "table:circle-of-the-land-forest",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p22-l32-table-rows",
+      "pageStart": 22,
+      "pageEnd": 22,
+      "lineStart": 32,
+      "lineEnd": 36,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Circle of the Land",
+        "Grassland"
+      ],
+      "sourceContext": "Grassland",
+      "regionType": "table-rows",
+      "firstPhrase": "Druid Level Circle Spells 3rd invisibility, pass without trace 5th daylight, haste 7th divination,",
+      "lastPhrase": "without trace 5th daylight, haste 7th divination, freedom of movement 9th dream, insect plague",
+      "normalizedCharCount": 143,
+      "classification": "record:table:circle-of-the-land-grassland",
+      "targetKey": "table:circle-of-the-land-grassland",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p22-l38-table-rows",
+      "pageStart": 22,
+      "pageEnd": 22,
+      "lineStart": 38,
+      "lineEnd": 42,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Circle of the Land",
+        "Mountain"
+      ],
+      "sourceContext": "Mountain",
+      "regionType": "table-rows",
+      "firstPhrase": "Druid Level Circle Spells 3rd spider climb, spike growth 5th lightning bolt, meld into",
+      "lastPhrase": "lightning bolt, meld into stone 7th stone shape, stoneskin 9th passwall, wall of stone",
+      "normalizedCharCount": 147,
+      "classification": "record:table:circle-of-the-land-mountain",
+      "targetKey": "table:circle-of-the-land-mountain",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p22-l44-table-rows",
+      "pageStart": 22,
+      "pageEnd": 22,
+      "lineStart": 44,
+      "lineEnd": 48,
+      "headingPath": [
+        "Druid",
+        "Class Features",
+        "Circle of the Land",
+        "Swamp"
+      ],
+      "sourceContext": "Swamp",
+      "regionType": "table-rows",
+      "firstPhrase": "Druid Level Circle Spells 3rd acid arrow, darkness 5th water walk, stinking cloud 7th",
+      "lastPhrase": "water walk, stinking cloud 7th freedom of movement, locate creature 9th insect plague, scrying",
+      "normalizedCharCount": 149,
+      "classification": "record:table:circle-of-the-land-swamp",
+      "targetKey": "table:circle-of-the-land-swamp",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p22-l50-prose",
       "pageStart": 22,
       "pageEnd": 22,
@@ -3125,6 +3439,27 @@
       "targetKey": "class:fighter",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p24-l28-table-rows",
+      "pageStart": 24,
+      "pageEnd": 24,
+      "lineStart": 28,
+      "lineEnd": 50,
+      "headingPath": [
+        "Fighter",
+        "Class Features",
+        "Hit Points",
+        "The Fighter"
+      ],
+      "sourceContext": "The Fighter",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Level Bonus Features 1st +2 Fighting Style, Second Wind 2nd +2 Action Surge",
+      "lastPhrase": "+6 Martial Archetype feature 19th +6 Ability Score Improvement 20th +6 Extra Attack (3)",
+      "normalizedCharCount": 680,
+      "classification": "record:table:the-fighter",
+      "targetKey": "table:the-fighter",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p24-l52-prose",
@@ -3618,6 +3953,27 @@
       "targetKey": "class:monk",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p26-l12-table-rows",
+      "pageStart": 26,
+      "pageEnd": 26,
+      "lineStart": 12,
+      "lineEnd": 13,
+      "headingPath": [
+        "Monk",
+        "Class Features",
+        "Hit Points",
+        "The Monk"
+      ],
+      "sourceContext": "The Monk",
+      "regionType": "table-rows",
+      "firstPhrase": "Level Proficiency Bonus Martial Arts Ki Points Unarmored Movement 1st +2 1d4 — —",
+      "lastPhrase": "Level Proficiency Bonus Martial Arts Ki Points Unarmored Movement 1st +2 1d4 — —",
+      "normalizedCharCount": 80,
+      "classification": "record:table:the-monk",
+      "targetKey": "table:the-monk",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p26-l14-prose",
@@ -4385,6 +4741,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p30-l12-table-rows",
+      "pageStart": 30,
+      "pageEnd": 30,
+      "lineStart": 12,
+      "lineEnd": 17,
+      "headingPath": [
+        "Paladin",
+        "Class Features",
+        "Hit Points",
+        "The Paladin"
+      ],
+      "sourceContext": "The Paladin",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Level Bonus Features 1st 1st +2 Divine Sense, Lay on Hands 2nd +2",
+      "lastPhrase": "Spellcasting, Divine Smite 3rd +2 Divine Health, Sacred Oath 4th +2 Ability Score Improvement",
+      "normalizedCharCount": 187,
+      "classification": "record:table:the-paladin",
+      "targetKey": "table:the-paladin",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p30-l18-prose",
       "pageStart": 30,
       "pageEnd": 30,
@@ -5048,6 +5425,27 @@
       "emission": "contained"
     },
     {
+      "id": "p33-l31-table-rows",
+      "pageStart": 33,
+      "pageEnd": 33,
+      "lineStart": 31,
+      "lineEnd": 37,
+      "headingPath": [
+        "Paladin",
+        "Sacred Oaths",
+        "Oath of Devotion",
+        "Oath of Devotion Spells"
+      ],
+      "sourceContext": "Oath of Devotion Spells",
+      "regionType": "table-rows",
+      "firstPhrase": "Paladin Level Spells 3rd protection from evil and good, sanctuary 5th lesser restoration, zone",
+      "lastPhrase": "hope, dispel magic 13th freedom of movement, guardian of faith 17th commune, flame strike",
+      "normalizedCharCount": 207,
+      "classification": "record:table:oath-of-devotion-spells",
+      "targetKey": "table:oath-of-devotion-spells",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p33-l39-prose",
       "pageStart": 33,
       "pageEnd": 33,
@@ -5265,6 +5663,27 @@
       "targetKey": "class:ranger",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p35-l13-table-rows",
+      "pageStart": 35,
+      "pageEnd": 35,
+      "lineStart": 13,
+      "lineEnd": 15,
+      "headingPath": [
+        "Ranger",
+        "Class Features",
+        "Hit Points",
+        "The Ranger"
+      ],
+      "sourceContext": "The Ranger",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Level Bonus Features 1st +2 Favored Enemy, Natural Explorer",
+      "lastPhrase": "Proficiency Level Bonus Features 1st +2 Favored Enemy, Natural Explorer",
+      "normalizedCharCount": 71,
+      "classification": "record:table:the-ranger",
+      "targetKey": "table:the-ranger",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p35-l16-prose",
@@ -6059,6 +6478,27 @@
       "emission": "contained"
     },
     {
+      "id": "p39-l29-table-rows",
+      "pageStart": 39,
+      "pageEnd": 39,
+      "lineStart": 29,
+      "lineEnd": 60,
+      "headingPath": [
+        "Rogue",
+        "Class Features",
+        "Hit Points",
+        "The Rogue"
+      ],
+      "sourceContext": "The Rogue",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Sneak Level Bonus Attack Features 1st +2 1d6 Expertise, Sneak Attack, Thieves Cant",
+      "lastPhrase": "9d6 Elusive 19th +6 10d6 Ability Score Improvement 20th +6 10d6 Stroke of Luck",
+      "normalizedCharCount": 679,
+      "classification": "record:table:the-rogue",
+      "targetKey": "table:the-rogue",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p39-l62-prose",
       "pageStart": 39,
       "pageEnd": 39,
@@ -6589,6 +7029,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p42-l12-table-rows",
+      "pageStart": 42,
+      "pageEnd": 42,
+      "lineStart": 12,
+      "lineEnd": 42,
+      "headingPath": [
+        "Sorcerer",
+        "Class Features",
+        "Hit Points",
+        "The Sorcerer"
+      ],
+      "sourceContext": "The Sorcerer",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Sorcery Cantrips Level Bonus Points Features Known 1st +2 Spellcasting, Sorcerous Origin 2nd",
+      "lastPhrase": "Sorcerous Origin feature 19th +6 19 Ability Score Improvement 20th +6 20 Sorcerous Restoration",
+      "normalizedCharCount": 564,
+      "classification": "record:table:the-sorcerer",
+      "targetKey": "table:the-sorcerer",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p42-l43-prose",
       "pageStart": 42,
       "pageEnd": 42,
@@ -6870,6 +7331,27 @@
       "targetKey": "feature:sorcerer:font-of-magic",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p43-l83-table-rows",
+      "pageStart": 43,
+      "pageEnd": 43,
+      "lineStart": 83,
+      "lineEnd": 89,
+      "headingPath": [
+        "Sorcerer",
+        "Class Features",
+        "Font of Magic",
+        "Creating Spell Slots"
+      ],
+      "sourceContext": "Creating Spell Slots",
+      "regionType": "table-rows",
+      "firstPhrase": "Spell Slot Sorcery Level Point Cost 1st 2 2nd 3 3rd 5 4th 6",
+      "lastPhrase": "Sorcery Level Point Cost 1st 2 2nd 3 3rd 5 4th 6 5th 7",
+      "normalizedCharCount": 65,
+      "classification": "record:table:creating-spell-slots",
+      "targetKey": "table:creating-spell-slots",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p43-l90-prose",
@@ -7218,6 +7700,27 @@
       "emission": "contained"
     },
     {
+      "id": "p44-l88-table-rows",
+      "pageStart": 44,
+      "pageEnd": 45,
+      "lineStart": 88,
+      "lineEnd": 8,
+      "headingPath": [
+        "Sorcerer",
+        "Sorcerous Origins",
+        "Draconic Bloodline",
+        "Draconic Ancestry"
+      ],
+      "sourceContext": "Draconic Ancestry",
+      "regionType": "table-rows",
+      "firstPhrase": "Dragon Damage Type Black Acid Blue Lightning Brass Fire Bronze Lightning Copper Acid Gold",
+      "lastPhrase": "Bronze Lightning Copper Acid Gold Fire Green Poison Red Fire Silver Cold White Cold",
+      "normalizedCharCount": 139,
+      "classification": "record:table:draconic-bloodline-draconic-ancestry",
+      "targetKey": "table:draconic-bloodline-draconic-ancestry",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p45-l9-prose",
       "pageStart": 45,
       "pageEnd": 45,
@@ -7411,6 +7914,27 @@
       "targetKey": "class:warlock",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p46-l12-table-rows",
+      "pageStart": 46,
+      "pageEnd": 46,
+      "lineStart": 12,
+      "lineEnd": 13,
+      "headingPath": [
+        "Warlock",
+        "Class Features",
+        "Hit Points",
+        "The Warlock"
+      ],
+      "sourceContext": "The Warlock",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Cantrips Level Bonus Features Known",
+      "lastPhrase": "Proficiency Cantrips Level Bonus Features Known",
+      "normalizedCharCount": 47,
+      "classification": "record:table:the-warlock",
+      "targetKey": "table:the-warlock",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p46-l14-prose",
@@ -8653,6 +9177,27 @@
       "emission": "contained"
     },
     {
+      "id": "p50-l70-table-rows",
+      "pageStart": 50,
+      "pageEnd": 50,
+      "lineStart": 70,
+      "lineEnd": 75,
+      "headingPath": [
+        "Warlock",
+        "Otherworldly Patrons",
+        "The Fiend",
+        "Fiend Expanded Spells"
+      ],
+      "sourceContext": "Fiend Expanded Spells",
+      "regionType": "table-rows",
+      "firstPhrase": "Spell Level Spells 1st burning hands, command 2nd blindness/deafness, scorching ray 3rd fireball, stinking",
+      "lastPhrase": "3rd fireball, stinking cloud 4th fire shield, wall of fire 5th flame strike, hallow",
+      "normalizedCharCount": 167,
+      "classification": "record:table:fiend-expanded-spells",
+      "targetKey": "table:fiend-expanded-spells",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p50-l77-prose",
       "pageStart": 50,
       "pageEnd": 50,
@@ -8847,6 +9392,27 @@
       "targetKey": "class:wizard",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p52-l12-table-rows",
+      "pageStart": 52,
+      "pageEnd": 52,
+      "lineStart": 12,
+      "lineEnd": 13,
+      "headingPath": [
+        "Wizard",
+        "Class Features",
+        "Hit Points",
+        "The Wizard"
+      ],
+      "sourceContext": "The Wizard",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Cantrips Level Bonus Features Known 1st 2nd",
+      "lastPhrase": "Proficiency Cantrips Level Bonus Features Known 1st 2nd",
+      "normalizedCharCount": 55,
+      "classification": "record:table:the-wizard",
+      "targetKey": "table:the-wizard",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p52-l14-prose",
@@ -9433,6 +9999,25 @@
       "emission": "contained"
     },
     {
+      "id": "p56-l36-table-rows",
+      "pageStart": 56,
+      "pageEnd": 56,
+      "lineStart": 36,
+      "lineEnd": 56,
+      "headingPath": [
+        "Beyond 1st Level",
+        "Character Advancement"
+      ],
+      "sourceContext": "Character Advancement",
+      "regionType": "table-rows",
+      "firstPhrase": "Experience Points Level Proficiency Bonus 0 1 +2 300 2 +2 900 3 +2",
+      "lastPhrase": "16 +5 225,000 17 +6 265,000 18 +6 305,000 19 +6 355,000 20 +6",
+      "normalizedCharCount": 288,
+      "classification": "record:table:character-advancement",
+      "targetKey": "table:character-advancement",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p56-l58-prose",
       "pageStart": 56,
       "pageEnd": 56,
@@ -9472,6 +10057,27 @@
       "targetKey": "rule:prerequisites",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p56-l89-table-rows",
+      "pageStart": 56,
+      "pageEnd": 56,
+      "lineStart": 89,
+      "lineEnd": 101,
+      "headingPath": [
+        "Beyond 1st Level",
+        "Multiclassing",
+        "Prerequisites",
+        "Multiclassing Prerequisites"
+      ],
+      "sourceContext": "Multiclassing Prerequisites",
+      "regionType": "table-rows",
+      "firstPhrase": "Class Ability Score Minimum Barbarian Strength 13 Bard Charisma 13 Cleric Wisdom 13 Druid",
+      "lastPhrase": "Wisdom 13 Rogue Dexterity 13 Sorcerer Charisma 13 Warlock Charisma 13 Wizard Intelligence 13",
+      "normalizedCharCount": 320,
+      "classification": "record:table:multiclassing-prerequisites",
+      "targetKey": "table:multiclassing-prerequisites",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p57-l1-prose",
@@ -9556,6 +10162,27 @@
       "targetKey": "rule:proficiencies",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p57-l36-table-rows",
+      "pageStart": 57,
+      "pageEnd": 57,
+      "lineStart": 36,
+      "lineEnd": 55,
+      "headingPath": [
+        "Beyond 1st Level",
+        "Multiclassing",
+        "Proficiencies",
+        "Multiclassing Proficiencies"
+      ],
+      "sourceContext": "Multiclassing Proficiencies",
+      "regionType": "table-rows",
+      "firstPhrase": "Class Proficiencies Gained Barbarian Shields, simple weapons, martial weapons Bard Light armor, one skill",
+      "lastPhrase": "class’s skill list, thieves’ tools Sorcerer — Warlock Light armor, simple weapons Wizard —",
+      "normalizedCharCount": 728,
+      "classification": "record:table:multiclassing-proficiencies",
+      "targetKey": "table:multiclassing-proficiencies",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p57-l57-prose",
@@ -9689,6 +10316,27 @@
       "emission": "contained"
     },
     {
+      "id": "p58-l53-table-rows",
+      "pageStart": 58,
+      "pageEnd": 58,
+      "lineStart": 53,
+      "lineEnd": 73,
+      "headingPath": [
+        "Beyond 1st Level",
+        "Multiclassing",
+        "Class Features",
+        "Multiclass Spellcaster: Spell Slots per Spell Level"
+      ],
+      "sourceContext": "Multiclass Spellcaster: Spell Slots per Spell Level",
+      "regionType": "table-rows",
+      "firstPhrase": "Lvl. 1st 2nd 3rd 4th 5th 6th 7th 8th 9th 1st 2 — —",
+      "lastPhrase": "2 1 1 1 20th 4 3 3 3 3 2 2 1 1",
+      "normalizedCharCount": 491,
+      "classification": "record:table:multiclass-spellcaster-spell-slots-per-spell-level",
+      "targetKey": "table:multiclass-spellcaster-spell-slots-per-spell-level",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p58-l75-prose",
       "pageStart": 58,
       "pageEnd": 58,
@@ -9768,6 +10416,47 @@
       "targetKey": "rule:languages",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p59-l72-table-rows",
+      "pageStart": 59,
+      "pageEnd": 59,
+      "lineStart": 72,
+      "lineEnd": 80,
+      "headingPath": [
+        "Beyond 1st Level",
+        "Languages",
+        "Standard Languages"
+      ],
+      "sourceContext": "Standard Languages",
+      "regionType": "table-rows",
+      "firstPhrase": "Language Typical Speakers Script Common Humans Common Dwarvish Dwarves Dwarvish Elvish Elves Elvish Giant",
+      "lastPhrase": "giants Dwarvish Gnomish Gnomes Dwarvish Goblin Goblinoids Dwarvish Halfling Halflings Common Orc Orcs Dwarvish",
+      "normalizedCharCount": 223,
+      "classification": "record:table:standard-languages",
+      "targetKey": "table:standard-languages",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p59-l82-table-rows",
+      "pageStart": 59,
+      "pageEnd": 59,
+      "lineStart": 82,
+      "lineEnd": 90,
+      "headingPath": [
+        "Beyond 1st Level",
+        "Languages",
+        "Standard Languages",
+        "Exotic Languages"
+      ],
+      "sourceContext": "Exotic Languages",
+      "regionType": "table-rows",
+      "firstPhrase": "Language Typical Speakers Script Abyssal Demons Infernal Celestial Celestials Celestial Draconic Dragons, dragonborn Draconic",
+      "lastPhrase": "Infernal Devils Infernal Primordial Elementals Dwarvish Sylvan Fey creatures Elvish Undercommon Underworld traders Elvish",
+      "normalizedCharCount": 280,
+      "classification": "record:table:exotic-languages",
+      "targetKey": "table:exotic-languages",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p59-l92-prose",
@@ -10086,6 +10775,25 @@
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained",
       "contentMatch": true
+    },
+    {
+      "id": "p62-l36-table-rows",
+      "pageStart": 62,
+      "pageEnd": 62,
+      "lineStart": 36,
+      "lineEnd": 41,
+      "headingPath": [
+        "Equipment",
+        "Standard Exchange Rates"
+      ],
+      "sourceContext": "Standard Exchange Rates",
+      "regionType": "table-rows",
+      "firstPhrase": "Coin CP SP EP GP PP Copper (cp) 1 1/10 1/50 1/100 1/1,000 Silver",
+      "lastPhrase": "Gold (gp) 100 10 2 1 1/10 Platinum (pp) 1,000 100 20 10 1",
+      "normalizedCharCount": 177,
+      "classification": "record:table:standard-exchange-rates",
+      "targetKey": "table:standard-exchange-rates",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p62-l43-prose",
@@ -10540,6 +11248,27 @@
       "targetKey": "rule:getting-into-and-out-of-armor",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p64-l24-table-rows",
+      "pageStart": 64,
+      "pageEnd": 64,
+      "lineStart": 24,
+      "lineEnd": 28,
+      "headingPath": [
+        "Equipment",
+        "Armor",
+        "Getting Into and Out of Armor",
+        "Donning and Doffing Armor"
+      ],
+      "sourceContext": "Donning and Doffing Armor",
+      "regionType": "table-rows",
+      "firstPhrase": "Category Don Doff Light Armor 1 minute 1 minute Medium Armor 5 minutes 1",
+      "lastPhrase": "minutes 1 minute Heavy Armor 10 minutes 5 minutes Shield 1 action 1 action",
+      "normalizedCharCount": 137,
+      "classification": "record:table:donning-and-doffing-armor",
+      "targetKey": "table:donning-and-doffing-armor",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p64-l30-prose",
@@ -12087,6 +12816,26 @@
       "emission": "contained"
     },
     {
+      "id": "p72-l45-table-rows",
+      "pageStart": 72,
+      "pageEnd": 72,
+      "lineStart": 45,
+      "lineEnd": 58,
+      "headingPath": [
+        "Equipment",
+        "Trade Goods",
+        "Trade Goods"
+      ],
+      "sourceContext": "Trade Goods",
+      "regionType": "table-rows",
+      "firstPhrase": "Cost Goods 1 cp 1 lb. of wheat 2 cp 1 lb. of flour",
+      "lastPhrase": "one ox 50 gp 1 lb. of gold 500 gp 1 lb. of platinum",
+      "normalizedCharCount": 444,
+      "classification": "record:table:trade-goods",
+      "targetKey": "table:trade-goods",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p72-l60-prose",
       "pageStart": 72,
       "pageEnd": 72,
@@ -12126,6 +12875,27 @@
       "targetKey": "rule:expenses-lifestyle-expenses",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p72-l91-table-rows",
+      "pageStart": 72,
+      "pageEnd": 73,
+      "lineStart": 91,
+      "lineEnd": 4,
+      "headingPath": [
+        "Equipment",
+        "Expenses",
+        "Lifestyle Expenses",
+        "Lifestyle Expenses"
+      ],
+      "sourceContext": "Lifestyle Expenses",
+      "regionType": "table-rows",
+      "firstPhrase": "Lifestyle Price/Day Wretched — Squalid 1 sp Poor 2 sp Modest 1 gp Comfortable",
+      "lastPhrase": "sp Modest 1 gp Comfortable 2 gp Wealthy 4 gp Aristocratic 10 gp minimum",
+      "normalizedCharCount": 122,
+      "classification": "record:table:lifestyle-expenses",
+      "targetKey": "table:lifestyle-expenses",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p73-l5-prose",
@@ -12216,6 +12986,27 @@
       "emission": "contained"
     },
     {
+      "id": "p73-l97-table-rows",
+      "pageStart": 73,
+      "pageEnd": 74,
+      "lineStart": 97,
+      "lineEnd": 20,
+      "headingPath": [
+        "Equipment",
+        "Expenses",
+        "Food, Drink, and Lodging",
+        "Food, Drink, and Lodging"
+      ],
+      "sourceContext": "Food, Drink, and Lodging",
+      "regionType": "table-rows",
+      "firstPhrase": "Item Cost Ale Gallon 2 sp Mug 4 cp Banquet (per person) 10 gp",
+      "lastPhrase": "gp Meat, chunk 3 sp Wine Common (pitcher) 2 sp Fine (bottle) 10 gp",
+      "normalizedCharCount": 361,
+      "classification": "record:table:food-drink-and-lodging",
+      "targetKey": "table:food-drink-and-lodging",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p74-l22-prose",
       "pageStart": 74,
       "pageEnd": 74,
@@ -12235,6 +13026,27 @@
       "targetKey": "rule:services",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p74-l52-table-rows",
+      "pageStart": 74,
+      "pageEnd": 74,
+      "lineStart": 52,
+      "lineEnd": 61,
+      "headingPath": [
+        "Equipment",
+        "Expenses",
+        "Services",
+        "Services"
+      ],
+      "sourceContext": "Services",
+      "regionType": "table-rows",
+      "firstPhrase": "Service Pay Coach cab Between towns 3 cp per mile Within a city 1",
+      "lastPhrase": "per mile Road or gate toll 1 cp Ship’s passage 1 sp per mile",
+      "normalizedCharCount": 197,
+      "classification": "record:table:services",
+      "targetKey": "table:services",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p74-l62-prose",
@@ -12358,6 +13170,26 @@
       "emission": "contained"
     },
     {
+      "id": "p76-l38-table-rows",
+      "pageStart": 76,
+      "pageEnd": 76,
+      "lineStart": 38,
+      "lineEnd": 54,
+      "headingPath": [
+        "Using Ability Scores",
+        "Ability Scores and Modifiers",
+        "Ability Scores and Modifiers"
+      ],
+      "sourceContext": "Ability Scores and Modifiers",
+      "regionType": "table-rows",
+      "firstPhrase": "Score Modifier 1 −5 2–3 −4 4–5 −3 6–7 −2 8–9 −1 10–11 +0",
+      "lastPhrase": "18–19 +4 20–21 +5 22–23 +6 24–25 +7 26–27 +8 28–29 +9 30 +10",
+      "normalizedCharCount": 144,
+      "classification": "record:table:ability-scores-and-modifiers",
+      "targetKey": "table:ability-scores-and-modifiers",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p76-l55-prose",
       "pageStart": 76,
       "pageEnd": 76,
@@ -12457,6 +13289,26 @@
       "targetKey": "rule:ability-checks",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p77-l50-table-rows",
+      "pageStart": 77,
+      "pageEnd": 77,
+      "lineStart": 50,
+      "lineEnd": 56,
+      "headingPath": [
+        "Using Ability Scores",
+        "Ability Checks",
+        "Typical Difficulty Classes"
+      ],
+      "sourceContext": "Typical Difficulty Classes",
+      "regionType": "table-rows",
+      "firstPhrase": "Task Difficulty DC Very easy 5 Easy 10 Medium 15 Hard 20 Very hard",
+      "lastPhrase": "easy 5 Easy 10 Medium 15 Hard 20 Very hard 25 Nearly impossible 30",
+      "normalizedCharCount": 90,
+      "classification": "record:table:difficulty-classes",
+      "targetKey": "table:difficulty-classes",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p77-l57-prose",
@@ -13556,6 +14408,27 @@
       "emission": "contained"
     },
     {
+      "id": "p84-l88-table-rows",
+      "pageStart": 84,
+      "pageEnd": 84,
+      "lineStart": 88,
+      "lineEnd": 96,
+      "headingPath": [
+        "Using Ability Scores",
+        "Movement",
+        "Speed",
+        "Travel Pace"
+      ],
+      "sourceContext": "Travel Pace",
+      "regionType": "table-rows",
+      "firstPhrase": "Pace Distance Traveled per . . . Minute Hour Day Effect Fast 400 4",
+      "lastPhrase": "feet miles miles Slow 200 2 18 Able to use stealth feet miles miles",
+      "normalizedCharCount": 221,
+      "classification": "record:table:travel-pace",
+      "targetKey": "table:travel-pace",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p85-l1-prose",
       "pageStart": 85,
       "pageEnd": 85,
@@ -14642,6 +15515,27 @@
       "targetKey": "rule:creature-size",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p92-l56-table-rows",
+      "pageStart": 92,
+      "pageEnd": 92,
+      "lineStart": 56,
+      "lineEnd": 62,
+      "headingPath": [
+        "Using Ability Scores",
+        "Movement and Position",
+        "Creature Size",
+        "Size Categories"
+      ],
+      "sourceContext": "Size Categories",
+      "regionType": "table-rows",
+      "firstPhrase": "Size Space Tiny 2½ by 2½ ft. Small 5 by 5 ft. Medium 5",
+      "lastPhrase": "10 ft. Huge 15 by 15 ft. Gargantuan 20 by 20 ft. or larger",
+      "normalizedCharCount": 134,
+      "classification": "record:table:size-categories",
+      "targetKey": "table:size-categories",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p92-l64-prose",
@@ -20273,6 +21167,27 @@
       "emission": "contained"
     },
     {
+      "id": "p116-l56-table-rows",
+      "pageStart": 116,
+      "pageEnd": 116,
+      "lineStart": 56,
+      "lineEnd": 63,
+      "headingPath": [
+        "Spellcasting",
+        "Spell Descriptions",
+        "Acid Arrow",
+        "Animated Object Statistics"
+      ],
+      "sourceContext": "Animated Object Statistics",
+      "regionType": "table-rows",
+      "firstPhrase": "Size HP AC Attack Str Dex Tiny 20 18 +8 to hit, 1d4 +",
+      "lastPhrase": "10 damage Huge 80 10 +8 to hit, 2d12 + 4 18 6 damage",
+      "normalizedCharCount": 243,
+      "classification": "record:table:animated-object-statistics",
+      "targetKey": "table:animated-object-statistics",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p116-l64-prose",
       "pageStart": 116,
       "pageEnd": 116,
@@ -21630,6 +22545,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p127-l41-table-rows",
+      "pageStart": 127,
+      "pageEnd": 127,
+      "lineStart": 41,
+      "lineEnd": 51,
+      "headingPath": [
+        "Spellcasting",
+        "Spell Descriptions",
+        "Acid Arrow",
+        "Confusion"
+      ],
+      "sourceContext": "d10 Behavior",
+      "regionType": "table-rows",
+      "firstPhrase": "1 The creature uses all its movement to move in a random direction. To",
+      "lastPhrase": "the creature does nothing this turn. 9–10 The creature can act and move normally.",
+      "normalizedCharCount": 487,
+      "classification": "record:table:confusion-behavior",
+      "targetKey": "table:confusion-behavior",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p127-l52-prose",
       "pageStart": 127,
       "pageEnd": 127,
@@ -22045,6 +22981,69 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p131-l43-table-rows",
+      "pageStart": 131,
+      "pageEnd": 131,
+      "lineStart": 43,
+      "lineEnd": 48,
+      "headingPath": [
+        "Spellcasting",
+        "Spell Descriptions",
+        "Acid Arrow",
+        "Precipitation"
+      ],
+      "sourceContext": "Precipitation",
+      "regionType": "table-rows",
+      "firstPhrase": "Stage Condition 1 Clear 2 Light clouds 3 Overcast or ground fog 4 Rain,",
+      "lastPhrase": "ground fog 4 Rain, hail, or snow 5 Torrential rain, driving hail, or blizzard",
+      "normalizedCharCount": 130,
+      "classification": "record:table:precipitation",
+      "targetKey": "table:precipitation",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p131-l50-table-rows",
+      "pageStart": 131,
+      "pageEnd": 131,
+      "lineStart": 50,
+      "lineEnd": 56,
+      "headingPath": [
+        "Spellcasting",
+        "Spell Descriptions",
+        "Acid Arrow",
+        "Temperature"
+      ],
+      "sourceContext": "Temperature",
+      "regionType": "table-rows",
+      "firstPhrase": "Stage Condition 1 Unbearable heat 2 Hot 3 Warm 4 Cool 5 Cold 6",
+      "lastPhrase": "1 Unbearable heat 2 Hot 3 Warm 4 Cool 5 Cold 6 Arctic cold",
+      "normalizedCharCount": 74,
+      "classification": "record:table:temperature",
+      "targetKey": "table:temperature",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p131-l58-table-rows",
+      "pageStart": 131,
+      "pageEnd": 131,
+      "lineStart": 58,
+      "lineEnd": 63,
+      "headingPath": [
+        "Spellcasting",
+        "Spell Descriptions",
+        "Acid Arrow",
+        "Wind"
+      ],
+      "sourceContext": "Wind",
+      "regionType": "table-rows",
+      "firstPhrase": "Stage Condition 1 Calm 2 Moderate wind 3 Strong wind 4 Gale 5 Storm",
+      "lastPhrase": "Stage Condition 1 Calm 2 Moderate wind 3 Strong wind 4 Gale 5 Storm",
+      "normalizedCharCount": 67,
+      "classification": "record:table:wind",
+      "targetKey": "table:wind",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p131-l65-prose",
       "pageStart": 131,
       "pageEnd": 131,
@@ -22174,6 +23173,27 @@
       "targetKey": "spell:creation",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p132-l83-table-rows",
+      "pageStart": 132,
+      "pageEnd": 132,
+      "lineStart": 83,
+      "lineEnd": 87,
+      "headingPath": [
+        "Spellcasting",
+        "Spell Descriptions",
+        "Acid Arrow",
+        "Creation"
+      ],
+      "sourceContext": "Material Duration",
+      "regionType": "table-rows",
+      "firstPhrase": "Vegetable matter 1 day Stone or crystal 12 hours Precious metals 1 hour Gems",
+      "lastPhrase": "12 hours Precious metals 1 hour Gems 10 minutes Adamantine or mithral 1 minute",
+      "normalizedCharCount": 118,
+      "classification": "record:table:creation-material-duration",
+      "targetKey": "table:creation-material-duration",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p132-l88-prose",
@@ -27436,6 +28456,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p174-l65-table-rows",
+      "pageStart": 174,
+      "pageEnd": 174,
+      "lineStart": 65,
+      "lineEnd": 78,
+      "headingPath": [
+        "Spellcasting",
+        "Spell Descriptions",
+        "Acid Arrow",
+        "Reincarnate"
+      ],
+      "sourceContext": "d100 Race",
+      "regionType": "table-rows",
+      "firstPhrase": "01–04 Dragonborn 05–13 Dwarf, hill 14–21 Dwarf, mountain 22–25 Elf, dark 26–34 Elf, high",
+      "lastPhrase": "53–56 Half-elf 57–60 Half-orc 61–68 Halfling, lightfoot 69–76 Halfling, stout 77–96 Human 97–00 Tiefling",
+      "normalizedCharCount": 247,
+      "classification": "record:table:reincarnate-race",
+      "targetKey": "table:reincarnate-race",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p174-l79-prose",
       "pageStart": 174,
       "pageEnd": 174,
@@ -27786,6 +28827,27 @@
       "targetKey": "spell:scrying",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p176-l88-table-rows",
+      "pageStart": 176,
+      "pageEnd": 176,
+      "lineStart": 88,
+      "lineEnd": 94,
+      "headingPath": [
+        "Spellcasting",
+        "Spell Descriptions",
+        "Acid Arrow",
+        "Scrying"
+      ],
+      "sourceContext": "Knowledge Save Modifier",
+      "regionType": "table-rows",
+      "firstPhrase": "Secondhand (you have heard of the target) +5 Firsthand (you have met the target)",
+      "lastPhrase": "garment −4 Body part, lock of hair, bit of nail, or the like −10",
+      "normalizedCharCount": 249,
+      "classification": "record:table:scrying-knowledge",
+      "targetKey": "table:scrying-knowledge",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p177-l0-prose",
@@ -28930,6 +29992,27 @@
       "emission": "contained"
     },
     {
+      "id": "p186-l10-table-rows",
+      "pageStart": 186,
+      "pageEnd": 186,
+      "lineStart": 10,
+      "lineEnd": 20,
+      "headingPath": [
+        "Spellcasting",
+        "Spell Descriptions",
+        "Acid Arrow",
+        "Teleport"
+      ],
+      "sourceContext": "Similar Off On",
+      "regionType": "table-rows",
+      "firstPhrase": "Familiarity Mishap Area Target Target Permanent — — — 01–100 circle Associated — —",
+      "lastPhrase": "44–53 54–73 74–100 Description 01–43 44–53 54–73 74–100 False 01–50 51–100 — — destination",
+      "normalizedCharCount": 285,
+      "classification": "record:table:teleport-familiarity",
+      "targetKey": "table:teleport-familiarity",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p186-l21-prose",
       "pageStart": 186,
       "pageEnd": 186,
@@ -30026,6 +31109,48 @@
       "emission": "contained"
     },
     {
+      "id": "p196-l22-table-rows",
+      "pageStart": 196,
+      "pageEnd": 196,
+      "lineStart": 22,
+      "lineEnd": 25,
+      "headingPath": [
+        "Spellcasting",
+        "Traps",
+        "Traps in Play",
+        "Trap Save DCs and Attack Bonuses"
+      ],
+      "sourceContext": "Trap Save DCs and Attack Bonuses",
+      "regionType": "table-rows",
+      "firstPhrase": "Trap Danger Save DC Attack Bonus Setback 10–11 +3 to +5 Dangerous 12–15 +6",
+      "lastPhrase": "10–11 +3 to +5 Dangerous 12–15 +6 to +8 Deadly 16–20 +9 to +12",
+      "normalizedCharCount": 103,
+      "classification": "record:table:trap-save-dcs-and-attack-bonuses",
+      "targetKey": "table:trap-save-dcs-and-attack-bonuses",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p196-l27-table-rows",
+      "pageStart": 196,
+      "pageEnd": 196,
+      "lineStart": 27,
+      "lineEnd": 31,
+      "headingPath": [
+        "Spellcasting",
+        "Traps",
+        "Traps in Play",
+        "Damage Severity by Level"
+      ],
+      "sourceContext": "Damage Severity by Level",
+      "regionType": "table-rows",
+      "firstPhrase": "Character Level Setback Dangerous Deadly 1st–4th 1d10 2d10 4d10 5th–10th 2d10 4d10 10d10 11th–16th",
+      "lastPhrase": "2d10 4d10 5th–10th 2d10 4d10 10d10 11th–16th 4d10 10d10 18d10 17th–20th 10d10 18d10 24d10",
+      "normalizedCharCount": 143,
+      "classification": "record:table:damage-severity-by-level",
+      "targetKey": "table:damage-severity-by-level",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p196-l33-prose",
       "pageStart": 196,
       "pageEnd": 196,
@@ -30546,6 +31671,69 @@
       "emission": "contained"
     },
     {
+      "id": "p201-l37-table-rows",
+      "pageStart": 201,
+      "pageEnd": 201,
+      "lineStart": 37,
+      "lineEnd": 60,
+      "headingPath": [
+        "Spellcasting",
+        "Madness",
+        "Madness Effects",
+        "Short-Term Madness"
+      ],
+      "sourceContext": "Short-Term Madness",
+      "regionType": "table-rows",
+      "firstPhrase": "d100 Effect (lasts 1d10 minutes) 01–20 The character retreats into his or her mind",
+      "lastPhrase": "dirt, slime, or offal. 81–90 The character is stunned. 91–100 The character falls unconscious.",
+      "normalizedCharCount": 941,
+      "classification": "record:table:short-term-madness",
+      "targetKey": "table:short-term-madness",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p201-l62-table-rows",
+      "pageStart": 201,
+      "pageEnd": 201,
+      "lineStart": 62,
+      "lineEnd": 101,
+      "headingPath": [
+        "Spellcasting",
+        "Madness",
+        "Madness Effects",
+        "Long-Term Madness"
+      ],
+      "sourceContext": "Long-Term Madness",
+      "regionType": "table-rows",
+      "firstPhrase": "d100 Effect (lasts 1d10 × 10 hours) 01–10 The character feels compelled to repeat",
+      "lastPhrase": "The character falls unconscious. No amount of jostling or damage can wake the character.",
+      "normalizedCharCount": 1710,
+      "classification": "record:table:long-term-madness",
+      "targetKey": "table:long-term-madness",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p202-l1-table-rows",
+      "pageStart": 202,
+      "pageEnd": 202,
+      "lineStart": 1,
+      "lineEnd": 25,
+      "headingPath": [
+        "Spellcasting",
+        "Madness",
+        "Madness Effects",
+        "Indefinite Madness"
+      ],
+      "sourceContext": "Indefinite Madness",
+      "regionType": "table-rows",
+      "firstPhrase": "d100 Flaw (lasts until cured) 01–15 “Being drunk keeps me sane.” 16–25 “I keep",
+      "lastPhrase": "the funnier I find it.” 96–100 “I’ve discovered that I really like killing people.”",
+      "normalizedCharCount": 1013,
+      "classification": "record:table:indefinite-madness",
+      "targetKey": "table:indefinite-madness",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p202-l27-prose",
       "pageStart": 202,
       "pageEnd": 202,
@@ -30608,6 +31796,27 @@
       "emission": "contained"
     },
     {
+      "id": "p203-l25-table-rows",
+      "pageStart": 203,
+      "pageEnd": 203,
+      "lineStart": 25,
+      "lineEnd": 32,
+      "headingPath": [
+        "Spellcasting",
+        "Objects",
+        "Statistics for Objects",
+        "Object Armor Class"
+      ],
+      "sourceContext": "Object Armor Class",
+      "regionType": "table-rows",
+      "firstPhrase": "Substance AC Cloth, paper, rope 11 Crystal, glass, ice 13 Wood, bone 15 Stone",
+      "lastPhrase": "ice 13 Wood, bone 15 Stone 17 Iron, steel 19 Mithral 21 Adamantine 23",
+      "normalizedCharCount": 120,
+      "classification": "record:table:object-armor-class",
+      "targetKey": "table:object-armor-class",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p203-l33-prose",
       "pageStart": 203,
       "pageEnd": 203,
@@ -30628,6 +31837,27 @@
       "targetKey": "rule:objects",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p203-l43-table-rows",
+      "pageStart": 203,
+      "pageEnd": 203,
+      "lineStart": 43,
+      "lineEnd": 47,
+      "headingPath": [
+        "Spellcasting",
+        "Objects",
+        "Statistics for Objects",
+        "Object Hit Points"
+      ],
+      "sourceContext": "Object Hit Points",
+      "regionType": "table-rows",
+      "firstPhrase": "Size Fragile Resilient Tiny (bottle, lock) 2 (1d4) 5 (2d4) Small (chest, lute) 3",
+      "lastPhrase": "(barrel, chandelier) 4 (1d8) 18 (4d8) Large (cart, 10-ft.-by-10-ft. window) 5 (1d10) 27 (5d10)",
+      "normalizedCharCount": 197,
+      "classification": "record:table:object-hit-points",
+      "targetKey": "table:object-hit-points",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p203-l48-prose",
@@ -31174,6 +32404,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p208-l47-table-rows",
+      "pageStart": 208,
+      "pageEnd": 208,
+      "lineStart": 47,
+      "lineEnd": 78,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Apparatus of the Crab Levers"
+      ],
+      "sourceContext": "Apparatus of the Crab Levers",
+      "regionType": "table-rows",
+      "firstPhrase": "Lever Up Down 1 Legs and tail extend, Legs and tail retract, allowing the",
+      "lastPhrase": "liquid. 10 The rear hatch unseals The rear hatch closes and opens. and seals.",
+      "normalizedCharCount": 1132,
+      "classification": "record:table:apparatus-of-the-crab-levers",
+      "targetKey": "table:apparatus-of-the-crab-levers",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p208-l80-prose",
       "pageStart": 208,
       "pageEnd": 208,
@@ -31238,6 +32489,27 @@
       "targetKey": "magic-item:armor-of-resistance",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p209-l1-table-rows",
+      "pageStart": 209,
+      "pageEnd": 209,
+      "lineStart": 1,
+      "lineEnd": 5,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Armor of Resistance"
+      ],
+      "sourceContext": "d10 Damage Type d10 Damage Type",
+      "regionType": "table-rows",
+      "firstPhrase": "1 Acid 6 Necrotic 2 Cold 7 Poison 3 Fire 8 Psychic 4 Force",
+      "lastPhrase": "7 Poison 3 Fire 8 Psychic 4 Force 9 Radiant 5 Lightning 10 Thunder",
+      "normalizedCharCount": 91,
+      "classification": "record:table:armor-of-resistance",
+      "targetKey": "table:armor-of-resistance",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p209-l7-prose",
@@ -31328,6 +32600,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p209-l64-table-rows",
+      "pageStart": 209,
+      "pageEnd": 210,
+      "lineStart": 64,
+      "lineEnd": 14,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Bag of Beans"
+      ],
+      "sourceContext": "d100 Effect",
+      "regionType": "table-rows",
+      "firstPhrase": "01 5d4 toadstools sprout. If a creature eats a toadstool, roll any die. On",
+      "lastPhrase": "to a great view, a cloud giant’s castle, or a different plane of existence.",
+      "normalizedCharCount": 2265,
+      "classification": "record:table:bag-of-beans",
+      "targetKey": "table:bag-of-beans",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p210-l16-prose",
       "pageStart": 210,
       "pageEnd": 210,
@@ -31416,6 +32709,69 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p210-l94-table-rows",
+      "pageStart": 210,
+      "pageEnd": 211,
+      "lineStart": 94,
+      "lineEnd": 1,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Gray Bag of Tricks"
+      ],
+      "sourceContext": "Gray Bag of Tricks",
+      "regionType": "table-rows",
+      "firstPhrase": "d8 Creature 1 Weasel 2 Giant rat 3 Badger 4 Boar 5 Panther 6",
+      "lastPhrase": "Badger 4 Boar 5 Panther 6 Giant badger 7 Dire wolf 8 Giant elk",
+      "normalizedCharCount": 97,
+      "classification": "record:table:gray-bag-of-tricks",
+      "targetKey": "table:gray-bag-of-tricks",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p211-l3-table-rows",
+      "pageStart": 211,
+      "pageEnd": 211,
+      "lineStart": 3,
+      "lineEnd": 11,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Rust Bag of Tricks"
+      ],
+      "sourceContext": "Rust Bag of Tricks",
+      "regionType": "table-rows",
+      "firstPhrase": "d8 Creature 1 Rat 2 Owl 3 Mastiff 4 Goat 5 Giant goat 6",
+      "lastPhrase": "Mastiff 4 Goat 5 Giant goat 6 Giant boar 7 Lion 8 Brown bear",
+      "normalizedCharCount": 86,
+      "classification": "record:table:rust-bag-of-tricks",
+      "targetKey": "table:rust-bag-of-tricks",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
+      "id": "p211-l13-table-rows",
+      "pageStart": 211,
+      "pageEnd": 211,
+      "lineStart": 13,
+      "lineEnd": 21,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Tan Bag of Tricks"
+      ],
+      "sourceContext": "Tan Bag of Tricks",
+      "regionType": "table-rows",
+      "firstPhrase": "d8 Creature 1 Jackal 2 Ape 3 Baboon 4 Axe beak 5 Black bear",
+      "lastPhrase": "4 Axe beak 5 Black bear 6 Giant weasel 7 Giant hyena 8 Tiger",
+      "normalizedCharCount": 96,
+      "classification": "record:table:tan-bag-of-tricks",
+      "targetKey": "table:tan-bag-of-tricks",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p211-l23-prose",
       "pageStart": 211,
       "pageEnd": 211,
@@ -31480,6 +32836,27 @@
       "targetKey": "magic-item:belt-of-giant-strength",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p211-l76-table-rows",
+      "pageStart": 211,
+      "pageEnd": 211,
+      "lineStart": 76,
+      "lineEnd": 80,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Belt of Giant Strength"
+      ],
+      "sourceContext": "Type Strength Rarity",
+      "regionType": "table-rows",
+      "firstPhrase": "Hill giant 21 Rare Stone/frost giant 23 Very rare Fire giant 25 Very rare",
+      "lastPhrase": "rare Fire giant 25 Very rare Cloud giant 27 Legendary Storm giant 29 Legendary",
+      "normalizedCharCount": 123,
+      "classification": "record:table:belt-of-giant-strength",
+      "targetKey": "table:belt-of-giant-strength",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p211-l82-prose",
@@ -31790,6 +33167,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p213-l24-table-rows",
+      "pageStart": 213,
+      "pageEnd": 213,
+      "lineStart": 24,
+      "lineEnd": 32,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Candle of Invocation"
+      ],
+      "sourceContext": "d20 Alignment",
+      "regionType": "table-rows",
+      "firstPhrase": "1–2 Chaotic evil 3–4 Chaotic neutral 5–7 Chaotic good 8–9 Neutral evil 10–11 Neutral",
+      "lastPhrase": "10–11 Neutral 12–13 Neutral good 14–15 Lawful evil 16–17 Lawful neutral 18–20 Lawful good",
+      "normalizedCharCount": 160,
+      "classification": "record:table:candle-of-invocation",
+      "targetKey": "table:candle-of-invocation",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p213-l33-prose",
       "pageStart": 213,
       "pageEnd": 213,
@@ -31876,6 +33274,27 @@
       "targetKey": "magic-item:carpet-of-flying",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p213-l72-table-rows",
+      "pageStart": 213,
+      "pageEnd": 213,
+      "lineStart": 72,
+      "lineEnd": 75,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Carpet of Flying"
+      ],
+      "sourceContext": "d100 Size Capacity Flying Speed",
+      "regionType": "table-rows",
+      "firstPhrase": "01–20 3 ft. × 5 ft. 200 lb. 80 feet 21–55 4 ft. ×",
+      "lastPhrase": "600 lb. 40 feet 81–100 6 ft. × 9 ft. 800 lb. 30 feet",
+      "normalizedCharCount": 144,
+      "classification": "record:table:carpet-of-flying",
+      "targetKey": "table:carpet-of-flying",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p213-l76-prose",
@@ -32208,6 +33627,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p215-l32-table-rows",
+      "pageStart": 215,
+      "pageEnd": 215,
+      "lineStart": 32,
+      "lineEnd": 44,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Cube of Force Faces"
+      ],
+      "sourceContext": "Cube of Force Faces",
+      "regionType": "table-rows",
+      "firstPhrase": "Face Charges Effect 1 1 Gases, wind, and fog can’t pass through the barrier.",
+      "lastPhrase": "floors, and ceilings can pass through at your discretion. 6 0 The barrier deactivates.",
+      "normalizedCharCount": 430,
+      "classification": "record:table:cube-of-force-faces",
+      "targetKey": "table:cube-of-force-faces",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p215-l45-prose",
       "pageStart": 215,
       "pageEnd": 215,
@@ -32228,6 +33668,27 @@
       "targetKey": "magic-item:cube-of-force",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p215-l50-table-rows",
+      "pageStart": 215,
+      "pageEnd": 215,
+      "lineStart": 50,
+      "lineEnd": 54,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Cube of Force Faces"
+      ],
+      "sourceContext": "Spell or Item Charges Lost",
+      "regionType": "table-rows",
+      "firstPhrase": "Disintegrate 1d12 Horn of blasting 1d10 Passwall 1d6 Prismatic spray 1d20 Wall of fire",
+      "lastPhrase": "1d12 Horn of blasting 1d10 Passwall 1d6 Prismatic spray 1d20 Wall of fire 1d4",
+      "normalizedCharCount": 90,
+      "classification": "record:table:cube-of-force-charges-lost",
+      "targetKey": "table:cube-of-force-charges-lost",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p215-l56-prose",
@@ -32384,6 +33845,27 @@
       "emission": "contained"
     },
     {
+      "id": "p216-l56-table-rows",
+      "pageStart": 216,
+      "pageEnd": 216,
+      "lineStart": 56,
+      "lineEnd": 88,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Deck of Illusions"
+      ],
+      "sourceContext": "Playing Card Illusion",
+      "regionType": "table-rows",
+      "firstPhrase": "Ace of hearts Red dragon King of hearts Knight and four guards Queen of",
+      "lastPhrase": "Eight of clubs Orc Two of clubs Kobold Jokers (2) You (the deck’s owner)",
+      "normalizedCharCount": 869,
+      "classification": "record:table:deck-of-illusions",
+      "targetKey": "table:deck-of-illusions",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p216-l90-prose",
       "pageStart": 216,
       "pageEnd": 216,
@@ -32426,6 +33908,27 @@
       "targetKey": "magic-item:deck-of-many-things",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p217-l11-table-rows",
+      "pageStart": 217,
+      "pageEnd": 217,
+      "lineStart": 11,
+      "lineEnd": 33,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Deck of Many Things"
+      ],
+      "sourceContext": "Playing Card Card",
+      "regionType": "table-rows",
+      "firstPhrase": "Ace of diamonds Vizier* King of diamonds Sun Queen of diamonds Moon Jack of",
+      "lastPhrase": "TM) Fool* Joker (without TM) Jester *Found only in a deck with twenty-two cards",
+      "normalizedCharCount": 528,
+      "classification": "record:table:deck-of-many-things",
+      "targetKey": "table:deck-of-many-things",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p217-l34-prose",
@@ -32650,6 +34153,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p219-l37-table-rows",
+      "pageStart": 219,
+      "pageEnd": 219,
+      "lineStart": 37,
+      "lineEnd": 41,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Dragon Scale Mail"
+      ],
+      "sourceContext": "Dragon Resistance Dragon Resistance",
+      "regionType": "table-rows",
+      "firstPhrase": "Black Acid Gold Fire Blue Lightning Green Poison Brass Fire Red Fire Bronze Lightning",
+      "lastPhrase": "Green Poison Brass Fire Red Fire Bronze Lightning Silver Cold Copper Acid White Cold",
+      "normalizedCharCount": 120,
+      "classification": "record:table:dragon-scale-mail",
+      "targetKey": "table:dragon-scale-mail",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p219-l43-prose",
       "pageStart": 219,
       "pageEnd": 219,
@@ -32848,6 +34372,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p220-l40-table-rows",
+      "pageStart": 220,
+      "pageEnd": 220,
+      "lineStart": 40,
+      "lineEnd": 53,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Efreeti Bottle"
+      ],
+      "sourceContext": "d100 Effect",
+      "regionType": "table-rows",
+      "firstPhrase": "01–10 The efreeti attacks you. After fighting for 5 rounds, the efreeti disappears, and",
+      "lastPhrase": "grants the final wish or after 1 hour, and the bottle loses its magic.",
+      "normalizedCharCount": 620,
+      "classification": "record:table:efreeti-bottle",
+      "targetKey": "table:efreeti-bottle",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p220-l55-prose",
       "pageStart": 220,
       "pageEnd": 220,
@@ -32868,6 +34413,27 @@
       "targetKey": "magic-item:elemental-gem",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p220-l62-table-rows",
+      "pageStart": 220,
+      "pageEnd": 220,
+      "lineStart": 62,
+      "lineEnd": 65,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Elemental Gem"
+      ],
+      "sourceContext": "Gem Summoned Elemental",
+      "regionType": "table-rows",
+      "firstPhrase": "Blue sapphire Air elemental Yellow diamond Earth elemental Red corundum Fire elemental Emerald Water",
+      "lastPhrase": "sapphire Air elemental Yellow diamond Earth elemental Red corundum Fire elemental Emerald Water elemental",
+      "normalizedCharCount": 110,
+      "classification": "record:table:elemental-gem",
+      "targetKey": "table:elemental-gem",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p220-l67-prose",
@@ -33022,6 +34588,27 @@
       "targetKey": "magic-item:feather-token",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p221-l26-table-rows",
+      "pageStart": 221,
+      "pageEnd": 221,
+      "lineStart": 26,
+      "lineEnd": 28,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Feather Token"
+      ],
+      "sourceContext": "d100 Feather Token d100 Feather Token",
+      "regionType": "table-rows",
+      "firstPhrase": "01–20 Anchor 51–65 Swan boat 21–35 Bird 66–90 Tree 36–50 Fan 91–00 Whip",
+      "lastPhrase": "01–20 Anchor 51–65 Swan boat 21–35 Bird 66–90 Tree 36–50 Fan 91–00 Whip",
+      "normalizedCharCount": 71,
+      "classification": "record:table:feather-token",
+      "targetKey": "table:feather-token",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p221-l29-prose",
@@ -33750,6 +35337,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p226-l36-table-rows",
+      "pageStart": 226,
+      "pageEnd": 226,
+      "lineStart": 36,
+      "lineEnd": 43,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Horn of Valhalla"
+      ],
+      "sourceContext": "d100 Horn Berserkers Requirement",
+      "regionType": "table-rows",
+      "firstPhrase": "Type Summoned 01–40 Silver 2d4 + 2 None 41–75 Brass 3d4 + 3 Proficiency",
+      "lastPhrase": "with all medium armor 91–00 Iron 5d4 + 5 Proficiency with all martial weapons",
+      "normalizedCharCount": 206,
+      "classification": "record:table:horn-of-valhalla",
+      "targetKey": "table:horn-of-valhalla",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p226-l44-prose",
       "pageStart": 226,
       "pageEnd": 226,
@@ -33968,6 +35576,27 @@
       "targetKey": "magic-item:iron-flask",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p228-l52-table-rows",
+      "pageStart": 228,
+      "pageEnd": 228,
+      "lineStart": 52,
+      "lineEnd": 85,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Iron Flask"
+      ],
+      "sourceContext": "d100 Contents",
+      "regionType": "table-rows",
+      "firstPhrase": "Empty 1 50 Demon (type 1) 51 54 Demon (type 2) 55 58 Demon",
+      "lastPhrase": "87 90 91 Planetar Salamander 92 95 96 Solar Succubus/incubus 97 99 100 Xorn",
+      "normalizedCharCount": 340,
+      "classification": "record:table:iron-flask",
+      "targetKey": "table:iron-flask",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p228-l87-prose",
@@ -34212,6 +35841,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p229-l90-table-rows",
+      "pageStart": 229,
+      "pageEnd": 229,
+      "lineStart": 90,
+      "lineEnd": 93,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Manual of Golems"
+      ],
+      "sourceContext": "d20 Golem Time Cost",
+      "regionType": "table-rows",
+      "firstPhrase": "1–5 Clay 30 days 65,000 gp 6–17 Flesh 60 days 50,000 gp 18 Iron",
+      "lastPhrase": "50,000 gp 18 Iron 120 days 100,000 gp 19–20 Stone 90 days 80,000 gp",
+      "normalizedCharCount": 113,
+      "classification": "record:table:manual-of-golems",
+      "targetKey": "table:manual-of-golems",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p230-l0-prose",
       "pageStart": 230,
       "pageEnd": 230,
@@ -34452,6 +36102,27 @@
       "targetKey": "magic-item:necklace-of-prayer-beads",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p231-l49-table-rows",
+      "pageStart": 231,
+      "pageEnd": 231,
+      "lineStart": 49,
+      "lineEnd": 56,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Necklace of Prayer Beads"
+      ],
+      "sourceContext": "d20 Bead of … Spell",
+      "regionType": "table-rows",
+      "firstPhrase": "1–6 Blessing Bless 7–12 Curing Cure wounds (2nd level) or lesser restoration 13–16 Favor",
+      "lastPhrase": "restoration 17–18 Smiting Branding smite 19 Summons Planar ally 20 Wind Wind walk walking",
+      "normalizedCharCount": 186,
+      "classification": "record:table:necklace-of-prayer-beads",
+      "targetKey": "table:necklace-of-prayer-beads",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p231-l58-prose",
@@ -35004,6 +36675,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p234-l28-table-rows",
+      "pageStart": 234,
+      "pageEnd": 234,
+      "lineStart": 28,
+      "lineEnd": 32,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Potion of Giant Strength"
+      ],
+      "sourceContext": "Type of Giant Strength Rarity",
+      "regionType": "table-rows",
+      "firstPhrase": "Hill giant 21 Uncommon Frost/stone giant 23 Rare Fire giant 25 Rare Cloud giant",
+      "lastPhrase": "Rare Fire giant 25 Rare Cloud giant 27 Very rare Storm giant 29 Legendary",
+      "normalizedCharCount": 117,
+      "classification": "record:table:potion-of-giant-strength",
+      "targetKey": "table:potion-of-giant-strength",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p234-l34-prose",
       "pageStart": 234,
       "pageEnd": 234,
@@ -35068,6 +36760,27 @@
       "targetKey": "magic-item:potion-of-healing",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p234-l49-table-rows",
+      "pageStart": 234,
+      "pageEnd": 234,
+      "lineStart": 49,
+      "lineEnd": 53,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Potions of Healing"
+      ],
+      "sourceContext": "Potions of Healing",
+      "regionType": "table-rows",
+      "firstPhrase": "Potion of … Rarity HP Regained Healing Common 2d4 + 2 Greater healing Uncommon",
+      "lastPhrase": "4 Superior healing Rare 8d4 + 8 Supreme healing Very rare 10d4 + 20",
+      "normalizedCharCount": 152,
+      "classification": "record:table:potions-of-healing",
+      "targetKey": "table:potions-of-healing",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p234-l55-prose",
@@ -35178,6 +36891,27 @@
       "targetKey": "magic-item:potion-of-resistance",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
+    },
+    {
+      "id": "p235-l7-table-rows",
+      "pageStart": 235,
+      "pageEnd": 235,
+      "lineStart": 7,
+      "lineEnd": 11,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Potion of Resistance"
+      ],
+      "sourceContext": "d10 Damage Type d10 Damage Type",
+      "regionType": "table-rows",
+      "firstPhrase": "1 Acid 6 Necrotic 2 Cold 7 Poison 3 Fire 8 Psychic 4 Force",
+      "lastPhrase": "7 Poison 3 Fire 8 Psychic 4 Force 9 Radiant 5 Lightning 10 Thunder",
+      "normalizedCharCount": 91,
+      "classification": "record:table:potion-of-resistance",
+      "targetKey": "table:potion-of-resistance",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p235-l13-prose",
@@ -35554,6 +37288,27 @@
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
     {
+      "id": "p237-l18-table-rows",
+      "pageStart": 237,
+      "pageEnd": 237,
+      "lineStart": 18,
+      "lineEnd": 27,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Ring of Resistance"
+      ],
+      "sourceContext": "d10 Damage Type Gem",
+      "regionType": "table-rows",
+      "firstPhrase": "1 Acid Pearl 2 Cold Tourmaline 3 Fire Garnet 4 Force Sapphire 5 Lightning",
+      "lastPhrase": "Necrotic Jet 7 Poison Amethyst 8 Psychic Jade 9 Radiant Topaz 10 Thunder Spinel",
+      "normalizedCharCount": 163,
+      "classification": "record:table:ring-of-resistance",
+      "targetKey": "table:ring-of-resistance",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p237-l29-prose",
       "pageStart": 237,
       "pageEnd": 237,
@@ -35596,6 +37351,27 @@
       "targetKey": "magic-item:ring-of-shooting-stars",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p237-l57-table-rows",
+      "pageStart": 237,
+      "pageEnd": 237,
+      "lineStart": 57,
+      "lineEnd": 60,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Ring of Shooting Stars"
+      ],
+      "sourceContext": "Spheres Lightning Damage",
+      "regionType": "table-rows",
+      "firstPhrase": "4 2d4 3 2d6 2 5d4 1 4d12",
+      "lastPhrase": "4 2d4 3 2d6 2 5d4 1 4d12",
+      "normalizedCharCount": 24,
+      "classification": "record:table:ring-of-shooting-stars",
+      "targetKey": "table:ring-of-shooting-stars",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p237-l61-prose",
@@ -35970,6 +37746,27 @@
       "targetKey": "magic-item:robe-of-useful-items",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p239-l52-table-rows",
+      "pageStart": 239,
+      "pageEnd": 239,
+      "lineStart": 52,
+      "lineEnd": 73,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Robe of Useful Items"
+      ],
+      "sourceContext": "d100 Patch",
+      "regionType": "table-rows",
+      "firstPhrase": "01–08 Bag of 100 gp 09–15 Silver coffer (1 foot long, 6 inches wide",
+      "lastPhrase": "which you can place on a vertical surface you can reach 97–00 Portable ram",
+      "normalizedCharCount": 749,
+      "classification": "record:table:robe-of-useful-items",
+      "targetKey": "table:robe-of-useful-items",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p239-l75-prose",
@@ -36391,6 +38188,27 @@
       "contentMatch": true
     },
     {
+      "id": "p242-l58-table-rows",
+      "pageStart": 242,
+      "pageEnd": 242,
+      "lineStart": 58,
+      "lineEnd": 68,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Spell Scroll"
+      ],
+      "sourceContext": "Spell Scroll",
+      "regionType": "table-rows",
+      "firstPhrase": "Spell Level Rarity Save DC Attack Bonus Cantrip Common 13 +5 1st Common 13",
+      "lastPhrase": "7th Very rare 18 +10 8th Very rare 18 +10 9th Legendary 19 +11",
+      "normalizedCharCount": 228,
+      "classification": "record:table:spell-scroll",
+      "targetKey": "table:spell-scroll",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p242-l69-prose",
       "pageStart": 242,
       "pageEnd": 242,
@@ -36478,6 +38296,27 @@
       "targetKey": "magic-item:sphere-of-annihilation",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p243-l22-table-rows",
+      "pageStart": 243,
+      "pageEnd": 243,
+      "lineStart": 22,
+      "lineEnd": 27,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Sphere of Annihilation"
+      ],
+      "sourceContext": "d100 Result",
+      "regionType": "table-rows",
+      "firstPhrase": "01–50 The sphere is destroyed. 51–85 The sphere moves through the portal or into",
+      "lastPhrase": "180 feet of the sphere, including the sphere, to a random plane of existence.",
+      "normalizedCharCount": 245,
+      "classification": "record:table:sphere-of-annihilation",
+      "targetKey": "table:sphere-of-annihilation",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p243-l29-prose",
@@ -36612,6 +38451,27 @@
       "emission": "contained"
     },
     {
+      "id": "p244-l35-table-rows",
+      "pageStart": 244,
+      "pageEnd": 244,
+      "lineStart": 35,
+      "lineEnd": 37,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Staff of Power"
+      ],
+      "sourceContext": "Distance from Origin Damage",
+      "regionType": "table-rows",
+      "firstPhrase": "10 ft. away or closer 8 × the number of charges in the staff",
+      "lastPhrase": "21 to 30 ft. away 4 × the number of charges in the staff",
+      "normalizedCharCount": 174,
+      "classification": "record:table:staff-of-power",
+      "targetKey": "table:staff-of-power",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p244-l39-prose",
       "pageStart": 244,
       "pageEnd": 244,
@@ -36698,6 +38558,27 @@
       "targetKey": "magic-item:staff-of-the-magi",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p245-l23-table-rows",
+      "pageStart": 245,
+      "pageEnd": 245,
+      "lineStart": 23,
+      "lineEnd": 25,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Staff of the Magi"
+      ],
+      "sourceContext": "Distance from Origin Damage",
+      "regionType": "table-rows",
+      "firstPhrase": "10 ft. away or closer 8 × the number of charges in the staff",
+      "lastPhrase": "21 to 30 ft. away 4 × the number of charges in the staff",
+      "normalizedCharCount": 174,
+      "classification": "record:table:staff-of-the-magi",
+      "targetKey": "table:staff-of-the-magi",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p245-l27-prose",
@@ -37580,6 +39461,27 @@
       "emission": "contained"
     },
     {
+      "id": "p250-l7-table-rows",
+      "pageStart": 250,
+      "pageEnd": 250,
+      "lineStart": 7,
+      "lineEnd": 78,
+      "headingPath": [
+        "Magic Items",
+        "Magic Items A-Z",
+        "Adamantine Armor",
+        "Wand of Wonder"
+      ],
+      "sourceContext": "d100 Effect",
+      "regionType": "table-rows",
+      "firstPhrase": "01–05 You cast slow. 06–10 You cast faerie fire. 11–15 You are stunned until",
+      "lastPhrase": "lasts until the target is freed by the greater restoration spell or similar magic.",
+      "normalizedCharCount": 3169,
+      "classification": "record:table:wand-of-wonder",
+      "targetKey": "table:wand-of-wonder",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p250-l80-prose",
       "pageStart": 250,
       "pageEnd": 250,
@@ -37797,6 +39699,27 @@
       "emission": "contained"
     },
     {
+      "id": "p251-l59-table-rows",
+      "pageStart": 251,
+      "pageEnd": 251,
+      "lineStart": 59,
+      "lineEnd": 66,
+      "headingPath": [
+        "Magic Items",
+        "Sentient Magic Items",
+        "Creating Sentient Magic Items",
+        "Communication"
+      ],
+      "sourceContext": "d100 Communication",
+      "regionType": "table-rows",
+      "firstPhrase": "01–60 The item communicates by transmitting emotion to the creature carrying or wielding it.",
+      "lastPhrase": "addition, the item can communicate telepathically with any character that carries or wields it.",
+      "normalizedCharCount": 331,
+      "classification": "record:table:sentient-magic-item-communication",
+      "targetKey": "table:sentient-magic-item-communication",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p251-l68-prose",
       "pageStart": 251,
       "pageEnd": 251,
@@ -37819,6 +39742,27 @@
       "emission": "contained"
     },
     {
+      "id": "p251-l73-table-rows",
+      "pageStart": 251,
+      "pageEnd": 251,
+      "lineStart": 73,
+      "lineEnd": 76,
+      "headingPath": [
+        "Magic Items",
+        "Sentient Magic Items",
+        "Creating Sentient Magic Items",
+        "Senses"
+      ],
+      "sourceContext": "d4 Senses",
+      "regionType": "table-rows",
+      "firstPhrase": "1 Hearing and normal vision out to 30 feet. 2 Hearing and normal vision",
+      "lastPhrase": "normal vision out to 120 feet. 4 Hearing and darkvision out to 120 feet.",
+      "normalizedCharCount": 173,
+      "classification": "record:table:sentient-magic-item-senses",
+      "targetKey": "table:sentient-magic-item-senses",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p251-l78-prose",
       "pageStart": 251,
       "pageEnd": 251,
@@ -37839,6 +39783,27 @@
       "targetKey": "rule:creating-sentient-magic-items-alignment",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p251-l82-table-rows",
+      "pageStart": 251,
+      "pageEnd": 251,
+      "lineStart": 82,
+      "lineEnd": 86,
+      "headingPath": [
+        "Magic Items",
+        "Sentient Magic Items",
+        "Creating Sentient Magic Items",
+        "Alignment"
+      ],
+      "sourceContext": "d100 Alignment d100 Alignment",
+      "regionType": "table-rows",
+      "firstPhrase": "01–15 Lawful good 74–85 Chaotic neutral 16–35 Neutral good 86–89 Lawful evil 36–50 Chaotic",
+      "lastPhrase": "36–50 Chaotic good 90–96 Neutral evil 51–63 Lawful neutral 97–00 Chaotic evil 64–73 Neutral",
+      "normalizedCharCount": 168,
+      "classification": "record:table:sentient-magic-item-alignment",
+      "targetKey": "table:sentient-magic-item-alignment",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p251-l88-prose",
@@ -37883,6 +39848,27 @@
       "targetKey": "rule:special-purpose",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p252-l3-table-rows",
+      "pageStart": 252,
+      "pageEnd": 252,
+      "lineStart": 3,
+      "lineEnd": 26,
+      "headingPath": [
+        "Magic Items",
+        "Sentient Magic Items",
+        "Creating Sentient Magic Items",
+        "Special Purpose"
+      ],
+      "sourceContext": "d10 Purpose",
+      "regionType": "table-rows",
+      "firstPhrase": "1 Aligned: The item seeks to defeat or destroy those of a diametrically opposed",
+      "lastPhrase": "Seeker: The item seeks its creator and wants to understand why it was created.",
+      "normalizedCharCount": 1070,
+      "classification": "record:table:sentient-magic-item-special-purpose",
+      "targetKey": "table:sentient-magic-item-special-purpose",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p252-l28-prose",
@@ -38024,6 +40010,26 @@
       "targetKey": "rule:size",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p254-l11-table-rows",
+      "pageStart": 254,
+      "pageEnd": 254,
+      "lineStart": 11,
+      "lineEnd": 17,
+      "headingPath": [
+        "Monsters",
+        "Size",
+        "Size Categories"
+      ],
+      "sourceContext": "Size Categories",
+      "regionType": "table-rows",
+      "firstPhrase": "Size Space Examples Tiny 2½ by 2½ ft. Imp, sprite Small 5 by 5",
+      "lastPhrase": "ft. Fire giant, treant Gargantuan 20 by 20 ft. or larger Kraken, purple worm",
+      "normalizedCharCount": 243,
+      "classification": "record:table:size-categories",
+      "targetKey": "table:size-categories",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p254-l19-prose",
@@ -38218,6 +40224,27 @@
       "emission": "contained"
     },
     {
+      "id": "p256-l1-table-rows",
+      "pageStart": 256,
+      "pageEnd": 256,
+      "lineStart": 1,
+      "lineEnd": 7,
+      "headingPath": [
+        "Monsters",
+        "Size",
+        "Hit Points",
+        "Hit Dice by Size"
+      ],
+      "sourceContext": "Hit Dice by Size",
+      "regionType": "table-rows",
+      "firstPhrase": "Monster Size Hit Die Average HP per Die Tiny d4 2½ Small d6 3½",
+      "lastPhrase": "d6 3½ Medium d8 4½ Large d10 5½ Huge d12 6½ Gargantuan d20 10½",
+      "normalizedCharCount": 119,
+      "classification": "record:table:hit-dice-by-size",
+      "targetKey": "table:hit-dice-by-size",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p256-l8-prose",
       "pageStart": 256,
       "pageEnd": 256,
@@ -38389,6 +40416,27 @@
       "targetKey": "rule:monsters-saving-throws",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p256-l64-table-rows",
+      "pageStart": 256,
+      "pageEnd": 256,
+      "lineStart": 64,
+      "lineEnd": 82,
+      "headingPath": [
+        "Monsters",
+        "Size",
+        "Saving Throws",
+        "Proficiency Bonus by Challenge Rating"
+      ],
+      "sourceContext": "Proficiency Bonus by Challenge Rating",
+      "regionType": "table-rows",
+      "firstPhrase": "Proficiency Proficiency Challenge Bonus Challenge Bonus 0 +2 14 +5 1/8 +2 15 +5",
+      "lastPhrase": "27 +8 11 +4 28 +8 12 +4 29 +9 13 +5 30 +9",
+      "normalizedCharCount": 252,
+      "classification": "record:table:proficiency-bonus-by-challenge-rating",
+      "targetKey": "table:proficiency-bonus-by-challenge-rating",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p256-l84-prose",
@@ -38670,6 +40718,27 @@
       "targetKey": "rule:challenge-experience-points",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p258-l29-table-rows",
+      "pageStart": 258,
+      "pageEnd": 258,
+      "lineStart": 29,
+      "lineEnd": 46,
+      "headingPath": [
+        "Monsters",
+        "Size",
+        "Challenge",
+        "Experience Points by Challenge Rating"
+      ],
+      "sourceContext": "Experience Points by Challenge Rating",
+      "regionType": "table-rows",
+      "firstPhrase": "Challenge XP Challenge XP 0 0 or 10 14 11,500 1/8 25 15 13,000",
+      "lastPhrase": "27 105,000 11 7,200 28 120,000 12 8,400 29 135,000 13 10,000 30 155,000",
+      "normalizedCharCount": 334,
+      "classification": "record:table:experience-points-by-challenge-rating",
+      "targetKey": "table:experience-points-by-challenge-rating",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p258-l48-prose",
@@ -47209,6 +49278,26 @@
       "emission": "contained"
     },
     {
+      "id": "p320-l88-table-rows",
+      "pageStart": 320,
+      "pageEnd": 321,
+      "lineStart": 88,
+      "lineEnd": 2,
+      "headingPath": [
+        "Monsters",
+        "Monsters (H)",
+        "Half-Dragon Template"
+      ],
+      "sourceContext": "Color Damage Resistance",
+      "regionType": "table-rows",
+      "firstPhrase": "Black or copper Acid Blue or bronze Lightning Brass, gold, or red Fire Green",
+      "lastPhrase": "or bronze Lightning Brass, gold, or red Fire Green Poison Silver or white Cold",
+      "normalizedCharCount": 104,
+      "classification": "record:table:half-dragon-damage-resistance",
+      "targetKey": "table:half-dragon-damage-resistance",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p321-l3-prose",
       "pageStart": 321,
       "pageEnd": 321,
@@ -47228,6 +49317,26 @@
       "targetKey": "rule:half-dragon-template",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
+    },
+    {
+      "id": "p321-l9-table-rows",
+      "pageStart": 321,
+      "pageEnd": 321,
+      "lineStart": 9,
+      "lineEnd": 13,
+      "headingPath": [
+        "Monsters",
+        "Monsters (H)",
+        "Half-Dragon Template"
+      ],
+      "sourceContext": "Optional",
+      "regionType": "table-rows",
+      "firstPhrase": "Size Breath Weapon Prerequisite Large or As a wyrmling Challenge 2 or higher smaller",
+      "lastPhrase": "dragon Challenge 7 or higher Gargantuan As an adult dragon Challenge 8 or higher",
+      "normalizedCharCount": 181,
+      "classification": "record:table:half-dragon-breath-weapon",
+      "targetKey": "table:half-dragon-breath-weapon",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p321-l15-prose",
@@ -52874,6 +54983,27 @@
       "emission": "contained"
     },
     {
+      "id": "p360-l33-table-rows",
+      "pageStart": 360,
+      "pageEnd": 360,
+      "lineStart": 33,
+      "lineEnd": 42,
+      "headingPath": [
+        "Appendix PH-B: Fantasy-Historical Pantheons",
+        "The Celtic Pantheon",
+        "The Greek Pantheon",
+        "Celtic Deities"
+      ],
+      "sourceContext": "Celtic Deities",
+      "regionType": "table-rows",
+      "firstPhrase": "Deity Alignment The Daghdha, god of weather and crops Arawn, god of life and",
+      "lastPhrase": "of arts, travel, and commerce Manannan mac Lir, god of oceans and sea creatures",
+      "normalizedCharCount": 365,
+      "classification": "record:table:celtic-deities",
+      "targetKey": "table:celtic-deities",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
+    },
+    {
       "id": "p360-l44-prose",
       "pageStart": 360,
       "pageEnd": 360,
@@ -52934,9 +55064,9 @@
       "firstPhrase": "CG Nature, Trickery Bubbling cauldron or shield NE Life, Death Black star on gray",
       "lastPhrase": "and warriors Oghma, god of speech and writing Silvanus, god of nature and forests",
       "normalizedCharCount": 517,
-      "classification": "intentionally-ignored:deity-table-column-header",
-      "ignoreReason": "deity-table-column-header",
-      "guardNotes": "Table rows on an otherwise unaccounted page; accounted under the owning structure’s documented ignore reason."
+      "classification": "record:table:celtic-deities",
+      "targetKey": "table:celtic-deities",
+      "guardNotes": "Table rows on an otherwise unaccounted page; the rows are the owning table record’s row data."
     },
     {
       "id": "p361-l6-table-rows",

@@ -612,7 +612,7 @@
         }
       ]
     },
-    "source": "SRD 5.1 p. 5",
+    "source": "SRD 5.1 pp. 5, 6",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -631,7 +631,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 5"
+      "locator": "pp. 5, 6"
     }
   },
   {
@@ -1750,7 +1750,7 @@
         }
       ]
     },
-    "source": "SRD 5.1 p. 4",
+    "source": "SRD 5.1 pp. 3, 4",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -1769,7 +1769,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 4"
+      "locator": "pp. 3, 4"
     }
   },
   {
@@ -1981,7 +1981,7 @@
         }
       ]
     },
-    "source": "SRD 5.1 p. 5",
+    "source": "SRD 5.1 pp. 4, 5",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -2000,7 +2000,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 5"
+      "locator": "pp. 4, 5"
     }
   },
   {
@@ -90489,7 +90489,7 @@
         ]
       }
     },
-    "source": "SRD 5.1 p. 210",
+    "source": "SRD 5.1 pp. 210, 211",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -90508,7 +90508,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 210"
+      "locator": "pp. 210, 211"
     }
   },
   {
@@ -185190,7 +185190,7 @@
         ]
       ]
     },
-    "source": "SRD 5.1 p. 209",
+    "source": "SRD 5.1 pp. 209, 210",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -185209,7 +185209,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 209"
+      "locator": "pp. 209, 210"
     }
   },
   {
@@ -185585,7 +185585,7 @@
         ]
       ]
     },
-    "source": "SRD 5.1 p. 360",
+    "source": "SRD 5.1 pp. 360, 361",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -185604,7 +185604,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 360"
+      "locator": "pp. 360, 361"
     }
   },
   {
@@ -187381,7 +187381,7 @@
         ]
       ]
     },
-    "source": "SRD 5.1 p. 44",
+    "source": "SRD 5.1 pp. 44, 45",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -187400,7 +187400,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 44"
+      "locator": "pp. 44, 45"
     }
   },
   {
@@ -188349,7 +188349,7 @@
         ]
       }
     },
-    "source": "SRD 5.1 p. 73",
+    "source": "SRD 5.1 pp. 73, 74",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -188368,7 +188368,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 73"
+      "locator": "pp. 73, 74"
     }
   },
   {
@@ -188416,7 +188416,7 @@
         ]
       ]
     },
-    "source": "SRD 5.1 p. 210",
+    "source": "SRD 5.1 pp. 210, 211",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -188435,7 +188435,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 210"
+      "locator": "pp. 210, 211"
     }
   },
   {
@@ -188673,7 +188673,7 @@
         ]
       ]
     },
-    "source": "SRD 5.1 p. 320",
+    "source": "SRD 5.1 pp. 320, 321",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -188692,7 +188692,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 320"
+      "locator": "pp. 320, 321"
     }
   },
   {
@@ -189211,7 +189211,7 @@
         ]
       }
     },
-    "source": "SRD 5.1 p. 72",
+    "source": "SRD 5.1 pp. 72, 73",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -189230,7 +189230,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 72"
+      "locator": "pp. 72, 73"
     }
   },
   {

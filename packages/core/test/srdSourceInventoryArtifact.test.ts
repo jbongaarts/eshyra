@@ -437,11 +437,11 @@ describe('committed SRD source-region ledger artifact — prose gate', () => {
     // eshyra-o9bd.18.8.3: spell-list regions are source-positioned structured
     // ownership, so duplicate spell names cannot be claimed by a subclass table.
     // eshyra-erf5.5: table-rows-only pages (p69's Adventuring Gear price-list
-    // body, the p360-361 deity-table column-header run) now carry explicit
-    // table-rows entries instead of silently owning nothing, classified under
-    // the owning structure's documented reason.
+    // body) now carries explicit table-rows entries instead of silently owning
+    // nothing; the p360-361 Celtic Deities rows are attributed to
+    // table:celtic-deities rather than to the stray column-group header
+    // (eshyra-o9bd.16.7.3).
     expect(sourceRegionLedger.summary.intentionallyIgnored).toEqual({
-      'deity-table-column-header': 1,
       'front-matter': 2,
       'table-rows-emitted-as-records': 2,
     });
