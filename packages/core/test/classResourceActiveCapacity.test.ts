@@ -23,6 +23,8 @@ import {
   spendUsage,
   writeCampaignRulesBinding,
 } from '../src/internal.js';
+import { spendUsageTool } from '../src/orchestrator/toolSpendUsage.js';
+import { CLASS_RESOURCE_BINDINGS } from '../src/state/classResources.js';
 import {
   bareDb,
   DEFAULT_TEST_SESSION_ID,
@@ -529,4 +531,20 @@ describe('a none-capacity bound resource is never refilled or reported', () => {
       });
     }
   }
+});
+
+/**
+ * L3-F3 (`eshyra-o9bd.16.8.3`): the model-facing spend_usage description
+ * once told the model to declare maxUses + reset on the first spend of ANY
+ * character ability, and the engine rightly rejects exactly that call for a
+ * class-table-bound resource. The description must name every bound resource
+ * and the omission it requires.
+ */
+describe('spend_usage description and class-table-bound resources', () => {
+  it('names every bound class resource and forbids a declared economy for it', () => {
+    const description = spendUsageTool.description;
+    for (const binding of CLASS_RESOURCE_BINDINGS)
+      expect(description).toContain(binding.displayName);
+    expect(description).toContain('never pass maxUses/reset for them');
+  });
 });
