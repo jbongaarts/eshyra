@@ -1,5 +1,6 @@
 {
   "auditName": "D&D 5e SRD 5.1 final importer audit",
+  "historicalScope": "Historical record of the 2026-06-17 audit of commit 0f5b3dcce1de96630e01532d138b1286c948b668; preserved as evidence, not a claim about the current pack. Its completeness and freeze sign-off conclusions were withdrawn by ADR 0020 and the 2026-06-28 re-audit thaw. Operative bar: section 5.9 of docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md. Current candidate evidence: docs/audits/dnd5e-srd-5.1-final/2026-11-01-o9bd-19-6-1-candidate-pack.md; later gates: eshyra-o9bd.19.6.3 / eshyra-o9bd.16.",
   "verdict": "FREEZE / SIGN OFF",
   "repoCommit": "0f5b3dcce1de96630e01532d138b1286c948b668",
   "srdContentCommit": "67648aaca3e43d4cb742f412f313c4feb7ee848e",
