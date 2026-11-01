@@ -1208,6 +1208,7 @@ export type {
 } from './rules/fieldProvenance.js';
 export {
   assertFieldProvenanceCoverage,
+  assertFieldProvenanceScopesLive,
   buildFieldProvenanceManifest,
   classifyFieldPointer,
   FIELD_PROVENANCE_CLASSES,

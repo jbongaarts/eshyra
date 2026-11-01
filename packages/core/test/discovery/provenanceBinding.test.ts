@@ -286,9 +286,14 @@ describe('packet classification follows the producing pack', () => {
     // otherwise this case would prove nothing.
     const baseManifest = getBundledDnd5eSrdFieldProvenanceManifest();
     if (baseManifest === undefined) throw new Error('no bundled manifest');
-    expect(classifyFieldPointer(baseManifest, 'spell', '/description')).toBe(
-      'source-prose',
-    );
+    expect(
+      classifyFieldPointer(
+        baseManifest,
+        'spell',
+        'spell:probe',
+        '/description',
+      ),
+    ).toBe('source-prose');
 
     const addon: RulesPack = {
       meta: {
