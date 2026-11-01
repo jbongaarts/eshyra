@@ -3063,10 +3063,14 @@ async function main(): Promise<void> {
     buildReadme({
       gates,
       sourcePdfSha256: hashVerification.actual,
-      packArtifactHashes: ['records.json', 'manifest.json'].map((f) => ({
-        file: `pack/${f}`,
-        sha256: sha256File(join(outDir, 'pack', f)),
-      })),
+      // Identity covers every committed pack artifact the verifier compares
+      // plus the manifest, not only the two copied into pack/.
+      packArtifactHashes: [...VERIFIED_PACK_ARTIFACTS, 'manifest.json'].map(
+        (f) => ({
+          file: `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/${f}`,
+          sha256: sha256File(join(COMMITTED_PACK_DIR, f)),
+        }),
+      ),
       commitSha: gitSha,
       branch: gitBranch,
       timestamp,
