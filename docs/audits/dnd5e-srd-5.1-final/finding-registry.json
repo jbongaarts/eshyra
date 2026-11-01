@@ -40,7 +40,7 @@
       "aliases": ["sol:CAP-008"],
       "invariant": "Bag of Beans successful-save outcome follows source authority",
       "status": "accepted",
-      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3.1 (PR #567, merge 25631abf): the Bag of Beans explosion now represents half damage on a successful Dexterity save, matching its printed sentence “or half as much damage on a successful one”; the source-census invariant covers this branch. Evidence: packages/core/test/importers/dnd5e-srd-5.1/halfDamageSuccessBranches.test.ts and the current magic-item:bag-of-beans mechanics.successSave branch.",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3.1 (PR #567, merge 25631abf): the Bag of Beans explosion represents half damage on a successful Dexterity save, matching the printed sentence “or half as much damage on a successful one.” The census assertion in packages/core/test/importers/dnd5e-srd-5.1/halfDamageSuccessBranches.test.ts checks the magic-item-effect representation at effects[id=c2-residual-dump-beans-explosion].successfulSaveDamage = half; that is the current path in packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json.",
       "provenance": {
         "auditFinding": "sol:CAP-008",
         "evidenceBasis": "audit-finding"
@@ -66,7 +66,7 @@
       "aliases": ["fable:F5"],
       "invariant": "Synthesized table headers are distinguished from source text",
       "status": "accepted",
-      "statusReasoning": "Repaired by eshyra-o9bd.19.2.1.2 (PR #566, merge 77b2d475): invented “Basis” / “Circumstance” headers were removed from the merged Scrying save-modifier table; emitted column labels now follow the printed source tables, and the source-prose gate only accepts literal source spans. Evidence: packages/core/test/importers/dnd5e-srd-5.1/fieldProvenanceGate.test.ts and the current table and field-provenance artifacts.",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.1.2 (PR #566, merge 77b2d475): the separate Scrying Knowledge and Connection tables retain their printed headers. packages/core/test/importers/dnd5e-srd-5.1/parseDocumentTables.test.ts pins the Scrying table specs and asserts columns are literal spans of the printed header lines, so invented, expanded, reordered, or recomposed header text fails.",
       "provenance": {
         "auditFinding": "fable:F5",
         "evidenceBasis": "audit-finding"
@@ -105,7 +105,7 @@
       "aliases": ["indep:008"],
       "invariant": "Incomplete locators are not treated as complete coverage",
       "status": "accepted",
-      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.3 (PR #576, merge 6684c064): field locators and source-page membership are checked against the source-region ledger, and partial continuation locators fail closed. Evidence: packages/core/test/importers/dnd5e-srd-5.1/fieldProvenanceGate.test.ts, sourceRegionLedger.test.ts, and the current field-provenance.json / source-region-ledger.json.",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.3 (PR #576, merge 6684c064): record locator coverage and fieldLocators are checked against the source-region ledger; missing, extra, stale, and incomplete continuation pages fail closed. packages/core/test/importers/dnd5e-srd-5.1/recordLocatorCompleteness.test.ts asserts those failures. The current representation is records.json provenance.fieldLocators plus source-region-ledger.json.",
       "provenance": {
         "auditFinding": "indep:008",
         "evidenceBasis": "source-span"
@@ -196,7 +196,7 @@
       "aliases": ["sol:CAP-010"],
       "invariant": "Structured fields cite actual source provenance",
       "status": "accepted",
-      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.3 (PR #576, merge 6684c064): structured field locators resolve to source pages and are validated against independently captured source regions; stale/non-printing pages fail the ledger-derived gate. Evidence: packages/core/test/importers/dnd5e-srd-5.1/fieldProvenanceGate.test.ts and current field-provenance.json.",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.3 (PR #576, merge 6684c064): structured fieldLocators are checked against source-region evidence, rejecting missing, extra, or stale page citations. packages/core/test/importers/dnd5e-srd-5.1/recordLocatorCompleteness.test.ts asserts these bad states fail. The current representation is records.json provenance.fieldLocators plus source-region-ledger.json.",
       "provenance": {
         "auditFinding": "sol:CAP-010",
         "evidenceBasis": "source-span"
@@ -209,7 +209,7 @@
       "aliases": ["fable:F4"],
       "invariant": "Container continuations retain complete citation",
       "status": "accepted",
-      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.3 (PR #576, merge 6684c064): container-capacity continuation citations include the complete source span; continuation records fail closed when their page locator is partial. Evidence: packages/core/test/importers/dnd5e-srd-5.1/fieldProvenanceGate.test.ts and current container fields in field-provenance.json.",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.3 (PR #576, merge 6684c064): container capacity fields retain complete field-specific page citations across the pp. 69–70 continuation. packages/core/test/importers/dnd5e-srd-5.1/recordLocatorCompleteness.test.ts rejects missing field locators and locators whose cited page does not contain the field value. Current citations are in records.json provenance.fieldLocators and the source-region ledger.",
       "provenance": {
         "auditFinding": "fable:F4",
         "evidenceBasis": "audit-finding"
@@ -703,7 +703,7 @@
       "aliases": ["opus:F-25"],
       "invariant": "Creature and hazard half-damage branches are represented",
       "status": "accepted",
-      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3.1 (PR #567, merge 25631abf): source clauses that say a successful save takes half damage now carry damageOnSuccess: half across the independently source-enumerated creature, hazard, spell, and item branches. Evidence: packages/core/test/importers/dnd5e-srd-5.1/halfDamageSuccessBranches.test.ts and its source census; current creature and magic-item projections retain the printed branch.",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3.1 (PR #567, merge 25631abf): the source census distinguishes typed-save branches (saves[].damageOnSuccess), magic-item-effect branches (effects[].successfulSaveDamage), untyped members, and not-a-member cases. packages/core/test/importers/dnd5e-srd-5.1/halfDamageSuccessBranches.test.ts pins the PDF census, joins each source sentence to its pack container, checks the representation-specific branch, and rejects invented typed branches.",
       "provenance": {
         "auditFinding": "opus:F-25",
         "evidenceBasis": "audit-finding"
