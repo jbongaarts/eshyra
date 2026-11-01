@@ -87,7 +87,14 @@ function reclassified(
   if (manifest === undefined) throw new Error('no bundled manifest');
   let replaced = 0;
   const declarations = manifest.declarations.map((item) => {
-    if (item.kind !== kind || item.pointerPrefix !== pointerPrefix) return item;
+    // The unscoped declaration only: record-scoped splice declarations
+    // (eshyra-o9bd.16.7.5) share the pointer for a few named records.
+    if (
+      item.kind !== kind ||
+      item.pointerPrefix !== pointerPrefix ||
+      item.recordKeys !== undefined
+    )
+      return item;
     replaced += 1;
     return { ...item, class: cls };
   });

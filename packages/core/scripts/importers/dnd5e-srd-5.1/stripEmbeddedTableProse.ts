@@ -100,6 +100,72 @@ export function stripTableSpansFromProse(
 }
 
 /**
+ * Did removing `spans` from `prose` splice the text? True when some removed
+ * region has non-whitespace source text both before AND after it that is not
+ * itself removed: the remaining words were not adjacent in the source, so the
+ * result is not one contiguous quotation (eshyra-o9bd.16.7.5, S2). A trailing
+ * removal (or a leading one) leaves a contiguous run and is NOT a splice.
+ */
+export function proseHasInternalSplice(
+  prose: string,
+  spans: readonly string[],
+): boolean {
+  const removed = new Array<boolean>(prose.length).fill(false);
+  for (const span of [...spans].sort((a, b) => b.length - a.length)) {
+    if (span.length === 0) continue;
+    for (
+      let at = prose.indexOf(span);
+      at !== -1;
+      at = prose.indexOf(span, at + 1)
+    ) {
+      if (removed.slice(at, at + span.length).some(Boolean)) continue;
+      removed.fill(true, at, at + span.length);
+    }
+  }
+  const kept = [...prose].map((char, i) => !removed[i] && /\S/.test(char));
+  const first = kept.indexOf(true);
+  const last = kept.lastIndexOf(true);
+  if (first === -1) return false;
+  // A removed character strictly between the first and last kept word.
+  return removed.some((flag, i) => flag && i > first && i < last);
+}
+
+/** A prose field whose embedded-table removal spliced the remaining text. */
+export interface EmbeddedTableSplice {
+  readonly recordKey: string;
+  readonly kind: RulesRecord['kind'];
+  /** JSON pointer of the prose field, e.g. `/description`. */
+  readonly pointer: string;
+}
+
+/**
+ * `stripEmbeddedTableProse`, additionally reporting every prose field the
+ * removal turned into a non-contiguous splice (see `proseHasInternalSplice`).
+ */
+export function stripEmbeddedTableProseReporting(input: StripInput): {
+  readonly records: RulesRecord[];
+  readonly splices: readonly EmbeddedTableSplice[];
+} {
+  const owners = spansByOwner(input.tables);
+  const splices: EmbeddedTableSplice[] = [];
+  for (const record of input.records) {
+    const spans = owners.get(record.key);
+    if (spans === undefined) continue;
+    const field = proseFieldOf(record);
+    if (field === undefined) continue;
+    const prose = (record.data as Record<string, string>)[field];
+    if (proseHasInternalSplice(prose, spans)) {
+      splices.push({
+        recordKey: record.key,
+        kind: record.kind,
+        pointer: `/${field}`,
+      });
+    }
+  }
+  return { records: stripEmbeddedTableProse(input), splices };
+}
+
+/**
  * Remove every reviewed embedded-table span from its owner record's prose.
  *
  * Fails closed if an owner key names no emitted record or names a record with no

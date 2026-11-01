@@ -344,7 +344,11 @@ describe('packet classification follows the producing pack', () => {
     const incomplete = buildFieldProvenanceManifest(
       baseManifest.declarations.filter(
         (item) =>
-          !(item.kind === 'spell' && item.pointerPrefix === '/description'),
+          !(
+            item.kind === 'spell' &&
+            item.pointerPrefix === '/description' &&
+            item.recordKeys === undefined
+          ),
       ),
     );
     expect(incomplete.declarations.length).toBe(

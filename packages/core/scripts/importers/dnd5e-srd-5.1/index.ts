@@ -43,7 +43,10 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { excludeActionOwnedRuleDuplicates } from './actionOwnedRuleDedup.js';
-import { enrichProvenanceFromContentSpans } from './contentSpanPages.js';
+import {
+  enrichProvenanceFromContentSpans,
+  refineCopiedOptionSources,
+} from './contentSpanPages.js';
 import { assertCreatureAttackLeadInsSegmented } from './creatureAttackLeadIns.js';
 import {
   buildPack,
@@ -3647,8 +3650,11 @@ export async function runImporter(
     // read record.data, not provenance) so it cannot affect their pass/fail.
     pack = {
       ...pack,
-      records: enrichProvenanceFromContentSpans(
-        enrichProvenanceFromRegionLedger(pack.records, regionLedger),
+      records: refineCopiedOptionSources(
+        enrichProvenanceFromContentSpans(
+          enrichProvenanceFromRegionLedger(pack.records, regionLedger),
+          normalizedPageTextByNumber(pages),
+        ),
         normalizedPageTextByNumber(pages),
       ),
     };

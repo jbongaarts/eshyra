@@ -79258,55 +79258,55 @@
               "id": "dragon-ancestor:blue",
               "name": "Blue",
               "text": "Dragon: Blue; Damage Type: Lightning",
-              "source": "SRD 5.1 p. 44"
+              "source": "SRD 5.1 p. 45"
             },
             {
               "id": "dragon-ancestor:brass",
               "name": "Brass",
               "text": "Dragon: Brass; Damage Type: Fire",
-              "source": "SRD 5.1 p. 44"
+              "source": "SRD 5.1 p. 45"
             },
             {
               "id": "dragon-ancestor:bronze",
               "name": "Bronze",
               "text": "Dragon: Bronze; Damage Type: Lightning",
-              "source": "SRD 5.1 p. 44"
+              "source": "SRD 5.1 p. 45"
             },
             {
               "id": "dragon-ancestor:copper",
               "name": "Copper",
               "text": "Dragon: Copper; Damage Type: Acid",
-              "source": "SRD 5.1 p. 44"
+              "source": "SRD 5.1 p. 45"
             },
             {
               "id": "dragon-ancestor:gold",
               "name": "Gold",
               "text": "Dragon: Gold; Damage Type: Fire",
-              "source": "SRD 5.1 p. 44"
+              "source": "SRD 5.1 p. 45"
             },
             {
               "id": "dragon-ancestor:green",
               "name": "Green",
               "text": "Dragon: Green; Damage Type: Poison",
-              "source": "SRD 5.1 p. 44"
+              "source": "SRD 5.1 p. 45"
             },
             {
               "id": "dragon-ancestor:red",
               "name": "Red",
               "text": "Dragon: Red; Damage Type: Fire",
-              "source": "SRD 5.1 p. 44"
+              "source": "SRD 5.1 p. 45"
             },
             {
               "id": "dragon-ancestor:silver",
               "name": "Silver",
               "text": "Dragon: Silver; Damage Type: Cold",
-              "source": "SRD 5.1 p. 44"
+              "source": "SRD 5.1 p. 45"
             },
             {
               "id": "dragon-ancestor:white",
               "name": "White",
               "text": "Dragon: White; Damage Type: Cold",
-              "source": "SRD 5.1 p. 44"
+              "source": "SRD 5.1 p. 45"
             }
           ]
         }
