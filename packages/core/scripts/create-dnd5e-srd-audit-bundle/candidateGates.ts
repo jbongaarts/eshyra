@@ -244,17 +244,25 @@ export function parseVitestResults(
   const results = (parsed as { testResults?: unknown } | null)?.testResults;
   if (!Array.isArray(results) || results.length === 0) return null;
   const root = `${repoRoot.replaceAll('\\', '/').replace(/\/+$/, '')}/`;
-  const out = new Set<string>();
+  // Aggregate by normalized file identity first: several result records can
+  // name the same file (e.g. one per Vitest project), and a failed assertion
+  // in any of them excludes the file.
+  const statusesByFile = new Map<string, unknown[]>();
   for (const result of results) {
     const r = result as { name?: unknown; assertionResults?: unknown } | null;
     if (typeof r?.name !== 'string' || !Array.isArray(r.assertionResults))
       return null;
-    const statuses = r.assertionResults.map(
-      (a) => (a as { status?: unknown } | null)?.status,
-    );
-    if (statuses.includes('failed') || !statuses.includes('passed')) continue;
     const norm = r.name.replaceAll('\\', '/');
-    out.add(norm.startsWith(root) ? norm.slice(root.length) : norm);
+    const file = norm.startsWith(root) ? norm.slice(root.length) : norm;
+    const statuses = statusesByFile.get(file) ?? [];
+    for (const a of r.assertionResults)
+      statuses.push((a as { status?: unknown } | null)?.status);
+    statusesByFile.set(file, statuses);
+  }
+  const out = new Set<string>();
+  for (const [file, statuses] of statusesByFile) {
+    if (statuses.includes('failed') || !statuses.includes('passed')) continue;
+    out.add(file);
   }
   return out;
 }
@@ -388,15 +396,27 @@ const ROOT_ANCHORS = [
 ];
 
 /**
- * Every file-shaped token, matched whole and greedily (so x.test.ts.map is one
- * token). A token is either (i) any token containing '/' whose final segment
- * has an extension, or (ii) a bare token ending in a known extension. Trailing
- * sentence punctuation is trimmed; brackets and quotes are not token chars.
+ * Every file-shaped token. A token is a whole whitespace-delimited word with
+ * only surrounding brackets, quotes and trailing sentence punctuation trimmed,
+ * so no character inside it (a '+', '$', a non-ASCII letter) can split it into
+ * a surviving fragment that resolves to some other file; x.test.ts.map stays
+ * one token. A token is file-shaped when (i) it contains '/' and its final
+ * segment has an extension, or (ii) it ends in a known extension.
  */
+const LEADING_WRAP = /^[([{'"`\u2018\u201C]+/;
+const TRAILING_WRAP = /[)\]}'"`\u2019\u201D,;:.!?]+$/;
+
 export function extractFileTokens(reasoning: string): string[] {
   const out = new Set<string>();
-  for (const m of reasoning.matchAll(/[\w@./-]+/g)) {
-    const token = m[0].replace(/[.-]+$/, '');
+  for (const word of reasoning.split(/\s+/)) {
+    let token = word;
+    for (;;) {
+      const trimmed = token
+        .replace(LEADING_WRAP, '')
+        .replace(TRAILING_WRAP, '');
+      if (trimmed === token) break;
+      token = trimmed;
+    }
     const last = token.split('/').pop() ?? '';
     const ext = /\.([A-Za-z0-9]+)$/.exec(last)?.[1];
     if (ext === undefined || last.length === ext.length + 1) continue;

@@ -12,6 +12,7 @@ import {
   parseVitestResults,
   resolveCitation,
 } from '../scripts/create-dnd5e-srd-audit-bundle/candidateGates.js';
+import { npmRunArgs } from '../scripts/create-dnd5e-srd-audit-bundle/cli.js';
 
 const ctx = (existing: string[], executed: string[] | null = existing) => ({
   exists: (p: string) => existing.includes(p),
@@ -313,6 +314,29 @@ describe('citation identity', () => {
       path: 'packages/cli/test/only-cli.test.ts',
     });
   });
+  it('no character inside a token splits it into a resolvable fragment', () => {
+    for (const bad of [
+      'packages/core/test/missing+a.test.ts',
+      'packages/core/test/missing$a.test.ts',
+      'packages/core/test/\u00e9a.test.ts',
+      'packages/core/test/m~a.test.ts',
+      'packages/core/test/m=a.test.ts',
+    ]) {
+      expect(extractFileTokens(`Evidence: ${bad}.`)).toEqual([bad]);
+      const g = gateFindingEvidence({
+        rows: [{ canonicalId: 'a', statusReasoning: `Evidence: ${bad}.` }],
+        ctx: ctx(tracked),
+      });
+      expect(g.result).toBe('fail');
+      expect(g.denominator.count).toBe(1);
+    }
+    // surrounding brackets, quotes and sentence punctuation are trimmed
+    expect(
+      extractFileTokens(
+        '(packages/core/test/a.test.ts), \u201Csources/p.pdf\u201D; [x.test.ts]:',
+      ),
+    ).toEqual(['packages/core/test/a.test.ts', 'sources/p.pdf', 'x.test.ts']);
+  });
   it('unanchored suffix collisions and misses fail', () => {
     const t = [...tracked, 'a/dir/x.md', 'b/dir/x.md'];
     expect(resolveCitation('dir/x.md', t, '').status).toBe('ambiguous');
@@ -339,6 +363,27 @@ describe('executed-evidence admission', () => {
     expect([...(parseVitestResults(text, root) ?? [])]).toEqual([
       'packages/core/test/a.test.ts',
     ]);
+  });
+  it('aggregates duplicate records per file: any failure excludes it, in either order', () => {
+    for (const order of [
+      [['passed'], ['failed']],
+      [['failed'], ['passed']],
+    ]) {
+      const dup = results([
+        ['packages/core/test/multi.test.ts', order[0] ?? []],
+        ['packages/core/test/multi.test.ts', order[1] ?? []],
+      ]);
+      expect(
+        parseVitestResults(dup, root)?.has('packages/core/test/multi.test.ts'),
+      ).toBe(false);
+    }
+    const ok = results([
+      ['packages/core/test/multi.test.ts', ['skipped']],
+      ['packages/core/test/multi.test.ts', ['passed']],
+    ]);
+    expect(
+      parseVitestResults(ok, root)?.has('packages/core/test/multi.test.ts'),
+    ).toBe(true);
   });
   it('missing, unparseable or empty results are unavailable (null)', () => {
     expect(parseVitestResults('not json', root)).toBeNull();
@@ -449,5 +494,21 @@ describe('G-replay', () => {
         ctx: ctx(FILES),
       }).result,
     ).toBe('fail');
+  });
+});
+
+describe('captured command arguments', () => {
+  it('keeps an output path containing spaces as one argument', () => {
+    const out = '/tmp/with space/reports/vitest-results.json';
+    expect(
+      npmRunArgs('test', ['--reporter=json', `--outputFile.json=${out}`]),
+    ).toEqual([
+      'run',
+      'test',
+      '--',
+      '--reporter=json',
+      `--outputFile.json=${out}`,
+    ]);
+    expect(npmRunArgs('check')).toEqual(['run', 'check']);
   });
 });

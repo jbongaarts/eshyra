@@ -137,18 +137,29 @@ function sha256File(path: string): string {
   return createHash('sha256').update(buf).digest('hex');
 }
 
+/** The npm argument vector for `npm run <script> -- <extraArgs...>`. */
+export function npmRunArgs(script: string, extraArgs: string[] = []): string[] {
+  return ['run', script, ...(extraArgs.length ? ['--', ...extraArgs] : [])];
+}
+
 function captureCommand(
   script: string,
   extraArgs: string[] = [],
 ): { stdout: string; stderr: string; exitCode: number; combined: string } {
-  const fullCmd = `npm run ${script}${extraArgs.length ? ` -- ${extraArgs.join(' ')}` : ''}`;
-  const result = spawnSync(fullCmd, [], {
-    cwd: REPO_ROOT,
-    shell: true,
-    encoding: 'utf8',
-    timeout: 300_000,
-    maxBuffer: 50 * 1024 * 1024,
-  });
+  // An argument vector, not a shell string, so an argument such as an output
+  // path containing spaces reaches npm (and the reporter) intact.
+  const npmArgs = npmRunArgs(script, extraArgs);
+  const result = spawnSync(
+    process.platform === 'win32' ? 'npm.cmd' : 'npm',
+    npmArgs,
+    {
+      cwd: REPO_ROOT,
+      shell: process.platform === 'win32',
+      encoding: 'utf8',
+      timeout: 300_000,
+      maxBuffer: 50 * 1024 * 1024,
+    },
+  );
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
   const exitCode = result.status ?? 1;
