@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4d.2",
+  "title": "Context assembler party support + inventory scoping",
+  "description": "Make the per-turn prompt party-aware. Currently assembleContext/readStateSnapshot render only the active PC and read inventory with 'character_id = ? OR character_id IS NULL', which bleeds legacy NULL-owned items into the active PC. Add a compact party roster section to AssembledContext, keep the full sheet for the active/acting PC, scope that PC's inventory with strict character_id = ? (drop the NULL fallback; v9 migration already assigned legacy items to pc-1), and expose non-active PC detail via memory_drilldown. Update renderContextMessage with a ## Party section. Depends on party roster read API. Acceptance: prompt shows roster + active-PC sheet; inventory no longer leaks across PCs; drilldown retrieves non-active PC detail; tests for render and scoping.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T17:53:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:54Z",
+  "started_at": "2026-05-28T18:12:57Z",
+  "closed_at": "2026-05-28T18:17:30Z",
+  "close_reason": "AssembledContext.party roster + ## Party render section; inventory scoped strictly to owner (dropped OR NULL bleed). 4 new tests + updated orphan-item test. Full suite green (759 passed). Non-active-PC full-detail-on-demand via memory_drilldown was intentionally NOT added (wrong subsystem); roster already surfaces per-PC status, full detail via /switch (d4d.5). Committed 9b96570.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d4d.2",
+      "depends_on_id": "eshyra-d4d",
+      "type": "parent-child",
+      "created_at": "2026-05-28T12:53:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d4d.2",
+      "depends_on_id": "eshyra-d4d.4",
+      "type": "blocks",
+      "created_at": "2026-05-28T12:54:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d4d.2",
+      "depends_on_id": "eshyra-d4d.1",
+      "type": "blocks",
+      "created_at": "2026-05-28T12:54:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.12",
+  "title": "Model SRD choice metadata required for complete level-1 creation",
+  "description": "Identify and model the structured SRD data needed for complete level-1 D&D character creation. The generated rules pack is necessary but may not be sufficient if required choices are only stored as prose.\n\nCandidate metadata\n- class skill choice sets;\n- starting equipment choices;\n- spellcasting choice counts;\n- class spell lists by level;\n- ancestry ability bonuses and traits;\n- background proficiencies and equipment;\n- languages;\n- tool proficiencies;\n- armor/weapon proficiencies;\n- features granted at level 1;\n- formulas or metadata for derived values.\n\nDesign rule\nThe CLI should not parse prose to discover core mechanical choices. If a required character creation choice is only represented as prose, add importer/schema support or a deterministic derived metadata layer.\n\nAcceptance criteria\n- Inventory which required level-1 choices are already structured in the generated pack and which are prose-only/missing.\n- Add or propose schema/importer changes for missing required choice metadata.\n- Character creation engine can enumerate pending required choices for at least one martial class and one spellcasting class.\n- Any remaining incompleteness is explicitly tracked in child beads rather than hidden in the CLI.",
+  "notes": "Implemented in PR #291 (branch eshyra-b69j.12); awaiting review/merge. Inventory doc + resolver structured-metadata exposure + enumerateLevel1RequiredChoices. Prose-only gaps deferred to children 12.1-12.4. No importer/generated-pack files touched.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-24T21:42:34Z",
+  "closed_at": "2026-06-24T23:12:24Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.12",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

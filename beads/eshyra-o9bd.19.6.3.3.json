@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.3.3",
+  "title": "Dispatch: repair Sol S1 (citation population) and S2 (real vitest membership) in candidate gates (attempt 1)",
+  "description": "Repair the two MATERIAL findings from Sol's final review of PR #697. Read them in full with `bd show eshyra-o9bd.19.6.3.2`. The base is branch eshyra-o9bd.19.6.3 at b47b0ca4. The files are packages/core/scripts/create-dnd5e-srd-audit-bundle/candidateGates.ts, cli.ts and packages/core/test/dnd5eSrdAuditBundleGates.test.ts.\n\nS1, the citation population. G-finding-evidence must not silently drop any file-shaped citation in a statusReasoning.\n- Extract every token that looks like a repository file. That means a path or basename ending in a file extension such as .ts, .mjs, .js, .json or .md, with optional leading directories.\n- Resolve each token deterministically against the git-tracked file list. Inject the list for tests; in the CLI, get it from `git ls-files`.\n  (a) A root-anchored path resolves as is.\n  (b) A `test/...` token resolves under packages/core/.\n  (c) Any other token resolves to the unique tracked file whose path ends with `/<token>`.\n  (d) A basename that names a committed pack artifact (VERIFIED_PACK_ARTIFACTS, plus manifest.json when the reasoning says pack or records) resolves to packages/core/data/rules-packs/rules__dnd5e-srd-5.1/<name>. Apply this as the explicit rule for ambiguous pack-artifact basenames, and say so in observes.\n  (e) A token that is unresolved (0 matches) or still ambiguous (more than 1 match) is a FAILURE, never a silent drop.\n- Rows whose reasoning has no file-shaped token stay 'no committed evidence pointer'; that is not a failure.\n- The denominator is the distinct resolved citations plus the unresolved ones.\n- Remove the doesNotObserve line that excused shorthand citations.\n- Run the gate against the real committed registry and report the result. If a real citation in the committed registry is unresolved or ambiguous, do NOT edit the registry: another PR, #698, owns it. Report the citation and stop before committing so the supervisor can decide.\n\nS2, actual test membership. Replace the regex parse of vitest.config.ts with the real resolved membership.\n- The bundle captures `npx vitest list --filesOnly --json` from the repo root. It is supported on the installed vitest 5.0.5 and returns absolute file paths evaluated with the real include and exclude.\n- Normalize the paths to repo-relative, and use that set as membership for G-finding-evidence, G-capabilities and G-replay.\n- If the command fails, or its output does not parse or is empty, every gate that depends on membership is failed-to-run.\n- Delete the regex config parser and its tests. Replace them with tests that inject membership:\n  - an evidence test absent from the membership set fails (the narrowing and exclude controls Sol describes);\n  - unavailable membership gives failed-to-run.\n\nTests:\n- One generalized citation-resolution test covering forms (a) to (e), each with an injected missing-path control.\n- The membership tests above.\n- Never weaken the existing tests.\n\nFinish:\n- Run `npm run verify:worktree` before committing, and commit only if it exits 0.\n- The message starts with `eshyra-o9bd.19.6.3.3 ` and ends with the line `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.\n- Record the report with `bd update eshyra-o9bd.19.6.3.3 --append-notes`, then run `bd close eshyra-o9bd.19.6.3.3`.\n- Do not push, open a PR or merge.\n",
+  "notes": "STOPPED before commit per spec: real registry row engine-capability-ownership cites bare 'index.ts' ('the index.ts and internal.ts barrels'), which is ambiguous (4 tracked files: packages/cli/src/index.ts, packages/core/scripts/importers/dnd5e-srd-5.1/index.ts, packages/core/src/index.ts, packages/core/test/diagnostics/index.ts). G-finding-evidence therefore fails on the real tree (32 distinct citations: 31 resolved, 1 ambiguous). Implementation is uncommitted in this worktree (candidateGates.ts, cli.ts, dnd5eSrdAuditBundleGates.test.ts). Registry not edited (PR #698 owns it).\nCommit 8f96fc05. S1: every file-shaped token in statusReasoning resolved against git ls-files (root path, test/ under packages/core, pack-artifact basename, unique suffix); unresolved/ambiguous fail. S2: membership from 'vitest list --filesOnly --json' (388 files); unavailable => failed-to-run for G-finding-evidence/G-capabilities/G-replay. Supervisor edited finding-registry.json (engine-capability-ownership now cites packages/core/src/index.ts and internal.ts), included in commit. Real tree: G-finding-evidence pass (32 citations, 0 unresolved), G-capabilities pass 119, G-replay pass 10. verify:worktree exit 0.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T03:25:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T03:31:19Z",
+  "started_at": "2026-11-01T03:25:27Z",
+  "closed_at": "2026-11-01T03:31:19Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.3.3",
+      "depends_on_id": "eshyra-o9bd.19.6.3",
+      "type": "parent-child",
+      "created_at": "2026-10-31T22:25:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

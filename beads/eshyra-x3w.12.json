@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.12",
+  "title": "Task 4: Persist campaign rules binding and legacy defaulting",
+  "description": "Objective:\nStore the authoritative campaign rules binding in SQLite and default legacy SRD-only campaigns safely.\n\nFiles:\n- Modify: `packages/core/src/persistence/schema.ts`\n- Modify: `packages/core/src/campaign.ts`\n- Create: `packages/core/src/rules/binding.ts`\n- Modify: `packages/core/src/index.ts`\n- Test: `packages/core/test/campaignRulesBinding.test.ts`\n- Modify: `packages/core/test/campaign.test.ts`\n\nSteps:\n1. Write failing tests that new campaigns persist a D&D SRD default binding, `getCampaign` returns binding identity, an existing schema-version-compatible campaign without binding reads as D&D SRD, and invalid empty campaign ids still fail.\n2. Run `npx vitest run packages/core/test/campaignRulesBinding.test.ts packages/core/test/campaign.test.ts`; expected: FAIL because binding table/APIs do not exist.\n3. Add singleton `campaign_rules_binding` to schema and bump `SCHEMA_VERSION` only if required by current migration policy. Because older schema versions currently fail compatibility, implement defaulting inside campaign read/create paths for same-version test DBs rather than silent cross-version migration unless the repo has added migration support.\n4. Add `CampaignRulesBinding`, `DEFAULT_DND5E_SRD_BINDING`, `writeCampaignRulesBinding`, and `readCampaignRulesBinding`.\n5. Extend `CreateCampaignInput` with optional `rulesBinding`; default to D&D SRD.\n6. Extend `CampaignInfo` with `rulesBinding`.\n7. Export binding APIs from `packages/core/src/index.ts`.\n8. Run the focused tests; expected: PASS.\n9. Commit with `git add packages/core/src packages/core/test/campaignRulesBinding.test.ts packages/core/test/campaign.test.ts` and `git commit -m feat-persist-campaign-rules-binding`.",
+  "design": "Use a singleton table: `campaign_rules_binding(id, base_system_id, base_pack_id, base_version, addons_json, resolved_at)`. Keep add-ons JSON typed through `jsonColumn`. Existing code paths that create a campaign should write the default binding unless a caller passes another resolved binding.\n\nInitial test sketch:\n```ts\nconst info = createCampaign(db, { campaignId: 'c1', pack: EMBERFALL_HOLLOW });\nexpect(info.rulesBinding.base.systemId).toBe('dnd5e-srd');\nexpect(readCampaignRulesBinding(db)?.base.packId).toBe('dnd5e-srd-core');\n```",
+  "acceptance_criteria": "Focused campaign binding tests pass. Campaign DBs persist one base binding plus ordered add-ons JSON. Existing SRD-only same-version DBs without a binding are treated as D&D SRD campaigns.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T05:10:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-23T18:34:55Z",
+  "close_reason": "Added campaign_rules_binding singleton table (schema v6→v7), CampaignRulesBinding type with writer/reader and DEFAULT_DND5E_SRD_BINDING, threaded optional rulesBinding through CreateCampaignInput, surfaced it on CampaignInfo, and made getCampaign fall back to the default binding when no row exists. Verified: focused campaignRulesBinding + campaign vitest pass (10/10 RED→GREEN), full npm run typecheck and npm run test pass (368 passed, 2 documented skips).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.12",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-23T00:10:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.12",
+      "depends_on_id": "eshyra-x3w.11",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.12",
+      "depends_on_id": "eshyra-x3w.10",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 5,
+  "comment_count": 0
+}

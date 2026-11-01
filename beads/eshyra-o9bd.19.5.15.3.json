@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.15.3",
+  "title": "Dispatch: 19.5.15 repair after Sol S1-S5 (attempt 2)",
+  "description": "Repair PR #650 per Sol review eshyra-o9bd.19.5.15.2 (read S1-S5 in full: invariant, scenario, siblings, closure, evidence). For each, fix the CLASS not just the scenario: S1 compare every piece of campaign-owned live state a re-checkout would overwrite (live row/HP/conditions/resources, not only the sheet) or refuse; S2 apply the 'custody only after a successful attach' rule on every checkout path including catch-up/resume/fork; S3 the no-clobber placement must never fall back to an operation that can replace an existing destination (fail closed instead); S4 restate the inventory/Expertise refusal exactly per the code for multi-source grants (or fix the code if the refusal itself is wrong per its stated invariant - say which); S5 rewrite the close_combat_instance model-facing description to match the full ordered F3 boundary. Tests that fail on the pre-repair state for each; update the inventory statements that change. Host memory: wait until pgrep -fc '^node .*verify-current-worktree' prints 0 or 1; verify:worktree then commit only on success (&&); notes; close this bead. Work in branch/worktree eshyra-o9bd.19.5.15 (the PR branch) is NOT yours: use the new child worktree created for this bead. No push/PR.",
+  "notes": "COMPLETION commit 466e7ff6f0eddcbdf0da8c6859b3c779be1d288c. S1: same-slot checkout attach runs in a savepoint and is rolled back/refused if the live character row (HP, conditions, all non-provenance columns) or active character would change (characterCustody.ts liveStateSnapshot). S2: attachCharacterSheetToCampaign now persists sheet+import atomically and rolls back on ok:false; catchUpCharacterToHead throws CharacterCustodyError on !attach.ok before setCustody (CLI reports failure). Fork routes through checkout. S3: publishWithoutClobber fails closed on EPERM/ENOTSUP/EOPNOTSUPP (no rename fallback). S4: code kept (Expertise refusal applies to actually-dropped skills); inventory restated. S5: close_combat_instance description rewritten to full ordered F3 boundary (timers incl. character-owned, concentration, durable rebinding, instance-only cleanup). Tests (fail pre-repair): characterCustody live HP/conditions + catch-up failed attach; checkpointRestoreRace EPERM/ENOTSUP/EOPNOTSUPP/EEXIST; closeCombatInstanceToolErrors description. Inventory statements updated: removeOptionGrants Expertise, checkpoint-store-v1 publication, character-checkout-v1 same-slot + ok:false, character-catch-up-v1 failed attach. verify:worktree passed. Not pushed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T17:10:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T17:14:06Z",
+  "started_at": "2026-10-10T17:11:15Z",
+  "closed_at": "2026-10-10T17:14:06Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.15.3",
+      "depends_on_id": "eshyra-o9bd.19.5.15",
+      "type": "parent-child",
+      "created_at": "2026-10-10T12:10:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

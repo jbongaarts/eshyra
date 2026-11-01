@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.4.5",
+  "title": "Dispatch: 19.2.4 repair after Sol 19.2.4.4 S1 (attempt 3)",
+  "description": "Repair PR #655 per Sol review eshyra-o9bd.19.2.4.4 S1 (read in full). This is the SECOND repair of the D2 delivery class (prior: 19.2.4.2 S2): the qualified ambiguous candidates are built in toolLookupRules.ts but every model transport drops error data. Close it as one class across ALL serializers: packages/core/src/model/agentSdkMcpClient.ts (~:165, MCP text AND structuredContent), model/anthropicNativeClient.ts (~:136), model/openaiNativeClient.ts (~:110), model/codexMcpHttpServer.ts (~:65), plus any other place a ToolResult failure is serialized for a provider (grep for code/message error projections; check the legacy fenced renderToolResults and executor delegates). Reconcile the neutral ModelToolResult failure type (model/client.ts ~:252) with ToolResult so optional failure data is part of the contract. Error-with-data must reach the provider with candidate identities, kind, source/locator and structured re-query data; success and error-without-data behaviour must stay unchanged; keep cap/overflow and error semantics. Do not move qualification into another undelivered field. Permanent evidence: extend the existing adapter/MCP tests with a generalized error-with-data transport invariant exercised through public adapter/MCP boundaries using actual ambiguous lookup results (Darkvision source-distinct passages; same-kind feature collisions such as Spellcasting/ASI), asserting the provider-side payload carries each shown candidate's identity and qualification; include an error-without-data control. Correct registry reasoning (display-name-qualification / F-22) to cite actual DM delivery. Report every serializer inspected in notes. Host memory: wait until pgrep -fc '^node .*verify-current-worktree' prints 0 or 1; npm run verify:worktree && git commit. Notes; close this bead. No push/PR.",
+  "notes": "Complete, commit 1ec28562. Serializers inspected: anthropicNativeClient.toResultPayload, openaiNativeClient.toResultPayload, agentSdkMcpClient.toResultPayload (MCP text+structuredContent), codexMcpHttpServer (shares MCP shape) - all four dropped error data; now ALL route through one shared toToolResultPayload in model/client.ts. ModelToolResult failure now has optional data (reconciled with ToolResult). Legacy fenced renderToolResults already preserved data; executor delegates/nativeToolResults retain original result. Success and error-without-data payloads unchanged. Evidence: real lookup_rules ambiguous results (Darkvision, Spellcasting, ASI) asserted at provider payload in the 4 public adapter/MCP test suites (test/support/ambiguousLookup.ts) + error-without-data control; tests verified failing without fix (12 fail). Registry display-name-qualification reasoning corrected. verify:worktree passed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T15:47:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T15:52:34Z",
+  "closed_at": "2026-10-11T15:52:34Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.4.5",
+      "depends_on_id": "eshyra-o9bd.19.2.4",
+      "type": "parent-child",
+      "created_at": "2026-10-11T10:47:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

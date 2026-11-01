@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3aww",
+  "title": "Codex ChatGPT auth rejects gpt-6.1-sol / gpt-6.1-luna defaults",
+  "description": "Live smoke on 2026-10-09 showed both new OpenAI defaults rejected with 400 'not supported when using Codex with a ChatGPT account'. Re-verify availability before merging eshyra-i9sb; defaults currently unusable on this account unless ESHYRA_MODEL/ESHYRA_AUDIT_MODEL overridden.",
+  "notes": "Supervisor check 2026-10-09 (~/.codex/logs_2.sqlite, read-only): gpt-6.1-sol completed turns with token usage on this account through 2026-10-04 00:30 CDT, matching when Sol capacity became unavailable; rejections are recent. gpt-6.1-luna has no successful request here and is absent from models_cache.json. Likely availability (sol) / not-yet-rolled-out (luna), not a wrong id.\nROOT CAUSE (supervisor, 2026-10-09): not account availability. @openai/codex-sdk 0.157.0 bundles codex 0.157 which gets the 400 for gpt-6.1-sol; codex-cli 0.162.0 on the same account returns ok. gpt-6.1-luna was a mistaken id (user: audit is gpt-6-luna). Fix = bump @openai/codex-sdk to 0.162.0 (separate dependency PR).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T02:46:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T03:19:14Z",
+  "closed_at": "2026-10-09T03:19:14Z",
+  "close_reason": "Root cause was the pinned codex-sdk 0.157 bundled binary; fixed by PR #620 (0.162.0). gpt-6.1-luna was a mistaken id; audit default is gpt-6-luna (PR #619).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-3aww",
+      "depends_on_id": "eshyra-6bua",
+      "type": "blocks",
+      "created_at": "2026-10-08T22:09:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

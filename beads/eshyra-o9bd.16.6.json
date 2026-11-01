@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.6",
+  "title": "Audit blocker repairs: eshyra-o9bd.16 findings",
+  "description": "Owns repairs of BLOCKER findings from the independent ADR-0020 candidate audit lanes eshyra-o9bd.16.1-.5. Each child blocks eshyra-o9bd.19.6.4. A repair that changes pack bytes requires a bounded re-audit of the affected lane.",
+  "notes": "PR #699 merged as 8100e635 (2026-11-01). Sol final review .16.6.3, re-review .16.6.4 and confirmation .16.6.5 ended NO MATERIAL FINDINGS after the S2/S3 reason repairs.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T04:16:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:31:03Z",
+  "closed_at": "2026-11-01T08:31:03Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.6",
+      "depends_on_id": "eshyra-o9bd.16.6.2",
+      "type": "blocks",
+      "created_at": "2026-10-31T23:17:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16.6",
+      "depends_on_id": "eshyra-o9bd.16.6.1",
+      "type": "blocks",
+      "created_at": "2026-10-31T23:16:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16.6",
+      "depends_on_id": "eshyra-o9bd.16",
+      "type": "parent-child",
+      "created_at": "2026-10-31T23:16:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

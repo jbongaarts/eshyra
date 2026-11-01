@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.7",
+  "title": "opus:F-09 registry update (rule-record runtime statements design §8 step 4)",
+  "description": "Design docs/design/rule-record-runtime-statements.md §8 step 4, after the generalization (PR #596, 3a0bb5d4). Update finding-registry row rules-prose-readiness (opus:F-09) from accepted to disclosed-dependency, following the magic-item-effects precedent. statusReasoning records two things. (1) The ADR 0020 reading of F-09: in-band runtime statements (relationships, positively selected capabilities, known limits) through ruleAwareness, the lookup_rules envelope, and the discovery packet; absence makes no claim; no pack readiness label (R2). (2) The A5 dependency: blocking engine-capability gaps are disclosed but not discharged, so F-09 is not recorded as resolved while they are open. Deliverable is a PR; this bead stays in_progress until it merges.",
+  "acceptance_criteria": "- rules-prose-readiness status is disclosed-dependency with statusReasoning covering the narrowed reading and the open A5 gaps.\n- findingRegistry.test.ts pins the new disposition by identity.\n- verify:worktree green; PR opened.",
+  "notes": "2026-10-02: PR #598 opened at 67efaa8b (rules-prose-readiness -> disclosed-dependency). verify:worktree 5579 passed / 3 skipped. Stays in_progress until merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-02T03:24:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-02T03:35:48Z",
+  "started_at": "2026-10-02T03:24:59Z",
+  "closed_at": "2026-10-02T03:35:48Z",
+  "close_reason": "PR #598 merged as 18c1b305 (reviewed head 67efaa8b). rules-prose-readiness (opus:F-09) is disclosed-dependency.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.7",
+      "depends_on_id": "eshyra-o9bd.19.3.4",
+      "type": "parent-child",
+      "created_at": "2026-10-01T22:24:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

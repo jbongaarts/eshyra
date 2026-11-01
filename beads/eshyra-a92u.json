@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-a92u",
+  "title": "Guard against dependabot lockfile workspace-entry drift for optional deps",
+  "description": "On 2026-09-29 dependabot rebases of optional provider SDK bumps (#587 codex-sdk, #586 MCP SDK, #584 claude-agent-sdk) each injected a spurious entry into package-lock.json packages/core 'dependencies' while package.json lists those packages only under optionalDependencies. CI (npm ci, install smokes, artifact builds) stayed green, so nothing caught it; #592 happened to normalize it. Consider a CI check that 'npm install --package-lock-only --ignore-scripts' leaves package-lock.json unchanged, or a docs/dependencies.md review rule. Evidence: eshyra-7p3k notes.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T04:05:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-29T04:05:47Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.8.2",
+  "title": "GREEN: implement parseHazards, emit, sections wiring",
+  "description": "Implement parseHazards.ts, update types/emit/index/sections/kindSchemas to make RED tests pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T04:17:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T04:18:23Z",
+  "closed_at": "2026-05-28T04:22:31Z",
+  "close_reason": "Closed",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.8.2",
+      "depends_on_id": "eshyra-0m9.5.8.1",
+      "type": "blocks",
+      "created_at": "2026-05-27T23:17:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.8.2",
+      "depends_on_id": "eshyra-0m9.5.8",
+      "type": "parent-child",
+      "created_at": "2026-05-27T23:17:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "3aac8f66-5c08-5e3d-ab3a-37d4fc218064",
+      "issue_id": "eshyra-0m9.5.8.2",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: npm run test -- packages/core/test/importers/dnd5e-srd-5.1/ -> 128 passed (7 files). All parser + pipeline tests pass.",
+      "created_at": "2026-05-28T04:22:30Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

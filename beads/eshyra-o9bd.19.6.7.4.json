@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.4",
+  "title": "Audit lane A4: GPT-6.1 Sol (Codex) deep adversarial capability/state audit @ 6812cc0b",
+  "description": "Independent auditor lane of eshyra-o9bd.19.6.7 (read its description for the pinned candidate, authority, independence and finding-promotion rules). Audit exactly 6812cc0b89daa0e2503cd06521ec5c60a7103651; verify the pinned hashes first. READ-ONLY: no repository edits, commits to shared branches, PRs, or merges. Do not read sibling child beads of eshyra-o9bd.19.6.7. Report: identity checks; method and denominators; findings (BLOCKER/NON-BLOCKER, invariant+authority, evidence, reachability, consequence, sibling analysis, suggested owner); explicit LIMITS. A clean result means no blocker found within stated denominators.\n\nFOCUS: Deep adversarial review of positively selected deterministic capabilities and state: identity (record keys, instance/item identity, revision binding), mutation correctness and fail-closed refusal before mutation, migration and schema evolution, checkpoint/restore/replay state integrity, cross-tool invariants. Dispatched read-only via dispatch-codex.sh (gpt-6.1-sol, high reasoning) into worktree/branch named after this bead at the pinned SHA. Records its own report on this bead with bd.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T18:00:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T18:00:40Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.4",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-01T12:00:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

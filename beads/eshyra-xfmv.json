@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xfmv",
+  "title": "Bump Biome to 2.6.x with config migration; keep Markdown unformatted",
+  "notes": "PR https://github.com/jbongaarts/eshyra/pull/687 open; supersedes dependabot #682. Close after merge.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-27T01:48:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-27T03:12:35Z",
+  "started_at": "2026-10-27T01:48:55Z",
+  "closed_at": "2026-10-27T03:12:35Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

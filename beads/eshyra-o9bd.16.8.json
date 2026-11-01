@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.8",
+  "title": "Audit blocker repairs: eshyra-o9bd.16.3 L3 adjudication/readiness findings",
+  "description": "Parent for repairs of independent-audit lane L3 (eshyra-o9bd.16.3) blockers L3-F1..F3. Deliverable: one PR to main from branch eshyra-o9bd.16.8. Blocks re-freeze acceptance eshyra-o9bd.19.6.4.",
+  "notes": "PR #700 opened 2026-11-01. Awaiting Sol review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:32:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T13:27:19Z",
+  "started_at": "2026-11-01T08:59:12Z",
+  "closed_at": "2026-11-01T13:27:19Z",
+  "close_reason": "PR #700 merged 8a30d968 after clean Sol review 16.8.4",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.8",
+      "depends_on_id": "eshyra-o9bd.16",
+      "type": "parent-child",
+      "created_at": "2026-11-01T02:32:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

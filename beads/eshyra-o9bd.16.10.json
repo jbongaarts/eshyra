@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.10",
+  "title": "Audit blocker repairs: eshyra-o9bd.16.4 L4 deterministic-capability findings",
+  "description": "Parent for repairs of independent-audit lane L4 (eshyra-o9bd.16.4) blockers L4-F1 (stack-final consumption voids earlier paid bind credits) and L4-F2 (use_item ignores unrecognized operation args). Deliverable: one PR to main from branch eshyra-o9bd.16.10. Blocks re-freeze acceptance eshyra-o9bd.19.6.4.",
+  "notes": "PR opened 2026-11-01 with .1 and .2 integrated. Awaiting Sol review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:42:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T13:50:46Z",
+  "started_at": "2026-11-01T08:59:14Z",
+  "closed_at": "2026-11-01T13:50:46Z",
+  "close_reason": "PR #702 merged after clean Sol confirm 16.10.4",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.10",
+      "depends_on_id": "eshyra-o9bd.16",
+      "type": "parent-child",
+      "created_at": "2026-11-01T02:42:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,26 @@
+{
+  "_type": "issue",
+  "id": "eshyra-j9rc",
+  "title": "Prove Pipes variable-charge spend after its grant contract is owned",
+  "description": "Pipes of the Sewers now has green C1 charge economy and operation clauses, but useItem still refuses call-rat-swarms at the unmodified real-pack preflight because m4-pipes-of-the-sewers remains engine-pending on creature-grant lifecycle, controlled-entity action budget, and cooldown/identity ownership. This dispatch proved the real-record dawn 1d3 regain and separately verified that useItem refuses a variable spend larger than remaining charges; the exact Pipes 2-then-2-with-1-remaining sequence cannot reach cost validation without crossing the independent m4 boundary.\\n\\nAfter the existing grant contract is owned or otherwise resolved, add no-waiver real-pack evidence that spending 2 charges, refusing another 2 with 1 remaining, and crossing dawn restores 1d3 capped at 3. Preserve the current truthful refusal until that boundary changes.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T22:32:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T22:32:13Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-j9rc",
+      "depends_on_id": "eshyra-9ooo.1",
+      "type": "discovered-from",
+      "created_at": "2026-10-31T17:32:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

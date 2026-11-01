@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.8.3",
+  "title": "L3-F3: spend_usage description must state the class-table-bound resource exception",
+  "description": "Repair L3-F3 (evidence in eshyra-o9bd.16.3 notes). toolSpendUsage.ts ~31-35 tells the model that character abilities have no structured economy and to pass maxUses+reset on first spend, but usageCounters.ts ~928-980 derives Rage, Ki and Sorcery Points from the class table and rejects a declared economy. protocol.ts injects both, so the model gets contradictory instructions. Fix the description (and any other model-facing copy) to state the bound/unbound distinction; keep the engine's rejection. Evidence: a compact assertion that the published description identifies the distinction.",
+  "notes": "Done by the Captain in commit 8cc290d6 on branch eshyra-o9bd.16.8. The toolSpendUsage.ts description now states the class-table-bound exception for Rage, Ki and Sorcery Points. The engine's rejection is unchanged, and protocol.ts already carried the exception. Test: classResourceActiveCapacity.test.ts checks that every CLASS_RESOURCE_BINDINGS displayName and the omission rule appear in the description. verify:worktree passed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:33:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:40:01Z",
+  "closed_at": "2026-11-01T08:40:01Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.8.3",
+      "depends_on_id": "eshyra-o9bd.16.8",
+      "type": "parent-child",
+      "created_at": "2026-11-01T02:33:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

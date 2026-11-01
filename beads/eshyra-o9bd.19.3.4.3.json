@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.3",
+  "title": "Implement condition->condition discovery relationships (design PR #593)",
+  "description": "Implementation PR for docs/design/condition-condition-relationships.md (revision 3, APPROVED and merged via PR #593 as 7452fbff), design §8 step 2: C1-C7, regenerated pack artifacts, §6 evidence, inventory-script rerun. Deliverable is a PR; stays in_progress until it merges.",
+  "notes": "2026-09-29: child .3.1 integrated after supervisor review (added live lookup_rules Grappled assertion + design I1). PR #595 opened from eshyra-o9bd.19.3.4.3. verify:worktree 5569 passed / 3 skipped. Stays in_progress until merge.\n2026-09-29: review @552d93da (invariant-7 aliasing across Grappled's two exclusions) fixed test-only in 1c461bf1; mutation of either leaf observed to fail. Awaiting re-review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T21:41:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-30T00:44:51Z",
+  "started_at": "2026-09-29T21:43:21Z",
+  "closed_at": "2026-09-30T00:44:51Z",
+  "close_reason": "Merged via PR #595 as d9397578.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.3",
+      "depends_on_id": "eshyra-o9bd.19.3.4",
+      "type": "parent-child",
+      "created_at": "2026-09-29T16:41:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.3",
+      "depends_on_id": "eshyra-o9bd.19.3.4.3.1",
+      "type": "blocks",
+      "created_at": "2026-09-29T16:43:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

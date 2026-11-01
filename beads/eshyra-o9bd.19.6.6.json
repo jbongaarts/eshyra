@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.6",
+  "title": "Reconcile finding-registry rows whose owner or reasoning is stale under ADR 0020",
+  "description": "docs/audits/dnd5e-srd-5.1-final/finding-registry.json rows audit-readiness-gate (indep:001), readiness-integrity (opus:F-21), and readiness-artifacts (sol:CAP-014) still name owningBead eshyra-o9bd.19.1.5, which was closed 2026-09-11 as superseded, and their invariants are pre-ADR ('Readiness gates require clause-complete procedures'; 'Readiness metadata reflects semantic completeness'; 'Readiness artifacts agree with the corpus'). ADR 0020 section 7 requires an explicit disposition per finding, and the re-freeze bar #5 requires every finding to be dispositioned. Found by the 2026-09-22 ADR-0020 disposition pass over eshyra-o9bd.19.",
+  "acceptance_criteria": "- Each of rows audit-readiness-gate (indep:001), readiness-integrity (opus:F-21), readiness-artifacts (sol:CAP-014) names a live owning bead or carries an explicit ADR-0020 retirement naming its replacing responsibility (expected: re-freeze bar #4, checked by eshyra-o9bd.19.6.3), hiding no source, discovery, or state defect.\n- source-authority-opus-f19 reasoning no longer depends on retired clause-IR work and states its actual disposition with evidence.\n- engine-capability-ownership (sol:CAP-007) names eshyra-o9bd.19.5.12 (or another live owner) and no longer waits on retired family certification.\n- The registry's own validation/currency checks pass; no membership claim is added.",
+  "notes": "2026-10-09 rebaseline: scope extended to two further rows in the same file whose recorded reasoning names retired work (one PR, one file; still no membership claim). Previous title 'Re-own or disposition the three finding-registry rows owned by closed eshyra-o9bd.19.1.5'; previous AC preserved verbatim: [- Each of the three rows names a live owning bead or carries an explicit ADR-0020 retirement that names its replacing responsibility (expected: re-freeze bar #4, truthful in-band scope of every audit/readiness artifact, checked by eshyra-o9bd.19.6.3) and hides no source, discovery, or state defect.\n- The registry's own validation/currency checks pass; no membership claim is added.]. Added: (4) source-authority-opus-f19 (owner closed eshyra-o9bd.19.2.1): reasoning says 'preserve this source identity until the clause IR follow-up lands', but that follow-up was retired 2026-09-22 (eshyra-r8r3/eshyra-pk7e) and the composed spellPreparation quotation was removed by eshyra-o9bd.19.2.1.2 (PR #566); restate the disposition. (5) engine-capability-ownership (sol:CAP-007, owner epic eshyra-o9bd.19.5): reasoning says 'until those families certify', but the per-family certify tasks were retired and eshyra-olc5.2 is superseded; re-own to eshyra-o9bd.19.5.12 (single in-force inventory) with reasoning that unselected legacy backlog is backlog, not an ownership gap. The magic-item-effects row is NOT here - eshyra-o9bd.19.4.5 owns it.\nPR #641 opened at head acf927f5; Sol final review child eshyra-o9bd.19.6.6.2.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-23T01:41:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T02:46:41Z",
+  "started_at": "2026-10-10T02:29:33Z",
+  "closed_at": "2026-10-10T02:46:41Z",
+  "close_reason": "PR #641 merged (d98932b5) after GPT-6.1-Sol APPROVED at exact head acf927f5 (eshyra-o9bd.19.6.6.2). Five rows reconciled: audit-readiness-gate and readiness-integrity narrowed to 19.6.3; readiness-artifacts re-owned to 19.6.3; F-19 reasoning states the #566 derived-composition disposition with exact provenance wording; CAP-007 re-owned to 19.5.12.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.6",
+      "depends_on_id": "eshyra-o9bd.19.6.6.1",
+      "type": "blocks",
+      "created_at": "2026-10-09T21:29:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.6",
+      "depends_on_id": "eshyra-o9bd.19.6",
+      "type": "parent-child",
+      "created_at": "2026-09-22T20:41:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

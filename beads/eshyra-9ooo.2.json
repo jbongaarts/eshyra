@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9ooo.2",
+  "title": "Review: Sol final review of PR #695 (eshyra-9ooo @ 5767fc2e)",
+  "description": "Final read-only review of PR #695 (branch eshyra-9ooo, exact head 5767fc2efea21c0f49daa6dbf4b6e591e80e3de5) by Sol. Findings in notes; ends with a VERDICT line.",
+  "notes": "dispatch: gpt-6.1-sol high, pgid 1969453\nFINAL READ-ONLY REVIEW — PR #695, exact head 5767fc2efea21c0f49daa6dbf4b6e591e80e3de5; rules-clause-complete profile.\n\nRead AGENTS.md, design-and-pr-review-policy.md, importer-fix-protocol.md, rules-pack compiler guidance, ADR 0020, live owning/dispatch beads, eshyra-7gkh.1 and its thaw-note precedent, and eshyra-j9rc. The local refs/beads/state projection is dated 2026-09-10 and predates these beads; live bd records were used for current scope/status. Reviewed the full origin/main...HEAD diff and all three branch commits; GitHub also reports this exact head, with no prior reviews or comments.\n\nS1 — NON-MATERIAL (documentation count nit). docs/audits/dnd5e-srd-5.1-final/thaw-notes/2026-10-31-eshyra-9ooo-dawn-dice-recharge-ownership.md:47-48 says \"53 other charge-recharge clauses remain pending.\" Concrete scenario: filtering the committed pack's executionReadiness clauses for missingHooks containing {engine:F5, hook:magic-item-usage-recharge} returns 134, not 53: all 207 declarations remain, of which 73 are green and 134 pending. This does not change runtime classification or the correct overall integrated census. Suggested fix: replace 53 with 134. Evidence is the generalized hook-membership count over the committed pack; a new permanent test for this prose typo is disproportionate.\n\nNo material findings. Independently read charge-economy, spending, recharge, and depletion-related sentences from the vendored SRD PDF for every one of the 22 changed items (including Cube of Force's zero-charge barrier ending, which remains represented by the pending M5 machine). Structural comparison confirms that the only generated changes are the advertised 73 pending-to-green clauses (22 economy, 51 operation); mechanics, descriptions, provenance, other clauses, record membership and global landed-hook set are preserved. The integrated census is 677 pending / 333 green / 358 adjudicated / 1 design-blocked, total 1369.\n\nTraced compiler ownership through effective parent/variant mechanics and the real consumers: deriveItemOperationReadinessInput/assertMagicItemOperationReady and campaign preflight; useItem costAmount, sequential multi-cost accounting, transactional overdraft refusal and depletion handling; itemResetExecutor reset-shape admission, seeded dice, maximum capping and clock-boundary/idempotence logic; discovery readiness disclosure. Independent ownership probes covered mixed economies, depletion, extra reset keys, weekly reset, zero maximum, invalid dice, empty cost and unresolved economy. No overbroad global hook landing found. The four newly ready operations are the advertised Gem/gain-truesight, Evasion/turn-failed-dex-save-into-success, Ram/break-object and Wand/detect-secret. Their charge spending is bounded; source interpretation and existing residual clauses retain their established ownership.\n\nPipes remains refused by m4 before state initialization/spending. The requested exact real-Pipes 2-then-2 sequence cannot execute while preserving that independently required refusal; this limitation is explicit in the implementation report and eshyra-j9rc. Independent no-waiver evidence on the unmodified Ring of the Ram exercised the same variable-cost consumer: spend 2 leaves 1, another 2 is refused with identical state, invalid amounts are refused, and dawn restores the seeded roll. No readiness waiver or product change is warranted to force Pipes through m4.\n\nVerification: 438 tests passed across magicItemCompiler, magicItemFamilyRegistry, magicItemOperationSourceAgreement, itemChargeDawnRecharge, itemState and srdGeneratedPack; another 110 passed across itemResetExecutor and discoveryProbes (548 total, zero failures). npm run verify:dnd5e-srd-pack passed with exact regenerated pack and sibling-artifact agreement, using an external temp directory. Inventory --check passed (1865 rows); git diff --check passed. Independent real-pack overflow probes with seed 1 confirmed Pipes and Wand: 2 remaining + roll 2 restores only 1 to max 3; Robe of Stars at dusk: 5 + roll 4 restores only 1 to max 6. The new seed-23 tests roll 1 and therefore do not themselves force overflow; the existing shared clamp regression and these independent probes cover that invariant, so no additional permanent fixture is required.\n\nRepository working tree remains clean at the reviewed SHA. No repository edits, formatting, full mutating verification, commits, pushes, GitHub comments or merge were performed. Owning bead eshyra-9ooo was not modified.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T22:47:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T22:51:43Z",
+  "closed_at": "2026-10-31T22:51:43Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-9ooo.2",
+      "depends_on_id": "eshyra-9ooo",
+      "type": "parent-child",
+      "created_at": "2026-10-31T17:47:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

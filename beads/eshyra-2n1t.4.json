@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.4",
+  "title": "F2: Action-economy turn budget",
+  "description": "Per-combatant per-turn budget record (action, bonus, reaction-per-round, free interaction, movement note) on encounter state + turn-loop reset + bonus-action-spell timing check + surprised-turn restriction flag. Members: your-turn, bonus-actions, reactions, other-activity-on-your-turn, bonus-action (IMPL); clauses: surprise (turn-1 restriction), two-weapon-fighting (bonus-attack spend). Deliberately not a full action-legality engine. Source: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4.",
+  "notes": "2026-07-10: F2 implemented on branch eshyra-2n1t-4-action-economy, PR #422 (https://github.com/jbongaarts/eshyra/pull/422) open for review. Migration 0006 (combat_instance round/active-turn + combat_turn_budget), state/actionEconomy.ts (beginTurn/spendTurnResource/setSurprised/readCombatTurnState), tools begin_turn/spend_turn_resource/set_surprised, prompt+context wiring, coverage registry: 5 rows to implemented, census 10/97/47/11/10. verify:worktree green (3734 passed). Close on merge.\n2026-07-11: Review round 1 addressed in 9ab40d0 — reactions now an allowance (perTurn extraReactions refresh every turn; formula-based grants via validated update_combatant reactionAllowance, hydra/marilith regression-tested), spell timing pack-derived via spellRef (fail-closed on unresolved refs and on cast-like activities without a ref), setSurprised rejects active/already-acted participants. PR #422 comment posted; awaiting re-review.\n2026-07-11: Review round 2 addressed in 95ed4db — setSurprised acted-guard now also checks retained reaction_activity so the every_turn (marilith Reactive) refresh cannot erase pre-first-turn reaction evidence; reviewer's exact regression added. PR #422 awaiting final review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:40:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-11T04:34:54Z",
+  "started_at": "2026-07-11T00:08:34Z",
+  "closed_at": "2026-07-11T04:34:54Z",
+  "close_reason": "F2 action-economy turn budget merged to main via PR #422 (merge commit b6aade9). Turn budget state machine (begin_turn/spend_turn_resource/set_surprised + update_combatant reactionAllowance grant), migration 0006, coverage census 10/97/47/11/10. Both review rounds addressed (reaction allowance w/ hydra+marilith mechanics, pack-derived spellRef timing, surprise guards).",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.4",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-07T00:40:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

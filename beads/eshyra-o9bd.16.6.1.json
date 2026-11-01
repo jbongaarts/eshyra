@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.6.1",
+  "title": "L2-F2: runtime shadow/intervene discovery drops the installed relationship-manifest source",
+  "description": "Independent audit finding L2-F2 (BLOCKER, bar 9). Read the full finding with `bd show eshyra-o9bd.16.2`.\n\nROOT CAUSE: packages/core/src/orchestrator/orchestrator.ts:870 already puts relationshipManifestSource on the shadow capture input. But ShadowDiscoveryInput (packages/core/src/discovery/shadow.ts, around line 178) has no such field, and captureRawShadow's runDiscoveryStages call (around line 322) never forwards it. So packages/core/src/discovery/harness.ts:30 falls back to bundledDnd5eSrdRecordRelationshipManifestSource(), and an installed add-on manifest is reported absent at runtime, in both shadow and intervene modes. lookup_rules (toolLookupRules.ts:166) honours it correctly.\n\nFIX:\n- Add `readonly relationshipManifestSource?: RecordRelationshipManifestSource` to ShadowDiscoveryInput, with a doc comment: it is the manifest association installed with the campaign's rules pack, preserved by identity, and absent means the bundled default.\n- Forward it to runDiscoveryStages.\n- Grep every other runtime caller of runDiscoveryStages and captureRawShadow for the same drop.\n- Do not change the absent-source semantics.\n\nEVIDENCE: one generalized contract test. It binds the canonical candidate base plus one synthetic add-on that owns its own record-key declaration, and runs the same per-pack source through lookup_rules, runDiscoveryStages, and runTurn in BOTH discoveryMode shadow and intervene. It asserts:\n- the add-on manifest is present;\n- the traversal reaches the linked record;\n- the delivered (intervene) packet contains it;\n- an absent-manifest control shows the bundled-default behaviour.\nStart from the auditor's reproducer, /tmp/claude-1000/-home-jhbongaarts-src-eshyra/fbbcdead-8263-4bd4-8b2c-f48eaa899a3a/scratchpad/repro/l2-runtime-source.mts. Adapt it into vitest using the existing in-memory DB and scripted-model test helpers in packages/core/test/ (search for discoveryMode). It must fail before the fix and pass after.\n\nCompletion: `npm run verify:worktree` passes; commit on the assigned branch only.\n",
+  "notes": "Fixed L2-F2 on branch eshyra-o9bd.16.6.1, commit 570747766c97d1562893fb9df9e1e19cf3a8dd63. Files: packages/core/src/discovery/shadow.ts (ShadowDiscoveryInput.relationshipManifestSource added and forwarded to runDiscoveryStages in captureRawShadow; absent semantics unchanged); packages/core/test/discovery/relationshipManifestRuntime.test.ts (new generalized contract test). Before fix: 2 runTurn tests (shadow, intervene) FAIL, runtime reports add-on manifest absent; lookup_rules and offline runDiscoveryStages pass; absent control passes. After fix: 4/4 pass. npm run verify:worktree exit 0 (7242 passed, 3 skipped). Other runtime callers: only the two orchestrator capture entry points (captureDiscoveryShadow, captureDiscoveryIntervention), both via captureRawShadow and both already receive the source from orchestrator.ts:870; no other runtime caller of runDiscoveryStages found. Not pushed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T04:16:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T04:21:00Z",
+  "closed_at": "2026-11-01T04:21:00Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.6.1",
+      "depends_on_id": "eshyra-o9bd.16.6",
+      "type": "parent-child",
+      "created_at": "2026-10-31T23:16:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

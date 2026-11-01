@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-kcb0",
+  "title": "Flaky CI timeout: hpLifecycle 'uses full damage for instant death at 0 HP across stable/dying and temp buffers' exceeds 5s",
+  "description": "On 2026-11-01, CI build-test on docs-only PR #704 (run 41314408649) failed: packages/core/test/hpLifecycle.test.ts > adjustHp — temporary hit points > 'uses full damage for instant death at 0 HP across stable/dying and temp buffers' took 5172ms against the 5000ms default timeout. The same test passes locally in verify:worktree. Measure the test's cost. Then either reduce its enumeration, if it is a combinatorial sweep, or give it a justified per-test timeout. Do not weaken its assertions.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T14:11:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T14:11:57Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

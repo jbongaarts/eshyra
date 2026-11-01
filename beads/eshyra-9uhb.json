@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9uhb",
+  "title": "Import Using Ability Scores chapter intro as rule:using-ability-scores",
+  "description": "SRD p76. coreRulePages (sliceSection anchors.coreRules, excludes 'Using Ability Scores' h25.9 title) starts at 'Six abilities provide a quick description...'; intro (six ability bullets + d20/check/save/attack explanation) until first heading 'Ability Scores and Modifiers' h18. Use the shared parseSectionIntro helper (stop at h>=11.5) on coreRulePages -> rule:using-ability-scores. Avoid duplicating child rules/tables. NOTE: do NOT use parseRules chapterIntro here (coreRules slice spans 3 chapters; tier-0 seed would wrongly parent Adventuring/Combat headings). Add to EXPECTED_SRD_5_1_RULE_KEYS + coverage. Sentinel: 'Six abilities provide a quick description'. Part of commit 1.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T15:34:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-15T15:39:54Z",
+  "closed_at": "2026-06-15T15:54:52Z",
+  "close_reason": "Implemented in PR #227 (branch eshyra-g9im-intro-prose). 12 new rule records (rule:feats, rule:conditions, rule:using-ability-scores, rule:appendix-mm-b-nonplayer-characters, 8 subclass overviews); all 12 headings reclassified from ignored:document-structure to record. Sentinels + coverage assertions added. verify:dnd5e-srd-pack + verify:worktree green.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-9uhb",
+      "depends_on_id": "eshyra-g9im",
+      "type": "parent-child",
+      "created_at": "2026-06-15T10:35:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

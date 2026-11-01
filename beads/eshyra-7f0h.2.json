@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7f0h.2",
+  "title": "Review: Sol final review of PR #694 (eshyra-7f0h @ 00e7dbe2)",
+  "description": "Final read-only review of PR #694 (branch eshyra-7f0h, exact head 00e7dbe200c229c3c9f0c1c744f2354651dc27ba) by Sol. Findings in notes; ends with a VERDICT line.",
+  "notes": "dispatch: gpt-6.1-sol high, pgid 1875069\nFinal read-only review of PR #694, exact head 00e7dbe200c229c3c9f0c1c744f2354651dc27ba; effective profile rules-clause-complete.\n\nReviewed owning bead AC1-5, dispatch decisions/report, AGENTS.md, design-and-pr-review-policy.md, importer-fix-protocol.md, compiler architecture and ADRs 0017/0020; full origin/main...HEAD diff and commit log; vendored SRD 5.1 pp. 208 (Apparatus and all ten lever rows), 213 (Candle), and 101-103 (spell casting/bonus-action restriction); activation ledger/census; generated records and inventories; use_item input/output, readiness and semantic ownership, state initialization/transitions/depletion, attunement/inventory identity, turn-resource accounting, and real-pack evidence. refs/beads/state was stale (2026-09-10) and lacked these beads; current scope/status reconciled against live bd show. GitHub PR head matches the reviewed SHA.\n\nS1 — MATERIAL (P2). packages/core/scripts/importers/dnd5e-srd-5.1/magicItemCandleLifecycle.ts:47 (and :61, which makes cast-gate executable). Newly ready cast-gate has an action cost but no bound spell identity. Concrete reproduced scenario on the unmodified bundled pack: start a PC combat turn, provide an owned/attuned fresh Candle, spend a bonus action casting spell:healing-word, then useItem(...operationId: 'cast-gate'). Both succeed; the Candle is consumed, actionUsed and bonusActionUsed are true, but otherSpellCast remains 'none'. Reverse the order and Healing Word also succeeds after gate. The printed Candle alternative casts gate; SRD bonus-action casting permits no other spell that turn except an action cantrip. spendActivationTurnResource (itemState.ts:2343-2346) consequently passes itemOperation:true instead of spellRef:'spell:gate' to the existing spell-timing guard (actionEconomy.ts:1153-1183). This violates authoritative accounting (owning AC2, dispatch C2) and ADR0020's engine-owned resource/state boundary. DM ownership of gate's effects does not authorize recording its casting as a non-spell action; the tool also tells the DM not to spend a second action. Scope/siblings: of the four newly executable operations, only cast-gate casts a spell; move-levers, light, and snuff need no spell identity. Tested both ordering dimensions, fresh instance identity, real attunement, and real combat accounting. Suggested fix: connect this source-backed cast to spell:gate in the authoritative accounting path while retaining one lighting action and DM adjudication of effects, with honest readiness for any added binding; alternatively retain an explicit blocker for cast-gate until that accounting can be supported (dispatch C2 permits a spell-hook refusal). Required permanent evidence: a generalized real-pack spell-accounting invariant for this newly executable cast, covering both orderings with a bonus-action spell and transactional preservation of the Candle/action when refused; this is proportionate to a live rules/accounting defect. Implementation owner: PR #694 / eshyra-7f0h. Repair is material and needs a fresh full review at its new exact head before approval.\n\nOther scope conclusions: Apparatus grouping/selection and source cells are faithful; Candle paid lighting, free burn updates, relighting, first-light-only gate eligibility, and destruction behave as specified apart from S1. The unused excludes field is pre-existing; this Candle's new lifecycle enforces the relevant exclusion. Legacy-state migration: no requirement under the explicit pre-v1 no-compatibility policy in ADR0013/0015. No non-material findings.\n\nVerification: 10 targeted Vitest files, 593 tests passed (candleAndApparatus, itemTransitionTurnResource, magicItemMechanicsSchema, magicItemActivationEconomy, magicItemOperationSourceAgreement, magicItemTriage, itemState, itemTurnResource, srdGeneratedPack, magicItemLegacyCapabilityBacklog). Additional in-memory checks passed: snuff before any burn still bars gate; invalid transition destination refused; relight succeeds; exact 240-minute destruction and destroyed-instance refusal. npm run verify:dnd5e-srd-pack passed using /tmp output: no added/removed/changed regenerated records and all five sibling artifacts match. Generated record diff affects only Apparatus and Candle. git diff --check and git status --short clean. No repository edits, formatter, commit, push, GitHub comment, or merge performed.\n\nVERDICT: MATERIAL FINDINGS (1)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T22:21:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T22:25:13Z",
+  "closed_at": "2026-10-31T22:25:13Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7f0h.2",
+      "depends_on_id": "eshyra-7f0h",
+      "type": "parent-child",
+      "created_at": "2026-10-31T17:21:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

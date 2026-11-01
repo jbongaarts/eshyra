@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d8ap.5",
+  "title": "Add model-tier evaluation harness for primary DM and auditor roles",
+  "description": "Claude-vs-Codex comparison is mostly curiosity and is confounded by runtime changes like `l3b3`. The practical model question is which model tier is required for each Eshyra role. Evaluate primary DM and auditor roles independently, especially within the same provider, and measure total accepted-turn cost/usage rather than just per-call token counts.\n\nAcceptance criteria:\n\n- Define a short deterministic scenario that can be run under multiple primary DM / auditor model pairings on the same commit.\n- Use deterministic roll fixtures for combat comparison, not live RNG.\n- Scenario should include Sela / village-authority dialogue; asking what happened; asking what to expect if investigating; traveling to the watchtower; lighting a torch / entering the hollow; goblin ambush; at least one player attack; at least one enemy attack; a save/check or death save in the deterministic fixture.\n- Support evaluating primary DM and auditor roles independently: fixed primary DM + varied auditor; fixed auditor + varied primary DM.\n- Suggested staged matrix: Phase 1 holds primary DM constant and varies auditor with Opus + Haiku, Opus + Sonnet, Opus + Opus as a ceiling/control only if useful, GPT-5.5 + GPT-5.4-mini, and GPT-5.5 + stronger GPT auditor tier if available; Phase 2 holds best auditor constant and varies primary DM with Opus vs Sonnet vs Haiku if available and GPT-5.5 vs lower GPT primary tiers if available; Phase 3 evaluates cheapest viable pairings such as Sonnet + Haiku, Sonnet + Sonnet, and lower GPT primary + mini auditor if available.\n- Capture comparison metrics: first-pass audit accept rate; primary DM retry count; auditor call count; total expensive primary-DM calls per accepted player turn; auditor rejection causes; auditor false rejects; auditor false accepts; JSON/parse failures; tool correctness; player-visible roll compliance; combatant-state correctness; unsupported inference rate; qualitative prose/style notes; approximate usage by primary DM vs auditor.\n- Explicitly test the hypothesis that a stronger auditor may reduce total usage by avoiding false rejects and expensive primary-DM retries.\n- Document that prior Claude-vs-Codex comparisons were confounded by `l3b3` and differing session content.\n- Output should make it easy to compare table feel separately from mechanical correctness.\n",
+  "notes": "PR #309 opened for model-tier evaluation harness. Validation passed: targeted model evaluation/profile/combat fixture tests and npm run verify:worktree.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-25T05:22:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-25T23:55:23Z",
+  "started_at": "2026-06-25T23:38:54Z",
+  "closed_at": "2026-06-25T23:55:23Z",
+  "close_reason": "Merged PR #309 with model-tier evaluation harness, deterministic scenario/matrix, metrics aggregation, tests, and docs.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d8ap.5",
+      "depends_on_id": "eshyra-d8ap.3",
+      "type": "blocks",
+      "created_at": "2026-06-25T00:22:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d8ap.5",
+      "depends_on_id": "eshyra-d8ap.4",
+      "type": "blocks",
+      "created_at": "2026-06-25T00:22:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d8ap.5",
+      "depends_on_id": "eshyra-d8ap",
+      "type": "parent-child",
+      "created_at": "2026-06-25T00:22:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

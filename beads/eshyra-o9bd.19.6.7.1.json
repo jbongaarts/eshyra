@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.1",
+  "title": "Audit lane A1: GPT-6 (ChatGPT) broad review @ 6812cc0b",
+  "description": "Independent auditor lane of eshyra-o9bd.19.6.7 (read its description for the pinned candidate, authority, independence and finding-promotion rules). Audit exactly 6812cc0b89daa0e2503cd06521ec5c60a7103651; verify the pinned hashes first. READ-ONLY: no repository edits, commits to shared branches, PRs, or merges. Do not read sibling child beads of eshyra-o9bd.19.6.7. Report: identity checks; method and denominators; findings (BLOCKER/NON-BLOCKER, invariant+authority, evidence, reachability, consequence, sibling analysis, suggested owner); explicit LIMITS. A clean result means no blocker found within stated denominators.\n\nFOCUS: Broad independent review, emphasis on source fidelity against the vendored PDF, discovery (relationship declarations, rule-awareness expansion, context packets), and architectural consistency across ADR 0020/0017, the compiler doc and the implementation. Input: the reproducible audit bundle regenerated at the pinned SHA plus read access to the public repository at that SHA. The Captain records the submitted report on this bead verbatim with attribution (ChatGPT has no bd access).",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T18:00:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T18:00:32Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.1",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-01T12:00:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

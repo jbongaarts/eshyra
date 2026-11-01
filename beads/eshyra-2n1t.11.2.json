@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.11.2",
+  "title": "Codex: dedupe character-creation 4d6-drop-lowest onto the shared F1 dice grammar",
+  "description": "packages/core/src/character/abilityAllocation.ts implements its own 4d6-drop-lowest (rollAbilityScore/rollAbilityScoreSet) predating the F1 grammar. Migrate it onto dice.ts rollDice('4d6dl1') so there is exactly one keep/drop implementation (canonical rolled/kept/dropped representation from docs/dice-and-resolution.md), preserving the existing RolledAbilityScore result shape (rolls, dropped, total) and its seeded-RNG behavior contract. Mechanical, well-scoped Codex work; no behavior change intended — existing abilityAllocation tests must keep passing (update only if they pin the internal drop-selection tie order, which dice.ts defines as earliest-rolled-die-first).",
+  "acceptance_criteria": "abilityAllocation.ts contains no bespoke drop-lowest selection; delegates to dice.ts; tests green.",
+  "notes": "PR #451 review follow-up: fail closed on roll evidence for non-rolled methods; keep wizard on ability step when rolled evidence is missing; repair Markdown fence and stale advisory wording.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T20:48:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-14T23:51:55Z",
+  "started_at": "2026-07-14T23:20:28Z",
+  "closed_at": "2026-07-14T23:51:55Z",
+  "close_reason": "Addressed PR #451 review: reject roll evidence for non-rolled methods, block wizard advancement without rolled evidence, repair documentation fence/semantics, and add regressions.",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.11.2",
+      "depends_on_id": "eshyra-2n1t.11",
+      "type": "parent-child",
+      "created_at": "2026-07-11T15:48:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

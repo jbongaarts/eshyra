@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-efg5",
+  "title": "Dispatch: durable desc-mechanics numeric-conservation gate + schema robustness (attempt 2)",
+  "description": "Retry of eshyra-3kpz (attempt 1 failed on matcher spec; its 52 'mismatches' were false negatives). Same two parts as eshyra-3kpz (read its description for the full spec) with these binding matcher requirements learned from attempt 1:\n1. A description token 'DC n' (also phrasing 'save DC of n') is satisfied when n appears as ANY numeric dc/saveDc JSON field at ANY depth of the item's base mechanics or any variants[*].mechanics (e.g. save:{ability,dc}, saveDc, fixed numeric), or as literal 'DC n'/'DC of n' inside any mechanics string. Dice tokens must normalize whitespace and unicode minus ('1d6 + 4' == '1d6+4', '1d4 − 1' == '1d4-1').\n2. Reverse direction: a numeric dc/saveDc in mechanics is satisfied by desc 'DC n' OR 'save DC of n'.\n3. Expected steady state: exactly five forward accept-list entries (deck-of-many-things card dice 1d4/1d3/1d10/1d8 GM-mediated; figurine-of-wondrous-power 3d10 stat-block-owned; bead-of-force 1d4 found-count loot metadata; ioun-stone 1d3 orbit distance flavor; apparatus-of-the-crab DC 20 hidden catch adjudicated per as87 disposition) and one reverse entry (deck-of-illusions 1d34 synthesized uniform draw). If anything beyond these fails, STOP and report per original instructions.\n4. Part 2 unchanged: magicItemMechanics.ts schema guard forbidding transition onFailure+effects combination, with engine regression test.\nFull verify:worktree before commit.",
+  "notes": "Attempt-2 implementation completed by Codex session (killed after writing code; supervisor reviewed, ran focused tests 295 passed, full verify:worktree 4639 tests passed, committed). Gate passes against committed pack with exactly the six documented accept entries.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T07:37:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-19T07:46:34Z",
+  "close_reason": "Gate + schema guard implemented, fully verified, merged by supervisor",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

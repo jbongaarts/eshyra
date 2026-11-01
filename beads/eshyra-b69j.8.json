@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.8",
+  "title": "Add concept-first guided character creation flow",
+  "description": "Implement the guided CLI flow for the canonical modern path: Concept-first — I know what I want to play.\n\nStep order\nidentity/concept → class → ancestry → background → ability scores → class choices → spells/equipment → review\n\nUX requirements\n- Show the exact mode label.\n- Accept list numbers, display names, common aliases, case-insensitive text, and safe unambiguous prefixes.\n- Users should not need internal record IDs.\n- Class and ancestry choices should resolve through the generated rules-pack resolver.\n- Helper text should reflect the selected class/ancestry when data is available.\n\nAcceptance criteria\n- User can start a new character in concept-first mode.\n- User can choose class and ancestry by display name or unambiguous prefix.\n- Invalid class/ancestry produces actionable suggestions rather than whole-draft failure.\n- Flow preserves draft state when using back/review/set where implemented.\n- Transcript-style tests cover a representative successful concept-first path and common correction path.",
+  "notes": "PR #303 (combined with b69j.10): concept-first flow. Recipe step order identity->class->ancestry->background->scores->class-choices->spells->review with exact mode label; resolver-backed resolution by name/key/case-insensitive/unambiguous-prefix with suggestions on miss (no draft failure). Skill/tool/equipment selection -> b69j.13; finalize -> b69j.14. verify:worktree green.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-25T05:02:11Z",
+  "closed_at": "2026-06-25T22:26:20Z",
+  "close_reason": "Merged via PR #303. Concept-first flow: recipe step order identity->class->ancestry->background->scores->class-choices->spells->review with exact mode label; resolver-backed resolution by name/key/case-insensitive/unambiguous-prefix with suggestions on miss (no draft failure). Skill/tool/equipment selection -> b69j.13; finalize -> b69j.14.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.8",
+      "depends_on_id": "eshyra-b69j.11",
+      "type": "blocks",
+      "created_at": "2026-06-24T18:16:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-b69j.8",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 4,
+  "comment_count": 0
+}

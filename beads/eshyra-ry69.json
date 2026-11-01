@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ry69",
+  "title": "Declare or disposition the remaining undeclared record-key reference leaves (non-condition)",
+  "description": "Successor owner for the remaining undeclared reference-like leaves that eshyra-o9bd.16.2 L2-F1 identified. The population is the deterministic predicate: a data leaf whose value exactly equals an existing record key, at a (kind, normalized pointer) shape that no relationship declaration covers. Excluded are the families eshyra-o9bd.16.6.2 declares and the condition-name leaves of eshyra-o9bd.19.3.5. For each shape, either declare it (a reference with its relation) or declare it not-a-reference with a reason, and prove any intended expansion. This is a disclosed discovery limit of the candidate (bar 9), not a re-freeze blocker.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T04:17:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T04:17:36Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

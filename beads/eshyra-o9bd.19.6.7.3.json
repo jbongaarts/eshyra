@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.3",
+  "title": "Audit lane A3: Fable 5.1 (Claude Code Cloud) source-to-pack fidelity @ 6812cc0b",
+  "description": "Independent auditor lane of eshyra-o9bd.19.6.7 (read its description for the pinned candidate, authority, independence and finding-promotion rules). Audit exactly 6812cc0b89daa0e2503cd06521ec5c60a7103651; verify the pinned hashes first. READ-ONLY: no repository edits, commits to shared branches, PRs, or merges. Do not read sibling child beads of eshyra-o9bd.19.6.7. Report: identity checks; method and denominators; findings (BLOCKER/NON-BLOCKER, invariant+authority, evidence, reachability, consequence, sibling analysis, suggested owner); explicit LIMITS. A clean result means no blocker found within stated denominators.\n\nFOCUS: Source-to-pack fidelity and provenance (locators, fieldLocators, source-region ledger, no compiler-authored content carrying source provenance or licence), discovery support, executionReadiness/readiness truthfulness, and adjudication support (model-facing record and tool descriptions vs source and real tool contracts). Regenerates the audit bundle in the cloud VM from the pinned repository (Node 24 installed by the environment setup script). bd is unavailable in the cloud: the report is committed as a single file on a pushed report-only branch (no PR) and the Captain records it on this bead verbatim with the branch SHA.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T18:00:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T18:00:37Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.3",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-01T12:00:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.5.2",
+  "title": "F3 follow-up: suppression tool exposure + zone/form link runtimes",
+  "description": "suppressEffect/unsuppressEffect exist as validated domain operations (antimagic-style suppression without end/cleanup) with tests, but are not exposed as DM tools yet — expose suppress_effect/unsuppress_effect when the first consumer (antimagic field / S3 ward runtime) needs them. The 'zone' and 'form' active_effect_link kinds are schema-reserved (migration 0009 CHECK) and fail closed in code; their projection runtimes belong to the S3 ward/spatial slice and the C1 changeShape runtime respectively (eshyra-o9bd.18.7.9) — this bead only tracks wiring those runtimes through the F3 link cleanup contract (cleanup_on_end/cleanup_on_break, 'missing' holders) rather than a parallel mechanism. See docs/active-effect-lifecycle.md §2/§6.",
+  "notes": "Part A complete: added registered suppress_effect and unsuppress_effect semantic tools with explicit-action gating, domain error seam, provenance, protocol definitions, and tool-path tests. Part B remains reserved/fail-closed because canonical S3 ward/zone and C1 form runtimes are absent; future prerequisite is those owning consumers exposing validated projection create/remove operations.\nSupervisor disposition (2026-07-19, eshyra-fe3t phase): Part A shipped earlier (suppress_effect/unsuppress_effect tools). Part B verified still correctly fail-closed after 18.7.9 closed — 18.7.9 delivered the pack-side slices, but no engine-side owning consumer exposing validated zone/form projection create/remove operations exists yet (activeEffects.ts reservation comment remains accurate). Wiring work now has a dedicated owner bead (see follow-up created today); this tracking shim is complete for its own scope.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-12T15:19:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T07:53:21Z",
+  "started_at": "2026-07-13T03:48:08Z",
+  "closed_at": "2026-07-19T07:53:21Z",
+  "close_reason": "Part A shipped; Part B remains deliberately fail-closed and its runtime wiring now has a dedicated owner bead; nothing further belongs to this tracking bead",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.5.2",
+      "depends_on_id": "eshyra-2n1t.5",
+      "type": "parent-child",
+      "created_at": "2026-07-12T10:19:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

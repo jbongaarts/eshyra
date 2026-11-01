@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-09co.9",
+  "title": "Fix: Sol pass-4 S1-S3 on PR #627 (Sonnet 5.5)",
+  "description": "Fix the three MATERIAL findings from Sol pass-4 on PR #627 (read in full: `bd show eshyra-09co.8`). Branch from origin/eshyra-09co. Deps installed. Do not edit packages/core/src/character/ or packages/cli/.\n\nDESIGN (do it once, use it everywhere): add ONE pure, non-mutating canonical projection in usageCounters.ts for pack-bound class resources, e.g. projectBoundClassResources(rows, sheetsByCharacter, activeStack) that groups canonical + alias rows per character/resource, applies the owner's most-spent rule clamped to the active finite capacity, normalizes canonical key/display name/reset/source, and dispositions 'none' (no finite resource at this level: no refill, not advertised as available) and 'unlimited' (omitted or represented as unlimited, never as a finite exhausted pool). reconcileBoundCounterRows (the mutating owner) and the read path must agree with it (share the computation where practical).\n\nS1 (P1, contextAssembler.ts ~641-645, ~364, ~571): pass input.resolveRulesPack into readStateSnapshot -> readSpentUsageCounters, using the same per-turn memo the rest of context assembly uses, so a resolvable non-bundled binding keeps working before and after a spend. Preserve existing binding-failure behaviour.\nS2 (usageCounters.ts ~1917-1940): readSpentUsageCounters uses the canonical projection instead of overlaying max/used row by row. Non-mutating. Other counters unchanged.\nS3 (usageCounters.ts ~1785, rest.ts ~702/720): a bound row whose active capacity is 'none' never enters the reset mutation or the successful recovery results (historical expenditure retained, not refilled), consistent with spend/restore refusal and the projection.\n\nEVIDENCE (small generalized invariants, in-memory DB; you may extend packages/core/test/classResourceActiveCapacity.test.ts):\n- assembleContext with a non-bundled add-on binding (Sorcery Points, Ki, Rage) works before and after a spend and shows the active capacity.\n- The read projection of canonical, alias-only and duplicate legacy representations equals the owner's effective pool/reset/source WITHOUT changing stored rows, across finite, none and unlimited.\n- resetUsage / completeLongRest do not refill or report a 'none' resource.\n- Run the new tests against the pre-fix code (temporarily) to confirm they fail; say so in notes.\n\nPROTOCOL: `npm run verify:worktree` BEFORE committing; commit on your branch; `bd update <your-bead> --append-notes` with the report; `bd close <your-bead>`. Do not push or open/comment on PRs.",
+  "notes": "Committed 865354d4 on eshyra-09co.9. S1: assembleContext forwards resolveRulesPack to readStateSnapshot. S2: readSpentUsageCounters uses new non-mutating projectBoundClassResources (groups canonical+alias rows incl. unspent, shared mostSpentUsed rule, canonical key/name/reset/source, none/unlimited omitted). S3: reconcileScopeBoundCounters returns none-capacity rows; resetUsage excludes them (so rests too); history retained. Tests in classResourceActiveCapacity.test.ts (22 new); all 22 fail on pre-fix src, pass after. verify:worktree green (6282 passed).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:00:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:05:05Z",
+  "closed_at": "2026-10-09T05:05:05Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-09co.9",
+      "depends_on_id": "eshyra-09co",
+      "type": "parent-child",
+      "created_at": "2026-10-09T00:00:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

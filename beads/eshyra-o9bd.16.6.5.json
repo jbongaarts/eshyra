@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.6.5",
+  "title": "Review: Sol confirm PR #699 S3 repair (eshyra-o9bd.16.6 @ f2f8c19f)",
+  "description": "Bounded read-only confirmation of the S3 repair (spellcasting-spell reason) in PR #699 at f2f8c19f. Ends with VERDICT.",
+  "notes": "S1. NON-MATERIAL / bounded scope: Confirmed PR #699 at exact HEAD f2f8c19f77b67e360a0ff099c63f58e80e5ea057 on branch eshyra-o9bd.16.6.5 with clean git status. Read live eshyra-o9bd.16.6.4 (S3 sole material finding; S4 completed 338-occurrence sibling sweep), this bead and parent, review policy, importer-fix protocol, ADR 0020, affected producer/consumer code and complete git diff c54013ff..HEAD. The diff changes only the spellcasting-spell declaration reason, its generated manifest line and seven thaw-note lines. Prior S4-cleared findings were not reopened; no parser, resolver, target, record or test changes.\n\nS2. NON-MATERIAL / S3 repaired across all 313 occurrences: The new reason, \"A spell record a creature spellcasting trait lists in one of its printed groups: cantrips, spells by slot level, at will, or a number of times per day.\", faithfully describes all 173 prepared-list, 138 innate and two Archmage pre-list at-will spell occurrences across 36 creatures. Independent fresh pdftotext -raw extraction of the vendored PDF confirms all 36 trait texts modulo punctuation/spacing. Each spell name was additionally checked against its own printed group context: 38 cantrip, 135 slot-level, 46 at-will and 94 per-day occurrences. The four single-spell mephit per-day groups have their printed use limit in the trait name. Archmage p.395 independently confirms the pre-list at-will sentence. Both creature:archmage /traits/1/mechanics/spellcasting/groups/0/spells/0/ref -> spell:disguise-self and sibling spells/1/ref -> spell:invisibility remain. records.json is unchanged from c54013ff. No inferred prepared/innate classification is asserted for that pair.\n\nS3. NON-MATERIAL / actual consumer and documentation: /tmp/eshyra-699-s3-confirm.mts exercised real lookupRulesTool.run with an in-memory campaign DB and no explicit systemId for every affected creature; every emitted target occurrence was matched as a multiset to resolved spellcasting-spell output with the exact new declaration reason and an existing spell target. /tmp/eshyra-699-s3-source-confirm.py independently checked all 313 source contexts and the Archmage pair. The thaw-note addition truthfully identifies prior S3, the separate printed at-will spells, the new group-based wording and preservation of both links. This closes the previously identified prose-semantic defect class without changing valid links or moving the false classification into another layer.\n\nS4. NON-MATERIAL / verification and limits: npm run verify:dnd5e-srd-pack exited 0 with zero manifest/record changes and exact regenerated-byte matches for source-inventory.json, source-coverage.json, source-region-ledger.json, field-provenance.json and record-relationships.json. Vendored PDF SHA-256 remains 2504d2a0abb0a4d491a939be4f17910a2dde0312570ab8d208080225ccf0a1f0. ./node_modules/.bin/vitest run packages/core/test/discovery/discoveryStages.test.ts packages/core/test/rules/recordRelationships.test.ts packages/core/test/rules/ruleAwareness.test.ts --cache=false passed 3 files / 77 tests. Final git status --porcelain=v1 empty; exact HEAD unchanged. Repository review remained read-only, with probes/source extraction confined to /tmp; no formatting, verify:worktree, commits, pushes, GitHub comments or merges. Confirmation is bounded to this repair and the prior completed S4 population, with no universal source/discovery-completeness claim. Only eshyra-o9bd.16.6.5 is updated and closed as instructed.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:24:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:26:16Z",
+  "started_at": "2026-11-01T08:24:40Z",
+  "closed_at": "2026-11-01T08:26:16Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.6.5",
+      "depends_on_id": "eshyra-o9bd.16.6",
+      "type": "parent-child",
+      "created_at": "2026-11-01T02:24:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

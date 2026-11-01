@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xt6m.1.2",
+  "title": "Review: Sol final review of PR #693 (eshyra-xt6m.1 @ d6c7e87e)",
+  "description": "Final read-only review of PR #693 (branch eshyra-xt6m.1, exact head d6c7e87e8efce61fa57b02feb48d54a5a54e6ab8) by Sol. Findings in notes; ends with a VERDICT line.",
+  "notes": "dispatch: gpt-6.1-sol high, pgid 1818177\nFINAL REVIEW of PR #693 at exact head d6c7e87e8efce61fa57b02feb48d54a5a54e6ab8 (branch eshyra-xt6m.1.2), using the rules-clause-complete profile.\n\nAuthority and scope: read live eshyra-xt6m.1.2, owning eshyra-xt6m.1 (including all acceptance criteria and the 2026-10-18 user decision), implementation dispatch/report eshyra-xt6m.1.1, AGENTS.md, design-and-pr-review-policy.md, importer-fix-protocol.md, compiler guidance, ADRs 0017/0020 and applicable migration authority. Inspected the entire origin/main...HEAD diff and both commits (9c6cee09, d6c7e87e), PR metadata/body, actual compiler producers and runtime consumers. refs/beads/state is stale (2026-09-10 and lacks these beads); used live bd records for current scope/status.\n\nSource and boundary: independently read the vendored SRD PDF pp. 220 and 128, the Elemental Gem table, and spell:conjure-elemental. All four gem variants and single-creature grants agree with the printed table. The typed action activation and existing PRINTED_CASTING_TIME_OVERRIDES entry preserve the item's one-action override over the spell's one-minute casting time. The exact effects/summon-elemental readiness clause owns the matching creature lifecycle, not a spell executor; the quantity clause owns the spend. Existing source prose, verbatim adjudicated clauses, and the preserved spell reference keep residual interpretation with the DM, consistent with the corrected AC5 and ADR 0020. No deterministic spell procedure, object engine, movement engine, or production readiness waiver was introduced.\n\nConsumers and state integrity: traced use_item readiness/effect binding, action budget, quantity depletion, variant-scoped bind-credit issuance, final-unit consumption receipts, start_effect variant/creature/count checks, mandatory concentration, atomic one-time redemption, durable actor identity, source tombstones, concentration-break successor, fixed deadline and 0-HP removal. Reviewed the runtime-wide typed-creature admission change against sibling grants: Bag of Tricks uses its separately enforced rolled selection; Efreeti Bottle, Feather Token, Horn of Valhalla and Manual of Golems retain their declared creature admissions. Feather Token semantics remain unchanged and truthfully pending, an expressly accepted AC4 outcome.\n\nMigration observation: no requirement for compatibility migration of former variantless pre-v1 gems; ADR 0013 decision 3 and ADR 0015 explicitly exclude pre-v1 backwards-compatibility migration effort, and this PR changes no SQLite schema.\n\nEvidence inspected and independently run:\n- Seven targeted suites (itemGrantRealPackReadiness, itemGrantBindCredit, itemGrantConsumptionReceipt, itemGrantSummons, elementalGemVariants, magicItemGrantOwnership, magicItemOperationSourceAgreement): 218 tests passed.\n- srdGeneratedPack, magicItemLegacyCapabilityBacklog and itemTurnResource: 306 tests passed. Combined: 10 files, 524 passed, no failures.\n- npm run verify:dnd5e-srd-pack: passed; zero manifest/record changes and all five sibling artifacts match independent regeneration exactly. Only magic-item:elemental-gem differs from origin/main; readiness/count/inventory deltas agree with that change.\n- Independent inline, in-memory probes against the unmodified bundled pack for ALL FOUR variants: printed action spent, quantity-two stack credit followed by typed final-unit receipt, correct identity bind, unpaid bind refusal, wrong-creature refusal, missing-concentration refusal before any successful bind, repeated-credit and repeated-receipt refusal, concentration replacement creates the uncontrolled successor, and both creatures leave at the original one-hour deadline. Separate fresh probes for all four variants reject a wrong grant variant before receipt redemption and confirm 0 HP ends the effect and removes the elemental. Feather Token use-token independently refuses with F3/F9 hooks and writes no receipt.\n- git diff --check passed; worktree clean and exact head unchanged.\n\nFindings: none (0 MATERIAL; 0 NON-MATERIAL). No repository files edited or created; no formatting, committing, pushing, GitHub comments or merging performed.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T22:00:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T22:04:37Z",
+  "closed_at": "2026-10-31T22:04:37Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-xt6m.1.2",
+      "depends_on_id": "eshyra-xt6m.1",
+      "type": "parent-child",
+      "created_at": "2026-10-31T17:00:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

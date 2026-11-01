@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.9.15",
+  "title": "C9 — Close residual single-record creature mechanics",
+  "description": "Coordinate the 4 refs / 3 contracts from classification §1.6.7: Shrieker sound alarm; shared Djinni + Efreeti on-death body disposal; Shield Guardian reaction AC bonus. Use the child beads for the three contracts and complete parent-level residual reconciliation.",
+  "notes": "Complete exact registry/membership removals and count reconciliation; verify readiness-report delta; regenerate through the importer; add committed-pack assertions; update thaw evidence and freeze hash as appropriate; run verify:dnd5e-srd-pack, verify:dnd5e-srd-freeze, relevant focused tests, full required worktree/check/typecheck tests, and audit-bundle verification where required.\nReview follow-up: added closed soundAlarm continuationUnit 'shrieker-turns' and corrected pre-C9 reconciliation wording; regenerated pack and refreshed freeze/audit evidence.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T04:10:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-11T15:46:49Z",
+  "closed_at": "2026-07-11T16:01:06Z",
+  "close_reason": "Completed C9 reconciliation: all four reviewed refs now carry closed mechanics contracts; registry/readiness reconciled and verified.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.9.15",
+      "depends_on_id": "eshyra-o9bd.18.7.9",
+      "type": "parent-child",
+      "created_at": "2026-07-10T23:10:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

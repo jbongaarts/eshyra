@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7f0h.3",
+  "title": "Dispatch: repair S1 — type Candle cast-gate's spell:gate and keep it refused (attempt 1, Haiku)",
+  "description": "Review-repair dispatch for eshyra-7f0h (Haiku 5.5). Worktree .worktrees/eshyra-7f0h.3, branch eshyra-7f0h.3, cut from eshyra-7f0h (PR #694 head). Deps installed. Read `bd show eshyra-7f0h.2` (Sol finding S1), `bd show eshyra-7f0h.1` (implementation report), AGENTS.md, docs/importer-fix-protocol.md.\n\nFINDING S1: Candle of Invocation `cast-gate` became executable with an action cost but no bound spell identity, so use_item records it as a non-spell item action (itemState.ts spendActivationTurnResource passes itemOperation:true), and a bonus-action spell (healing-word) can be cast in the same turn — wrong spell-timing accounting.\n\nDECISION (supervisor): take Sol's alternative, consistent with how the pack already types every other item gate cast (Cubic Gate `c2-cast-gate`, engine-pending on {F4,'canonical spell execution'}): type the printed spell and keep the operation truthfully refused until spell execution is owned.\n1. scripts/importers/dnd5e-srd-5.1/magicItemCandleLifecycle.ts: add a castSpell effect `{ id: 'c2-cast-gate', kind: 'castSpell', spellRef: 'spell:gate' }` to the projection's mechanics.effects (make sure it MERGES with the Candle's existing effects such as c2-residual-invocation-zone rather than replacing them — check how family projections merge mechanics in magicItemCompiler.ts and follow it), give the `cast-gate` operation `effects: ['c2-cast-gate']`, and add a clause `{ id: 'c2-effect-cast-gate', tag: 'C2', representation: { block: 'effects', effectId: 'c2-cast-gate' }, engineHooks: [{ engine: 'F4', hook: 'canonical spell execution' }] }`. Update the file's header comment: the cast-gate operation casts spell:gate, whose execution is not owned, so the operation stays refused; the lighting action, first-light-only transition and destruction are typed for when it is.\n2. Regenerate the canonical pack (`npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1/`), `npm run verify:dnd5e-srd-pack`, regenerate the semi-structured inventory via writeCommittedOutputs() (packages/core/scripts/inventory-semi-structured-boundary.ts) using a throwaway tsx script outside the repo tree. Append a \"Review repair (eshyra-7f0h.3)\" section to docs/audits/dnd5e-srd-5.1-final/thaw-notes/2026-10-31-eshyra-7f0h-activation-grouping.md with exact new counts and that cast-gate is no longer newly ready. Update srdGeneratedPack.test.ts and any ready-operation list (magicItemOperationSourceAgreement.test.ts etc.) to the ACTUAL values; never weaken other pins.\n3. Evidence (packages/core/test/candleAndApparatus.test.ts, real unmodified pack): replace the fresh-candle cast-gate success with: use_item cast-gate on a fresh candle in combat is REFUSED with the readiness error naming `c2-effect-cast-gate` and `canonical spell execution`; the candle row, its item state (unlit) and the turn's action are unchanged (assert the action is still available, e.g. light succeeds afterwards spending it). Add a focused assertion that planItemTurnResource (src/state/itemTurnResource.ts) on the real pack's cast-gate operation binds spellRef 'spell:gate' (so when spell execution is owned, the cast is accounted as a spell, not an item action). Negative-proof the refusal once (remove the hook, see the test fail, restore).\n4. Do not touch Apparatus, light/snuff/burn behaviour, or the excludes field (eshyra-kbzm).\n\nPROCESS: `npm run verify:worktree` from the worktree root must pass BEFORE committing; commit on eshyra-7f0h.3 (message starts 'eshyra-7f0h.3', ends with `Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>`); report via `bd update eshyra-7f0h.3 --append-notes \"...\"` (files, count deltas, negative proof, verify result); `bd close eshyra-7f0h.3`.\n",
+  "notes": "COMPLETE (commit 0d313a8c on eshyra-7f0h.3, not pushed). Repair of S1: cast-gate typed to spell:gate (castSpell effect c2-cast-gate merged with residual invocation-zone) and engine-pending on F4 canonical spell execution; stays refused. Files: magicItemCandleLifecycle.ts; records.json (Candle only, +40 lines, pack verify: 0 added/removed/changed); semi-structured inventory regenerated via its CLI (1865 rows, --check passes); thaw note repair section appended. Tests: candleAndApparatus (cast-gate refused by readiness, candle/state/action unchanged, light then succeeds; planItemTurnResource binds spell:gate); itemState, magicItemOperationSourceAgreement (READY 40->39). Pins updated to actual values, none weakened: srdGeneratedPack clause total 1368->1369, engine-pending 749->750; magicItemTriage castSpell duration checks 94->95; magicItemLegacyCapabilityBacklog 797->798 with new fingerprint dc9e1714... Negative proof: removing the F4 hook fails 3 Candle tests; source restored, pack regenerated. Verify: npm run verify:worktree exit 0 (383 files, 7175 passed, 3 skipped). Open question: state-machine guard for cast-gate (snuffed/lit) is now shadowed by readiness until spell execution is owned. Deviation: used the inventory script's own CLI rather than a throwaway script (same writeCommittedOutputs call).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T22:26:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T22:39:22Z",
+  "closed_at": "2026-10-31T22:39:22Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7f0h.3",
+      "depends_on_id": "eshyra-7f0h",
+      "type": "parent-child",
+      "created_at": "2026-10-31T17:26:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p4vd.9",
+  "title": "Add regression test for improvised hook continuity",
+  "description": "Add an integration/regression playtest around improvised lore becoming queryable canon.\n\nUse a minimal module/campaign fixture or test harness. The test does not need to recreate the stale campaign from the original run.\n\nScenario pattern:\n1. Player asks a local NPC what is wrong.\n2. DM introduces a consequential local hook:\n   - missing charcoal cart / missing worker\n   - returned mule or equivalent evidence\n   - damage at a gate or road\n   - rumors about danger nearby\n3. DM records those facts as campaign overlay lore with truth statuses.\n4. Player later asks villagers what is known and rumored.\n5. DM retrieves the overlay lore and answers without audit rejection.\n6. Decorative details from the original scene are not queryable unless deliberately promoted.\n\nAcceptance criteria:\n- Test fails if the DM asserts the hook without recording it or querying existing support.\n- Test fails if failed world_query calls are treated as support.\n- Test passes when current-turn recorded lore supports the initial hook.\n- Test passes when later world_query retrieves the overlay lore.\n- Test verifies rumor truth status is respected.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:24:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:45:03Z",
+  "started_at": "2026-06-24T03:34:31Z",
+  "closed_at": "2026-06-24T03:45:03Z",
+  "close_reason": "Implemented campaign overlay canon, truth-statused lore recording, world_query retrieval/search, audit/prompt guidance, docs, and regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-p4vd.9",
+      "depends_on_id": "eshyra-p4vd",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:24:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.7.5",
+  "title": "Represent dying and death saves for encounter combatants (rule:suffocating, rule:monsters-and-death)",
+  "description": "Problem. CombatantStatus has no dying state and no death-save counters; encounterCombatants.ts updateCombatant sets a combatant whose hpDelta reaches 0 to dead unless another status is passed. SRD rule:suffocating makes ANY creature 'drop to 0 hit points and be dying'; SRD rule:monsters-and-death lets the GM have mighty villains and special NPCs 'fall unconscious and follow the same rules as player characters'. Once the DM rules that a combatant follows those rules, the dying lifecycle (death saves, stabilization, damage at 0) is engine-owned and cannot be recorded; 'unconscious' is a lossy substitute. Current disclosure: RULE_KNOWN_LIMITS rule:suffocating with capability gap 'combatant-dying-state'.\n\nRequired capability. Operation: an opt-in dying lifecycle for encounter combatants mirroring the character death rules (dying status, death-save success/failure counters, stabilization, damage at 0, instant death on overflow), selected per combatant. Inputs: combatant identity; DM selection that it follows PC death rules. Exclusions: the default monster-dies-at-0 convention stays the default; which combatants follow PC rules is DM interpretation.\n\nSelection basis: the governing SRD clause requires an engine-owned step (ADR 0020 §3: arithmetic / atomic state mutation / resource accounting / lifecycle), and no registered tool performs it. Under F-09 design amendment A5 (docs/design/rule-record-runtime-statements.md, PR #596) the rule's known limit only DISCLOSES this gap; it does not satisfy or retire the obligation. This bead blocks eshyra-o9bd.19.3.4 (owning rules work for opus:F-09 / sol:CAP-001) until the capability lands or accepted authority explicitly changes the requirement. Do not close it because PR #596 recorded the gap. Enters this engine family by explicit positive selection (the family's out-of-backlog entry clause).",
+  "acceptance_criteria": "- Combatant dying status + death-save state with deterministic transitions, exposed through update_combatant or a dedicated tool; default behavior unchanged.\n- Tests: dying, death saves, stabilization, damage at 0, overflow death, default dead-at-0 preserved.\n- rule:suffocating combatant clause rewritten under R0; gap entry removed; update_combatant description updated.\n- eshyra-o9bd.19.3.4 dependency resolves only when this lands.",
+  "notes": "2026-10-03: delivered in PR #599 (https://github.com/jbongaarts/eshyra/pull/599), branch eshyra-o9bd.19.3.4.8 @7414d014. Stays in_progress until the PR merges.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-02T01:46:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-04T06:22:11Z",
+  "started_at": "2026-10-02T03:41:52Z",
+  "closed_at": "2026-10-04T06:22:11Z",
+  "close_reason": "Landed on main via PR #599 (merge commit 12cdb1f8)",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.7.5",
+      "depends_on_id": "eshyra-o9bd.19.5.7",
+      "type": "parent-child",
+      "created_at": "2026-10-01T20:46:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.7.5",
+      "depends_on_id": "eshyra-o9bd.19.5.7.5.1",
+      "type": "blocks",
+      "created_at": "2026-10-01T23:04:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eh54.7",
+  "title": "Build The Hollow Beneath Emberfall hello-world adventure module",
+  "description": "Create a small first-party starter adventure module - The Hollow Beneath Emberfall - that serves as Eshyra's gameplay hello-world module.\n\nThe Emberfall setting itself should remain setting-scale campaign template content. This work adds a separate scenario-scale module located within or near Emberfall. The module should be intentionally small and useful for testing real play: opening hook, locations, scenes, at least one social beat, exploration, encounter resolution, reward, ending states, persistence, and resume.\n\nNaming glossary (ADR 0012):\n- Emberfall - the setting-scale village/region; campaign template. Preserve as setting content.\n- The Hollow Beneath Emberfall - this starter adventure module (scenario-scale).\n- Ember Hollow - informal shorthand only; not a separate canonical entity. (The ember-hollow label is a project tag, not a third concept.)\n- EMBERFALL_HOLLOW - the existing legacy sample that conflates setting and scenario, to be split by this work.\n",
+  "design": "Target size:\n- 3 to 5 keyed locations\n- 1 to 2 combat-capable encounters\n- 1 social encounter\n- 1 exploration obstacle\n- 3 to 6 secrets or clues\n- 1 meaningful choice\n- 1 reward\n- 2 to 3 possible ending states\n\nThe purpose is engine coverage and product shape, not a large polished adventure. The module is immutable authored scenario source; play progress is recorded in the campaign-owned adventure run / module binding (eshyra-eh54.4), not in the module.\n",
+  "acceptance_criteria": "- A small first-party starter adventure module (The Hollow Beneath Emberfall) exists.\n- The module is scenario-scale, not a replacement for the Emberfall campaign template/setting.\n- The module exercises the adventure module schema, loader, campaign-owned adventure run / module binding and progress, runtime context, and progress persistence.\n- The module supports a short playable path suitable for smoke testing.\n- The module has enough structure to test hidden secrets, objectives, encounters, rewards, and alternate outcomes.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T06:11:58Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-21T06:40:19Z",
+  "close_reason": "All children complete (.1 outline #268, .2 fixture #269, .3 smoke #270). The Hollow Beneath Emberfall starter module exists as immutable source, loads via the loader, binds to a campaign, feeds the DM runtime context, and round-trips through persistence.",
+  "labels": [
+    "adventure-module",
+    "campaign-runtime",
+    "domain-model",
+    "ember-hollow",
+    "starter-content"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eh54.7",
+      "depends_on_id": "eshyra-eh54",
+      "type": "parent-child",
+      "created_at": "2026-06-18T01:11:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

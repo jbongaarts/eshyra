@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xwic",
+  "title": "Add ambiguous-name-match diagnostic to SRD source-coverage artifact",
+  "description": "Follow-up from PR #193 (eshyra-4a7.1) code review. The source-coverage name auto-matcher resolves duplicate record names to the lexicographically first key (codified in code and tests). This is fine for coarse accounting but can make the coverage report misleading for duplicate source names (e.g. repeated 'Ability Score Improvement') or cross-kind names (e.g. 'Druid' / 'Acolyte'). Add an 'ambiguous name match' diagnostic section to the coverage artifact so these collisions are visible rather than silently collapsed to one key. Non-blocking; deferred from the PR per reviewer.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T21:25:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-12T05:25:55Z",
+  "started_at": "2026-06-12T05:10:26Z",
+  "closed_at": "2026-06-12T05:25:55Z",
+  "close_reason": "Implemented and merged via PR #196. ambiguous section added to source-coverage.json with shadowedRecords (62) and collapsedSourceItems (60). All tests pass.",
+  "comments": [
+    {
+      "id": "938f6f53-44af-5eb2-be58-d1e55fd13ac4",
+      "issue_id": "eshyra-xwic",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm test; 1520 passed, 19 skipped (dolt-gated). All clean.",
+      "created_at": "2026-06-12T05:12:14Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

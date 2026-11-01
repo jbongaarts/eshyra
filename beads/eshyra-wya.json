@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wya",
+  "title": "Condense PR #157 AGENTS workflow guidance",
+  "description": "Review feedback for PR #157: shorten only the Agent Worktree Workflow section in AGENTS.md while preserving cheap origin/main preflight, immediate linked-worktree root normalization, full pre-commit/push verification, and wrong-checkout Biome recovery. Verify documentation formatting and policy tests.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T01:29:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:47Z",
+  "started_at": "2026-06-06T01:29:27Z",
+  "closed_at": "2026-06-06T01:32:37Z",
+  "close_reason": "Condensed PR #157 worktree guidance without weakening behavior; documentation check and 9 workflow-policy tests passed.",
+  "comments": [
+    {
+      "id": "f1f34a9d-fcd9-568b-a611-03b3028afe14",
+      "issue_id": "eshyra-wya",
+      "author": "Joseph Bongaarts",
+      "text": "Review evaluation: accepted. The current section is behaviorally correct but repeats the fetch/base rationale, root resolution, and helper command details. The requested compact three-phase structure preserves all safety-critical instructions and requires an AGENTS.md-only edit.",
+      "created_at": "2026-06-06T01:29:29Z"
+    },
+    {
+      "id": "a2fcb1cb-22fc-5d82-b5f5-dec2e8e6aa86",
+      "issue_id": "eshyra-wya",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: AGENTS.md Agent Worktree Workflow reduced from 291 to 203 words (about 30%) while preserving fetch-only origin/main preflight, parent-checkout full-verification prohibition including Biome/tests/build/typecheck/package verification, immediate linked-worktree entry and git-root normalization, all commands from active root, pre-commit/push npm run verify:worktree, helper fix/check/test summary, and wrong-checkout Biome recovery without deleting/recreating worktrees. npm run check -> exit 0; hidden Unicode scan 270 files and Biome 234 files clean. npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 0; 9 tests passed. git diff --check -> exit 0. Only AGENTS.md changed.",
+      "created_at": "2026-06-06T01:32:35Z"
+    },
+    {
+      "id": "bad3f985-fc23-5d39-8183-0614485d4195",
+      "issue_id": "eshyra-wya",
+      "author": "Joseph Bongaarts",
+      "text": "Post-push verification: PR #157 checks for commit 59320cb all passed, including build-test, SRD verify, CodeQL, and Linux/macOS/Windows install smoke jobs. Branch push and Beads Dolt push both succeeded.",
+      "created_at": "2026-06-06T01:35:08Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 3
+}
