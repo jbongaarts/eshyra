@@ -190,11 +190,24 @@ function parseFieldProvenanceDeclaration(
   if (typeof reason !== 'string' || reason.trim().length === 0) {
     throw new RulesPackError(`${path}.reason must be a non-empty string`);
   }
+  const recordKeys = o.recordKeys;
+  if (recordKeys !== undefined) {
+    if (
+      !Array.isArray(recordKeys) ||
+      recordKeys.length === 0 ||
+      recordKeys.some((k) => typeof k !== 'string' || k.trim().length === 0)
+    ) {
+      throw new RulesPackError(
+        `${path}.recordKeys must be a non-empty array of non-empty strings`,
+      );
+    }
+  }
   return {
     kind: kind as RulesRecordKind,
     pointerPrefix,
     class: cls as FieldProvenanceDeclaration['class'],
     reason,
+    ...(recordKeys === undefined ? {} : { recordKeys: recordKeys as string[] }),
   };
 }
 

@@ -54,6 +54,13 @@ function emptyClassIndex(): ReadonlyMap<string, ReadonlySet<SpellCasterClass>> {
   return new Map<string, Set<SpellCasterClass>>();
 }
 
+/**
+ * A record key no record-scoped declaration names, so a probe asking about an
+ * UNSCOPED pointer gets the unscoped (verbatim-majority) class. Probes that
+ * must reflect a scoped composed display pass the real record key instead.
+ */
+const PROBE_KEY = 'probe:unscoped';
+
 function fullManifest(): FieldProvenanceManifest {
   return buildFieldProvenanceManifest(DND5E_FIELD_PROVENANCE_DECLARATIONS);
 }
@@ -65,7 +72,10 @@ function classifyRecord(
 ): ReadonlyMap<string, string | undefined> {
   const out = new Map<string, string | undefined>();
   walkFieldPointers(record.data, (pointer) => {
-    out.set(pointer, classifyFieldPointer(manifest, record.kind, pointer));
+    out.set(
+      pointer,
+      classifyFieldPointer(manifest, record.kind, record.key, pointer),
+    );
   });
   return out;
 }
@@ -217,7 +227,12 @@ describe('projection containers classify as compiler-projection at any depth', (
         if (!pointer.split('/').some((segment) => containers.has(segment)))
           return;
         checked += 1;
-        const cls = classifyFieldPointer(manifest, record.kind, pointer);
+        const cls = classifyFieldPointer(
+          manifest,
+          record.kind,
+          record.key,
+          pointer,
+        );
         if (cls !== 'compiler-projection')
           wrong.push(`${record.key} ${pointer} -> ${cls}`);
       });
@@ -247,7 +262,12 @@ describe('creature:adult-black-dragon classification (E3)', () => {
   it('armorClass.sourceText is source-prose (real record has this leaf)', () => {
     expect(typeof data.armorClass.sourceText).toBe('string');
     expect(
-      classifyFieldPointer(manifest, 'creature', '/armorClass/sourceText'),
+      classifyFieldPointer(
+        manifest,
+        'creature',
+        PROBE_KEY,
+        '/armorClass/sourceText',
+      ),
     ).toBe('source-prose');
   });
 
@@ -255,10 +275,20 @@ describe('creature:adult-black-dragon classification (E3)', () => {
     expect(typeof data.armorClass.value).toBe('number');
     expect(typeof data.armorClass.source).toBe('string');
     expect(
-      classifyFieldPointer(manifest, 'creature', '/armorClass/value'),
+      classifyFieldPointer(
+        manifest,
+        'creature',
+        PROBE_KEY,
+        '/armorClass/value',
+      ),
     ).toBe('source-derived');
     expect(
-      classifyFieldPointer(manifest, 'creature', '/armorClass/source'),
+      classifyFieldPointer(
+        manifest,
+        'creature',
+        PROBE_KEY,
+        '/armorClass/source',
+      ),
     ).toBe('source-derived');
   });
 
@@ -271,11 +301,16 @@ describe('creature:adult-black-dragon classification (E3)', () => {
     expect(data.actions.length).toBeGreaterThan(5);
     expect(typeof data.actions[5].text).toBe('string');
     expect(data.actions[5].mechanics).toBeDefined();
-    expect(classifyFieldPointer(manifest, 'creature', '/actions/*/text')).toBe(
-      'source-prose',
-    );
     expect(
-      classifyFieldPointer(manifest, 'creature', '/actions/*/mechanics'),
+      classifyFieldPointer(manifest, 'creature', PROBE_KEY, '/actions/*/text'),
+    ).toBe('source-prose');
+    expect(
+      classifyFieldPointer(
+        manifest,
+        'creature',
+        PROBE_KEY,
+        '/actions/*/mechanics',
+      ),
     ).toBe('compiler-projection');
   });
 });
@@ -311,9 +346,9 @@ describe('the sibling class named by the PR #543 re-review (E4)', () => {
       '/abilityScores',
       '/abilityScores/strength',
     ]) {
-      expect(classifyFieldPointer(manifest, 'creature', pointer)).toBe(
-        'source-derived',
-      );
+      expect(
+        classifyFieldPointer(manifest, 'creature', PROBE_KEY, pointer),
+      ).toBe('source-derived');
     }
   });
 });
@@ -365,10 +400,20 @@ describe('magic-item:ioun-stone classification — nested array prose (E6)', () 
     expect(data.variants.length).toBeGreaterThan(1);
     expect(data.variants.some((v) => v.mechanics !== undefined)).toBe(true);
     expect(
-      classifyFieldPointer(manifest, 'magic-item', '/variants/*/text'),
+      classifyFieldPointer(
+        manifest,
+        'magic-item',
+        PROBE_KEY,
+        '/variants/*/text',
+      ),
     ).toBe('source-prose');
     expect(
-      classifyFieldPointer(manifest, 'magic-item', '/variants/*/mechanics'),
+      classifyFieldPointer(
+        manifest,
+        'magic-item',
+        PROBE_KEY,
+        '/variants/*/mechanics',
+      ),
     ).toBe('compiler-projection');
   });
 });
@@ -396,7 +441,12 @@ describe('creation-choice sourceText is classified by what the schema permits', 
   it('never classifies a creation-choice label as verbatim source prose', () => {
     for (const kind of ['ancestry', 'background'] as const)
       expect(
-        classifyFieldPointer(manifest, kind, '/choices/*/sourceText'),
+        classifyFieldPointer(
+          manifest,
+          kind,
+          PROBE_KEY,
+          '/choices/*/sourceText',
+        ),
       ).toBe('source-derived');
   });
 
@@ -409,6 +459,7 @@ describe('creation-choice sourceText is classified by what the schema permits', 
     const cls = classifyFieldPointer(
       manifest,
       'ancestry',
+      PROBE_KEY,
       '/choices/*/sourceText',
     );
     expect(cls).toBe('source-derived');
@@ -420,7 +471,12 @@ describe('creation-choice sourceText is classified by what the schema permits', 
     // "Spellcasting Ability" sentence across separate subsections (e.g.
     // class:cleric), so the string is SRD text but not one verbatim quote.
     expect(
-      classifyFieldPointer(manifest, 'class', '/spellPreparation/sourceText'),
+      classifyFieldPointer(
+        manifest,
+        'class',
+        PROBE_KEY,
+        '/spellPreparation/sourceText',
+      ),
     ).toBe('source-derived');
   });
 

@@ -397,6 +397,7 @@ describe('context-packet message renderer', () => {
           const cls = classifyFieldPointer(
             manifest,
             record.kind,
+            record.key,
             normalizedPointer,
           );
           if (cls !== 'source-derived' && cls !== 'compiler-projection') return;

@@ -22,7 +22,10 @@
 import { readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertFieldProvenanceCoverage } from '../../../src/rules/fieldProvenance.js';
+import {
+  assertFieldProvenanceCoverage,
+  assertFieldProvenanceScopesLive,
+} from '../../../src/rules/fieldProvenance.js';
 import {
   loadFieldProvenanceManifest,
   loadRulesPackFromDirectory,
@@ -168,6 +171,12 @@ async function main(): Promise<void> {
     writtenPack.records,
     fieldProvenanceManifest,
   );
+  // Dead-scope gate (field-provenance-v2, eshyra-o9bd.16.7.2). It runs here
+  // rather than inside `buildPack`, because it needs the COMPLETE record set:
+  // `buildPack` is also driven by partial fixtures, which legitimately omit the
+  // records a scoped declaration names. Every record-scoped declaration must
+  // still name an emitted record whose data contains its prefix.
+  assertFieldProvenanceScopesLive(writtenPack.records, fieldProvenanceManifest);
   console.log('Field provenance coverage (kind: prose/derived/projection):');
   for (const [kind, counts] of [...coverage.entries()].sort(([a], [b]) =>
     a < b ? -1 : a > b ? 1 : 0,

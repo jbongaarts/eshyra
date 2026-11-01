@@ -117,6 +117,30 @@ function projection(
 }
 
 /**
+ * A `source-derived` declaration scoped to named records (`field-provenance-v2`).
+ * Used where a pointer is verbatim source text in most records of its kind but
+ * compiler-COMPOSED in the listed ones: the scoped entry beats the unscoped
+ * `source-prose` declaration for those records only, so the verbatim majority
+ * keeps `source-prose`. The dead-scope gate (`assertFieldProvenanceScopesLive`)
+ * fails the build if a listed record stops existing or stops carrying the
+ * prefix.
+ */
+function composedDerived(
+  kind: RulesRecordKind,
+  pointerPrefix: string,
+  recordKeys: readonly string[],
+  reason: string,
+): void {
+  decls.push({
+    kind,
+    pointerPrefix,
+    class: 'source-derived',
+    reason,
+    recordKeys: [...recordKeys],
+  });
+}
+
+/**
  * `mechanics` / `upcast` / `executionReadiness` / `useProfile` / a table's
  * `projection` — wherever one of these appears, the whole subtree beneath it
  * is the compiler's typed, interpretive projection of nearby source prose,
@@ -788,6 +812,16 @@ prose(
   '/description',
   'the feature description prose, quoted verbatim.',
 );
+// Sweep (eshyra-o9bd.16.7.2): these two descriptions have an embedded printed
+// table span DELETED by classProgression.ts trimEmbeddedTable, with the seam
+// whitespace collapsed. The remaining text is source prose with a splice, not
+// one contiguous quotation, so it is derived rather than verbatim.
+composedDerived(
+  'feature',
+  '/description',
+  ['feature:cleric:destroy-undead', 'feature:druid:wild-shape'],
+  'the feature description with its embedded printed table span removed and the seam whitespace collapsed by classProgression.ts trimEmbeddedTable (the table is a separate table record). Source-derived: the text is printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.',
+);
 namedEntry('feature', '/sections', { mechanics: false });
 prose(
   'feature',
@@ -834,6 +868,20 @@ prose(
   'feature',
   '/choices/*/options/*/text',
   "a named option's printed descriptive clause (e.g. a Fighting Style option body), quoted verbatim.",
+);
+// Compiler-COMPOSED option displays (deriveFeatureChoices.ts). These sentences
+// are built from printed column headers and cells, not quoted from the source.
+composedDerived(
+  'feature',
+  '/choices/*/options/*/text',
+  ['feature:draconic-bloodline:dragon-ancestor'],
+  "a composed option display built by deriveFeatureChoices.ts from the printed column headers and cells of the Draconic Ancestry table (SRD p. 44, e.g. 'Dragon: Black; Damage Type: Acid' from the headers 'Dragon'/'Damage Type' and the row 'Black Acid'). Truthful and attributable to that table, NOT verbatim source prose.",
+);
+composedDerived(
+  'feature',
+  '/choices/*/options/*/text',
+  ['feature:circle-of-the-land:circle-spells'],
+  "a composed option display built by deriveFeatureChoices.ts from the printed level/spell rows under one header of the Circle Spells table (SRD p. 22, e.g. 'Druid Level 3rd: hold person, spike growth; ...'). Truthful and attributable to that table, NOT verbatim source prose.",
 );
 derived(
   'feature',
@@ -958,6 +1006,26 @@ derived(
   'a list of linked `table:` record-key references, not source text.',
 );
 namedEntry('magic-item', '/variants');
+// Compiler-COMPOSED variant sentences (parseMagicItems.ts). Built from printed
+// table headings and cells, not quoted from the source.
+composedDerived(
+  'magic-item',
+  '/variants/*/text',
+  ['magic-item:elemental-gem'],
+  "a composed variant sentence built by parseMagicItems.ts from the printed 'Gem / Summoned Elemental' headings and 'Blue sapphire / Air elemental' rows (SRD p. 220). Truthful and attributable, NOT verbatim source prose.",
+);
+composedDerived(
+  'magic-item',
+  '/variants/*/text',
+  ['magic-item:horn-of-valhalla'],
+  "a composed variant sentence built by parseMagicItems.ts from the printed table cells under separate headings (SRD p. 226), e.g. 'Berserkers Summoned: 2d4 + 2. Requirement: None.'. Truthful and attributable, NOT verbatim source prose.",
+);
+composedDerived(
+  'magic-item',
+  '/variants/*/text',
+  ['magic-item:bag-of-tricks'],
+  "a composed variant display built by parseMagicItems.ts from the separate numbered Creature tables (SRD pp. 210-211), e.g. 'd8 creatures: 1 Weasel; 2 Giant rat; ...'. Truthful and attributable, NOT verbatim source prose.",
+);
 derived(
   'magic-item',
   '/variants/*/rarity',
@@ -1184,6 +1252,17 @@ prose(
   '/columns',
   'the printed column header labels, quoted verbatim.',
 );
+// Expanded labels constructed by parseTables.ts (travel pace). The spanning
+// header 'Distance Traveled per . . .' and its subheaders 'Minute'/'Hour'/'Day'
+// are printed separately (SRD p. 84); the full labels are composed. The whole
+// `/columns` array is derived for this one record because pointers carry no
+// per-index scope; 'Pace' and 'Effect' are printed verbatim but are not split out.
+composedDerived(
+  'table',
+  '/columns',
+  ['table:travel-pace'],
+  "column labels 'Distance per Minute'/'Distance per Hour'/'Distance per Day' composed by parseTables.ts from the spanning header 'Distance Traveled per . . .' and the subheaders 'Minute'/'Hour'/'Day' (SRD p. 84). The array is derived as a whole, so the printed 'Pace' and 'Effect' labels in it are not claimed as verbatim here. Truthful and attributable, NOT verbatim source prose.",
+);
 prose(
   'table',
   '/legend',
@@ -1193,6 +1272,18 @@ prose(
   'table',
   '/rows',
   "the table's raw cells, reproduced verbatim from the source table (as opposed to `projection`, the compiler's structured reading of them).",
+);
+// Grouped cost tables (parseTables.ts foldGroupedItemName): every sub-item row
+// is a group header folded with its member name, e.g. 'Inn stay, squalid (per
+// day)' from the printed header 'Inn stay (per day)' and row 'Squalid'
+// (SRD p. 74). The `/rows` array is derived as a whole for these two records;
+// the few ungrouped rows in them are printed cells but cannot be split out from
+// the array because pointers carry no per-row scope.
+composedDerived(
+  'table',
+  '/rows',
+  ['table:food-drink-and-lodging', 'table:services'],
+  "row labels folded by parseTables.ts from printed group headers ('Inn stay (per day)', 'Coach cab') and sub-item rows ('Squalid', 'Within a city') (SRD pp. 73-74). Truthful and attributable, NOT verbatim source prose.",
 );
 mechanicsSubtree('table', '/projection', 'table.projection');
 

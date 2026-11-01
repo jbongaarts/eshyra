@@ -243,12 +243,17 @@ describe('projection-limit notes are built from attested prose', () => {
     // would prove nothing.
     const real = getBundledDnd5eSrdFieldProvenanceManifest();
     if (real === undefined) throw new Error('no bundled manifest');
-    expect(classifyFieldPointer(real, 'creature', '/actions/*/text')).toBe(
-      'source-prose',
-    );
-    expect(classifyFieldPointer(real, 'spell', '/description')).toBe(
-      'source-prose',
-    );
+    expect(
+      classifyFieldPointer(
+        real,
+        'creature',
+        'creature:probe',
+        '/actions/*/text',
+      ),
+    ).toBe('source-prose');
+    expect(
+      classifyFieldPointer(real, 'spell', 'spell:probe', '/description'),
+    ).toBe('source-prose');
 
     const dragonTrace = packetFor(base, [DRAGON], dragonManifest);
     const dragon = candidate(dragonTrace, DRAGON);
