@@ -1,3 +1,5 @@
+> **Historical scope — 2026-07-06 artifact, preserved in snapshot `c43e149d7af261e67f14a57587d2707a618f1e9f`.** This document is historical design or audit evidence, not current candidate authority. Its completeness, ownership, readiness, or re-freeze conclusions are withdrawn by ADR 0020. The operative bar is §5.9 of `docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md`. Current candidate evidence is [the candidate record](./2026-11-01-o9bd-19-6-1-candidate-pack.md); later gates are `eshyra-o9bd.19.6.3` / `eshyra-o9bd.16`.
+
 # eshyra-o9bd.18.7.9 slice S1: summoning contract design
 
 Date: 2026-07-06. Reconciled: 2026-07-09. Bead:
