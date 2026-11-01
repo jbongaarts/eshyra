@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(798);
+    expect(backlog.candidates).toHaveLength(890);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -127,8 +127,13 @@ describe('magic-item legacy capability backlog', () => {
     // eshyra-7f0h.3 (review repair of S1): the Candle's cast-gate castSpell
     // effect carries one engine-pending F4 clause (c2-effect-cast-gate), a new
     // legacy engine-hook candidate (797 -> 798); no other identity changed.
+    // eshyra-o9bd.16.8.1 (L3-F1): the 92 hook-free passive effect clauses with
+    // no reviewed runtime consumer now declare their missing F6/F8 owner hook
+    // and are engine-pending, so each joins the legacy engine-hook candidate
+    // set as an unselected-backlog row (798 -> 890); no existing identity
+    // changed.
     expect(fingerprint).toBe(
-      'dc9e17141a25218951d8ba917369f4acadd7eb482db3acfddde50505157ba990',
+      'a82540e183bdf555cf460b61fafc6fdf81f950c67ebade87e6520da44528e8fe',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),
