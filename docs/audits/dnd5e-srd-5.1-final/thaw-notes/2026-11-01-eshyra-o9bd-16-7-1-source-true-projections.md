@@ -39,7 +39,7 @@ authoritative prose stays for DM adjudication).
 - p. 155 Holy Aura: "Creatures of your choice in that radius when you cast
   this spell shed dim light ... and have advantage on all saving throws, and
   other creatures have disadvantage on attack rolls against them".
-- p. 155 Foresight: "other creatures have disadvantage on attack rolls
+- p. 147 Foresight: "other creatures have disadvantage on attack rolls
   against the target for the duration".
 - p. 374 Giant Centipede: "Hit: 4 (1d4 + 2) piercing damage, and the target
   must succeed on a DC 11 Constitution saving throw or take 10 (3d6) poison

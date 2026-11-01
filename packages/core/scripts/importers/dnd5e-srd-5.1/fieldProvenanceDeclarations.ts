@@ -1289,3 +1289,52 @@ mechanicsSubtree('table', '/projection', 'table.projection');
 
 export const DND5E_FIELD_PROVENANCE_DECLARATIONS: readonly FieldProvenanceDeclaration[] =
   decls;
+
+/**
+ * Record-scoped `source-derived` declarations for prose fields whose embedded
+ * table removal spliced the remaining text (eshyra-o9bd.16.7.5, S2). The
+ * producer (`stripEmbeddedTableProseReporting`) reports exactly which
+ * (record, field) pairs it spliced; nothing here is hand-listed. Grouped per
+ * (kind, pointer) so each scoped declaration names the records it covers.
+ */
+export function deriveEmbeddedTableSpliceDeclarations(
+  splices: readonly {
+    readonly kind: RulesRecordKind;
+    readonly pointer: string;
+    readonly recordKey: string;
+  }[],
+  existing: readonly FieldProvenanceDeclaration[] = DND5E_FIELD_PROVENANCE_DECLARATIONS,
+): readonly FieldProvenanceDeclaration[] {
+  const groups = new Map<
+    string,
+    { kind: RulesRecordKind; pointer: string; keys: Set<string> }
+  >();
+  for (const splice of splices) {
+    // A record a hand declaration already scopes (classProgression's
+    // trimEmbeddedTable path) keeps that declaration.
+    const alreadyScoped = existing.some(
+      (decl) =>
+        decl.kind === splice.kind &&
+        decl.pointerPrefix === splice.pointer &&
+        decl.class === 'source-derived' &&
+        decl.recordKeys?.includes(splice.recordKey) === true,
+    );
+    if (alreadyScoped) continue;
+    const id = `${splice.kind}${splice.pointer}`;
+    const group = groups.get(id) ?? {
+      kind: splice.kind,
+      pointer: splice.pointer,
+      keys: new Set<string>(),
+    };
+    group.keys.add(splice.recordKey);
+    groups.set(id, group);
+  }
+  return [...groups.values()].map((group) => ({
+    kind: group.kind,
+    pointerPrefix: group.pointer,
+    class: 'source-derived' as const,
+    reason:
+      'the prose with an embedded printed table span removed from the middle of the text and the seam whitespace collapsed by stripEmbeddedTableProse.ts (the table is a separate table record). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.',
+    recordKeys: [...group.keys].sort(),
+  }));
+}

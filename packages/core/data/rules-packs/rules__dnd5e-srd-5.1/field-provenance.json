@@ -1436,6 +1436,47 @@
       "pointerPrefix": "/projection",
       "class": "compiler-projection",
       "reason": "table.projection is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/description",
+      "class": "source-derived",
+      "reason": "the prose with an embedded printed table span removed from the middle of the text and the seam whitespace collapsed by stripEmbeddedTableProse.ts (the table is a separate table record). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "spell:animate-objects",
+        "spell:confusion",
+        "spell:creation",
+        "spell:reincarnate",
+        "spell:scrying",
+        "spell:teleport"
+      ]
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/description",
+      "class": "source-derived",
+      "reason": "the prose with an embedded printed table span removed from the middle of the text and the seam whitespace collapsed by stripEmbeddedTableProse.ts (the table is a separate table record). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "feature:draconic-bloodline:dragon-ancestor",
+        "feature:sorcerer:font-of-magic"
+      ]
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/description",
+      "class": "source-derived",
+      "reason": "the prose with an embedded printed table span removed from the middle of the text and the seam whitespace collapsed by stripEmbeddedTableProse.ts (the table is a separate table record). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "magic-item:candle-of-invocation",
+        "magic-item:carpet-of-flying",
+        "magic-item:cube-of-force",
+        "magic-item:deck-of-many-things",
+        "magic-item:feather-token",
+        "magic-item:horn-of-valhalla",
+        "magic-item:manual-of-golems",
+        "magic-item:ring-of-shooting-stars",
+        "magic-item:spell-scroll"
+      ]
     }
   ]
 }

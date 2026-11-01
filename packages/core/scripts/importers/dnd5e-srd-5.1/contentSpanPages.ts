@@ -219,3 +219,97 @@ export function enrichProvenanceFromContentSpans(
     };
   });
 }
+
+/**
+ * Re-cite option-level sources copied from a table (eshyra-o9bd.16.7.5, S1).
+ *
+ * `deriveFeatureChoices` copies `table.source` onto each option it builds from
+ * table rows, BEFORE the final locator enrichment, so a table that continues
+ * onto a second page leaves every copied option citing only the first page
+ * (Draconic Ancestry: nine options cite p. 44 but print on p. 45). After the
+ * table locators are final, an option whose source is a single page equal to a
+ * table's first page and whose text contains every cell of one or more of that
+ * table's rows is re-cited to the page(s) those rows are actually printed on
+ * (`contentChunks` row pages restricted to the table's final span), or to the
+ * table's final span when a row's page cannot be located. Never invents a page.
+ */
+export function refineCopiedOptionSources(
+  records: readonly RulesRecord[],
+  normalizedPages: NormalizedPages,
+): RulesRecord[] {
+  const tables = records.filter((record) => record.kind === 'table');
+  const rowPages = new Map<string, ReadonlyMap<number, readonly number[]>>();
+  const rowPagesOf = (table: RulesRecord) => {
+    let cached = rowPages.get(table.key);
+    if (cached === undefined) {
+      const map = new Map<number, readonly number[]>();
+      for (const chunk of contentChunks(table, normalizedPages)) {
+        const match = /^\/rows\/(\d+)$/.exec(chunk.pointer);
+        if (match !== null) map.set(Number(match[1]), chunk.pages);
+      }
+      cached = map;
+      rowPages.set(table.key, cached);
+    }
+    return cached;
+  };
+  return records.map((record) => {
+    const data = record.data as Record<string, unknown> | null;
+    const choices = data?.choices;
+    if (!Array.isArray(choices)) return record;
+    let changed = false;
+    const nextChoices = choices.map((choice) => {
+      const options = (choice as { options?: unknown }).options;
+      if (!Array.isArray(options)) return choice;
+      const nextOptions = options.map((option) => {
+        const { source, text } = option as { source?: unknown; text?: unknown };
+        if (typeof source !== 'string' || typeof text !== 'string')
+          return option;
+        const single = /^SRD 5\.1 p\. (\d+)$/.exec(source);
+        if (single === null) return option;
+        const page = Number(single[1]);
+        for (const table of tables) {
+          const span = citedPages(table.provenance.locator);
+          if (span[0] !== page || span.length < 2) continue;
+          const rows = (table.data as { rows?: unknown[][] }).rows ?? [];
+          const owned = rows
+            .map((row, index) => ({ row, index }))
+            .filter(
+              ({ row }) =>
+                row.length > 0 &&
+                row.every(
+                  (cell) =>
+                    typeof cell === 'string' &&
+                    cell !== '' &&
+                    text.includes(cell),
+                ),
+            );
+          if (owned.length === 0) continue;
+          const cited = new Set<number>();
+          for (const { index } of owned) {
+            const printed = (rowPagesOf(table).get(index) ?? []).filter((p) =>
+              span.includes(p),
+            );
+            if (printed.length === 0) {
+              for (const p of span) cited.add(p);
+            } else {
+              cited.add(Math.min(...printed));
+            }
+          }
+          const pagesList = [...cited].sort((a, b) => a - b);
+          const label =
+            pagesList.length === 1
+              ? `p. ${pagesList[0]}`
+              : `pp. ${pagesList.join(', ')}`;
+          if (`SRD 5.1 ${label}` === source) return option;
+          changed = true;
+          return { ...(option as object), source: `SRD 5.1 ${label}` };
+        }
+        return option;
+      });
+      return { ...(choice as object), options: nextOptions };
+    });
+    return changed
+      ? { ...record, data: { ...(data as object), choices: nextChoices } }
+      : record;
+  });
+}
