@@ -1,7 +1,7 @@
 {
   "bead": "eshyra-o9bd.18.7.6",
   "generatedBy": "packages/core/scripts/inventory-equipment-mechanics.ts",
-  "historicalScope": "2026-07-06 inventory snapshot preserved at c43e149d7af261e67f14a57587d2707a618f1e9f; not current candidate authority. Conclusions withdrawn by ADR 0020; operative bar: docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md §5.9. Current candidate: docs/audits/dnd5e-srd-5.1-final/2026-11-01-o9bd-19-6-1-candidate-pack.md; later gates: eshyra-o9bd.19.6.3 / eshyra-o9bd.16.",
+  "historicalScope": "equipment inventory first added 2026-07-14 (81709d57) and last regenerated 2026-09-23 (7b469822); snapshot preserved at c43e149d7af261e67f14a57587d2707a618f1e9f; not current candidate authority. Conclusions withdrawn by ADR 0020; operative bar: docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md §5.9. Current candidate: docs/audits/dnd5e-srd-5.1-final/2026-11-01-o9bd-19-6-1-candidate-pack.md; later gates: eshyra-o9bd.19.6.3 / eshyra-o9bd.16.",
   "recordCount": 219,
   "recordsWithDescriptions": 110,
   "mechanicallyActiveRecords": 175,
