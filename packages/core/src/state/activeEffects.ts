@@ -3937,6 +3937,11 @@ interface ItemGrantBinding {
    *  its one-time receipt: the ISO consumption time. The binding is born
    *  tombstoned at that time. */
   readonly receiptConsumedAt?: string;
+  /** Set when the source item row is already gone (consumed by use_item): the
+   *  binding is born tombstoned at this time. Paid for by the consumption
+   *  receipt (`receiptConsumedAt`) or by an earlier unit's still-open bind
+   *  credit (`bindCreditId`) (eshyra-o9bd.16.10.1). */
+  readonly sourceDestroyedAt?: string;
   /** The bind credit (olc5.12.3) this non-anchored grant redeems with its
    *  effect insert. */
   readonly bindCreditId?: string;
@@ -4048,6 +4053,7 @@ function validateItemGrantBinding(
   // a one-time consumption receipt (written by use_item when the printed
   // activation consumed the item) stand in for it (olc5.12.13).
   let receiptConsumedAt: string | undefined;
+  let destroyedReceipt: ReturnType<typeof readItemConsumptionReceipt>;
   if (inventory === undefined) {
     const receipt = readItemConsumptionReceipt(db, itemInstanceId);
     if (receipt === undefined)
@@ -4058,10 +4064,7 @@ function validateItemGrantBinding(
       throw new ActiveEffectError(
         `item instance '${itemInstanceId}' was consumed in a different campaign; its consumption receipt cannot pay for a grant in campaign '${input.campaignId}'`,
       );
-    if (receipt.redeemedEffectId !== undefined)
-      throw new ActiveEffectError(
-        `the consumption receipt of item instance '${itemInstanceId}' was already redeemed by effect '${receipt.redeemedEffectId}'; one consumption pays for one grant`,
-      );
+    destroyedReceipt = receipt;
     if (receipt.packRef !== record.key)
       throw new ActiveEffectError(
         `item instance '${itemInstanceId}' was consumed as '${receipt.packRef}', not '${record.key}'`,
@@ -4329,10 +4332,15 @@ function validateItemGrantBinding(
   // credit that use_item issued when it charged that economy (olc5.12.3). The
   // oldest open credit is redeemed with the effect insert, in one transaction.
   let bindCreditId: string | undefined;
+  // eshyra-o9bd.16.10.1: a consumed stack's earlier units each keep their own
+  // open credit after the final unit destroys the row (the receipt retires the
+  // id, so no later item can redeem them). Those credits pay first; the final
+  // unit's receipt pays only when no credit is open.
+  const sourceDestroyedAt = receiptConsumedAt;
   if (
     !cooldownAnchored &&
-    receiptConsumedAt === undefined &&
-    typeof grant.cooldownEconomy === 'string'
+    typeof grant.cooldownEconomy === 'string' &&
+    (receiptConsumedAt === undefined || destroyedReceipt !== undefined)
   ) {
     const economyId = grant.cooldownEconomy;
     const creditScope = {
@@ -4364,7 +4372,8 @@ function validateItemGrantBinding(
         );
       bindCreditId = requestedCreditId;
     } else bindCreditId = oldestOpenItemGrantBindCredit(db, creditScope);
-    if (bindCreditId === undefined) {
+    if (bindCreditId !== undefined) receiptConsumedAt = undefined;
+    if (bindCreditId === undefined && sourceDestroyedAt === undefined) {
       const spender = economySpender(mechanics, economyId);
       throw new ActiveEffectError(
         `${label} is paid for by the item's '${economyId}' economy, and item '${itemInstanceId}' holds no unredeemed use of it; use_item ${
@@ -4375,6 +4384,14 @@ function validateItemGrantBinding(
       );
     }
   }
+  if (
+    destroyedReceipt !== undefined &&
+    bindCreditId === undefined &&
+    destroyedReceipt.redeemedEffectId !== undefined
+  )
+    throw new ActiveEffectError(
+      `the consumption receipt of item instance '${itemInstanceId}' was already redeemed by effect '${destroyedReceipt.redeemedEffectId}'; one consumption pays for one grant`,
+    );
   if (input.source.bindCreditId !== undefined && bindCreditId === undefined)
     throw new ActiveEffectError(
       `${label} is not paid for by a use_item bind credit here (it binds through its cooldown spend or a consumption receipt); source.bindCreditId is refused`,
@@ -4505,6 +4522,7 @@ function validateItemGrantBinding(
     cooldownAnchored,
     destroysSourceAtZeroHp: grant.destroysItemOn === 'reduced-to-0-hit-points',
     ...(receiptConsumedAt === undefined ? {} : { receiptConsumedAt }),
+    ...(sourceDestroyedAt === undefined ? {} : { sourceDestroyedAt }),
     ...(bindCreditId === undefined ? {} : { bindCreditId }),
   };
 }
@@ -5634,9 +5652,9 @@ export function createActiveEffect(
               ...(itemGrant.destroysSourceAtZeroHp
                 ? { destroysSourceAtZeroHp: true }
                 : {}),
-              ...(itemGrant.receiptConsumedAt === undefined
+              ...(itemGrant.sourceDestroyedAt === undefined
                 ? {}
-                : { sourceDestroyedAt: itemGrant.receiptConsumedAt }),
+                : { sourceDestroyedAt: itemGrant.sourceDestroyedAt }),
             }),
         duration.anchorKind,
         duration.anchorAt,
