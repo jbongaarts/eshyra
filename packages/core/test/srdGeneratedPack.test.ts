@@ -3517,11 +3517,17 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // turn-failed-dex-save-into-success, break-object and detect-secret become
       // newly ready (the exact census is pinned in
       // magicItemOperationSourceAgreement.test.ts).
+      // eshyra-o9bd.16.8.1 (L3-F1): a hook-free passive `effects` clause is
+      // green only when a reviewed runtime consumer reads its kind, and the
+      // reviewed consumer registry is empty. 92 formerly green hook-free
+      // effect clauses move green -> engine-pending (333 -> 241; 677 -> 769);
+      // total, adjudicated and design-blocked counts stay fixed. The exact
+      // witnesses are pinned in magicItemPassiveEffectReadiness.test.ts.
       expect(counts).toEqual({
         'adjudicated-by-design': 358,
         'design-blocked': 1,
-        'engine-pending': 677,
-        green: 333,
+        'engine-pending': 769,
+        green: 241,
       });
       const pipesReadiness = clauses.filter(({ clauseId }) =>
         clauseId.startsWith('magic-item:pipes-of-the-sewers/'),
