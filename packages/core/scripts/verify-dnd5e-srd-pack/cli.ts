@@ -71,6 +71,7 @@ import {
   SRD_5_1_STAT_BLOCK_CONTAINING_ITEMS,
 } from '../importers/dnd5e-srd-5.1/index.js';
 import { SRD_5_1_COVERAGE_RULES } from '../importers/dnd5e-srd-5.1/sourceInventoryCoverage.js';
+import { VERIFIED_PACK_SIBLING_ARTIFACTS } from './verifiedArtifacts.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../../..');
@@ -209,13 +210,7 @@ async function main(): Promise<number> {
     // source accounting or field-provenance classification without a
     // matching artifact regeneration.
     let artifactsDrifted = false;
-    for (const artifact of [
-      'source-inventory.json',
-      'source-coverage.json',
-      'source-region-ledger.json',
-      'field-provenance.json',
-      'record-relationships.json',
-    ]) {
+    for (const artifact of VERIFIED_PACK_SIBLING_ARTIFACTS) {
       let committedText: string;
       try {
         committedText = readFileSync(
