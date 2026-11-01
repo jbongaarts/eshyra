@@ -50,3 +50,13 @@ the spellcasting-spell relation; it is not weakened.
 The freeze guard is intentionally inactive during the re-audit
 (`THAW_NOTE_CHECK_ENABLED` false); hash pins are refreshed by the re-freeze
 (`eshyra-o9bd.14`), not here.
+
+## Review correction (eshyra-o9bd.16.6.3)
+
+The final review found that the first `requires-item` reason described every
+prerequisite as worn attunement equipment. That is false for Sovereign Glue,
+whose printed prerequisite (SRD p. 242) is a storage container coated with oil
+of slipperiness; the item needs no attunement. The reason reaches the DM through
+`lookup_rules`, so it now names both source-backed cases. Only the declaration's
+reason text and the matching line of `record-relationships.json` change;
+`verify:dnd5e-srd-pack` matches.

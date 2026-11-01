@@ -319,6 +319,6 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       relation: 'requires-item',
       targetResolution: 'record-key',
       reason:
-        'A magic item the printed attunement text requires the wielder to wear (Hammer of Thunderbolts: belt of giant strength, gauntlets of ogre power).',
+        'A magic item the printed text names as a prerequisite of this item: worn for attunement (Hammer of Thunderbolts: belt of giant strength, gauntlets of ogre power) or coating its storage container (Sovereign Glue: oil of slipperiness).',
     },
   ];
