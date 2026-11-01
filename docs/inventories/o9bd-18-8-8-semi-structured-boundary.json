@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1865,
+  "rowCount": 1882,
   "dispositionCounts": {
     "complete": 444,
-    "model-adjudicated": 1215,
+    "model-adjudicated": 1232,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -16616,6 +16616,135 @@
       "recordKinds": [
         "hazard"
       ],
+      "fieldPath": "data.identicalToRef",
+      "representativeValues": [
+        "magic-item:sphere-of-annihilation"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.identicalToRef",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.identicalToText",
+      "representativeValues": [
+        "A successful DC 20 Intelligence (Arcana) check reveals that the mouth contains a sphere of annihilation that can’t be controlled or moved. It is otherwise identical to a normal sphere of annihilation."
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.identicalToText",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.checks[].ability",
+      "representativeValues": [
+        "dexterity",
+        "strength",
+        "intelligence",
+        "wisdom"
+      ],
+      "population": 10,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.checks[].ability",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.checks[].skill",
+      "representativeValues": [
+        "investigation",
+        "perception",
+        "arcana"
+      ],
+      "population": 5,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.checks[].skill",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.checks[].text",
+      "representativeValues": [
+        "The DC to spot the trip wire is 10.",
+        "A successful DC 15 Dexterity check using thieves’ tools disables the trip wire harmlessly.",
+        "The DC to spot the trip wire and net is 10.",
+        "A successful DC 15 Dexterity check using thieves’ tools breaks the trip wire harmlessly.",
+        "A creature can use its action to make a DC 10 Strength check, freeing itself or another creature within its reach on a success."
+      ],
+      "population": 14,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "source coverage retains the clause; readiness does not count it as deterministic support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.checks[].tool",
+      "representativeValues": [
+        "thieves-tools"
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.checks[].tool",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
       "fieldPath": "data.mechanics.conditions[].condition",
       "representativeValues": [
         "poisoned",
@@ -16698,6 +16827,46 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.damage[].type",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.dispels[].spell",
+      "representativeValues": [
+        "spell:dispel-magic"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.dispels[].spell",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.dispels[].text",
+      "representativeValues": [
+        "A successful dispel magic (DC 13) cast on the statue destroys the trap."
+      ],
+      "population": 1,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "source coverage retains the clause; readiness does not count it as deterministic support",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -17059,6 +17228,94 @@
       "recordKinds": [
         "hazard"
       ],
+      "fieldPath": "data.variants[].mechanics.checks[].ability",
+      "representativeValues": [
+        "wisdom",
+        "intelligence",
+        "strength",
+        "dexterity"
+      ],
+      "population": 4,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.variants[].mechanics.checks[].ability",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.variants[].mechanics.checks[].skill",
+      "representativeValues": [
+        "perception",
+        "investigation"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.variants[].mechanics.checks[].skill",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.variants[].mechanics.checks[].text",
+      "representativeValues": [
+        "The DC to spot the pit is 10.",
+        "A successful DC 15 Wisdom (Perception) check discerns an absence of foot traffic over the section of floor that forms the pit’s cover.",
+        "A successful DC 15 Intelligence (Investigation) check is necessary to confirm that the trapped section of floor is actually the cover of a pit.",
+        "A successful DC 20 Strength check is necessary to pry the cover open.",
+        "A character in the pit can also attempt to disable the spring mechanism from the inside with a DC 15 Dexterity check using thieves’ tools, provided that the mechanism can be reached and the character can see."
+      ],
+      "population": 5,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "source coverage retains the clause; readiness does not count it as deterministic support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.variants[].mechanics.checks[].tool",
+      "representativeValues": [
+        "thieves-tools"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.variants[].mechanics.checks[].tool",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
       "fieldPath": "data.variants[].mechanics.damage[].dice",
       "representativeValues": [
         "2d10",
@@ -17172,6 +17429,106 @@
         "Spiked Pit. This pit trap is a simple, hidden, or locking pit trap with sharpened wooden or iron spikes at the bottom. A creature falling into the pit takes 11 (2d10) piercing damage from the spikes, in addition to any falling damage. Even nastier versions have poison smeared on the spikes. In that case, anyone taking piercing damage from the spikes must also make a DC 13 Constitution saving throw, taking an 22 (4d10) poison damage on a failed save, or half as much damage on a successful one."
       ],
       "population": 4,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "source coverage retains the clause; readiness does not count it as deterministic support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.versions[].likeSpellAspect",
+      "representativeValues": [
+        "sympathy"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.versions[].likeSpellAspect",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.versions[].likeSpellRef",
+      "representativeValues": [
+        "spell:antipathy-sympathy"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.versions[].likeSpellRef",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.versions[].mechanics.dispels[].spell",
+      "representativeValues": [
+        "spell:dispel-magic"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.versions[].mechanics.dispels[].spell",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.versions[].mechanics.dispels[].text",
+      "representativeValues": [
+        "A successful dispel magic (DC 18) removes this enchantment."
+      ],
+      "population": 1,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "source coverage retains the clause; readiness does not count it as deterministic support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.versions[].text",
+      "representativeValues": [
+        "Some versions of the trap include an enchantment placed on the stone face, such that specified creatures feel an overwhelming urge to approach it and crawl inside its mouth. This effect is otherwise like the sympathy aspect of the antipathy/sympathy spell. A successful dispel magic (DC 18) removes this enchantment."
+      ],
+      "population": 1,
       "valueClass": "source prose",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",

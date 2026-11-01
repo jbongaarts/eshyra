@@ -1468,6 +1468,34 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       });
     }
   }
+  // Printed non-save DCs (eshyra-o9bd.19.4.4.1): projection only, values
+  // verbatim from the source sentence in `text`.
+  objArray(mechanics, 'checks', `${path}.${key}`)?.forEach((check, i) => {
+    const checkPath = `${path}.${key}.checks[${i}]`;
+    reqInt(check, 'dc', checkPath, 1);
+    reqStr(check, 'text', checkPath);
+    if (check.ability !== undefined) {
+      const ability = reqStr(check, 'ability', checkPath);
+      if (!ABILITY_SCORE_KEYS.has(ability)) {
+        throw new RulesPackError(
+          `${checkPath}.ability must be a lowercase ability score name`,
+        );
+      }
+    }
+    optStr(check, 'skill', checkPath);
+    if (check.tool !== undefined && check.tool !== 'thieves-tools') {
+      throw new RulesPackError(`${checkPath}.tool must be "thieves-tools"`);
+    }
+  });
+  objArray(mechanics, 'dispels', `${path}.${key}`)?.forEach((dispel, i) => {
+    const dispelPath = `${path}.${key}.dispels[${i}]`;
+    const spell = reqStr(dispel, 'spell', dispelPath);
+    if (!spell.startsWith('spell:')) {
+      throw new RulesPackError(`${dispelPath}.spell must be a 'spell:' ref`);
+    }
+    reqInt(dispel, 'dc', dispelPath, 1);
+    reqStr(dispel, 'text', dispelPath);
+  });
   objArray(mechanics, 'attacks', `${path}.${key}`)?.forEach((attack, i) => {
     validateAttackAlternatives(attack, `${path}.${key}.attacks[${i}]`);
   });
@@ -6013,6 +6041,37 @@ function validateDnd5eHazard(record: RulesRecord, path: string): void {
   // Printed sub-traps of one record (eshyra-o9bd.19.3.1.1): the creature
   // variant shape {name, text, mechanics?}, one per printed trap.
   optNamedEntryArray(data, 'variants', `${path}.data`);
+  // Sphere of Annihilation trap (eshyra-o9bd.19.4.4.1): a typed reference to
+  // the magic item the trap is otherwise identical to, plus unnamed optional
+  // versions {text, likeSpellRef?, likeSpellAspect?, mechanics?}.
+  optStr(data, 'identicalToText', `${path}.data`);
+  const identicalToRef = data.identicalToRef;
+  if (identicalToRef !== undefined) {
+    if (
+      typeof identicalToRef !== 'string' ||
+      !identicalToRef.startsWith('magic-item:')
+    ) {
+      throw new RulesPackError(
+        `${path}.data.identicalToRef must be a 'magic-item:' ref when present`,
+      );
+    }
+    reqStr(data, 'identicalToText', `${path}.data`);
+  }
+  objArray(data, 'versions', `${path}.data`)?.forEach((version, i) => {
+    const versionPath = `${path}.data.versions[${i}]`;
+    reqStr(version, 'text', versionPath);
+    optStr(version, 'likeSpellAspect', versionPath);
+    const likeSpellRef = version.likeSpellRef;
+    if (
+      likeSpellRef !== undefined &&
+      (typeof likeSpellRef !== 'string' || !likeSpellRef.startsWith('spell:'))
+    ) {
+      throw new RulesPackError(
+        `${versionPath}.likeSpellRef must be a 'spell:' ref when present`,
+      );
+    }
+    optMechanics(version, 'mechanics', versionPath);
+  });
 }
 
 function validateDnd5eAction(record: RulesRecord, path: string): void {

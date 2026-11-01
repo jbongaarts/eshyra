@@ -1323,13 +1323,6 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
     reason:
       'Every entry in this bucket carries an explicit per-ref reviewed disposition in CREATURE_ENTRY_REVIEWED_DISPOSITIONS; the remaining Vampire Weaknesses headers are permanent accepted prose (§1.5).',
   },
-  'hazard#prose-only': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.7',
-    findingId: 'magic-item-effects',
-    reason:
-      "Sphere of Annihilation's contact/destruction mechanics are prose-only pending the magic-item deterministic-effect epic.",
-  },
   'equipment#partial-structure': {
     status: 'finding',
     bead: 'eshyra-o9bd.18.7.6',
