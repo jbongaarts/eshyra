@@ -30,6 +30,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   cpSync,
+  existsSync,
   mkdirSync,
   readFileSync,
   rmSync,
@@ -47,6 +48,7 @@ import {
   auditSrdChoiceProse,
   auditSrdPlayability,
   countSrdPlayabilityByCategory,
+  DETERMINISTIC_CAPABILITY_INVENTORY,
   type EquipmentResolutionResult,
   findingByCanonicalId,
   formatAuditReport,
@@ -59,6 +61,7 @@ import {
   getClassSpellcasting,
   getClassStartingEquipment,
   loadRulesPackFromDirectory,
+  RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
   type RulesAmbiguity,
   type RulesPack,
   RulesPackError,
@@ -83,6 +86,24 @@ import {
   SOURCE_EXPECTED_SRD_5_1_RULE_KEYS,
   SOURCE_EXPECTED_SRD_5_1_TABLE_NAMES,
 } from '../importers/dnd5e-srd-5.1/sourceCoverage.js';
+import { VERIFIED_PACK_ARTIFACTS } from '../verify-dnd5e-srd-pack/verifiedArtifacts.js';
+import {
+  CANDIDATE_RECORD_PATH,
+  type CandidateGate,
+  EXPLICIT_NON_CLAIMS,
+  formatGateSummaryTable,
+  formatGatesText,
+  gateCandidateRecord,
+  gateCapabilities,
+  gateFindingEvidence,
+  gateRegistry,
+  gateReplay,
+  gateRepro,
+  gateSourceHash,
+  gateSuite,
+  overallGateResult,
+  parseVitestIncludePatterns,
+} from './candidateGates.js';
 import {
   assertRuleDispositions,
   buildRuleDispositionReport,
@@ -2256,6 +2277,9 @@ export function formatEquipmentResolutionReport(
 // ---------------------------------------------------------------------------
 
 function buildReadme(meta: {
+  gates: readonly CandidateGate[];
+  sourcePdfSha256: string;
+  packArtifactHashes: ReadonlyArray<{ file: string; sha256: string }>;
   commitSha: string;
   branch: string;
   timestamp: string;
@@ -2275,6 +2299,30 @@ function buildReadme(meta: {
     `- **Branch**: ${meta.branch}`,
     `- **Generated**: ${meta.timestamp}`,
     `- **Source PDF hash match**: ${meta.sourceHashMatch ? 'YES' : 'NO — see reports/source-hash-verification.txt'}`,
+    '',
+    '## Candidate identity',
+    '',
+    `- **Commit**: ${meta.commitSha}`,
+    `- **Source PDF sha256**: ${meta.sourcePdfSha256}`,
+    ...meta.packArtifactHashes.map(
+      (h) => `- **${h.file} sha256**: ${h.sha256}`,
+    ),
+    '',
+    '## Candidate gates',
+    '',
+    `Overall: **${overallGateResult(meta.gates).toUpperCase()}**. Each gate states what it observes and does not observe in \`reports/candidate-gates.txt\` / \`.json\`. A gate with denominator 0 has failed to run; it has not passed. The bundle process exits non-zero unless every gate passes.`,
+    '',
+    ...formatGateSummaryTable(meta.gates),
+    '',
+    '## Explicit non-claims',
+    '',
+    ...EXPLICIT_NON_CLAIMS.map((c) => `- ${c}`),
+    '',
+    '## Unresolved limits disclosed',
+    '',
+    `Unresolved limits are disclosed in \`${CANDIDATE_RECORD_PATH}\` (gate G-candidate-record fails the run if it is absent).`,
+    '',
+    '- eshyra-o9bd.19.3.5 bounded discovery limitation (re-freeze bar #9): undeclared condition-name leaves in creature, ancestry and magic-item records are not reached; one-hop expansion does not reach the imposed condition record. This is a disclosed discovery limit, not a claim of discovery completeness.',
     '',
     '## File glossary',
     '',
@@ -2345,6 +2393,7 @@ function buildReadme(meta: {
     '  mechanics projections, and prose-only records',
     '- `magic-item-execution-readiness.{json,txt}` — derived clause-level',
     '  representation bindings, exact hook gaps, and terminal dispositions',
+    '- `candidate-gates.{json,txt}` — bounded candidate gates: observes, does-not-observe, denominator, result',
     '- `source-hash-verification.txt` — SHA-256 and size check for the vendored PDF',
     '',
     '## How to reproduce',
@@ -2434,6 +2483,7 @@ async function main(): Promise<void> {
     { name: 'verify-dnd5e-srd-pack', script: 'verify:dnd5e-srd-pack' },
   ];
 
+  const capturedExitCodes: Record<string, number> = {};
   for (const cmd of commands) {
     log(
       `Running: npm run ${cmd.script}${cmd.extraArgs ? ` -- ${cmd.extraArgs.join(' ')}` : ''} ...`,
@@ -2445,6 +2495,7 @@ async function main(): Promise<void> {
       'utf8',
     );
     log(`  Exit code: ${result.exitCode}`);
+    capturedExitCodes[cmd.script] = result.exitCode;
   }
 
   // 6. Audit reports from the loaded pack
@@ -2931,10 +2982,91 @@ async function main(): Promise<void> {
     'utf8',
   );
 
+  // 10b. Candidate gates (eshyra-o9bd.19.6.3.1). All reports are written
+  // before the exit code is set, so a reviewer can see why a gate failed.
+  log('Evaluating candidate gates...');
+  const repoExists = (rel: string): boolean => existsSync(join(REPO_ROOT, rel));
+  const includePatterns = parseVitestIncludePatterns(
+    readFileSync(join(REPO_ROOT, 'vitest.config.ts'), 'utf8'),
+  );
+  const ctx = { exists: repoExists, includePatterns };
+  let registryRaw: unknown = null;
+  try {
+    registryRaw = JSON.parse(
+      readFileSync(
+        join(
+          REPO_ROOT,
+          'docs/audits/dnd5e-srd-5.1-final/finding-registry.json',
+        ),
+        'utf8',
+      ),
+    );
+  } catch {
+    registryRaw = null;
+  }
+  const registryRows = (
+    Array.isArray((registryRaw as { rows?: unknown } | null)?.rows)
+      ? (registryRaw as { rows: unknown[] }).rows
+      : []
+  ).filter(
+    (r): r is { canonicalId: string; statusReasoning?: string } =>
+      typeof r === 'object' &&
+      r !== null &&
+      typeof (r as { canonicalId?: unknown }).canonicalId === 'string',
+  );
+  const sourceManifest = JSON.parse(
+    readFileSync(join(SOURCE_DIR, 'manifest.json'), 'utf8'),
+  ) as { artifact?: { sha256?: string } };
+  const packManifest = JSON.parse(
+    readFileSync(join(COMMITTED_PACK_DIR, 'manifest.json'), 'utf8'),
+  ) as { source?: { sourceHash?: string } };
+  const inventory = [...DETERMINISTIC_CAPABILITY_INVENTORY];
+  const gates: CandidateGate[] = [
+    gateRepro({
+      verifyExitCode: capturedExitCodes['verify:dnd5e-srd-pack'],
+      artifacts: VERIFIED_PACK_ARTIFACTS,
+    }),
+    gateSourceHash({
+      pdfSha256: hashVerification.actual,
+      sourceManifestSha256: sourceManifest.artifact?.sha256,
+      packManifestSha256: packManifest.source?.sourceHash,
+    }),
+    gateSuite({ exitCodes: capturedExitCodes }),
+    gateRegistry({ registry: registryRaw }),
+    gateFindingEvidence({ rows: registryRows, ctx }),
+    gateCapabilities({
+      inventory,
+      contracts: Object.values(RULE_DETERMINISTIC_CAPABILITY_CONTRACTS),
+      ctx,
+    }),
+    gateReplay({ inventory, ctx }),
+    gateCandidateRecord({ exists: repoExists }),
+  ];
+  const gateOverall = overallGateResult(gates);
+  writeFileSync(
+    join(outDir, 'reports/candidate-gates.json'),
+    JSON.stringify({ overall: gateOverall, gates }, null, 2),
+    'utf8',
+  );
+  writeFileSync(
+    join(outDir, 'reports/candidate-gates.txt'),
+    formatGatesText(gates),
+    'utf8',
+  );
+  for (const g of gates) log(`  ${g.id}: ${g.result}`);
+  log(`  Overall: ${gateOverall}`);
+  if (gateOverall !== 'pass') process.exitCode = 1;
+
   // 11. README
   writeFileSync(
     join(outDir, 'README.md'),
     buildReadme({
+      gates,
+      sourcePdfSha256: hashVerification.actual,
+      packArtifactHashes: ['records.json', 'manifest.json'].map((f) => ({
+        file: `pack/${f}`,
+        sha256: sha256File(join(outDir, 'pack', f)),
+      })),
       commitSha: gitSha,
       branch: gitBranch,
       timestamp,
