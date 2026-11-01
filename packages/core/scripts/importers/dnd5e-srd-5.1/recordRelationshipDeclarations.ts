@@ -268,4 +268,57 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       reason:
         'A printed dispel-magic DC inside a trap version names the spell that removes the enchantment.',
     },
+    // eshyra-o9bd.16.6.2 (audit L2-F1): four source-grounded non-condition
+    // reference families that already carried resolvable record keys. The
+    // remaining undeclared record-key leaves are owned by eshyra-ry69.
+    {
+      kind: 'spell',
+      pointerPrefix: '/mechanics/effects/*/creation/forms/*/creatureRef',
+      linkField: 'data.mechanics.effects[].creation.forms[].creatureRef',
+      disposition: 'reference',
+      relation: 'creation-form',
+      targetResolution: 'record-key',
+      reason:
+        'The creature record whose statistics the created form uses (Find Familiar: the familiar has the statistics of the chosen form).',
+    },
+    {
+      kind: 'creature',
+      pointerPrefix: '/traits/*/mechanics/spellcasting/groups/*/spells/*/ref',
+      linkField: 'data.traits[].mechanics.spellcasting.groups[].spells[].ref',
+      disposition: 'reference',
+      relation: 'spellcasting-spell',
+      targetResolution: 'record-key',
+      reason:
+        'A spell record a creature spellcasting trait lists in one of its printed groups: cantrips, spells by slot level, at will, or a number of times per day.',
+    },
+    {
+      kind: 'ancestry',
+      pointerPrefix: '/traits/*/tableRefs/*',
+      linkField: 'data.traits[].tableRefs',
+      disposition: 'reference',
+      relation: 'table-reference',
+      targetResolution: 'record-key',
+      reason:
+        'The table record a racial trait directs the reader to (Dragonborn: Draconic Ancestry).',
+    },
+    {
+      kind: 'ancestry',
+      pointerPrefix: '/choices/*/tableRef',
+      linkField: 'data.choices[].tableRef',
+      disposition: 'reference',
+      relation: 'table-reference',
+      targetResolution: 'record-key',
+      reason:
+        'The table record a racial choice is made from (Dragonborn: Draconic Ancestry).',
+    },
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/interItem/requiresItems/*/itemRefs/*',
+      linkField: 'data.mechanics.interItem.requiresItems[].itemRefs',
+      disposition: 'reference',
+      relation: 'requires-item',
+      targetResolution: 'record-key',
+      reason:
+        'A magic item the printed text names as a prerequisite of this item: worn for attunement (Hammer of Thunderbolts: belt of giant strength, gauntlets of ogre power) or coating its storage container (Sovereign Glue: oil of slipperiness).',
+    },
   ];

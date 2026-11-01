@@ -6,12 +6,15 @@ import {
   deduplicateCandidates,
   expandTypedRelationships,
   getBundledDnd5eSrdPack,
+  getBundledDnd5eSrdRecordRelationshipManifest,
   MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
   measureDiscovery,
   projectDiscoveryTrace,
   resolveDiscoveryCandidates,
+  resolveRecordRelationships,
   resolveRulesStack,
   runDiscoveryStages,
+  walkFieldPointers,
 } from '../../src/internal.js';
 import { freshDbWithSession } from '../support/db.js';
 import {
@@ -516,9 +519,23 @@ describe('offline discovery stage boundaries', () => {
         (item) => item.identity.key === 'spell:fireball',
       );
       expect(candidate).toBeDefined();
-      expect(candidate?.routes.map((route) => route.routeClass)).toEqual([
-        'campaign-rule',
-      ]);
+      // The campaign rule is the only route that reached it. The sole other
+      // route is the reverse one-hop traversal of creature spellcasting
+      // references (eshyra-o9bd.16.6.2: Lich, Mage and Pit Fiend list
+      // fireball), which expansion adds from the already-surfaced candidate.
+      const routes = candidate?.routes ?? [];
+      expect(
+        routes.filter((route) => route.routeClass !== 'typed-relationship'),
+      ).toEqual([expect.objectContaining({ routeClass: 'campaign-rule' })]);
+      expect(
+        routes
+          .filter((route) => route.routeClass === 'typed-relationship')
+          .map((route) => route.trigger),
+      ).toEqual(
+        expect.arrayContaining([
+          'data.traits[].mechanics.spellcasting.groups[].spells[].ref:spellcasting-spell',
+        ]),
+      );
       expect(candidate?.campaignRules[0].ruleIdentity).toBe(
         'house-rule-components',
       );
@@ -1250,4 +1267,98 @@ describe('offline discovery stage boundaries', () => {
     expect(trace.routeCountBeforeDedup['rule:cover']).toBe(2);
     expect(trace.routeCountAfterDedup['rule:cover']).toBe(2);
   });
+});
+
+/**
+ * eshyra-o9bd.16.6.2 (audit finding L2-F1): four source-grounded
+ * non-condition reference families were emitted as record keys but declared
+ * nowhere, so a seeded referencing record never retrieved the record its own
+ * text names. Each family below is generalized over its emitted shape (every
+ * leaf must resolve), with one source-backed seed per family proven end to end
+ * through `runDiscoveryStages`.
+ */
+describe('non-condition reference families (L2-F1)', () => {
+  const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
+  const manifest = getBundledDnd5eSrdRecordRelationshipManifest();
+  const families = [
+    {
+      relation: 'creation-form',
+      kind: 'spell',
+      shape: /^\/mechanics\/effects\/\d+\/creation\/forms\/\d+\/creatureRef$/,
+      seed: 'spell:find-familiar',
+      targets: ['creature:bat', 'creature:owl'],
+    },
+    {
+      relation: 'spellcasting-spell',
+      kind: 'creature',
+      shape:
+        /^\/traits\/\d+\/mechanics\/spellcasting\/groups\/\d+\/spells\/\d+\/ref$/,
+      seed: 'creature:acolyte',
+      targets: ['spell:light', 'spell:bless'],
+    },
+    {
+      relation: 'table-reference',
+      kind: 'ancestry',
+      shape: /^(\/traits\/\d+\/tableRefs\/\d+|\/choices\/\d+\/tableRef)$/,
+      seed: 'ancestry:dragonborn',
+      targets: ['table:draconic-ancestry'],
+    },
+    {
+      relation: 'requires-item',
+      kind: 'magic-item',
+      shape: /^\/mechanics\/interItem\/requiresItems\/\d+\/itemRefs\/\d+$/,
+      seed: 'magic-item:hammer-of-thunderbolts',
+      targets: [
+        'magic-item:belt-of-giant-strength',
+        'magic-item:gauntlets-of-ogre-power',
+      ],
+    },
+  ] as const;
+
+  for (const family of families) {
+    it(`${family.relation}: every emitted ${family.kind} leaf of the shape resolves`, () => {
+      let leaves = 0;
+      for (const record of getBundledDnd5eSrdPack().records) {
+        if (record.kind !== family.kind) continue;
+        const emitted: string[] = [];
+        walkFieldPointers(record.data, (pointer, value, actualPointer) => {
+          if (family.shape.test(actualPointer) && typeof value === 'string')
+            emitted.push(pointer);
+        });
+        const resolved = resolveRecordRelationships(manifest, record, stack);
+        for (const pointer of emitted) {
+          leaves++;
+          const hit = resolved.find((r) => r.pointer === pointer);
+          expect(
+            hit?.outcome,
+            `${record.key}${pointer} must resolve as ${family.relation}`,
+          ).toBe('resolved');
+          expect(hit?.outcome === 'resolved' && hit.relation).toBe(
+            family.relation,
+          );
+        }
+      }
+      expect(leaves).toBeGreaterThan(0);
+    });
+
+    it(`${family.relation}: seeding ${family.seed} retrieves the records it names`, () => {
+      const db = freshDbWithSession();
+      try {
+        const trace = runDiscoveryStages({
+          db,
+          scenario: {
+            playerInput: 'I proceed.',
+            stateFields: { currentRecord: family.seed },
+          },
+        });
+        const retained = new Set(
+          trace.packet.packet.candidates.map((c) => c.identity.key),
+        );
+        for (const target of family.targets) expect(retained).toContain(target);
+        expect(trace.expansion.losses).toEqual([]);
+      } finally {
+        db.close();
+      }
+    });
+  }
 });
