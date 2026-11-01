@@ -8472,7 +8472,7 @@ export function applyCombatClosureToEffects(
           `SELECT 1 FROM encounter_combatant
            WHERE campaign_id = ? AND combat_instance_id = ?
              AND identity_kind = 'campaign_actor' AND identity_ref = ?
-             AND rowid > (SELECT rowid FROM encounter_combatant
+             AND insertion_order > (SELECT insertion_order FROM encounter_combatant
                           WHERE campaign_id = ? AND combatant_id = ?)
            LIMIT 1`,
         )

@@ -266,7 +266,7 @@ describe('migration 0013 elapsed-world transition', () => {
     expect(migrateDatabase(db, { now: NOW }).migrations.applied).toEqual([
       13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
       31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
-      49, 50, 51, 52,
+      49, 50, 51, 52, 53,
     ]);
     expect(
       db
@@ -329,7 +329,7 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.migrations.applied).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
       22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
-      40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
+      40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
     ]);
     expect(readMigrationLedger(db).map((r) => [r.version, r.name])).toEqual([
       [1, 'initial'],
@@ -384,6 +384,7 @@ describe('migrateDatabase (end to end)', () => {
       [50, 'item_grant_bind_credit_rolled_counts'],
       [51, 'item_grant_bind_credit_rolled_creatures'],
       [52, 'item_variant_establishment'],
+      [53, 'persistent_combat_and_credit_order'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -403,12 +404,12 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.migrations.applied).toEqual([
       2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
       22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
-      40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
+      40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
     ]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     expect(
       readMigrationLedger(db)
-        .slice(-20)
+        .slice(-21)
         .map((r) => [r.version, r.name]),
     ).toEqual([
       [33, 'combatant_death_rules'],
@@ -431,6 +432,7 @@ describe('migrateDatabase (end to end)', () => {
       [50, 'item_grant_bind_credit_rolled_counts'],
       [51, 'item_grant_bind_credit_rolled_creatures'],
       [52, 'item_variant_establishment'],
+      [53, 'persistent_combat_and_credit_order'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -658,7 +660,7 @@ describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
     expect(result.migrations.applied).toEqual([
       5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
       25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
-      43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
+      43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
     ]);
     const row = db
       .prepare(

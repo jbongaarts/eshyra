@@ -424,7 +424,7 @@ CREATE TABLE combat_instance (
     CHECK (
       active_participant_kind IS NULL
       OR active_participant_kind IN ('character', 'combatant')
-    ), active_participant_ref TEXT,
+    ), active_participant_ref TEXT, insertion_order INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (campaign_id, combat_instance_id)
 );
 
@@ -523,7 +523,7 @@ CREATE TABLE "encounter_combatant" (
   head_died_this_turn INTEGER NOT NULL DEFAULT 0,
   stable_recovery_settled INTEGER NOT NULL DEFAULT 0
   CHECK (stable_recovery_settled IN (0, 1)),
-  zero_hp_rule TEXT CHECK (zero_hp_rule IS NULL OR zero_hp_rule IN ('vanish', 'vanish-bonded', 'revert-object', 'revert-form')),
+  zero_hp_rule TEXT CHECK (zero_hp_rule IS NULL OR zero_hp_rule IN ('vanish', 'vanish-bonded', 'revert-object', 'revert-form')), insertion_order INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (campaign_id, combatant_id)
 );
 
@@ -710,7 +710,7 @@ CREATE TABLE item_grant_bind_credit (
   redeemed_at TEXT,
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL
-, rolled_counts_json TEXT, rolled_creatures_json TEXT);
+, rolled_counts_json TEXT, rolled_creatures_json TEXT, insertion_order INTEGER NOT NULL DEFAULT 0);
 
 CREATE TABLE item_state (
   inventory_id TEXT PRIMARY KEY
@@ -1027,6 +1027,8 @@ CREATE INDEX character_spell_slot_character
 
 CREATE UNIQUE INDEX character_wallet_event_insertion_order ON character_wallet_event(insertion_order);
 
+CREATE UNIQUE INDEX combat_instance_insertion_order ON combat_instance(insertion_order);
+
 CREATE UNIQUE INDEX combat_instance_one_active_per_campaign
   ON combat_instance(campaign_id) WHERE status = 'active';
 
@@ -1037,6 +1039,8 @@ CREATE INDEX combat_turn_budget_instance
   ON combat_turn_budget(campaign_id, combat_instance_id);
 
 CREATE INDEX encounter_combatant_identity ON encounter_combatant(campaign_id, identity_kind, identity_ref);
+
+CREATE UNIQUE INDEX encounter_combatant_insertion_order ON encounter_combatant(insertion_order);
 
 CREATE INDEX encounter_combatant_instance ON encounter_combatant(campaign_id, combat_instance_id);
 
@@ -1057,6 +1061,8 @@ WHERE character_id IS NULL AND unheld_disposition = 'dropped';
 
 CREATE INDEX inventory_wear_state_character
   ON inventory_wear_state(character_id, wear_state, inventory_id);
+
+CREATE UNIQUE INDEX item_grant_bind_credit_insertion_order ON item_grant_bind_credit(insertion_order);
 
 CREATE INDEX item_grant_bind_credit_open
   ON item_grant_bind_credit(campaign_id, item_instance_id, economy_id)

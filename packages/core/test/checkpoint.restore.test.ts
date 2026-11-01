@@ -1,12 +1,16 @@
 import {
+  cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { CampaignPosition, CampaignRule } from '../src/internal.js';
 import {
@@ -30,6 +34,10 @@ import {
   CheckpointStore,
 } from '../src/persistence/checkpoint/store.js';
 import { openDatabase } from '../src/persistence/db.js';
+import {
+  migrateDatabase,
+  readMigrationLedger,
+} from '../src/persistence/migrationRunner.js';
 import { initSchema } from '../src/persistence/schema.js';
 
 const doltOk = DoltRepo.available();
@@ -90,6 +98,60 @@ function supersedeCampaignRule(
 }
 
 describe('checkpoint serialization', () => {
+  it('restores a pre-0053 checkpoint and applies persistent chronology on database open', () => {
+    const root = mkdtempSync(join(tmpdir(), 'checkpoint-pre-0053-'));
+    const migrations = join(root, 'migrations');
+    const dest = join(root, 'restored.db');
+    const source = openDatabase(':memory:');
+    try {
+      const migrationSource = fileURLToPath(
+        new URL('../data/migrations/', import.meta.url),
+      );
+      mkdirSync(migrations);
+      for (const entry of readdirSync(migrationSource)) {
+        const version = Number(entry.slice(0, 4));
+        if (version <= 52)
+          cpSync(join(migrationSource, entry), join(migrations, entry));
+      }
+      migrateDatabase(source, {
+        dir: migrations,
+        now: () => '2026-11-01T00:00:00.000Z',
+      });
+      const snapshot = serializeCampaign(source);
+      materializeSnapshot(snapshot, dest);
+      const restored = openDatabase(dest);
+      try {
+        expect(readMigrationLedger(restored).at(-1)).toMatchObject({
+          version: 52,
+        });
+        expect(
+          (
+            restored
+              .prepare('PRAGMA table_info(encounter_combatant)')
+              .all() as { name: string }[]
+          ).some((column) => column.name === 'insertion_order'),
+        ).toBe(false);
+        initSchema(restored);
+        expect(readMigrationLedger(restored).at(-1)).toMatchObject({
+          version: 53,
+          name: 'persistent_combat_and_credit_order',
+        });
+        expect(
+          (
+            restored
+              .prepare('PRAGMA table_info(encounter_combatant)')
+              .all() as { name: string }[]
+          ).some((column) => column.name === 'insertion_order'),
+        ).toBe(true);
+      } finally {
+        restored.close();
+      }
+    } finally {
+      source.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('materializes campaign-rule reads without Dolt', () => {
     const root = mkdtempSync(join(tmpdir(), 'lw-rules-rs-'));
     const dest = join(root, 'restored.db');

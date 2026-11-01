@@ -304,8 +304,10 @@ export function issueItemGrantBindCredit(
     `INSERT INTO item_grant_bind_credit(
        credit_id, campaign_id, item_instance_id, pack_ref, variant_id,
        economy_id, operation_id, issued_at, issued_elapsed_minutes,
-       provenance, session_id, rolled_counts_json, rolled_creatures_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       provenance, session_id, rolled_counts_json, rolled_creatures_json,
+       insertion_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+       (SELECT COALESCE(MAX(insertion_order), 0) + 1 FROM item_grant_bind_credit))`,
   ).run(
     creditId,
     credit.campaignId,
@@ -428,7 +430,7 @@ export function oldestOpenItemGrantBindCredit(
       `SELECT credit_id FROM item_grant_bind_credit
        WHERE campaign_id = ? AND item_instance_id = ? AND economy_id = ?
          AND pack_ref = ? AND variant_id IS ? AND redeemed_effect_id IS NULL
-       ORDER BY issued_at, rowid LIMIT 1`,
+       ORDER BY issued_at, insertion_order LIMIT 1`,
     )
     .get(
       scope.campaignId,

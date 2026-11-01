@@ -326,7 +326,7 @@ export function updateCampaignActor(
         `SELECT combatant_id, hp_current, hp_max FROM encounter_combatant
          WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
            AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
-         ORDER BY rowid DESC LIMIT 1`,
+         ORDER BY insertion_order DESC LIMIT 1`,
       )
       .get(input.campaignId, input.actorId, input.campaignId) as
       | { combatant_id: string; hp_current: number; hp_max: number }
@@ -1184,7 +1184,7 @@ function currentActorProjectionId(
   const row = db
     .prepare(`SELECT c.combatant_id FROM encounter_combatant c JOIN combat_instance i USING(campaign_id,combat_instance_id)
     WHERE c.campaign_id=? AND c.identity_kind='campaign_actor' AND c.identity_ref=?
-    ORDER BY (i.status='active') DESC, i.rowid DESC, c.rowid DESC LIMIT 1`)
+    ORDER BY (i.status='active') DESC, i.insertion_order DESC, c.insertion_order DESC LIMIT 1`)
     .get(campaignId, actorId) as { combatant_id: string } | undefined;
   return row?.combatant_id;
 }
@@ -1912,9 +1912,9 @@ function insertCombatant(
        campaign_id, combat_instance_id, source_encounter_id, combatant_id,
        identity_kind, identity_ref, display_label, rules_ref, side, faction,
        hp_current, hp_max, ac, conditions_json, status, location_id, placement,
-       head_count, provenance, session_id, updated_at
+       head_count, provenance, session_id, updated_at, insertion_order
      )
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(insertion_order), 0) + 1 FROM encounter_combatant))`,
   ).run(
     input.campaignId,
     input.combatInstanceId,
@@ -2424,9 +2424,9 @@ function startEncounterInTxn(
     `INSERT INTO combat_instance(
        campaign_id, combat_instance_id, source_encounter_id, source_run_id,
        status, location_id, provenance, session_id, opened_at, updated_at,
-       closed_at
+       closed_at, insertion_order
      )
-     VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, NULL)`,
+     VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, NULL, (SELECT COALESCE(MAX(insertion_order), 0) + 1 FROM combat_instance))`,
   ).run(
     input.campaignId,
     combatInstanceId,
@@ -3205,7 +3205,7 @@ export function revertCampaignActorToNaturalForm(
         `SELECT combatant_id FROM encounter_combatant
          WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
            AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
-         ORDER BY rowid DESC LIMIT 1`,
+         ORDER BY insertion_order DESC LIMIT 1`,
       )
       .get(input.campaignId, input.actorId, input.campaignId) as
       | { combatant_id: string }
@@ -3334,7 +3334,7 @@ export function removeCampaignActorFromPlay(
         `SELECT combatant_id FROM encounter_combatant
          WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
            AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
-         ORDER BY rowid DESC LIMIT 1`,
+         ORDER BY insertion_order DESC LIMIT 1`,
       )
       .get(input.campaignId, input.actorId, input.campaignId) as
       | { combatant_id: string }
@@ -3446,7 +3446,7 @@ export function restoreBondedCampaignActor(
         `SELECT combatant_id FROM encounter_combatant
          WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
            AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
-         ORDER BY rowid DESC LIMIT 1`,
+         ORDER BY insertion_order DESC LIMIT 1`,
       )
       .get(input.campaignId, actor.actorId, input.campaignId) as
       | { combatant_id: string }
@@ -3521,7 +3521,7 @@ export function findLiveActorCombatantId(
       `SELECT combatant_id, status FROM encounter_combatant
        WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
          AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
-       ORDER BY rowid DESC LIMIT 1`,
+       ORDER BY insertion_order DESC LIMIT 1`,
     )
     .get(campaignId, actorId, campaignId) as
     | { combatant_id: string; status: string }
@@ -3647,7 +3647,7 @@ export function recallPocketedCampaignActor(
           `SELECT side, faction FROM encounter_combatant
            WHERE campaign_id = ? AND combat_instance_id = ?
              AND identity_kind = 'campaign_actor' AND identity_ref = ?
-           ORDER BY rowid DESC LIMIT 1`,
+           ORDER BY insertion_order DESC LIMIT 1`,
         )
         .get(input.campaignId, instance.combatInstanceId, actor.actorId) as
         | { side: string; faction: string | null }
