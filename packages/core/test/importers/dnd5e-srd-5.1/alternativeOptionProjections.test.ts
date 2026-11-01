@@ -249,9 +249,7 @@ describe('O2: printed sub-traps in one record', () => {
     // condition; the other pits carry at most their own printed checks
     // (eshyra-o9bd.19.4.4.1), never the Spiked Pit's projections.
     for (const variant of variants.slice(0, 3)) {
-      expect(Object.keys(variant.mechanics ?? {}).sort()).toEqual(
-        variant.mechanics === undefined ? [] : ['checks'],
-      );
+      expect(Object.keys(variant.mechanics ?? {})).toEqual(['checks']);
     }
     expect(pits.data.mechanics).toBeUndefined();
   });
