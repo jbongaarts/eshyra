@@ -102,7 +102,7 @@ import {
   gateSourceHash,
   gateSuite,
   overallGateResult,
-  parseVitestListFiles,
+  parseVitestResults,
 } from './candidateGates.js';
 import {
   assertRuleDispositions,
@@ -2479,7 +2479,17 @@ async function main(): Promise<void> {
     },
     { name: 'check', script: 'check' },
     { name: 'typecheck', script: 'typecheck' },
-    { name: 'test', script: 'test' },
+    {
+      name: 'test',
+      script: 'test',
+      // The SAME run G-suite judges also writes Vitest's JSON results, which
+      // the evidence gates read to credit only executed test files.
+      extraArgs: [
+        '--reporter=default',
+        '--reporter=json',
+        `--outputFile.json=${join(outDir, 'reports/vitest-results.json')}`,
+      ],
+    },
     { name: 'verify-dnd5e-srd-pack', script: 'verify:dnd5e-srd-pack' },
   ];
 
@@ -2993,21 +3003,16 @@ async function main(): Promise<void> {
   });
   const trackedFiles =
     lsFiles.status === 0 ? lsFiles.stdout.split('\0').filter(Boolean) : [];
-  const vitestList = spawnSync(
-    'npx',
-    ['vitest', 'list', '--filesOnly', '--json'],
-    {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-      timeout: 300_000,
-      maxBuffer: 50 * 1024 * 1024,
-    },
-  );
-  const membership =
-    vitestList.status === 0
-      ? parseVitestListFiles(vitestList.stdout ?? '', REPO_ROOT)
-      : null;
-  const ctx = { exists: repoExists, trackedFiles, membership };
+  let executed: Set<string> | null = null;
+  try {
+    executed = parseVitestResults(
+      readFileSync(join(outDir, 'reports/vitest-results.json'), 'utf8'),
+      REPO_ROOT,
+    );
+  } catch {
+    executed = null;
+  }
+  const ctx = { exists: repoExists, trackedFiles, executed };
   let registryRaw: unknown = null;
   try {
     registryRaw = JSON.parse(

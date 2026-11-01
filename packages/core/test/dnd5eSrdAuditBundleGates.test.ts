@@ -3,19 +3,20 @@ import { describe, expect, it } from 'vitest';
 import {
   buildGate,
   type CapabilityLike,
+  extractFileTokens,
   gateCapabilities,
   gateFindingEvidence,
   gateRegistry,
   gateReplay,
   overallGateResult,
-  parseVitestListFiles,
+  parseVitestResults,
   resolveCitation,
 } from '../scripts/create-dnd5e-srd-audit-bundle/candidateGates.js';
 
-const ctx = (existing: string[], membership: string[] | null = existing) => ({
+const ctx = (existing: string[], executed: string[] | null = existing) => ({
   exists: (p: string) => existing.includes(p),
   trackedFiles: existing,
-  membership: membership === null ? null : new Set(membership),
+  executed: executed === null ? null : new Set(executed),
 });
 const cap = (over: Partial<CapabilityLike> = {}): CapabilityLike => ({
   revision: 'x-v1',
@@ -236,20 +237,156 @@ describe('citation resolution (forms a-e)', () => {
   });
 });
 
-describe('resolved vitest membership', () => {
-  it('parses vitest list output into repo-relative paths', () => {
-    const out = JSON.stringify([
-      { file: '/repo/packages/core/test/a.test.ts' },
+describe('citation identity', () => {
+  const PACK = 'packages/core/data/rules-packs/rules__dnd5e-srd-5.1';
+  const tracked = [
+    'packages/core/test/a.test.ts',
+    'packages/core/test/a.test.ts.map',
+    'packages/core/test/b.test.jsx',
+    'packages/cli/test/only-cli.test.ts',
+    'docs/archive/docs/x.md',
+    'archive/docs/y.md',
+    'sources/p.pdf',
+    '.github/workflows/ci.yml',
+    `${PACK}/records.json`,
+  ];
+  it('keeps whole tokens across extensions and compound suffixes', () => {
+    expect(
+      extractFileTokens(
+        'a packages/core/test/a.test.ts.map, packages/core/test/b.test.jsx; sources/p.pdf (.github/workflows/ci.yml) "x.test.ts" and prose 5.1 v2.0 e.g.',
+      ),
+    ).toEqual([
+      'packages/core/test/a.test.ts.map',
+      'packages/core/test/b.test.jsx',
+      'sources/p.pdf',
+      '.github/workflows/ci.yml',
+      'x.test.ts',
     ]);
-    expect([...(parseVitestListFiles(out, '/repo') ?? [])]).toEqual([
+  });
+  const variants = [
+    'packages/core/test/a.test.ts',
+    'packages/core/test/a.test.ts.map',
+    'packages/core/test/b.test.jsx',
+    'sources/p.pdf',
+    '.github/workflows/ci.yml',
+  ];
+  for (const token of variants) {
+    it(`${token}: resolves exactly, and a missing target fails`, () => {
+      expect(resolveCitation(token, tracked, '').status).toBe('resolved');
+      const g = gateFindingEvidence({
+        rows: [{ canonicalId: 'a', statusReasoning: token }],
+        ctx: ctx(
+          tracked.filter((f) => f !== token),
+          tracked,
+        ),
+      });
+      expect(g.result).toBe('fail');
+      expect(g.denominator.count).toBe(1);
+    });
+  }
+  it('does not truncate a compound suffix to an existing prefix', () => {
+    const only = tracked.filter(
+      (f) => f !== 'packages/core/test/a.test.ts.map',
+    );
+    const g = gateFindingEvidence({
+      rows: [
+        {
+          canonicalId: 'a',
+          statusReasoning: 'packages/core/test/a.test.ts.map',
+        },
+      ],
+      ctx: ctx(only),
+    });
+    expect(g.result).toBe('fail');
+  });
+  it('anchors are terminal: root and test/ misses never fall back to a suffix', () => {
+    expect(resolveCitation('docs/y.md', tracked, '').status).toBe('unresolved');
+    expect(resolveCitation('reports/missing.txt', tracked, '').status).toBe(
+      'unresolved',
+    );
+    expect(resolveCitation('test/only-cli.test.ts', tracked, '').status).toBe(
+      'unresolved',
+    );
+    // an unanchored token may still use the unique-suffix rule
+    expect(resolveCitation('only-cli.test.ts', tracked, '')).toMatchObject({
+      status: 'resolved',
+      path: 'packages/cli/test/only-cli.test.ts',
+    });
+  });
+  it('unanchored suffix collisions and misses fail', () => {
+    const t = [...tracked, 'a/dir/x.md', 'b/dir/x.md'];
+    expect(resolveCitation('dir/x.md', t, '').status).toBe('ambiguous');
+    expect(resolveCitation('nope.md', t, '').status).toBe('unresolved');
+  });
+});
+
+describe('executed-evidence admission', () => {
+  const root = '/repo';
+  const results = (files: Array<[string, string[]]>): string =>
+    JSON.stringify({
+      testResults: files.map(([name, statuses]) => ({
+        name: `${root}/${name}`,
+        assertionResults: statuses.map((status) => ({ status })),
+      })),
+    });
+  const text = results([
+    ['packages/core/test/a.test.ts', ['passed', 'skipped']],
+    ['packages/core/test/skipped.test.ts', ['skipped', 'skipped']],
+    ['packages/core/test/todo.test.ts', ['todo']],
+    ['packages/core/test/broken.test.ts', ['passed', 'failed']],
+  ]);
+  it('executed set holds only files with a pass and no failure', () => {
+    expect([...(parseVitestResults(text, root) ?? [])]).toEqual([
       'packages/core/test/a.test.ts',
     ]);
   });
-  it('returns null for empty or unparsable output', () => {
-    expect(parseVitestListFiles('[]', '/repo')).toBeNull();
-    expect(parseVitestListFiles('not json', '/repo')).toBeNull();
-    expect(parseVitestListFiles('{"a":1}', '/repo')).toBeNull();
+  it('missing, unparseable or empty results are unavailable (null)', () => {
+    expect(parseVitestResults('not json', root)).toBeNull();
+    expect(parseVitestResults('{}', root)).toBeNull();
+    expect(parseVitestResults('{"testResults":[]}', root)).toBeNull();
   });
+  const files = [
+    'packages/core/src/a.ts',
+    'packages/core/test/a.test.ts',
+    'packages/core/test/skipped.test.ts',
+    'packages/core/test/absent.test.ts',
+  ];
+  const run = (evidence: string) => {
+    const executed = parseVitestResults(text, root);
+    const c = {
+      exists: (p: string) => files.includes(p),
+      trackedFiles: files,
+      executed,
+    };
+    return gateCapabilities({
+      inventory: [cap({ evidence: [evidence] })],
+      contracts: [],
+      ctx: c,
+    });
+  };
+  it('credits an executed file, fails skipped and absent files', () => {
+    expect(run('packages/core/test/a.test.ts').result).toBe('pass');
+    const skipped = run('packages/core/test/skipped.test.ts');
+    expect(skipped.result).toBe('fail');
+    expect(skipped.details.join('\n')).toContain(
+      'not executed in the captured suite run',
+    );
+    expect(run('packages/core/test/absent.test.ts').result).toBe('fail');
+  });
+  it('unavailable results make every dependent gate failed-to-run', () => {
+    const none = ctx(FILES, null);
+    expect(
+      gateFindingEvidence({
+        rows: [
+          { canonicalId: 'a', statusReasoning: 'packages/core/test/a.test.ts' },
+        ],
+        ctx: none,
+      }).result,
+    ).toBe('failed-to-run');
+  });
+});
+
+describe('executed evidence (legacy membership controls)', () => {
   it('capabilities and replay fail when evidence is absent from membership, failed-to-run when unavailable', () => {
     const narrowed = ctx(FILES, ['packages/core/src/a.ts']);
     const seeded = cap({ operation: 'seeded roll' });
