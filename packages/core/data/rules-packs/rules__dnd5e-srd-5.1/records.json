@@ -88297,7 +88297,22 @@
               "block": "effects",
               "effectId": "m2-amulet-of-health-constitution-score-set"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -91005,7 +91020,22 @@
               "block": "effects",
               "effectId": "m2-belt-of-dwarvenkind-constitution-score-increase"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:belt-of-dwarvenkind/m2-belt-of-dwarvenkind-proficiency-speak-read-and-write-dwarvish",
@@ -91017,7 +91047,22 @@
               "block": "effects",
               "effectId": "m2-belt-of-dwarvenkind-proficiency-speak-read-and-write-dwarvish"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:belt-of-dwarvenkind/m3-belt-of-dwarvenkind-sense-darkvision",
@@ -91029,7 +91074,22 @@
               "block": "effects",
               "effectId": "m3-belt-of-dwarvenkind-sense-darkvision"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -91092,7 +91152,22 @@
               "block": "effects",
               "effectId": "m2-belt-of-giant-strength-strength-score-set"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:belt-of-giant-strength/S:Belt of Giant Strength:table:table:belt-of-giant-strength",
@@ -91261,7 +91336,22 @@
               "block": "effects",
               "effectId": "m2-berserker-axe-hit-point-maximum-increase"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F6",
+                "hook": "passive item effect runtime consumer: hitPointMaximumIncrease"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F6",
+                "hook": "passive item effect runtime consumer: hitPointMaximumIncrease"
+              }
+            ],
+            "missingEngines": [
+              "F6"
+            ]
           },
           {
             "clauseId": "magic-item:berserker-axe/m7-berserker-attachment",
@@ -91839,7 +91929,22 @@
               "block": "effects",
               "effectId": "m3-boots-of-speed-speed-multiplier"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedMultiplier"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedMultiplier"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:boots-of-speed/m5-boots-of-speed",
@@ -91969,7 +92074,22 @@
               "block": "effects",
               "effectId": "m3-boots-of-striding-and-springing-ignore-movement-restriction"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: ignoreMovementRestriction"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: ignoreMovementRestriction"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:boots-of-striding-and-springing/m3-boots-of-striding-and-springing-jump-distance-multiplier",
@@ -91981,7 +92101,22 @@
               "block": "effects",
               "effectId": "m3-boots-of-striding-and-springing-jump-distance-multiplier"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: jumpDistanceMultiplier"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: jumpDistanceMultiplier"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:boots-of-striding-and-springing/m3-boots-of-striding-and-springing-walk-speed",
@@ -91993,7 +92128,22 @@
               "block": "effects",
               "effectId": "m3-boots-of-striding-and-springing-walk-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -92095,7 +92245,22 @@
               "block": "effects",
               "effectId": "m3-boots-of-the-winterlands-ignore-difficult-terrain"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: ignoreDifficultTerrain"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: ignoreDifficultTerrain"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:boots-of-the-winterlands/m3-boots-of-the-winterlands-temperature-tolerance",
@@ -92107,7 +92272,22 @@
               "block": "effects",
               "effectId": "m3-boots-of-the-winterlands-temperature-tolerance"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: temperatureTolerance"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: temperatureTolerance"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -92358,7 +92538,22 @@
               "block": "effects",
               "effectId": "m2-bracers-of-archery-proficiency-longbow-and-shortbow"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -92827,7 +93022,22 @@
               "block": "effects",
               "effectId": "m3-broom-of-flying-fly-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:broom-of-flying/m5-complex-broom-of-flying",
@@ -93605,7 +93815,22 @@
               "block": "effects",
               "effectId": "m3-carpet-of-flying-fly-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:carpet-of-flying/m3-carpet-of-flying-speed-multiplier",
@@ -93617,7 +93842,22 @@
               "block": "effects",
               "effectId": "m3-carpet-of-flying-speed-multiplier"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedMultiplier"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedMultiplier"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:carpet-of-flying/m5-complex-carpet-of-flying",
@@ -94401,7 +94641,22 @@
               "block": "effects",
               "effectId": "m3-cloak-of-arachnida-climb-anywhere"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: climbAnywhere"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: climbAnywhere"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:cloak-of-arachnida/m3-cloak-of-arachnida-climb-speed",
@@ -94413,7 +94668,22 @@
               "block": "effects",
               "effectId": "m3-cloak-of-arachnida-climb-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:cloak-of-arachnida/m3-cloak-of-arachnida-immunity",
@@ -94425,7 +94695,22 @@
               "block": "effects",
               "effectId": "m3-cloak-of-arachnida-immunity"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: immunity"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: immunity"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:cloak-of-arachnida/m3-cloak-of-arachnida-movement-cost-multiplier",
@@ -94437,7 +94722,22 @@
               "block": "effects",
               "effectId": "m3-cloak-of-arachnida-movement-cost-multiplier"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: movementCostMultiplier"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: movementCostMultiplier"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:cloak-of-arachnida/triage-activation-cast-web-0",
@@ -95112,7 +95412,22 @@
               "block": "effects",
               "effectId": "m3-cloak-of-the-bat-fly-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:cloak-of-the-bat/m5-cloak-of-the-bat",
@@ -95239,7 +95554,22 @@
               "block": "effects",
               "effectId": "m3-cloak-of-the-manta-ray-breathe-water"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: breathes"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: breathes"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:cloak-of-the-manta-ray/m3-cloak-of-the-manta-ray-swim-speed",
@@ -95251,7 +95581,22 @@
               "block": "effects",
               "effectId": "m3-cloak-of-the-manta-ray-swim-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -95461,7 +95806,22 @@
               "block": "effects",
               "effectId": "m3-crystal-ball-crystal-ball-of-true-seeing-sense-truesight"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -98302,7 +98662,22 @@
               "block": "effects",
               "effectId": "m2-demon-armor-proficiency-understand-and-speak-abyssal"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:demon-armor/m7-demon-armor-disadvantage",
@@ -98855,7 +99230,22 @@
               "block": "effects",
               "effectId": "m3-dragon-scale-mail-sense-nearest-dragon-of-matching-type"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:dragon-scale-mail/S:Dragon Scale Mail:table:table:dragon-scale-mail",
@@ -100832,7 +101222,22 @@
               "block": "effects",
               "effectId": "m2-elven-chain-proficiency-this-armor"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -103486,7 +103891,22 @@
               "block": "effects",
               "effectId": "m2-gauntlets-of-ogre-power-strength-score-set"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -104079,7 +104499,22 @@
               "block": "effects",
               "effectId": "m3-gem-of-seeing-sense-truesight"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -104646,7 +105081,22 @@
               "block": "effects",
               "effectId": "m3-gloves-of-swimming-and-climbing-climb-without-extra-movement"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: climbWithoutExtraMovement"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: climbWithoutExtraMovement"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:gloves-of-swimming-and-climbing/m3-gloves-of-swimming-and-climbing-swim-without-extra-movement",
@@ -104658,7 +105108,22 @@
               "block": "effects",
               "effectId": "m3-gloves-of-swimming-and-climbing-swim-without-extra-movement"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: swimWithoutExtraMovement"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: swimWithoutExtraMovement"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -104719,7 +105184,22 @@
               "block": "effects",
               "effectId": "m3-goggles-of-night-sense-darkvision"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -105095,7 +105575,22 @@
               "block": "effects",
               "effectId": "m2-hammer-of-thunderbolts-strength-score-increase"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:hammer-of-thunderbolts/triage-activation-giant-slaying-critical-0",
@@ -105441,7 +105936,22 @@
               "block": "effects",
               "effectId": "m2-headband-of-intellect-intelligence-score-set"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -106682,7 +107192,22 @@
               "block": "effects",
               "effectId": "m3-helm-of-telepathy-telepathic-relay"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: telepathicRelay"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: telepathicRelay"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:helm-of-telepathy/triage-activation-cast-detect-thoughts-0",
@@ -107770,7 +108295,22 @@
               "block": "effects",
               "effectId": "m3-horseshoes-of-a-zephyr-hover"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: hover"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: hover"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:horseshoes-of-a-zephyr/m3-horseshoes-of-a-zephyr-ignore-difficult-terrain",
@@ -107782,7 +108322,22 @@
               "block": "effects",
               "effectId": "m3-horseshoes-of-a-zephyr-ignore-difficult-terrain"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: ignoreDifficultTerrain"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: ignoreDifficultTerrain"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:horseshoes-of-a-zephyr/m3-horseshoes-of-a-zephyr-immunity",
@@ -107794,7 +108349,22 @@
               "block": "effects",
               "effectId": "m3-horseshoes-of-a-zephyr-immunity"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: immunity"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: immunity"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:horseshoes-of-a-zephyr/m3-horseshoes-of-a-zephyr-leaves-no-tracks",
@@ -107806,7 +108376,22 @@
               "block": "effects",
               "effectId": "m3-horseshoes-of-a-zephyr-leaves-no-tracks"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: leavesNoTracks"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: leavesNoTracks"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:horseshoes-of-a-zephyr/m3-horseshoes-of-a-zephyr-walk-on-liquids",
@@ -107818,7 +108403,22 @@
               "block": "effects",
               "effectId": "m3-horseshoes-of-a-zephyr-walk-on-liquids"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: walkOnLiquids"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: walkOnLiquids"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -107878,7 +108478,22 @@
               "block": "effects",
               "effectId": "m3-horseshoes-of-speed-speed-bonus"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedBonus"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedBonus"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -108765,7 +109380,22 @@
               "block": "effects",
               "effectId": "m2-ioun-stone-agility-dexterity-score-increase"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:fortitude/m2-ioun-stone-fortitude-constitution-score-increase",
@@ -108778,7 +109408,22 @@
               "block": "effects",
               "effectId": "m2-ioun-stone-fortitude-constitution-score-increase"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:greater-absorption/m9-ioun-greater-cancel",
@@ -108858,7 +109503,22 @@
               "block": "effects",
               "effectId": "m2-ioun-stone-insight-wisdom-score-increase"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:intellect/m2-ioun-stone-intellect-intelligence-score-increase",
@@ -108871,7 +109531,22 @@
               "block": "effects",
               "effectId": "m2-ioun-stone-intellect-intelligence-score-increase"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:leadership/m2-ioun-stone-leadership-charisma-score-increase",
@@ -108884,7 +109559,22 @@
               "block": "effects",
               "effectId": "m2-ioun-stone-leadership-charisma-score-increase"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:mastery/m2-ioun-stone-mastery-proficiency-bonus-increase",
@@ -108897,7 +109587,22 @@
               "block": "effects",
               "effectId": "m2-ioun-stone-mastery-proficiency-bonus-increase"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiencyBonusIncrease"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiencyBonusIncrease"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:protection/c2-static-ioun-protection-ac",
@@ -108938,7 +109643,22 @@
               "block": "effects",
               "effectId": "m2-ioun-stone-regeneration-regeneration"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F6",
+                "hook": "passive item effect runtime consumer: regeneration"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F6",
+                "hook": "passive item effect runtime consumer: regeneration"
+              }
+            ],
+            "missingEngines": [
+              "F6"
+            ]
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:reserve/activation-m9-cast-ioun-reserve",
@@ -109104,7 +109824,22 @@
               "block": "effects",
               "effectId": "m2-ioun-stone-strength-strength-score-increase"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreIncrease"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ioun-stone/variant:sustenance/m3-ioun-stone-sustenance-sustenance",
@@ -109117,7 +109852,22 @@
               "block": "effects",
               "effectId": "m3-ioun-stone-sustenance-sustenance"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sustenance"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sustenance"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -109951,7 +110701,22 @@
               "block": "effects",
               "effectId": "m3-lantern-of-revealing-bright-light"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: light"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: light"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:lantern-of-revealing/m3-lantern-of-revealing-dim-light",
@@ -109963,7 +110728,22 @@
               "block": "effects",
               "effectId": "m3-lantern-of-revealing-dim-light"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: light"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: light"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:lantern-of-revealing/m3-lantern-of-revealing-sense-reveal-invisible-in-bright-light",
@@ -109975,7 +110755,22 @@
               "block": "effects",
               "effectId": "m3-lantern-of-revealing-sense-reveal-invisible-in-bright-light"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -112346,7 +113141,22 @@
               "block": "effects",
               "effectId": "m3-necklace-of-adaptation-breathe-any-environment"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: breathes"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: breathes"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -115400,7 +116210,22 @@
               "block": "effects",
               "effectId": "m2-periapt-of-wound-closure-healing-multiplier"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F6",
+                "hook": "passive item effect runtime consumer: healingMultiplier"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F6",
+                "hook": "passive item effect runtime consumer: healingMultiplier"
+              }
+            ],
+            "missingEngines": [
+              "F6"
+            ]
           },
           {
             "clauseId": "magic-item:periapt-of-wound-closure/m2-periapt-of-wound-closure-stabilize",
@@ -115412,7 +116237,22 @@
               "block": "effects",
               "effectId": "m2-periapt-of-wound-closure-stabilize"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F6",
+                "hook": "passive item effect runtime consumer: stabilize"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F6",
+                "hook": "passive item effect runtime consumer: stabilize"
+              }
+            ],
+            "missingEngines": [
+              "F6"
+            ]
           }
         ]
       }
@@ -116880,7 +117720,22 @@
               "block": "effects",
               "effectId": "m3-potion-of-climbing-climb-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -117201,7 +118056,22 @@
               "block": "effects",
               "effectId": "m3-potion-of-flying-fly-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -117534,7 +118404,22 @@
               "block": "effects",
               "effectId": "m2-potion-of-giant-strength-strength-score-set"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: abilityScoreSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:potion-of-giant-strength/S:Potion of Giant Strength:table:table:potion-of-giant-strength",
@@ -119175,7 +120060,22 @@
               "block": "effects",
               "effectId": "m3-potion-of-water-breathing-breathe-water"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: breathes"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: breathes"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -122180,7 +123080,22 @@
               "block": "effects",
               "effectId": "m2-ring-of-elemental-command-ring-of-air-elemental-command-proficiency-speak-and-understand-auran"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/variant:ring-of-air-elemental-command/m3-ring-of-elemental-command-ring-of-air-elemental-command-fly-speed",
@@ -122193,7 +123108,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-elemental-command-ring-of-air-elemental-command-fly-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/variant:ring-of-air-elemental-command/m3-ring-of-elemental-command-ring-of-air-elemental-command-slow-fall",
@@ -122206,7 +123136,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-elemental-command-ring-of-air-elemental-command-slow-fall"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: slowFall"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: slowFall"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/variant:ring-of-earth-elemental-command/c2-static-elemental-ring-earth-acid",
@@ -122247,7 +123192,22 @@
               "block": "effects",
               "effectId": "m2-ring-of-elemental-command-ring-of-earth-elemental-command-proficiency-speak-and-understand-terran"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/variant:ring-of-earth-elemental-command/m3-ring-of-elemental-command-ring-of-earth-elemental-command-earth-glide",
@@ -122260,7 +123220,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-elemental-command-ring-of-earth-elemental-command-earth-glide"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: earthGlide"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: earthGlide"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/variant:ring-of-earth-elemental-command/m3-ring-of-elemental-command-ring-of-earth-elemental-command-ignore-difficult-terrain",
@@ -122273,7 +123248,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-elemental-command-ring-of-earth-elemental-command-ignore-difficult-terrain"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: ignoreDifficultTerrain"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: ignoreDifficultTerrain"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/variant:ring-of-fire-elemental-command/c2-static-elemental-ring-fire-immunity",
@@ -122342,7 +123332,22 @@
               "block": "effects",
               "effectId": "m2-ring-of-elemental-command-ring-of-fire-elemental-command-proficiency-speak-and-understand-ignan"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/variant:ring-of-water-elemental-command/m2-ring-of-elemental-command-ring-of-water-elemental-command-proficiency-speak-and-understand-aquan",
@@ -122355,7 +123360,22 @@
               "block": "effects",
               "effectId": "m2-ring-of-elemental-command-ring-of-water-elemental-command-proficiency-speak-and-understand-aquan"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/variant:ring-of-water-elemental-command/m3-ring-of-elemental-command-ring-of-water-elemental-command-breathe-water",
@@ -122368,7 +123388,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-elemental-command-ring-of-water-elemental-command-breathe-water"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: breathes"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: breathes"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/variant:ring-of-water-elemental-command/m3-ring-of-elemental-command-ring-of-water-elemental-command-swim-speed",
@@ -122381,7 +123416,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-elemental-command-ring-of-water-elemental-command-swim-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-elemental-command/variant:ring-of-water-elemental-command/m3-ring-of-elemental-command-ring-of-water-elemental-command-walk-on-liquids",
@@ -122394,7 +123444,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-elemental-command-ring-of-water-elemental-command-walk-on-liquids"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: walkOnLiquids"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: walkOnLiquids"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -122591,7 +123656,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-feather-falling-slow-fall"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: slowFall"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: slowFall"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -122775,7 +123855,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-free-action-ignore-difficult-terrain"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: ignoreDifficultTerrain"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: ignoreDifficultTerrain"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -123691,7 +124786,22 @@
               "block": "effects",
               "effectId": "m2-ring-of-regeneration-regeneration"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F6",
+                "hook": "passive item effect runtime consumer: regeneration"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F6",
+                "hook": "passive item effect runtime consumer: regeneration"
+              }
+            ],
+            "missingEngines": [
+              "F6"
+            ]
           }
         ]
       }
@@ -125014,7 +126124,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-swimming-swim-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -125678,7 +126803,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-warmth-temperature-tolerance"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: temperatureTolerance"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: temperatureTolerance"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -125736,7 +126876,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-water-walking-walk-on-liquids"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: walkOnLiquids"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: walkOnLiquids"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -125867,7 +127022,22 @@
               "block": "effects",
               "effectId": "m3-ring-of-x-ray-vision-sense-x-ray-vision"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:ring-of-x-ray-vision/triage-activation-activate-x-ray-vision-0",
@@ -126110,7 +127280,22 @@
               "block": "effects",
               "effectId": "m3-robe-of-eyes-sense-all-around-vision"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:robe-of-eyes/m3-robe-of-eyes-sense-darkvision",
@@ -126122,7 +127307,22 @@
               "block": "effects",
               "effectId": "m3-robe-of-eyes-sense-darkvision"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:robe-of-eyes/m3-robe-of-eyes-sense-see-invisible-and-ethereal",
@@ -126134,7 +127334,22 @@
               "block": "effects",
               "effectId": "m3-robe-of-eyes-sense-see-invisible-and-ethereal"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -126731,7 +127946,22 @@
               "block": "effects",
               "effectId": "m2-robe-of-the-archmagi-ac-formula"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: acFormula"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: acFormula"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:robe-of-the-archmagi/m7-archmagi-alignment",
@@ -127791,7 +129021,22 @@
               "block": "effects",
               "effectId": "m3-rod-of-alertness-sense-invisible-hostile-location"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:rod-of-alertness/m5-complex-rod-of-alertness",
@@ -128458,7 +129703,22 @@
               "block": "effects",
               "effectId": "m3-rod-of-lordly-might-sense-magnetic-north-and-depth"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:rod-of-lordly-might/m5-complex-rod-of-lordly-might",
@@ -130102,7 +131362,22 @@
               "block": "effects",
               "effectId": "m3-slippers-of-spider-climbing-climb-anywhere"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: climbAnywhere"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: climbAnywhere"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:slippers-of-spider-climbing/m3-slippers-of-spider-climbing-climb-speed",
@@ -130114,7 +131389,22 @@
               "block": "effects",
               "effectId": "m3-slippers-of-spider-climbing-climb-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           }
         ]
       }
@@ -139987,7 +141277,22 @@
               "block": "effects",
               "effectId": "m2-sun-blade-proficiency-the-sun-blade"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: proficiency"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:sun-blade/m5-sun-blade",
@@ -143268,7 +144573,22 @@
               "block": "effects",
               "effectId": "m3-wand-of-enemy-detection-sense-nearest-hostile-direction"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:wand-of-enemy-detection/triage-activation-detect-enemy-0",
@@ -145060,7 +146380,22 @@
               "block": "effects",
               "effectId": "m3-wand-of-secrets-sense-nearest-secret-door-or-trap"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: sense"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:wand-of-secrets/triage-activation-detect-secret-0",
@@ -146298,7 +147633,22 @@
               "block": "effects",
               "effectId": "m3-winged-boots-fly-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:winged-boots/m3-winged-boots-slow-fall",
@@ -146310,7 +147660,22 @@
               "block": "effects",
               "effectId": "m3-winged-boots-slow-fall"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: slowFall"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: slowFall"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:winged-boots/triage-activation-fly-0",
@@ -146488,7 +147853,22 @@
               "block": "effects",
               "effectId": "m3-wings-of-flying-fly-speed"
             },
-            "readiness": "green"
+            "readiness": "engine-pending",
+            "engineHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingHooks": [
+              {
+                "engine": "F8",
+                "hook": "passive item effect runtime consumer: speedSet"
+              }
+            ],
+            "missingEngines": [
+              "F8"
+            ]
           },
           {
             "clauseId": "magic-item:wings-of-flying/m5-wings-of-flying",
