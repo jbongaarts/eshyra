@@ -15,12 +15,12 @@
  * be unit-tested without running the bundle.
  */
 
-import { matchesGlob } from 'node:path';
 import {
   aliasIndex,
   type FindingRow,
   validateFindingRegistry,
 } from '../../src/internal.js';
+import { VERIFIED_PACK_ARTIFACTS } from '../verify-dnd5e-srd-pack/verifiedArtifacts.js';
 
 export type GateResult = 'pass' | 'fail' | 'failed-to-run';
 
@@ -217,36 +217,60 @@ export function gateSuite(input: {
 // Test-inclusion helpers (G-finding-evidence, G-capabilities, G-replay)
 // ---------------------------------------------------------------------------
 
-/**
- * Reads the `include` globs from vitest.config.ts source text so the gates use
- * the suite's own patterns rather than a hand-copied list. Importing the config
- * would run its temp-root side effects, so the source text is parsed.
- */
-export function parseVitestIncludePatterns(configText: string): string[] {
-  const match = /\binclude\s*:\s*\[([^\]]*)\]/.exec(configText);
-  if (!match) return [];
-  return [...(match[1] ?? '').matchAll(/(['"`])([^'"`]+)\1/g)].map(
-    (m) => m[2] as string,
-  );
-}
-
 const TEST_FILE_RE = /\.test\.[cm]?[jt]sx?$/;
 
 export function isTestFilePath(path: string): boolean {
   return TEST_FILE_RE.test(path);
 }
 
-export function isInVitestRun(
-  path: string,
-  includePatterns: readonly string[],
-): boolean {
-  return includePatterns.some((pattern) => matchesGlob(path, pattern));
+/**
+ * Parses `vitest list --filesOnly --json` output (absolute file paths already
+ * evaluated with the real include and exclude) into a set of repo-relative
+ * posix paths. Returns null when the output does not parse or is empty, so
+ * every membership-dependent gate is failed-to-run rather than guessing.
+ */
+export function parseVitestListFiles(
+  stdout: string,
+  repoRoot: string,
+): Set<string> | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stdout);
+  } catch {
+    const start = stdout.indexOf('[');
+    const end = stdout.lastIndexOf(']');
+    if (start < 0 || end < start) return null;
+    try {
+      parsed = JSON.parse(stdout.slice(start, end + 1));
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(parsed)) return null;
+  const root = `${repoRoot.replaceAll('\\', '/').replace(/\/+$/, '')}/`;
+  const out = new Set<string>();
+  for (const item of parsed) {
+    const file = (item as { file?: unknown } | null)?.file;
+    if (typeof file !== 'string') return null;
+    const norm = file.replaceAll('\\', '/');
+    out.add(norm.startsWith(root) ? norm.slice(root.length) : norm);
+  }
+  return out.size > 0 ? out : null;
 }
 
 export interface PathCheckContext {
   exists: (repoRelativePath: string) => boolean;
-  includePatterns: readonly string[];
+  /** Git-tracked repo-relative paths (git ls-files); citation resolution domain. */
+  trackedFiles: readonly string[];
+  /**
+   * The real resolved vitest membership (the G-suite test run), or null when it
+   * could not be obtained.
+   */
+  membership: ReadonlySet<string> | null;
 }
+
+const MEMBERSHIP_UNAVAILABLE =
+  'The resolved vitest membership (vitest list --filesOnly --json) could not be obtained, so test-run membership cannot be established.';
 
 function checkPath(
   path: string,
@@ -258,9 +282,9 @@ function checkPath(
     failures.push(`${label}: ${path} does not exist.`);
     return;
   }
-  if (isTestFilePath(path) && !isInVitestRun(path, ctx.includePatterns)) {
+  if (isTestFilePath(path) && !ctx.membership?.has(path)) {
     failures.push(
-      `${label}: ${path} is a test file outside the vitest include globs, so G-suite does not run it.`,
+      `${label}: ${path} is a test file that is not in the resolved vitest run, so G-suite does not run it.`,
     );
   }
 }
@@ -325,23 +349,69 @@ export function gateRegistry(input: { registry: unknown }): CandidateGate {
 // G-finding-evidence (AC3)
 // ---------------------------------------------------------------------------
 
-const REPO_PATH_RE =
-  /(?<![A-Za-z0-9_@./-])(?:packages|docs|scripts|\.github|test)\/[A-Za-z0-9_@.*-]+(?:\/[A-Za-z0-9_@.*-]+)*/g;
+const FILE_TOKEN_RE =
+  /(?<![\w@./-])((?:[\w@.-]+\/)*[\w@-][\w@.-]*\.(?:tsx|mts|cts|ts|mjs|cjs|js|json|md))(?![\w@-])/g;
 
-/**
- * Repository paths cited in a statusReasoning. A path is root-anchored
- * (packages/, docs/, scripts/, .github/); the shorthand `test/...` is resolved
- * against packages/core. Trailing sentence punctuation is trimmed. Other
- * relative shorthand (e.g. `discovery/signals.ts`) is not extracted.
- */
-export function extractCitedPaths(reasoning: string): string[] {
+const PACK_DIR = 'packages/core/data/rules-packs/rules__dnd5e-srd-5.1';
+
+/** Every file-shaped token (path or basename with a file extension). */
+export function extractFileTokens(reasoning: string): string[] {
   const out = new Set<string>();
-  for (const m of reasoning.matchAll(REPO_PATH_RE)) {
-    let p = m[0].replace(/[.,;:)]+$/, '');
-    if (p.startsWith('test/')) p = `packages/core/${p}`;
-    if (p.length > 0) out.add(p);
+  for (const m of reasoning.matchAll(FILE_TOKEN_RE)) {
+    if (m[1]) out.add(m[1]);
   }
   return [...out];
+}
+
+export type CitationResolution =
+  | { token: string; status: 'resolved'; path: string }
+  | { token: string; status: 'unresolved' | 'ambiguous'; reason: string };
+
+/**
+ * Resolves one file-shaped token deterministically against the tracked files:
+ * (a) a root-anchored path as is; (b) `test/...` under packages/core;
+ * (d) a committed pack-artifact basename (plus manifest.json when the
+ * reasoning mentions pack or records) under the pack directory; (c) otherwise
+ * the unique tracked file whose path ends with `/<token>`. Zero or multiple
+ * matches are failures, never dropped.
+ */
+export function resolveCitation(
+  token: string,
+  trackedFiles: readonly string[],
+  reasoning: string,
+): CitationResolution {
+  const tracked = new Set(trackedFiles);
+  if (tracked.has(token)) return { token, status: 'resolved', path: token };
+  if (token.startsWith('test/')) {
+    const p = `packages/core/${token}`;
+    if (tracked.has(p)) return { token, status: 'resolved', path: p };
+  }
+  const packArtifact =
+    VERIFIED_PACK_ARTIFACTS.includes(token) ||
+    (token === 'manifest.json' && /\b(pack|records)\b/i.test(reasoning));
+  if (packArtifact) {
+    const p = `${PACK_DIR}/${token}`;
+    if (tracked.has(p)) return { token, status: 'resolved', path: p };
+    return {
+      token,
+      status: 'unresolved',
+      reason: `pack artifact ${p} is not tracked.`,
+    };
+  }
+  const matches = trackedFiles.filter((f) => f.endsWith(`/${token}`));
+  if (matches.length === 1 && matches[0] !== undefined)
+    return { token, status: 'resolved', path: matches[0] };
+  if (matches.length === 0)
+    return {
+      token,
+      status: 'unresolved',
+      reason: 'matches no tracked file.',
+    };
+  return {
+    token,
+    status: 'ambiguous',
+    reason: `matches ${matches.length} tracked files: ${matches.join(', ')}.`,
+  };
 }
 
 export function gateFindingEvidence(input: {
@@ -350,42 +420,58 @@ export function gateFindingEvidence(input: {
 }): CandidateGate {
   const failures: string[] = [];
   const details: string[] = [];
-  const cited = new Map<string, string[]>();
+  const resolved = new Map<string, string[]>();
+  const unresolved = new Map<string, string[]>();
   const noPointer: string[] = [];
   for (const row of input.rows) {
-    const paths =
-      typeof row.statusReasoning === 'string'
-        ? extractCitedPaths(row.statusReasoning)
-        : [];
-    if (paths.length === 0) noPointer.push(row.canonicalId);
-    for (const p of paths) {
-      cited.set(p, [...(cited.get(p) ?? []), row.canonicalId]);
+    const reasoning = row.statusReasoning ?? '';
+    const tokens = extractFileTokens(reasoning);
+    if (tokens.length === 0) noPointer.push(row.canonicalId);
+    for (const token of tokens) {
+      const r = resolveCitation(token, input.ctx.trackedFiles, reasoning);
+      if (r.status === 'resolved') {
+        resolved.set(r.path, [
+          ...(resolved.get(r.path) ?? []),
+          row.canonicalId,
+        ]);
+      } else {
+        const key = `${token} (${r.status}: ${r.reason})`;
+        unresolved.set(key, [...(unresolved.get(key) ?? []), row.canonicalId]);
+      }
     }
   }
-  for (const [path, rowIds] of cited) {
+  for (const [key, rowIds] of unresolved) {
+    failures.push(`cited by ${rowIds.join(', ')}: ${key}`);
+  }
+  for (const [path, rowIds] of resolved) {
     checkPath(path, input.ctx, `cited by ${rowIds.join(', ')}`, failures);
   }
   for (const id of noPointer) {
     details.push(`${id}: no committed evidence pointer`);
   }
   details.push(
-    `${noPointer.length} of ${input.rows.length} rows cite no repository path (not a failure).`,
+    `${noPointer.length} of ${input.rows.length} rows cite no file-shaped token (not a failure).`,
+    `resolved citations: ${[...resolved.keys()].join(', ') || '(none)'}`,
+    `unresolved citations: ${[...unresolved.keys()].join(', ') || '(none)'}`,
   );
   return buildGate({
     id: 'G-finding-evidence',
     observes:
-      'AC3: every repository path cited in a registry statusReasoning exists, and every cited test file is inside the vitest include globs and therefore part of the G-suite run.',
+      'AC3: every file-shaped token (path or basename with a file extension) in a registry statusReasoning resolves deterministically against git ls-files (root-anchored path as is; test/... under packages/core; a pack-artifact basename from the verifier list, plus manifest.json when the reasoning says pack or records, under the committed pack directory as the explicit rule for ambiguous pack-artifact basenames; otherwise the unique tracked file ending /<token>); unresolved or ambiguous tokens fail; every resolved test file is in the resolved vitest run (G-suite membership).',
     doesNotObserve: [
       'Whether each pointer discriminates the defect (eshyra-o9bd.19.1.8 owns that).',
-      'Rows whose reasoning cites no root-anchored path; they are listed as "no committed evidence pointer" and are not failures.',
-      'Relative shorthand citations other than test/..., which are not extracted.',
+      'Rows whose reasoning has no file-shaped token; they are listed as "no committed evidence pointer" and are not failures.',
     ],
     denominator: {
-      description: 'Distinct repository paths cited across statusReasoning',
-      count: cited.size,
+      description:
+        'Distinct resolved citations plus unresolved or ambiguous citations',
+      count: resolved.size + unresolved.size,
     },
     failures,
     details,
+    ...(input.ctx.membership === null
+      ? { forceFailedToRun: MEMBERSHIP_UNAVAILABLE }
+      : {}),
   });
 }
 
@@ -431,7 +517,7 @@ export function gateCapabilities(input: {
   return buildGate({
     id: 'G-capabilities',
     observes:
-      'AC4: every deterministic-capability inventory entry and every rule-bound capability contract names at least one runtimeOwner and one evidence path, all of which exist, and every evidence test file is inside the vitest include globs (part of G-suite).',
+      'AC4: every deterministic-capability inventory entry and every rule-bound capability contract names at least one runtimeOwner and one evidence path, all of which exist, and every evidence test file is in the resolved vitest run (part of G-suite).',
     doesNotObserve: [
       'Completeness: the absence of a binding is not a completeness result.',
       'The unselected magic-item backlog; it is not covered.',
@@ -446,6 +532,9 @@ export function gateCapabilities(input: {
     details: [
       `inventory entries: ${input.inventory.length}; contract entries: ${input.contracts.length}`,
     ],
+    ...(input.ctx.membership === null
+      ? { forceFailedToRun: MEMBERSHIP_UNAVAILABLE }
+      : {}),
   });
 }
 
@@ -490,7 +579,7 @@ export function gateReplay(input: {
   return buildGate({
     id: 'G-replay',
     observes:
-      'Replay/deterministic equivalence for capabilities: every inventory entry whose operation, input, exclusion or residual text declares seeded dice cites at least one existing evidence test inside the vitest run. Pack replay is observed by G-repro, not here.',
+      'Replay/deterministic equivalence for capabilities: every inventory entry whose operation, input, exclusion or residual text declares seeded dice cites at least one existing evidence test in the resolved vitest run. Pack replay is observed by G-repro, not here.',
     doesNotObserve: [
       'That the cited tests assert same-seed-same-result equivalence; only that a test is cited and runs in G-suite.',
       'Capabilities that are deterministic but do not mention a seed in their contract text.',
@@ -502,6 +591,9 @@ export function gateReplay(input: {
     },
     failures,
     details,
+    ...(input.ctx.membership === null
+      ? { forceFailedToRun: MEMBERSHIP_UNAVAILABLE }
+      : {}),
   });
 }
 

@@ -102,7 +102,7 @@ import {
   gateSourceHash,
   gateSuite,
   overallGateResult,
-  parseVitestIncludePatterns,
+  parseVitestListFiles,
 } from './candidateGates.js';
 import {
   assertRuleDispositions,
@@ -2986,10 +2986,28 @@ async function main(): Promise<void> {
   // before the exit code is set, so a reviewer can see why a gate failed.
   log('Evaluating candidate gates...');
   const repoExists = (rel: string): boolean => existsSync(join(REPO_ROOT, rel));
-  const includePatterns = parseVitestIncludePatterns(
-    readFileSync(join(REPO_ROOT, 'vitest.config.ts'), 'utf8'),
+  const lsFiles = spawnSync('git', ['ls-files', '-z'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    maxBuffer: 50 * 1024 * 1024,
+  });
+  const trackedFiles =
+    lsFiles.status === 0 ? lsFiles.stdout.split('\0').filter(Boolean) : [];
+  const vitestList = spawnSync(
+    'npx',
+    ['vitest', 'list', '--filesOnly', '--json'],
+    {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      timeout: 300_000,
+      maxBuffer: 50 * 1024 * 1024,
+    },
   );
-  const ctx = { exists: repoExists, includePatterns };
+  const membership =
+    vitestList.status === 0
+      ? parseVitestListFiles(vitestList.stdout ?? '', REPO_ROOT)
+      : null;
+  const ctx = { exists: repoExists, trackedFiles, membership };
   let registryRaw: unknown = null;
   try {
     registryRaw = JSON.parse(
