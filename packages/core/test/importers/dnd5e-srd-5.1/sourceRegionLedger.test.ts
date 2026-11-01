@@ -186,12 +186,19 @@ describe('buildSourceRegionLedger', () => {
       ],
     );
 
-    // The table-cell-height row is a real table row, already owned by the
-    // `table:` record — it must not also surface as a ledger entry.
-    expect(ledger.entries).toHaveLength(1);
+    // The table-cell-height row is a real table row owned by the `table:`
+    // record. It surfaces as that record's own `record:table:*` entry
+    // (eshyra-o9bd.16.7.3, L1-F1) so a continuation page the preface does not
+    // cover is still attributed to the table; the preface entry is unchanged.
+    expect(ledger.entries).toHaveLength(2);
     expect(ledger.entries[0]).toMatchObject({
       regionType: 'table-preface',
       classification: 'record:table:damage-severity-by-level',
+    });
+    expect(ledger.entries[1]).toMatchObject({
+      regionType: 'table-rows',
+      classification: 'record:table:damage-severity-by-level',
+      targetKey: 'table:damage-severity-by-level',
     });
   });
 
@@ -687,9 +694,10 @@ describe('buildSourceRegionLedger', () => {
     );
   });
 
-  it('emits no table-rows entry when the run’s pages already carry other ledger entries (eshyra-erf5.5)', () => {
-    // Same shape as the table-preface test: preface prose gives the page an
-    // entry, so the caption-owned rows stay accounted by coverage alone.
+  it('attributes table-owned rows to the table even when the pages already carry other ledger entries (eshyra-erf5.5, eshyra-o9bd.16.7.3)', () => {
+    // Same shape as the table-preface test. Rows owned by an emitted `table:`
+    // record always get their own `record:table:*` entry: a continuation page
+    // that already carries other entries must still reach the record's locator.
     const table = item({
       text: 'Damage Severity by Level',
       lineIndex: 0,
@@ -715,7 +723,12 @@ describe('buildSourceRegionLedger', () => {
 
     expect(
       ledger.entries.filter((entry) => entry.regionType === 'table-rows'),
-    ).toHaveLength(0);
+    ).toMatchObject([
+      {
+        classification: 'record:table:damage-severity',
+        targetKey: 'table:damage-severity',
+      },
+    ]);
     expect(ledger.summary.unaccountedPages).toEqual([]);
   });
 
