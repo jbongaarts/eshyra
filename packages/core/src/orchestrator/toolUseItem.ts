@@ -53,7 +53,30 @@ export const useItemTool: Tool = {
       args: {
         type: 'object',
         description:
-          'Operation-specific validated inputs. Variable costs use { costs: { <economyId>: <positive integer> } }. Ambiguous state transitions require transitionTo; declared failure paths use transitionOutcome: "failure".',
+          'Operation-specific validated inputs. Only the names the operation reads are accepted; any other name is refused and the error lists the accepted ones. Variable costs use { costs: { <economyId>: <positive integer> } }. Ambiguous state transitions require transitionTo; declared failure paths use transitionOutcome: "failure".',
+        properties: {
+          transitionTo: {
+            type: 'string',
+            minLength: 1,
+            description:
+              'Declared destination state id; required only when the operation has several candidate transitions.',
+          },
+          transitionOutcome: {
+            type: 'string',
+            enum: ['success', 'failure'],
+            description:
+              'Declared failure path; omitted means success. Only for an operation that is the via of a state transition.',
+          },
+          costs: {
+            type: 'object',
+            description:
+              'Positive integer amount for each variable-cost economy of the operation, keyed by economy id. Only for an operation with a variable cost.',
+            additionalProperties: { type: 'integer', minimum: 1 },
+          },
+        },
+        // Deliberately open: the accepted names depend on the selected
+        // operation, so the item-layer validator refuses any other name and
+        // lists that operation's accepted ones (eshyra-o9bd.16.10.3 S1).
       },
       levers: {
         type: 'array',
@@ -88,6 +111,14 @@ export const useItemTool: Tool = {
         'use_item requires { instanceId, operationId }',
       );
     }
+    if (
+      a.args !== undefined &&
+      (typeof a.args !== 'object' || a.args === null || Array.isArray(a.args))
+    )
+      return err(
+        'invalid_args',
+        'use_item args must be an object of operation-specific inputs',
+      );
     const instanceId = a.instanceId;
     const target = resolveTargetCharacterId(a.character, ctx);
     if ('ok' in target) return target;

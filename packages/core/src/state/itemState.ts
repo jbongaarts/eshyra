@@ -1920,6 +1920,77 @@ function costAmount(
   );
 }
 
+/**
+ * Fail-closed argument shape for one operation (eshyra-o9bd.16.10.2, L4-F2).
+ * The operation kind determines what `args` may carry:
+ *  - `transitionTo` / `transitionOutcome`: only when the operation is the `via`
+ *    of at least one state-machine transition;
+ *  - `costs`: only when the operation has at least one variable-amount cost, and
+ *    then keyed by exactly those economies, each a positive integer (every
+ *    variable cost is required, as `costAmount` already enforces).
+ * Any other name, or a `costs` key outside the variable set, is refused before
+ * any action, economy, timer, credit or RNG work. An operation with no args
+ * declared and no args supplied is unaffected.
+ */
+function validateOperationArgs(
+  mechanics: Obj,
+  packRef: string,
+  operation: Obj,
+  args: Readonly<Record<string, unknown>> | undefined,
+): void {
+  if (args === undefined) return;
+  const keys = Object.keys(args);
+  if (keys.length === 0) return;
+  const operationId = String(operation.id);
+  const variableEconomyIds = (
+    Array.isArray(operation.cost) ? operation.cost : []
+  )
+    .map((raw) => obj(raw, 'operation cost'))
+    .filter((cost) => cost.amount === 'variable')
+    .map((cost) => String(cost.economy));
+  const acceptsTransitions =
+    mechanics.stateMachine !== undefined &&
+    (() => {
+      const machine = obj(
+        mechanics.stateMachine,
+        `${packRef}.mechanics.stateMachine`,
+      );
+      return (
+        Array.isArray(machine.transitions) &&
+        machine.transitions.some(
+          (raw) =>
+            obj(raw, `${packRef}.mechanics.stateMachine.transitions[]`).via ===
+            operationId,
+        )
+      );
+    })();
+  const accepted = [
+    ...(acceptsTransitions ? ['transitionOutcome', 'transitionTo'] : []),
+    ...(variableEconomyIds.length > 0 ? ['costs'] : []),
+  ];
+  for (const key of keys) {
+    if (!accepted.includes(key))
+      throw new ItemStateError(
+        `${packRef} operation '${operationId}' does not accept args.${key}; accepted args: ${accepted.length === 0 ? 'none (this operation takes no args)' : accepted.join(', ')}`,
+      );
+  }
+  if (args.costs !== undefined) {
+    const costs = args.costs;
+    if (typeof costs !== 'object' || costs === null || Array.isArray(costs))
+      throw new ItemStateError(
+        `${packRef} operation '${operationId}' args.costs must be an object keyed by variable economy id`,
+      );
+    for (const economyId of Object.keys(costs)) {
+      if (!variableEconomyIds.includes(economyId))
+        throw new ItemStateError(
+          `${packRef} operation '${operationId}' does not accept args.costs.${economyId}; accepted args.costs keys: ${variableEconomyIds.join(', ')}`,
+        );
+    }
+  }
+  for (const economyId of variableEconomyIds)
+    costAmount('variable', economyId, args);
+}
+
 function elapsedNow(db: Db): number {
   const row = db
     .prepare('SELECT elapsed_minutes FROM clock WHERE id = 1')
@@ -2783,6 +2854,9 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       throw new ItemStateError(
         `${packRef} declares no operation '${input.operationId}'`,
       );
+    // Argument shape is refused before equipment, action, economy, timer,
+    // credit or RNG work (eshyra-o9bd.16.10.2).
+    validateOperationArgs(mechanics, packRef, operation, input.args);
     assertActivationEquipment(txnDb, {
       campaignId: input.campaignId,
       characterId: input.characterId,
