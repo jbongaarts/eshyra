@@ -5,7 +5,15 @@
  * F-hooks stay unlanded; eshyra-c58j owns that gate), following the precedent
  * in itemGrantConsumptionReceipt.test.ts. Anchored grants (Ring of Djinni,
  * Efreeti Bottle) keep their coupling and are covered by itemGrantSummons. */
+
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  replaySnapshot,
+  restoreReplaySnapshot,
+} from '../src/campaign/turnReplayStore.js';
 import type { ToolContext } from '../src/internal.js';
 import {
   createDefaultToolRegistry,
@@ -14,7 +22,15 @@ import {
   getBundledDnd5eSrdPack,
   listActiveEffects,
 } from '../src/internal.js';
+import { serializeCampaign } from '../src/persistence/checkpoint/serialize.js';
+import { materializeSnapshot } from '../src/persistence/checkpoint/store.js';
+import { openDatabase } from '../src/persistence/db.js';
 import { magicItemVariantDefinitions } from '../src/rules/magicItemVariants.js';
+import {
+  issueItemGrantBindCredit,
+  oldestOpenItemGrantBindCredit,
+  redeemItemGrantBindCredit,
+} from '../src/state/itemGrantBinding.js';
 import { grantCooldownAnchoredTo } from '../src/state/itemState.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
@@ -24,6 +40,60 @@ import {
 
 const NOW = '2026-10-17T10:00:00.000Z';
 const realPack = getBundledDnd5eSrdPack();
+
+describe('item grant credit chronology round trips', () => {
+  it.each(['checkpoint materialization', 'in-place replay restore'])(
+    'preserves equal-timestamp oldest-credit selection through %s',
+    (restorePath) => {
+      const db = freshDbWithSession();
+      const scope = {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        itemInstanceId: 'chronology-item',
+        packRef: 'magic-item:bowl-of-commanding-water-elementals',
+        variantId: undefined,
+        economyId: 'uses',
+        operationId: 'summon-water-elemental',
+      };
+      for (let n = 1; n <= 12; n += 1)
+        issueItemGrantBindCredit(db, {
+          ...scope,
+          issuedAt: NOW,
+          issuedElapsedMinutes: n * 1440,
+          provenance: 'round-trip-test',
+          sessionId: DEFAULT_TEST_SESSION_ID,
+        });
+      let restored = db;
+      let dir: string | undefined;
+      if (restorePath === 'checkpoint materialization') {
+        dir = mkdtempSync(join(tmpdir(), 'eshyra-credit-chronology-'));
+        const path = join(dir, 'restore.db');
+        materializeSnapshot(serializeCampaign(db), path);
+        restored = openDatabase(path);
+      } else {
+        const snapshot = replaySnapshot(db);
+        db.transaction(() => restoreReplaySnapshot(db, snapshot))();
+      }
+      try {
+        const selected: string[] = [];
+        for (let n = 1; n <= 12; n += 1) {
+          const creditId = oldestOpenItemGrantBindCredit(restored, scope);
+          expect(creditId).toBe(`chronology-item:summon-water-elemental:${n}`);
+          if (creditId === undefined) break;
+          selected.push(creditId);
+          redeemItemGrantBindCredit(restored, creditId, `effect-${n}`, NOW);
+        }
+        expect(selected).toHaveLength(12);
+        expect(selected.at(-1)).toBe(
+          'chronology-item:summon-water-elemental:12',
+        );
+      } finally {
+        if (restored !== db) restored.close();
+        db.close();
+        if (dir !== undefined) rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  );
+});
 
 type Obj = Record<string, unknown>;
 interface Carrier {

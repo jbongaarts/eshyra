@@ -38,8 +38,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 52,
-      name: 'item_variant_establishment',
+      version: 53,
+      name: 'persistent_combat_and_credit_order',
     });
     db.close();
   });

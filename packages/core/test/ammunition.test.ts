@@ -38,8 +38,9 @@ function combat(
 ) {
   db.prepare(`INSERT INTO combat_instance(
     campaign_id, combat_instance_id, status, location_id, provenance, session_id,
-    opened_at, updated_at, closed_at
-  ) VALUES (?, ?, ?, ?, 'test', ?, ?, ?, ?)`).run(
+    opened_at, updated_at, closed_at, insertion_order
+  ) VALUES (?, ?, ?, ?, 'test', ?, ?, ?, ?,
+    (SELECT COALESCE(MAX(insertion_order), 0) + 1 FROM combat_instance))`).run(
     DEFAULT_TEST_CAMPAIGN_ID,
     id,
     status,

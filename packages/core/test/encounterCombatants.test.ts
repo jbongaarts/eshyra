@@ -1,4 +1,11 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  replaySnapshot,
+  restoreReplaySnapshot,
+} from '../src/campaign/turnReplayStore.js';
 import { closeSession, startSession } from '../src/index.js';
 import type { AdventureModule, ToolContext } from '../src/internal.js';
 import {
@@ -17,6 +24,9 @@ import {
   upsertCampaignActor,
 } from '../src/internal.js';
 import { deriveTraceFields } from '../src/orchestrator/turnTraceProjection.js';
+import { serializeCampaign } from '../src/persistence/checkpoint/serialize.js';
+import { materializeSnapshot } from '../src/persistence/checkpoint/store.js';
+import { openDatabase } from '../src/persistence/db.js';
 import { ensureCampaignActorFromCombatant } from '../src/state/encounterCombatants.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
@@ -86,6 +96,106 @@ function setup() {
 }
 
 describe('encounter combatants', () => {
+  it.each(['checkpoint materialization', 'in-place replay restore'])(
+    'preserves durable actor chronology through %s',
+    (restorePath) => {
+      const { db, registry, ctx } = setup();
+      const must = (name: string, args: unknown, target = db) => {
+        const result = registry.invoke(name, args, { ...ctx, db: target });
+        if (!result.ok) throw new Error(`${name} failed: ${result.message}`);
+      };
+      must('start_encounter', {
+        combatInstanceId: 'c',
+        actors: [
+          {
+            actorId: 'wiz',
+            rulesRef: 'creature:goblin',
+            hpMax: 20,
+            hpCurrent: 20,
+            side: 'ally',
+          },
+          {
+            actorId: 'fam',
+            rulesRef: 'creature:bat',
+            hpMax: 5,
+            hpCurrent: 5,
+            side: 'ally',
+          },
+        ],
+      });
+      must('start_effect', {
+        effectId: 'fam-fx',
+        kind: 'summoning',
+        displayName: 'Familiar',
+        source: {
+          kind: 'spell',
+          ref: 'spell:find-familiar',
+          actor: { kind: 'campaign_actor', ref: 'wiz' },
+        },
+        duration: { kind: 'until-removed' },
+        actors: [{ combatantId: 'c-fam', campaignActorId: 'fam' }],
+      });
+      for (let n = 2; n <= 12; n += 1) {
+        must('transition_bonded_summon', {
+          effectId: 'fam-fx',
+          spellRef: 'spell:find-familiar',
+          trigger: 'action-temporary-dismissal',
+        });
+        must('transition_bonded_summon', {
+          effectId: 'fam-fx',
+          spellRef: 'spell:find-familiar',
+          trigger: 'action-recall',
+          placement: 'adjacent',
+        });
+      }
+      const latest = (target: typeof db) =>
+        target
+          .prepare(
+            "SELECT combatant_id,status,hp_current FROM encounter_combatant WHERE identity_kind='campaign_actor' AND identity_ref='fam' ORDER BY insertion_order DESC LIMIT 1",
+          )
+          .get();
+      let restored = db;
+      let dir: string | undefined;
+      if (restorePath === 'checkpoint materialization') {
+        dir = mkdtempSync(join(tmpdir(), 'eshyra-chronology-'));
+        const path = join(dir, 'restore.db');
+        materializeSnapshot(serializeCampaign(db), path);
+        restored = openDatabase(path);
+      } else {
+        const snapshot = replaySnapshot(db);
+        db.transaction(() => restoreReplaySnapshot(db, snapshot))();
+      }
+      try {
+        const projection = latest(restored) as {
+          combatant_id: string;
+          status: string;
+          hp_current: number;
+        };
+        expect(projection).toMatchObject({
+          combatant_id: 'c-fam-12',
+          status: 'alive',
+          hp_current: 5,
+        });
+        must(
+          'update_combatant',
+          { combatantId: projection.combatant_id, hpDelta: -1 },
+          restored,
+        );
+        expect(
+          getCampaignActor(restored, DEFAULT_TEST_CAMPAIGN_ID, 'fam'),
+        ).toMatchObject({ hpCurrent: 4, status: 'alive' });
+        must('close_combat_instance', { status: 'completed' }, restored);
+        expect(
+          getCampaignActor(restored, DEFAULT_TEST_CAMPAIGN_ID, 'fam'),
+        ).toMatchObject({ hpCurrent: 4, status: 'alive' });
+      } finally {
+        if (restored !== db) restored.close();
+        db.close();
+        if (dir !== undefined) rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
   it('clamps model supplied actor HP to the condition-adjusted maximum on admission', () => {
     const { db } = setup();
     const started = startEncounter(db, {
