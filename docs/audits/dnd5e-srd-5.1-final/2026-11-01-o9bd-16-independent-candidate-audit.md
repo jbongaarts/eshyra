@@ -50,7 +50,9 @@ The bar does **not** require any of the following:
 - **Finding format:** every finding records:
   - its lane;
   - BLOCKER or NON-BLOCKER;
-  - concrete evidence (record key or file:line, plus SRD page and quote);
+  - concrete evidence: a record key or file:line, plus an SRD page and quote
+    where a printed rule governs (software-contract findings such as L2-F2
+    and L4-F3 cite code and observed behavior instead);
   - its registry alias when it recurs a known class;
   - a suggested owner.
 - **Limits:** every lane recorded explicit LIMITS. A clean lane means no blocker
@@ -154,8 +156,10 @@ final Sol verdict at its exact merged head. Repaired `main` is at `6ef35383`.
 - **L4-F1 (BLOCKER).** Consuming the last Elemental Gem in a stack erased grants
   that earlier units had already paid for.
   - **Fix:** `.16.10.1` keeps those credits redeemable when a consumption
-    receipt retires the stack. Destroying the source redeems the named credit,
-    or the oldest open one.
+    receipt retires the stack (destruction itself chooses and redeems
+    nothing). A later grant binding on the destroyed source chooses the
+    named credit, or the oldest open one, and redeems it atomically with the
+    effect insertion.
   - **Status:** repaired.
 - **L4-F2 (BLOCKER).** `use_item` did not fail closed on unrecognized operation
   arguments.
@@ -163,8 +167,12 @@ final Sol verdict at its exact merged head. Repaired `main` is at `6ef35383`.
   - **Review:** `.16.10.3` found that refusals through the registry omitted the
     accepted keys the tool promises to list. The follow-up commit leaves the
     `args` object schema open, so the item-layer validator refuses every unknown
-    name and lists the selected operation's accepted keys. Every refusal case
-    asserts that wording on both the registry path and the direct path.
+    name and lists the selected operation's accepted keys. The refusal cases
+    assert that wording on both the registry path and the direct path, with
+    two disclosed exceptions: the zero-cost composite Bag of Tricks case runs
+    only on the direct path, because the registry schema refuses its
+    `uses: 0` value first; and the non-object `args` refusal runs only on the
+    registry path and asserts `invalid_args` and state conservation.
   - **Status:** repaired; bounded confirmation `.16.10.4` was clean.
 - **L4-F3 (NON-BLOCKER).** Prototype-inherited keys bypass the capability
   ledger's unknown-identity checks.
