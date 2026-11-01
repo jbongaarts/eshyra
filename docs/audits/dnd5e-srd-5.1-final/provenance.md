@@ -1,3 +1,5 @@
+> **Historical scope — 2026-06-17 audit of commit `0f5b3dcce1de96630e01532d138b1286c948b668`.** This document is preserved as evidence of that audit, not as a claim about the current pack. Its completeness and freeze sign-off conclusions were withdrawn by ADR 0020 and the 2026-06-28 re-audit thaw. The operative bar is §5.9 of `docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md`. Current candidate evidence is [the candidate record](./2026-11-01-o9bd-19-6-1-candidate-pack.md); later gates are `eshyra-o9bd.19.6.3` / `eshyra-o9bd.16`.
+
 # Provenance — D&D 5e SRD 5.1 Generated Rules Pack
 
 This file records the source, importer, and artifact provenance for the frozen

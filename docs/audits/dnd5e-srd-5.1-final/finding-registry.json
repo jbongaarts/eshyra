@@ -40,6 +40,7 @@
       "aliases": ["sol:CAP-008"],
       "invariant": "Bag of Beans successful-save outcome follows source authority",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3.1 (PR #567, merge 25631abf): the Bag of Beans explosion represents half damage on a successful Dexterity save, matching the printed sentence “or half as much damage on a successful one.” The census assertion in packages/core/test/importers/dnd5e-srd-5.1/halfDamageSuccessBranches.test.ts checks the magic-item-effect representation at effects[id=c2-residual-dump-beans-explosion].successfulSaveDamage = half; that is the current path in packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json.",
       "provenance": {
         "auditFinding": "sol:CAP-008",
         "evidenceBasis": "audit-finding"
@@ -52,6 +53,7 @@
       "aliases": ["fable:F1"],
       "invariant": "Starting Wealth is not emitted as unsupported SRD content",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.1.1 (PR #504, merge 6015db05): the unsupported Starting Wealth table is absent from the SRD pack; the SRD-only creation path has no source-backed wealth table to consume. Evidence: current packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json has no table:starting-wealth-by-class, with source-backed starting-equipment choices retained; packages/core/test/srdGeneratedPack.test.ts and character-creation tests cover the boundary.",
       "provenance": {
         "auditFinding": "fable:F1",
         "evidenceBasis": "audit-finding"
@@ -64,6 +66,7 @@
       "aliases": ["fable:F5"],
       "invariant": "Synthesized table headers are distinguished from source text",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.1.2 (PR #566, merge 77b2d475): the separate Scrying Knowledge and Connection tables retain their printed headers. packages/core/test/importers/dnd5e-srd-5.1/parseDocumentTables.test.ts pins the Scrying table specs and asserts columns are literal spans of the printed header lines, so invented, expanded, reordered, or recomposed header text fails.",
       "provenance": {
         "auditFinding": "fable:F5",
         "evidenceBasis": "audit-finding"
@@ -76,6 +79,7 @@
       "aliases": ["fable:F7"],
       "invariant": "Synthesized choice labels are distinguished from source text",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.1.3 (PR #569, merge ddc231be): synthesized ancestry/background choice labels are classified source-derived rather than quoted source prose. Evidence: packages/core/test/importers/dnd5e-srd-5.1/fieldProvenanceGate.test.ts asserts /choices/*/sourceText is not source-prose, and the current packages/core/data/rules-packs/rules__dnd5e-srd-5.1/field-provenance.json declaration.",
       "provenance": {
         "auditFinding": "fable:F7",
         "evidenceBasis": "audit-finding"
@@ -101,6 +105,7 @@
       "aliases": ["indep:008"],
       "invariant": "Incomplete locators are not treated as complete coverage",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.3 (PR #576, merge 6684c064): record locators and fieldLocators are checked against the source-region ledger. What the evidence rejects: a record locator that misses a page the source-region ledger requires for that record, including an incomplete continuation; a spell fieldLocators['/classes'] whose pages differ from the ledger's spell-list pages; a missing required capacity or primaryAbilities field locator; and a field locator none of whose cited pages carries the field value. It does not reject surplus record-locator pages, or surplus pages on a field locator when at least one cited page carries the value. Evidence: packages/core/test/importers/dnd5e-srd-5.1/recordLocatorCompleteness.test.ts. The current representation is provenance.locator and provenance.fieldLocators in packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json plus packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-region-ledger.json.",
       "provenance": {
         "auditFinding": "indep:008",
         "evidenceBasis": "source-span"
@@ -113,6 +118,7 @@
       "aliases": ["indep:009"],
       "invariant": "Ambiguous ownership is not counted as resolved coverage",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.5 (PR #578, merge 52748aad): ambiguous and unresolved source ownership remain separately classified and cannot count as clean coverage; ownership resolution is source-structure based. Evidence: packages/core/test/importers/dnd5e-srd-5.1/sourceRegionLedger.test.ts and the current packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-coverage.json and packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-region-ledger.json predicates.",
       "provenance": {
         "auditFinding": "indep:009",
         "evidenceBasis": "audit-finding"
@@ -125,6 +131,7 @@
       "aliases": ["indep:010", "sol:CAP-012"],
       "invariant": "Rock Gnome trait ownership is assigned to the correct boundary",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.1.3 (PR #569, merge ddc231be): the printed “Artificer’s Lore” heading is recognized as its own Rock Gnome trait after the Constitution Ability Score Increase, so its prose and expertise projection attach to the correct trait. Evidence: packages/core/test/importers/dnd5e-srd-5.1/parseAncestries.test.ts and packages/core/test/srdGeneratedPack.test.ts; current ancestry:rock-gnome traits preserve that boundary.",
       "provenance": {
         "auditFinding": "indep:010",
         "evidenceBasis": "audit-finding"
@@ -150,6 +157,7 @@
       "aliases": ["opus:F-15"],
       "invariant": "Spellcasting subfeatures retain consistent granularity",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.4 (PR #574, merge 5872620a): class Spellcasting is one feature per class-table grant, with printed subsection names and text retained as sections; 12-point subheadings are not promoted to separate feature records. Evidence: packages/core/test/importers/dnd5e-srd-5.1/spellcastingSections.test.ts and current feature:*:spellcasting records.",
       "provenance": {
         "auditFinding": "opus:F-15",
         "evidenceBasis": "audit-finding"
@@ -162,6 +170,7 @@
       "aliases": ["opus:F-17"],
       "invariant": "Vehicles tool row is retained",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.2 (PR #573, merge a0af3c0f): the printed Tools table row “Vehicles (land or water)” is emitted with its footnote description and no fabricated cost or weight; the row gate fails closed on drift. Evidence: packages/core/test/importers/dnd5e-srd-5.1/toolsTableRows.test.ts and current equipment:vehicles-land-or-water.",
       "provenance": {
         "auditFinding": "opus:F-17",
         "evidenceBasis": "audit-finding"
@@ -174,6 +183,7 @@
       "aliases": ["opus:F-30"],
       "invariant": "Wererat Hand Crossbow is not swallowed by segmentation",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.1 (PR #571, merge c492c918): the label-only “Hand Crossbow (Humanoid or Hybrid Form Only)” lead-in on the Wererat stat block opens its own attack entry rather than being swallowed into the preceding action. Evidence: packages/core/test/importers/dnd5e-srd-5.1/parseCreatures.test.ts, packages/core/test/importers/dnd5e-srd-5.1/creatureAttackLeadIns.test.ts, and current creature:wererat.actions.",
       "provenance": {
         "auditFinding": "opus:F-30",
         "evidenceBasis": "audit-finding"
@@ -186,6 +196,7 @@
       "aliases": ["sol:CAP-010"],
       "invariant": "Structured fields cite actual source provenance",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.3 (PR #576, merge 6684c064): structured fieldLocators are checked against source-region evidence. What the evidence rejects: a record locator that misses a page the source-region ledger requires for that record, including an incomplete continuation; a spell fieldLocators['/classes'] whose pages differ from the ledger's spell-list pages; a missing required capacity or primaryAbilities field locator; and a field locator none of whose cited pages carries the field value. It does not reject surplus record-locator pages, or surplus pages on a field locator when at least one cited page carries the value. Evidence: packages/core/test/importers/dnd5e-srd-5.1/recordLocatorCompleteness.test.ts. The current representation is provenance.fieldLocators in packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json plus packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-region-ledger.json.",
       "provenance": {
         "auditFinding": "sol:CAP-010",
         "evidenceBasis": "source-span"
@@ -198,6 +209,7 @@
       "aliases": ["fable:F4"],
       "invariant": "Container continuations retain complete citation",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.2.3 (PR #576, merge 6684c064): container capacity fields retain complete field-specific page citations across the pp. 69–70 continuation. packages/core/test/importers/dnd5e-srd-5.1/recordLocatorCompleteness.test.ts rejects a missing capacity field locator and a capacity locator none of whose cited pages carries the field value; it does not reject a surplus cited page when another cited page carries the value. Current citations are provenance.fieldLocators['/capacity'] in packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json, checked against packages/core/data/rules-packs/rules__dnd5e-srd-5.1/source-region-ledger.json.",
       "provenance": {
         "auditFinding": "fable:F4",
         "evidenceBasis": "audit-finding"
@@ -665,6 +677,7 @@
       "aliases": ["sol:CAP-009"],
       "invariant": "Animal Friendship correction is source-authority work",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.2.1.4 (PR #568, merge df27288c): the garbled printed higher-slot phrase remains verbatim and is represented as an unresolved source defect; no count is inferred from the missing words. The SRD p. 115 print reads “one additional beast t level above 1st.” Evidence: current spell:animal-friendship upcast.sourceDefect and packages/core/test/spellUpcast.test.ts.",
       "provenance": {
         "auditFinding": "sol:CAP-009",
         "evidenceBasis": "audit-finding"
@@ -690,6 +703,7 @@
       "aliases": ["opus:F-25"],
       "invariant": "Creature and hazard half-damage branches are represented",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.3.1 (PR #567, merge 25631abf): the source census distinguishes typed-save branches (saves[].damageOnSuccess), magic-item-effect branches (effects[].successfulSaveDamage), untyped members, and not-a-member cases. packages/core/test/importers/dnd5e-srd-5.1/halfDamageSuccessBranches.test.ts pins the PDF census, joins each source sentence to its pack container, checks the representation-specific branch, and rejects invented typed branches.",
       "provenance": {
         "auditFinding": "opus:F-25",
         "evidenceBasis": "audit-finding"

@@ -1,3 +1,5 @@
+> **Historical scope — 2026-07-01 review of commit `beb9a21bf0a746e7359477b2062b6dec9a5b06ea`.** This document is preserved as evidence of that review, not as a claim about the current pack. Its completeness and freeze sign-off conclusions were withdrawn by ADR 0020 and the 2026-06-28 re-audit thaw. The operative bar is §5.9 of `docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md`. Current candidate evidence is [the candidate record](./2026-11-01-o9bd-19-6-1-candidate-pack.md); later gates are `eshyra-o9bd.19.6.3` / `eshyra-o9bd.16`.
+
 # 2026-07-01 External Audit — Positive Assurances
 
 **Bead:** `eshyra-o9bd.18.10` (child of epic `eshyra-o9bd.18`, "Close 2026-07-01
