@@ -2,6 +2,7 @@ import type { AdventureModule } from '../adventure/types.js';
 import { isCampaignRuleKind } from '../campaign/campaignRules.js';
 import type { TraceJsonValue } from '../memory/turnTrace.js';
 import type { Db } from '../persistence/db.js';
+import type { RecordRelationshipManifestSource } from '../rules/recordRelationships.js';
 import type { CampaignRulesPackResolver } from '../state/campaignRecordLookup.js';
 import {
   memoizeCampaignRulesPackResolver,
@@ -202,6 +203,13 @@ export interface ShadowDiscoveryInput {
    */
   readonly resolveRulesPack?: CampaignRulesPackResolver;
   /**
+   * The relationship manifest association installed with the campaign's rules
+   * pack. It is preserved by identity and forwarded unchanged to the discovery
+   * run, so the runtime capture answers exactly as `lookup_rules` does for the
+   * same campaign. Absent means the bundled default, not an inferred manifest.
+   */
+  readonly relationshipManifestSource?: RecordRelationshipManifestSource;
+  /**
    * The jhpt read seam, already bound to `campaignPosition` by its owner.
    * Discovery is handed a seam and never reaches for the campaign-rule store
    * to build one (design section 8.4).
@@ -328,6 +336,9 @@ function captureRawShadow(
       ...(resolveRulesPack === undefined
         ? {}
         : { rulesPackResolver: resolveRulesPack }),
+      ...(input.relationshipManifestSource === undefined
+        ? {}
+        : { relationshipManifestSource: input.relationshipManifestSource }),
     });
     return {
       ...base,
