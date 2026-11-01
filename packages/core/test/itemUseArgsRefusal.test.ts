@@ -108,99 +108,95 @@ function ropeInstance(s: ReturnType<typeof setup>): string {
 }
 
 describe('use_item refuses unrecognized or inapplicable operation arguments before any mutation', () => {
+  // Every refusal must name the selected operation's accepted keys on BOTH
+  // paths: the registry (the provider-facing tool boundary) and the item
+  // layer reached directly. The args schema deliberately does not close its
+  // property set, so the registry hands unknown names to the item-layer
+  // validator that knows the operation (eshyra-o9bd.16.10.3 S1).
+  const ROPE_ACCEPTED = 'accepted args: transitionOutcome, transitionTo';
   const refusals: {
     name: string;
     item: 'rope' | 'bag';
     args: unknown;
     message: RegExp;
-    /** registry: the schema boundary; item: the item-layer validator. */
-    layer?: 'registry' | 'item';
+    /** registry: the tool boundary; item: the item-layer validator. Default both. */
+    layers?: readonly ('registry' | 'item')[];
   }[] = [
     {
-      name: 'Rope misspelled transitionOutcome (transitionOutome) is unknown',
+      name: 'Rope misspelled transitionOutcome (transitionOutome) names the accepted keys',
       item: 'rope',
       args: { transitionOutome: 'failure' },
-      message: /transitionOutome/,
+      message: new RegExp(
+        `does not accept args\\.transitionOutome; ${ROPE_ACCEPTED}`,
+      ),
     },
     {
-      name: 'Rope declared transitionOutcome plus an unknown predicate is refused',
+      name: 'Rope declared transitionOutcome plus an unknown predicate names the accepted keys',
       item: 'rope',
       args: { transitionOutcome: 'failure', unknownPredicate: true },
-      message: /unknownPredicate/,
+      message: new RegExp(
+        `does not accept args\\.unknownPredicate; ${ROPE_ACCEPTED}`,
+      ),
     },
     {
-      name: 'Bag of Tricks with a fixed-cost cost key and an unknown name',
+      name: 'Bag of Tricks fixed-cost costs key plus an unknown name says the operation takes no args',
       item: 'bag',
-      args: { costs: { uses: 0 }, unknown: 'garbage' },
-      message: /costs|unknown/,
+      args: { costs: { uses: 1 }, unknown: 'garbage' },
+      message: /does not accept args\.costs; accepted args: none/,
     },
     {
-      name: 'Bag of Tricks with only an unknown name',
+      name: 'item layer: Bag of Tricks fixed-cost zero costs key names the accepted keys',
       item: 'bag',
-      args: { unknown: 'garbage' },
-      message: /unknown/,
-    },
-    {
-      name: 'Bag of Tricks with a costs key on a fixed-cost operation',
-      item: 'bag',
-      args: { costs: { uses: 1 } },
-      message: /costs/,
-    },
-    // The item-layer validator, reached past the registry schema: it names the
-    // accepted keys, so a caller bypassing the schema gets the same refusal.
-    {
-      name: 'item layer: Rope misspelled transitionOutcome names the accepted keys',
-      item: 'rope',
-      layer: 'item',
-      args: { transitionOutome: 'failure' },
-      message:
-        /does not accept args\.transitionOutome; accepted args: transitionOutcome, transitionTo/,
-    },
-    {
-      name: 'item layer: Bag of Tricks fixed-cost costs key names the accepted keys',
-      item: 'bag',
-      layer: 'item',
+      layers: ['item'],
       args: { costs: { uses: 0 }, unknown: 'garbage' },
       message: /does not accept args\.costs; accepted args: none/,
     },
     {
-      name: 'item layer: Bag of Tricks unknown name says the operation takes no args',
+      name: 'Bag of Tricks unknown name says the operation takes no args',
       item: 'bag',
-      layer: 'item',
       args: { unknown: 'garbage' },
       message:
         /does not accept args\.unknown; accepted args: none \(this operation takes no args\)/,
     },
     {
-      name: 'item layer: Rope costs key on a state-transition operation with no variable cost',
+      name: 'Bag of Tricks with a costs key on a fixed-cost operation',
+      item: 'bag',
+      args: { costs: { uses: 1 } },
+      message: /does not accept args\.costs; accepted args: none/,
+    },
+    {
+      name: 'Rope costs key on a state-transition operation with no variable cost',
       item: 'rope',
-      layer: 'item',
       args: { costs: { charges: 1 } },
-      message:
-        /does not accept args\.costs; accepted args: transitionOutcome, transitionTo/,
+      message: new RegExp(`does not accept args\\.costs; ${ROPE_ACCEPTED}`),
     },
   ];
 
-  for (const refusal of refusals) {
-    it(`refuses and leaves state and budgets unchanged: ${refusal.name}`, () => {
-      const s = setup();
-      const id =
-        refusal.item === 'rope' ? ropeInstance(s) : s.give('bag', BAG, 'gray');
-      const before = snapshot(s.db);
-      const machineBefore = readItemState(s.db, id)?.machineState;
-      const operationId =
-        refusal.item === 'rope' ? 'entangle-creature' : 'pull-fuzzy-object';
-      const input = { instanceId: id, operationId, args: refusal.args };
-      const result =
-        refusal.layer === 'item' ? s.run(input) : s.call('use_item', input);
-      expect(result).toMatchObject({ ok: false });
-      expect((result as { message: string }).message).toMatch(refusal.message);
-      expect(snapshot(s.db)).toBe(before);
-      if (refusal.item === 'rope')
-        expect(readItemState(s.db, id)?.machineState).toBe(machineBefore);
-      s.db.close();
-    });
-  }
+  for (const refusal of refusals)
+    for (const layer of refusal.layers ?? (['registry', 'item'] as const)) {
+      it(`refuses and leaves state and budgets unchanged (${layer}): ${refusal.name}`, () => {
+        const s = setup();
+        const id =
+          refusal.item === 'rope'
+            ? ropeInstance(s)
+            : s.give('bag', BAG, 'gray');
+        const before = snapshot(s.db);
+        const machineBefore = readItemState(s.db, id)?.machineState;
+        const operationId =
+          refusal.item === 'rope' ? 'entangle-creature' : 'pull-fuzzy-object';
+        const input = { instanceId: id, operationId, args: refusal.args };
+        const result =
+          layer === 'item' ? s.run(input) : s.call('use_item', input);
+        expect(result).toMatchObject({ ok: false });
+        expect((result as { message: string }).message).toMatch(
+          refusal.message,
+        );
+        expect(snapshot(s.db)).toBe(before);
+        if (refusal.item === 'rope')
+          expect(readItemState(s.db, id)?.machineState).toBe(machineBefore);
+        s.db.close();
+      });
+    }
 
   it('refuses non-object args at the tool boundary instead of dropping them', () => {
     const s = setup();

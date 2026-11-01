@@ -74,7 +74,9 @@ export const useItemTool: Tool = {
             additionalProperties: { type: 'integer', minimum: 1 },
           },
         },
-        additionalProperties: false,
+        // Deliberately open: the accepted names depend on the selected
+        // operation, so the item-layer validator refuses any other name and
+        // lists that operation's accepted ones (eshyra-o9bd.16.10.3 S1).
       },
       levers: {
         type: 'array',
