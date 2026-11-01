@@ -1,5 +1,5 @@
 {
-  "schema": "field-provenance-v1",
+  "schema": "field-provenance-v2",
   "declarations": [
     {
       "kind": "action",
@@ -801,6 +801,16 @@
     },
     {
       "kind": "feature",
+      "pointerPrefix": "/description",
+      "class": "source-derived",
+      "reason": "the feature description with its embedded printed table span removed and the seam whitespace collapsed by classProgression.ts trimEmbeddedTable (the table is a separate table record). Source-derived: the text is printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "feature:cleric:destroy-undead",
+        "feature:druid:wild-shape"
+      ]
+    },
+    {
+      "kind": "feature",
       "pointerPrefix": "/sections/*/name",
       "class": "source-prose",
       "reason": "literal bold lead-in label printed by the source for this entry"
@@ -864,6 +874,24 @@
       "pointerPrefix": "/choices/*/options/*/text",
       "class": "source-prose",
       "reason": "a named option's printed descriptive clause (e.g. a Fighting Style option body), quoted verbatim."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/text",
+      "class": "source-derived",
+      "reason": "a composed option display built by deriveFeatureChoices.ts from the printed column headers and cells of the Draconic Ancestry table (SRD p. 44, e.g. 'Dragon: Black; Damage Type: Acid' from the headers 'Dragon'/'Damage Type' and the row 'Black Acid'). Truthful and attributable to that table, NOT verbatim source prose.",
+      "recordKeys": [
+        "feature:draconic-bloodline:dragon-ancestor"
+      ]
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/text",
+      "class": "source-derived",
+      "reason": "a composed option display built by deriveFeatureChoices.ts from the printed level/spell rows under one header of the Circle Spells table (SRD p. 22, e.g. 'Druid Level 3rd: hold person, spike growth; ...'). Truthful and attributable to that table, NOT verbatim source prose.",
+      "recordKeys": [
+        "feature:circle-of-the-land:circle-spells"
+      ]
     },
     {
       "kind": "feature",
@@ -1038,6 +1066,33 @@
       "pointerPrefix": "/variants/*/mechanics",
       "class": "compiler-projection",
       "reason": "/variants[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/variants/*/text",
+      "class": "source-derived",
+      "reason": "a composed variant sentence built by parseMagicItems.ts from the printed 'Gem / Summoned Elemental' headings and 'Blue sapphire / Air elemental' rows (SRD p. 220). Truthful and attributable, NOT verbatim source prose.",
+      "recordKeys": [
+        "magic-item:elemental-gem"
+      ]
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/variants/*/text",
+      "class": "source-derived",
+      "reason": "a composed variant sentence built by parseMagicItems.ts from the printed table cells under separate headings (SRD p. 226), e.g. 'Berserkers Summoned: 2d4 + 2. Requirement: None.'. Truthful and attributable, NOT verbatim source prose.",
+      "recordKeys": [
+        "magic-item:horn-of-valhalla"
+      ]
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/variants/*/text",
+      "class": "source-derived",
+      "reason": "a composed variant display built by parseMagicItems.ts from the separate numbered Creature tables (SRD pp. 210-211), e.g. 'd8 creatures: 1 Weasel; 2 Giant rat; ...'. Truthful and attributable, NOT verbatim source prose.",
+      "recordKeys": [
+        "magic-item:bag-of-tricks"
+      ]
     },
     {
       "kind": "magic-item",
@@ -1347,6 +1402,15 @@
     },
     {
       "kind": "table",
+      "pointerPrefix": "/columns",
+      "class": "source-derived",
+      "reason": "column labels 'Distance per Minute'/'Distance per Hour'/'Distance per Day' composed by parseTables.ts from the spanning header 'Distance Traveled per . . .' and the subheaders 'Minute'/'Hour'/'Day' (SRD p. 84). The array is derived as a whole, so the printed 'Pace' and 'Effect' labels in it are not claimed as verbatim here. Truthful and attributable, NOT verbatim source prose.",
+      "recordKeys": [
+        "table:travel-pace"
+      ]
+    },
+    {
+      "kind": "table",
       "pointerPrefix": "/legend",
       "class": "source-prose",
       "reason": "printed footnote/legend text accompanying the table, quoted verbatim."
@@ -1359,9 +1423,60 @@
     },
     {
       "kind": "table",
+      "pointerPrefix": "/rows",
+      "class": "source-derived",
+      "reason": "row labels folded by parseTables.ts from printed group headers ('Inn stay (per day)', 'Coach cab') and sub-item rows ('Squalid', 'Within a city') (SRD pp. 73-74). Truthful and attributable, NOT verbatim source prose.",
+      "recordKeys": [
+        "table:food-drink-and-lodging",
+        "table:services"
+      ]
+    },
+    {
+      "kind": "table",
       "pointerPrefix": "/projection",
       "class": "compiler-projection",
       "reason": "table.projection is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/description",
+      "class": "source-derived",
+      "reason": "the prose with an embedded printed table span removed from the middle of the text and the seam whitespace collapsed by stripEmbeddedTableProse.ts (the table is a separate table record). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "spell:animate-objects",
+        "spell:confusion",
+        "spell:creation",
+        "spell:reincarnate",
+        "spell:scrying",
+        "spell:teleport"
+      ]
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/description",
+      "class": "source-derived",
+      "reason": "the prose with an embedded printed table span removed from the middle of the text and the seam whitespace collapsed by stripEmbeddedTableProse.ts (the table is a separate table record). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "feature:draconic-bloodline:dragon-ancestor",
+        "feature:sorcerer:font-of-magic"
+      ]
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/description",
+      "class": "source-derived",
+      "reason": "the prose with an embedded printed table span removed from the middle of the text and the seam whitespace collapsed by stripEmbeddedTableProse.ts (the table is a separate table record). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "magic-item:candle-of-invocation",
+        "magic-item:carpet-of-flying",
+        "magic-item:cube-of-force",
+        "magic-item:deck-of-many-things",
+        "magic-item:feather-token",
+        "magic-item:horn-of-valhalla",
+        "magic-item:manual-of-golems",
+        "magic-item:ring-of-shooting-stars",
+        "magic-item:spell-scroll"
+      ]
     }
   ]
 }

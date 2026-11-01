@@ -1365,6 +1365,7 @@ export function buildSourceRegionLedger(
   const ownersWithProse = new Set<string>();
   let headingPath: readonly string[] = [];
   let owner: ActiveOwner | undefined;
+  let lastTableOwner: ActiveOwner | undefined;
   let regionLines: FlatLine[] = [];
   let regionHeadingPath: readonly string[] = [];
   let regionOwner: ActiveOwner | undefined;
@@ -1440,6 +1441,17 @@ export function buildSourceRegionLedger(
           ? { structuredFieldEvidence: coverage.status.evidence }
           : {}),
       };
+      if (owner.status.startsWith('record:table:')) lastTableOwner = owner;
+      // The Appendix PH-B column-group header is a stray table-internal item
+      // the extractor surfaces ahead of a pantheon table's rows (Celtic
+      // Deities, p360-361): the rows after it belong to the last table caption
+      // seen, not to the ignored header (eshyra-o9bd.16.7.3, L1-F1).
+      if (
+        owner.status === 'ignored:deity-table-column-header' &&
+        lastTableOwner !== undefined
+      ) {
+        owner = { ...lastTableOwner, item: coverage.item };
+      }
       continue;
     }
 
@@ -1523,7 +1535,13 @@ export function buildSourceRegionLedger(
     for (let page = first.page; page <= last.page; page++) {
       if (!pagesWithEntries.has(page)) touchesUnaccountedPage = true;
     }
-    if (!touchesUnaccountedPage) continue;
+    // A run owned by an emitted `table:` record is that record's row data
+    // wherever it is printed (eshyra-o9bd.16.7.3, L1-F1): a continuation on a
+    // page that already carries other entries still needs its own
+    // `record:table:*` entry, or the record's locator and the completeness
+    // gate never see the page.
+    const ownedByTable = run.owner?.status.startsWith('record:table:') === true;
+    if (!touchesUnaccountedPage && !ownedByTable) continue;
     entries.push(tableRowsEntry(run));
   }
 

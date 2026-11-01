@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import {
   assertFieldProvenanceCoverage,
   buildFieldProvenanceManifest,
+  type FieldProvenanceDeclaration,
   type FieldProvenanceManifest,
 } from '../../../src/rules/fieldProvenance.js';
 import {
@@ -55,7 +56,10 @@ import {
 } from './deriveFeatureChoices.js';
 import { equipmentMechanicsFor } from './equipmentMechanics.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
-import { DND5E_FIELD_PROVENANCE_DECLARATIONS } from './fieldProvenanceDeclarations.js';
+import {
+  DND5E_FIELD_PROVENANCE_DECLARATIONS,
+  deriveEmbeddedTableSpliceDeclarations,
+} from './fieldProvenanceDeclarations.js';
 import {
   applyFoundation1ProcedureProjections,
   canApplyFoundation1ProcedureProjections,
@@ -94,7 +98,7 @@ import { linkSpellEmbeddedTables } from './spellTables.js';
 import {
   assertNoEmbeddedTableLinearization,
   spansByOwner,
-  stripEmbeddedTableProse,
+  stripEmbeddedTableProseReporting,
   stripTableSpansFromProse,
 } from './stripEmbeddedTableProse.js';
 import { deriveSphereProjection, deriveTrapChecks } from './trapChecks.js';
@@ -148,8 +152,25 @@ const PROVENANCE_POLICY =
  * class, duplicate `(kind, pointerPrefix)`) throws at module load time, not
  * buried inside a build/write call.
  */
-const FIELD_PROVENANCE_MANIFEST: FieldProvenanceManifest =
+const STATIC_FIELD_PROVENANCE_MANIFEST: FieldProvenanceManifest =
   buildFieldProvenanceManifest(DND5E_FIELD_PROVENANCE_DECLARATIONS);
+/**
+ * The static declarations plus the scoped `source-derived` declarations one
+ * build derived from its internal embedded-table splices (eshyra-o9bd.16.7.5,
+ * S2). Returned with that build's pack and handed explicitly to
+ * `writePackToDirectory`, so the written manifest is always the one the
+ * build's coverage gate checked.
+ */
+function fieldProvenanceManifestWith(
+  derived: readonly FieldProvenanceDeclaration[],
+): FieldProvenanceManifest {
+  return derived.length === 0
+    ? STATIC_FIELD_PROVENANCE_MANIFEST
+    : buildFieldProvenanceManifest([
+        ...DND5E_FIELD_PROVENANCE_DECLARATIONS,
+        ...derived,
+      ]);
+}
 const RECORD_RELATIONSHIP_MANIFEST: RecordRelationshipManifest =
   buildRecordRelationshipManifest(DND5E_RECORD_RELATIONSHIP_DECLARATIONS);
 
@@ -1904,6 +1925,16 @@ export interface BuildPackInput {
 }
 
 export function buildPack(input: BuildPackInput): RulesPack {
+  return buildPackWithFieldProvenance(input).pack;
+}
+
+/** A built pack and the field-provenance manifest its coverage gate checked. */
+export interface BuiltPack {
+  readonly pack: RulesPack;
+  readonly fieldProvenanceManifest: FieldProvenanceManifest;
+}
+
+export function buildPackWithFieldProvenance(input: BuildPackInput): BuiltPack {
   const classByName =
     input.spellClasses ??
     new Map(
@@ -2051,27 +2082,31 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // descriptions/text, leaving the structured `table:*` records as the sole
   // representation (eshyra-3anh). The assertion fails the build closed if any
   // captured table span still appears in prose.
-  const stripped = stripEmbeddedTableProse({
-    records: [
-      ...spellRecords,
-      ...creatureRecords,
-      ...enriched.classRecords,
-      ...enriched.subclassRecords,
-      ...featureRecordsWithChoices,
-      ...conditionRecords,
-      ...featRecords,
-      ...hazardRecords,
-      ...actionRecords,
-      ...ruleRecords,
-      ...tableRecords,
-      ...equipmentRecords,
-      ...magicItemRecords,
-      ...statBlockRecords,
-      ...ancestryRecords,
-      ...backgroundRecords,
-    ],
-    tables: input.tables ?? [],
-  });
+  const { records: stripped, splices: proseSplices } =
+    stripEmbeddedTableProseReporting({
+      records: [
+        ...spellRecords,
+        ...creatureRecords,
+        ...enriched.classRecords,
+        ...enriched.subclassRecords,
+        ...featureRecordsWithChoices,
+        ...conditionRecords,
+        ...featRecords,
+        ...hazardRecords,
+        ...actionRecords,
+        ...ruleRecords,
+        ...tableRecords,
+        ...equipmentRecords,
+        ...magicItemRecords,
+        ...statBlockRecords,
+        ...ancestryRecords,
+        ...backgroundRecords,
+      ],
+      tables: input.tables ?? [],
+    });
+  const fieldProvenanceManifest = fieldProvenanceManifestWith(
+    deriveEmbeddedTableSpliceDeclarations(proseSplices),
+  );
   assertNoEmbeddedTableLinearization({
     records: stripped,
     tables: input.tables ?? [],
@@ -2118,8 +2153,8 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // pointer is never defaulted to a class (see fieldProvenance.ts); a future
   // field the importer starts emitting without an accompanying declaration
   // must fail here, not ship silently unclassified.
-  assertFieldProvenanceCoverage(validated.records, FIELD_PROVENANCE_MANIFEST);
-  return validated;
+  assertFieldProvenanceCoverage(validated.records, fieldProvenanceManifest);
+  return { pack: validated, fieldProvenanceManifest };
 }
 
 function uniqueKindsOf(records: readonly RulesRecord[]): readonly string[] {
@@ -2153,6 +2188,12 @@ function stringify(value: unknown): string {
 }
 
 export interface WritePackOptions {
+  /**
+   * The manifest `buildPackWithFieldProvenance` returned for this pack. Omitted
+   * only by callers writing a pack whose build derived no splice declarations;
+   * they get the static declarations.
+   */
+  readonly fieldProvenanceManifest?: FieldProvenanceManifest;
   readonly outDir: string;
   /**
    * Run the DEAD-DECLARATION gate, which is a claim about the COMPLETE SRD
@@ -2220,7 +2261,9 @@ export function writePackToDirectory(
   // the emitter, so regeneration is byte-stable.
   writeFileSync(
     join(options.outDir, PACK_FIELD_PROVENANCE_FILE),
-    stringify(FIELD_PROVENANCE_MANIFEST),
+    stringify(
+      options.fieldProvenanceManifest ?? STATIC_FIELD_PROVENANCE_MANIFEST,
+    ),
     'utf8',
   );
   writeFileSync(

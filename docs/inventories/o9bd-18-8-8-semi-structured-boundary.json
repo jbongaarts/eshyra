@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1882,
+  "rowCount": 1881,
   "dispositionCounts": {
     "complete": 444,
-    "model-adjudicated": 1232,
+    "model-adjudicated": 1231,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -2133,7 +2133,7 @@
       ],
       "fieldPath": "record.provenance.locator",
       "representativeValues": [
-        "p. 5",
+        "pp. 5, 6",
         "p. 3",
         "p. 4",
         "p. 6",
@@ -2177,7 +2177,7 @@
       ],
       "fieldPath": "record.source",
       "representativeValues": [
-        "SRD 5.1 p. 5",
+        "SRD 5.1 pp. 5, 6",
         "SRD 5.1 p. 3",
         "SRD 5.1 p. 4",
         "SRD 5.1 p. 6",
@@ -5317,7 +5317,7 @@
         "2d10 + 6",
         "1d8"
       ],
-      "population": 569,
+      "population": 551,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -5341,7 +5341,7 @@
         "slashing",
         "lightning"
       ],
-      "population": 584,
+      "population": 569,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -5437,7 +5437,7 @@
         "1d4",
         "2d10 + 6"
       ],
-      "population": 652,
+      "population": 634,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -5461,7 +5461,7 @@
         "slashing",
         "lightning"
       ],
-      "population": 652,
+      "population": 637,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -6506,9 +6506,13 @@
       ],
       "fieldPath": "data.actions[].mechanics.saves[].damageOnFailure[].dice",
       "representativeValues": [
-        "4d6"
+        "7d6",
+        "3d6",
+        "4d10",
+        "2d8",
+        "2d6"
       ],
-      "population": 1,
+      "population": 19,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -6528,7 +6532,7 @@
       "representativeValues": [
         "poison"
       ],
-      "population": 1,
+      "population": 19,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -14360,8 +14364,8 @@
         "SRD 5.1 p. 24",
         "SRD 5.1 p. 22",
         "SRD 5.1 p. 44",
-        "SRD 5.1 p. 38",
-        "SRD 5.1 p. 37"
+        "SRD 5.1 p. 45",
+        "SRD 5.1 p. 38"
       ],
       "population": 91,
       "valueClass": "scalar-like",
@@ -15183,7 +15187,7 @@
         "speedBonus",
         "checkMinimum"
       ],
-      "population": 91,
+      "population": 90,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -15608,26 +15612,6 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].type",
-      "disposition": "model-adjudicated",
-      "typedSchemaOrConsumer": null,
-      "retainedProseBoundary": null,
-      "owner": null,
-      "futureWork": false
-    },
-    {
-      "system": "dnd5e-srd",
-      "recordKinds": [
-        "feature"
-      ],
-      "fieldPath": "data.mechanics.effects[].types",
-      "representativeValues": [
-        "all"
-      ],
-      "population": 1,
-      "valueClass": "scalar-like",
-      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
-      "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].types",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -28159,7 +28143,7 @@
         "p. 208",
         "p. 209",
         "p. 210",
-        "p. 211"
+        "pp. 210, 211"
       ],
       "population": 240,
       "valueClass": "source prose",
@@ -28203,7 +28187,7 @@
         "SRD 5.1 p. 208",
         "SRD 5.1 p. 209",
         "SRD 5.1 p. 210",
-        "SRD 5.1 p. 211"
+        "SRD 5.1 pp. 210, 211"
       ],
       "population": 240,
       "valueClass": "source prose",

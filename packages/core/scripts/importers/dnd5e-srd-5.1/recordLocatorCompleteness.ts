@@ -76,6 +76,7 @@
 
 import { resolveJsonPointer } from '../../../src/rules/jsonPointer.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
+import { contentChunks } from './contentSpanPages.js';
 import {
   anchorFoundOnAnyPage,
   citedPages,
@@ -162,6 +163,33 @@ function checkRecordLocators(
       reported.add(reportKey);
       violations.push(
         `${key}: ledger entry ${entry.id} (${entry.classification}) places page ${page} on this record, but provenance.locator (${JSON.stringify(record.provenance.locator)}) does not cite it — if page ${page} actually belongs to a DIFFERENT record, fix that region's ownership, never widen ${key}'s locator to cover a page that is not really its own`,
+      );
+    }
+  }
+}
+
+/**
+ * (e) Content-derived page coverage (eshyra-o9bd.16.7.3, L1-F1): every
+ * retained table row, ancestry trait (opening and closing words) and magic-item
+ * variant entry that is printed within the window around the record's start
+ * page must be printed on a page the record's own locator cites. The
+ * denominator is the extracted page text, not the ledger, so a continuation or
+ * flattened/inherited span the ledger never attributes to the record is caught.
+ */
+function checkContentSpanLocators(
+  records: readonly RulesRecord[],
+  pages: readonly PageText[],
+  violations: string[],
+): void {
+  const normalizedPages = normalizedPageTextByNumber(pages);
+  for (const record of records) {
+    const cited = safeCitedPages(record.provenance.locator);
+    if (cited === undefined) continue;
+    const citedSet = new Set(cited);
+    for (const chunk of contentChunks(record, normalizedPages)) {
+      if (chunk.pages.some((page) => citedSet.has(page))) continue;
+      violations.push(
+        `${record.key}: retained content ${chunk.pointer} (${JSON.stringify(chunk.text)}) is printed only on page(s) [${chunk.pages.join(', ')}], but provenance.locator (${JSON.stringify(record.provenance.locator)}) does not cite them`,
       );
     }
   }
@@ -377,6 +405,7 @@ export function assertRecordLocatorCompleteness(
     violations,
   );
   checkOtherFieldLocators(records, pages, options.requireComplete, violations);
+  checkContentSpanLocators(records, pages, violations);
   checkSourceLabelMatchesLocator(records, violations);
   if (violations.length > 0) {
     throw new RecordLocatorCompletenessError(violations);

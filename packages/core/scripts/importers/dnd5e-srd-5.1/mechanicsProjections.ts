@@ -686,11 +686,56 @@ function projectHitDamage(hit: string):
   };
 }
 
+/**
+ * A saving throw clause INSIDE the Hit sentence: "and the target must succeed
+ * on a DC 11 Constitution saving throw or take 10 (3d6) poison damage", "the
+ * target must make a DC 15 Constitution saving throw, taking 45 (10d8) poison
+ * damage on a failed save, or half as much damage on a successful one" (the
+ * Imp prints the typo "must make on a DC 11").
+ */
+const HIT_SAVE_CLAUSE_RE =
+  /\bmust (?:succeed on|make)(?: on)? a DC \d+ [A-Z][a-z]+ saving throw\b/;
+
+/**
+ * Split a Hit sentence at its save clause (eshyra-o9bd.16.7.1, L1-F5). Damage
+ * printed after the save clause is governed by the save (dealt only on a failed
+ * save, halved or negated on a success), never unconditional hit damage: the
+ * `direct` text is what the hit itself deals, `saveOwned` the damage terms the
+ * save owns. A sentence with no save clause, or whose save clause prints no
+ * damage (condition-only saves: Bone Devil, Erinyes, Balor), is unchanged.
+ */
+function splitHitSaveDamage(hit: string): {
+  readonly direct: string;
+  readonly saveOwned: readonly Mechanics[];
+} {
+  const save = HIT_SAVE_CLAUSE_RE.exec(hit);
+  if (save === null) return { direct: hit, saveOwned: [] };
+  const saveOwned = parseDamage(hit.slice(save.index));
+  if (saveOwned.length === 0) return { direct: hit, saveOwned: [] };
+  return { direct: hit.slice(0, save.index), saveOwned };
+}
+
+/** The save-owned damage printed in an attack's Hit sentence, if any. */
+function hitSaveOwnedDamage(text: string): readonly Mechanics[] {
+  const match = ATTACK_CLAUSE_RE.exec(text);
+  return match === null ? [] : splitHitSaveDamage(match[7]).saveOwned;
+}
+
 function parseAttack(text: string): Mechanics | undefined {
   const match = ATTACK_CLAUSE_RE.exec(text);
   if (match === null) return undefined;
-  const [, kind, weaponOrSpell, bonus, modeBonus, modeCondition, middle, hit] =
-    match;
+  const [
+    ,
+    kind,
+    weaponOrSpell,
+    bonus,
+    modeBonus,
+    modeCondition,
+    middle,
+    fullHit,
+  ] = match;
+  // Damage owned by an in-sentence save is projected on the save, not here.
+  const hit = splitHitSaveDamage(fullHit).direct;
   const reach = /\breach\s+(\d+)\s*ft\./i.exec(middle);
   const range = ATTACK_RANGE_RE.exec(middle);
   // The target phrase runs from its quantifier to the end of the lead-in
@@ -759,8 +804,17 @@ function projectEntryDamage(
   text: string,
   attack: Mechanics | undefined,
 ): readonly Mechanics[] {
-  if (attack === undefined || attack.alternatives === undefined) {
-    return parseDamage(text);
+  if (attack === undefined) return parseDamage(text);
+  if (attack.alternatives === undefined) {
+    // Damage the Hit sentence leaves to a save is not unconditional entry
+    // damage either (eshyra-o9bd.16.7.1): keep the direct hit terms plus any
+    // damage printed outside the attack clause.
+    return hitSaveOwnedDamage(text).length === 0
+      ? parseDamage(text)
+      : [
+          ...((attack.hitDamage as readonly Mechanics[] | undefined) ?? []),
+          ...parseDamage(outsideAttackClause(text)),
+        ];
   }
   // Top-level damage is the default hit mode only (eshyra-o9bd.19.4.2 C3).
   // Damage printed outside the Hit sentence belongs to its own clause and is
@@ -788,8 +842,17 @@ function projectSaveDamage(
   text: string,
   attack: Mechanics | undefined,
 ): Mechanics | undefined {
-  if (attack === undefined || attack.alternatives === undefined) return save;
-  const outsideDamage: Mechanics[] = [];
+  const hitOwned = hitSaveOwnedDamage(text);
+  if (attack === undefined || attack.alternatives === undefined) {
+    if (hitOwned.length === 0) return save;
+    if (save === undefined) {
+      throw new Error(
+        `Hit sentence prints save-owned damage but the entry projects no save: ${JSON.stringify(text)}`,
+      );
+    }
+    return { ...save, damageOnFailure: [...hitOwned] };
+  }
+  const outsideDamage: Mechanics[] = [...hitOwned];
   for (const sentence of outsideAttackClause(text).split(/(?<=[.!?])\s+/)) {
     const damage = parseDamage(sentence);
     if (damage.length === 0) continue;
@@ -1049,6 +1112,38 @@ const SPELL_MODIFIER_VERB_RE =
 
 const SPELL_MODIFIER_SUBJECT_RE =
   /\b(you|the target|the creature|each target|any creature|it)\b(?![^.;]*\b(?:you|the target|the creature|each target|any creature|it)\b)/i;
+
+/**
+ * A subject candidate is NOT the grammatical subject of the modifier verb when
+ * it is (a) the object of a preposition ("made against this target", "to it"),
+ * (b) inside an embedded clause ("when you cast this spell", "if it ..."), or
+ * (c) followed, before the verb, by a different noun phrase that takes the
+ * verb ("..., other creatures have", "and the next attack roll ... has").
+ * The modifier is then omitted instead of bound to the nearest pronoun
+ * (eshyra-o9bd.16.7.1, L1-F3); a compound predicate ("takes 1d4 psychic damage
+ * and has disadvantage") keeps its subject.
+ */
+const SPELL_MODIFIER_OBJECT_LEAD_RE =
+  /\b(?:against|to|of|at|with|from|on|for|by|when|if|after|before|while|until|unless|once|as)\s+$/i;
+const SPELL_MODIFIER_NEW_SUBJECT_RE =
+  /(?:^|[,;]|\band)\s*(?:the|a|an|other|each|any|another|creatures?)\s/i;
+
+/**
+ * Other creatures' advantage/disadvantage on attack rolls against the spell's
+ * affected creature, printed with an explicit non-caster subject: Irresistible
+ * Dance, "other creatures have advantage on attack rolls against it". The
+ * holder is the ATTACKER, so the subject is `attackers-against-target`.
+ */
+const SPELL_OTHER_CREATURES_ATTACKERS_RE =
+  /\bother creatures have (advantage|disadvantage) on attack rolls against (?:the target|it)\b/i;
+
+/**
+ * An attack roll made against the target, as the modifier's own subject:
+ * Guiding Bolt, "the next attack roll made against this target before the end
+ * of your next turn has advantage". The printed limit stays verbatim in scope.
+ */
+const SPELL_NEXT_ATTACK_AGAINST_TARGET_RE =
+  /\b(the next attack roll made against (?:this|the) target\b[^.;,]*?) (?:has|have) (advantage|disadvantage)\b/i;
 
 const SPELL_MODIFIER_SUBJECTS: ReadonlyMap<string, string> = new Map([
   ['you', 'caster'],
@@ -1359,11 +1454,41 @@ function parseSpellEffects(text: string): readonly Mechanics[] {
       });
       continue;
     }
+    const otherCreatures =
+      SPELL_OTHER_CREATURES_ATTACKERS_RE.exec(trimmedSentence);
+    if (otherCreatures !== null) {
+      effects.push({
+        kind: 'rollModifier',
+        subject: 'attackers-against-target',
+        mode: otherCreatures[1].toLowerCase(),
+        scope: 'attack-rolls',
+      });
+      continue;
+    }
+    const nextAttack =
+      SPELL_NEXT_ATTACK_AGAINST_TARGET_RE.exec(trimmedSentence);
+    if (nextAttack !== null) {
+      effects.push({
+        kind: 'rollModifier',
+        subject: 'attackers-against-target',
+        mode: nextAttack[2].toLowerCase(),
+        scope: nextAttack[1],
+      });
+      continue;
+    }
     SPELL_MODIFIER_VERB_RE.lastIndex = 0;
     for (const verb of trimmedSentence.matchAll(SPELL_MODIFIER_VERB_RE)) {
       const prefix = trimmedSentence.slice(0, verb.index);
       const nearest = SPELL_MODIFIER_SUBJECT_RE.exec(prefix);
       if (nearest === null) continue;
+      if (
+        SPELL_MODIFIER_OBJECT_LEAD_RE.test(prefix.slice(0, nearest.index)) ||
+        SPELL_MODIFIER_NEW_SUBJECT_RE.test(
+          prefix.slice(nearest.index + nearest[0].length),
+        )
+      ) {
+        continue;
+      }
       const subject = SPELL_MODIFIER_SUBJECTS.get(nearest[1].toLowerCase());
       if (subject === undefined) continue;
       effects.push(
@@ -5373,7 +5498,14 @@ function parseFeatureEffects(text: string): readonly Mechanics[] {
       ...typeProficiencyGrant(grant),
     });
   }
-  if (/\bresistance to all damage\b/.test(text)) {
+  // "resistance to all damage but force damage" (Empty Body) is NOT all-damage
+  // resistance: the existing `types: 'all'` shape has no exception field, so a
+  // following exception omits the effect (eshyra-o9bd.16.7.1, L1-F4).
+  if (
+    /\bresistance to all damage\b(?!\s+(?:but|except|other than|apart from|aside from)\b)/.test(
+      text,
+    )
+  ) {
     effects.push({ kind: 'damageResistance', types: 'all' });
   }
   const immunity = /\b(?:you are|makes you) immune to ([a-z ]+?)[.,]/.exec(

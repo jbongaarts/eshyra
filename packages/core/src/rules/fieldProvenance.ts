@@ -87,7 +87,7 @@ export const FIELD_PROVENANCE_CLASSES: readonly FieldProvenanceClass[] = [
 ];
 
 /** File format tag for `field-provenance.json`; bump on an incompatible shape change. */
-export const FIELD_PROVENANCE_SCHEMA = 'field-provenance-v1';
+export const FIELD_PROVENANCE_SCHEMA = 'field-provenance-v2';
 
 /**
  * One producer-declared classification for every leaf pointer at, or nested
@@ -116,6 +116,18 @@ export interface FieldProvenanceDeclaration {
   readonly pointerPrefix: string;
   readonly class: FieldProvenanceClass;
   readonly reason: string;
+  /**
+   * Optional record scope (`field-provenance-v2`). When present, the
+   * declaration applies ONLY to the records whose key is listed here, and
+   * `pointerPrefix` is interpreted within those records alone. It exists to
+   * separate compiler-COMPOSED displays (a label or cell interpolated into a
+   * sentence) from verbatim source text that sits under the SAME pointer in
+   * other records of the same kind: pointers carry no record identity, so an
+   * unscoped declaration cannot tell them apart. Must be a non-empty array of
+   * distinct, non-empty record keys. Two scoped declarations with the same
+   * `(kind, pointerPrefix)` may not name a common record key.
+   */
+  readonly recordKeys?: readonly string[];
 }
 
 export interface FieldProvenanceManifest {
@@ -150,6 +162,28 @@ function assertWellFormedPointerPrefix(prefix: string, where: string): void {
   }
 }
 
+function assertWellFormedRecordKeys(keys: unknown, where: string): void {
+  if (!Array.isArray(keys) || keys.length === 0) {
+    throw new FieldProvenanceError(
+      `${where}.recordKeys must be a non-empty array of record keys`,
+    );
+  }
+  const seenKeys = new Set<string>();
+  for (const key of keys) {
+    if (typeof key !== 'string' || key.trim().length === 0) {
+      throw new FieldProvenanceError(
+        `${where}.recordKeys must contain only non-empty strings`,
+      );
+    }
+    if (seenKeys.has(key)) {
+      throw new FieldProvenanceError(
+        `${where}.recordKeys lists ${JSON.stringify(key)} more than once`,
+      );
+    }
+    seenKeys.add(key);
+  }
+}
+
 /**
  * Build (and validate) a manifest from a flat declaration list. Throws on a
  * malformed prefix, an unknown `class`/`kind`, or a duplicate
@@ -160,6 +194,9 @@ export function buildFieldProvenanceManifest(
   declarations: readonly FieldProvenanceDeclaration[],
 ): FieldProvenanceManifest {
   const seen = new Set<string>();
+  // Record sets already claimed per `(kind, pointerPrefix)`, to reject two
+  // scoped declarations that overlap (matching would be ambiguous).
+  const scopedClaims = new Map<string, Set<string>>();
   declarations.forEach((decl, i) => {
     const where = `declarations[${i}]`;
     if (!RULES_RECORD_KINDS.includes(decl.kind)) {
@@ -176,44 +213,86 @@ export function buildFieldProvenanceManifest(
     if (decl.reason.trim().length === 0) {
       throw new FieldProvenanceError(`${where}.reason must not be empty`);
     }
-    const identity = `${decl.kind}${decl.pointerPrefix}`;
+    if (decl.recordKeys !== undefined) {
+      assertWellFormedRecordKeys(decl.recordKeys, where);
+    }
+    const scope =
+      decl.recordKeys === undefined
+        ? ''
+        : `\u0000${[...decl.recordKeys].sort().join('\u0000')}`;
+    const identity = `${decl.kind}${decl.pointerPrefix}${scope}`;
     if (seen.has(identity)) {
       throw new FieldProvenanceError(
-        `${where}: duplicate declaration for (${decl.kind}, ${decl.pointerPrefix})`,
+        `${where}: duplicate declaration for (${decl.kind}, ${decl.pointerPrefix})${
+          decl.recordKeys === undefined
+            ? ''
+            : ` scoped to ${decl.recordKeys.join(', ')}`
+        }`,
       );
     }
     seen.add(identity);
+    if (decl.recordKeys !== undefined) {
+      const claimKey = `${decl.kind}${decl.pointerPrefix}`;
+      const claimed = scopedClaims.get(claimKey) ?? new Set<string>();
+      for (const key of decl.recordKeys) {
+        if (claimed.has(key)) {
+          throw new FieldProvenanceError(
+            `${where}: scoped declarations for (${decl.kind}, ${decl.pointerPrefix}) overlap on record ${JSON.stringify(key)}`,
+          );
+        }
+        claimed.add(key);
+      }
+      scopedClaims.set(claimKey, claimed);
+    }
   });
   return { schema: FIELD_PROVENANCE_SCHEMA, declarations };
 }
 
 /**
- * Find the most specific declaration covering `pointer` for `kind`, or
- * `undefined` when none does. "Most specific" is the declaration with the
- * most '/'-delimited segments in `pointerPrefix`; a pointer matches a
- * declaration when the pointer IS the prefix, or the pointer continues past
- * the prefix at a `/` boundary (so `/armorClass` matches `/armorClass` and
- * `/armorClass/value` but not `/armorClassCondition`).
+ * Find the declared class covering `pointer` for the record `recordKey` of
+ * `kind`, or `undefined` when none does. A pointer matches a declaration when
+ * the pointer IS the declaration's prefix, or continues past it at a `/`
+ * boundary (so `/armorClass` matches `/armorClass` and `/armorClass/value`
+ * but not `/armorClassCondition`).
  *
- * Returns `undefined` on no match — deliberately. Callers that need a class
- * (the fail-closed gate) must treat `undefined` as a coverage failure, never
- * substitute a default; see the module doc comment.
+ * Precedence, in order:
+ * 1. A RECORD-SCOPED declaration (`recordKeys` present) that names
+ *    `recordKey` beats every unscoped declaration, whatever its prefix depth.
+ *    This is what lets one record's composed display be classified apart from
+ *    verbatim text under the same pointer in its sibling records.
+ * 2. Within the same scope tier, the longest (most segments) prefix wins.
+ *
+ * `recordKey` is REQUIRED: a caller that cannot name the record must not be
+ * able to skip scoped declarations silently. Returns `undefined` on no match —
+ * deliberately. Callers that need a class (the fail-closed gate) must treat
+ * `undefined` as a coverage failure, never substitute a default; see the
+ * module doc comment.
  */
 export function classifyFieldPointer(
   manifest: FieldProvenanceManifest,
   kind: RulesRecordKind,
+  recordKey: string,
   pointer: string,
 ): FieldProvenanceClass | undefined {
   let best: FieldProvenanceDeclaration | undefined;
+  let bestScoped = false;
   let bestSegments = -1;
   for (const decl of manifest.declarations) {
     if (decl.kind !== kind) continue;
+    if (decl.recordKeys !== undefined && !decl.recordKeys.includes(recordKey))
+      continue;
     const prefix = decl.pointerPrefix;
     if (pointer !== prefix && !pointer.startsWith(`${prefix}/`)) continue;
+    const scoped = decl.recordKeys !== undefined;
     const segments = prefix.split('/').length;
-    if (segments > bestSegments) {
-      bestSegments = segments;
+    const better =
+      best === undefined ||
+      (scoped && !bestScoped) ||
+      (scoped === bestScoped && segments > bestSegments);
+    if (better) {
       best = decl;
+      bestScoped = scoped;
+      bestSegments = segments;
     }
   }
   return best?.class;
@@ -308,7 +387,12 @@ export function assertFieldProvenanceCoverage(
   const uncovered: string[] = [];
   for (const record of records) {
     walkFieldPointers(record.data, (pointer) => {
-      const cls = classifyFieldPointer(manifest, record.kind, pointer);
+      const cls = classifyFieldPointer(
+        manifest,
+        record.kind,
+        record.key,
+        pointer,
+      );
       if (cls === undefined) {
         uncovered.push(`${record.kind}:${record.key}${pointer}`);
         return;
@@ -332,4 +416,49 @@ export function assertFieldProvenanceCoverage(
     );
   }
   return summary;
+}
+
+/**
+ * The dead-scope gate (`field-provenance-v2`). A record-scoped declaration is
+ * only meaningful if it names records that were actually emitted and whose
+ * data really contains the scoped prefix; otherwise a renamed record key or a
+ * shape change would silently leave a composed display classified by the
+ * unscoped (verbatim-majority) declaration. Throws unless every `recordKeys`
+ * entry names an emitted record of the declaration's kind AND at least one
+ * leaf of that record matches the declaration's `pointerPrefix`.
+ */
+export function assertFieldProvenanceScopesLive(
+  records: readonly RulesRecord[],
+  manifest: FieldProvenanceManifest,
+): void {
+  const dead: string[] = [];
+  for (const decl of manifest.declarations) {
+    if (decl.recordKeys === undefined) continue;
+    for (const key of decl.recordKeys) {
+      const record = records.find((r) => r.kind === decl.kind && r.key === key);
+      if (record === undefined) {
+        dead.push(
+          `(${decl.kind}, ${decl.pointerPrefix}) names ${JSON.stringify(key)}, which is not an emitted ${decl.kind} record`,
+        );
+        continue;
+      }
+      let matched = false;
+      walkFieldPointers(record.data, (pointer) => {
+        if (
+          pointer === decl.pointerPrefix ||
+          pointer.startsWith(`${decl.pointerPrefix}/`)
+        )
+          matched = true;
+      });
+      if (!matched)
+        dead.push(
+          `(${decl.kind}, ${decl.pointerPrefix}) scoped to ${JSON.stringify(key)} matches no leaf in that record`,
+        );
+    }
+  }
+  if (dead.length > 0)
+    throw new FieldProvenanceError(
+      `field provenance has ${dead.length} dead record-scoped declaration(s); ` +
+        `each must name an emitted record whose data contains its prefix:\n${dead.join('\n')}`,
+    );
 }

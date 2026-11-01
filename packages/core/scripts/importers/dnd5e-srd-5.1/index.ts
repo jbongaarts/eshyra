@@ -43,9 +43,13 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { excludeActionOwnedRuleDuplicates } from './actionOwnedRuleDedup.js';
+import {
+  enrichProvenanceFromContentSpans,
+  refineCopiedOptionSources,
+} from './contentSpanPages.js';
 import { assertCreatureAttackLeadInsSegmented } from './creatureAttackLeadIns.js';
 import {
-  buildPack,
+  buildPackWithFieldProvenance,
   writePackToDirectory,
   writeSourceCoverageArtifacts,
 } from './emit.js';
@@ -89,7 +93,10 @@ import { parseSubclassOverviews } from './parseSubclassOverviews.js';
 import { parseTables } from './parseTables.js';
 import { parseTraps } from './parseTraps.js';
 import { assertRecordLocatorCompleteness } from './recordLocatorCompleteness.js';
-import { assertRecordsAnchoredInSource } from './recordSourceAnchors.js';
+import {
+  assertRecordsAnchoredInSource,
+  normalizedPageTextByNumber,
+} from './recordSourceAnchors.js';
 import {
   type SectionAnchorOptions,
   SectionNotFoundError,
@@ -3555,7 +3562,7 @@ export async function runImporter(
     if (!(error instanceof SectionNotFoundError)) throw error;
     // Multiclassing section absent: leave primaryAbilities empty.
   }
-  let pack = buildPack({
+  const built = buildPackWithFieldProvenance({
     spells,
     classIndex,
     spellClasses,
@@ -3588,6 +3595,7 @@ export async function runImporter(
       ? { allowSyntheticSpellSourceBindings: true as const }
       : {}),
   });
+  let pack = built.pack;
   validateRecordTextCoverage(pack.records, input.expectedRecordTextSentinels);
   // Cross-record grant/choice ref integrity (eshyra-ngcj.3/.4/.5). These need
   // the FULL record set to resolve their targets (equipment / table / spell), so
@@ -3643,7 +3651,13 @@ export async function runImporter(
     // read record.data, not provenance) so it cannot affect their pass/fail.
     pack = {
       ...pack,
-      records: enrichProvenanceFromRegionLedger(pack.records, regionLedger),
+      records: refineCopiedOptionSources(
+        enrichProvenanceFromContentSpans(
+          enrichProvenanceFromRegionLedger(pack.records, regionLedger),
+          normalizedPageTextByNumber(pages),
+        ),
+        normalizedPageTextByNumber(pages),
+      ),
     };
     // Complete imports also enforce that automatic owners cite the source
     // page using FINAL enriched locators. Structural page-locality resolution
@@ -3709,6 +3723,7 @@ export async function runImporter(
   });
   writePackToDirectory(pack, {
     outDir: input.outDir,
+    fieldProvenanceManifest: built.fieldProvenanceManifest,
     // The production CLI supplies the reviewed exact creature baseline; small
     // synthetic PDFs intentionally exercise parser subsets and cannot satisfy
     // the full curated relationship denominator.

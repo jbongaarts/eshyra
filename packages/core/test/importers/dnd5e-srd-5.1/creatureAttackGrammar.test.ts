@@ -138,7 +138,32 @@ describe('creature attack grammar over the committed pack', () => {
           printedBonus,
         );
 
-        const printed = printedTerms(hit);
+        // Damage printed after a save clause in the Hit sentence is owned by
+        // the save (eshyra-o9bd.16.7.1, SRD p. 374 Giant Centipede: "or take
+        // 10 (3d6) poison damage" only on a failed save): it is checked
+        // against saves[].damageOnFailure, never against unconditional hitDamage.
+        const saveClause =
+          /\bmust (?:succeed on|make)(?: on)? a DC \d+ [A-Z][a-z]+ saving throw\b/.exec(
+            hit,
+          );
+        const saveOwned =
+          saveClause === null ? [] : printedTerms(hit.slice(saveClause.index));
+        const printed =
+          saveOwned.length === 0
+            ? printedTerms(hit)
+            : printedTerms(hit.slice(0, saveClause?.index));
+        if (saveOwned.length > 0) {
+          const saves = block.mechanics.saves as
+            | { damageOnFailure?: Record<string, unknown>[] }[]
+            | undefined;
+          expect(
+            (saves?.[0]?.damageOnFailure ?? []).map(
+              (entry) =>
+                `${normalizeDice(String(entry.dice))}|${String(entry.type)}`,
+            ),
+            `${record.key} ${block.name} save-owned damage`,
+          ).toEqual(saveOwned);
+        }
         const modes = projectedModes(attack);
         const projected = new Set(modes.flat());
         const printedSet = new Set(printed);

@@ -158,6 +158,7 @@ interface ProvenanceSplit {
 function classifyRecordBody(
   value: unknown,
   kind: RulesRecordKind,
+  recordKey: string,
   manifest: FieldProvenanceManifest | undefined,
   displayPointer: string,
   normalizedPointer: string,
@@ -172,7 +173,7 @@ function classifyRecordBody(
     const cls =
       manifest === undefined
         ? undefined
-        : classifyFieldPointer(manifest, kind, normalizedPointer);
+        : classifyFieldPointer(manifest, kind, recordKey, normalizedPointer);
     if (cls === undefined) {
       // The VALUE is kept, in its own bucket, not discarded. Dropping it
       // would delete an add-on's or a custom resolver's actual rules content
@@ -249,6 +250,7 @@ function classifyRecordBody(
       const result = classifyRecordBody(
         child,
         kind,
+        recordKey,
         manifest,
         `${displayPointer}/${key}`,
         // `classifyFieldPointer`'s own convention: an array index is the
@@ -685,6 +687,7 @@ function capabilities(
 function splitRecordData(
   data: Obj,
   kind: RulesRecordKind,
+  recordKey: string,
   manifest: FieldProvenanceManifest | undefined,
 ): {
   readonly sourceProse: Obj;
@@ -695,7 +698,15 @@ function splitRecordData(
   readonly residue: readonly RecordDataResidue[];
 } {
   const residue: RecordDataResidue[] = [];
-  const result = classifyRecordBody(data, kind, manifest, '/data', '', residue);
+  const result = classifyRecordBody(
+    data,
+    kind,
+    recordKey,
+    manifest,
+    '/data',
+    '',
+    residue,
+  );
   return {
     sourceProse: (result.sourceProse as Obj | undefined) ?? {},
     sourceDerived: (result.sourceDerived as Obj | undefined) ?? {},
@@ -808,6 +819,7 @@ function packetCandidate(
   const split = splitRecordData(
     object(record.data) ?? {},
     record.kind,
+    record.key,
     provenanceSource?.(candidate.entry.pack),
   );
   const sourceProseRoot = { data: split.sourceProse };
