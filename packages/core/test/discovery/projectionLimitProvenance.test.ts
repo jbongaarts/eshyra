@@ -449,4 +449,40 @@ describe('projection-limit notes are built from attested prose', () => {
     expect(JSON.stringify(item.projection)).toContain('executionReadiness');
     expect(note?.note).not.toContain('source');
   });
+
+  /**
+   * L3-F2 (`eshyra-o9bd.16.8.2`): the note names only the readiness
+   * categories the record actually has. Bag of Devouring's single clause is
+   * adjudicated-by-design, so telling the model the engine still owes it work
+   * was false; Ammunition's is engine-pending; Animated Shield mixes both.
+   */
+  it.each([
+    {
+      key: 'magic-item:bag-of-devouring',
+      present: ['adjudicated-by-design'],
+      absent: ['engine-pending'],
+    },
+    {
+      key: 'magic-item:ammunition-1-2-or-3',
+      present: ['engine-pending'],
+      absent: ['adjudicated-by-design'],
+    },
+    {
+      key: 'magic-item:animated-shield',
+      present: ['engine-pending', 'adjudicated-by-design'],
+      absent: [],
+    },
+  ])(
+    'states only the readiness categories $key actually has',
+    ({ key, present, absent }) => {
+      const trace = packetFor(getBundledDnd5eSrdPack(), [key]);
+      const note = candidate(trace, key).projectionLimits.find(
+        (entry) => entry.kind === 'execution-readiness',
+      );
+      expect(note).toBeDefined();
+      for (const status of present) expect(note?.note).toContain(status);
+      for (const status of absent) expect(note?.note).not.toContain(status);
+      expect(render(trace)).toContain(note?.note ?? '');
+    },
+  );
 });

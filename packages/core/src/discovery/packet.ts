@@ -465,7 +465,7 @@ function projectionLimits(
   if (pending.length > 0)
     notes.push({
       kind: 'execution-readiness',
-      note: 'The record has engine-pending readiness clauses; typed projections are not a capability.',
+      note: readinessNote(pending),
       evidence: { clauses: pending },
       // May be empty, and says so by being empty: this note makes no claim
       // about the source at all, so it is not withheld when a record has no
@@ -474,6 +474,43 @@ function projectionLimits(
     });
   return notes;
 }
+/**
+ * What each non-green readiness status means, stated to the model. The note
+ * names only the statuses actually present (L3-F2, `eshyra-o9bd.16.8.2`): an
+ * item whose only non-green clauses are adjudicated by design must not be told
+ * the engine still owes it work, and an engine-pending clause must not be
+ * presented as a DM ruling.
+ */
+const READINESS_STATUS_MEANING: Readonly<Record<string, string>> = {
+  'engine-pending':
+    'engine-pending (a printed deterministic procedure the engine does not yet execute)',
+  'adjudicated-by-design':
+    'adjudicated-by-design (the DM rules on it from the source text, by design)',
+  'design-blocked':
+    'design-blocked (execution waits on an unresolved design decision)',
+};
+
+/**
+ * Builds the readiness note from the statuses of the non-green clauses, in
+ * first-seen order. Only the three clause-level categories the compiler emits
+ * (`MagicItemReadiness` in magicItemCompiler.ts; `transitional` and `red` are
+ * item-level) get a stated meaning. Any other status is reported verbatim as
+ * unrecognized, never folded into a known category.
+ */
+function readinessNote(pending: readonly unknown[]): string {
+  const counts = new Map<string, number>();
+  for (const item of pending) {
+    const status = object(item)?.readiness;
+    const key = typeof status === 'string' ? status : 'unrecognized';
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const parts = [...counts].map(
+    ([status, count]) =>
+      `${count} ${READINESS_STATUS_MEANING[status] ?? `${status} (unrecognized readiness status)`}`,
+  );
+  return `The record has non-green readiness clauses: ${parts.join('; ')}. Typed projections of those clauses are not an engine capability.`;
+}
+
 /**
  * One preflight for one `(record, variant, operation)` triple `signals.ts`
  * enumerated (W10 F1 repair, `eshyra-o9bd.19.12.9`): capability AVAILABILITY

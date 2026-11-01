@@ -17884,7 +17884,7 @@
         "F2",
         "F5"
       ],
-      "population": 1537,
+      "population": 1629,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17903,12 +17903,12 @@
       "fieldPath": "data.executionReadiness.clauses[].engineHooks[].hook",
       "representativeValues": [
         "derived combat modifier application",
+        "passive item effect runtime consumer: abilityScoreSet",
         "condition and eligibility relations",
         "roll mode and targeting modifiers",
-        "damage, range, cover, and forced movement",
-        "seeded dice, percentage, table, and pool selection"
+        "damage, range, cover, and forced movement"
       ],
-      "population": 1537,
+      "population": 1629,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17932,7 +17932,7 @@
         "F6",
         "F5"
       ],
-      "population": 677,
+      "population": 769,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17956,7 +17956,7 @@
         "F6",
         "F5"
       ],
-      "population": 1231,
+      "population": 1323,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17975,12 +17975,12 @@
       "fieldPath": "data.executionReadiness.clauses[].missingHooks[].hook",
       "representativeValues": [
         "derived combat modifier application",
+        "passive item effect runtime consumer: abilityScoreSet",
         "condition and eligibility relations",
         "roll mode and targeting modifiers",
-        "damage, range, cover, and forced movement",
-        "seeded dice, percentage, table, and pool selection"
+        "damage, range, cover, and forced movement"
       ],
-      "population": 1231,
+      "population": 1323,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
