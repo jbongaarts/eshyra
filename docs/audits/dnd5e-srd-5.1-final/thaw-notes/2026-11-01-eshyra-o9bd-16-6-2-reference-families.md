@@ -60,3 +60,10 @@ of slipperiness; the item needs no attunement. The reason reaches the DM through
 `lookup_rules`, so it now names both source-backed cases. Only the declaration's
 reason text and the matching line of `record-relationships.json` change;
 `verify:dnd5e-srd-pack` matches.
+
+The bounded re-review (eshyra-o9bd.16.6.4) found the same class in the
+`spellcasting-spell` reason, which said every listed spell is "prepared or
+innate". The Archmage (SRD p. 395) casts disguise self and invisibility at will,
+printed separately from its prepared list. The reason now names the printed
+groups the importer captures (cantrips, by slot level, at will, per day), and
+both Archmage links are kept.

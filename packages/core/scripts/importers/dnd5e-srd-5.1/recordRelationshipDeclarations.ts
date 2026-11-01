@@ -289,7 +289,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       relation: 'spellcasting-spell',
       targetResolution: 'record-key',
       reason:
-        'The spell record a creature spellcasting trait lists as prepared or innate.',
+        'A spell record a creature spellcasting trait lists in one of its printed groups: cantrips, spells by slot level, at will, or a number of times per day.',
     },
     {
       kind: 'ancestry',
