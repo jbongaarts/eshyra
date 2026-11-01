@@ -821,12 +821,29 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // poison record expose an explicit save, damage, or condition projection.
   // eshyra-o9bd.19.3.1.1 (O2): hazard:pits moves its per-trap projections into
   // data.variants, so its record-level mechanics are absent.
-  { kind: 'hazard', field: 'mechanics', missingCount: 2, totalInKind: 25 },
+  // eshyra-o9bd.19.4.4.1: hazard:sphere-of-annihilation now projects its
+  // printed Arcana check, its otherwise-identical-to item reference and its
+  // optional sympathy-enchantment version, so only hazard:pits lacks
+  // record-level mechanics.
+  {
+    kind: 'hazard',
+    field: 'identicalToRef',
+    missingCount: 24,
+    totalInKind: 25,
+  },
+  {
+    kind: 'hazard',
+    field: 'identicalToText',
+    missingCount: 24,
+    totalInKind: 25,
+  },
+  { kind: 'hazard', field: 'mechanics', missingCount: 1, totalInKind: 25 },
   { kind: 'hazard', field: 'poisonType', missingCount: 11, totalInKind: 25 },
   { kind: 'hazard', field: 'price', missingCount: 11, totalInKind: 25 },
   { kind: 'hazard', field: 'trapType', missingCount: 17, totalInKind: 25 },
   // eshyra-o9bd.19.3.1.1 (O2): only hazard:pits prints several named traps.
   { kind: 'hazard', field: 'variants', missingCount: 24, totalInKind: 25 },
+  { kind: 'hazard', field: 'versions', missingCount: 24, totalInKind: 25 },
   {
     kind: 'magic-item',
     field: 'attunementRequirement',

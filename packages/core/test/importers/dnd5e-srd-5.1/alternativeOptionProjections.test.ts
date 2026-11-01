@@ -245,9 +245,11 @@ describe('O2: printed sub-traps in one record', () => {
         { average: 22, dice: '4d10', type: 'poison' },
       ],
     });
-    // Only the Spiked Pit poison variant carries a save; no other pit does.
+    // Only the Spiked Pit poison variant carries a save, damage, or
+    // condition; the other pits carry at most their own printed checks
+    // (eshyra-o9bd.19.4.4.1), never the Spiked Pit's projections.
     for (const variant of variants.slice(0, 3)) {
-      expect(variant.mechanics).toBeUndefined();
+      expect(Object.keys(variant.mechanics ?? {})).toEqual(['checks']);
     }
     expect(pits.data.mechanics).toBeUndefined();
   });

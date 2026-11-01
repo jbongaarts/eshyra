@@ -932,6 +932,42 @@
       "reason": "/variants[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
     },
     {
+      "kind": "hazard",
+      "pointerPrefix": "/identicalToRef",
+      "class": "source-derived",
+      "reason": "the magic-item record key named by the printed \"otherwise identical to a normal ...\" sentence (a reference, not a copy of the item)."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/identicalToText",
+      "class": "source-prose",
+      "reason": "the two contiguous printed sentences that state the revealing check and the item the trap is otherwise identical to, quoted verbatim."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/versions/*/text",
+      "class": "source-prose",
+      "reason": "the printed sentences describing an optional version of the trap, quoted verbatim."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/versions/*/likeSpellRef",
+      "class": "source-derived",
+      "reason": "the spell record key named by the version's printed \"otherwise like the ... aspect of the ... spell\" sentence, resolved fail-closed against the emitted spells."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/versions/*/likeSpellAspect",
+      "class": "source-derived",
+      "reason": "the spell aspect word printed in the version's \"like the ... aspect\" sentence."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/versions/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "hazard.versions[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
       "kind": "magic-item",
       "pointerPrefix": "/attunementRequirement",
       "class": "source-derived",

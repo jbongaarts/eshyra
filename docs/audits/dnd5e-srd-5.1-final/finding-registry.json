@@ -599,7 +599,8 @@
       "canonicalId": "hazard-and-healing-potion",
       "aliases": ["sol:CAP-006"],
       "invariant": "Hazards and healing potion procedures are complete",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Narrowed under ADR 0020. No completeness or execution claim is made for hazards or the healing potion. The surviving obligation is that emitted hazard and healing-potion projections agree with source; the healing potion's typed table-driven healing is already projected.",
       "provenance": {
         "auditFinding": "sol:CAP-006",
         "evidenceBasis": "audit-finding"
@@ -791,7 +792,8 @@
       "canonicalId": "hazard-completeness",
       "aliases": ["indep:007"],
       "invariant": "Hazards are deterministically executable",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Narrowed under ADR 0020. Hazards are not claimed deterministically executable. The surviving obligation is source-faithful hazard projections, including printed trap ability checks and dispel-magic DCs (eshyra-o9bd.19.4.4.1, trapChecksProjection.test.ts); detection, disarm, and escape resolution stay DM-adjudicated.",
       "provenance": {
         "auditFinding": "indep:007",
         "evidenceBasis": "audit-finding"
@@ -804,6 +806,7 @@
       "aliases": ["opus:F-01"],
       "invariant": "Hazard success-damage branches are represented",
       "status": "accepted",
+      "statusReasoning": "Repaired by PR #567 (eshyra-o9bd.19.4.3.1, merge 25631abf); hazards are included in the committed half-damage source census (halfDamageSuccessBranches.test.ts).",
       "provenance": {
         "auditFinding": "opus:F-01",
         "evidenceBasis": "audit-finding"
@@ -816,6 +819,7 @@
       "aliases": ["opus:F-23"],
       "invariant": "Sphere of Annihilation is not prose-only",
       "status": "accepted",
+      "statusReasoning": "Repaired by eshyra-o9bd.19.4.4.1: hazard:sphere-of-annihilation projects its printed DC 20 Intelligence (Arcana) check, a typed identicalToRef to magic-item:sphere-of-annihilation with the two verbatim sentences that print it (not a copy of the item projection), and an unnamed optional version carrying the antipathy/sympathy likeSpellRef and its DC 18 dispel-magic entry. Evidence: trapChecksProjection.test.ts.",
       "provenance": {
         "auditFinding": "opus:F-23",
         "evidenceBasis": "audit-finding"

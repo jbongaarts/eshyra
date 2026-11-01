@@ -204,6 +204,42 @@
       "targetResolution": "record-name",
       "targetKind": "condition",
       "reason": "The Grappled source clause says its condition ends when the grappler is incapacitated (see the condition)."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/identicalToRef",
+      "linkField": "data.identicalToRef",
+      "disposition": "reference",
+      "relation": "otherwise-identical-to",
+      "targetResolution": "record-key",
+      "reason": "The Sphere of Annihilation trap prints that it is otherwise identical to the normal sphere of annihilation magic item."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/versions/*/likeSpellRef",
+      "linkField": "data.versions[].likeSpellRef",
+      "disposition": "reference",
+      "relation": "effect-like-spell",
+      "targetResolution": "record-key",
+      "reason": "The trap version prints that its enchantment is otherwise like an aspect of a named spell."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/mechanics/dispels/*/spell",
+      "linkField": "data.mechanics.dispels[].spell",
+      "disposition": "reference",
+      "relation": "dispelled-by",
+      "targetResolution": "record-key",
+      "reason": "A printed trap dispel-magic DC names the spell that removes the trap."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/versions/*/mechanics/dispels/*/spell",
+      "linkField": "data.versions[].mechanics.dispels[].spell",
+      "disposition": "reference",
+      "relation": "dispelled-by",
+      "targetResolution": "record-key",
+      "reason": "A printed dispel-magic DC inside a trap version names the spell that removes the enchantment."
     }
   ]
 }

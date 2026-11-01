@@ -71,6 +71,7 @@ import {
   compileMagicItemFamilies,
 } from './magicItemFamilyRegistry.js';
 import {
+  compact,
   deriveActionMechanics,
   deriveCreatureEntryMechanics,
   deriveFeatMechanics,
@@ -96,6 +97,7 @@ import {
   stripEmbeddedTableProse,
   stripTableSpansFromProse,
 } from './stripEmbeddedTableProse.js';
+import { deriveSphereProjection, deriveTrapChecks } from './trapChecks.js';
 import type {
   ActionExtraction,
   AncestryExtraction,
@@ -1159,10 +1161,31 @@ function printedTrapVariants(
  */
 export function trapExtractionsToRecords(
   traps: readonly TrapExtraction[],
+  resolveSpell?: SpellGrantResolver,
 ): RulesRecord[] {
+  // Trap mechanics = the shared hazard projection plus every printed non-save
+  // DC (ability checks and dispel-magic DCs; eshyra-o9bd.19.4.4.1).
+  const trapMechanics = (
+    trap: TrapExtraction,
+    key: string,
+    text: string,
+  ): Record<string, unknown> => {
+    const { checks, dispels } = deriveTrapChecks(text, key, resolveSpell);
+    return compact({
+      ...deriveHazardMechanics({ ...trap, description: text }),
+      checks,
+      dispels,
+    });
+  };
   const out: RulesRecord[] = traps.map((trap) => {
     const key = hazardKey(trap.name);
     const printed = printedTrapVariants(key, trap.description);
+    const sphere = deriveSphereProjection(
+      key,
+      trap.description,
+      resolveSpell,
+      magicItemKey,
+    );
     const data: Record<string, unknown> = {
       category: 'trap',
       trapType: trap.trapType,
@@ -1174,10 +1197,7 @@ export function trapExtractionsToRecords(
       // trap's save and damage as if it applied to all of them
       // (eshyra-o9bd.19.3.1.1, opus:F-02).
       data.variants = printed.map((variant) => {
-        const mechanics = deriveHazardMechanics({
-          ...trap,
-          description: variant.text,
-        });
+        const mechanics = trapMechanics(trap, key, variant.text);
         return {
           name: variant.name,
           text: variant.text,
@@ -1185,9 +1205,20 @@ export function trapExtractionsToRecords(
         };
       });
     } else {
-      const mechanics = deriveHazardMechanics(trap);
+      // The sphere's optional enchantment is an unnamed printed addition with
+      // its own dispel DC: it lives on `data.versions`, not at record level.
+      const mechanics = trapMechanics(
+        trap,
+        key,
+        sphere?.recordText ?? trap.description,
+      );
       if (Object.keys(mechanics).length > 0) {
         data.mechanics = mechanics;
+      }
+      if (sphere !== undefined) {
+        data.identicalToRef = sphere.identicalToRef;
+        data.identicalToText = sphere.identicalToText;
+        data.versions = [sphere.version];
       }
     }
     const record: RulesRecord = {
@@ -1926,7 +1957,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // and poisons additionally carry `poisonType` / `price`.
   const hazardRecords = [
     ...hazardExtractionsToRecords(input.hazards ?? []),
-    ...trapExtractionsToRecords(input.traps ?? []),
+    ...trapExtractionsToRecords(input.traps ?? [], resolveSpellGrant),
     ...diseaseExtractionsToRecords(input.diseases ?? []),
     ...poisonExtractionsToRecords(input.poisons ?? []),
   ];

@@ -879,6 +879,39 @@ mechanicsSubtree('hazard', '/mechanics', 'hazard.mechanics');
 // name and text are literal source spans; its mechanics are the compiler's
 // projection of that span alone.
 namedEntry('hazard', '/variants');
+// Sphere of Annihilation trap (eshyra-o9bd.19.4.4.1, opus:F-23): a typed
+// reference to the magic item it is "otherwise identical" to, with the two
+// verbatim sentences that print it, plus the unnamed optional enchantment.
+derived(
+  'hazard',
+  '/identicalToRef',
+  'the magic-item record key named by the printed "otherwise identical to a normal ..." sentence (a reference, not a copy of the item).',
+);
+prose(
+  'hazard',
+  '/identicalToText',
+  'the two contiguous printed sentences that state the revealing check and the item the trap is otherwise identical to, quoted verbatim.',
+);
+prose(
+  'hazard',
+  '/versions/*/text',
+  'the printed sentences describing an optional version of the trap, quoted verbatim.',
+);
+derived(
+  'hazard',
+  '/versions/*/likeSpellRef',
+  'the spell record key named by the version\'s printed "otherwise like the ... aspect of the ... spell" sentence, resolved fail-closed against the emitted spells.',
+);
+derived(
+  'hazard',
+  '/versions/*/likeSpellAspect',
+  'the spell aspect word printed in the version\'s "like the ... aspect" sentence.',
+);
+mechanicsSubtree(
+  'hazard',
+  '/versions/*/mechanics',
+  'hazard.versions[].mechanics',
+);
 
 // ---------------------------------------------------------------------------
 // magic-item — the 240 SRD magic items (parseMagicItems.ts / magicItem*.ts)
