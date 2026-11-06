@@ -2690,3 +2690,54 @@ describe('feature runtime-effect projections (eshyra-o9bd.18.7.5)', () => {
     ]);
   });
 });
+
+describe('creature attack Hit-clause components (eshyra-o9bd.19.6.7.11)', () => {
+  const lead = 'Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: ';
+
+  it('lists a flat component followed by a plus dice component', () => {
+    const mechanics = deriveCreatureEntryMechanics(
+      'Bite',
+      `${lead}1 piercing damage plus 7 (3d4) poison damage.`,
+    );
+    const attack = (mechanics.attacks as Record<string, unknown>[])[0];
+    expect(attack.hitDamage).toEqual([
+      { amount: 1, type: 'piercing' },
+      { average: 7, dice: '3d4', type: 'poison' },
+    ]);
+    expect(mechanics.damage).toEqual(attack.hitDamage);
+    expect(attack.hitDamageNotProjected).toBeUndefined();
+  });
+
+  it('accepts an en dash and a Unicode minus inside dice', () => {
+    for (const dash of ['–', '−']) {
+      const mechanics = deriveCreatureEntryMechanics(
+        'Bite',
+        `${lead}1 (1d4 ${dash} 1) piercing damage.`,
+      );
+      const attack = (mechanics.attacks as Record<string, unknown>[])[0];
+      expect(attack.hitDamage).toEqual([
+        { average: 1, dice: '1d4 - 1', type: 'piercing' },
+      ]);
+    }
+  });
+
+  it('discloses a Hit clause it cannot fully project instead of omitting damage', () => {
+    const none = deriveCreatureEntryMechanics(
+      'Bite',
+      `${lead}the target takes damage equal to its level.`,
+    );
+    const noneAttack = (none.attacks as Record<string, unknown>[])[0];
+    expect(noneAttack.hitDamage).toBeUndefined();
+    expect(noneAttack.hitDamageNotProjected).toBe(
+      'the target takes damage equal to its level',
+    );
+    const partial = deriveCreatureEntryMechanics(
+      'Scimitar',
+      `${lead}12 (2d6 + 5) slashing damage plus 3 (1d6) lightning or thunder damage (choice).`,
+    );
+    expect((partial.attacks as Record<string, unknown>[])[0]).toMatchObject({
+      hitDamage: [{ average: 12, dice: '2d6 + 5', type: 'slashing' }],
+      hitDamageNotProjected: expect.stringContaining('lightning or thunder'),
+    });
+  });
+});

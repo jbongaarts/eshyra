@@ -29,6 +29,7 @@ function recordOf(key: string): RulesRecord {
 }
 
 const MINUS = '−';
+const EN_DASH = '–';
 
 /** Every creature text block that carries an attack lead-in and Hit clause. */
 function attackBlocks(record: RulesRecord): {
@@ -76,7 +77,12 @@ function attackBlocks(record: RulesRecord): {
 }
 
 function normalizeDice(dice: string): string {
-  return dice.split(MINUS).join('-').replace(/\s+/g, ' ');
+  return dice
+    .split(MINUS)
+    .join('-')
+    .split(EN_DASH)
+    .join('-')
+    .replace(/\s+/g, ' ');
 }
 
 /**
@@ -85,14 +91,30 @@ function normalizeDice(dice: string): string {
  * as "amount:<n>|<type>".
  */
 function printedTerms(hit: string): string[] {
-  const dice = [
-    ...hit.matchAll(
-      /(\d+)\s*\((\d+d\d+(?:\s*[+−-]\s*\d+)?)\)\s+([a-z]+)\s+damage/gi,
-    ),
-  ].map((match) => `${normalizeDice(match[2])}|${match[3].toLowerCase()}`);
-  const flat = /^\s*(\d+) ([a-z]+) damage/.exec(hit);
-  if (flat === null || dice.length > 0) return dice;
-  return [`amount:${flat[1]}|${flat[2].toLowerCase()}`];
+  // Every printed component, in print order: dice terms ("7 (3d4) poison
+  // damage", "1 (1d4 – 1) piercing damage") and flat terms ("1 piercing
+  // damage") that are not the tail of a dice term (eshyra-o9bd.19.6.7.11).
+  const found: { at: number; end: number; key: string }[] = [];
+  for (const match of hit.matchAll(
+    /(\d+)\s*\((\d+d\d+(?:\s*[+−–-]\s*\d+)?)\)\s+([a-z]+)\s+damage/gi,
+  )) {
+    found.push({
+      at: match.index,
+      end: match.index + match[0].length,
+      key: `${normalizeDice(match[2])}|${match[3].toLowerCase()}`,
+    });
+  }
+  for (const match of hit.matchAll(/(?<![\w(])(\d+) ([a-z]+) damage/gi)) {
+    const at = match.index;
+    const end = at + match[0].length;
+    if (found.some((term) => at < term.end && end > term.at)) continue;
+    found.push({
+      at,
+      end,
+      key: `amount:${match[1]}|${match[2].toLowerCase()}`,
+    });
+  }
+  return found.sort((a, b) => a.at - b.at).map((term) => term.key);
 }
 
 function projectedModes(attack: Record<string, unknown>): string[][] {
@@ -164,6 +186,23 @@ describe('creature attack grammar over the committed pack', () => {
             `${record.key} ${block.name} save-owned damage`,
           ).toEqual(saveOwned);
         }
+        // A Hit clause printing more damage than the grammar lists must say so
+        // in band, never silently omit it (eshyra-o9bd.19.6.7.11); a fully
+        // listed clause carries no disclosure.
+        const direct =
+          saveClause === null ? hit : hit.slice(0, saveClause.index);
+        const damageWords = (direct.match(/\bdamage\b/gi) ?? []).length;
+        if (damageWords > printed.length) {
+          expect(
+            attack.hitDamageNotProjected,
+            `${record.key} ${block.name} disclosure`,
+          ).toBe(direct.trim());
+        } else {
+          expect(
+            attack.hitDamageNotProjected,
+            `${record.key} ${block.name} spurious disclosure`,
+          ).toBeUndefined();
+        }
         const modes = projectedModes(attack);
         const projected = new Set(modes.flat());
         const printedSet = new Set(printed);
@@ -182,6 +221,34 @@ describe('creature attack grammar over the committed pack', () => {
       }
     }
     expect(checked).toBeGreaterThan(0);
+  });
+
+  it('lists every printed Hit component: Flying Snake flat plus dice, Jackal en dash, Djinni disclosed (A3-F3)', () => {
+    const snake = leadInAttack(recordOf('creature:flying-snake'), 'Bite');
+    expect(snake.attack.hitDamage).toEqual([
+      { amount: 1, type: 'piercing' },
+      { average: 7, dice: '3d4', type: 'poison' },
+    ]);
+    expect(snake.attack.hitDamageNotProjected).toBeUndefined();
+    expect(snake.block.mechanics.damage).toEqual(snake.attack.hitDamage);
+
+    const jackal = leadInAttack(recordOf('creature:jackal'), 'Bite');
+    expect(jackal.block.text).toContain('1 (1d4 – 1) piercing damage');
+    expect(jackal.attack.hitDamage).toEqual([
+      { average: 1, dice: '1d4 - 1', type: 'piercing' },
+    ]);
+    expect(jackal.block.mechanics.damage).toEqual(jackal.attack.hitDamage);
+
+    // SRD Djinni Scimitar: "plus 3 (1d6) lightning or thunder
+    // damage (djinni's choice)" is a choice-of-type rider this grammar does
+    // not project, so the attack discloses the printed clause.
+    const djinni = leadInAttack(recordOf('creature:djinni'), 'Scimitar');
+    expect(djinni.attack.hitDamage).toEqual([
+      { average: 12, dice: '2d6 + 5', type: 'slashing' },
+    ]);
+    expect(djinni.attack.hitDamageNotProjected).toBe(
+      '12 (2d6 + 5) slashing damage plus 3 (1d6) lightning or thunder damage (djinni’s choice)',
+    );
   });
 
   it('never projects a Unicode minus into dice, and never drops a printed minus dice Hit', () => {

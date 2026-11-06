@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1881,
+  "rowCount": 1882,
   "dispositionCounts": {
     "complete": 444,
-    "model-adjudicated": 1231,
+    "model-adjudicated": 1232,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -5317,7 +5317,7 @@
         "2d10 + 6",
         "1d8"
       ],
-      "population": 551,
+      "population": 552,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -5341,11 +5341,31 @@
         "slashing",
         "lightning"
       ],
-      "population": 569,
+      "population": 571,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.actions[].mechanics.attacks[].hitDamage[].type",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
+      "fieldPath": "data.actions[].mechanics.attacks[].hitDamageNotProjected",
+      "representativeValues": [
+        "12 (2d6 + 5) slashing damage plus 3 (1d6) lightning or thunder damage (djinni’s choice)"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.actions[].mechanics.attacks[].hitDamageNotProjected",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -5437,7 +5457,7 @@
         "1d4",
         "2d10 + 6"
       ],
-      "population": 634,
+      "population": 635,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -5461,7 +5481,7 @@
         "slashing",
         "lightning"
       ],
-      "population": 637,
+      "population": 639,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
