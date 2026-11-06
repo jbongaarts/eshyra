@@ -35,6 +35,7 @@
  * non-blank line — the two are merged into one level entry.
  */
 
+import { composedByField } from './proseComposition.js';
 import type {
   ConditionExtraction,
   ExhaustionLevel,
@@ -153,6 +154,18 @@ function parseConditionBody(
   let inTable = false;
   let pendingLevel: number | undefined;
   let currentEffect: string | undefined;
+  // Composition reporting (eshyra-o9bd.19.6.7.10): prose before a removed
+  // table/bullet region and prose after it means the description is spliced.
+  let proseBeforeRemoval = false;
+  let removalSeen = false;
+  let interiorRemoval = false;
+  const notePlainProse = (): void => {
+    if (removalSeen) {
+      if (proseBeforeRemoval) interiorRemoval = true;
+    } else {
+      proseBeforeRemoval = true;
+    }
+  };
 
   function closeEffect(): void {
     if (currentEffect !== undefined) {
@@ -206,6 +219,7 @@ function parseConditionBody(
     if (LEVEL_HEADER_RE.test(trimmed)) {
       closeEffect();
       inTable = true;
+      removalSeen = true;
       continue;
     }
 
@@ -213,6 +227,7 @@ function parseConditionBody(
     if (isBulletLine(trimmed)) {
       closeEffect();
       currentEffect = stripBullet(trimmed);
+      removalSeen = true;
       continue;
     }
 
@@ -224,6 +239,7 @@ function parseConditionBody(
     }
 
     // Otherwise: plain prose line.
+    notePlainProse();
     proseLines.push(trimmed);
   }
 
@@ -233,10 +249,14 @@ function parseConditionBody(
   // conditions (no prose), fall back to joining effects so the record always
   // carries a non-empty description.
   let description: string;
+  let bulletJoin = false;
   if (proseLines.some((l) => l.length > 0)) {
     description = joinParagraphs(proseLines);
   } else {
     description = effects.join(' ');
+    // Printed bullet items joined with their glyphs removed. A single bullet
+    // only loses its leading glyph (a trim, still one contiguous quotation).
+    bulletJoin = effects.length > 1;
   }
 
   // Fallback — should not happen with valid SRD input.
@@ -249,6 +269,7 @@ function parseConditionBody(
     description,
     effects,
     ...(levels.length > 0 ? { levels } : {}),
+    ...composedByField({ interiorRemoval, bulletJoin }),
     sourcePage,
   };
 }

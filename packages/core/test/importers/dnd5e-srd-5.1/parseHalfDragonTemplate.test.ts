@@ -63,6 +63,8 @@ describe('parseHalfDragonTemplate', () => {
     expect(parseHalfDragonTemplate(HALF_DRAGON_PAGES)).toEqual({
       name: 'Half-Dragon Template',
       keySlug: 'half-dragon-template',
+      // Reported by the producer (eshyra-o9bd.19.6.7.10); the text is unchanged.
+      composedBy: ['interior-removal'],
       text:
         'A beast, humanoid, giant, or monstrosity can become a half-dragon. ' +
         'It keeps its statistics, except as follows. Challenge. To avoid ' +

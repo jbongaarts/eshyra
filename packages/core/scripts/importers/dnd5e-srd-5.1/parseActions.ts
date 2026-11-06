@@ -10,6 +10,10 @@
  * are skipped safely because the caller is responsible for section narrowing.
  */
 
+import {
+  composedByField,
+  joinParagraphsStrippingBullets,
+} from './proseComposition.js';
 import type { ActionExtraction, PageText } from './types.js';
 
 export const STANDARD_ACTION_NAMES = [
@@ -53,27 +57,6 @@ interface ActionEntry {
   readonly name: StandardActionName;
 }
 
-function joinParagraphs(lines: readonly string[]): string {
-  const paragraphs: string[] = [];
-  let current: string[] = [];
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (line.length === 0) {
-      if (current.length > 0) {
-        paragraphs.push(current.join(' '));
-        current = [];
-      }
-      continue;
-    }
-    const stripped = line.replace(/^[•\-*]\s+/, '');
-    current.push(stripped);
-  }
-  if (current.length > 0) {
-    paragraphs.push(current.join(' '));
-  }
-  return paragraphs.join('\n\n').trim();
-}
-
 /**
  * Parse standard SRD combat actions from the narrowed actions-section
  * `PageText[]`. Returns an `ActionExtraction[]` sorted by action name.
@@ -98,10 +81,12 @@ export function parseActions(pages: readonly PageText[]): ActionExtraction[] {
     const bodyEnd = entries[i + 1]?.nameIdx ?? flat.length;
     const bodyLines = flat.slice(bodyStart, bodyEnd).map((f) => f.line);
     const sourcePage = flat[entry.nameIdx].page;
-    const description = joinParagraphs(bodyLines);
+    const { text: description, bulletJoin } =
+      joinParagraphsStrippingBullets(bodyLines);
     out.push({
       name: entry.name,
       description: description.length > 0 ? description : entry.name,
+      ...composedByField({ bulletJoin: bulletJoin && description.length > 0 }),
       sourcePage,
     });
   }

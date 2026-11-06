@@ -5,6 +5,18 @@
  * extraction structures that downstream `toRulesRecords` converts to records.
  */
 
+/**
+ * How a producer composed a prose field from printed text that is not one
+ * contiguous quotation (eshyra-o9bd.19.6.7.10, A3-F1/F2). The compiler turns a
+ * producer's report into a scoped `source-derived` declaration; nothing is
+ * hand-listed.
+ *  - `interior-removal`: printed table rows / list items were removed from the
+ *    middle of the text (non-whitespace source text remains on both sides).
+ *  - `bullet-join`: printed bullet items were joined into running text with
+ *    their bullet glyphs removed.
+ */
+export type ProseCompositionCause = 'interior-removal' | 'bullet-join';
+
 export interface PageText {
   readonly pageNumber: number;
   /** Original page-relative line offset when this page is a section slice. */
@@ -24,6 +36,14 @@ export interface PageText {
    * without dropping parents (loreweaver-yli).
    */
   readonly lineHeights?: readonly number[];
+  /**
+   * Parallel to `lines`: true when a producer (`removeTableCellLines`) dropped
+   * one or more table-cell lines immediately BEFORE this line. A prose parser
+   * that later finds this flag set on a line inside a body that already has
+   * text knows the body was spliced around the removed rows
+   * (eshyra-o9bd.19.6.7.10, A3-F2). Absent when nothing was removed.
+   */
+  readonly removedBefore?: readonly boolean[];
   /**
    * Per-line vertical baseline gap (PDF user-space points) from the PREVIOUS
    * line in the same column, parallel to `lines`. `null` marks a reading-order
@@ -150,6 +170,8 @@ export interface ConditionExtraction {
   readonly effects: readonly string[];
   /** Exhaustion only: the six cumulative effect levels. */
   readonly levels?: readonly ExhaustionLevel[];
+  /** Producer-reported composition of the prose field, absent when verbatim. */
+  readonly composedBy?: readonly ProseCompositionCause[];
   /** 1-based page in the source PDF where the condition entry begins. */
   readonly sourcePage: number;
 }
@@ -165,6 +187,8 @@ export interface FeatExtraction {
   readonly prerequisites?: string;
   /** Benefit text, re-flowed into paragraphs. */
   readonly description: string;
+  /** Producer-reported composition of the prose field, absent when verbatim. */
+  readonly composedBy?: readonly ProseCompositionCause[];
   /** 1-based page in the source PDF where the feat entry begins. */
   readonly sourcePage: number;
 }
@@ -260,6 +284,8 @@ export interface RuleExtraction {
   readonly keySlug?: string;
   /** Full rule body text, re-flowed into paragraphs. */
   readonly text: string;
+  /** Producer-reported composition of the prose field, absent when verbatim. */
+  readonly composedBy?: readonly ProseCompositionCause[];
   /** Embedded reference tables owned by this rule, emitted as record keys. */
   readonly tableRefs?: readonly string[];
   /** 1-based page in the source PDF where the rule heading begins. */
@@ -273,6 +299,8 @@ export interface RuleExtraction {
 export interface ActionExtraction {
   readonly name: string;
   readonly description: string;
+  /** Producer-reported composition of the prose field, absent when verbatim. */
+  readonly composedBy?: readonly ProseCompositionCause[];
   /** 1-based page in the source PDF where the action entry begins. */
   readonly sourcePage: number;
 }

@@ -118,6 +118,47 @@ type RowRule =
       readonly rows: readonly (readonly string[])[];
     };
 
+/**
+ * Alphanumeric tokens of a cell run: runs of letters/digits, so range dashes,
+ * spacing and punctuation (glyph-encoding differences the extractor drops)
+ * never matter, but a character the source does not print does.
+ */
+function alphanumericTokens(values: readonly unknown[]): string[] {
+  return values
+    .flatMap((value) => String(value).match(/[\p{L}\p{N}]+/gu) ?? [])
+    .sort();
+}
+
+/**
+ * A reviewed reconstruction may regroup and re-punctuate the extracted cell
+ * run (the PDF discards a column boundary and a CID dash) but must not invent
+ * text: the multiset of alphanumeric tokens in the reconstructed cells must
+ * equal the one in the pinned source lines. The Iron Flask d100 cells once
+ * carried a hand-written leading zero ('01–50') the page never prints
+ * (eshyra-o9bd.19.6.7.10, A3-F1); this gate covers every reconstruction spec,
+ * so a future curated row cannot substitute characters under source-prose.
+ */
+export function assertReconstructionUsesOnlySourceTokens(
+  sourceLines: readonly string[],
+  rows: readonly (readonly unknown[])[],
+  tableName: string,
+): void {
+  const fromSource = alphanumericTokens(sourceLines);
+  const fromRows = alphanumericTokens(rows.flat());
+  const counts = new Map<string, number>();
+  for (const token of fromRows) counts.set(token, (counts.get(token) ?? 0) + 1);
+  for (const token of fromSource)
+    counts.set(token, (counts.get(token) ?? 0) - 1);
+  const invented = [...counts.entries()]
+    .filter(([, delta]) => delta !== 0)
+    .map(([token, delta]) => `${token} (${delta > 0 ? '+' : ''}${delta})`);
+  if (invented.length > 0) {
+    throw new Error(
+      `reviewed reconstruction of table "${tableName}" does not match its pinned source tokens: ${invented.join(', ')}`,
+    );
+  }
+}
+
 export interface DocumentTableSpec {
   /** Emitted table name (verbatim caption, or synthesized — see specs). */
   readonly name: string;
@@ -1002,7 +1043,7 @@ export const SRD_5_1_DOCUMENT_TABLE_SPECS: readonly DocumentTableSpec[] = [
         '100 Xorn',
       ],
       rows: [
-        ['01–50', 'Empty'],
+        ['1–50', 'Empty'],
         ['51–54', 'Demon (type 1)'],
         ['55–58', 'Demon (type 2)'],
         ['59–62', 'Demon (type 3)'],
@@ -1353,6 +1394,7 @@ function cellRunAfter(
 function collectRows(
   run: readonly Row[],
   rule: RowRule,
+  tableName: string,
 ): readonly (readonly unknown[])[] {
   switch (rule.kind) {
     case 'line-per-row': {
@@ -1439,6 +1481,11 @@ function collectRows(
       ) {
         return [];
       }
+      assertReconstructionUsesOnlySourceTokens(
+        rule.sourceLines,
+        rule.rows,
+        tableName,
+      );
       return rule.rows.map((row) => [...row]);
     }
     case 'class-progression-reconstruction':
@@ -1479,7 +1526,7 @@ function parseSpec(
     const headerIdx = findHeaderAt(rows, i, spec);
     if (headerIdx === undefined) continue; // try the next anchor occurrence
     const run = cellRunAfter(rows, headerIdx, spec.headerLines.length);
-    const tableRows = collectRows(run, spec.rows);
+    const tableRows = collectRows(run, spec.rows, spec.name);
     // Fail closed: a located table whose rows drift in count or shape emits
     // nothing, so the table-name baseline catches it before output is written.
     if (tableRows.length !== spec.expectedRows) return undefined;

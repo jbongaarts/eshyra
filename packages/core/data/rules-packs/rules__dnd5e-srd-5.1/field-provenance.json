@@ -347,7 +347,7 @@
       "kind": "condition",
       "pointerPrefix": "/description",
       "class": "source-prose",
-      "reason": "the condition's intro line, quoted verbatim."
+      "reason": "the condition's printed body quoted verbatim: its intro prose, or its single printed bullet (a lone leading bullet glyph is a layout marker, not text). Conditions whose description joins several printed bullets, or is spliced around a printed table, are declared source-derived by generated record-scoped declarations."
     },
     {
       "kind": "condition",
@@ -1476,6 +1476,60 @@
         "magic-item:manual-of-golems",
         "magic-item:ring-of-shooting-stars",
         "magic-item:spell-scroll"
+      ]
+    },
+    {
+      "kind": "rule",
+      "pointerPrefix": "/text",
+      "class": "source-derived",
+      "reason": "the prose with printed table rows or list items removed from the middle of the text by the record producer (the removed content is carried by a separate table record or structured fields). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around the removed region, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "rule:ability-checks",
+        "rule:ability-scores-and-modifiers",
+        "rule:expenses-lifestyle-expenses",
+        "rule:half-dragon-template",
+        "rule:hit-points",
+        "rule:objects",
+        "rule:services",
+        "rule:skills",
+        "rule:speed"
+      ]
+    },
+    {
+      "kind": "condition",
+      "pointerPrefix": "/description",
+      "class": "source-derived",
+      "reason": "the printed bullet items joined into running text with their bullet glyphs removed by the record producer. Reported by the producer, not hand-listed. Source-derived: printed items re-flowed without their list markers, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "condition:blinded",
+        "condition:charmed",
+        "condition:frightened",
+        "condition:grappled",
+        "condition:invisible",
+        "condition:paralyzed",
+        "condition:petrified",
+        "condition:prone",
+        "condition:restrained",
+        "condition:stunned",
+        "condition:unconscious"
+      ]
+    },
+    {
+      "kind": "condition",
+      "pointerPrefix": "/description",
+      "class": "source-derived",
+      "reason": "the prose with printed table rows or list items removed from the middle of the text by the record producer (the removed content is carried by a separate table record or structured fields). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around the removed region, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "condition:exhaustion"
+      ]
+    },
+    {
+      "kind": "feat",
+      "pointerPrefix": "/description",
+      "class": "source-derived",
+      "reason": "the printed bullet items joined into running text with their bullet glyphs removed by the record producer. Reported by the producer, not hand-listed. Source-derived: printed items re-flowed without their list markers, NOT one contiguous verbatim quotation.",
+      "recordKeys": [
+        "feat:grappler"
       ]
     }
   ]

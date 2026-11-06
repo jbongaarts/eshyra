@@ -505,7 +505,7 @@ derived(
 prose(
   'condition',
   '/description',
-  "the condition's intro line, quoted verbatim.",
+  "the condition's printed body quoted verbatim: its intro prose, or its single printed bullet (a lone leading bullet glyph is a layout marker, not text). Conditions whose description joins several printed bullets, or is spliced around a printed table, are declared source-derived by generated record-scoped declarations.",
 );
 prose(
   'condition',
@@ -1302,12 +1302,19 @@ export function deriveEmbeddedTableSpliceDeclarations(
     readonly kind: RulesRecordKind;
     readonly pointer: string;
     readonly recordKey: string;
+    readonly cause?: SpliceCause;
   }[],
   existing: readonly FieldProvenanceDeclaration[] = DND5E_FIELD_PROVENANCE_DECLARATIONS,
 ): readonly FieldProvenanceDeclaration[] {
-  const groups = new Map<
+  // (kind, pointer, record) -> the distinct causes the producers reported.
+  const causesByRecord = new Map<
     string,
-    { kind: RulesRecordKind; pointer: string; keys: Set<string> }
+    {
+      kind: RulesRecordKind;
+      pointer: string;
+      recordKey: string;
+      causes: Set<SpliceCause>;
+    }
   >();
   for (const splice of splices) {
     // A record a hand declaration already scopes (classProgression's
@@ -1320,21 +1327,65 @@ export function deriveEmbeddedTableSpliceDeclarations(
         decl.recordKeys?.includes(splice.recordKey) === true,
     );
     if (alreadyScoped) continue;
-    const id = `${splice.kind}${splice.pointer}`;
-    const group = groups.get(id) ?? {
+    const id = `${splice.kind}\u0000${splice.pointer}\u0000${splice.recordKey}`;
+    const entry = causesByRecord.get(id) ?? {
       kind: splice.kind,
       pointer: splice.pointer,
+      recordKey: splice.recordKey,
+      causes: new Set<SpliceCause>(),
+    };
+    entry.causes.add(splice.cause ?? 'table-strip');
+    causesByRecord.set(id, entry);
+  }
+  // Group records that share (kind, pointer, cause set): one scoped
+  // declaration each, with a reason that names exactly those causes. Two
+  // scoped declarations on one (kind, pointer) cover disjoint record sets.
+  const groups = new Map<
+    string,
+    {
+      kind: RulesRecordKind;
+      pointer: string;
+      causes: SpliceCause[];
+      keys: Set<string>;
+    }
+  >();
+  for (const entry of causesByRecord.values()) {
+    const causes = SPLICE_CAUSE_ORDER.filter((cause) =>
+      entry.causes.has(cause),
+    );
+    const id = `${entry.kind}\u0000${entry.pointer}\u0000${causes.join('+')}`;
+    const group = groups.get(id) ?? {
+      kind: entry.kind,
+      pointer: entry.pointer,
+      causes,
       keys: new Set<string>(),
     };
-    group.keys.add(splice.recordKey);
+    group.keys.add(entry.recordKey);
     groups.set(id, group);
   }
   return [...groups.values()].map((group) => ({
     kind: group.kind,
     pointerPrefix: group.pointer,
     class: 'source-derived' as const,
-    reason:
-      'the prose with an embedded printed table span removed from the middle of the text and the seam whitespace collapsed by stripEmbeddedTableProse.ts (the table is a separate table record). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.',
+    reason: group.causes.map((cause) => SPLICE_CAUSE_REASONS[cause]).join(' '),
     recordKeys: [...group.keys].sort(),
   }));
 }
+
+type SpliceCause = 'table-strip' | 'interior-removal' | 'bullet-join';
+
+const SPLICE_CAUSE_ORDER: readonly SpliceCause[] = [
+  'table-strip',
+  'interior-removal',
+  'bullet-join',
+];
+
+/** Reasons for the generated declarations. Reported by producers, not hand-listed. */
+const SPLICE_CAUSE_REASONS: Readonly<Record<SpliceCause, string>> = {
+  'table-strip':
+    'the prose with an embedded printed table span removed from the middle of the text and the seam whitespace collapsed by stripEmbeddedTableProse.ts (the table is a separate table record). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around a deleted span, NOT one contiguous verbatim quotation.',
+  'interior-removal':
+    'the prose with printed table rows or list items removed from the middle of the text by the record producer (the removed content is carried by a separate table record or structured fields). Reported by the producer, not hand-listed. Source-derived: printed prose spliced around the removed region, NOT one contiguous verbatim quotation.',
+  'bullet-join':
+    'the printed bullet items joined into running text with their bullet glyphs removed by the record producer. Reported by the producer, not hand-listed. Source-derived: printed items re-flowed without their list markers, NOT one contiguous verbatim quotation.',
+};
