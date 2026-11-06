@@ -8,7 +8,7 @@ export const updateClockTool: Tool = {
   // Writes the session clock — a canon write (eshyra-dwkm).
   mutates: true,
   description:
-    "Set the in-game time label and/or the character's current location. A time label does not advance elapsed world time or trigger effect expiry, recovery, or item resets; use advance_time to pass time.",
+    "Set the in-game time label and/or the character's current location. A time label does not advance elapsed world time or trigger effect expiry, recovery, or item resets; use advance_time to pass time. The engine clock starts at 00:00 on Day 1 with dawn at 06:00 and dusk at 18:00; keep the label consistent with it.",
   inputSchema: {
     type: 'object',
     properties: {
