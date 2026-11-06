@@ -86,6 +86,9 @@ async function playLocked(
       return 1;
     }
     const sessionId = await launch(deps, db, options.dbPath, campaign);
+    if (sessionId === undefined) {
+      return 1;
+    }
     await turnLoop(
       deps,
       db,
@@ -158,7 +161,11 @@ async function demoLocked(
       deps.io.write(
         `Demo campaign: ${existing.title} (${existing.campaignId}).`,
       );
-      sessionId = await launch(deps, db, options.dbPath, existing);
+      const launched = await launch(deps, db, options.dbPath, existing);
+      if (launched === undefined) {
+        return 1;
+      }
+      sessionId = launched;
     }
     // A demo campaign can gain registry-linked characters via /addpc, so the
     // same custody-on-resume guard applies before play (ADR 0012). On a
