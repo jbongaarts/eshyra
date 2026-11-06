@@ -42,6 +42,10 @@ import {
   getCharacterConcentration,
 } from './activeEffects.js';
 import { endAllAttunementsOnDeath } from './attunement.js';
+import {
+  deathSaveSucceeds,
+  validateDeathSaveModifier,
+} from './combatantLifecycle.js';
 import type { DomainMutationContext } from './domainMutations.js';
 import { effectiveHpMax } from './exhaustion.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
@@ -749,8 +753,24 @@ export type DeathSaveOutcome =
   | 'stabilized'
   | 'dead';
 
+/** Optional saving-throw bonus applied to one death save (SRD p.98). */
+export interface DeathSaveModifier {
+  readonly saveBonus: number;
+  readonly bonusSources: readonly string[];
+}
+
+export const NO_DEATH_SAVE_MODIFIER: DeathSaveModifier = {
+  saveBonus: 0,
+  bonusSources: [],
+};
+
 export interface DeathSaveResult {
   roll: number;
+  /** Saving-throw bonus applied to the natural roll (0 when none). */
+  saveBonus: number;
+  bonusSources: string[];
+  /** Natural roll plus saveBonus, the value judged against 10. */
+  total: number;
   outcome: DeathSaveOutcome;
   deathSaveSuccesses: number;
   deathSaveFailures: number;
@@ -762,6 +782,8 @@ export interface DeathSaveResult {
 /** Pure shared death-save state transition used by characters and combatants. */
 export function resolveDeathSaveTransition(input: {
   roll: number;
+  /** Natural roll plus saving-throw bonus; defaults to the roll. */
+  total?: number;
   successes: number;
   failures: number;
   hp: number;
@@ -772,6 +794,7 @@ export function resolveDeathSaveTransition(input: {
   let hpCurrent = input.hp;
   let lifeState: LifeState = 'dying';
   let outcome: DeathSaveOutcome;
+  const total = input.total ?? input.roll;
   const reviving =
     input.roll === 20 && !input.recoveryBlocked && input.hpMax > 0;
   if (reviving) {
@@ -784,7 +807,7 @@ export function resolveDeathSaveTransition(input: {
     failures = Math.min(3, failures + 2);
     lifeState = failures >= 3 ? 'dead' : 'dying';
     outcome = failures >= 3 ? 'dead' : 'critical-failure';
-  } else if (input.roll >= 10) {
+  } else if (deathSaveSucceeds(input.roll, total)) {
     // A natural 20 that cannot regain HP (zero effective maximum or a
     // recovery block) is an ordinary capped success.
     successes = Math.min(3, successes + 1);
@@ -805,19 +828,29 @@ export function resolveDeathSaveTransition(input: {
 /**
  * Apply one already-rolled d20 death saving throw to a dying character.
  * The die goes through the `roll` tool (category `death_save`) so it is
- * seeded and ledgered; this mutation owns the outcome semantics.
+ * seeded and ledgered; this mutation owns the outcome semantics. A
+ * saving-throw bonus changes only the total judged against 10; natural 1 and
+ * natural 20 are judged on the natural roll alone.
  */
 export function recordDeathSave(
   db: Db,
   roll: number,
   ctx: DomainMutationContext,
   rng: Rng = createSeededRng(0),
+  modifier: DeathSaveModifier = NO_DEATH_SAVE_MODIFIER,
 ): DeathSaveResult {
   if (!Number.isInteger(roll) || roll < 1 || roll > 20) {
     throw new MutateStateError(
       'death save roll must be an integer between 1 and 20',
     );
   }
+  const modifierCheck = validateDeathSaveModifier(
+    modifier.saveBonus,
+    modifier.bonusSources,
+  );
+  if (!modifierCheck.ok) throw new MutateStateError(modifierCheck.message);
+  const { saveBonus, bonusSources } = modifierCheck;
+  const total = roll + saveBonus;
 
   return withTransaction(db, (txnDb) => {
     const charId = resolveCharacterId(txnDb, ctx.characterId);
@@ -832,6 +865,7 @@ export function recordDeathSave(
     const recoveryBlocked = row.recovery_block !== null;
     const transition = resolveDeathSaveTransition({
       roll,
+      total,
       successes: row.death_save_successes,
       failures: row.death_save_failures,
       hp: row.hp_current,
@@ -858,6 +892,9 @@ export function recordDeathSave(
 
     return {
       roll,
+      saveBonus,
+      bonusSources,
+      total,
       outcome,
       deathSaveSuccesses: successes,
       deathSaveFailures: failures,

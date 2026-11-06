@@ -1968,6 +1968,81 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     db.close();
   });
 
+  it('applies saving-throw bonuses to combatant death saves (eshyra-o9bd.19.6.7.6.1)', () => {
+    const { db, registry, ctx, id, update, read, hpMax } = optedIn();
+    const save = (args: Record<string, unknown>) =>
+      registry.invoke('record_death_save', { combatantId: id, ...args }, ctx);
+    update({ hpDelta: -hpMax });
+
+    // Bless: natural 9 plus 1 is a success, and the bonus is recorded.
+    const blessed = save({
+      roll: 9,
+      saveBonus: 1,
+      bonusSources: ['Bless'],
+    });
+    expect(blessed).toMatchObject({
+      ok: true,
+      data: {
+        roll: 9,
+        saveBonus: 1,
+        bonusSources: ['Bless'],
+        total: 10,
+        outcome: 'success',
+      },
+    });
+    expect(read()).toMatchObject({ status: 'dying', deathSaveSuccesses: 1 });
+
+    // Natural 1 with a large bonus is still two failures.
+    expect(save({ roll: 1, saveBonus: 10 })).toMatchObject({
+      ok: true,
+      data: { outcome: 'critical-failure', total: 11 },
+    });
+    expect(read()).toMatchObject({
+      status: 'dying',
+      deathSaveSuccesses: 1,
+      deathSaveFailures: 2,
+    });
+    db.close();
+  });
+
+  it('keeps natural 20 revival independent of a negative saving-throw bonus', () => {
+    const { db, registry, ctx, id, update, read, hpMax } = optedIn();
+    update({ hpDelta: -hpMax });
+
+    expect(
+      registry.invoke(
+        'record_death_save',
+        { combatantId: id, roll: 20, saveBonus: -5 },
+        ctx,
+      ),
+    ).toMatchObject({ ok: true, data: { outcome: 'revived', total: 15 } });
+    expect(read()).toMatchObject({ status: 'alive', hpCurrent: 1 });
+    db.close();
+  });
+
+  it('refuses malformed saving-throw bonus input with no combatant state change', () => {
+    const { db, registry, ctx, id, update, read, hpMax } = optedIn();
+    update({ hpDelta: -hpMax });
+    const before = read();
+    for (const args of [
+      { saveBonus: '2' },
+      { saveBonus: 1.5 },
+      { saveBonus: 21 },
+      { saveBonus: 1, bonusSources: 'Bless' },
+      { saveBonus: 1, bonusSources: [''] },
+    ]) {
+      expect(
+        registry.invoke(
+          'record_death_save',
+          { combatantId: id, roll: 10, ...args },
+          ctx,
+        ),
+      ).toMatchObject({ ok: false, code: 'invalid_args' });
+      expect(read()).toEqual(before);
+    }
+    db.close();
+  });
+
   it('applies the monster default when a monster-rules combatant suffocates', () => {
     const { db, registry, ctx } = setup();
     registry.invoke('start_encounter', { encounterId: 'enc-goblins' }, ctx);

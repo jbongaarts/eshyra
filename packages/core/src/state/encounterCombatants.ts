@@ -26,11 +26,13 @@ import {
   type CombatantHeadMechanic,
   type CombatantLifecycleEvent,
   type CombatantLifecycleState,
+  deathSaveSucceeds,
   describeZeroHpRule,
   leavesPlayAtZeroHp,
   nextCombatantLifecycle,
   revertsFormAtZeroHp,
   type StableRecoverySchedule,
+  validateDeathSaveModifier,
   type ZeroHpRule,
 } from './combatantLifecycle.js';
 import { effectiveHpMax, exhaustionLevel } from './exhaustion.js';
@@ -2644,11 +2646,20 @@ export function resolveCombatantDeathSave(
     resolveRulesPack: CampaignRulesPackResolver | undefined;
   },
   rng: Rng = createSeededRng(0),
+  modifier: { saveBonus?: unknown; bonusSources?: unknown } = {},
 ) {
   if (!Number.isInteger(roll) || roll < 1 || roll > 20)
     throw new EncounterCombatantError(
       'death save roll must be an integer between 1 and 20',
     );
+  const modifierCheck = validateDeathSaveModifier(
+    modifier.saveBonus,
+    modifier.bonusSources,
+  );
+  if (!modifierCheck.ok)
+    throw new EncounterCombatantError(modifierCheck.message);
+  const { saveBonus, bonusSources } = modifierCheck;
+  const total = roll + saveBonus;
   return withTransaction(db, (txn) => {
     const c = readCombatant(txn, campaignId, combatantId);
     requireActiveCombatant(txn, campaignId, c);
@@ -2663,9 +2674,10 @@ export function resolveCombatantDeathSave(
       roll === 20 &&
       c.recoveryBlock === null &&
       effectiveHpMax(c.hpMax, c.conditions) > 0;
+    const succeeds = deathSaveSucceeds(roll, total);
     const needsSchedule =
       !natural20Revives &&
-      roll >= 10 &&
+      succeeds &&
       c.deathSaveSuccesses >= 2 &&
       c.recoveryBlock === null;
     const recoverySchedule = needsSchedule
@@ -2673,7 +2685,7 @@ export function resolveCombatantDeathSave(
       : undefined;
     const lifecycle = transitionCombatantLifecycle(
       readCombatantLifecycleState(txn, c),
-      { type: 'deathSave', roll },
+      { type: 'deathSave', roll, total },
       recoverySchedule,
     );
     persistCombatantLifecycle(txn, c, lifecycle, ctx);
@@ -2688,7 +2700,7 @@ export function resolveCombatantDeathSave(
           ? lifecycle.status === 'dead'
             ? 'dead'
             : 'critical-failure'
-          : roll >= 10
+          : succeeds
             ? lifecycle.status === 'stable'
               ? 'stabilized'
               : 'success'
@@ -2705,6 +2717,9 @@ export function resolveCombatantDeathSave(
     syncCombatantActor(txn, campaignId, combatantId, ctx);
     return {
       roll,
+      saveBonus,
+      bonusSources,
+      total,
       outcome,
       deathSaveSuccesses: successes,
       deathSaveFailures: failures,

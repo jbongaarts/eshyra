@@ -1,3 +1,4 @@
+import { validateDeathSaveModifier } from '../state/combatantLifecycle.js';
 import {
   EncounterCombatantError,
   resolveCombatantDeathSave,
@@ -18,7 +19,7 @@ export const recordDeathSaveTool: Tool = {
   // Writes death-save counters and life state — a canon write (eshyra-dwkm).
   mutates: true,
   description:
-    'Record a natural d20 death-save result for a dying character or opted-in player-character combatant. Obtain the natural result through `roll` and pass it here. For a combatant, this works only during that combatant’s active combat instance; a dying player-character actor whose encounter closed continues its death saves and stabilization when it is next brought into an encounter with start_encounter.',
+    'Record a death-save result for a dying character or opted-in player-character combatant. Obtain the natural d20 through `roll` and pass it here. An optional saveBonus (integer -20 to 20) is added to the natural roll when judging the 10-or-higher success test; the DM decides which saving-throw effects apply (for example Bless, Aura of Protection, a Ring of Protection), rolls any dice they add through `roll`, passes the total as saveBonus, and names the sources in bonusSources. The tool does not discover bonuses itself. A natural 1 is always two failures and a natural 20 always revives (subject to the usual blocks), regardless of saveBonus. For a combatant, this works only during that combatant’s active combat instance; a dying player-character actor whose encounter closed continues its death saves and stabilization when it is next brought into an encounter with start_encounter.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -27,6 +28,20 @@ export const recordDeathSaveTool: Tool = {
         description: 'Natural d20 result (1-20), unmodified.',
         minimum: 1,
         maximum: 20,
+      },
+      saveBonus: {
+        type: 'integer',
+        description:
+          'Total saving-throw bonus from effects the DM has identified (integer -20 to 20, default 0). Added to the natural roll for the 10-or-higher test only; natural 1 and natural 20 ignore it.',
+        minimum: -20,
+        maximum: 20,
+      },
+      bonusSources: {
+        type: 'array',
+        description:
+          'Names of the spells or features that supplied saveBonus (for example "Bless"), recorded with the result.',
+        items: { type: 'string', minLength: 1 },
+        maxItems: 8,
       },
       character: CHARACTER_TARGET_SCHEMA,
       combatantId: { type: 'string', minLength: 1 },
@@ -41,6 +56,8 @@ export const recordDeathSaveTool: Tool = {
     }
     if (a.character !== undefined && a.combatantId !== undefined)
       return err('invalid_args', 'provide character or combatantId, not both');
+    const modifier = validateDeathSaveModifier(a.saveBonus, a.bonusSources);
+    if (!modifier.ok) return err('invalid_args', modifier.message);
     if (typeof a.combatantId === 'string') {
       try {
         return ok(
@@ -56,6 +73,10 @@ export const recordDeathSaveTool: Tool = {
               resolveRulesPack: ctx.resolveRulesPack,
             },
             ctx.rng,
+            {
+              saveBonus: modifier.saveBonus,
+              bonusSources: modifier.bonusSources,
+            },
           ),
         );
       } catch (e) {
@@ -80,6 +101,7 @@ export const recordDeathSaveTool: Tool = {
           characterId: target.id,
         },
         ctx.rng,
+        { saveBonus: modifier.saveBonus, bonusSources: modifier.bonusSources },
       );
       return ok(result);
     } catch (e) {

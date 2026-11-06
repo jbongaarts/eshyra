@@ -120,7 +120,13 @@ export type CombatantLifecycleEvent =
   | { readonly type: 'optIntoPlayerCharacterRules' }
   /** F3 remove: take the combatant out of play (status absent). */
   | { readonly type: 'removeFromPlay' }
-  | { readonly type: 'deathSave'; readonly roll: number }
+  | {
+      readonly type: 'deathSave';
+      /** Natural d20, judged alone for natural 1 and natural 20. */
+      readonly roll: number;
+      /** Natural roll plus the saving-throw bonus; defaults to the roll. */
+      readonly total?: number;
+    }
   | { readonly type: 'stabilize' }
   | {
       readonly type: 'knockout';
@@ -218,6 +224,61 @@ function scheduleFor(
   context: CombatantLifecycleContext,
 ): StableRecoverySchedule | null {
   return context.recoverySchedule ?? null;
+}
+
+/** Largest magnitude accepted for a death-save bonus (SRD-bounded input). */
+export const DEATH_SAVE_BONUS_LIMIT = 20;
+/** Largest number of named bonus sources recorded with one death save. */
+export const DEATH_SAVE_BONUS_SOURCE_LIMIT = 8;
+
+/**
+ * Death-save judgement shared by the character and combatant paths. A natural
+ * 1 is always a failure and a natural 20 is always a success (a revival is
+ * decided by the caller); neither depends on the bonus. Any other roll succeeds
+ * iff the modified total is 10 or more.
+ */
+export function deathSaveSucceeds(roll: number, total: number): boolean {
+  if (roll === 1) return false;
+  return roll === 20 || total >= 10;
+}
+
+export type DeathSaveModifierResult =
+  | {
+      readonly ok: true;
+      readonly saveBonus: number;
+      readonly bonusSources: string[];
+    }
+  | { readonly ok: false; readonly message: string };
+
+/**
+ * Validate the optional saving-throw bonus of a death save. Omitted values mean
+ * no bonus. Anything else malformed is refused so no state is changed.
+ */
+export function validateDeathSaveModifier(
+  saveBonus: unknown,
+  bonusSources: unknown,
+): DeathSaveModifierResult {
+  const bonus = saveBonus === undefined ? 0 : saveBonus;
+  if (
+    typeof bonus !== 'number' ||
+    !Number.isInteger(bonus) ||
+    Math.abs(bonus) > DEATH_SAVE_BONUS_LIMIT
+  )
+    return {
+      ok: false,
+      message: `saveBonus must be an integer between -${DEATH_SAVE_BONUS_LIMIT} and ${DEATH_SAVE_BONUS_LIMIT}`,
+    };
+  const sources = bonusSources === undefined ? [] : bonusSources;
+  if (
+    !Array.isArray(sources) ||
+    sources.length > DEATH_SAVE_BONUS_SOURCE_LIMIT ||
+    sources.some((s) => typeof s !== 'string' || s.length === 0)
+  )
+    return {
+      ok: false,
+      message: `bonusSources must be at most ${DEATH_SAVE_BONUS_SOURCE_LIMIT} non-empty strings`,
+    };
+  return { ok: true, saveBonus: bonus, bonusSources: [...sources] };
 }
 
 /** Apply one lifecycle event and return a complete, invariant-valid state. */
@@ -535,6 +596,9 @@ export function nextCombatantLifecycle(
       case 'deathSave': {
         if (!Number.isInteger(event.roll) || event.roll < 1 || event.roll > 20)
           return refusal('death save roll must be between 1 and 20');
+        const total = event.total ?? event.roll;
+        if (!Number.isInteger(total))
+          return refusal('death save total must be an integer');
         if (next.deathRules !== 'player-character' || next.status !== 'dying')
           return refusal(
             'only a dying player-character combatant may make death saves',
@@ -548,7 +612,7 @@ export function nextCombatantLifecycle(
           next.status = 'alive';
           next.deathSaveSuccesses = 0;
           next.deathSaveFailures = 0;
-        } else if (event.roll >= 10) {
+        } else if (deathSaveSucceeds(event.roll, total)) {
           // Ordinary success, and a natural 20 that cannot regain HP, share
           // one capped-success path (S28/S34).
           next.deathSaveSuccesses = Math.min(3, next.deathSaveSuccesses + 1);
