@@ -1882,6 +1882,34 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
       duration: { kind: 'timed', amount: 20, unit: 'minute' },
       durationProvenance: { kind: 'dm-override', basis: 'dm-adjudicated' },
     });
+    // An omitted duration re-anchors the stored (overridden) duration and
+    // keeps its recorded provenance; the printed duration is not compared
+    // again here.
+    s.must('advance_time', { minutes: 5 });
+    expect(s.call('refresh_effect', { effectId: 'fx-armor-s5' })).toMatchObject(
+      { ok: true },
+    );
+    expect(s.effect('fx-armor-s5')).toMatchObject({
+      duration: { kind: 'timed', amount: 20, unit: 'minute' },
+      durationProvenance: { kind: 'dm-override', basis: 'dm-adjudicated' },
+    });
+    // A supplied duration equal to the printed typed duration returns the
+    // effect to its printed provenance without an override.
+    expect(
+      s.call('refresh_effect', {
+        effectId: 'fx-armor-s5',
+        duration: {
+          kind: 'timed',
+          amount: 10,
+          unit: 'minute',
+          anchor: 'effect-created',
+        },
+      }),
+    ).toMatchObject({ ok: true });
+    expect(s.effect('fx-armor-s5')).toMatchObject({
+      duration: { kind: 'timed', amount: 10, unit: 'minute' },
+      durationProvenance: { kind: 'typed-fixed', amount: 10, unit: 'minute' },
+    });
   });
 });
 

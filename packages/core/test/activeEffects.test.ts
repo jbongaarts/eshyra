@@ -2755,6 +2755,53 @@ describe('anchor semantics', () => {
     ).toEqual(['fx-next-target']);
   });
 
+  it('a ruling-sourced refresh replaces a supplied duration after shared validation and refuses durationOverride', () => {
+    const { db } = setup();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-ruling-refresh',
+      kind: 'condition-package',
+      displayName: 'Ruling refresh',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    const replaced = refreshEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-ruling-refresh',
+      duration: {
+        kind: 'timed',
+        amount: 3,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+      ...CTX,
+    });
+    expect(replaced.duration).toMatchObject({
+      kind: 'timed',
+      amount: 3,
+      unit: 'hour',
+    });
+    expect(() =>
+      refreshEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId: 'fx-ruling-refresh',
+        duration: { kind: 'until-removed' },
+        durationProvenance: {
+          kind: 'dm-override',
+          basis: 'dm-adjudicated',
+          reason: 'not an item effect',
+        },
+        ...CTX,
+      }),
+    ).toThrow(/durationOverride applies only/);
+  });
+
   it('refreshes participant-turn anchors using the same active-boundary clock', () => {
     const { db } = setupCombat();
     beginTurn(db, {
