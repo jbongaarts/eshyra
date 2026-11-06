@@ -8,7 +8,7 @@ export const updateClockTool: Tool = {
   // Writes the session clock — a canon write (eshyra-dwkm).
   mutates: true,
   description:
-    "Update the in-game clock and/or the character's current location.",
+    "Set the in-game time label and/or the character's current location. A time label does not advance elapsed world time or trigger effect expiry, recovery, or item resets; use advance_time to pass time.",
   inputSchema: {
     type: 'object',
     properties: {

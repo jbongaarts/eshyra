@@ -1848,6 +1848,12 @@ describe('active-effect tools (F3, eshyra-2n1t.5)', () => {
     ).toEqual({ event_kind: 'unsuppressed', provenance: 'model:turn-1' });
   });
 
+  it('keeps DM-directed elapsed time outside the player inventory action gate', () => {
+    const registry = createDefaultToolRegistry();
+    expect(registry.list()).toContain('advance_time');
+    expect(registry.listRequiresExplicitAction()).not.toContain('advance_time');
+  });
+
   it('preserves suppression errors and cleans normally on a terminal end', () => {
     const c = ctx();
     const registry = createDefaultToolRegistry();

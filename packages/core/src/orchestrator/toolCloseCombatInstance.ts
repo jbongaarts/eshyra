@@ -20,7 +20,8 @@ export const closeCombatInstanceTool: Tool = {
   description:
     'Close the active combat instance so it cannot become active again. ' +
     'Atomically applies the F3 effect boundary, in this order: (1) every ' +
-    'round or participant-turn timer anchored to this instance expires, ' +
+    'round or participant-turn timer anchored to this instance expires (this ' +
+    'does not advance elapsed world time or expire minute/hour/day timers), ' +
     'whoever owns the effect (character-owned effects included); (2) ' +
     'concentration owned by combatants of this instance breaks ' +
     '(owner-removed); (3) a combatant backed by a durable campaign actor ' +

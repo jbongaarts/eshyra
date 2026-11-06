@@ -8,6 +8,18 @@ import {
 } from '../src/internal.js';
 
 describe('DM system prompt', () => {
+  it('routes elapsed time and dawn through the real time lifecycle contract', () => {
+    const prompt = buildSystemPrompt(createDefaultToolRegistry());
+    expect(prompt).toContain('`advance_time` whenever in-game time passes');
+    expect(prompt).toContain('update_clock` only for a time label or location');
+    expect(prompt).toContain('recharge canonical pack-bound');
+    expect(prompt).toContain('settles due stable recovery');
+    expect(prompt).toMatch(
+      /combat\s+rounds do not advance elapsed world time/i,
+    );
+    expect(prompt).not.toMatch(/`update_clock` for time and/);
+  });
+
   it('describes engine-derived state-dependent reaction allowance', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
     expect(prompt).toContain('derive from its tracked head count');

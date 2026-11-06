@@ -477,6 +477,7 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
         'The kind limits which source kinds, concentration, and projections an effect may declare; structurally meaningless combinations, an owned entity that already has an owning effect, and a condition the target already has are refused before any write.',
         'A bonded summon (the instantaneous persistent-linked case above) requires an until-removed duration, a source actor that is a character or campaign actor (not a combatant), and at least one linked actor (and no more than the record maximum, when it gives one), and is refused while the same caster already holds a live effect from that spell with an active actor link (one bond per caster per spell).',
         'The timed spell-record check compares amount and unit only, not the anchor; a ruling source and a spell record whose duration is unrecognized or absent leave the declared duration to the caller.',
+        'Minute/hour/day timers use elapsed world time and expire only when advance_time or a rest tool advances that clock; combat rounds do not convert to elapsed minutes automatically.',
         'If projecting a condition cascades back and ends the effect mid-creation, the creation is refused and nothing is committed.',
         'Does not apply the consequences of the effect beyond the condition, actor, zone, and form projections it owns.',
       ],
@@ -1287,7 +1288,7 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
       'The natural recharge result is supplied by the caller and only range-checked against the counter die; the tool does not verify that it came from the roll tool, and a ruled amount is not checked against any source.',
       'A roll is refused for a counter that is not recharge-roll, outside the owner own open structured turn, when already attempted in this turn window, and when the ability was used in this window.',
       'A bound class resource with no capacity or unlimited capacity at the level is refused, and a pack-bound or quarantined item row is refused (use_item).',
-      'Rest and dawn resets go through reset_usage.',
+      'Generic rest/dawn usage resets go through reset_usage; elapsed-time processing and pack-bound item dawn economies go through advance_time or the rest completion tools.',
     ],
     residualDmInterpretation: [
       'The DM obtains the recharge or restore roll through roll and decides a ruled amount.',
@@ -1309,6 +1310,7 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
     exclusions: [
       'combatantId or character scopes the event to one owner (and, for a character, the items it holds); a dead owner and an absent combatant are refused.',
       'A spent counter in scope that belongs to a pack-bound item row refuses the whole call; canonical item economies belong to the item reset executor, and quarantined item rows are skipped.',
+      'Passing a dawn event here does not advance elapsed world time or settle timed effects, stable recovery, or pack-bound item economies; use advance_time to cross dawn.',
       'Does not complete a rest; the rest tools do.',
     ],
     residualDmInterpretation: [
