@@ -159,7 +159,12 @@ export interface LevelUpHitPoints {
   readonly constitutionModifier: number;
   readonly naturalRoll?: number;
   readonly retroactiveConstitutionAdjustment?: number;
-  /** HP gained this level: max(1, floor(hitDie/2)+1 + CON modifier). */
+  /**
+   * HP gained this level: max(1, floor(hitDie/2)+1 + CON modifier), or the
+   * natural roll + CON modifier with the same minimum of 1. SRD 5.1 p.56 omits
+   * the minimum; it is the official 2018 Player's Handbook errata ("add the
+   * total (minimum of 1)"), adopted as separate authority (eshyra-o9bd.19.6.7.9).
+   */
   readonly increment: number;
   readonly maxHitPoints: LevelUpDelta<number>;
 }
@@ -1754,7 +1759,11 @@ function recomputeAfterChoices(
 /**
  * The HP gained for one level by the SRD fixed-average method:
  * `floor(hitDie / 2) + 1` (the per-class average: d6→4, d8→5, d10→6, d12→7)
- * plus the Constitution modifier, with the SRD floor of at least 1 HP per level.
+ * plus the Constitution modifier, with a minimum of 1 HP per level. SRD 5.1 p.56
+ * says only "add the total to your hit point maximum"; the minimum is the
+ * official 2018 Player's Handbook errata ("add the total (minimum of 1)"), also
+ * printed in the revised Basic Rules. It is adopted as separate authority by
+ * user decision (eshyra-o9bd.19.6.7.9) and is not attributed to SRD 5.1.
  */
 function hitPointIncrement(
   hitDie: number,

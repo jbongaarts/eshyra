@@ -1948,6 +1948,7 @@ const ENGINE_PATHS: readonly DeterministicCapabilityInventoryEntry[] = [
         'Does not check level-up eligibility or award experience; getLevelUpEligibility gives the verdict that callers gate on, so an ineligible character is not refused here (a target level with no class row in the pack is).',
         'Records the pick of an option-catalog feature choice only; the option effect is not implemented here.',
         'Multi-level catch-up is the caller looping one step at a time.',
+        "Each level's hit point gain (fixed average or natural roll, plus the Constitution modifier, including a Constitution-change recompute) is at least 1. SRD 5.1 p.56 states no minimum; this minimum is the official 2018 Player's Handbook errata, adopted as separate authority and not attributed to the SRD pack.",
       ],
       residualDmInterpretation: [
         'The player makes the choices; the DM adjudicates the effect of chosen options the sheet only records.',

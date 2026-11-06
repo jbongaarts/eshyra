@@ -22,6 +22,7 @@ import {
   readSpellSlots,
   renderContextMessage,
   restoreUsage,
+  rollDice,
   spendSpellSlot,
   spendUsage,
   syncSpellSlots,
@@ -859,8 +860,10 @@ describe('applyLevelUp — HP floor and fail-closed guards', () => {
     db.close();
   });
 
-  it('floors the HP increment at 1 for a very low Constitution', () => {
-    // CON 3 → modifier -4; Wizard d6 average 4 → 4 + (-4) = 0, floored to 1.
+  // The minimum of 1 HP per level is the official 2018 Player's Handbook
+  // errata ("add the total (minimum of 1)"), not SRD 5.1 p.56, which omits it.
+  it('applies the errata minimum of 1 HP per level on the fixed average', () => {
+    // CON 3 → modifier -4; Wizard d6 average 4 → 4 + (-4) = 0, minimum 1.
     const sheet = buildSheet({
       classKey: 'class:wizard',
       className: 'Wizard',
@@ -868,6 +871,24 @@ describe('applyLevelUp — HP floor and fail-closed guards', () => {
     });
     const changeSet = computeLevelUpChangeSet(sheet);
     expect(changeSet.hitPoints.increment).toBe(1);
+  });
+
+  it('applies the errata minimum of 1 HP per level on a rolled natural 1 with CON -1', () => {
+    // A rng that always returns index 0 makes 1d6 roll a natural 1; 1 + (-1) = 0.
+    const roll = rollDice('1d6', { nextInt: () => 0 });
+    expect(roll.natural).toBe(1);
+    const sheet = buildSheet({
+      classKey: 'class:wizard',
+      className: 'Wizard',
+      maxHitPoints: 6,
+      modifiers: { constitution: -1 },
+    });
+    const changeSet = computeLevelUpChangeSet(sheet, undefined, undefined, {
+      method: 'rolled',
+      roll,
+    });
+    expect(changeSet.hitPoints.increment).toBe(1);
+    expect(changeSet.hitPoints.maxHitPoints).toEqual({ from: 6, to: 7 });
   });
 
   it('throws when no sheet is stored for the character', () => {
