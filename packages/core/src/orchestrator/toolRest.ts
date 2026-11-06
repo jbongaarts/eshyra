@@ -60,7 +60,7 @@ export const advanceTimeTool: Tool = {
   mutates: true,
   // Time passage is DM pacing, not a player inventory action.
   description:
-    'Advance structured in-game time by a positive number of minutes. This is the canonical time operation whenever the DM narrates time passing (travel, waiting, downtime, or aftermath). It expires due minute/hour/day effects, settles stable recovery, and processes due item timers and dawn economies, including pack-bound items. Combat turns and rounds do not advance elapsed world time; minute timers expire only after advance_time. update_clock changes a label/location and never fabricates elapsed time.',
+    'Advance structured in-game time by a positive number of minutes. This is the canonical time operation whenever the DM narrates time passing (travel, waiting, downtime, or aftermath). It expires due minute/hour/day effects, settles stable recovery, and processes due item timers and dawn economies, including pack-bound items. Combat turns and rounds do not advance elapsed world time; minute/hour/day timers expire only when elapsed time passes through advance_time or a rest completion tool. update_clock changes a label/location and never fabricates elapsed time.',
   inputSchema: {
     type: 'object',
     properties: {
