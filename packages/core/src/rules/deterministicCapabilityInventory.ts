@@ -1406,6 +1406,7 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
     requiredInputs: ['minutes'],
     exclusions: [
       'Refused if the clock would exceed the safe integer range.',
+      'Dawn and dusk are the engine clock times 06:00 and 18:00 of each day from the 00:00 Day 1 start; item dawn and dusk resets fire when the advance crosses them.',
       'Does not complete a rest; in_game_time_label is a narrative label, not elapsed time, and a stale label is reported (narrativeLabelStale).',
     ],
     residualDmInterpretation: ['The DM decides how much time passes.'],
@@ -1434,7 +1435,7 @@ const WORLD_AND_RULINGS: readonly DeterministicCapabilityInventoryEntry[] = [
       'Set the in-game time label (stamped with the current elapsed minutes) and/or the current location id through the validated, provenance-recording state seam.',
     requiredInputs: ['in_game_time or location_id (at least one)'],
     exclusions: [
-      'A time label never advances elapsed minutes; advance_time does.',
+      'A time label never advances elapsed minutes; advance_time does. The engine clock starts at 00:00 on Day 1 with dawn at 06:00 and dusk at 18:00.',
       'A blank location_id is refused (null clears it).',
       'Does not check that the location exists in the module.',
     ],

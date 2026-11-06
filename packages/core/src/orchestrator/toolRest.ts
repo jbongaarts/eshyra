@@ -5,6 +5,10 @@ import {
   finishShortRestRecovery,
   spendRestHitDie,
 } from '../state/rest.js';
+import {
+  ENGINE_DAWN_TIME,
+  ENGINE_DUSK_TIME,
+} from '../state/worldClockBoundaries.js';
 import type { Tool } from './toolRegistry.js';
 import { asRecord, err, ok } from './toolRegistry.js';
 
@@ -59,8 +63,7 @@ export const advanceTimeTool: Tool = {
   name: 'advance_time',
   mutates: true,
   // Time passage is DM pacing, not a player inventory action.
-  description:
-    'Advance structured in-game time by a positive number of minutes. This is the canonical time operation whenever the DM narrates time passing (travel, waiting, downtime, or aftermath). It expires due minute/hour/day effects, settles stable recovery, and processes due item timers and dawn economies, including pack-bound items. Combat turns and rounds do not advance elapsed world time; minute/hour/day timers expire only when elapsed time passes through advance_time or a rest completion tool. update_clock changes a label/location and never fabricates elapsed time.',
+  description: `Advance structured in-game time by a positive number of minutes on the engine clock (starts 00:00 on Day 1; dawn ${ENGINE_DAWN_TIME}, dusk ${ENGINE_DUSK_TIME}); advance it to match narrated time. This is the canonical time operation whenever the DM narrates time passing (travel, waiting, downtime, or aftermath). It expires due minute/hour/day effects, settles stable recovery, and processes due item timers and dawn economies, including pack-bound items. Combat turns and rounds do not advance elapsed world time; minute/hour/day timers expire only when elapsed time passes through advance_time or a rest completion tool. update_clock changes a label/location and never fabricates elapsed time.`,
   inputSchema: {
     type: 'object',
     properties: {
@@ -105,8 +108,8 @@ function restTool(name: string, kind: 'short' | 'long'): Tool {
     requiresExplicitAction: true,
     description:
       kind === 'short'
-        ? 'Complete one group short rest, advancing the clock once and settling due effects, recovery, and item events. It restores Pact Magic, not ordinary Spellcasting slots, and opens one-at-a-time Hit Die recovery.'
-        : 'Complete one group long rest after code validation: at least 8 hours, and no more than once per 24 in-game hours. It advances the clock and settles due effects, recovery, and item events. Dawn alone is not a long rest.',
+        ? `Complete one group short rest, advancing the clock once and settling due effects, recovery, and item events (dawn and dusk are the engine clock's ${ENGINE_DAWN_TIME} and ${ENGINE_DUSK_TIME}). It restores Pact Magic, not ordinary Spellcasting slots, and opens one-at-a-time Hit Die recovery.`
+        : `Complete one group long rest after code validation: at least 8 hours, and no more than once per 24 in-game hours. It advances the clock and settles due effects, recovery, and item events, including those due at the engine dawn (${ENGINE_DAWN_TIME}) or dusk (${ENGINE_DUSK_TIME}) it crosses. Dawn alone is not a long rest.`,
     inputSchema: {
       type: 'object',
       properties: {

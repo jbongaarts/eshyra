@@ -8,6 +8,27 @@ import {
 } from '../src/internal.js';
 
 describe('DM system prompt', () => {
+  it('states the engine day-phase contract and tool descriptions name dawn and dusk', () => {
+    const registry = createDefaultToolRegistry();
+    const prompt = buildSystemPrompt(registry).replace(/\s+/g, ' ');
+    expect(prompt).toContain('engine clock starts at 00:00 on Day 1');
+    expect(prompt).toContain('dawn is 06:00 and dusk 18:00');
+    expect(prompt).toContain('if the story starts at another hour');
+    expect(prompt).toContain(
+      'Dawn means crossing 06:00 with `advance_time` or a rest tool',
+    );
+    expect(prompt).toContain('at that same crossing');
+    for (const name of [
+      'advance_time',
+      'update_clock',
+      'complete_short_rest',
+      'complete_long_rest',
+    ]) {
+      const description = registry.get(name)?.description ?? '';
+      expect(description, name).toMatch(/06:00|dawn 06:00/);
+    }
+  });
+
   it('routes elapsed time and dawn through the real time lifecycle contract', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
     expect(prompt).toContain('`advance_time` whenever in-game time passes');

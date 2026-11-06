@@ -1,3 +1,7 @@
+import {
+  ENGINE_DAWN_TIME,
+  ENGINE_DUSK_TIME,
+} from '../state/worldClockBoundaries.js';
 import type { ToolRequest } from './toolRequest.js';
 import type { ToolRegistry, ToolResult } from './tools.js';
 
@@ -308,10 +312,13 @@ export function buildSystemPrompt(
     "  advances time and applies the rest lifecycle. A monster's X/Day and",
     '  innate per-day uses regain only when that monster finishes a long rest:',
     '  call `reset_usage` with event long_rest and that combatantId (the party',
-    '  rest tools do not cover monsters). At dawn, use `advance_time`',
-    '  to pass time and recharge canonical pack-bound item economies; use',
-    '  `reset_usage` with event dawn only for generic/legacy unbound dawn counters, never those',
-    '  pack-bound items. Combat',
+    '  rest tools do not cover monsters). The engine clock starts at 00:00 on',
+    `  Day 1; dawn is ${ENGINE_DAWN_TIME} and dusk ${ENGINE_DUSK_TIME} on that clock, and the context Clock line`,
+    '  shows the current engine day and time. Narrated time follows the engine',
+    '  clock: if the story starts at another hour, `advance_time` to it first.',
+    `  Dawn means crossing ${ENGINE_DAWN_TIME} with \`advance_time\` or a rest tool; the`,
+    '  engine will recharge canonical pack-bound item economies there. Apply `reset_usage` with event dawn',
+    '  (generic/legacy unbound dawn counters only, never pack-bound items) at that same crossing. Combat',
     '  rounds do not advance elapsed world time. A minute/hour/day effect',
     '  expires only when elapsed time passes, through `advance_time`,',
     '  `complete_short_rest` or `complete_long_rest`; round timers',

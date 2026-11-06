@@ -49,3 +49,25 @@ export function nextDawnAfter(elapsedMinutes: number): number {
     throw new Error('no dawn boundary within one day of the clock');
   return dawn;
 }
+
+/** `HH:MM` for a minute of the day (0-1,439). */
+export function formatMinuteOfDay(minuteOfDay: number): string {
+  const hours = Math.floor(minuteOfDay / 60);
+  const minutes = minuteOfDay % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+/** The engine dawn and dusk as `HH:MM` text for DM-facing wording. */
+export const ENGINE_DAWN_TIME = formatMinuteOfDay(DAWN_MINUTE_OF_DAY);
+export const ENGINE_DUSK_TIME = formatMinuteOfDay(DUSK_MINUTE_OF_DAY);
+
+/**
+ * The engine's day number (Day 1 = elapsed minutes 0-1,439) and `HH:MM` time
+ * of day for `elapsedMinutes`, with the dawn and dusk times of that clock,
+ * e.g. `engine Day 2, 05:40; dawn 06:00, dusk 18:00`.
+ */
+export function describeEngineClock(elapsedMinutes: number): string {
+  const day = Math.floor(elapsedMinutes / MINUTES_PER_DAY) + 1;
+  const time = formatMinuteOfDay(elapsedMinutes % MINUTES_PER_DAY);
+  return `engine Day ${day}, ${time}; dawn ${ENGINE_DAWN_TIME}, dusk ${ENGINE_DUSK_TIME}`;
+}

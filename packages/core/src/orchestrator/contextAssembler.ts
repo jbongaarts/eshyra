@@ -91,6 +91,7 @@ import {
   readSpentUsageCounters,
   type UsageCounter,
 } from '../state/usageCounters.js';
+import { describeEngineClock } from '../state/worldClockBoundaries.js';
 import type { AdventureContextSlice } from './adventureContext.js';
 import {
   buildAdventureContextSlice,
@@ -1051,7 +1052,7 @@ function renderState(state: StateSnapshot): string {
     lines.push(`Plot flags: ${JSON.stringify(state.plotFlags)}`);
   }
   lines.push(
-    `Clock: ${state.clock.inGameTime || '(unset)'} [elapsed ${state.clock.elapsedMinutes} minutes${state.clock.narrativeLabelStale ? '; narrative label unchanged/stale' : ''}]${
+    `Clock: ${state.clock.inGameTime || '(unset)'} [elapsed ${state.clock.elapsedMinutes} minutes; ${describeEngineClock(state.clock.elapsedMinutes)}${state.clock.narrativeLabelStale ? '; narrative label unchanged/stale' : ''}]${
       state.clock.currentLocationId ? ` @ ${state.clock.currentLocationId}` : ''
     }`,
   );

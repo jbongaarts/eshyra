@@ -1889,4 +1889,31 @@ describe('Context Assembler', () => {
     expect(ctx.adventures).toEqual([]);
     db.close();
   });
+
+  it('shows the engine day and time of day on the clock line', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const cases: Array<[number, string]> = [
+      [0, 'engine Day 1, 00:00'],
+      [359, 'engine Day 1, 05:59'],
+      [360, 'engine Day 1, 06:00'],
+      [1439, 'engine Day 1, 23:59'],
+      [1440 + 360, 'engine Day 2, 06:00'],
+    ];
+    for (const [elapsed, phase] of cases) {
+      db.prepare('UPDATE clock SET elapsed_minutes=? WHERE id=1').run(elapsed);
+      const text = renderContextMessage(
+        assembleContext({
+          db,
+          campaignId: CAMPAIGN,
+          campaignPosition: formatCampaignPosition(campaignPosition(1)),
+          sessionId: SESSION,
+          playerInput: 'look around',
+        }),
+      );
+      expect(text).toContain(
+        `[elapsed ${elapsed} minutes; ${phase}; dawn 06:00, dusk 18:00`,
+      );
+    }
+    db.close();
+  });
 });
