@@ -1,3 +1,5 @@
+> **Historical scope — candidate record for the PR #698 merge (`eshyra-o9bd.19.6.1`).** It is preserved as evidence and is not a claim about the current pack. The pack and engine changed afterwards through PRs #699–#704 (independent audit `eshyra-o9bd.16`) and #710–#716 (second independent audit `eshyra-o9bd.19.6.7`). Current candidate evidence is [the successor record](./2026-11-06-o9bd-19-6-7-13-candidate-pack.md); acceptance is `eshyra-o9bd.19.6.4` and formal re-freeze is `eshyra-o9bd.14`.
+
 # ADR-0020 SRD Candidate Pack — eshyra-o9bd.19.6.1
 
 ## Candidate identity
