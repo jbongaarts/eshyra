@@ -285,6 +285,12 @@ function baseDeps(
   return {
     io,
     openDb: () => db,
+    // Tests inject an in-memory db for a fake path; no sidecar lock file.
+    acquireWriterLock: (dbPath) => ({
+      dbPath,
+      lockPath: `${dbPath}.writer-lock`,
+      release: () => {},
+    }),
     model: routedFakeModel({
       bible: () => ROUTED_FAKE_BIBLE_JSON,
       summary: () => FAKE_ARC_SUMMARY,

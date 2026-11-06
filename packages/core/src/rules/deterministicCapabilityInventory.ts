@@ -2321,6 +2321,34 @@ const cli = (file: string) => `packages/cli/src/${file}`;
 
 const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
   engineEntry(
+    'campaign-writer-lock-v1',
+    'acquireCampaignWriterLock',
+    'packages/core/src/persistence/campaignWriterLock.ts',
+    'state-integrity',
+    {
+      operation:
+        'Allow at most one writing process per physical campaign database. A writer takes an exclusive SQLite lock on a sidecar lock database beside the campaign database (<campaign>.writer-lock, symlinks resolved), with locking_mode EXCLUSIVE and a held BEGIN EXCLUSIVE, without waiting, and holds it for the command or session; a second writer, in this or another process, is refused with CampaignWriterLockedError. The operating system releases the lock when the holder exits or crashes, so there are no PID files and no stale-lock cleanup. The CLI takes it before the first campaign write in play, demo, new (and the picker create), and checkpoint restore and fork; a refusal reports the error, returns exit code 1, and writes nothing.',
+      requiredInputs: ['The campaign database path'],
+      exclusions: [
+        'Concurrent writers on one campaign database are unsupported and refused; no compare-and-set or merge is attempted for them, so a delayed campaign-stamp publication from a second concurrent writer is out of contract.',
+        'Readers are not locked: read-only commands (adventures, checkpoint list, campaigns list, add, remove and rename, usage, chronicle, create-character, fork-character) open no campaign database for writing and do not take it.',
+        'It guards a campaign database, not the shared character registry; different campaigns in different processes still share the registry, whose own writes stay atomic and head-checked (character-registry-v1).',
+        'It is advisory between cooperating Eshyra processes: a process that opens the campaign database without taking it is not stopped, and a filesystem without working file locks (some network shares) gives no guarantee.',
+      ],
+      residualDmInterpretation: [
+        'The player decides which session keeps the campaign when two are started.',
+      ],
+      runtimeOwner: [
+        'packages/core/src/persistence/campaignWriterLock.ts',
+        cli('campaignLock.ts'),
+        cli('play.ts'),
+        cli('campaigns.ts'),
+        cli('checkpoints.ts'),
+      ],
+      evidence: [t('campaignWriterLock.test.ts')],
+    },
+  ),
+  engineEntry(
     'character-registry-v1',
     'createCharacterRegistryStore',
     c('characterRegistry.ts'),
@@ -2443,7 +2471,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
         'A stale copy is never resolved automatically: cancel (the default, also on end of input or unrecognized input) writes nothing, and catch-up and fork are explicit choices.',
         'Only classification-time conflicts and cancellation abort before any write; if applying a chosen catch-up or fork fails, choices already applied remain.',
         'Legacy residual: a campaign database with no synced-revision stamp (created before migration 0054) keeps the previous behaviour, so a restored legacy copy that still holds custody is not detected until it is stamped at its next checkout, catch-up, sync-back, or resume acquire.',
-        'Disclosed residual: two copies of one campaign id that both diverged from the same synced revision cannot be told apart until one commits. Custody checks, the stale-copy guard, the registry append (which refuses when the head is not the one validated) and the custody write for sync-back, release, acquire (idle and already-held), checkout and catch-up each run as one registry write transaction taken up front, so concurrent callers are serialized: the first to commit wins, and a later copy is then validated against the moved head and refused as stale-copy (nothing is appended, no custody is taken, no fresh stamp is granted). The campaign-database stamp is written after the registry commit and names exactly the revision that transaction validated; a crash between the two is recovered by the sheet-equals-head restamp. Only a stale copy that is not yet distinguishable (legacy unstamped, or same synced revision and same base) can still commit first.',
+        'Disclosed residual: two copies of one campaign id that both diverged from the same synced revision cannot be told apart until one commits. Custody checks, the stale-copy guard, the registry append (which refuses when the head is not the one validated) and the custody write for sync-back, release, acquire (idle and already-held), checkout and catch-up each run as one registry write transaction taken up front, so concurrent callers are serialized: the first to commit wins, and a later copy is then validated against the moved head and refused as stale-copy (nothing is appended, no custody is taken, no fresh stamp is granted). The campaign-database stamp is written after the registry commit and names exactly the revision that transaction validated; a crash between the two is recovered by the sheet-equals-head restamp. Only a stale copy that is not yet distinguishable (legacy unstamped, or same synced revision and same base) can still commit first. Two concurrent writers on one campaign database are not part of this scenario: campaign-writer-lock-v1 refuses the second, so the copies compared here are sequential restores and forks, or different campaigns.',
       ],
       residualDmInterpretation: [
         'The player chooses how to resolve a stale copy.',

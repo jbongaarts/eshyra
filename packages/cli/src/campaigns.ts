@@ -22,6 +22,7 @@ import {
   initSchema,
   type ModulePack,
 } from '@eshyra/core';
+import type { AcquireWriterLock } from './campaignLock.js';
 import { campaignsDir, ensureDataRoot } from './dataRoot.js';
 import type { CliIO } from './play.js';
 import {
@@ -52,6 +53,8 @@ export interface CampaignDeps {
   pack: ModulePack;
   /** Open (creating the file if absent) a campaign database at a path. */
   openDb: (path: string) => Db;
+  /** Take the single-writer lock for a campaign database (ADR 0012). */
+  acquireWriterLock: AcquireWriterLock;
 }
 
 /** A campaign resolved for `play`, or an actionable failure message. */
@@ -61,17 +64,24 @@ export type PlayTarget =
 
 /** Forge a campaign database at `dbPath`: schema + a forked module template. */
 function forkNewCampaignDb(dbPath: string, deps: CampaignDeps): void {
-  const db = deps.openDb(dbPath);
+  // Created under the writer lock like any other campaign write (ADR 0012); a
+  // refusal surfaces as the caller's "could not create campaign" error.
+  const lock = deps.acquireWriterLock(dbPath);
   try {
-    initSchema(db);
-    if (getCampaign(db) === undefined) {
-      createCampaign(db, {
-        campaignId: deps.nextId('campaign'),
-        pack: deps.pack,
-      });
+    const db = deps.openDb(dbPath);
+    try {
+      initSchema(db);
+      if (getCampaign(db) === undefined) {
+        createCampaign(db, {
+          campaignId: deps.nextId('campaign'),
+          pack: deps.pack,
+        });
+      }
+    } finally {
+      db.close();
     }
   } finally {
-    db.close();
+    lock.release();
   }
 }
 

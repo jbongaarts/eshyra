@@ -234,6 +234,50 @@ warning and confirmation** before proceeding (`.4.2`/`.4.3`). The warning is
 informational, not a hard block: the player may still choose to proceed, cancel,
 or fork instead.
 
+## Single writer per campaign database (eshyra-o9bd.19.6.7.8, 2026-11-06)
+
+**Decision (user, 2026-11-06).** At most **one active writing process** may
+hold a physical campaign database at a time. Concurrent readers are
+supported. Concurrent campaign writers are **unsupported** and **fail closed**:
+a second process that tries to open a campaign for writing is refused before it
+mutates anything.
+
+- **Mechanism: a crash-released OS lock, not lock files with PIDs.** A writer
+  takes an exclusive SQLite lock on a sidecar lock database next to the campaign
+  database. It uses `locking_mode=EXCLUSIVE` and holds a `BEGIN EXCLUSIVE`
+  transaction for the life of its writer session. The operating system releases
+  the lock when the process exits or crashes, so there is no stale-lock cleanup.
+  SQLite also tracks its locks within one process, so a second writer
+  connection inside the same process is refused too. Readers open the campaign
+  database itself and are not affected.
+- **Scope.** Every supported campaign-mutating entrypoint acquires the lock
+  before its first campaign write and holds it for the command or session.
+  Enumerated from the code: `eshyra play` (including resume, `ESHYRA_DB_PATH`,
+  and every in-session write: `/rules`, `/addpc`, fork and release, and the
+  graceful-close checkpoint), `eshyra demo`, `eshyra new` and the `play`
+  picker's first-campaign create (each forges a new campaign database), and
+  `eshyra checkpoint restore` and `fork` (which read the source campaign's
+  checkpoint history; fork also writes a branch there). Read-only commands do
+  not take it: `eshyra adventures`, `checkpoint list`, `campaigns
+  list|add|remove|rename` (registry file only), `usage`, `chronicle`,
+  `create-character` and `fork-character` (character registry only), and the
+  banner. Checkpoint creation is part of the play session's graceful close and
+  there is no separate create command; rules management is in-session `/rules`.
+  The mechanism is `acquireCampaignWriterLock` in
+  `packages/core/src/persistence/campaignWriterLock.ts`.
+- **What this replaces.** The custody timeline protections keep handling
+  *sequential* restore and fork scenarios: the synced-revision stamp, stale-copy
+  classification, and atomic head-checked registry writes. They do **not** try
+  to make two concurrent writers on one campaign database safe. Do not add
+  compare-and-set or other concurrency machinery for that case; it is excluded
+  by this decision. The character registry is still shared by different
+  campaigns running in different processes, so its own atomic, head-checked
+  writes stay.
+- **Consequence.** A delayed campaign-stamp publication from a second
+  concurrent writer on the same campaign database is out of contract, because
+  the second writer cannot exist. Sol review `eshyra-o9bd.19.6.7.8.6` found
+  that interleaving, and this decision resolves it.
+
 ## Out of scope
 
 - Structured currency and the portable character chronicle (their own epics).

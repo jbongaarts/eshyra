@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  acquireCampaignWriterLock,
   EMBERFALL_HOLLOW,
   getCampaign,
   openDatabase,
@@ -56,6 +57,7 @@ function harness(answers: Array<string | undefined> = []): Harness {
     nextId: (prefix) => `${prefix}-${++counter}`,
     pack: EMBERFALL_HOLLOW,
     openDb: (path) => openDatabase(path),
+    acquireWriterLock: acquireCampaignWriterLock,
   };
   return { root, deps, logs, written };
 }
