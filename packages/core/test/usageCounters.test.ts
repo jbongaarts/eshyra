@@ -14,6 +14,7 @@ import {
   getActiveCharacterId,
   getBundledDnd5eSrdPack,
   giveItem,
+  listCombatants,
   readSpentUsageCounters,
   renderContextMessage,
   resetUsage,
@@ -46,7 +47,17 @@ const DRAGON = 'ci-enc-lair-1-adult-red-dragon-1';
 const GIANT = 'ci-enc-lair-1-cloud-giant-2';
 const BOAR = 'ci-enc-lair-1-boar-3';
 
-function lairModule(): AdventureModule {
+type EncounterCreatures = AdventureModule['encounters'][number]['creatures'];
+
+const LAIR_CREATURES: EncounterCreatures = [
+  { rulesRef: 'creature:adult-red-dragon', count: 1, role: 'boss' },
+  { rulesRef: 'creature:cloud-giant', count: 1, role: 'lieutenant' },
+  { rulesRef: 'creature:boar', count: 1, role: 'pet' },
+];
+
+function lairModule(
+  creatures: EncounterCreatures = LAIR_CREATURES,
+): AdventureModule {
   const module = makeTestAdventureModule();
   return {
     ...module,
@@ -55,11 +66,7 @@ function lairModule(): AdventureModule {
         id: 'enc-lair',
         name: 'The Lair',
         description: 'A dragon, a giant, and a boar walk into a lair.',
-        creatures: [
-          { rulesRef: 'creature:adult-red-dragon', count: 1, role: 'boss' },
-          { rulesRef: 'creature:cloud-giant', count: 1, role: 'lieutenant' },
-          { rulesRef: 'creature:boar', count: 1, role: 'pet' },
-        ],
+        creatures,
         locationId: 'loc-cellar',
         reward: 'A hoard.',
       },
@@ -72,9 +79,9 @@ function lairModule(): AdventureModule {
   };
 }
 
-function setup() {
+function setup(creatures: EncounterCreatures = LAIR_CREATURES) {
   const db = freshDbWithSession();
-  const module = lairModule();
+  const module = lairModule(creatures);
   startAdventureRun(db, {
     campaignId: CAMPAIGN,
     runId: 'run-lair',
@@ -113,7 +120,7 @@ describe('spendUsage — record-derived combatant economies', () => {
     expect(Date.now() - started).toBeLessThan(1_000);
   });
 
-  it('derives an X/Day trait economy and refuses the overspend with a dawn hint', () => {
+  it('derives an X/Day trait economy and refuses the overspend with a long-rest hint', () => {
     const { db } = setup();
 
     for (let i = 1; i <= 3; i++) {
@@ -125,7 +132,7 @@ describe('spendUsage — record-derived combatant economies', () => {
       });
       expect(result.counter.usesUsed).toBe(i);
       expect(result.counter.usesMax).toBe(3);
-      expect(result.counter.resetKind).toBe('dawn');
+      expect(result.counter.resetKind).toBe('long_rest');
       expect(result.counter.source).toBe('record');
     }
 
@@ -136,7 +143,9 @@ describe('spendUsage — record-derived combatant economies', () => {
         ability: 'Legendary Resistance',
         ...CTX,
       }),
-    ).toThrow(/no uses of 'Legendary Resistance \(3\/Day\)' left.*dawn/s);
+    ).toThrow(
+      /no uses of 'Legendary Resistance \(3\/Day\)' left.*spent until a long rest/s,
+    );
   });
 
   it('derives a Recharge X-Y action economy from the record', () => {
@@ -188,7 +197,7 @@ describe('spendUsage — record-derived combatant economies', () => {
     });
     expect(first.counter.counterKey).toBe('innate:spell:misty-step');
     expect(first.counter.usesMax).toBe(3);
-    expect(first.counter.resetKind).toBe('dawn');
+    expect(first.counter.resetKind).toBe('long_rest');
 
     const daily = spendUsage(db, {
       campaignId: CAMPAIGN,
@@ -845,7 +854,7 @@ describe('resetUsage — rest and dawn events', () => {
     ).toEqual(['fire-breath']);
   });
 
-  it('dawn restores per-day economies for every owner', () => {
+  it('a long rest scoped to a monster restores its X/Day and innate per-day economies, not dawn', () => {
     const { db } = setup();
     spendUsage(db, {
       campaignId: CAMPAIGN,
@@ -866,19 +875,146 @@ describe('resetUsage — rest and dawn events', () => {
       ...CTX,
     });
 
+    // Dawn does not regain creature per-day economies (SRD p.259).
     const dawn = resetUsage(db, {
       campaignId: CAMPAIGN,
       event: 'dawn',
       ...CTX,
     });
-    expect(dawn.reset.map((c) => c.counterKey).sort()).toEqual([
+    expect(dawn.reset).toHaveLength(0);
+    expect(
+      readSpentUsageCounters(db, CAMPAIGN)
+        .map((c) => c.counterKey)
+        .sort(),
+    ).toEqual([
+      'fire-breath',
       'innate:spell:misty-step',
       'legendary-resistance',
     ]);
-    // Recharge abilities belong to the turn-start roll and rests, not dawn.
+
+    // The party's long rest does not reach a monster either.
+    const partyRest = resetUsage(db, {
+      campaignId: CAMPAIGN,
+      event: 'long_rest',
+      ...CTX,
+    });
+    expect(partyRest.reset).toHaveLength(0);
+
+    // A long rest recorded for the dragon regains its X/Day economy and its
+    // Recharge ability (rests cover recharge); the giant's innate group stays
+    // spent until the giant's own long rest.
+    const dragonRest = resetUsage(db, {
+      campaignId: CAMPAIGN,
+      event: 'long_rest',
+      owner: combatant(DRAGON),
+      ...CTX,
+    });
+    expect(dragonRest.reset.map((c) => c.counterKey).sort()).toEqual([
+      'fire-breath',
+      'legendary-resistance',
+    ]);
     expect(
       readSpentUsageCounters(db, CAMPAIGN).map((c) => c.counterKey),
-    ).toEqual(['fire-breath']);
+    ).toEqual(['innate:spell:misty-step']);
+
+    const giantRest = resetUsage(db, {
+      campaignId: CAMPAIGN,
+      event: 'long_rest',
+      owner: combatant(GIANT),
+      ...CTX,
+    });
+    expect(giantRest.reset.map((c) => c.counterKey)).toEqual([
+      'innate:spell:misty-step',
+    ]);
+    expect(readSpentUsageCounters(db, CAMPAIGN)).toEqual([]);
+  });
+
+  it('a monster finishing a long rest regains Enslave (3/Day), and dawn does not', () => {
+    const { db } = setup([
+      { rulesRef: 'creature:aboleth', count: 1, role: 'boss' },
+    ]);
+    const [aboleth] = listCombatants(db, CAMPAIGN);
+    if (aboleth === undefined) throw new Error('no aboleth combatant');
+    const owner = combatant(aboleth.combatantId);
+    for (let i = 0; i < 3; i++) {
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner,
+        ability: 'Enslave',
+        ...CTX,
+      });
+    }
+    expect(() =>
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner,
+        ability: 'Enslave',
+        ...CTX,
+      }),
+    ).toThrow(/Enslave.*long rest/s);
+
+    // Dawn leaves the spent Enslave uses spent.
+    resetUsage(db, { campaignId: CAMPAIGN, event: 'dawn', ...CTX });
+    expect(() =>
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner,
+        ability: 'Enslave',
+        ...CTX,
+      }),
+    ).toThrow(/long rest/);
+
+    // The monster's own long rest regains every use.
+    const rest = resetUsage(db, {
+      campaignId: CAMPAIGN,
+      event: 'long_rest',
+      owner,
+      ...CTX,
+    });
+    expect(rest.reset.map((c) => c.counterKey)).toEqual(['enslave']);
+    const after = spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner,
+      ability: 'Enslave',
+      ...CTX,
+    });
+    expect(after.counter.usesUsed).toBe(1);
+    expect(after.counter.resetKind).toBe('long_rest');
+  });
+
+  it('a magic-item dawn economy still regains at dawn and not on a long rest', () => {
+    const { db, pcId } = setup();
+    giveItem(
+      db,
+      { id: 'dawn-wand', name: 'Dawn wand' },
+      { characterId: pcId, ...CTX },
+    );
+    spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      itemId: 'dawn-wand',
+      uses: 2,
+      declared: { maxUses: 4, reset: 'dawn' },
+      ...CTX,
+    });
+
+    const longRest = resetUsage(db, {
+      campaignId: CAMPAIGN,
+      event: 'long_rest',
+      owner: PC,
+      ...CTX,
+    });
+    expect(longRest.reset).toHaveLength(0);
+
+    const dawn = resetUsage(db, {
+      campaignId: CAMPAIGN,
+      event: 'dawn',
+      ...CTX,
+    });
+    expect(dawn.reset.map((c) => c.owner)).toEqual([
+      { kind: 'item', ref: 'dawn-wand' },
+    ]);
+    expect(readSpentUsageCounters(db, CAMPAIGN)).toEqual([]);
   });
 });
 

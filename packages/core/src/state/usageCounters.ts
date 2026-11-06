@@ -6,9 +6,13 @@
 // (limited-usage, charges, and the innate-spellcasting X/Day economies —
 // single-owner factoring per the classification):
 //
-// - X/Day means X uses, regained at dawn (limited-usage). Innate
-//   per-day spell groups are the same economy keyed per spell ("3/day
-//   each") or shared across the group when the statblock pools them.
+// - X/Day means X uses, and a monster must finish a long rest to regain
+//   expended uses (limited-usage, SRD p.259). A creature's usage.perDay
+//   economy and its innate per-day spell groups are that economy keyed per
+//   ability/spell ("3/day each") or shared across the group when the
+//   statblock pools them. They reset on a long rest scoped to the monster,
+//   never at dawn. Magic-item and legacy/ad-hoc charge economies whose
+//   printed text says "daily at dawn" keep the dawn reset.
 // - Recharge X–Y abilities have one use; at the start of each of the
 //   monster's turns the DM rolls a d6 (through the `roll` tool — all dice
 //   are code-owned) and the ability recharges on X–Y. It also recharges on
@@ -53,8 +57,9 @@
 // applies rest/dawn events today (the DM narrates the rest) and is the
 // primitive the F7 rest engine will orchestrate. A short or long rest also
 // recharges Recharge X–Y abilities (SRD limited-usage). Long rests restore
-// short-rest economies too; per-day economies belong to dawn, not to the
-// rest itself.
+// short-rest economies too. Creature X/Day and innate per-day economies
+// are long-rest economies (SRD limited-usage), so a long rest restores them
+// when scoped to the monster; dawn restores only dawn-printed economies.
 //
 // The legendary-action per-round economy lives with the rest of the combat
 // turn budget in `actionEconomy.ts` (encounter-scoped, reset by beginTurn),
@@ -204,7 +209,7 @@ export interface ResetUsageInput extends UsageMutationContext {
   readonly event: UsageResetEvent;
   /** Narrow the reset to one owner. Default scope: rests reset every
    *  character-owned counter (the party rests; a monster's rest is recorded
-   *  by scoping to it); dawn resets every owner's per-day counters. */
+   *  by scoping to it); dawn resets every owner's dawn-printed counters. */
   readonly owner?: UsageOwnerInput;
 }
 
@@ -233,7 +238,9 @@ const RESET_KINDS: readonly UsageResetKind[] = [
 ];
 
 /** Which stored reset kinds each reset event restores. Rests also recharge
- *  Recharge X–Y abilities (SRD limited-usage); dawn owns per-day economies. */
+ *  Recharge X–Y abilities (SRD limited-usage); a long rest restores creature
+ *  X/Day and innate per-day economies (long_rest); dawn restores only the
+ *  dawn-printed economies (item and legacy charges). */
 const EVENT_RESETS: Readonly<
   Record<UsageResetEvent, readonly UsageResetKind[]>
 > = {
@@ -378,7 +385,7 @@ function economyFromEntryMechanics(
       counterKey: slug,
       displayName: `${stripTrailingParenthetical(entryName)} (${usage.perDay}/Day)`,
       usesMax: usage.perDay,
-      resetKind: 'dawn',
+      resetKind: 'long_rest',
     };
   }
   const recharge = asRecordObject(mechanics.recharge);
@@ -503,7 +510,7 @@ export function deriveUsageEconomy(
           counterKey: `innate:${matchedRef}`,
           displayName: `Innate: ${spellDisplayName(matchedRef)} (${group.uses}/Day)`,
           usesMax: group.uses,
-          resetKind: 'dawn',
+          resetKind: 'long_rest',
         };
       }
       const sorted = refs.map(spellRefSlug).sort();
@@ -512,7 +519,7 @@ export function deriveUsageEconomy(
         counterKey: `innate:group:${sorted.join('+')}`,
         displayName: `Innate: ${refs.map(spellDisplayName).join(', ')} (shared ${group.uses}/Day)`,
         usesMax: group.uses,
-        resetKind: 'dawn',
+        resetKind: 'long_rest',
       };
     }
   }
