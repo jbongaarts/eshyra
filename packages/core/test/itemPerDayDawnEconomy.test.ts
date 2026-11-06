@@ -18,6 +18,7 @@ import {
   createDefaultToolRegistry,
   createSeededRng,
   getBundledDnd5eSrdPack,
+  listActiveEffects,
   readItemState,
 } from '../src/internal.js';
 import {
@@ -107,9 +108,29 @@ describe('per-day dawn economy: spend, refuse at 0, restore at dawn (real pack, 
     expect(refused.message).toMatch(/insufficient uses/);
     expect(remaining()).toBe(0);
 
+    // The DM passes time through the canonical tool. This expires the timer
+    // without using prose or a clock label, then dawn restores the pack item.
+    must('start_effect', {
+      effectId: 'time-path-effect',
+      kind: 'condition-package',
+      displayName: 'One minute ward',
+      source: { kind: 'ruling' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'minute',
+        anchor: 'effect-created',
+      },
+    });
+
     // An advance that stops one minute before dawn (minute 359) restores nothing.
     must('advance_time', { minutes: 359 });
     expect(minutes()).toBe(359);
+    expect(
+      listActiveEffects(db, DEFAULT_TEST_CAMPAIGN_ID, {
+        includeEnded: true,
+      }).find((effect) => effect.effectId === 'time-path-effect')?.endReason,
+    ).toBe('expired');
     expect(remaining()).toBe(0);
     expect(throwBands()).toMatchObject({ ok: false });
 

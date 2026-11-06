@@ -58,9 +58,9 @@ function args(a: Record<string, unknown> | undefined) {
 export const advanceTimeTool: Tool = {
   name: 'advance_time',
   mutates: true,
-  requiresExplicitAction: true,
+  // Time passage is DM pacing, not a player inventory action.
   description:
-    'Advance structured in-game time by a positive number of minutes. This is the canonical time operation; update_clock labels never fabricate elapsed time.',
+    'Advance structured in-game time by a positive number of minutes. This is the canonical time operation whenever the DM narrates time passing (travel, waiting, downtime, or aftermath). It expires due minute/hour/day effects, settles stable recovery, and processes due item timers and dawn economies, including pack-bound items. Combat turns and rounds do not advance elapsed world time; minute/hour/day timers expire only when elapsed time passes through advance_time or a rest completion tool. update_clock changes a label/location and never fabricates elapsed time.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -105,8 +105,8 @@ function restTool(name: string, kind: 'short' | 'long'): Tool {
     requiresExplicitAction: true,
     description:
       kind === 'short'
-        ? 'Complete one group short rest, advancing the clock once. It restores Pact Magic, not ordinary Spellcasting slots, and opens one-at-a-time Hit Die recovery.'
-        : 'Complete one group long rest after code validation: at least 8 hours, and no more than once per 24 in-game hours. Dawn is not a long rest.',
+        ? 'Complete one group short rest, advancing the clock once and settling due effects, recovery, and item events. It restores Pact Magic, not ordinary Spellcasting slots, and opens one-at-a-time Hit Die recovery.'
+        : 'Complete one group long rest after code validation: at least 8 hours, and no more than once per 24 in-game hours. It advances the clock and settles due effects, recovery, and item events. Dawn alone is not a long rest.',
     inputSchema: {
       type: 'object',
       properties: {

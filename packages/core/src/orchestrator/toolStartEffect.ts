@@ -51,7 +51,11 @@ export const startEffectTool: Tool = {
     'concentration effect deterministically ends the owner’s previous ' +
     'one (reported in the result); projected conditions are owned by the ' +
     'effect and are cleaned up exactly when it ends. Give every timer a ' +
-    'quantity, unit, and anchor. For an item power with a typed printed ' +
+    'quantity, unit, and anchor. Minute/hour/day timers expire only when ' +
+    'elapsed time passes through advance_time, complete_short_rest or ' +
+    'complete_long_rest; combat rounds do not advance ' +
+    'that clock, and the engine does not convert minutes into rounds. Round ' +
+    'timers use their declared combat round/turn boundaries. For an item power with a typed printed ' +
     'duration, omit duration entirely and the engine rolls printed dice or ' +
     'fills a fixed duration. To use a different duration, supply it and ' +
     'durationOverride { basis: "dm-adjudicated" | "house-rule", reason, ' +

@@ -185,7 +185,7 @@ const AUDIT_POLICY = [
   '  value. Reject hand-computed, mismatched, failed, or lookup-only scaling.',
   '- A change to HP, conditions, inventory, time/location, plot flags, or world',
   '  facts requires the matching state tool (e.g. `adjust_hp`, `add_condition`,',
-  '  `give_item`, `claim_item`, `reacquire_item`, `adopt_item`, `use_item`, `transfer_item`, `remove_item`, `update_clock`, `set_plot_flag`, `set_world_fact`).',
+  '  `give_item`, `claim_item`, `reacquire_item`, `adopt_item`, `use_item`, `transfer_item`, `remove_item`, `advance_time`, `update_clock`, `set_plot_flag`, `set_world_fact`).',
   '- Wallet balances are valid read-only evidence from the Current State Snapshot.',
   '  Narrated currency gains, spending, or denomination changes require the',
   '  corresponding `gain_currency`, `spend_currency`, or `convert_currency` call.',

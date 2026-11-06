@@ -15,7 +15,8 @@ export const beginTurnTool: Tool = {
     "instance. Resets that participant's per-turn budget (action, bonus " +
     'action, free object interaction, movement note) and returns their ' +
     'reaction; implicitly ends the previous turn (clearing its surprise) and ' +
-    'automatically settles due F3 round and participant-turn effects. ' +
+    'automatically settles due F3 round and participant-turn effects. It does ' +
+    'not advance elapsed world time or expire minute/hour/day timers. ' +
     "At the end of a multi-headed creature's turn, it also applies eligible " +
     'head regrowth and healing and reports the new head count. ' +
     'A dying player-character combatant keeps an available turn: record its start-of-turn death save with record_death_save during that turn; its end-of-turn effects (such as head regrowth) settle when that turn ends at the next begin_turn, after the save. A known but dead, stable, escaped, inactive, or absent (out of play) participant still establishes its ' +

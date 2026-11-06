@@ -8,6 +8,35 @@ import {
 } from '../src/internal.js';
 
 describe('DM system prompt', () => {
+  it('routes elapsed time and dawn through the real time lifecycle contract', () => {
+    const prompt = buildSystemPrompt(createDefaultToolRegistry());
+    expect(prompt).toContain('`advance_time` whenever in-game time passes');
+    expect(prompt).toContain('update_clock` only for a time label or location');
+    expect(prompt).toContain('recharge canonical pack-bound');
+    expect(prompt).toContain('settles due stable recovery');
+    expect(prompt).toMatch(
+      /combat\s+rounds do not advance elapsed world time/i,
+    );
+    expect(prompt).not.toMatch(/`update_clock` for time and/);
+    // Every public elapsed-time path is named in the expiry contract (rests
+    // advance the clock too), so the guidance never claims one tool is the
+    // only way an effect expires.
+    const expiry = prompt.slice(prompt.indexOf('effect\n  expires only'));
+    for (const tool of [
+      'advance_time',
+      'complete_short_rest',
+      'complete_long_rest',
+    ])
+      expect(expiry.slice(0, 200)).toContain(`\`${tool}\``);
+    for (const description of [
+      createDefaultToolRegistry().get('start_effect')?.description,
+      createDefaultToolRegistry().get('advance_time')?.description,
+    ])
+      expect(description).not.toMatch(
+        /expire only (when|after)[^.;]*advance_time[;.]/,
+      );
+  });
+
   it('describes engine-derived state-dependent reaction allowance', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
     expect(prompt).toContain('derive from its tracked head count');
