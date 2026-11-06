@@ -20,10 +20,23 @@ export const refreshEffectTool: Tool = {
     'Animate Dead reasserted before the 24-hour control window lapses. ' +
     'Only an active (not suppressed, never ended) effect can refresh; a ' +
     'rule that re-establishes an ended effect creates a NEW effect via ' +
-    'start_effect. When the effect comes from a spell whose record has a ' +
-    'timed duration, a supplied duration must equal it; other effects ' +
-    'accept the supplied duration unchecked. Omit duration to re-anchor ' +
-    'the existing one from now. An item-power effect keeps its printed typed duration: a different duration needs durationOverride (basis and reason), which records it as a DM override. An effect bound to an item grant (a granted creature) never has its lifetime rewritten by refresh, with or without durationOverride: to change or cut it short, call end_effect for the whole grant with a ruling.',
+    'start_effect. Omit duration to re-anchor the stored duration from now. ' +
+    'A supplied duration replaces the stored one after the shared duration ' +
+    'validation, and the source decides the rest: (a) a ruling or other ' +
+    'non-item effect takes it, and durationOverride is refused; a spell ' +
+    'whose record has a timed duration must supply that same amount and ' +
+    'unit (other spell records do not constrain it); (b) an item-power ' +
+    'effect with a printed typed duration keeps it: its matching timed ' +
+    'duration records typed-fixed, and any other duration needs ' +
+    'durationOverride (basis and reason), which records a DM override; an ' +
+    'item-power effect with no printed typed duration needs durationOverride ' +
+    'for a timed duration, while a non-timed duration takes effect without ' +
+    'one and clears its provenance; an omitted duration re-anchors the stored ' +
+    'duration and keeps its provenance; (c) an ' +
+    'effect bound to an item grant (a granted creature) never has its ' +
+    'lifetime rewritten by refresh, with or without durationOverride, and an ' +
+    'unchanged re-anchor that would move its clock is refused: to change or ' +
+    'cut it short, call end_effect for the whole grant with a ruling.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -32,7 +45,7 @@ export const refreshEffectTool: Tool = {
       durationOverride: {
         type: 'object',
         description:
-          'Required to change a printed item-power duration: { basis: dm-adjudicated | house-rule, reason }. Never accepted for an item-grant effect (use end_effect).',
+          'Required, with basis and reason, for an item-power duration that differs from its printed typed duration, or for a timed duration on an item-power effect that prints none: { basis: dm-adjudicated | house-rule, reason }. Not needed for a non-timed duration on an item-power effect that prints none. Never accepted for an item-grant effect (use end_effect).',
         properties: {
           basis: { enum: ['dm-adjudicated', 'house-rule'] },
           reason: { type: 'string', minLength: 1 },

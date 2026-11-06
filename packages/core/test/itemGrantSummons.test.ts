@@ -1882,6 +1882,186 @@ describe('olc5.12.6 repair: grant identity, concentration, presence, timing, ref
       duration: { kind: 'timed', amount: 20, unit: 'minute' },
       durationProvenance: { kind: 'dm-override', basis: 'dm-adjudicated' },
     });
+    // An omitted duration re-anchors the stored (overridden) duration and
+    // keeps its recorded provenance; the printed duration is not compared
+    // again here.
+    s.must('advance_time', { minutes: 5 });
+    expect(s.call('refresh_effect', { effectId: 'fx-armor-s5' })).toMatchObject(
+      { ok: true },
+    );
+    expect(s.effect('fx-armor-s5')).toMatchObject({
+      duration: { kind: 'timed', amount: 20, unit: 'minute' },
+      durationProvenance: { kind: 'dm-override', basis: 'dm-adjudicated' },
+    });
+    // A supplied duration equal to the printed typed duration returns the
+    // effect to its printed provenance without an override.
+    expect(
+      s.call('refresh_effect', {
+        effectId: 'fx-armor-s5',
+        duration: {
+          kind: 'timed',
+          amount: 10,
+          unit: 'minute',
+          anchor: 'effect-created',
+        },
+      }),
+    ).toMatchObject({ ok: true });
+    expect(s.effect('fx-armor-s5')).toMatchObject({
+      duration: { kind: 'timed', amount: 10, unit: 'minute' },
+      durationProvenance: { kind: 'typed-fixed', amount: 10, unit: 'minute' },
+    });
+  });
+
+  // eshyra-o9bd.19.6.7.12.3: refresh of an item-power effect is judged by
+  // whether its printed effect has a typed duration, crossed with the supplied
+  // duration kind and durationOverride. The typed-present fixture prints 10
+  // minutes; the typed-absent fixture (wings of flying) prints no duration.
+  const PRESENT_ITEM = {
+    kind: 'magic-item',
+    ref: 'magic-item:armor-of-invulnerability',
+    effectRef: 'c2-activate-immunity-payload',
+  };
+  const ABSENT_ITEM = {
+    kind: 'magic-item',
+    ref: 'magic-item:wings-of-flying',
+    effectRef: 'm3-wings-of-flying-fly-speed',
+  };
+  const TIMED_10 = {
+    kind: 'timed',
+    amount: 10,
+    unit: 'minute',
+    anchor: 'effect-created',
+  };
+  const TIMED_20 = { ...TIMED_10, amount: 20 };
+  const UNTIL_REMOVED = { kind: 'until-removed' };
+  const DM_OVERRIDE = {
+    basis: 'dm-adjudicated',
+    reason: 'the DM renewed the power',
+  };
+  const HOUSE_OVERRIDE = { basis: 'house-rule', reason: 'table house rule' };
+  interface TypedRefreshRow {
+    readonly label: string;
+    readonly item: 'typed-present' | 'typed-absent';
+    readonly supplied: Record<string, unknown>;
+    readonly durationOverride?: Record<string, unknown>;
+    readonly accepted: boolean;
+    // 'unchanged': provenance equals the stored one; 'cleared': no provenance.
+    readonly provenance: 'unchanged' | 'cleared' | Record<string, unknown>;
+  }
+  const TYPED_REFRESH_ROWS: readonly TypedRefreshRow[] = [
+    {
+      label: 'typed-present, timed equal to printed, no override',
+      item: 'typed-present',
+      supplied: TIMED_10,
+      accepted: true,
+      provenance: { kind: 'typed-fixed', amount: 10, unit: 'minute' },
+    },
+    {
+      label: 'typed-present, timed equal to printed, override not recorded',
+      item: 'typed-present',
+      supplied: TIMED_10,
+      durationOverride: DM_OVERRIDE,
+      accepted: true,
+      provenance: { kind: 'typed-fixed', amount: 10, unit: 'minute' },
+    },
+    {
+      label: 'typed-present, different timed, no override refused',
+      item: 'typed-present',
+      supplied: TIMED_20,
+      accepted: false,
+      provenance: 'unchanged',
+    },
+    {
+      label: 'typed-present, different timed, with override',
+      item: 'typed-present',
+      supplied: TIMED_20,
+      durationOverride: DM_OVERRIDE,
+      accepted: true,
+      provenance: { kind: 'dm-override', ...DM_OVERRIDE },
+    },
+    {
+      label: 'typed-present, non-timed, no override refused',
+      item: 'typed-present',
+      supplied: UNTIL_REMOVED,
+      accepted: false,
+      provenance: 'unchanged',
+    },
+    {
+      label: 'typed-present, non-timed, with override',
+      item: 'typed-present',
+      supplied: UNTIL_REMOVED,
+      durationOverride: DM_OVERRIDE,
+      accepted: true,
+      provenance: { kind: 'dm-override', ...DM_OVERRIDE },
+    },
+    {
+      label: 'typed-absent, timed, no override refused',
+      item: 'typed-absent',
+      supplied: TIMED_20,
+      accepted: false,
+      provenance: 'unchanged',
+    },
+    {
+      label: 'typed-absent, timed, with override',
+      item: 'typed-absent',
+      supplied: TIMED_20,
+      durationOverride: HOUSE_OVERRIDE,
+      accepted: true,
+      provenance: { kind: 'dm-override', ...HOUSE_OVERRIDE },
+    },
+    {
+      label: 'typed-absent, non-timed, no override clears provenance',
+      item: 'typed-absent',
+      supplied: UNTIL_REMOVED,
+      accepted: true,
+      provenance: 'cleared',
+    },
+    {
+      label: 'typed-absent, non-timed, with override',
+      item: 'typed-absent',
+      supplied: UNTIL_REMOVED,
+      durationOverride: DM_OVERRIDE,
+      accepted: true,
+      provenance: { kind: 'dm-override', ...DM_OVERRIDE },
+    },
+  ];
+
+  it.each(TYPED_REFRESH_ROWS)('item-power refresh: $label', (row) => {
+    const s = setup(pack, { extraActors: REPAIR_ACTORS });
+    const typedPresent = row.item === 'typed-present';
+    // The typed-absent item needs a recorded override to start timed, so its
+    // start carries dm-override provenance that a non-timed refresh clears.
+    s.must('start_effect', {
+      effectId: 'fx-typed-matrix',
+      kind: 'item-power',
+      displayName: 'typed matrix',
+      source: typedPresent ? PRESENT_ITEM : ABSENT_ITEM,
+      duration: TIMED_10,
+      ...(typedPresent ? {} : { durationOverride: HOUSE_OVERRIDE }),
+    });
+    const before = s.effect('fx-typed-matrix');
+    const result = s.call('refresh_effect', {
+      effectId: 'fx-typed-matrix',
+      duration: row.supplied,
+      ...(row.durationOverride === undefined
+        ? {}
+        : { durationOverride: row.durationOverride }),
+    });
+    expect(result).toMatchObject({ ok: row.accepted });
+    const after = s.effect('fx-typed-matrix');
+    if (row.accepted)
+      expect(after.duration).toMatchObject({
+        kind: row.supplied.kind,
+        ...(row.supplied.kind === 'timed'
+          ? { amount: row.supplied.amount, unit: row.supplied.unit }
+          : {}),
+      });
+    else expect(after).toEqual(before);
+    if (row.provenance === 'unchanged')
+      expect(after.durationProvenance).toEqual(before.durationProvenance);
+    else if (row.provenance === 'cleared')
+      expect(after.durationProvenance).toBeUndefined();
+    else expect(after.durationProvenance).toEqual(row.provenance);
   });
 });
 
