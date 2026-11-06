@@ -22,7 +22,7 @@
  */
 
 import type { RulesRecord } from '../../../src/rules/types.js';
-import type { TableExtraction } from './types.js';
+import type { ProseCompositionCause, TableExtraction } from './types.js';
 
 export class EmbeddedTableProseError extends Error {
   override readonly name = 'EmbeddedTableProseError';
@@ -130,12 +130,19 @@ export function proseHasInternalSplice(
   return removed.some((flag, i) => flag && i > first && i < last);
 }
 
-/** A prose field whose embedded-table removal spliced the remaining text. */
+/**
+ * A prose field whose text is not one contiguous quotation: an embedded-table
+ * removal spliced it (`table-strip`, the default), a producer removed printed
+ * rows from its interior (`interior-removal`), or it joined printed bullets
+ * with their glyphs removed (`bullet-join`).
+ */
 export interface EmbeddedTableSplice {
   readonly recordKey: string;
   readonly kind: RulesRecord['kind'];
   /** JSON pointer of the prose field, e.g. `/description`. */
   readonly pointer: string;
+  /** Absent means `table-strip`. */
+  readonly cause?: 'table-strip' | ProseCompositionCause;
 }
 
 /**

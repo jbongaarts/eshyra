@@ -122,6 +122,9 @@ describe('parseGamemasteringRules', () => {
       {
         name: 'Objects',
         keySlug: 'objects',
+        // The producer now reports the two table blocks removed from the
+        // middle of the prose (eshyra-o9bd.19.6.7.10); the text is unchanged.
+        composedBy: ['interior-removal'],
         text: 'Characters can destroy any destructible object with enough time and the right tools. Use common sense when determining whether an attack can damage an object. Statistics for Objects When time is a factor, assign Armor Class and hit points. Armor Class. The table suggests AC values for common substances. Hit Points. Resilient objects have more hit points than fragile ones. Huge and Gargantuan Objects. Track smaller sections separately. Objects and Damage Types. Objects are immune to poison and psychic damage. Damage Threshold. Superficial damage does not reduce hit points.',
         sourcePage: 203,
       },

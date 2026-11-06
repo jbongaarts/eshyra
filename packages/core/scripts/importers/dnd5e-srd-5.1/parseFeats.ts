@@ -29,6 +29,10 @@
  * in `sections.ts`).
  */
 
+import {
+  composedByField,
+  joinParagraphsStrippingBullets,
+} from './proseComposition.js';
 import type { FeatExtraction, PageText } from './types.js';
 
 interface FlatLine {
@@ -123,29 +127,6 @@ interface FeatEntry {
   readonly name: string;
 }
 
-/** Re-flow wrapped body lines into paragraph-separated prose. */
-function joinParagraphs(lines: readonly string[]): string {
-  const paragraphs: string[] = [];
-  let current: string[] = [];
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (line.length === 0) {
-      if (current.length > 0) {
-        paragraphs.push(current.join(' '));
-        current = [];
-      }
-      continue;
-    }
-    // Strip bullet markers from individual lines but keep the text.
-    const stripped = line.replace(/^[•\-*]\s+/, '');
-    current.push(stripped);
-  }
-  if (current.length > 0) {
-    paragraphs.push(current.join(' '));
-  }
-  return paragraphs.join('\n\n').trim();
-}
-
 function parseFeatBody(
   name: string,
   bodyLines: readonly string[],
@@ -169,12 +150,14 @@ function parseFeatBody(
   }
 
   const descLines = bodyLines.slice(i);
-  const description = joinParagraphs(descLines);
+  const { text: description, bulletJoin } =
+    joinParagraphsStrippingBullets(descLines);
 
   return {
     name,
     ...(prerequisites !== undefined ? { prerequisites } : {}),
     description: description.length > 0 ? description : name,
+    ...composedByField({ bulletJoin: bulletJoin && description.length > 0 }),
     sourcePage,
   };
 }

@@ -97,6 +97,7 @@ import type { SourceRegionLedger } from './sourceRegionLedger.js';
 import { linkSpellEmbeddedTables } from './spellTables.js';
 import {
   assertNoEmbeddedTableLinearization,
+  type EmbeddedTableSplice,
   spansByOwner,
   stripEmbeddedTableProseReporting,
   stripTableSpansFromProse,
@@ -117,6 +118,7 @@ import type {
   HazardExtraction,
   MagicItemExtraction,
   PoisonExtraction,
+  ProseCompositionCause,
   RuleExtraction,
   SpellCasterClass,
   SpellClassIndex,
@@ -483,6 +485,50 @@ function ruleKey(name: string): string {
 
 function actionKey(name: string): string {
   return `action:${slug(name)}`;
+}
+
+/**
+ * Prose fields whose PRODUCER reported composition: printed rows removed from
+ * the interior of a rule/condition body, or printed bullets joined with their
+ * glyphs removed (eshyra-o9bd.19.6.7.10, A3-F2). The compiler derives scoped
+ * `source-derived` declarations from these reports; nothing is hand-listed.
+ * Record keys come from the same key functions the record converters use.
+ */
+function producerComposedProseSplices(input: {
+  readonly rules?: readonly RuleExtraction[];
+  readonly conditions: readonly ConditionExtraction[];
+  readonly feats?: readonly FeatExtraction[];
+  readonly actions?: readonly ActionExtraction[];
+}): EmbeddedTableSplice[] {
+  const out: EmbeddedTableSplice[] = [];
+  const add = (
+    kind: RulesRecord['kind'],
+    recordKey: string,
+    pointer: string,
+    composedBy: readonly ProseCompositionCause[] | undefined,
+  ): void => {
+    for (const cause of composedBy ?? [])
+      out.push({ kind, recordKey, pointer, cause });
+  };
+  for (const rule of input.rules ?? [])
+    add(
+      'rule',
+      rule.keySlug === undefined ? ruleKey(rule.name) : `rule:${rule.keySlug}`,
+      '/text',
+      rule.composedBy,
+    );
+  for (const condition of input.conditions)
+    add(
+      'condition',
+      conditionKey(condition.name),
+      '/description',
+      condition.composedBy,
+    );
+  for (const feat of input.feats ?? [])
+    add('feat', featKey(feat.name), '/description', feat.composedBy);
+  for (const action of input.actions ?? [])
+    add('action', actionKey(action.name), '/description', action.composedBy);
+  return out;
 }
 
 function tableKey(name: string): string {
@@ -2105,7 +2151,10 @@ export function buildPackWithFieldProvenance(input: BuildPackInput): BuiltPack {
       tables: input.tables ?? [],
     });
   const fieldProvenanceManifest = fieldProvenanceManifestWith(
-    deriveEmbeddedTableSpliceDeclarations(proseSplices),
+    deriveEmbeddedTableSpliceDeclarations([
+      ...proseSplices,
+      ...producerComposedProseSplices(input),
+    ]),
   );
   assertNoEmbeddedTableLinearization({
     records: stripped,

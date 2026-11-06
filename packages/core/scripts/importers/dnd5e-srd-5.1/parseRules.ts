@@ -29,6 +29,7 @@
  *     assert against.
  */
 
+import { composedByField, endsPrintedSentence } from './proseComposition.js';
 import type { PageText, RuleExtraction } from './types.js';
 
 /**
@@ -41,21 +42,32 @@ import type { PageText, RuleExtraction } from './types.js';
 export function removeTableCellLines(
   pages: readonly PageText[],
 ): readonly PageText[] {
+  // A removal run that ends a page is carried onto the next kept line.
+  let removalPending = false;
   return pages
     .map((page) => {
       if (page.lineHeights === undefined) return page;
       const lines: string[] = [];
       const lineHeights: number[] = [];
+      const removedBefore: boolean[] = [];
       for (let i = 0; i < page.lines.length; i++) {
         const height = page.lineHeights[i];
-        if (height !== undefined && height < BODY_PROSE_MIN_H) continue;
+        if (height !== undefined && height < BODY_PROSE_MIN_H) {
+          // A table-cell row is dropped. Blank lines carry no text, so they do
+          // not count as removed content.
+          if (page.lines[i].trim().length > 0) removalPending = true;
+          continue;
+        }
         lines.push(page.lines[i]);
         if (height !== undefined) lineHeights.push(height);
+        removedBefore.push(removalPending);
+        removalPending = false;
       }
       return {
         pageNumber: page.pageNumber,
         lines,
         lineHeights,
+        removedBefore,
       };
     })
     .filter((page) => page.lines.length > 0);
@@ -66,6 +78,8 @@ interface FlatLine {
   readonly page: number;
   /** Rendered max font height for this line, when the source carried it. */
   readonly height?: number;
+  /** A producer removed table-cell lines immediately before this line. */
+  readonly removedBefore?: boolean;
 }
 
 function flatten(pages: readonly PageText[]): FlatLine[] {
@@ -77,6 +91,7 @@ function flatten(pages: readonly PageText[]): FlatLine[] {
         line: page.lines[i],
         page: page.pageNumber,
         height: heights?.[i],
+        removedBefore: page.removedBefore?.[i],
       });
     }
   }
@@ -240,12 +255,24 @@ function mergeWrappedHeadings(flat: readonly FlatLine[]): TieredLine[] {
         break;
       }
       if (j > i + 1) {
-        out.push({ line: text, page: cur.page, height: cur.height, tier });
+        out.push({
+          line: text,
+          page: cur.page,
+          height: cur.height,
+          removedBefore: cur.removedBefore,
+          tier,
+        });
         i = j;
         continue;
       }
     }
-    out.push({ line: cur.line, page: cur.page, height: cur.height, tier });
+    out.push({
+      line: cur.line,
+      page: cur.page,
+      height: cur.height,
+      removedBefore: cur.removedBefore,
+      tier,
+    });
     i++;
   }
   return out;
@@ -258,6 +285,11 @@ interface HeadingEntry {
   readonly ancestors: readonly string[];
   readonly bodyLines: readonly string[];
   readonly page: number;
+  /**
+   * Printed table rows / list items were removed from the middle of this
+   * entry's body (eshyra-o9bd.19.6.7.10, A3-F2): text remains on both sides.
+   */
+  readonly interiorRemoval?: boolean;
 }
 
 /**
@@ -367,6 +399,41 @@ function isTableCaptionHeading(name: string, tier: number): boolean {
  */
 const BODY_PROSE_MIN_H = 9.3;
 
+/**
+ * The last non-blank body line ends a printed sentence, so rows removed right
+ * after it were printed BETWEEN two sentences. A removal in the middle of a
+ * sentence is column-flow interleaving of another table's cells (the prose is
+ * one contiguous printed passage), not a splice.
+ */
+function bodyEndsSentence(lines: readonly string[]): boolean {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    if (line.length > 0) return endsPrintedSentence(line);
+  }
+  return false;
+}
+
+/**
+ * A producer upstream (`removeTableCellLines`) dropped table-cell rows between
+ * two body lines of this entry: some body line carries `removedBefore` after
+ * the body already has text.
+ */
+function bodyRemovedInterior(body: readonly TieredLine[]): boolean {
+  let previous: string | undefined;
+  for (const line of body) {
+    const text = line.line.trim();
+    if (text.length === 0) continue;
+    if (
+      previous !== undefined &&
+      line.removedBefore === true &&
+      endsPrintedSentence(previous)
+    )
+      return true;
+    previous = text;
+  }
+  return false;
+}
+
 function collectHeadingEntries(
   merged: readonly TieredLine[],
   chapterName?: string,
@@ -416,6 +483,10 @@ function collectHeadingEntries(
           const prev = entries[entries.length - 1];
           entries[entries.length - 1] = {
             ...prev,
+            interiorRemoval:
+              prev.interiorRemoval === true ||
+              (!INLINE_PROSE_RESUMPTION_TABLE_CAPTIONS.has(cur.line.trim()) &&
+                bodyEndsSentence(prev.bodyLines)),
             bodyLines: [
               ...prev.bodyLines,
               ...(INLINE_PROSE_RESUMPTION_TABLE_CAPTIONS.has(cur.line.trim())
@@ -447,6 +518,8 @@ function collectHeadingEntries(
           const prev = entries[entries.length - 1];
           entries[entries.length - 1] = {
             ...prev,
+            interiorRemoval:
+              prev.interiorRemoval === true || bodyEndsSentence(prev.bodyLines),
             bodyLines: [...prev.bodyLines, '', ...resumingProse],
           };
         }
@@ -459,6 +532,7 @@ function collectHeadingEntries(
       ancestors,
       bodyLines,
       page: cur.page,
+      interiorRemoval: bodyRemovedInterior(body),
     });
   }
   return entries;
@@ -594,6 +668,9 @@ function parseRulesByHeadings(
       name: entry.name,
       keySlug: keySlugs[i],
       text: text.length > 0 ? text : entry.name,
+      ...composedByField({
+        interiorRemoval: entry.interiorRemoval === true && text.length > 0,
+      }),
       sourcePage: entry.page,
     };
   });

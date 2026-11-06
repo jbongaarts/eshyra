@@ -1,3 +1,4 @@
+import { composedByField, hasInteriorRemoval } from './proseComposition.js';
 import { classifyTier, isTableCell } from './sourceInventory.js';
 import type { PageText, RuleExtraction } from './types.js';
 
@@ -68,15 +69,26 @@ export function parseHalfDragonTemplate(
     }
   }
 
-  const prose = lines
+  const region = lines
     .slice(start + 1, end)
-    .filter((line) => line.text.length > 0 && !isTableCell(line.height))
+    .filter((line) => line.text.length > 0);
+  const prose = region
+    .filter((line) => !isTableCell(line.height))
     .map((line) => line.text);
+  // Table-cell rows are dropped from the middle of the template's prose
+  // (eshyra-o9bd.19.6.7.10, A3-F2).
+  const interiorRemoval = hasInteriorRemoval(
+    region.map((line) => ({
+      text: line.text,
+      kept: !isTableCell(line.height),
+    })),
+  );
 
   return {
     name: TEMPLATE_HEADING,
     keySlug: TEMPLATE_KEY,
     text: joinProse(prose),
+    ...composedByField({ interiorRemoval }),
     sourcePage: lines[start].page,
     tableRefs: TABLE_REFS,
   };

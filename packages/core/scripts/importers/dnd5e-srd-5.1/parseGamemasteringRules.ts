@@ -7,6 +7,7 @@
  * table blocks. The rules and exclusions here are intentionally source-shaped.
  */
 
+import { composedByField, hasInteriorRemoval } from './proseComposition.js';
 import type { PageText, RuleExtraction } from './types.js';
 
 interface FlatLine {
@@ -130,14 +131,22 @@ function parseObjectsRule(
 ): RuleExtraction | undefined {
   const flat = flatten(pages);
   if (flat.length === 0) return undefined;
-  const prose = flat.filter(({ line }) => {
+  const isKept = ({ line }: FlatLine): boolean => {
     const text = line.trim();
     return (
       !OBJECT_TABLE_LINE.test(text) &&
       !OBJECT_HIT_POINTS_INLINE_TABLE_LINE.test(text)
     );
-  });
-  return buildRule('Objects', 'objects', prose, flat[0].page);
+  };
+  const prose = flat.filter(isKept);
+  const rule = buildRule('Objects', 'objects', prose, flat[0].page);
+  if (rule === undefined) return undefined;
+  // The two reconstructed table blocks are removed from the middle of the
+  // section's prose (eshyra-o9bd.19.6.7.10, A3-F2).
+  const interiorRemoval = hasInteriorRemoval(
+    flat.map((line) => ({ text: line.line, kept: isKept(line) })),
+  );
+  return { ...rule, ...composedByField({ interiorRemoval }) };
 }
 
 export function parseGamemasteringRules(
