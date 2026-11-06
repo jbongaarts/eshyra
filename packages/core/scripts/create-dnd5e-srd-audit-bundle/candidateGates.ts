@@ -34,7 +34,7 @@ export interface CandidateGate {
 }
 
 export const CANDIDATE_RECORD_PATH =
-  'docs/audits/dnd5e-srd-5.1-final/2026-11-01-o9bd-19-6-1-candidate-pack.md';
+  'docs/audits/dnd5e-srd-5.1-final/2026-11-06-o9bd-19-6-7-13-candidate-pack.md';
 
 export const EXPLICIT_NON_CLAIMS: readonly string[] = [
   'No universal clause completeness: no gate claims every source clause is represented or typed.',
