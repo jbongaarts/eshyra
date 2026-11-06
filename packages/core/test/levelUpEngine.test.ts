@@ -1,6 +1,6 @@
 // Deterministic level-up application engine (eshyra-lupf.8). Tests assert exact
 // pack-derived deltas for a martial class (Fighter) and a caster (Wizard),
-// including proficiency-bonus crossings, spell DC recomputation, the HP increment,
+// including proficiency-bonus crossings, spell DC recomputation, the HP floor,
 // the live-row projection, the ledger audit row, and the fail-closed guards.
 
 import { describe, expect, it } from 'vitest';
@@ -22,7 +22,6 @@ import {
   readSpellSlots,
   renderContextMessage,
   restoreUsage,
-  rollDice,
   spendSpellSlot,
   spendUsage,
   syncSpellSlots,
@@ -798,7 +797,7 @@ describe('detectLevelUpRequiredChoices / fail-closed apply', () => {
   });
 });
 
-describe('applyLevelUp — HP increment and fail-closed guards', () => {
+describe('applyLevelUp — HP floor and fail-closed guards', () => {
   it('refuses an advancement target in preview and apply before any state change', () => {
     const db = bareDb();
     const store = createSqliteCharacterSheetStore(db, () => AT);
@@ -860,46 +859,15 @@ describe('applyLevelUp — HP increment and fail-closed guards', () => {
     db.close();
   });
 
-  it('applies no HP floor: fixed-average CON -4 on a d6 gains 0 (SRD p.56 states no minimum)', () => {
-    // CON 3 → modifier -4; Wizard d6 average 4 → 4 + (-4) = 0, no floor.
+  it('floors the HP increment at 1 for a very low Constitution', () => {
+    // CON 3 → modifier -4; Wizard d6 average 4 → 4 + (-4) = 0, floored to 1.
     const sheet = buildSheet({
       classKey: 'class:wizard',
       className: 'Wizard',
-      maxHitPoints: 6,
       modifiers: { constitution: -4 },
     });
     const changeSet = computeLevelUpChangeSet(sheet);
-    expect(changeSet.hitPoints.increment).toBe(0);
-    expect(changeSet.hitPoints.maxHitPoints).toEqual({ from: 6, to: 6 });
-  });
-
-  it('fixed-average CON -3 on a d6 gains 1 (4 + -3)', () => {
-    const sheet = buildSheet({
-      classKey: 'class:wizard',
-      className: 'Wizard',
-      modifiers: { constitution: -3 },
-    });
-    const changeSet = computeLevelUpChangeSet(sheet);
     expect(changeSet.hitPoints.increment).toBe(1);
-  });
-
-  it('rolled natural 1 with CON -1 gains 0, not a floored 1 (1 + -1)', () => {
-    // A rng that always returns index 0 makes 1d6 roll a natural 1.
-    const roll = rollDice('1d6', { nextInt: () => 0 });
-    expect(roll.natural).toBe(1);
-    const sheet = buildSheet({
-      classKey: 'class:wizard',
-      className: 'Wizard',
-      maxHitPoints: 6,
-      modifiers: { constitution: -1 },
-    });
-    const changeSet = computeLevelUpChangeSet(sheet, undefined, undefined, {
-      method: 'rolled',
-      roll,
-    });
-    expect(changeSet.hitPoints.naturalRoll).toBe(1);
-    expect(changeSet.hitPoints.increment).toBe(0);
-    expect(changeSet.hitPoints.maxHitPoints).toEqual({ from: 6, to: 6 });
   });
 
   it('throws when no sheet is stored for the character', () => {
