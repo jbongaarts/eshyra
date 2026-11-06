@@ -21,6 +21,7 @@ import {
   CharacterCustodyError,
   type CharacterRegistryStore,
   checkoutCharacterIntoCampaign,
+  createSqliteCharacterSheetStore,
   type Db,
   forkCharacterTimeline,
 } from '@eshyra/core';
@@ -67,10 +68,15 @@ export function forkConflictedCharacterIntoCampaign(
   }
   const newGlobalCharacterId = deps.nextId('fork');
   try {
+    // Branch the campaign's actual current sheet (not the registry's copy of
+    // its synced revision), so unsynchronized progress is kept; the synced
+    // revision is recorded as the fork's parent.
+    const campaignSheet = createSqliteCharacterSheetStore(db).load(characterId);
     const fork = forkCharacterTimeline(deps.characterRegistry, {
       sourceGlobalCharacterId: source.globalCharacterId,
       newGlobalCharacterId,
       fromRevision: source.fromRevision,
+      ...(campaignSheet !== undefined ? { sheet: campaignSheet } : {}),
     });
     // Attach the fork (revision 1) into the same party slot: this re-links the
     // campaign sheet to the new identity, re-projects the live row, and takes

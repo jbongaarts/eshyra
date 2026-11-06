@@ -10,6 +10,7 @@ import {
   type SessionCheckpointRunner,
   validateMemoryConfig,
 } from '@eshyra/core';
+import { tryAcquireWriterLock } from './campaignLock.js';
 import {
   activateCampaignCustody,
   ensureCharacterReady,
@@ -44,6 +45,25 @@ export async function runPlay(
   options: PlayOptions,
 ): Promise<number> {
   validateMemoryConfig(deps.memoryConfig);
+  const lock = tryAcquireWriterLock(
+    deps.acquireWriterLock,
+    options.dbPath,
+    (message) => deps.io.write(message),
+  );
+  if (lock === undefined) {
+    return 1;
+  }
+  try {
+    return await playLocked(deps, options);
+  } finally {
+    lock.release();
+  }
+}
+
+async function playLocked(
+  deps: PlayDeps,
+  options: PlayOptions,
+): Promise<number> {
   const db = deps.openDb(options.dbPath);
   try {
     // initSchema is migration-first and idempotent: it applies pending
@@ -66,6 +86,9 @@ export async function runPlay(
       return 1;
     }
     const sessionId = await launch(deps, db, options.dbPath, campaign);
+    if (sessionId === undefined) {
+      return 1;
+    }
     await turnLoop(
       deps,
       db,
@@ -87,6 +110,25 @@ export async function runPlay(
  * Returns a process exit code.
  */
 export async function runDemo(
+  deps: PlayDeps,
+  options: PlayOptions,
+): Promise<number> {
+  const lock = tryAcquireWriterLock(
+    deps.acquireWriterLock,
+    options.dbPath,
+    (message) => deps.io.write(message),
+  );
+  if (lock === undefined) {
+    return 1;
+  }
+  try {
+    return await demoLocked(deps, options);
+  } finally {
+    lock.release();
+  }
+}
+
+async function demoLocked(
   deps: PlayDeps,
   options: PlayOptions,
 ): Promise<number> {
@@ -119,7 +161,11 @@ export async function runDemo(
       deps.io.write(
         `Demo campaign: ${existing.title} (${existing.campaignId}).`,
       );
-      sessionId = await launch(deps, db, options.dbPath, existing);
+      const launched = await launch(deps, db, options.dbPath, existing);
+      if (launched === undefined) {
+        return 1;
+      }
+      sessionId = launched;
     }
     // A demo campaign can gain registry-linked characters via /addpc, so the
     // same custody-on-resume guard applies before play (ADR 0012). On a

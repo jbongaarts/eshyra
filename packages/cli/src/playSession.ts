@@ -6,6 +6,7 @@ import {
   getSessionLaunchState,
   startSession,
 } from '@eshyra/core';
+import { activateCampaignCustody } from './playCharacter.js';
 import { gracefulClose } from './playClose.js';
 import {
   bindAdventureModule,
@@ -76,13 +77,17 @@ export function resolveCampaign(deps: PlayDeps, db: Db): CampaignInfo {
  * Resolve which session to play. A crash leaves a session open; launch offers
  * the player Resume (reattach to the open session) or Close-and-recap (run the
  * close pipeline, then start fresh).
+ *
+ * Returns `undefined` when custody for the replacement session could not be
+ * re-established (held elsewhere, or the player cancelled a stale-copy choice);
+ * the caller must then exit without playing.
  */
 export async function launch(
   deps: PlayDeps,
   db: Db,
   dbPath: string,
   campaign: CampaignInfo,
-): Promise<string> {
+): Promise<string | undefined> {
   const pending = getPendingDisputedTurn(db, campaign.campaignId);
   if (pending) {
     deps.io.write(
@@ -136,6 +141,13 @@ export async function launch(
       campaign.campaignId,
       state.session.sessionId,
     );
+    // gracefulClose released every party character's custody (syncing progress
+    // to the registry). The replacement session must hold custody before any
+    // new gameplay, through the same acquire path resume uses, so the
+    // held-elsewhere / stale-copy fail-closed checks still apply (ADR 0012).
+    if (!(await activateCampaignCustody(deps, db, campaign.campaignId))) {
+      return undefined;
+    }
     return startNewSession(deps, db, campaign.campaignId);
   }
 

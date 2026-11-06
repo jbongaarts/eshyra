@@ -357,6 +357,12 @@ CREATE TABLE character_hit_dice (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE character_registry_sync (
+  character_id TEXT PRIMARY KEY,
+  global_character_id TEXT NOT NULL,
+  synced_revision INTEGER NOT NULL CHECK (synced_revision >= 1)
+);
+
 CREATE TABLE character_sheet (
   character_id TEXT PRIMARY KEY,
   schema_version INTEGER NOT NULL,

@@ -19,6 +19,7 @@ import type {
   TurnAuditor,
   TurnDiagnosticsSink,
 } from '@eshyra/core';
+import type { AcquireWriterLock } from './campaignLock.js';
 import type { CharacterDraftStore } from './characterDraftStore.js';
 
 /** Player-facing input/output seam. A terminal impl is {@link nodeIO}. */
@@ -37,6 +38,11 @@ export interface PlayDeps {
   io: CliIO;
   /** Open (creating the file if absent) the campaign database at a path. */
   openDb: (path: string) => Db;
+  /**
+   * Take the single-writer lock for the campaign database before it is opened
+   * for writing (ADR 0012); held for the whole session.
+   */
+  acquireWriterLock: AcquireWriterLock;
   /**
    * Model client powering the DM. Passed straight to `runTurn` for turn-time
    * narration, and used by graceful close to author the campaign arc summary

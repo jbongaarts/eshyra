@@ -11,6 +11,11 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { CheckpointStore, DoltRepo } from '@eshyra/core';
+import {
+  type AcquireWriterLock,
+  acquireProductionWriterLock,
+  tryAcquireWriterLock,
+} from './campaignLock.js';
 import { resolveCampaignDbPath } from './campaigns.js';
 
 /** Host seam for the checkpoint commands. */
@@ -21,6 +26,37 @@ export interface CheckpointDeps {
   env: Record<string, string | undefined>;
   /** Output sink. */
   log: (message: string) => void;
+  /**
+   * Take the single-writer lock for the source campaign (ADR 0012). Restore and
+   * fork read its checkpoint history (fork also writes a branch there), so they
+   * are refused while another process is writing the campaign. Defaults to the
+   * production OS lock.
+   */
+  acquireWriterLock?: AcquireWriterLock;
+}
+
+/**
+ * Run `body` under the source campaign's writer lock, or report the refusal and
+ * fail closed (exit 1) before anything is read or written.
+ */
+function withCampaignWriterLock(
+  deps: CheckpointDeps,
+  dbPath: string,
+  body: () => number,
+): number {
+  const lock = tryAcquireWriterLock(
+    deps.acquireWriterLock ?? acquireProductionWriterLock,
+    dbPath,
+    deps.log,
+  );
+  if (lock === undefined) {
+    return 1;
+  }
+  try {
+    return body();
+  } finally {
+    lock.release();
+  }
 }
 
 /** The Dolt checkpoint repo and beads directory for a campaign database. */
@@ -118,19 +154,21 @@ function runRestore(rest: string[], deps: CheckpointDeps): number {
     return 1;
   }
   const destPath = resolve(dest);
-  try {
-    new CheckpointStore(doltDir, beadsDir).restoreToNewWorkingCopy(
-      checkpointId,
-      destPath,
-    );
-    deps.log(
-      `Restored checkpoint ${checkpointId} to ${destPath} (the active campaign was not modified).`,
-    );
-    return 0;
-  } catch (err) {
-    deps.log(`restore failed: ${(err as Error).message}`);
-    return 1;
-  }
+  return withCampaignWriterLock(deps, db.dbPath, () => {
+    try {
+      new CheckpointStore(doltDir, beadsDir).restoreToNewWorkingCopy(
+        checkpointId,
+        destPath,
+      );
+      deps.log(
+        `Restored checkpoint ${checkpointId} to ${destPath} (the active campaign was not modified).`,
+      );
+      return 0;
+    } catch (err) {
+      deps.log(`restore failed: ${(err as Error).message}`);
+      return 1;
+    }
+  });
 }
 
 /**
@@ -159,21 +197,23 @@ function runFork(rest: string[], deps: CheckpointDeps): number {
     return 1;
   }
   const destPath = resolve(dest);
-  try {
-    new CheckpointStore(doltDir, beadsDir).forkFromCheckpoint(
-      checkpointId,
-      branchName,
-      destPath,
-    );
-    deps.log(
-      `Forked checkpoint ${checkpointId} onto branch '${branchName}' at ` +
-        `${destPath} (the active campaign was not modified).`,
-    );
-    return 0;
-  } catch (err) {
-    deps.log(`fork failed: ${(err as Error).message}`);
-    return 1;
-  }
+  return withCampaignWriterLock(deps, db.dbPath, () => {
+    try {
+      new CheckpointStore(doltDir, beadsDir).forkFromCheckpoint(
+        checkpointId,
+        branchName,
+        destPath,
+      );
+      deps.log(
+        `Forked checkpoint ${checkpointId} onto branch '${branchName}' at ` +
+          `${destPath} (the active campaign was not modified).`,
+      );
+      return 0;
+    } catch (err) {
+      deps.log(`fork failed: ${(err as Error).message}`);
+      return 1;
+    }
+  });
 }
 
 /** `eshyra checkpoint <list|restore|fork>` dispatcher. */

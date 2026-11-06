@@ -8,6 +8,7 @@ import {
   openDatabase,
   registerNewCharacter,
   releaseCharacterFromCampaign,
+  syncBackCharacterFromCampaign,
 } from '@eshyra/core';
 import { describe, expect, it } from 'vitest';
 import { activateCampaignCustody } from '../src/playCharacter.js';
@@ -401,3 +402,57 @@ describe('activateCampaignCustody — stale-copy conflict UX', () => {
     expect(registry.custody('hero-1')?.campaignId).toBe('camp-a');
   });
 });
+
+describe.each([['idle'], ['already-held']] as const)(
+  'activateCampaignCustody — fork of a synced restored copy (%s)',
+  (state) => {
+    it('presents and forks the synced revision, not the checkout revision', async () => {
+      const registry = freshRegistry();
+      registerNewCharacter(registry, {
+        globalCharacterId: 'hero-1',
+        sheet: sheet('Aria', 1),
+      });
+      const campA = freshCampaign();
+      const holder = { campaignId: 'camp-a', characterId: 'pc-1' } as const;
+      checkoutCharacterIntoCampaign(registry, campA, {
+        globalCharacterId: 'hero-1',
+        ...holder,
+        sessionId: 'session-1',
+        at: AT,
+      });
+      // Play on and synchronize: revision 2, stamped 2 (sourceRevision stays 1).
+      const store = createSqliteCharacterSheetStore(campA);
+      store.save('pc-1', {
+        ...(store.load('pc-1') as CharacterSheet),
+        level: 2,
+      });
+      if (state === 'idle') {
+        releaseCharacterFromCampaign(registry, campA, holder);
+      } else {
+        syncBackCharacterFromCampaign(registry, campA, holder);
+      }
+      expect(store.load('pc-1')?.metadata.sourceRevision).toBe(1);
+      // The original database moves the registry on to revision 3.
+      registry.appendRevision('hero-1', sheet('Aria', 9), 'sync-back');
+
+      const { io, lines } = scriptedIO(['fork']);
+      const ok = await activateCampaignCustody(
+        resumeDeps(registry, io),
+        campA,
+        'camp-a',
+      );
+
+      expect(ok).toBe(true);
+      expect(lines.join('\n')).toContain('This campaign is at revision 2');
+      expect(registry.loadRevision('fork-test', 1)?.parent).toEqual({
+        globalCharacterId: 'hero-1',
+        revision: 2,
+      });
+      expect(registry.load('fork-test')?.level).toBe(2);
+      expect(store.load('pc-1')?.level).toBe(2);
+      // The original keeps its newer head untouched.
+      expect(registry.headRevision('hero-1')).toBe(3);
+      expect(registry.load('hero-1')?.level).toBe(9);
+    });
+  },
+);

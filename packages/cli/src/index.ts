@@ -36,6 +36,7 @@ import {
   UnsupportedGameplayProviderError,
 } from '@eshyra/core';
 import { runAdventuresCommand } from './adventures.js';
+import { acquireProductionWriterLock } from './campaignLock.js';
 import {
   type CampaignDeps,
   resolvePlayCampaign,
@@ -333,6 +334,7 @@ function buildPlayDeps(
   return {
     io,
     openDb: (path) => openDatabase(path),
+    acquireWriterLock: acquireProductionWriterLock,
     // The SDK authenticates from the subscription token just as well as an API
     // key, so this path needs no Console API key. The resolved provider
     // credential is injected through the explicit auth seam rather than read from
@@ -381,6 +383,7 @@ function buildCampaignDeps(dataRoot: string, io: CliIO): CampaignDeps {
     nextId: makeId,
     pack: EMBERFALL_HOLLOW,
     openDb: (path) => openDatabase(path),
+    acquireWriterLock: acquireProductionWriterLock,
   };
 }
 

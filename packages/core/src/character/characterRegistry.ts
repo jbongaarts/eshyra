@@ -80,6 +80,24 @@ export interface CustodyRecord {
   readonly attachedAt: string;
 }
 
+/** Optional head check for {@link CharacterRegistryStore.appendRevision}. */
+export interface AppendRevisionOptions {
+  /**
+   * The head revision the caller validated against (`null` = the id must have
+   * no timeline yet). The append is refused with
+   * {@link CharacterRegistryHeadMovedError} if the head differs.
+   */
+  readonly expectedHead?: number | null;
+}
+
+/** The registry head moved after the caller validated against it. */
+export class CharacterRegistryHeadMovedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CharacterRegistryHeadMovedError';
+  }
+}
+
 /** Persistence for the cross-campaign character registry, keyed by global id. */
 export interface CharacterRegistryStore {
   /**
@@ -104,7 +122,33 @@ export interface CharacterRegistryStore {
     sheet: CharacterSheet,
     source: CharacterRevisionSource,
     parent?: CharacterRevision['parent'],
+    options?: AppendRevisionOptions,
   ): CharacterRevision;
+  /**
+   * Run `fn` as one atomic, serialized registry unit: a write transaction taken
+   * up front (`BEGIN IMMEDIATE`), so no other connection can commit a revision
+   * or custody change between a validation read inside `fn` and the write that
+   * relies on it. A throw rolls back every registry write `fn` made. Nested
+   * calls join the enclosing unit (a savepoint: only the outermost unit commits),
+   * so registry-only work (append, register, fork) may be nested. Custody
+   * operations (sync-back, release, acquire, checkout, catch-up) run their
+   * validate-and-write inside this, which is what makes ADR 0012's "exactly one
+   * writer" guard linearizable.
+   *
+   * Restriction: the stamp-producing custody operations (checkout, sync-back,
+   * release, acquire, catch-up) write a campaign freshness stamp after the
+   * registry commit, and an outer rollback after an inner release would leave
+   * that stamp naming a revision that no longer exists. They therefore refuse
+   * with `CharacterCustodyError`, before any write, when called while
+   * {@link CharacterRegistryStore.inTransaction} is true. Do not enclose them in
+   * `atomically`.
+   */
+  atomically<T>(fn: () => T): T;
+  /**
+   * Whether this store's connection is already inside a transaction (an
+   * enclosing `atomically` or any outer transaction). Read-only.
+   */
+  inTransaction(): boolean;
   /** The latest revision number, or `undefined` when none is registered. */
   headRevision(globalCharacterId: string): number | undefined;
   /** The full linear revision history, oldest first. */
@@ -339,6 +383,7 @@ export function createCharacterRegistryStore(
       sheet: CharacterSheet,
       source: CharacterRevisionSource,
       parent?: CharacterRevision['parent'],
+      options?: AppendRevisionOptions,
     ): CharacterRevision {
       assertSupportedCharacterBuild(sheet, {
         operation: 'character-registry revision persistence',
@@ -349,7 +394,17 @@ export function createCharacterRegistryStore(
       // Append + head update must be atomic so the head row always mirrors the
       // latest revision (a torn write would leave them disagreeing).
       const append = db.transaction((): CharacterRevision => {
-        const revision = (headRevisionNumber(id) ?? 0) + 1;
+        const currentHead = headRevisionNumber(id);
+        if (
+          options?.expectedHead !== undefined &&
+          (options.expectedHead ?? undefined) !== currentHead
+        ) {
+          throw new CharacterRegistryHeadMovedError(
+            `registry head for "${id}" moved to ${currentHead ?? 'none'} ` +
+              `(expected ${options.expectedHead ?? 'none'}); refusing to append over it`,
+          );
+        }
+        const revision = (currentHead ?? 0) + 1;
         db.prepare(
           `INSERT INTO character_revision(
              global_character_id, revision, schema_version, system, rules_pack_id,
@@ -377,7 +432,15 @@ export function createCharacterRegistryStore(
           createdAt: at,
         };
       });
-      return append();
+      return append.immediate();
+    },
+
+    atomically<T>(fn: () => T): T {
+      return db.transaction(fn).immediate();
+    },
+
+    inTransaction(): boolean {
+      return db.inTransaction;
     },
 
     headRevision(globalCharacterId: string): number | undefined {

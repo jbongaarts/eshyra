@@ -492,6 +492,12 @@ export {
   AuditError,
   ModelTurnAuditor,
 } from './orchestrator/turnAuditor.js';
+// Single-writer lock for a campaign database (ADR 0012).
+export type { CampaignWriterLock } from './persistence/campaignWriterLock.js';
+export {
+  acquireCampaignWriterLock,
+  CampaignWriterLockedError,
+} from './persistence/campaignWriterLock.js';
 export { DoltUnavailableError } from './persistence/checkpoint/doltBinary.js';
 export type {
   DoltInstallPrompt,

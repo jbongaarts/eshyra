@@ -2327,6 +2327,34 @@ const cli = (file: string) => `packages/cli/src/${file}`;
 
 const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
   engineEntry(
+    'campaign-writer-lock-v1',
+    'acquireCampaignWriterLock',
+    'packages/core/src/persistence/campaignWriterLock.ts',
+    'state-integrity',
+    {
+      operation:
+        'Allow at most one writing process per physical campaign database. A writer takes an exclusive SQLite lock on a sidecar lock database beside the campaign database (<campaign>.writer-lock, symlinks resolved), with locking_mode EXCLUSIVE and a held BEGIN EXCLUSIVE, without waiting, and holds it for the command or session; a second writer, in this or another process, is refused with CampaignWriterLockedError. The operating system releases the lock when the holder exits or crashes, so there are no PID files and no stale-lock cleanup. The CLI takes it before the first campaign write in play, demo, new (and the picker create), and checkpoint restore and fork; a refusal reports the error, returns exit code 1, and writes nothing.',
+      requiredInputs: ['The campaign database path'],
+      exclusions: [
+        'Concurrent writers on one campaign database are unsupported and refused; no compare-and-set or merge is attempted for them, so a delayed campaign-stamp publication from a second concurrent writer is out of contract.',
+        'Readers are not locked: read-only commands (adventures, checkpoint list, campaigns list, add, remove and rename, usage, chronicle, create-character, fork-character) open no campaign database for writing and do not take it.',
+        'It guards a campaign database, not the shared character registry; different campaigns in different processes still share the registry, whose own writes stay atomic and head-checked (character-registry-v1).',
+        'It is advisory between cooperating Eshyra processes: a process that opens the campaign database without taking it is not stopped, and a filesystem without working file locks (some network shares) gives no guarantee.',
+      ],
+      residualDmInterpretation: [
+        'The player decides which session keeps the campaign when two are started.',
+      ],
+      runtimeOwner: [
+        'packages/core/src/persistence/campaignWriterLock.ts',
+        cli('campaignLock.ts'),
+        cli('play.ts'),
+        cli('campaigns.ts'),
+        cli('checkpoints.ts'),
+      ],
+      evidence: [t('campaignWriterLock.test.ts')],
+    },
+  ),
+  engineEntry(
     'character-registry-v1',
     'createCharacterRegistryStore',
     c('characterRegistry.ts'),
@@ -2365,7 +2393,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Check a registry character out into a campaign as its single active writer. Refuses when another campaign holds custody, when this campaign holds it under a different party slot, and when the id is not registered; seeds revision 1 from a legacy head that has no timeline; attaches the registry head sheet (character-sheet-attach-v1: build and rules-pack checks, the sheet stamped with the global id, import time, and checked-out revision, then projected into the live row); and only after the attach succeeds records custody (campaign, slot, revision). The CLI checks out an existing registry character the player imports, each newly registered character (for the first character and /addpc), and each fork it plays.',
+        'Check a registry character out into a campaign as its single active writer. Refuses when another campaign holds custody, when this campaign holds it under a different party slot, and when the id is not registered; seeds revision 1 from a legacy head that has no timeline; attaches the registry head sheet (character-sheet-attach-v1: build and rules-pack checks, the sheet stamped with the global id, import time, and checked-out revision, then projected into the live row); and only after the attach succeeds records custody (campaign, slot, revision) and stamps the campaign database with that synced revision (character_registry_sync, see character-resume-custody-v1). The CLI checks out an existing registry character the player imports, each newly registered character (for the first character and /addpc), and each fork it plays.',
       requiredInputs: [
         'The registry store',
         'The campaign database',
@@ -2400,7 +2428,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Commit a campaign character back to its registry timeline and release it. syncBackCharacterFromCampaign reads the campaign sheet and follows its stamped global id, and acts only when this campaign and slot hold custody: it strips the per-attachment provenance (global id, import time, source revision) and appends a sync-back revision unless the result equals the registry head sheet (then it reports committed:false and appends nothing). releaseCharacterFromCampaign validates any selected chronicle records, performs that sync-back, and then, only when it acted as the custody holder, appends those records and clears custody. The CLI releases every campaign character on quit and reports, rather than propagates, a failure.',
+        'Commit a campaign character back to its registry timeline and release it. syncBackCharacterFromCampaign reads the campaign sheet and follows its stamped global id, and acts only when this campaign and slot hold custody and the copy is not a restored or forked one behind the registry head (see character-resume-custody-v1): it strips the per-attachment provenance (global id, import time, source revision) and appends a sync-back revision unless the result equals the registry head sheet (then it reports committed:false and appends nothing); after a committed or unchanged result it stamps the campaign database with the registry head as the synced revision. releaseCharacterFromCampaign validates any selected chronicle records, performs that sync-back, and then, only when it acted as the custody holder, appends those records and clears custody. The CLI releases every campaign character on quit and reports, rather than propagates, a failure.',
       requiredInputs: [
         'The registry store',
         'The campaign database',
@@ -2409,8 +2437,10 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
       ],
       exclusions: [
         'A caller that is not the custody holder, and a campaign sheet with no registry link, get no result: nothing is appended and custody is untouched, so a stale campaign copy cannot revert the timeline or drop another campaign hold.',
+        'A copy stamped with a synced revision older than the registry head whose sheet differs from the head sheet (a restored checkpoint or a fork of the campaign database) also gets no result even while this campaign still holds custody: nothing is appended and custody is not dropped, so the player resolves it through the resume conflict choices.',
         'Chronicle records passed without a chronicle store are refused, and for the custody holder invalid chronicle records are refused, before the sync-back writes anything.',
-        'The revision append, the chronicle append, and the custody clear are separate writes, not one transaction.',
+        'The revision append, the chronicle append, and the custody clear run in one registry transaction when the chronicle store shares the registry connection (the production CLI store does); the campaign stamp is written after that commit as a separate store. No such guarantee is made for a chronicle store on another connection.',
+        'Checkout, sync-back, release, acquire and catch-up refuse with CharacterCustodyError, before any write, when the registry connection is already inside a transaction (an enclosing atomically), because the post-commit campaign stamp would otherwise outlive a rolled-back outer unit; registry-only operations (append, register, fork) may still nest.',
         'Does not merge divergent sheets; it appends the holder copy as the next revision.',
       ],
       residualDmInterpretation: [
@@ -2435,7 +2465,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Re-take custody for a campaign character that is already attached when the campaign resumes, without re-attaching, so per-turn campaign state such as hit points and conditions survives. classifyResumeConflict reads without writing: not-linked (no registry link), already-held (this campaign and slot hold custody), held-elsewhere (another holder), stale-copy (no holder, but the registry head sheet differs from this campaign copy once its provenance is stripped), or resumable. checkCustodyResumable turns held-elsewhere and stale-copy into CharacterCustodyError, and acquireCustodyOnResume records custody at the head revision only for resumable. The CLI resume flow classifies every campaign character first, stops on any held-elsewhere conflict and on a cancelled stale-copy choice before writing anything, applies each chosen catch-up or fork, and then acquires custody for every character.',
+        'Re-take custody for a campaign character that is already attached when the campaign resumes, without re-attaching, so per-turn campaign state such as hit points and conditions survives. classifyResumeConflict reads without writing: not-linked (no registry link), already-held (this campaign and slot hold custody), held-elsewhere (another holder), stale-copy (reporting the durable synced revision as localRevision, falling back to the checkout source revision for a legacy copy, in both states; either no holder and the registry head sheet differs from this campaign copy once its provenance is stripped, or this campaign still holds custody but the copy is a restored or forked one: its synced revision, stored in the campaign database table character_registry_sync and stamped at checkout, catch-up, every committed or unchanged sync-back, and every resume acquire, is older than the registry head and its sheet differs from the head sheet), or resumable. A copy whose synced revision equals the head (a crash and resume of the original database) is already-held and its unsynced progress is kept and committed by a later sync-back; a copy behind the head whose sheet equals the head (a crash between the registry append and the stamp) is treated as synced and restamped on acquire. checkCustodyResumable turns held-elsewhere and stale-copy into CharacterCustodyError, and acquireCustodyOnResume validates and records custody in one registry transaction, at the head revision it validated, only for resumable (an already-held copy is restamped only to the validated head). The CLI resume flow classifies every campaign character first, stops on any held-elsewhere conflict and on a cancelled stale-copy choice before writing anything, applies each chosen catch-up or fork, and then acquires custody for every character.',
       requiredInputs: [
         'The registry store',
         'The campaign database',
@@ -2446,6 +2476,8 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
         'Held elsewhere is a hard stop; there is no custody-steal path.',
         'A stale copy is never resolved automatically: cancel (the default, also on end of input or unrecognized input) writes nothing, and catch-up and fork are explicit choices.',
         'Only classification-time conflicts and cancellation abort before any write; if applying a chosen catch-up or fork fails, choices already applied remain.',
+        'Legacy residual: a campaign database with no synced-revision stamp (created before migration 0054) keeps the previous behaviour, so a restored legacy copy that still holds custody is not detected until it is stamped at its next checkout, catch-up, sync-back, or resume acquire.',
+        'Disclosed residual: two copies of one campaign id that both diverged from the same synced revision cannot be told apart until one commits. Custody checks, the stale-copy guard, the registry append (which refuses when the head is not the one validated) and the custody write for sync-back, release, acquire (idle and already-held), checkout and catch-up each run as one registry write transaction taken up front, so concurrent callers are serialized: the first to commit wins, and a later copy is then validated against the moved head and refused as stale-copy (nothing is appended, no custody is taken, no fresh stamp is granted). The campaign-database stamp is written after the registry commit and names exactly the revision that transaction validated; a crash between the two is recovered by the sheet-equals-head restamp. Only a stale copy that is not yet distinguishable (legacy unstamped, or same synced revision and same base) can still commit first. Two concurrent writers on one campaign database are not part of this scenario: campaign-writer-lock-v1 refuses the second, so the copies compared here are sequential restores and forks, or different campaigns.',
       ],
       residualDmInterpretation: [
         'The player chooses how to resolve a stale copy.',
@@ -2465,7 +2497,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Adopt the registry head into a campaign whose character copy is stale: refuse a campaign character with no registry link, one whose custody another campaign or slot holds, and a character with no registry timeline; re-attach the head sheet over the campaign copy (stamped with the head as its source revision and re-projected into the live row); and record custody at the head revision only after that attach succeeds; a correction result (ok:false) persists nothing, records no custody, and is raised as a custody error, which the CLI reports as a failed catch-up. The stale campaign copy is replaced wholesale, not merged, and no registry revision is appended. The CLI runs it only as an explicit resume choice, confirmed again when a combat or scene is open.',
+        'Adopt the registry head into a campaign whose character copy is stale: refuse a campaign character with no registry link, one whose custody another campaign or slot holds, and a character with no registry timeline; re-attach the head sheet over the campaign copy (stamped with the head as its source revision and re-projected into the live row); and record custody at the head revision (stamping the campaign database with it as the synced revision) only after that attach succeeds; a correction result (ok:false) persists nothing, records no custody, and is raised as a custody error, which the CLI reports as a failed catch-up. The stale campaign copy is replaced wholesale, not merged, and no registry revision is appended. The CLI runs it only as an explicit resume choice, confirmed again when a combat or scene is open.',
       requiredInputs: [
         'The registry store',
         'The campaign database',
@@ -2494,7 +2526,7 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
     'state-integrity',
     {
       operation:
-        'Branch a chosen revision (the source head when none is given) of a registry character into a new global character id as its revision 1, with source fork and parent provenance (source id and revision), deliberately breaking continuity: the source timeline and custody are untouched. Refuses a target id that already has a revision timeline or a head row, a source with no timeline, and a source revision that does not exist. The CLI uses it for the explicit fork-character command (registry only, not attached) and for the resume stale-copy fork choice, which forks this campaign stamped revision and checks the fork into the same slot (character-checkout-v1); if that checkout returns a correction result or is refused, the resume fork reports failure (the registry fork already created stays), the campaign copy and custody are unchanged, and the resume does not continue.',
+        'Branch a chosen revision (the source head when none is given) of a registry character into a new global character id as its revision 1, with source fork and parent provenance (source id and revision), deliberately breaking continuity: the source timeline and custody are untouched. An optional sheet branches that exact sheet (campaign provenance stripped) in place of the sheet of the stored revision. The existence checks and the append run as one registry transaction. Refuses a target id that already has a revision timeline or a head row, a source with no timeline, and a source revision that does not exist. The CLI uses it for the explicit fork-character command (registry only, not attached) and for the resume stale-copy fork choice, which branches the actual current sheet of this campaign as the fork revision 1, records the campaign synced revision (the stamped revision, else its checkout revision) as the parent, and checks the fork into the same slot (character-checkout-v1); if that checkout returns a correction result or is refused, the resume fork reports failure (the registry fork already created stays), the campaign copy and custody are unchanged, and the resume does not continue.',
       requiredInputs: [
         'The registry store',
         'sourceGlobalCharacterId',
