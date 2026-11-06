@@ -509,43 +509,53 @@ describe('adjustHp — damage at 0 HP escalation', () => {
   });
 });
 
+// The instant-death sweep below builds a fresh migrated database for each of
+// its 36 cases (life state x critical x damage x temp). It measured 1.9s alone
+// and crossed the 5s default under CI's parallel load (eshyra-kcb0), so it gets
+// a targeted timeout; the global default stays 5s.
+const SWEEP_TEST_TIMEOUT_MS = 20_000;
+
 describe('adjustHp — temporary hit points', () => {
-  it('uses full damage for instant death at 0 HP across stable/dying and temp buffers', () => {
-    for (const lifeState of ['dying', 'stable'] as const) {
-      for (const critical of [false, true]) {
-        for (const damage of [9, 10, 11]) {
-          for (const temp of [0, Math.floor(damage / 2), damage]) {
-            const db = freshDb({
-              max: 10,
-              current: 0,
-              lifeState,
-              temp,
-              successes: 1,
-              failures: 1,
-            });
-            const result = adjustHp(db, -damage, CTX, { critical });
-            expect(result.instantDeath).toBe(damage >= 10);
-            expect(readMachine(db)).toMatchObject({
-              hp_current: 0,
-              hp_temp: Math.max(0, temp - damage),
-              life_state: damage >= 10 || critical ? 'dead' : 'dying',
-            });
-            expect(
-              db
-                .prepare(
-                  "SELECT death_save_failures FROM character WHERE id='pc-1'",
-                )
-                .get(),
-            ).toEqual({
-              death_save_failures:
-                damage >= 10 ? 1 : Math.min(3, 1 + (critical ? 2 : 1)),
-            });
-            db.close();
+  it(
+    'uses full damage for instant death at 0 HP across stable/dying and temp buffers',
+    () => {
+      for (const lifeState of ['dying', 'stable'] as const) {
+        for (const critical of [false, true]) {
+          for (const damage of [9, 10, 11]) {
+            for (const temp of [0, Math.floor(damage / 2), damage]) {
+              const db = freshDb({
+                max: 10,
+                current: 0,
+                lifeState,
+                temp,
+                successes: 1,
+                failures: 1,
+              });
+              const result = adjustHp(db, -damage, CTX, { critical });
+              expect(result.instantDeath).toBe(damage >= 10);
+              expect(readMachine(db)).toMatchObject({
+                hp_current: 0,
+                hp_temp: Math.max(0, temp - damage),
+                life_state: damage >= 10 || critical ? 'dead' : 'dying',
+              });
+              expect(
+                db
+                  .prepare(
+                    "SELECT death_save_failures FROM character WHERE id='pc-1'",
+                  )
+                  .get(),
+              ).toEqual({
+                death_save_failures:
+                  damage >= 10 ? 1 : Math.min(3, 1 + (critical ? 2 : 1)),
+              });
+              db.close();
+            }
           }
         }
       }
-    }
-  });
+    },
+    SWEEP_TEST_TIMEOUT_MS,
+  );
 
   it('damage consumes the temp-HP buffer before real HP', () => {
     const db = freshDb({ max: 20, current: 10, temp: 5 });
