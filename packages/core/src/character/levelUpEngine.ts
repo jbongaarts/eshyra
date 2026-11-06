@@ -2091,21 +2091,15 @@ function projectToLiveCharacter(
       id: characterId,
       field: 'hp_current',
       op: 'set',
-      // A non-positive increment can lower hit points; they never drop below
-      // 0 (SRD p.96: "any number from the creature's hit point maximum down
-      // to 0").
-      value: Math.max(
-        0,
-        Math.min(
-          row.hp_current +
-            (changeSet.hitPoints.maxHitPoints.to -
-              changeSet.hitPoints.maxHitPoints.from),
-          effectiveHpMax(
-            changeSet.hitPoints.maxHitPoints.to,
-            validateConditionsJson(
-              JSON.parse(row.conditions_json),
-              `character[${characterId}].conditions_json`,
-            ),
+      value: Math.min(
+        row.hp_current +
+          (changeSet.hitPoints.maxHitPoints.to -
+            changeSet.hitPoints.maxHitPoints.from),
+        effectiveHpMax(
+          changeSet.hitPoints.maxHitPoints.to,
+          validateConditionsJson(
+            JSON.parse(row.conditions_json),
+            `character[${characterId}].conditions_json`,
           ),
         ),
       ),

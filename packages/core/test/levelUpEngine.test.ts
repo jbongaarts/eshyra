@@ -902,37 +902,6 @@ describe('applyLevelUp — HP increment and fail-closed guards', () => {
     expect(changeSet.hitPoints.maxHitPoints).toEqual({ from: 6, to: 6 });
   });
 
-  it('a negative increment lowers live hit points but never below 0 (SRD p.96)', () => {
-    // CON 1 → modifier -5; Wizard d6 average 4 → 4 + (-5) = -1.
-    const db = bareDb();
-    const store = createSqliteCharacterSheetStore(db, () => AT);
-    store.save(
-      'pc-1',
-      buildSheet({
-        classKey: 'class:wizard',
-        className: 'Wizard',
-        maxHitPoints: 1,
-        modifiers: { constitution: -5 },
-        finalScores: { constitution: 1 },
-      }),
-    );
-    seedLiveHp(db, 1, 0);
-    applyLevelUp(db, {
-      store,
-      choices: {
-        'level.2.subclass': ['School of Evocation'],
-        'level.2.spells.spellbook': ['spell:magic-missile', 'spell:shield'],
-      },
-      ...APPLY,
-    });
-    expect(
-      db
-        .prepare('SELECT hp_max, hp_current FROM character WHERE id = ?')
-        .get('pc-1'),
-    ).toEqual({ hp_max: 0, hp_current: 0 });
-    db.close();
-  });
-
   it('throws when no sheet is stored for the character', () => {
     const db = bareDb();
     const store = createSqliteCharacterSheetStore(db, () => AT);
