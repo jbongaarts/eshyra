@@ -54,11 +54,11 @@ A1-F1 (discovery limits in the PR #698 record) was refuted as stated. This succe
 
 ## Positive capability evidence
 
-`packages/core/src/rules/deterministicCapabilityLedger.ts` is the authority for the positively selected capabilities in force. It is backed by the capability inventory in `deterministicCapabilityInventory.ts`. The ledger bindings describe bounded support and its evidence. The absence of a binding is not a completeness result. Engine-pending magic-item clauses remain the generated, unselected backlog. The DM adjudicates them, and this candidate does not claim to execute them.
+`DETERMINISTIC_CAPABILITY_INVENTORY` in `packages/core/src/rules/deterministicCapabilityInventory.ts` is the authority for the full set of positively selected capabilities in force. Each entry states its operation, inputs, exclusions, residual DM interpretation, runtime owner and evidence. `packages/core/src/rules/deterministicCapabilityLedger.ts` is narrower: it holds the shared rule-bound contracts and their rule bindings, which the inventory imports. Many in-force operations, such as `record-death-save-v1` and `level-up-v1`, are inventory entries with no ledger binding. The entries describe bounded support and its evidence. The absence of a binding is not a completeness result. Engine-pending magic-item clauses remain the generated, unselected backlog. The DM adjudicates them, and this candidate does not claim to execute them.
 
 ## Explicit unresolved limits
 
-- **Undeclared nested condition-name leaves (`eshyra-o9bd.19.3.5`).** Top-level `mechanics.conditions[].condition` references are declared record-name relationships for actions, feats, features, hazards and spells, and resolve (for example `spell:animal-friendship` → `condition:charmed`). Condition names nested elsewhere are not declared. Examples are creature action and trait mechanics (for example `creature:aboleth` Enslave → charmed), ancestry traits, magic-item effects and equipment use profiles. Discovery does not follow those leaves. The condition remains available by name mention or direct `lookup_rules`. This is a discovery limitation, not missing source text or incorrect state.
+- **Undeclared nested condition-name leaves (`eshyra-o9bd.19.3.5`).** Top-level `mechanics.conditions[].condition` references are declared record-name relationships for actions, feats, features, hazards and spells, and resolve (for example `spell:animal-friendship` → `condition:charmed`). Condition records also declare their own nested condition references; for example, `condition:petrified` and `condition:paralyzed` resolve to `condition:incapacitated`. The undeclared families tracked here are nested condition-name leaves outside condition records: creature action and trait mechanics (for example `creature:aboleth` Enslave → charmed), ancestry traits, magic-item effects and equipment use profiles (for example `equipment:ball-bearings-bag-of-1-000` → prone). Discovery does not follow those leaves. The condition remains available by name mention or direct `lookup_rules`. This is a discovery limitation, not missing source text or incorrect state.
 - **Remaining undeclared record-key leaves (`eshyra-ry69`).** Data leaves equal to an existing record key, at shapes no declaration covers, are neither declared references nor declared non-references. Expansion is one hop over declared shapes only. The referenced record remains available by name mention or `lookup_rules`.
 - **Adjudicated-by-design and engine-pending readiness clauses.** These remain DM-adjudicated where classified. A clause is not executable merely because a record or binding exists.
 - **Magic-item `operation.excludes` enforcement (`eshyra-kbzm`).** The field is validated but not generally enforced by `useItem`.
@@ -77,8 +77,8 @@ A1-F1 (discovery limits in the PR #698 record) was refuted as stated. This succe
 
 ## Downstream
 
-- A bounded re-audit of the second-audit repairs at this candidate, if the project owner wants one before acceptance.
-- Acceptance and re-freeze authorization: `eshyra-o9bd.19.6.4`, the project owner's decision.
+- A bounded re-audit of the second-audit repairs at this candidate is required before acceptance. The audit's reconciliation on `eshyra-o9bd.19.6.7` records it as the required next state, because the repairs changed the candidate.
+- Acceptance and re-freeze authorization: `eshyra-o9bd.19.6.4`, the project owner's decision after that re-audit.
 - Formal regeneration and re-freeze: `eshyra-o9bd.14`, then `eshyra-2zyy`.
 
 ## Non-claims
