@@ -1854,6 +1854,33 @@ describe('active-effect tools (F3, eshyra-2n1t.5)', () => {
     expect(registry.listRequiresExplicitAction()).not.toContain('advance_time');
   });
 
+  // eshyra-o9bd.19.6.7.18: start_effect's input descriptions must state every
+  // source case the engine admits, not a typed-only boundary.
+  it('describes every start_effect duration and durationOverride source case', () => {
+    const def = createDefaultToolRegistry()
+      .definitions()
+      .find((d) => d.name === 'start_effect');
+    if (def === undefined) throw new Error('start_effect is not registered');
+    const props = (
+      def.inputSchema as {
+        properties: Record<string, { description?: string }>;
+      }
+    ).properties;
+    const duration = props.duration?.description ?? '';
+    const override = props.durationOverride?.description ?? '';
+    // Omission: typed item effect (engine fills or rolls) and next-dawn grant
+    // (engine computes the minutes).
+    expect(duration).toMatch(/typed duration/);
+    expect(duration).toMatch(/next dawn/);
+    // Override: any magic-item source except a next-dawn grant; ruleId only on
+    // the typed path; refused for other sources.
+    expect(override).toMatch(/only for a magic-item source/);
+    expect(override).toMatch(/next dawn/);
+    expect(override).toMatch(/no typed duration/);
+    expect(override).toMatch(/ruleId is not accepted/);
+    expect(override).not.toMatch(/only when overriding a typed item duration/);
+  });
+
   it('preserves suppression errors and cleans normally on a terminal end', () => {
     const c = ctx();
     const registry = createDefaultToolRegistry();

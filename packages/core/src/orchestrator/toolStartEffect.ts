@@ -178,12 +178,12 @@ export const startEffectTool: Tool = {
       duration: {
         ...EFFECT_DURATION_SCHEMA,
         description:
-          'Required except for a magic-item source whose effect has a typed duration. For that item case, omit the whole duration to have the engine fill the fixed duration or roll its dice with campaign RNG.',
+          'Required except in two magic-item cases. An item effect with a typed duration: omit the whole duration to have the engine fill the fixed duration or roll its dice with campaign RNG. An item grant that ends at the next dawn (Bag of Tricks): omit it to have the engine fill the minutes to the first dawn after now; a supplied duration must equal that.',
       },
       durationOverride: {
         type: 'object',
         description:
-          'Declare only when overriding a typed item duration. basis is dm-adjudicated or house-rule; give a reason. If ruleId is supplied it must identify an active house-rule campaign rule.',
+          'Valid only for a magic-item source, and refused for a grant that ends at the next dawn. With a typed item duration it records a DM override of that duration; ruleId, if supplied, must identify an active house-rule campaign rule. With no typed duration (an untyped item power or a grant such as the goat of traveling) it records a DM-adjudicated duration, and ruleId is not accepted. basis is dm-adjudicated or house-rule; give a reason. Refused for every other source.',
         properties: {
           basis: { type: 'string', enum: ['dm-adjudicated', 'house-rule'] },
           reason: { type: 'string', minLength: 1 },
@@ -639,7 +639,7 @@ export const startEffectTool: Tool = {
       if (override !== undefined && source.kind !== 'magic-item')
         return err(
           'invalid_args',
-          'durationOverride is only valid for a typed item duration',
+          'durationOverride is only valid for a magic-item source',
         );
       let rawDuration: unknown = a.duration;
       if (endsAtNextDawn) {
