@@ -324,6 +324,115 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  it('migration 0055 moves creature dawn economies to long rest and leaves other dawn economies', () => {
+    const bundled = discoverMigrations();
+    const dir = makeMigrationDir(
+      Object.fromEntries(
+        bundled
+          .slice(0, 54)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
+      ),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(54);
+    const insert = db.prepare(
+      `INSERT INTO entity_usage_counter(
+         campaign_id, owner_kind, owner_ref, counter_key, display_name,
+         uses_max, uses_used, reset_kind, source, provenance, session_id, updated_at
+       ) VALUES ('campaign-1', ?, ?, ?, ?, 3, 2, ?, ?, 'test', 'session', ?)`,
+    );
+    insert.run(
+      'combatant',
+      'boss-1',
+      'enslave',
+      'Enslave (3/Day)',
+      'dawn',
+      'record',
+      NOW(),
+    );
+    insert.run(
+      'combatant',
+      'boss-1',
+      'innate:spell:misty-step',
+      'Innate: misty step (3/Day)',
+      'dawn',
+      'record',
+      NOW(),
+    );
+    insert.run(
+      'combatant',
+      'boss-1',
+      'fire-breath',
+      'Fire Breath',
+      'recharge_roll',
+      'record',
+      NOW(),
+    );
+    insert.run(
+      'character',
+      'pc-1',
+      'ability:wand-lore',
+      'Wand Lore',
+      'dawn',
+      'declared',
+      NOW(),
+    );
+    insert.run(
+      'item',
+      'wand-1',
+      'charges',
+      'Wand charges',
+      'dawn',
+      'declared',
+      NOW(),
+    );
+
+    const migration55 = bundled.find((migration) => migration.version === 55);
+    if (!migration55) throw new Error('missing migration 0055');
+    writeFileSync(
+      join(
+        dir,
+        `${String(migration55.version).padStart(4, '0')}_${migration55.name}.sql`,
+      ),
+      migration55.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([55]);
+    expect(
+      db
+        .prepare(
+          `SELECT owner_kind, counter_key, reset_kind FROM entity_usage_counter
+           ORDER BY owner_kind, counter_key`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        owner_kind: 'character',
+        counter_key: 'ability:wand-lore',
+        reset_kind: 'dawn',
+      },
+      {
+        owner_kind: 'combatant',
+        counter_key: 'enslave',
+        reset_kind: 'long_rest',
+      },
+      {
+        owner_kind: 'combatant',
+        counter_key: 'fire-breath',
+        reset_kind: 'recharge_roll',
+      },
+      {
+        owner_kind: 'combatant',
+        counter_key: 'innate:spell:misty-step',
+        reset_kind: 'long_rest',
+      },
+      { owner_kind: 'item', counter_key: 'charges', reset_kind: 'dawn' },
+    ]);
+    db.close();
+  });
+
   it('migration 0039 adds absent status and zero_hp_rule while preserving rows', () => {
     const bundled = discoverMigrations();
     const file = (m: { version: number; name: string }) =>

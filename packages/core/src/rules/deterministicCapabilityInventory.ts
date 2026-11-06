@@ -1307,12 +1307,13 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('reset_usage', 'bounded-procedure', {
     operation:
-      'Apply a short rest, long rest, or dawn reset event to spent usage counters: short rest resets recharge-roll, short-rest, and short-or-long counters, long rest also resets long-rest counters, and dawn resets dawn counters, except that a dawn counter with a recharge formula is returned in needsRolledRestore instead. Bound class-resource counters in scope are first reconciled to the active class table; one whose capacity is none is neither refilled nor reported. Without an owner, rests cover every character and the counters of the item rows characters hold, and dawn covers every counter owner, including combatants and unheld items.',
+      'Apply a short rest, long rest, or dawn reset event to spent usage counters: short rest resets recharge-roll, short-rest, and short-or-long counters, long rest also resets long-rest counters (including a combatant X/Day or innate per-day economy, SRD limited-usage p.259), and dawn resets dawn counters (item and legacy charges), except that a dawn counter with a recharge formula is returned in needsRolledRestore instead. Bound class-resource counters in scope are first reconciled to the active class table; one whose capacity is none is neither refilled nor reported. Without an owner, rests cover every character and the counters of the item rows characters hold, and dawn covers every dawn counter owner, including unheld items; a combatant is reset only when the event is scoped to it.',
     requiredInputs: ['event'],
     exclusions: [
       'combatantId or character scopes the event to one owner (and, for a character, the items it holds); a dead owner and an absent combatant are refused.',
       'A spent counter in scope that belongs to a pack-bound item row refuses the whole call; canonical item economies belong to the item reset executor, and quarantined item rows are skipped.',
       'Passing a dawn event here does not advance elapsed world time or settle timed effects, stable recovery, or pack-bound item economies; use advance_time to cross dawn.',
+      'A creature X/Day or innate per-day economy is not reset by dawn; it regains only on a long_rest event scoped to that combatant.',
       'Does not complete a rest; the rest tools do.',
     ],
     residualDmInterpretation: [
@@ -1358,6 +1359,7 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
       'Reusing a completed restId returns the recorded result, without re-applying anything, only when kind, qualification, label, and participants are identical, and is otherwise refused; this check runs before the combat check.',
       'A refusal inside a participant benefit (for example a spent counter on a pack-bound item row in the usage reset) aborts the whole rest.',
       'Dawn is not a long rest.',
+      'Participants are characters only: a monster X/Day or innate per-day economy regains through reset_usage long_rest scoped to that combatant, not through this completion.',
       'Does not decide whether the party actually rested.',
     ],
     residualDmInterpretation: [

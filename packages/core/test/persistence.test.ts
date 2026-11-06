@@ -38,8 +38,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 54,
-      name: 'character_registry_sync',
+      version: 55,
+      name: 'creature_long_rest_usage',
     });
     db.close();
   });
