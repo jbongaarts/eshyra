@@ -38,8 +38,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 53,
-      name: 'persistent_combat_and_credit_order',
+      version: 54,
+      name: 'character_registry_sync',
     });
     db.close();
   });

@@ -1122,3 +1122,183 @@ describe('custody repairs (eshyra-o9bd.19.5.15.1)', () => {
     expect(store.load('pc-1')?.metadata.sourceRevision).toBe(1);
   });
 });
+
+describe('restored/forked copy vs crash/resume (eshyra-o9bd.19.6.7.8, A2-F3)', () => {
+  let registry: CharacterRegistryStore;
+  let campaign: Db;
+  const holder = { campaignId: 'camp-a', characterId: 'pc-1' } as const;
+
+  beforeEach(() => {
+    registry = freshRegistry().registry;
+    campaign = freshCampaign();
+    registerNewCharacter(registry, {
+      globalCharacterId: 'mira',
+      sheet: makeSheet({ level: 1 }),
+    });
+    checkoutCharacterIntoCampaign(registry, campaign, {
+      globalCharacterId: 'mira',
+      campaignId: 'camp-a',
+      characterId: 'pc-1',
+      sessionId: 'session-1',
+      at: 'a1',
+    });
+  });
+
+  /** Play on in the campaign copy: set its level without touching provenance. */
+  function playTo(level: number): void {
+    const store = createSqliteCharacterSheetStore(campaign);
+    store.save('pc-1', { ...(store.load('pc-1') as CharacterSheet), level });
+  }
+
+  /** What a Dolt checkpoint of the campaign database captures for custody. */
+  function capture() {
+    return {
+      sheet: campaign
+        .prepare('SELECT * FROM character_sheet WHERE character_id = ?')
+        .get('pc-1') as Record<string, unknown>,
+      sync: campaign
+        .prepare('SELECT * FROM character_registry_sync')
+        .all() as Array<Record<string, unknown>>,
+    };
+  }
+
+  /** Restore an earlier capture: older sheet AND older stamp come back. */
+  function restore(snapshot: ReturnType<typeof capture>): void {
+    campaign.prepare('DELETE FROM character_sheet').run();
+    campaign.prepare('DELETE FROM character_registry_sync').run();
+    const s = snapshot.sheet;
+    campaign
+      .prepare(
+        'INSERT INTO character_sheet(character_id, schema_version, system, rules_pack_id, sheet_json, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        s.character_id,
+        s.schema_version,
+        s.system,
+        s.rules_pack_id,
+        s.sheet_json,
+        s.updated_at,
+      );
+    for (const r of snapshot.sync) {
+      campaign
+        .prepare(
+          'INSERT INTO character_registry_sync(character_id, global_character_id, synced_revision) VALUES (?, ?, ?)',
+        )
+        .run(r.character_id, r.global_character_id, r.synced_revision);
+    }
+  }
+
+  it('stamps the synced revision at checkout, after each sync-back, and on resume acquire', () => {
+    const synced = () =>
+      (
+        campaign
+          .prepare(
+            "SELECT synced_revision AS r FROM character_registry_sync WHERE character_id = 'pc-1'",
+          )
+          .get() as { r: number }
+      ).r;
+    expect(synced()).toBe(1);
+    playTo(2);
+    syncBackCharacterFromCampaign(registry, campaign, holder);
+    expect(synced()).toBe(2);
+    releaseCharacterFromCampaign(registry, campaign, holder);
+    acquireCustodyOnResume(registry, campaign, { ...holder, at: 'a2' });
+    expect(synced()).toBe(2);
+  });
+
+  it('crash -> restore an older checkpoint -> resume -> release never reverts the head', () => {
+    const checkpoint = capture(); // stamp 1, level 1
+    playTo(2);
+    syncBackCharacterFromCampaign(registry, campaign, holder); // rev 2
+    playTo(3);
+    syncBackCharacterFromCampaign(registry, campaign, holder); // rev 3
+    // Crash: no /quit, so custody is still held. The player restores the older
+    // checkpoint of the same campaign (same campaign id).
+    restore(checkpoint);
+    expect(registry.custody('mira')?.campaignId).toBe('camp-a');
+
+    expect(classifyResumeConflict(registry, campaign, holder)).toEqual({
+      kind: 'stale-copy',
+      globalCharacterId: 'mira',
+      headRevision: 3,
+      localRevision: 1,
+    });
+    expect(() =>
+      acquireCustodyOnResume(registry, campaign, { ...holder, at: 'a3' }),
+    ).toThrow(CharacterCustodyError);
+    expect(syncBackCharacterFromCampaign(registry, campaign, holder)).toBe(
+      undefined,
+    );
+    expect(releaseCharacterFromCampaign(registry, campaign, holder)).toBe(
+      undefined,
+    );
+    expect(registry.headRevision('mira')).toBe(3);
+    expect(registry.load('mira')?.level).toBe(3);
+    // Custody is not dropped by the stale copy either.
+    expect(registry.custody('mira')).toBeDefined();
+
+    // Catch-up (the existing conflict UX) adopts head and clears the conflict.
+    catchUpCharacterToHead(registry, campaign, {
+      ...holder,
+      sessionId: 's',
+      at: 'a4',
+    });
+    expect(classifyResumeConflict(registry, campaign, holder).kind).toBe(
+      'already-held',
+    );
+  });
+
+  it('crash -> resume the ORIGINAL database with unsynced progress -> release commits it', () => {
+    playTo(2);
+    syncBackCharacterFromCampaign(registry, campaign, holder); // rev 2, stamp 2
+    playTo(3); // unsynced progress, then crash (custody still held)
+
+    expect(classifyResumeConflict(registry, campaign, holder).kind).toBe(
+      'already-held',
+    );
+    expect(
+      acquireCustodyOnResume(registry, campaign, { ...holder, at: 'a3' }),
+    ).toBe('already-held');
+    const released = releaseCharacterFromCampaign(registry, campaign, holder);
+    expect(released).toMatchObject({ committed: true, revision: 3 });
+    expect(registry.load('mira')?.level).toBe(3);
+    expect(registry.custody('mira')).toBeUndefined();
+  });
+
+  it('treats a crash between the registry append and the stamp as synced', () => {
+    const checkpoint = capture(); // stamp 1
+    playTo(2);
+    syncBackCharacterFromCampaign(registry, campaign, holder); // rev 2, level 2
+    // Simulate the crash after appendRevision but before the stamp landed.
+    restore({ sheet: capture().sheet, sync: checkpoint.sync });
+
+    expect(classifyResumeConflict(registry, campaign, holder).kind).toBe(
+      'already-held',
+    );
+    expect(
+      acquireCustodyOnResume(registry, campaign, { ...holder, at: 'a3' }),
+    ).toBe('already-held');
+    expect(capture().sync[0]?.synced_revision).toBe(2);
+    expect(releaseCharacterFromCampaign(registry, campaign, holder)).toEqual({
+      globalCharacterId: 'mira',
+      revision: 2,
+      committed: false,
+    });
+  });
+
+  it('keeps today’s behaviour for a legacy copy with no stamp', () => {
+    playTo(2);
+    campaign.prepare('DELETE FROM character_registry_sync').run();
+    expect(classifyResumeConflict(registry, campaign, holder).kind).toBe(
+      'already-held',
+    );
+    expect(
+      acquireCustodyOnResume(registry, campaign, { ...holder, at: 'a2' }),
+    ).toBe('already-held');
+    // Stamped at the next acquire, then synced normally.
+    expect(capture().sync[0]?.synced_revision).toBe(1);
+    expect(
+      releaseCharacterFromCampaign(registry, campaign, holder),
+    ).toMatchObject({ committed: true, revision: 2 });
+  });
+});

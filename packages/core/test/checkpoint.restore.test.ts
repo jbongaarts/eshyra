@@ -133,8 +133,8 @@ describe('checkpoint serialization', () => {
         ).toBe(false);
         initSchema(restored);
         expect(readMigrationLedger(restored).at(-1)).toMatchObject({
-          version: 53,
-          name: 'persistent_combat_and_credit_order',
+          version: 54,
+          name: 'character_registry_sync',
         });
         expect(
           (
