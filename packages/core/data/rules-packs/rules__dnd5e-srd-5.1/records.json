@@ -27522,7 +27522,8 @@
                     "dice": "2d6 + 5",
                     "type": "slashing"
                   }
-                ]
+                ],
+                "hitDamageNotProjected": "12 (2d6 + 5) slashing damage plus 3 (1d6) lightning or thunder damage (djinni’s choice)"
               }
             ],
             "damage": [
@@ -31568,6 +31569,10 @@
                 "target": "one target",
                 "hitDamage": [
                   {
+                    "amount": 1,
+                    "type": "piercing"
+                  },
+                  {
                     "average": 7,
                     "dice": "3d4",
                     "type": "poison"
@@ -31576,6 +31581,10 @@
               }
             ],
             "damage": [
+              {
+                "amount": 1,
+                "type": "piercing"
+              },
               {
                 "average": 7,
                 "dice": "3d4",
@@ -42797,7 +42806,21 @@
                 "attackType": "melee-weapon",
                 "attackBonus": 1,
                 "reachFeet": 5,
-                "target": "one target"
+                "target": "one target",
+                "hitDamage": [
+                  {
+                    "average": 1,
+                    "dice": "1d4 - 1",
+                    "type": "piercing"
+                  }
+                ]
+              }
+            ],
+            "damage": [
+              {
+                "average": 1,
+                "dice": "1d4 - 1",
+                "type": "piercing"
               }
             ]
           }

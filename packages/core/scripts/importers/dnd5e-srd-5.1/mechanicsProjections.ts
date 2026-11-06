@@ -189,15 +189,22 @@ export function compact<T extends Record<string, unknown>>(obj: T): T {
 
 /**
  * One "<avg> (<dice>) <type> damage" term. The sign may be ASCII or the
- * printed Unicode minus (U+2212, eshyra-o9bd.19.4.2): both normalize to ASCII
- * so a minus is never silently unmatched.
+ * printed Unicode minus (U+2212, eshyra-o9bd.19.4.2) or the en dash (U+2013,
+ * the Jackal's "1 (1d4 – 1) piercing damage", eshyra-o9bd.19.6.7.11): all
+ * normalize to ASCII so a minus is never silently unmatched.
  */
 const DAMAGE_TERM_RE =
-  /(?:(\d+)\s*\()?(\d+d\d+(?:\s*[+\u2212-]\s*\d+)?)\)?\s+([a-z]+)\s+damage/gi;
+  /(?:(\d+)\s*\()?(\d+d\d+(?:\s*[+\u2212\u2013-]\s*\d+)?)\)?\s+([a-z]+)\s+damage/gi;
+
+/**
+ * One flat "<N> <type> damage" term with no dice ("Hit: 1 piercing damage").
+ * Only meaningful outside a dice term's span (see `projectHitDamage`).
+ */
+const FLAT_DAMAGE_TERM_RE = /(?<![\w(])(\d+)\s+([a-z]+)\s+damage/gi;
 
 /** Normalize a printed dice expression to ASCII ("1d4 − 1" -> "1d4 - 1"). */
 function normalizeDice(dice: string): string {
-  return dice.replace(/\u2212/g, '-').replace(/\s+/g, ' ');
+  return dice.replace(/[\u2212\u2013]/g, '-').replace(/\s+/g, ' ');
 }
 
 /** Parse a printed signed integer, accepting the Unicode minus. */
@@ -616,6 +623,8 @@ function projectHitDamage(hit: string):
   | {
       readonly hitDamage: readonly Mechanics[];
       readonly alternatives?: readonly Mechanics[];
+      /** How many printed damage terms (dice and flat) were projected. */
+      readonly termCount: number;
     }
   | undefined {
   const terms: { start: number; end: number; damage: Mechanics }[] = [];
@@ -632,6 +641,21 @@ function projectHitDamage(hit: string):
       }),
     });
   }
+  // Flat terms ("1 piercing damage plus 7 (3d4) poison damage"): a flat match
+  // inside a dice term's span is that term's own tail, not a second component.
+  for (const match of hit.matchAll(FLAT_DAMAGE_TERM_RE)) {
+    const type = match[2].toLowerCase();
+    if (!SRD_5_1_DAMAGE_TYPES.has(type)) continue;
+    const start = match.index;
+    const end = start + match[0].length;
+    if (terms.some((term) => start < term.end && end > term.start)) continue;
+    terms.push({
+      start,
+      end,
+      damage: { amount: Number(match[1]), type },
+    });
+  }
+  terms.sort((a, b) => a.start - b.start);
   if (terms.length === 0) return undefined;
   // kinds[k]: 'alternative' starts a new mode; 'rider' is shared by all modes.
   const kinds: ('first' | 'alternative' | 'rider')[] = ['first'];
@@ -659,7 +683,10 @@ function projectHitDamage(hit: string):
     }
   }
   if (kinds.every((kind) => kind !== 'alternative')) {
-    return { hitDamage: terms.map((term) => term.damage) };
+    return {
+      hitDamage: terms.map((term) => term.damage),
+      termCount: terms.length,
+    };
   }
   const last = terms.length - 1;
   if (kinds[last] === 'alternative') {
@@ -672,6 +699,7 @@ function projectHitDamage(hit: string):
       .map(({ term }) => term.damage);
   const defaultIndex = 0;
   return {
+    termCount: terms.length,
     hitDamage: modeOf(defaultIndex),
     alternatives: terms.flatMap((_, index) =>
       kinds[index] === 'alternative'
@@ -748,13 +776,11 @@ function parseAttack(text: string): Mechanics | undefined {
       middle,
     );
   const projected = projectHitDamage(hit);
-  // Flat hit damage without a dice expression ("Hit: 1 piercing damage.").
-  const flat =
-    projected === undefined ? /^\s*(\d+) ([a-z]+) damage/.exec(hit) : null;
-  const flatDamage =
-    flat !== null && SRD_5_1_DAMAGE_TYPES.has(flat[2])
-      ? [{ amount: Number(flat[1]), type: flat[2] }]
-      : [];
+  // In-band disclosure (eshyra-o9bd.19.6.7.11): a Hit clause that prints more
+  // damage than the grammar projected must say so, never silently omit it.
+  const printedDamage = (hit.match(/\bdamage\b/gi) ?? []).length;
+  const hitDamageNotProjected =
+    printedDamage > (projected?.termCount ?? 0) ? hit.trim() : undefined;
   const alternatives = projected?.alternatives?.map((alternative) => ({
     ...alternative,
   }));
@@ -785,13 +811,28 @@ function parseAttack(text: string): Mechanics | undefined {
           ? { normal: Number(range[1]) }
           : { normal: Number(range[1]), long: Number(range[2]) },
     target: target?.[1].trim().toLowerCase(),
-    hitDamage: projected?.hitDamage ?? flatDamage,
+    hitDamage: projected?.hitDamage ?? [],
+    hitDamageNotProjected,
     alternatives:
       alternatives === undefined || alternatives.length === 0
         ? undefined
         : alternatives,
   });
   return attack;
+}
+
+/**
+ * A Hit clause that prints a flat component beside a dice component ("1
+ * piercing damage plus 7 (3d4) poison damage"). `parseDamage` is dice-only, so
+ * the entry's top-level damage must come from the attack's own hitDamage.
+ */
+function hitDamageMixesFlat(attack: Mechanics): boolean {
+  const hitDamage =
+    (attack.hitDamage as readonly Mechanics[] | undefined) ?? [];
+  return (
+    hitDamage.some((entry) => entry.dice === undefined) &&
+    hitDamage.some((entry) => entry.dice !== undefined)
+  );
 }
 
 /**
@@ -809,7 +850,7 @@ function projectEntryDamage(
     // Damage the Hit sentence leaves to a save is not unconditional entry
     // damage either (eshyra-o9bd.16.7.1): keep the direct hit terms plus any
     // damage printed outside the attack clause.
-    return hitSaveOwnedDamage(text).length === 0
+    return hitSaveOwnedDamage(text).length === 0 && !hitDamageMixesFlat(attack)
       ? parseDamage(text)
       : [
           ...((attack.hitDamage as readonly Mechanics[] | undefined) ?? []),
