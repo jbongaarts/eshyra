@@ -117,17 +117,20 @@ export function registerNewCharacter(
   input: { globalCharacterId: string; sheet: CharacterSheet },
 ): CharacterRevision {
   // Revision 1 is the initial register; a second register would append onto an
-  // existing timeline and overwrite its head (ADR 0012: linear history).
-  if (registry.load(input.globalCharacterId) !== undefined) {
-    throw new CharacterCustodyError(
-      `cannot register "${input.globalCharacterId}": that id is already registered`,
+  // existing timeline and overwrite its head (ADR 0012: linear history). The
+  // existence check and the append are one atomic unit.
+  return registry.atomically(() => {
+    if (registry.load(input.globalCharacterId) !== undefined) {
+      throw new CharacterCustodyError(
+        `cannot register "${input.globalCharacterId}": that id is already registered`,
+      );
+    }
+    return registry.appendRevision(
+      input.globalCharacterId,
+      input.sheet,
+      'register',
     );
-  }
-  return registry.appendRevision(
-    input.globalCharacterId,
-    input.sheet,
-    'register',
-  );
+  });
 }
 
 /**
@@ -170,6 +173,29 @@ export function checkoutCharacterIntoCampaign(
   campaignDb: Db,
   input: CheckoutCharacterInput,
 ): CheckoutCharacterResult {
+  // The custody check, head read and custody write are one atomic registry unit
+  // (ADR 0012: a concurrent checkout/release cannot interleave). The campaign
+  // sync stamp follows the registry commit, naming the revision actually
+  // checked out; a crash in between is recovered by the sheet==head restamp.
+  const outcome = registry.atomically(() =>
+    checkoutLocked(registry, campaignDb, input),
+  );
+  if (outcome.stamp !== undefined) {
+    stampSyncedRevision(
+      campaignDb,
+      outcome.result.characterId,
+      input.globalCharacterId,
+      outcome.stamp,
+    );
+  }
+  return outcome.result;
+}
+
+function checkoutLocked(
+  registry: CharacterRegistryStore,
+  campaignDb: Db,
+  input: CheckoutCharacterInput,
+): { result: CheckoutCharacterResult; stamp: number | undefined } {
   const characterId = input.characterId ?? DEFAULT_CHARACTER_ID;
   const held = registry.custody(input.globalCharacterId);
   if (held !== undefined && held.campaignId !== input.campaignId) {
@@ -246,7 +272,7 @@ export function checkoutCharacterIntoCampaign(
   if (!attach.ok) {
     // The live character was not projected (e.g. an unsupported rules system):
     // the campaign is not a valid writer, so do not take the lock.
-    return { attach, revision, characterId };
+    return { result: { attach, revision, characterId }, stamp: undefined };
   }
 
   registry.setCustody({
@@ -256,14 +282,7 @@ export function checkoutCharacterIntoCampaign(
     revision,
     attachedAt: input.at,
   });
-  stampSyncedRevision(
-    campaignDb,
-    characterId,
-    input.globalCharacterId,
-    revision,
-  );
-
-  return { attach, revision, characterId };
+  return { result: { attach, revision, characterId }, stamp: revision };
 }
 
 /** Campaign-owned live state a re-attach could overwrite, as comparable text. */
@@ -423,6 +442,33 @@ export function syncBackCharacterFromCampaign(
   campaignDb: Db,
   input: CustodyHolderInput,
 ): SyncBackResult | undefined {
+  // Custody check, stale-copy validation and the append are one atomic registry
+  // unit bound to the head the guard validated (ADR 0012); the campaign stamp
+  // follows the registry commit.
+  const result = registry.atomically(() =>
+    syncBackLocked(registry, campaignDb, input),
+  );
+  if (result !== undefined) {
+    stampSyncedRevision(
+      campaignDb,
+      input.characterId,
+      result.globalCharacterId,
+      result.revision,
+    );
+  }
+  return result;
+}
+
+/**
+ * Sync-back body. Must run inside {@link CharacterRegistryStore.atomically};
+ * does NOT stamp the campaign DB — the caller stamps `result.revision` only
+ * after the registry unit commits.
+ */
+function syncBackLocked(
+  registry: CharacterRegistryStore,
+  campaignDb: Db,
+  input: CustodyHolderInput,
+): SyncBackResult | undefined {
   const campaignSheet = createSqliteCharacterSheetStore(campaignDb).load(
     input.characterId,
   );
@@ -462,27 +508,21 @@ export function syncBackCharacterFromCampaign(
   const head = registry.headRevision(globalCharacterId);
   const headSheet =
     head === undefined ? undefined : registry.load(globalCharacterId);
-  if (headSheet !== undefined && sheetsEqual(headSheet, sheet)) {
+  if (
+    head !== undefined &&
+    headSheet !== undefined &&
+    sheetsEqual(headSheet, sheet)
+  ) {
     // Also covers a crash between an earlier append and its stamp: restamp.
-    stampSyncedRevision(
-      campaignDb,
-      input.characterId,
-      globalCharacterId,
-      head as number,
-    );
-    return { globalCharacterId, revision: head as number, committed: false };
+    return { globalCharacterId, revision: head, committed: false };
   }
 
   const appended = registry.appendRevision(
     globalCharacterId,
     sheet,
     'sync-back',
-  );
-  stampSyncedRevision(
-    campaignDb,
-    input.characterId,
-    globalCharacterId,
-    appended.revision,
+    undefined,
+    { expectedHead: head ?? null },
   );
   return {
     globalCharacterId,
@@ -507,17 +547,30 @@ export function releaseCharacterFromCampaign(
   campaignDb: Db,
   input: CustodyHolderInput,
 ): SyncBackResult | undefined {
-  const chronicleRecords = prepareReleaseChronicleRecords(
-    registry,
-    campaignDb,
-    input,
-  );
-  const result = syncBackCharacterFromCampaign(registry, campaignDb, input);
+  // Validation, append, chronicle append and custody clear are one atomic
+  // registry unit; the campaign stamp follows the commit.
+  const result = registry.atomically(() => {
+    const chronicleRecords = prepareReleaseChronicleRecords(
+      registry,
+      campaignDb,
+      input,
+    );
+    const synced = syncBackLocked(registry, campaignDb, input);
+    if (synced !== undefined) {
+      input.chronicleStore?.appendRecords(chronicleRecords);
+      // syncBack returned a result only because this campaign holds custody, so
+      // clearing the lock here is safe and targets our own hold.
+      registry.clearCustody(synced.globalCharacterId);
+    }
+    return synced;
+  });
   if (result !== undefined) {
-    input.chronicleStore?.appendRecords(chronicleRecords);
-    // syncBack returned a result only because this campaign holds custody, so
-    // clearing the lock here is safe and targets our own hold.
-    registry.clearCustody(result.globalCharacterId);
+    stampSyncedRevision(
+      campaignDb,
+      input.characterId,
+      result.globalCharacterId,
+      result.revision,
+    );
   }
   return result;
 }
@@ -689,7 +742,12 @@ export function classifyResumeConflict(
       kind: 'stale-copy',
       globalCharacterId,
       headRevision: head,
-      localRevision: campaignSheet.metadata.sourceRevision,
+      // Same reporting as the held branch: the durable synced revision (a
+      // restored fully synchronized copy may be ahead of its checkout
+      // revision), with the documented legacy fallback.
+      localRevision:
+        readSyncedRevision(campaignDb, input.characterId, globalCharacterId) ??
+        campaignSheet.metadata.sourceRevision,
     };
   }
 
@@ -758,52 +816,59 @@ export function acquireCustodyOnResume(
   campaignDb: Db,
   input: { campaignId: string; characterId: string; at: string },
 ): ResumeCustodyOutcome {
-  const outcome = checkCustodyResumable(registry, campaignDb, input);
-  if (outcome === 'not-linked') {
-    return outcome;
-  }
-
-  // checkCustodyResumable proved the sheet is linked; re-read its global id.
-  const globalCharacterId = createSqliteCharacterSheetStore(campaignDb).load(
-    input.characterId,
-  )?.metadata.globalCharacterId as string;
-  if (outcome === 'already-held') {
-    // Not stale (checked above): stamp a legacy copy, or restamp one whose
-    // registry append landed but whose stamp did not (copy equals head).
-    const head = registry.headRevision(globalCharacterId);
-    const synced = readSyncedRevision(
-      campaignDb,
+  // Classification (validation) and the custody write are one atomic registry
+  // unit. The stamp covers exactly the head revision that unit validated the
+  // sheet against, and is written after the registry commit.
+  const { outcome, stamp, globalCharacterId } = registry.atomically(() => {
+    const outcome = checkCustodyResumable(registry, campaignDb, input);
+    if (outcome === 'not-linked') {
+      return { outcome, stamp: undefined, globalCharacterId: '' };
+    }
+    // checkCustodyResumable proved the sheet is linked; re-read its global id.
+    const globalCharacterId = createSqliteCharacterSheetStore(campaignDb).load(
       input.characterId,
-      globalCharacterId,
-    );
-    if (head !== undefined && (synced === undefined || synced < head)) {
-      stampSyncedRevision(
+    )?.metadata.globalCharacterId as string;
+    if (outcome === 'already-held') {
+      // Not stale (validated above): stamp a legacy copy, or restamp one whose
+      // registry append landed but whose stamp did not (copy equals head).
+      const head = registry.headRevision(globalCharacterId);
+      const synced = readSyncedRevision(
         campaignDb,
         input.characterId,
         globalCharacterId,
-        head,
       );
+      const stamp =
+        head !== undefined && (synced === undefined || synced < head)
+          ? head
+          : undefined;
+      return { outcome, stamp, globalCharacterId };
     }
-    return outcome;
-  }
-  const revision =
-    registry.headRevision(globalCharacterId) ??
-    ensureRevisioned(registry, globalCharacterId) ??
-    1;
-  registry.setCustody({
-    globalCharacterId,
-    campaignId: input.campaignId,
-    characterId: input.characterId,
-    revision,
-    attachedAt: input.at,
+    const revision =
+      registry.headRevision(globalCharacterId) ??
+      ensureRevisioned(registry, globalCharacterId) ??
+      1;
+    registry.setCustody({
+      globalCharacterId,
+      campaignId: input.campaignId,
+      characterId: input.characterId,
+      revision,
+      attachedAt: input.at,
+    });
+    return {
+      outcome: 'acquired' as ResumeCustodyOutcome,
+      stamp: revision,
+      globalCharacterId,
+    };
   });
-  stampSyncedRevision(
-    campaignDb,
-    input.characterId,
-    globalCharacterId,
-    revision,
-  );
-  return 'acquired';
+  if (stamp !== undefined) {
+    stampSyncedRevision(
+      campaignDb,
+      input.characterId,
+      globalCharacterId,
+      stamp,
+    );
+  }
+  return outcome;
 }
 
 /** What a character catch-up needs and where it lands. */
@@ -849,6 +914,25 @@ export interface CatchUpToHeadResult {
  * fail-closed `held-elsewhere` conflict, resolved by releasing it there).
  */
 export function catchUpCharacterToHead(
+  registry: CharacterRegistryStore,
+  campaignDb: Db,
+  input: CatchUpToHeadInput,
+): CatchUpToHeadResult {
+  // Head read, custody check and custody write are one atomic registry unit;
+  // the stamp (the adopted head) follows the commit.
+  const result = registry.atomically(() =>
+    catchUpLocked(registry, campaignDb, input),
+  );
+  stampSyncedRevision(
+    campaignDb,
+    input.characterId,
+    result.globalCharacterId,
+    result.toRevision,
+  );
+  return result;
+}
+
+function catchUpLocked(
   registry: CharacterRegistryStore,
   campaignDb: Db,
   input: CatchUpToHeadInput,
@@ -912,8 +996,6 @@ export function catchUpCharacterToHead(
     revision: head,
     attachedAt: input.at,
   });
-  stampSyncedRevision(campaignDb, input.characterId, globalCharacterId, head);
-
   return { globalCharacterId, fromRevision, toRevision: head, attach };
 }
 
@@ -925,9 +1007,18 @@ export interface ForkCharacterInput {
   readonly newGlobalCharacterId: string;
   /**
    * The source revision to branch from (defaults to the source head). The
-   * fork's revision 1 is a copy of this revision's sheet.
+   * fork's revision 1 is a copy of this revision's sheet (recorded as the
+   * fork's parent), unless `sheet` is supplied.
    */
   readonly fromRevision?: number;
+  /**
+   * Branch this exact sheet (a campaign's actual current copy) instead of the
+   * registry's stored `fromRevision` sheet, keeping `fromRevision` as the
+   * recorded parent. Campaign provenance is stripped. Used by the resume-
+   * conflict "keep this campaign's version" fork, so unsynchronized progress on
+   * the campaign copy is not lost.
+   */
+  readonly sheet?: CharacterSheet;
 }
 
 /** Outcome of {@link forkCharacterTimeline}. */
@@ -954,39 +1045,45 @@ export function forkCharacterTimeline(
   registry: CharacterRegistryStore,
   input: ForkCharacterInput,
 ): ForkCharacterResult {
-  if (
-    registry.headRevision(input.newGlobalCharacterId) !== undefined ||
-    registry.load(input.newGlobalCharacterId) !== undefined
-  ) {
-    throw new CharacterCustodyError(
-      `cannot fork onto "${input.newGlobalCharacterId}": that id already has a registry timeline`,
+  return registry.atomically(() => {
+    if (
+      registry.headRevision(input.newGlobalCharacterId) !== undefined ||
+      registry.load(input.newGlobalCharacterId) !== undefined
+    ) {
+      throw new CharacterCustodyError(
+        `cannot fork onto "${input.newGlobalCharacterId}": that id already has a registry timeline`,
+      );
+    }
+    const fromRevision =
+      input.fromRevision ??
+      registry.headRevision(input.sourceGlobalCharacterId);
+    if (fromRevision === undefined) {
+      throw new CharacterCustodyError(
+        `no registered character "${input.sourceGlobalCharacterId}" to fork from`,
+      );
+    }
+    const source = registry.loadRevision(
+      input.sourceGlobalCharacterId,
+      fromRevision,
     );
-  }
-  const fromRevision =
-    input.fromRevision ?? registry.headRevision(input.sourceGlobalCharacterId);
-  if (fromRevision === undefined) {
-    throw new CharacterCustodyError(
-      `no registered character "${input.sourceGlobalCharacterId}" to fork from`,
-    );
-  }
-  const source = registry.loadRevision(
-    input.sourceGlobalCharacterId,
-    fromRevision,
-  );
-  if (source === undefined) {
-    throw new CharacterCustodyError(
-      `source revision ${input.sourceGlobalCharacterId}@${fromRevision} does not exist`,
-    );
-  }
+    if (source === undefined) {
+      throw new CharacterCustodyError(
+        `source revision ${input.sourceGlobalCharacterId}@${fromRevision} does not exist`,
+      );
+    }
 
-  const revision = registry.appendRevision(
-    input.newGlobalCharacterId,
-    source.sheet,
-    'fork',
-    {
-      globalCharacterId: input.sourceGlobalCharacterId,
-      revision: fromRevision,
-    },
-  );
-  return { globalCharacterId: input.newGlobalCharacterId, revision };
+    const revision = registry.appendRevision(
+      input.newGlobalCharacterId,
+      input.sheet === undefined
+        ? source.sheet
+        : stripCampaignProvenance(input.sheet),
+      'fork',
+      {
+        globalCharacterId: input.sourceGlobalCharacterId,
+        revision: fromRevision,
+      },
+      { expectedHead: null },
+    );
+    return { globalCharacterId: input.newGlobalCharacterId, revision };
+  });
 }
