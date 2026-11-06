@@ -129,11 +129,26 @@ export interface CharacterRegistryStore {
    * up front (`BEGIN IMMEDIATE`), so no other connection can commit a revision
    * or custody change between a validation read inside `fn` and the write that
    * relies on it. A throw rolls back every registry write `fn` made. Nested
-   * calls join the enclosing unit. Custody operations (sync-back, release,
-   * acquire, checkout, catch-up) run their validate-and-write inside this, which
-   * is what makes ADR 0012's "exactly one writer" guard linearizable.
+   * calls join the enclosing unit (a savepoint: only the outermost unit commits),
+   * so registry-only work (append, register, fork) may be nested. Custody
+   * operations (sync-back, release, acquire, checkout, catch-up) run their
+   * validate-and-write inside this, which is what makes ADR 0012's "exactly one
+   * writer" guard linearizable.
+   *
+   * Restriction: the stamp-producing custody operations (checkout, sync-back,
+   * release, acquire, catch-up) write a campaign freshness stamp after the
+   * registry commit, and an outer rollback after an inner release would leave
+   * that stamp naming a revision that no longer exists. They therefore refuse
+   * with `CharacterCustodyError`, before any write, when called while
+   * {@link CharacterRegistryStore.inTransaction} is true. Do not enclose them in
+   * `atomically`.
    */
   atomically<T>(fn: () => T): T;
+  /**
+   * Whether this store's connection is already inside a transaction (an
+   * enclosing `atomically` or any outer transaction). Read-only.
+   */
+  inTransaction(): boolean;
   /** The latest revision number, or `undefined` when none is registered. */
   headRevision(globalCharacterId: string): number | undefined;
   /** The full linear revision history, oldest first. */
@@ -422,6 +437,10 @@ export function createCharacterRegistryStore(
 
     atomically<T>(fn: () => T): T {
       return db.transaction(fn).immediate();
+    },
+
+    inTransaction(): boolean {
+      return db.inTransaction;
     },
 
     headRevision(globalCharacterId: string): number | undefined {

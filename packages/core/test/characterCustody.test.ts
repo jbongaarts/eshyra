@@ -1499,6 +1499,117 @@ describe('linearizable custody validation (eshyra-o9bd.19.6.7.8, Sol S2/S3)', ()
     expect(registryA.headRevision('mira')).toBe(1);
   });
 
+  describe('stamp-producing operations inside an enclosing registry unit (Sol S4)', () => {
+    type Op = (campaign: Db) => unknown;
+    const run: Record<string, { setup: (c: Db) => void; op: Op }> = {
+      checkout: {
+        setup: () => {},
+        op: (c) => checkout(registryA, c, 'camp-a'),
+      },
+      'sync-back': {
+        setup: (c) => {
+          checkout(registryA, c, 'camp-a');
+          playTo(c, 2);
+        },
+        op: (c) => syncBackCharacterFromCampaign(registryA, c, holder),
+      },
+      release: {
+        setup: (c) => {
+          checkout(registryA, c, 'camp-a');
+          playTo(c, 2);
+        },
+        op: (c) => releaseCharacterFromCampaign(registryA, c, holder),
+      },
+      'acquire already-held': {
+        setup: (c) => checkout(registryA, c, 'camp-a'),
+        op: (c) =>
+          acquireCustodyOnResume(registryA, c, {
+            ...holder,
+            at: 'a2',
+          }),
+      },
+      'acquire idle': {
+        setup: (c) => {
+          checkout(registryA, c, 'camp-a');
+          registryA.clearCustody('mira');
+        },
+        op: (c) =>
+          acquireCustodyOnResume(registryA, c, {
+            ...holder,
+            at: 'a2',
+          }),
+      },
+      'catch-up': {
+        setup: (c) => {
+          checkout(registryA, c, 'camp-a');
+          registryA.clearCustody('mira');
+          const original = freshCampaign();
+          checkout(registryA, original, 'camp-b');
+          playTo(original, 2);
+          releaseCharacterFromCampaign(registryA, original, {
+            campaignId: 'camp-b',
+            characterId: 'pc-1',
+          });
+        },
+        op: (c) =>
+          catchUpCharacterToHead(registryA, c, {
+            ...holder,
+            sessionId: 's2',
+            at: 'a2',
+          }),
+      },
+    };
+
+    it.each(Object.keys(run))(
+      '%s refuses and changes nothing when the registry is already in a transaction',
+      (name) => {
+        const { setup, op } = run[name] as (typeof run)[string];
+        const campaign = freshCampaign();
+        setup(campaign);
+        const before = {
+          head: registryA.headRevision('mira'),
+          revisions: registryA.listRevisions('mira').length,
+          custody: registryA.custody('mira'),
+          stamp: stamp(campaign),
+          level: createSqliteCharacterSheetStore(campaign).load('pc-1')?.level,
+        };
+        expect(registryA.inTransaction()).toBe(false);
+        expect(() =>
+          registryA.atomically(() => {
+            expect(registryA.inTransaction()).toBe(true);
+            op(campaign);
+          }),
+        ).toThrow(CharacterCustodyError);
+        expect(registryA.inTransaction()).toBe(false);
+        expect({
+          head: registryA.headRevision('mira'),
+          revisions: registryA.listRevisions('mira').length,
+          custody: registryA.custody('mira'),
+          stamp: stamp(campaign),
+          level: createSqliteCharacterSheetStore(campaign).load('pc-1')?.level,
+        }).toEqual(before);
+      },
+    );
+
+    it('still lets registry-only work nest in an enclosing unit', () => {
+      registryA.atomically(() => {
+        registryA.appendRevision('mira', makeSheet({ level: 2 }), 'sync-back');
+      });
+      expect(registryA.headRevision('mira')).toBe(2);
+      expect(() =>
+        registryA.atomically(() => {
+          registryA.appendRevision(
+            'mira',
+            makeSheet({ level: 3 }),
+            'sync-back',
+          );
+          throw new Error('outer abort');
+        }),
+      ).toThrow('outer abort');
+      expect(registryA.headRevision('mira')).toBe(2);
+    });
+  });
+
   describe.each([['already-held'], ['idle']] as const)(
     'synced revision ahead of checkout revision (%s)',
     (state) => {

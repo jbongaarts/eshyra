@@ -2405,7 +2405,8 @@ const CHARACTER_CONTINUITY: readonly DeterministicCapabilityInventoryEntry[] = [
         'A caller that is not the custody holder, and a campaign sheet with no registry link, get no result: nothing is appended and custody is untouched, so a stale campaign copy cannot revert the timeline or drop another campaign hold.',
         'A copy stamped with a synced revision older than the registry head whose sheet differs from the head sheet (a restored checkpoint or a fork of the campaign database) also gets no result even while this campaign still holds custody: nothing is appended and custody is not dropped, so the player resolves it through the resume conflict choices.',
         'Chronicle records passed without a chronicle store are refused, and for the custody holder invalid chronicle records are refused, before the sync-back writes anything.',
-        'The revision append, the chronicle append, and the custody clear are separate writes, not one transaction.',
+        'The revision append, the chronicle append, and the custody clear run in one registry transaction when the chronicle store shares the registry connection (the production CLI store does); the campaign stamp is written after that commit as a separate store. No such guarantee is made for a chronicle store on another connection.',
+        'Checkout, sync-back, release, acquire and catch-up refuse with CharacterCustodyError, before any write, when the registry connection is already inside a transaction (an enclosing atomically), because the post-commit campaign stamp would otherwise outlive a rolled-back outer unit; registry-only operations (append, register, fork) may still nest.',
         'Does not merge divergent sheets; it appends the holder copy as the next revision.',
       ],
       residualDmInterpretation: [

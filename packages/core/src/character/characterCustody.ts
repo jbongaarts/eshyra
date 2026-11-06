@@ -68,6 +68,25 @@ export class CharacterCustodyError extends Error {
   }
 }
 
+/**
+ * Refuse a stamp-producing custody operation inside an enclosing registry
+ * transaction. These operations stamp the campaign database after the registry
+ * commit; nested in an outer unit that later rolls back, the stamp would name a
+ * revision that never became durable and a later reuse of that revision number
+ * would let a stale copy overwrite newer progress. Fails closed before any
+ * registry or campaign write.
+ */
+function assertNotInRegistryTransaction(
+  registry: CharacterRegistryStore,
+  operation: string,
+): void {
+  if (registry.inTransaction()) {
+    throw new CharacterCustodyError(
+      `${operation} cannot run inside an enclosing registry transaction: its campaign freshness stamp is written after the registry commit and must not outlive a rolled-back outer unit`,
+    );
+  }
+}
+
 /** Where a registry character is being attached. */
 export interface CheckoutCharacterInput {
   /** The registry character to take custody of. Must already be registered. */
@@ -173,6 +192,7 @@ export function checkoutCharacterIntoCampaign(
   campaignDb: Db,
   input: CheckoutCharacterInput,
 ): CheckoutCharacterResult {
+  assertNotInRegistryTransaction(registry, 'checkout');
   // The custody check, head read and custody write are one atomic registry unit
   // (ADR 0012: a concurrent checkout/release cannot interleave). The campaign
   // sync stamp follows the registry commit, naming the revision actually
@@ -442,6 +462,7 @@ export function syncBackCharacterFromCampaign(
   campaignDb: Db,
   input: CustodyHolderInput,
 ): SyncBackResult | undefined {
+  assertNotInRegistryTransaction(registry, 'sync-back');
   // Custody check, stale-copy validation and the append are one atomic registry
   // unit bound to the head the guard validated (ADR 0012); the campaign stamp
   // follows the registry commit.
@@ -547,6 +568,7 @@ export function releaseCharacterFromCampaign(
   campaignDb: Db,
   input: CustodyHolderInput,
 ): SyncBackResult | undefined {
+  assertNotInRegistryTransaction(registry, 'release');
   // Validation, append, chronicle append and custody clear are one atomic
   // registry unit; the campaign stamp follows the commit.
   const result = registry.atomically(() => {
@@ -816,6 +838,7 @@ export function acquireCustodyOnResume(
   campaignDb: Db,
   input: { campaignId: string; characterId: string; at: string },
 ): ResumeCustodyOutcome {
+  assertNotInRegistryTransaction(registry, 'custody acquire');
   // Classification (validation) and the custody write are one atomic registry
   // unit. The stamp covers exactly the head revision that unit validated the
   // sheet against, and is written after the registry commit.
@@ -918,6 +941,7 @@ export function catchUpCharacterToHead(
   campaignDb: Db,
   input: CatchUpToHeadInput,
 ): CatchUpToHeadResult {
+  assertNotInRegistryTransaction(registry, 'catch-up');
   // Head read, custody check and custody write are one atomic registry unit;
   // the stamp (the adopted head) follows the commit.
   const result = registry.atomically(() =>
