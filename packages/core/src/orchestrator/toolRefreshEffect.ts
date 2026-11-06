@@ -26,9 +26,13 @@ export const refreshEffectTool: Tool = {
     'non-item effect takes it, and durationOverride is refused; a spell ' +
     'whose record has a timed duration must supply that same amount and ' +
     'unit (other spell records do not constrain it); (b) an item-power ' +
-    'effect keeps its printed typed duration: a different timed duration ' +
-    'needs durationOverride (basis and reason), which records a DM override, ' +
-    'and an omitted duration re-anchors it and keeps its provenance; (c) an ' +
+    'effect with a printed typed duration keeps it: its matching timed ' +
+    'duration records typed-fixed, and any other duration needs ' +
+    'durationOverride (basis and reason), which records a DM override; an ' +
+    'item-power effect with no printed typed duration needs durationOverride ' +
+    'for a timed duration, while a non-timed duration takes effect without ' +
+    'one and clears its provenance; an omitted duration re-anchors the stored ' +
+    'duration and keeps its provenance; (c) an ' +
     'effect bound to an item grant (a granted creature) never has its ' +
     'lifetime rewritten by refresh, with or without durationOverride, and an ' +
     'unchanged re-anchor that would move its clock is refused: to change or ' +
@@ -41,7 +45,7 @@ export const refreshEffectTool: Tool = {
       durationOverride: {
         type: 'object',
         description:
-          'Required to change a printed item-power duration: { basis: dm-adjudicated | house-rule, reason }. Never accepted for an item-grant effect (use end_effect).',
+          'Required, with basis and reason, for an item-power duration that differs from its printed typed duration, or for a timed duration on an item-power effect that prints none: { basis: dm-adjudicated | house-rule, reason }. Not needed for a non-timed duration on an item-power effect that prints none. Never accepted for an item-grant effect (use end_effect).',
         properties: {
           basis: { enum: ['dm-adjudicated', 'house-rule'] },
           reason: { type: 'string', minLength: 1 },
