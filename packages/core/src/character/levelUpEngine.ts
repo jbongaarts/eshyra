@@ -159,7 +159,10 @@ export interface LevelUpHitPoints {
   readonly constitutionModifier: number;
   readonly naturalRoll?: number;
   readonly retroactiveConstitutionAdjustment?: number;
-  /** HP gained this level: max(1, floor(hitDie/2)+1 + CON modifier). */
+  /**
+   * HP gained this level: floor(hitDie/2)+1 + CON modifier (fixed average), or
+   * natural roll + CON modifier (rolled). No floor is applied (SRD p.56).
+   */
   readonly increment: number;
   readonly maxHitPoints: LevelUpDelta<number>;
 }
@@ -1538,7 +1541,7 @@ function applyResolvedChoicesToChangeSet(
     const delta = constitution.modifier.to - constitution.modifier.from;
     const natural = changeSet.hitPoints.naturalRoll;
     const base = natural ?? Math.floor(changeSet.hitPoints.hitDie / 2) + 1;
-    const increment = Math.max(1, base + constitution.modifier.to);
+    const increment = base + constitution.modifier.to;
     const retroactiveConstitutionAdjustment = delta * changeSet.level.from;
     const totalDelta = increment + retroactiveConstitutionAdjustment;
     return {
@@ -1752,16 +1755,17 @@ function recomputeAfterChoices(
 }
 
 /**
- * The HP gained for one level by the SRD fixed-average method:
+ * The HP gained for one level by the SRD fixed-average method (SRD p.56):
  * `floor(hitDie / 2) + 1` (the per-class average: d6→4, d8→5, d10→6, d12→7)
- * plus the Constitution modifier, with the SRD floor of at least 1 HP per level.
+ * plus the Constitution modifier. The SRD states no minimum, so the total is
+ * returned as-is and may be zero or negative for a very low Constitution.
  */
 function hitPointIncrement(
   hitDie: number,
   constitutionModifier: number,
 ): number {
   const average = Math.floor(hitDie / 2) + 1;
-  return Math.max(1, average + constitutionModifier);
+  return average + constitutionModifier;
 }
 
 function resolveHitPointChoice(
@@ -1788,7 +1792,7 @@ function resolveHitPointChoice(
   return {
     method: 'rolled',
     naturalRoll: roll.natural,
-    increment: Math.max(1, roll.natural + constitutionModifier),
+    increment: roll.natural + constitutionModifier,
   };
 }
 
