@@ -328,16 +328,17 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
     }),
     toolEntry('record_death_save', 'bounded-procedure', {
       operation:
-        'Apply a caller-supplied natural d20 result (integer 1-20) to a dying character, or to a dying opted-in player-character combatant in the active combat instance: 10 or more is a success, less than 10 a failure, a natural 1 two failures, a natural 20 revives to 1 hit point unless recovery is blocked or the effective maximum is 0 (then an ordinary success); three successes stabilize unless recovery is blocked, and three failures kill. Stabilizing schedules a seeded stable recovery.',
+        'Apply a caller-supplied natural d20 result (integer 1-20) to a dying character, or to a dying opted-in player-character combatant in the active combat instance. An optional caller-supplied saveBonus (integer -20 to 20, default 0) is added to the natural roll and the total is judged against 10: 10 or more is a success, less than 10 a failure. A natural 1 is two failures and a natural 20 revives to 1 hit point unless recovery is blocked or the effective maximum is 0 (then an ordinary success); natural 1 and natural 20 are judged on the natural roll alone, whatever saveBonus is. Optional bonusSources names up to 8 spells or features and is recorded with the result. Three successes stabilize unless recovery is blocked, and three failures kill. Stabilizing schedules a seeded stable recovery.',
       requiredInputs: ['roll'],
       exclusions: [
         'The natural result is supplied by the caller and only range-checked; the tool does not verify that it came from the roll tool.',
+        'The saving-throw bonus is supplied by the caller and only range-checked (integer -20 to 20); the tool does not discover which spells or features apply, and does not verify that any bonus dice were rolled through roll. A malformed saveBonus or bonusSources is refused before any state change.',
         'Refused unless the target is dying (a character) or a dying player-character-rules combatant in the active combat instance.',
         'Providing both character and combatantId is refused.',
         'Does not decide when a death save is owed.',
       ],
       residualDmInterpretation: [
-        'The DM decides when a death save is owed and obtains the natural result through roll.',
+        'The DM decides when a death save is owed, obtains the natural result through roll, and decides which saving-throw effects (for example Bless, Aura of Protection, a Ring of Protection) apply and what their total bonus is.',
       ],
       runtimeOwner: [
         o('toolRecordDeathSave.ts'),

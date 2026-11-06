@@ -802,6 +802,138 @@ describe('recordDeathSave', () => {
   });
 });
 
+describe('recordDeathSave saving-throw bonus (eshyra-o9bd.19.6.7.6.1)', () => {
+  it('a Bless bonus lifts a natural 9 to a success and is recorded', () => {
+    const db = freshDb({ max: 20, current: 0, lifeState: 'dying' });
+
+    expect(
+      recordDeathSave(db, 9, CTX, undefined, {
+        saveBonus: 1,
+        bonusSources: ['Bless'],
+      }),
+    ).toMatchObject({
+      roll: 9,
+      saveBonus: 1,
+      bonusSources: ['Bless'],
+      total: 10,
+      outcome: 'success',
+      deathSaveSuccesses: 1,
+      lifeState: 'dying',
+    });
+    expect(readMachine(db)).toMatchObject({ death_save_successes: 1 });
+    db.close();
+  });
+
+  it('a positive bonus does not change a natural 1: still two failures', () => {
+    const db = freshDb({ max: 20, current: 0, lifeState: 'dying' });
+
+    expect(
+      recordDeathSave(db, 1, CTX, undefined, {
+        saveBonus: 10,
+        bonusSources: [],
+      }),
+    ).toMatchObject({
+      outcome: 'critical-failure',
+      total: 11,
+      deathSaveFailures: 2,
+      deathSaveSuccesses: 0,
+      lifeState: 'dying',
+    });
+    db.close();
+  });
+
+  it('a negative bonus does not stop a natural 20 from reviving', () => {
+    const db = freshDb({
+      max: 20,
+      current: 0,
+      lifeState: 'dying',
+      successes: 2,
+      failures: 1,
+    });
+
+    expect(
+      recordDeathSave(db, 20, CTX, undefined, {
+        saveBonus: -5,
+        bonusSources: [],
+      }),
+    ).toMatchObject({
+      outcome: 'revived',
+      total: 15,
+      hpCurrent: 1,
+      lifeState: 'alive',
+    });
+    expect(readMachine(db)).toMatchObject({
+      hp_current: 1,
+      life_state: 'alive',
+    });
+    db.close();
+  });
+
+  it('a natural 20 that cannot revive stays an ordinary success whatever the bonus', () => {
+    const db = freshDb({ max: 20, current: 0, lifeState: 'dying' });
+    beginSuffocation(db, { ...CTX, characterId: 'pc-1' });
+
+    expect(
+      recordDeathSave(db, 20, CTX, undefined, {
+        saveBonus: -15,
+        bonusSources: [],
+      }),
+    ).toMatchObject({
+      outcome: 'success',
+      total: 5,
+      recoveryBlocked: 'suffocating',
+      deathSaveSuccesses: 1,
+      deathSaveFailures: 0,
+      lifeState: 'dying',
+    });
+    db.close();
+  });
+
+  it('a bonus that leaves the total below 10 keeps a 9 a failure', () => {
+    const db = freshDb({ max: 20, current: 0, lifeState: 'dying' });
+
+    expect(
+      recordDeathSave(db, 9, CTX, undefined, {
+        saveBonus: -2,
+        bonusSources: [],
+      }),
+    ).toMatchObject({ outcome: 'failure', total: 7, deathSaveFailures: 1 });
+    db.close();
+  });
+
+  it('refuses malformed bonus input before any state change', () => {
+    const malformed: { saveBonus: unknown; bonusSources?: unknown }[] = [
+      { saveBonus: '2' },
+      { saveBonus: 1.5 },
+      { saveBonus: 21 },
+      { saveBonus: -21 },
+      { saveBonus: null },
+      { saveBonus: 1, bonusSources: 'Bless' },
+      { saveBonus: 1, bonusSources: [''] },
+      { saveBonus: 1, bonusSources: [1] },
+      {
+        saveBonus: 1,
+        bonusSources: Array.from({ length: 9 }, (_, i) => `source-${i}`),
+      },
+    ];
+    for (const modifier of malformed) {
+      const db = freshDb({
+        max: 20,
+        current: 0,
+        lifeState: 'dying',
+        successes: 1,
+        failures: 1,
+      });
+      const before = readMachine(db);
+      expect(() =>
+        recordDeathSave(db, 10, CTX, undefined, modifier as never),
+      ).toThrow(MutateStateError);
+      expect(readMachine(db)).toEqual(before);
+      db.close();
+    }
+  });
+});
+
 describe('stabilizeCharacter', () => {
   it('settles zero-maximum recovery and keeps later clock advances valid', () => {
     const db = freshDb({ max: 1, current: 0, lifeState: 'dying' });
