@@ -414,14 +414,32 @@ describe('spendUsage — declared economies (characters and items)', () => {
       { kind: 'item', ref: 'wand-1' },
     ]);
 
+    // A supplied amount on a rechargeFormula counter is a recorded DM ruling.
+    expect(() =>
+      restoreUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        itemId: 'wand-1',
+        amount: 5,
+        ...CTX,
+      }),
+    ).toThrow(/regains 1d6\+1 at dawn.*rollOverride/);
     const restored = restoreUsage(db, {
       campaignId: CAMPAIGN,
       owner: PC,
       itemId: 'wand-1',
       amount: 5,
+      rollOverride: { basis: 'dm-adjudicated', reason: 'ruling' },
       ...CTX,
     });
     expect(restored.counter.usesUsed).toBe(0);
+    expect(restored.rollEvidence).toEqual({
+      source: 'dm-supplied',
+      natural: 5,
+      total: 5,
+      basis: 'dm-adjudicated',
+      reason: 'ruling',
+    });
   });
 
   it('rejects every generic counter mutation for canonical pack-bound items', () => {
@@ -981,6 +999,238 @@ describe('restoreUsage — recharge rolls', () => {
         ...CTX,
       }),
     ).toThrow(/no usage counter matches 'Ice Breath'.*Fire Breath/s);
+  });
+});
+
+describe('restoreUsage — dawn rechargeFormula (engine-rolled)', () => {
+  /** A wand with 5 of 7 charges spent; the formula regains 1d6+1 at dawn. */
+  function spendWand(db: ReturnType<typeof setup>['db'], pcId: string) {
+    giveItem(
+      db,
+      { id: 'wand-1', name: 'Wand of Fireballs' },
+      { characterId: pcId, ...CTX },
+    );
+    spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      itemId: 'wand-1',
+      uses: 5,
+      declared: { maxUses: 7, reset: 'dawn', rechargeFormula: '1d6+1' },
+      ...CTX,
+    });
+  }
+
+  it('rolls the formula from the seeded RNG when neither amount nor roll is supplied', () => {
+    const { db, pcId } = setup();
+    spendWand(db, pcId);
+    const natural = createSeededRng(21).nextInt(6) + 1;
+    const total = natural + 1;
+    const restored = restoreUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      itemId: 'wand-1',
+      rng: createSeededRng(21),
+      ...CTX,
+    });
+    expect(restored.rollEvidence).toEqual({
+      source: 'engine',
+      dice: '1d6+1',
+      rolls: [natural],
+      kept: [natural],
+      dropped: [],
+      natural,
+      total,
+    });
+    expect(restored.recharged).toBeUndefined();
+    expect(restored.counter.usesUsed).toBe(Math.max(0, 5 - total));
+  });
+
+  it('refuses an engine formula roll without an rng and before any state change', () => {
+    const { db, pcId } = setup();
+    spendWand(db, pcId);
+    expect(() =>
+      restoreUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        itemId: 'wand-1',
+        ...CTX,
+      }),
+    ).toThrow(/pass amount/);
+    const counter = readSpentUsageCounters(db, CAMPAIGN).find(
+      (c) => c.displayName === 'Wand of Fireballs charges',
+    );
+    expect(counter?.usesUsed).toBe(5);
+  });
+
+  it('refuses a rollOverride without a supplied amount or roll', () => {
+    const { db, pcId } = setup();
+    spendWand(db, pcId);
+    expect(() =>
+      restoreUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        itemId: 'wand-1',
+        rng: createSeededRng(1),
+        rollOverride: { basis: 'dm-adjudicated', reason: 'x' },
+        ...CTX,
+      }),
+    ).toThrow(/accompanies a supplied roll or amount/);
+  });
+
+  it('refuses a rollOverride with an amount on a counter without a rechargeFormula', () => {
+    const { db, pcId } = setup();
+    giveItem(
+      db,
+      { id: 'legacy-rod', name: 'Legacy rod' },
+      { characterId: pcId, ...CTX },
+    );
+    spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      itemId: 'legacy-rod',
+      uses: 2,
+      declared: { maxUses: 7, reset: 'dawn' },
+      ...CTX,
+    });
+    expect(() =>
+      restoreUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        itemId: 'legacy-rod',
+        amount: 1,
+        rollOverride: { basis: 'dm-adjudicated', reason: 'x' },
+        ...CTX,
+      }),
+    ).toThrow(/takes no rollOverride for a DM ruling/);
+  });
+
+  it('keeps an amount on a counter without a rechargeFormula a DM ruling (no override, no evidence)', () => {
+    const { db, pcId } = setup();
+    giveItem(
+      db,
+      { id: 'legacy-rod', name: 'Legacy rod' },
+      { characterId: pcId, ...CTX },
+    );
+    spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      itemId: 'legacy-rod',
+      uses: 2,
+      declared: { maxUses: 7, reset: 'dawn' },
+      ...CTX,
+    });
+    const restored = restoreUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      itemId: 'legacy-rod',
+      amount: 1,
+      ...CTX,
+    });
+    expect(restored.counter.usesUsed).toBe(1);
+    expect(restored.rollEvidence).toBeUndefined();
+  });
+
+  it('refuses an engine roll on a counter with neither a recharge die nor a formula', () => {
+    const { db, pcId } = setup();
+    giveItem(
+      db,
+      { id: 'legacy-rod', name: 'Legacy rod' },
+      { characterId: pcId, ...CTX },
+    );
+    spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      itemId: 'legacy-rod',
+      uses: 2,
+      declared: { maxUses: 7, reset: 'dawn' },
+      ...CTX,
+    });
+    expect(() =>
+      restoreUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        itemId: 'legacy-rod',
+        rng: createSeededRng(1),
+        ...CTX,
+      }),
+    ).toThrow(/has no recharge die or dawn rechargeFormula to roll/);
+  });
+
+  it('names the engine roll in the depleted hint of a formula counter', () => {
+    const { db, pcId } = setup();
+    giveItem(
+      db,
+      { id: 'wand-1', name: 'Wand of Fireballs' },
+      { characterId: pcId, ...CTX },
+    );
+    const spent = spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      itemId: 'wand-1',
+      uses: 7,
+      declared: { maxUses: 7, reset: 'dawn', rechargeFormula: '1d6+1' },
+      ...CTX,
+    });
+    expect(spent.depletedHint).toMatch(/rolls 1d6\+1 from the engine RNG/);
+    expect(spent.depletedHint).not.toMatch(/via the roll tool/);
+  });
+
+  it('restore_usage tool: an omitted amount rolls the formula into the ledger; a supplied amount needs an override', () => {
+    const { db, pcId } = setup();
+    spendWand(db, pcId);
+    const registry = createDefaultToolRegistry();
+    const ctx = {
+      db,
+      rng: createSeededRng(21),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'turn-1',
+      at: NOW,
+    };
+    const args = { itemId: 'wand-1', visibility: 'player_visible' };
+    const rolled = registry.invoke('restore_usage', args, ctx);
+    expect(rolled).toMatchObject({
+      ok: true,
+      data: {
+        reason: 'Rolled restore',
+        visibility: 'player_visible',
+        rollEvidence: { source: 'engine', dice: '1d6+1' },
+      },
+    });
+    if (!rolled.ok) return;
+    expect(
+      appendPlayerVisibleRollLedger('N.', [
+        {
+          tool: 'restore_usage',
+          args,
+          result: rolled,
+          mutates: true,
+          source: 'native',
+        },
+      ]),
+    ).toMatch(
+      /Restore \(Wand of Fireballs charges: Rolled restore\): 1d6\+1 nat \d+ → regains \d+/,
+    );
+
+    expect(
+      registry.invoke('restore_usage', { itemId: 'wand-1', amount: 2 }, ctx),
+    ).toMatchObject({ ok: false, code: 'usage_error' });
+    expect(
+      registry.invoke(
+        'restore_usage',
+        {
+          itemId: 'wand-1',
+          amount: 2,
+          rollOverride: { basis: 'dm-adjudicated', reason: 'ruling' },
+        },
+        ctx,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: {
+        rollEvidence: { source: 'dm-supplied', natural: 2, total: 2 },
+      },
+    });
   });
 });
 

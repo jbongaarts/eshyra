@@ -1285,19 +1285,20 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('restore_usage', 'bounded-procedure', {
     operation:
-      'Restore a spent counter, found by ability or item (a bound class resource is first reconciled to the active class capacity): with neither roll nor amount, roll the counter recharge die from the seeded RNG for a recharge-roll counter, recharging it exactly when the natural roll meets the counter threshold and consuming that owner-turn window (the result records its roll provenance and a visibility, default dm_only); with a DM-supplied roll plus rollOverride, apply that recharge-die result instead (recorded as unbound DM-supplied provenance); with amount, regain that many DM-supplied uses (never below zero spent) on a counter of any reset kind not refused below.',
+      'Restore a spent counter, found by ability or item (a bound class resource is first reconciled to the active class capacity): with neither roll nor amount, roll the counter recharge die from the seeded RNG for a recharge-roll counter, recharging it exactly when the natural roll meets the counter threshold and consuming that owner-turn window (the result records its roll provenance and a visibility, default dm_only); on a dawn counter with a rechargeFormula (e.g. 1d6+1), neither roll nor amount rolls that formula from the seeded RNG and regains its total in uses (never below zero spent), recorded as engine evidence with the same visibility. With a DM-supplied roll plus rollOverride, apply that recharge-die result instead (recorded as unbound DM-supplied provenance); with amount on a rechargeFormula counter, the DM-supplied amount requires rollOverride; with amount on any other counter, regain that many DM-supplied uses (never below zero spent) without an override.',
     requiredInputs: [
       'ability or itemId (one of)',
-      'none beyond the counter (the engine rolls); roll requires rollOverride; amount is DM-supplied; at most one of roll or amount',
+      'none beyond the counter (the engine rolls); roll requires rollOverride; amount is DM-supplied and requires rollOverride only on a dawn rechargeFormula counter; at most one of roll or amount',
     ],
     exclusions: [
-      'A DM-supplied recharge roll is range-checked against the counter die and accepted only with rollOverride { basis dm-adjudicated or house-rule, reason, optional ruleId naming an active house-rule campaign rule }; it is refused without it and the override justification is not verified. The amount is DM-supplied and is not checked against any source (canonical items use use_item).',
-      'An engine or supplied roll is refused for a counter that is not recharge-roll, outside the owner own open structured turn, when already attempted in this turn window, and when the ability was used in this window.',
+      'A DM-supplied recharge roll is range-checked against the counter die and accepted only with rollOverride { basis dm-adjudicated or house-rule, reason, optional ruleId naming an active house-rule campaign rule }; it is refused without it and the override justification is not verified.',
+      'A DM-supplied amount on a dawn rechargeFormula counter is refused without rollOverride, and an engine roll of a formula is refused when the formula is not a dice expression or can regain less than 1 use. An amount on any other counter is a DM ruling: it is not checked against any source, and a rollOverride with it is refused (canonical items use use_item).',
+      'An engine or supplied roll is refused for a counter that is not recharge-roll, outside the owner own open structured turn, when already attempted in this turn window, and when the ability was used in this window. A counter with neither a recharge die nor a dawn rechargeFormula is refused when rolled.',
       'A bound class resource with no capacity or unlimited capacity at the level is refused, and a pack-bound or quarantined item row is refused (use_item).',
       'Generic rest/dawn usage resets go through reset_usage; elapsed-time processing and pack-bound item dawn economies go through advance_time or the rest completion tools.',
     ],
     residualDmInterpretation: [
-      'The DM decides when a recharge die is due, whether to override the engine roll with a recorded ruling, and any ruled or separately rolled amount.',
+      'The DM decides when a recharge die or dawn formula is due, whether to override the engine roll with a recorded ruling, and any ruled amount that is not a rolled formula.',
     ],
     runtimeOwner: [
       o('toolRestoreUsage.ts'),

@@ -30,8 +30,8 @@ export const resetUsageTool: Tool = {
     'rests); pass combatantId or character to scope the event to one ' +
     'owner. Dawn applies to every dawn-printed counter. Items that regain a rolled amount ' +
     '("1d6+1 daily at dawn") are returned in needsRolledRestore instead ' +
-    'of being reset — roll the formula via `roll`, then apply it with ' +
-    'restore_usage. args: { event: "short_rest"|"long_rest"|"dawn", ' +
+    'of being reset — apply each with restore_usage (omit amount: the ' +
+    'engine rolls the formula; never roll it yourself). args: { event: "short_rest"|"long_rest"|"dawn", ' +
     'combatantId?: string, character?: string }.',
   inputSchema: {
     type: 'object',

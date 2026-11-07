@@ -30,11 +30,17 @@ export interface EngineRollEvidence {
   readonly dropped: readonly number[];
   /** The kept die (the natural result). */
   readonly natural: number;
+  /** Kept sum plus the flat modifier (e.g. the 1d6+1 dawn recharge). Present
+   *  only when the expression carries a modifier. */
+  readonly total?: number;
 }
 
 export interface DmSuppliedRollEvidence extends RollOverride {
   readonly source: 'dm-supplied';
   readonly natural: number;
+  /** Present for a DM-supplied uses amount (a rechargeFormula restore). No die
+   *  was rolled, so the supplied amount is recorded as both natural and total. */
+  readonly total?: number;
 }
 
 export type RollEvidence = EngineRollEvidence | DmSuppliedRollEvidence;
@@ -51,6 +57,7 @@ export function engineRollEvidence(
     kept: roll.kept,
     dropped: roll.dropped,
     natural: roll.natural,
+    ...(roll.modifier === 0 ? {} : { total: roll.total }),
   };
 }
 
@@ -65,6 +72,19 @@ export function dmSuppliedRollEvidence(
     reason: override.reason,
     ...(override.ruleId === undefined ? {} : { ruleId: override.ruleId }),
   };
+}
+
+/** A DM-supplied uses amount restored from a rechargeFormula counter. */
+export function dmSuppliedAmountEvidence(
+  amount: number,
+  override: RollOverride,
+): DmSuppliedRollEvidence {
+  return { ...dmSuppliedRollEvidence(amount, override), total: amount };
+}
+
+/** Uses regained by an evidence record: the total when present, else the natural. */
+export function regainedFromEvidence(evidence: RollEvidence): number {
+  return evidence.total ?? evidence.natural;
 }
 
 /** Compact audit-trail suffix for a mutation `provenance` string. */

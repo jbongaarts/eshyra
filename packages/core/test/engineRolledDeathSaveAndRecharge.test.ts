@@ -292,5 +292,7 @@ describe('roll ledger and capability inventory', () => {
     expect(restore).toMatch(
       /amount is DM-supplied|DM-supplied uses|DM-supplied/,
     );
+    expect(restore).toMatch(/rechargeFormula/);
+    expect(restore).toMatch(/amount on a rechargeFormula counter/);
   });
 });

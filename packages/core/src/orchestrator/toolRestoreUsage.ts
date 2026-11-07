@@ -26,9 +26,11 @@ export const restoreUsageTool: Tool = {
     'adjudicate a result the engine cannot roll, supply `roll` together with ' +
     '`rollOverride { basis: "dm-adjudicated"|"house-rule", reason, ruleId? }`; a ' +
     'supplied roll without rollOverride is refused. (2) amount — regain a ' +
-    'specific number of uses/charges that you decide (e.g. the "1d6+1" dawn ' +
-    'recharge of a wand rolled via `roll`, or a DM ruling); the amount is ' +
-    'DM-supplied and is not verified. Pass at most one of roll or amount. ' +
+    'specific number of uses/charges that you decide (a DM ruling; the amount ' +
+    'is DM-supplied and not verified). A dawn counter with a rechargeFormula ' +
+    '(e.g. the "1d6+1" wand recharge) is rolled by the engine when you omit ' +
+    'amount, like a recharge die (never roll it yourself); supplying amount ' +
+    'there requires rollOverride. Pass at most one of roll or amount. ' +
     'Rest/dawn resets go through reset_usage instead. args: { ' +
     'ability?: string, itemId?: string, combatantId?: string, character?: ' +
     'string, roll?: integer, rollOverride?: object, amount?: integer, ' +
@@ -65,7 +67,9 @@ export const restoreUsageTool: Tool = {
       amount: {
         type: 'integer',
         description:
-          'Uses/charges regained, as decided by the DM (not verified).',
+          'Uses/charges regained, as decided by the DM (not verified). On a ' +
+          'dawn counter with a rechargeFormula, omit amount so the engine ' +
+          'rolls the formula; a supplied amount there requires rollOverride.',
         minimum: 1,
       },
     },
@@ -91,21 +95,22 @@ export const restoreUsageTool: Tool = {
     if (a.amount !== undefined && typeof a.amount !== 'number') {
       return err('invalid_args', 'restore_usage amount must be an integer');
     }
+    if (a.roll !== undefined && a.amount !== undefined) {
+      return err('invalid_args', 'pass at most one of roll or amount');
+    }
     let override: ReturnType<typeof parseRollOverride> | undefined;
-    if (a.roll !== undefined) {
-      if (a.rollOverride === undefined)
+    if (a.rollOverride !== undefined) {
+      if (a.roll === undefined && a.amount === undefined)
         return err(
           'invalid_args',
-          'restore_usage rolls the recharge die itself: omit roll, or supply roll together with rollOverride { basis, reason, ruleId? }',
+          'rollOverride applies only with a supplied roll or amount; omit it to let the engine roll',
         );
-      if (a.amount !== undefined)
-        return err('invalid_args', 'pass at most one of roll or amount');
       override = parseRollOverride(a.rollOverride, ctx, 'restore_usage');
       if (isToolResult(override)) return override;
-    } else if (a.rollOverride !== undefined) {
+    } else if (a.roll !== undefined) {
       return err(
         'invalid_args',
-        'rollOverride applies only with a supplied roll; omit it to let the engine roll',
+        'restore_usage rolls the recharge die itself: omit roll, or supply roll together with rollOverride { basis, reason, ruleId? }',
       );
     }
     const owner = parseTurnParticipant(a, ctx, 'restore_usage');
@@ -135,7 +140,10 @@ export const restoreUsageTool: Tool = {
           ? result
           : {
               ...result,
-              reason: 'Recharge roll',
+              reason:
+                result.rechargeThreshold === undefined
+                  ? 'Rolled restore'
+                  : 'Recharge roll',
               category: 'other',
               visibility,
             },

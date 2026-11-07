@@ -317,11 +317,13 @@ function readRollEvidence(value: unknown):
       rolls: number[];
       dropped: number[];
       natural: number;
+      total?: number;
       basis?: string;
     }
   | undefined {
   const e = asDataRecord(value);
   if (e === undefined || !Number.isInteger(e.natural)) return undefined;
+  const total = Number.isInteger(e.total) ? (e.total as number) : undefined;
   if (e.source === 'engine') {
     if (typeof e.dice !== 'string' || !isIntArray(e.rolls)) return undefined;
     return {
@@ -330,6 +332,7 @@ function readRollEvidence(value: unknown):
       rolls: e.rolls,
       dropped: isIntArray(e.dropped) ? e.dropped : [],
       natural: e.natural as number,
+      ...(total === undefined ? {} : { total }),
     };
   }
   if (e.source === 'dm-supplied' && typeof e.basis === 'string')
@@ -339,6 +342,7 @@ function readRollEvidence(value: unknown):
       rolls: [],
       dropped: [],
       natural: e.natural as number,
+      ...(total === undefined ? {} : { total }),
       basis: e.basis,
     };
   return undefined;
@@ -404,21 +408,31 @@ function readRechargeEntry(
   if (data.visibility !== 'player_visible') return undefined;
   const evidence = readRollEvidence(data.rollEvidence);
   const counter = asDataRecord(data.counter);
-  if (
-    evidence === undefined ||
-    counter === undefined ||
-    typeof data.recharged !== 'boolean' ||
-    typeof data.rechargeThreshold !== 'string'
-  )
-    return undefined;
+  if (evidence === undefined || counter === undefined) return undefined;
   const name =
     typeof counter.displayName === 'string' ? `${counter.displayName}: ` : '';
+  if (typeof data.rechargeThreshold === 'string') {
+    if (typeof data.recharged !== 'boolean') return undefined;
+    return {
+      label: 'Recharge',
+      reason: `${name}${typeof data.reason === 'string' ? data.reason : 'Recharge roll'}`,
+      visibility: 'player_visible',
+      category: 'other',
+      detail: `${formatRollEvidence(evidence)} vs ${data.rechargeThreshold} → ${data.recharged ? 'recharged' : 'not recharged'}`,
+    };
+  }
+  // A dawn rechargeFormula restore (e.g. 1d6+1): no threshold, the roll
+  // regains its total in uses.
+  const regained = evidence.total ?? evidence.natural;
   return {
-    label: 'Recharge',
-    reason: `${name}${typeof data.reason === 'string' ? data.reason : 'Recharge roll'}`,
+    label: 'Restore',
+    reason: `${name}${typeof data.reason === 'string' ? data.reason : 'Rolled restore'}`,
     visibility: 'player_visible',
     category: 'other',
-    detail: `${formatRollEvidence(evidence)} vs ${data.rechargeThreshold} → ${data.recharged ? 'recharged' : 'not recharged'}`,
+    detail:
+      evidence.source === 'dm-supplied'
+        ? `DM-supplied (${evidence.basis}) regains ${regained}`
+        : `${formatRollEvidence(evidence)} → regains ${regained}`,
   };
 }
 
