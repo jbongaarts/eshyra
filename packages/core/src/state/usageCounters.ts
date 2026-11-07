@@ -70,6 +70,7 @@ import {
   createRulesPackCharacterResolver,
   type ResolvedClassLevel,
 } from '../character/rulesPackResolver.js';
+import type { Rng } from '../orchestrator/rng.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
@@ -92,6 +93,12 @@ import {
   stripTrailingParenthetical,
   trimEdgeChar,
 } from './nameNormalization.js';
+import {
+  dmSuppliedRollEvidence,
+  engineRollEvidence,
+  type RollEvidence,
+  type RollOverride,
+} from './rollEvidence.js';
 
 /** Who a counter row belongs to: an acting entity, or — for charge
  *  economies — the item itself, so charge state follows the item across
@@ -189,9 +196,15 @@ export interface RestoreUsageInput extends UsageMutationContext {
   readonly owner: UsageOwnerInput;
   readonly ability?: string;
   readonly itemId?: string;
-  /** Natural recharge-die result (rolled via the `roll` tool) for a
-   *  recharge_roll counter. Mutually exclusive with `amount`. */
+  /** DM-supplied natural recharge-die result for a recharge_roll counter
+   *  (the restore_usage tool requires a recorded rollOverride for it).
+   *  Mutually exclusive with `amount`. With neither `roll` nor `amount`
+   *  and an `rng`, the engine rolls the counter's recharge die. */
   readonly roll?: number;
+  /** Seeded RNG for the engine recharge roll. */
+  readonly rng?: Rng;
+  /** Recorded override accompanying a supplied `roll`. */
+  readonly rollOverride?: RollOverride;
   /** Uses/charges regained (e.g. the rolled "1d6 + 1" dawn recharge, or a
    *  DM ruling). Mutually exclusive with `roll`. */
   readonly amount?: number;
@@ -202,6 +215,9 @@ export interface RestoreUsageResult {
   /** For roll mode: whether the recharge threshold was met. */
   readonly recharged?: boolean;
   readonly rechargeThreshold?: string;
+  /** Roll mode: engine-rolled die or the recorded DM override. Absent for a
+   *  legacy caller-supplied roll with no override. */
+  readonly rollEvidence?: RollEvidence;
 }
 
 export interface ResetUsageInput extends UsageMutationContext {
@@ -661,8 +677,8 @@ function depletedHintFor(counter: UsageCounter): string {
   switch (counter.resetKind) {
     case 'recharge_roll':
       return (
-        `${counter.displayName} is spent: at the start of ${counter.ownerLabel}'s turns, roll ` +
-        `${counter.rechargeRoll ?? 'd6'} via the roll tool and pass the natural result to restore_usage ` +
+        `${counter.displayName} is spent: at the start of ${counter.ownerLabel}'s turns, recharge ` +
+        `the die with restore_usage (omit roll and amount: the engine rolls ${counter.rechargeRoll ?? 'd6'}) ` +
         `(recharges on ${counter.rechargeMinimum}+; also recharges on a short or long rest)`
       );
     case 'short_rest':
@@ -674,7 +690,7 @@ function depletedHintFor(counter: UsageCounter): string {
     case 'dawn':
       return counter.rechargeFormula === undefined
         ? `${counter.displayName} is spent until dawn (reset_usage)`
-        : `${counter.displayName} is out of charges until dawn: roll ${counter.rechargeFormula} via the roll tool and apply it with restore_usage`;
+        : `${counter.displayName} is out of charges until dawn: roll ${counter.rechargeFormula} via the roll tool and apply it with restore_usage amount (a DM-supplied amount)`;
   }
 }
 
@@ -1536,9 +1552,15 @@ export function restoreUsage(
   db: Db,
   input: RestoreUsageInput,
 ): RestoreUsageResult {
-  if ((input.roll === undefined) === (input.amount === undefined)) {
+  if (input.roll !== undefined && input.amount !== undefined) {
     throw new UsageCounterError(
-      'pass exactly one of roll (a recharge-die result) or amount (uses regained)',
+      'pass at most one of roll (a recharge-die result) or amount (uses regained)',
+    );
+  }
+  const engineRolls = input.roll === undefined && input.amount === undefined;
+  if (engineRolls && input.rng === undefined) {
+    throw new UsageCounterError(
+      'pass amount (uses regained), or omit roll and amount so the engine rolls the recharge die',
     );
   }
   return withTransaction(db, (txnDb) => {
@@ -1555,7 +1577,7 @@ export function restoreUsage(
       input,
     );
 
-    if (input.roll !== undefined) {
+    if (engineRolls || input.roll !== undefined) {
       if (row.reset_kind !== 'recharge_roll') {
         throw new UsageCounterError(
           `'${row.display_name}' is not a recharge-roll ability (it resets on ${row.reset_kind.replace(/_/g, ' ')}); pass amount instead if a restore is due`,
@@ -1566,12 +1588,11 @@ export function restoreUsage(
         10,
       );
       if (
-        !Number.isInteger(input.roll) ||
-        input.roll < 1 ||
-        input.roll > faces
+        input.roll !== undefined &&
+        (!Number.isInteger(input.roll) || input.roll < 1 || input.roll > faces)
       ) {
         throw new UsageCounterError(
-          `roll must be a natural ${row.recharge_roll ?? 'd6'} result (1-${faces}), rolled via the roll tool`,
+          `roll must be a natural ${row.recharge_roll ?? 'd6'} result (1-${faces})`,
         );
       }
       // Once per own turn: the attempt is legal only during the acting
@@ -1594,7 +1615,16 @@ export function restoreUsage(
         );
       }
       const threshold = row.recharge_minimum ?? faces;
-      const recharged = input.roll >= threshold;
+      // Rolled only after every window refusal above, so a refused attempt
+      // never consumes the seeded RNG.
+      const rollEvidence: RollEvidence | undefined =
+        input.roll === undefined
+          ? engineRollEvidence(`1d${faces}`, input.rng as Rng)
+          : input.rollOverride === undefined
+            ? undefined
+            : dmSuppliedRollEvidence(input.roll, input.rollOverride);
+      const natural = rollEvidence?.natural ?? (input.roll as number);
+      const recharged = natural >= threshold;
       txnDb
         .prepare(
           `UPDATE entity_usage_counter
@@ -1625,6 +1655,7 @@ export function restoreUsage(
         counter: rowToCounter(after, counterLabel),
         recharged,
         rechargeThreshold: `${threshold}-${faces} on ${row.recharge_roll ?? 'd6'}`,
+        ...(rollEvidence === undefined ? {} : { rollEvidence }),
       };
     }
 

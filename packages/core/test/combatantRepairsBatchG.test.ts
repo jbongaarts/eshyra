@@ -73,10 +73,19 @@ describe('S34: death-save adapter arms the schedule whenever the save may stabil
           expect(row(id)).toMatchObject({ status: 'dying', hpCurrent: 0 });
           if (blocked)
             must('set_suffocation', { combatantId: id, event: 'drop' });
-          must('record_death_save', { combatantId: id, roll: 12 });
-          must('record_death_save', { combatantId: id, roll: 12 });
+          must('record_death_save', {
+            combatantId: id,
+            rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+            roll: 12,
+          });
+          must('record_death_save', {
+            combatantId: id,
+            rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+            roll: 12,
+          });
           const result = call('record_death_save', {
             combatantId: id,
+            rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
             roll: third,
           });
           expect(result.ok, JSON.stringify(result)).toBe(true);
@@ -140,7 +149,11 @@ describe('S36: a dying player-character combatant keeps an available turn for it
     const begin = s.must('begin_turn', { combatantId: 'h-hydra', round: 2 });
     expect(begin).toMatchObject({ data: { turnAvailable: true } });
     expect(s.row('h-hydra')).toMatchObject({ status: 'dying', headCount: 4 });
-    s.must('record_death_save', { combatantId: 'h-hydra', roll: 15 });
+    s.must('record_death_save', {
+      combatantId: 'h-hydra',
+      rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+      roll: 15,
+    });
     expect(s.row('h-hydra')).toMatchObject({ status: 'dying', headCount: 4 });
     const end = s.must('begin_turn', { combatantId: 'h-gob', round: 2 });
     expect(end).toMatchObject({
@@ -156,7 +169,11 @@ describe('S36: a dying player-character combatant keeps an available turn for it
     s.must('update_combatant', { combatantId: 'h-hydra', hpDelta: -1 });
     expect(s.row('h-hydra')).toMatchObject({ deathSaveFailures: 2 });
     s.must('begin_turn', { combatantId: 'h-hydra', round: 2 });
-    s.must('record_death_save', { combatantId: 'h-hydra', roll: 5 });
+    s.must('record_death_save', {
+      combatantId: 'h-hydra',
+      rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+      roll: 5,
+    });
     expect(s.row('h-hydra')).toMatchObject({ status: 'dead' });
     const end = s.must('begin_turn', { combatantId: 'h-gob', round: 2 });
     expect(

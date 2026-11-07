@@ -8,6 +8,7 @@ import type { AdventureModule } from '../src/internal.js';
 import {
   assembleContext,
   beginTurn,
+  createDefaultToolRegistry,
   createInitialItemState,
   createSeededRng,
   ensureCharacterRow,
@@ -27,6 +28,7 @@ import {
   updateCombatant,
   writeItemState,
 } from '../src/internal.js';
+import { appendPlayerVisibleRollLedger } from '../src/orchestrator/playerVisibleRollLedger.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
@@ -161,7 +163,7 @@ describe('spendUsage — record-derived combatant economies', () => {
     expect(result.counter.usesRemaining).toBe(0);
     expect(result.counter.resetKind).toBe('recharge_roll');
     expect(result.counter.rechargeMinimum).toBe(5);
-    expect(result.depletedHint).toMatch(/roll.*d6.*restore_usage/i);
+    expect(result.depletedHint).toMatch(/restore_usage.*engine rolls d6/i);
 
     expect(() =>
       spendUsage(db, {
@@ -663,6 +665,192 @@ describe('restoreUsage — recharge rolls', () => {
     expect(hit.counter.usesRemaining).toBe(1);
   });
 
+  it('rolls the recharge die from the seeded RNG when neither roll nor amount is supplied, judges it against the threshold, and keeps the window rules', () => {
+    const { db } = setup();
+    spendFireBreath(db);
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: combatant(DRAGON),
+      ...CTX,
+    });
+    // The expected die is whatever the seeded stream produces first.
+    const expected = createSeededRng(7).nextInt(6) + 1;
+    const engine = restoreUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: combatant(DRAGON),
+      ability: 'Fire Breath',
+      rng: createSeededRng(7),
+      ...CTX,
+    });
+    expect(engine.rollEvidence).toEqual({
+      source: 'engine',
+      dice: '1d6',
+      rolls: [expected],
+      kept: [expected],
+      dropped: [],
+      natural: expected,
+    });
+    expect(engine.recharged).toBe(expected >= 5);
+    // Hit or miss, the engine roll consumed the turn's single attempt.
+    expect(() =>
+      restoreUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: combatant(DRAGON),
+        ability: 'Fire Breath',
+        rng: createSeededRng(7),
+        ...CTX,
+      }),
+    ).toThrow(/already been rolled this turn/);
+  });
+
+  it('refuses an engine recharge roll without an rng, and does not consume the rng on a refused attempt', () => {
+    const { db } = setup();
+    spendFireBreath(db);
+    expect(() =>
+      restoreUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: combatant(DRAGON),
+        ability: 'Fire Breath',
+        ...CTX,
+      }),
+    ).toThrow(/pass amount/);
+    const rng = createSeededRng(3);
+    const first = createSeededRng(3).nextInt(6);
+    // Off-turn: refused by the window rule before the die is drawn.
+    expect(() =>
+      restoreUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: combatant(DRAGON),
+        ability: 'Fire Breath',
+        rng,
+        ...CTX,
+      }),
+    ).toThrow(/it is not .*turn/);
+    expect(rng.nextInt(6)).toBe(first);
+  });
+
+  it('restore_usage tool: engine roll by default with ledger rendering, supplied roll only with a recorded override', () => {
+    const { db } = setup();
+    spendFireBreath(db);
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: combatant(DRAGON),
+      ...CTX,
+    });
+    const registry = createDefaultToolRegistry();
+    const ctx = {
+      db,
+      rng: createSeededRng(7),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'turn-1',
+      at: NOW,
+    };
+    const args = { ability: 'Fire Breath', combatantId: DRAGON };
+    // A supplied roll without an override is refused before any state change.
+    expect(
+      registry.invoke('restore_usage', { ...args, roll: 5 }, ctx),
+    ).toMatchObject({
+      ok: false,
+      code: 'invalid_args',
+    });
+    expect(
+      registry.invoke(
+        'restore_usage',
+        { ...args, rollOverride: { basis: 'dm-adjudicated', reason: 'r' } },
+        ctx,
+      ),
+    ).toMatchObject({ ok: false, code: 'invalid_args' });
+    const result = registry.invoke(
+      'restore_usage',
+      { ...args, visibility: 'player_visible' },
+      ctx,
+    );
+    const expected = createSeededRng(7).nextInt(6) + 1;
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        recharged: expected >= 5,
+        visibility: 'player_visible',
+        rollEvidence: { source: 'engine', natural: expected },
+      },
+    });
+    if (!result.ok) return;
+    const ledger = appendPlayerVisibleRollLedger('N.', [
+      {
+        tool: 'restore_usage',
+        args,
+        result,
+        mutates: true,
+        source: 'native',
+      },
+    ]);
+    expect(ledger).toContain(`1d6 nat ${expected} vs 5-6 on d6 → `);
+    // dm_only by default: not ledgered.
+    expect(
+      appendPlayerVisibleRollLedger('N.', [
+        {
+          tool: 'restore_usage',
+          args,
+          result: {
+            ok: true,
+            data: { ...(result.data as object), visibility: 'dm_only' },
+          },
+          mutates: true,
+          source: 'native',
+        },
+      ]),
+    ).toBe('N.');
+  });
+
+  it('restore_usage tool: a supplied roll with an override is recorded as DM-supplied and the mutation provenance is tagged', () => {
+    const { db } = setup();
+    spendFireBreath(db);
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: combatant(DRAGON),
+      ...CTX,
+    });
+    const result = createDefaultToolRegistry().invoke(
+      'restore_usage',
+      {
+        ability: 'Fire Breath',
+        combatantId: DRAGON,
+        roll: 5,
+        rollOverride: { basis: 'dm-adjudicated', reason: 'ruling' },
+      },
+      {
+        db,
+        rng: createSeededRng(1),
+        campaignId: CAMPAIGN,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: 'turn-1',
+        at: NOW,
+      },
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        recharged: true,
+        rollEvidence: {
+          source: 'dm-supplied',
+          natural: 5,
+          basis: 'dm-adjudicated',
+          reason: 'ruling',
+        },
+      },
+    });
+    expect(
+      (
+        db
+          .prepare(
+            `SELECT provenance FROM entity_usage_counter WHERE counter_key LIKE '%fire%breath%'`,
+          )
+          .get() as { provenance: string }
+      ).provenance,
+    ).toBe('model:turn-1#dm-roll:dm-adjudicated');
+  });
+
   it('refuses use-then-recharge inside the same turn: the roll precedes use', () => {
     const { db } = setup();
     beginTurn(db, {
@@ -772,7 +960,7 @@ describe('restoreUsage — recharge rolls', () => {
         amount: 1,
         ...CTX,
       }),
-    ).toThrow(/exactly one of roll/);
+    ).toThrow(/at most one of roll/);
   });
 
   it('names the recorded counters when the reference matches none', () => {

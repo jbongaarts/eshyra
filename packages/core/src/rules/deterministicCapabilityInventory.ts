@@ -328,20 +328,24 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
     }),
     toolEntry('record_death_save', 'bounded-procedure', {
       operation:
-        'Apply a caller-supplied natural d20 result (integer 1-20) to a dying character, or to a dying opted-in player-character combatant in the active combat instance. An optional caller-supplied saveBonus (integer -20 to 20, default 0) is added to the natural roll and the total is judged against 10: 10 or more is a success, less than 10 a failure. A natural 1 is two failures and a natural 20 revives to 1 hit point unless recovery is blocked or the effective maximum is 0 (then an ordinary success); natural 1 and natural 20 are judged on the natural roll alone, whatever saveBonus is. Optional bonusSources names up to 8 spells or features and is recorded with the result. Three successes stabilize unless recovery is blocked, and three failures kill. Stabilizing schedules a seeded stable recovery.',
-      requiredInputs: ['roll'],
+        'Roll the death-save d20 from the seeded RNG (1d20, or 2d20kh1 / 2d20kl1 under declared advantage / disadvantage, which cancel pairwise; natural 1 and 20 are judged on the kept die) and apply it to a dying character, or to a dying opted-in player-character combatant in the active combat instance. An optional caller-supplied saveBonus (integer -20 to 20, default 0) is added to the natural roll and the total is judged against 10: 10 or more is a success, less than 10 a failure. A natural 1 is two failures and a natural 20 revives to 1 hit point unless recovery is blocked or the effective maximum is 0 (then an ordinary success); natural 1 and natural 20 are judged on the natural roll alone, whatever saveBonus is. Optional bonusSources names up to 8 spells or features and is recorded with the result. Three successes stabilize unless recovery is blocked, and three failures kill. Stabilizing schedules a seeded stable recovery. The result records its roll provenance (rollEvidence: the engine dice, kept and dropped, or the DM-supplied override) and carries a visibility (default player_visible) for the roll ledger.',
+      requiredInputs: [
+        'none beyond the optional target (the engine rolls); a supplied roll requires rollOverride',
+      ],
       exclusions: [
-        'The natural result is supplied by the caller and only range-checked; the tool does not verify that it came from the roll tool.',
+        'A DM-supplied roll (integer 1-20) is accepted only with rollOverride { basis dm-adjudicated or house-rule, reason, optional ruleId naming an active house-rule campaign rule }; it is refused without it, and advantage/disadvantage with a supplied roll is refused. The override is recorded as unbound DM-supplied provenance: the tool does not verify the justification.',
         'The saving-throw bonus is supplied by the caller and only range-checked (integer -20 to 20); the tool does not discover which spells or features apply, and does not verify that any bonus dice were rolled through roll. A malformed saveBonus or bonusSources is refused before any state change.',
         'Refused unless the target is dying (a character) or a dying player-character-rules combatant in the active combat instance.',
         'Providing both character and combatantId is refused.',
         'Does not decide when a death save is owed.',
       ],
       residualDmInterpretation: [
-        'The DM decides when a death save is owed, obtains the natural result through roll, and decides which saving-throw effects (for example Bless, Aura of Protection, a Ring of Protection) apply and what their total bonus is.',
+        'The DM decides when a death save is owed, whether advantage or disadvantage applies, whether to override the engine roll with a recorded ruling, and which saving-throw effects (for example Bless, Aura of Protection, a Ring of Protection) apply and what their total bonus is.',
       ],
       runtimeOwner: [
         o('toolRecordDeathSave.ts'),
+        o('toolRollOverride.ts'),
+        s('rollEvidence.ts'),
         s('hpLifecycle.ts'),
         s('encounterCombatants.ts'),
         s('combatantLifecycle.ts'),
@@ -1281,22 +1285,24 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
   }),
   toolEntry('restore_usage', 'bounded-procedure', {
     operation:
-      'Restore a spent counter, found by ability or item (a bound class resource is first reconciled to the active class capacity): with roll, apply a recharge-die result to a recharge-roll counter, recharging it exactly when the natural roll meets the counter threshold and consuming that owner-turn window; with amount, regain that many uses (never below zero spent) on a counter of any reset kind not refused below.',
+      'Restore a spent counter, found by ability or item (a bound class resource is first reconciled to the active class capacity): with neither roll nor amount, roll the counter recharge die from the seeded RNG for a recharge-roll counter, recharging it exactly when the natural roll meets the counter threshold and consuming that owner-turn window (the result records its roll provenance and a visibility, default dm_only); with a DM-supplied roll plus rollOverride, apply that recharge-die result instead (recorded as unbound DM-supplied provenance); with amount, regain that many DM-supplied uses (never below zero spent) on a counter of any reset kind not refused below.',
     requiredInputs: [
       'ability or itemId (one of)',
-      'roll or amount (exactly one)',
+      'none beyond the counter (the engine rolls); roll requires rollOverride; amount is DM-supplied; at most one of roll or amount',
     ],
     exclusions: [
-      'The natural recharge result is supplied by the caller and only range-checked against the counter die; the tool does not verify that it came from the roll tool, and a ruled amount is not checked against any source.',
-      'A roll is refused for a counter that is not recharge-roll, outside the owner own open structured turn, when already attempted in this turn window, and when the ability was used in this window.',
+      'A DM-supplied recharge roll is range-checked against the counter die and accepted only with rollOverride { basis dm-adjudicated or house-rule, reason, optional ruleId naming an active house-rule campaign rule }; it is refused without it and the override justification is not verified. The amount is DM-supplied and is not checked against any source (canonical items use use_item).',
+      'An engine or supplied roll is refused for a counter that is not recharge-roll, outside the owner own open structured turn, when already attempted in this turn window, and when the ability was used in this window.',
       'A bound class resource with no capacity or unlimited capacity at the level is refused, and a pack-bound or quarantined item row is refused (use_item).',
       'Generic rest/dawn usage resets go through reset_usage; elapsed-time processing and pack-bound item dawn economies go through advance_time or the rest completion tools.',
     ],
     residualDmInterpretation: [
-      'The DM obtains the recharge or restore roll through roll and decides a ruled amount.',
+      'The DM decides when a recharge die is due, whether to override the engine roll with a recorded ruling, and any ruled or separately rolled amount.',
     ],
     runtimeOwner: [
       o('toolRestoreUsage.ts'),
+      o('toolRollOverride.ts'),
+      s('rollEvidence.ts'),
       s('usageCounters.ts'),
       s('classResources.ts'),
     ],
