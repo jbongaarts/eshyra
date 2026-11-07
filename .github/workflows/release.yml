@@ -59,7 +59,7 @@ jobs:
         # GitHub-hosted runners covering the target matrix:
         #   ubuntu-latest      -> linux-x64 (also the WSL target)
         #   ubuntu-24.04-arm   -> linux-arm64
-        #   macos-14           -> darwin-arm64 (macOS latest, Apple Silicon)
+        #   macos-latest       -> darwin-arm64 (Apple Silicon)
         #   windows-latest     -> windows-x64
         # macOS is supported on Apple Silicon (arm64) only; we do not ship a
         # darwin-x64 build.
@@ -69,7 +69,7 @@ jobs:
         # per-platform model; see ADR 0011 and bead eshyra-5cd6 (artifact-size
         # work) for the trimming/throttling follow-up.
         edition: [api, claude, codex, full]
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-14, windows-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
     env:
       # Keep prebuild-install on the prebuilt-first path (ADR 0008): the bundled
       # better-sqlite3 binding must be a downloaded prebuild, not a source build.
@@ -166,8 +166,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # ubuntu-latest -> linux-x64 (GNU); macos-14 -> darwin-arm64 (BSD).
-        os: [ubuntu-latest, macos-14]
+        # ubuntu-latest -> linux-x64 (GNU); macos-latest -> darwin-arm64 (BSD).
+        os: [ubuntu-latest, macos-latest]
     env:
       npm_config_build_from_source: "false"
     steps:
