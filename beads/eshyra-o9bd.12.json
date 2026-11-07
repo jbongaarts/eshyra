@@ -1,0 +1,75 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.12",
+  "title": "Runtime smoke tests: character creation + level-up to 20",
+  "description": "Re-freeze bar #10. Runtime smoke tests exercising the generated pack as a playable model, using ONLY generated pack data — no consumer-side hardcoded SRD knowledge and no overlays.\n\nSCOPE (deterministic, NOT combinatorial): \n  - Every legal class/ancestry/background TUPLE (~12 classes x 13 ancestries x backgrounds) created at level 1 with DETERMINISTIC representative choices (fixed seed/first-legal-option), asserting derived stats.\n  - Then level REPRESENTATIVE characters through 20, exercising subclass selection where required.\nDo NOT enumerate every legal spell/equipment/choice combination.\n\nPlus TARGETED choice-coverage cases: Half-Elf ASI/skill choices; Wizard spellbook + preparation; Cleric/Druid prepared-caster formula; Bard known-spells; Fighter and Cleric starting-equipment choices; a subclass-dependent level-up; an ASI-vs-feat row; and a feature-improvement row. This is the executable proof of the playable bar.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-29T04:53:37Z",
+  "closed_at": "2026-06-29T05:03:51Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.12",
+      "depends_on_id": "eshyra-o9bd.5",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.12",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.12",
+      "depends_on_id": "eshyra-o9bd.2",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.12",
+      "depends_on_id": "eshyra-o9bd.9",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.12",
+      "depends_on_id": "eshyra-o9bd.17",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.12",
+      "depends_on_id": "eshyra-o9bd.4",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 5,
+  "dependent_count": 1,
+  "comment_count": 0
+}

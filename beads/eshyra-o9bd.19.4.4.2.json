@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.4.2",
+  "title": "Review: Sol final review of PR #696 (eshyra-o9bd.19.4.4.1 @ cdaadc3c)",
+  "description": "Final read-only review of PR #696 (branch eshyra-o9bd.19.4.4.1, exact head cdaadc3c44bb2c1d4d1716be802967a568f0a405) by Sol. Findings in notes; ends with a VERDICT line.",
+  "notes": "FINAL REVIEW of PR #696, exact head cdaadc3c44bb2c1d4d1716be802967a568f0a405, branch eshyra-o9bd.19.4.4.2. Profile: rules-clause-complete. Reviewed both commits and the full origin/main...HEAD diff (all 17 files).\n\nAuthority: read live review/owning/implementation beads, AGENTS.md, design-and-pr-review-policy.md, importer-fix-protocol.md, compiler guidance/ADR 0017, ADR 0020, and finding-registry.md. refs/beads/state is stale (2026-09-10); reconciled against live Beads, including the owning bead's November scope extension and data.versions decision.\n\nFindings: none; no MATERIAL or NON-MATERIAL findings.\n\nSource and membership: independently extracted the vendored SRD 5.1 PDF pp. 196-198 with pdftotext and compared its complete sample-trap non-save DC sentence population against every emitted check/dispel. All 21 sentences across eight trap records match exactly; printed DC, ability and skill values agree. Checked all eight changed traps, including each Pits variant, bare spot DCs, tools, and the Sphere's identical-to qualifier and three optional sympathy-enchantment sentences. No invented entries or silently omitted in-scope sentence. The historical nine-record snapshot does not override the query-defined population. Verified no records added/removed and all pre-existing record fields/mechanics preserved.\n\nContracts and consumers: inspected trap extraction/build/resolver flow, new grammar and exceptional Sphere split, kind-schema validation, field-provenance and relationship manifests, normalized nested-star pointer resolution, ruleAwareness, discovery expansion, retention and context partition/rendering. In-memory probes exercised unknown DC/skill and missing spell/structure failures, absent manifests and missing relationship targets. Real Sphere expansion reaches the item, antipathy/sympathy and dispel magic; the context packet preserves the uncontrollable/immovable qualifier and optional-version prose, separates source-derived refs from compiler projections, and keeps the DC 18 dispel on the optional version only. Its capability ledger outcome remains no-statement; no deterministic-execution or state-mutation claim was introduced.\n\nDispositions and evidence: all four registry changes match the child spec and ADR 0020 while preserving audit identity/provenance/ownership and registry non-claims. F-01's source census remains operative. Removal of the now-empty hazard#prose-only diagnostic disposition is valid and does not discharge a capability obligation. Reviewed every modified test pin: missing-field/count baselines reflect additive fields, registry expectations reflect explicit dispositions, and the first three Pits variants now require exactly checks, retaining the no-Spiked-Pit-save/damage/condition-bleed protection. The new generalized census and exact Sphere assertions preserve the source-backed regression boundary. Inventory changes add only the new model-adjudicated hazard paths.\n\nValidation: 13 targeted Vitest files, 521 tests passed (389 + 132); included trap census, alternative projections, registry, generated pack, relationship/provenance gates, audit bundle, rule-awareness/discovery provenance and ownership, half-damage source census, and kind-schema effects. npm run verify:dnd5e-srd-pack passed: records and all five sibling artifacts exactly match regeneration into /tmp. Additional independent PDF/diff and in-memory consumer probes passed. git diff --check passed; tracked worktree clean and exact head unchanged. No source edits, formatting, commits, GitHub comments or merges. Beads reads/writes use --sandbox after canceling an automatically spawned sync from the initial bd show; no explicit sync/push is part of this review.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T02:59:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T03:05:03Z",
+  "closed_at": "2026-11-01T03:05:03Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.4.2",
+      "depends_on_id": "eshyra-o9bd.19.4.4",
+      "type": "parent-child",
+      "created_at": "2026-10-31T21:59:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

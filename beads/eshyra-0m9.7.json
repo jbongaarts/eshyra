@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.7",
+  "title": "Define Pathfinder source policy and allowed corpus",
+  "description": "Define the legally clean source policy and allowed corpus for the Pathfinder rules pack.\r\n\r\nThe key decision is exactly what source material may be imported, how license/provenance is tracked, and how to keep rules/mechanics separate from protected setting or product-identity material.",
+  "acceptance_criteria": "- Allowed Pathfinder source corpus is documented.\r\n- License/provenance policy is documented.\r\n- Any source that is useful for reference but not safe for direct import is explicitly marked as reference-only.\r\n- The plan separates rules/mechanics from setting/adventure content.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:01:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-25T05:36:38Z",
+  "closed_at": "2026-05-25T05:37:45Z",
+  "close_reason": "Policy recorded in ADR 0006; ORC-only Remaster bundled pack with mechanics/setting separation.",
+  "labels": [
+    "ingestion",
+    "licensing",
+    "orc",
+    "pathfinder",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.7",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:01:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

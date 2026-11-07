@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.13.3",
+  "title": "Dispatch: olc5.13 repair Sol r1 S1-S2 (deduction amount domain, unique row in resolved table) (attempt 2)",
+  "description": "Repair after Sol review eshyra-olc5.13.2 (read its notes: S1 and S2 with probes and required closures). Branch cut from eshyra-olc5.13 @ c1b8a417.\n\nS1: at the resolved execution boundary in packages/core/src/state/itemResetExecutor.ts (deductionAmount / deduction apply), refuse atomically any resolved amount that is not a finite non-negative safe integer (negative dice totals like 1d2-3, negative or fractional numeric cells), before any write. Align validate.ts amount validation with that domain (reject expressions whose minimum can be negative, e.g. via the dice parser's min, and negative/non-integer numerics) without changing unrelated dice semantics. Permanent evidence: generalized invariant over admitted numeric and dice amounts that a deduction never increases remaining, and invalid amounts leave the whole database unchanged (include the add-on override sibling Sol describes).\n\nS2: validate the deduction table contract on the ACTUAL resolved table (the one resolveTable returns from the campaign stack) at execution: both columns present, and exactly one row whose keyColumn equals tableRow; zero -> existing refusal, more than one -> refuse as ambiguous, atomically, before rolling. Permanent evidence: a small parameterized resolved-stack test using independently validated base + add-on packs (duplicate-key ordering both ways, invalid-key, missing-column siblings).\n\nDo not touch files unrelated to these two findings. No pack regeneration should be needed; if it is, stop and report. Run npm run verify:worktree before committing. Completion notes: per-finding fix + test names, verify result.",
+  "notes": "Dispatched as Claude Haiku 5.5 Agent; worktree .worktrees/eshyra-olc5.13.3 from eshyra-olc5.13 @ c1b8a417.\nCOMPLETION REPORT (olc5.13.3, Haiku 5.5 dispatch, repair of Sol r1 S1-S2). Commit ac0a1be3 on eshyra-olc5.13.3 (base c1b8a417). verify:worktree exit 0 (364 files passed, 2 skipped; 6842 tests passed, 3 skipped). Not pushed, no PR, no beads:sync, no changes to olc5.13 or olc5. No pack regeneration needed (committed Cube rows are all positive, validator change does not alter generated output).\n\nS1 (negative/non-integer resolved amounts) - FIXED.\n- Executor (itemResetExecutor.ts deductionAmount): the resolved amount, numeric or rolled, must be a safe integer >= 0 before any write; otherwise ItemResetExecutorError. Dice that do not parse are refused as errors instead of leaking DiceError. Dice are rolled first, so 1d2-3 is refused on its outcome.\n- Admission (validate.ts assertEconomyDeductionTables + new dice.ts minimumDiceTotal): dice whose lowest outcome is negative (kept dice at 1 plus modifier < 0) are rejected; unsafe integer strings are rejected. parseDice/rollDice unchanged.\n- Sol probe 1 (1d2-3 on Disintegrate, base pack): validateRulesPack now rejects it ('can total below zero'); through the real item_state_event tool on an unvalidated pack it returns item_error 'resolved to -2 ... refused with no change', DB unchanged, 36 charges.\n- Sibling (table-only add-on, numeric -7): tool refuses ('resolved to -7'), DB unchanged. Admission does not run for that add-on, so the executor is the boundary.\n- Permanent tests (itemResetExecutor.test.ts): 'refuses <dice/numeric/fractional/unsafe/non-dice> ... with every table and the Cube state byte-identical' (it.each over 7 amounts x 6 seeds, whole-database snapshot); 'never increases remaining for any admitted amount, including mixed-sign dice outcomes' (generalized invariant over 1d4-2, 1d12, 2d20kh1-1, 0, 4, '6' across seeds); 'refuses a table-only add-on override that carries a negative numeric charge'; admission its in 'economyDeduction pack validation' (negative-floor dice, unsafe string, fractional refused; 2d20kh1-1, 2d4-1, 4d6dl1, 1d12 admitted).\n\nS2 (ambiguous or malformed effective table row) - FIXED.\n- Executor (deductionRows): on the table the stack resolves, both columns must exist (existing refusal), every key cell must be a non-empty string, and keys must be unique across the table, each refused atomically with a message. The match is exact: zero matches keeps the existing 'has no ... row' refusal; more than one is refused as ambiguous.\n- Sol probe 2 (add-on overriding the Cube table with [Disintegrate,1],[Disintegrate,12]): validateRulesPack accepts the add-on (as Sol said), and through the real tool it now refuses 'key Disintegrate is ambiguous ... refused with no change', DB unchanged.\n- Permanent tests: parameterized 'refuses <duplicate key matching-first | matching-second | duplicate on unnamed row | non-string key | empty key | amount column missing | key column missing | no row> on the resolved stack with the database unchanged' over independently validated base (bundled) + add-on packs (validateRulesPack asserted on the add-on); plus 'governs the deduction with the unique add-on row, regardless of base row order' as the control.\n\nFiles changed: packages/core/src/orchestrator/dice.ts, packages/core/src/rules/validate.ts, packages/core/src/state/itemResetExecutor.ts, packages/core/test/itemResetExecutor.test.ts. The scratch probe file used for tool-level reproduction was deleted before commit.\n\nCould not complete: nothing required. Follow-ups filed: admission-time validation of effective add-on deduction tables (P2) and the pre-existing biome.json schema mismatch (P3).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-15T05:01:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-15T05:09:17Z",
+  "started_at": "2026-10-15T05:01:40Z",
+  "closed_at": "2026-10-15T05:09:17Z",
+  "close_reason": "Completed: S1 and S2 fixed with permanent tests; verify:worktree exit 0; commit ac0a1be3 on eshyra-olc5.13.3",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.13.3",
+      "depends_on_id": "eshyra-olc5.13",
+      "type": "parent-child",
+      "created_at": "2026-10-15T00:01:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

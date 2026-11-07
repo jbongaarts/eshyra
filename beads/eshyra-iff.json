@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-iff",
+  "title": "Wire demo mode into the CLI",
+  "description": "Completeness review finding. createDemoCampaign, DEMO_TURN_CAP, getDemoTurnBudget, assertDemoTurnAllowed and resolveDemoModel implement bounded public demo mode but no CLI subcommand exposes it and play never enforces a turn cap. Add a loreweaver demo subcommand wiring createDemoCampaign and the turn-budget gate. Parent context: loreweaver-d4r.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T21:25:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:02Z",
+  "closed_at": "2026-05-21T22:39:02Z",
+  "close_reason": "Fixed in PR #26 (merged)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

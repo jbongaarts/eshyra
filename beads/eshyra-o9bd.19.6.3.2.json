@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.3.2",
+  "title": "Review: Sol final review of PR #697 (eshyra-o9bd.19.6.3 @ b47b0ca4)",
+  "description": "Final read-only review of PR #697 (branch eshyra-o9bd.19.6.3, exact head b47b0ca4a3ce2105ac16104623af347cacc827e3) by Sol. Findings in notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #697 at exact head b47b0ca4a3ce2105ac16104623af347cacc827e3. Effective profile: rules-clause-complete, bounded to audit tooling and its real producers/consumers. Read AGENTS.md, the review policy, ADR 0020, integrated design sections 5.9 and 13.3, the owning bead and implementation child/spec/report. Reviewed both commits and the complete origin/main...HEAD diff. The local refs/beads/state projection is stale (2026-09-10 and missing this review/implementation child); live bd records supplied current authority.\n\nS1 — MATERIAL — packages/core/scripts/create-dnd5e-srd-audit-bundle/candidateGates.ts:339 (also :381): G-finding-evidence silently drops citation forms already used by the committed registry, violating the child spec's requirement to check every cited repository path and the owning bead's no-false-green criterion. Concrete reproducer, using the committed 68 registry rows without editing files: inject exists(p) = p !== 'packages/core/test/discovery/nameMentionReasons.test.ts' && existsSync(p). G-finding-evidence still returns pass with denominator 15 and no failures, although display-name-qualification and canonical-discovery cite discovery/nameMentionReasons.test.ts. Independently, treating packages/core/test/srdTaxonomyDurations.test.ts as missing also returns pass, although advancement-qualifiers, madness-durations and table-empty-cells cite that basename. Both extractCitedPaths('discovery/nameMentionReasons.test.ts') and extractCitedPaths('srdTaxonomyDurations.test.ts') return []; a genuinely cited but unrecognized pointer is classified as no committed evidence pointer. Sibling search found other basename and source-relative citations (including alternativeOptionProjections.test.ts, trapChecksProjection.test.ts, halfDamageSuccessBranches.test.ts and discovery/signals.ts). Adding a doesNotObserve exclusion does not authorize narrowing the required population. Suggested fix: resolve the citation forms actually present to deterministic repository paths, and reject unresolved/ambiguous file-shaped citations instead of silently dropping them; preserve the allowed no-pointer outcome for genuinely pointer-free reasoning. Permanent evidence: a generalized citation-extraction/existence invariant covering root paths, test/ shorthand, nested shorthand, basenames and unresolved/ambiguous citations, with injected missing-path controls. This is proportionate to the gate's evidence-admission decision; no new corpus-wide claim or per-finding ledger is needed. Owner: this PR's gate implementation; required next state: repair before merge.\n\nS2 — MATERIAL — packages/core/scripts/create-dnd5e-srd-audit-bundle/candidateGates.ts:225 (also :239; wired at cli.ts:2989): regex extraction can accept an unparsed Vitest configuration and claim tests run when they do not. Concrete reproducer: in memory, replace the actual config's include: ['packages/**/test/**/*.test.ts'] with include: ['packages/**/test/**/*.test.ts'].map(p => p.replace('packages/**/', 'packages/cli/')). This is a valid config whose evaluated includes select only CLI tests. The parser nevertheless returns ['packages/**/test/**/*.test.ts']; against the committed registry/inventory, G-finding-evidence, G-capabilities and G-replay all return pass even though core evidence such as packages/core/test/resolutionTools.test.ts is outside the actual run. A commented old include before a narrower live include produces the same result. The membership helper also ignores exclude: adding exclude: ['packages/core/test/**'] leaves G-capabilities passing for all 119 entries. Inspected the installed Vitest consumer: it uses evaluated include AND exclude, not just the first bracketed source fragment. This violates the explicit no-false-green-on-unparsed-config requirement and the assertion that evidence tests belong to G-suite. Suggested fix: use the actual resolved/discovered test membership from the captured suite, or strictly validate the supported static configuration and mark unsupported/dynamic/ambiguous selection configuration failed-to-run; respect exclusions and other selection options whenever accepted. Permanent evidence: one generalized test-membership invariant with controls for an evaluated narrowing expression, commented includes and exclusions, asserting that skipped evidence cannot pass. Owner: this PR's gate implementation; required next state: repair before merge.\n\nOther reviewed requirements: all eight gates carry observes/non-claims/denominators; zero denominators and missing captured commands cannot pass; the CLI writes candidate gate reports and sets a persistent nonzero exitCode on any non-pass; verifier sibling artifacts are shared with its actual comparison loop and records.json is compared through diffPacks; registry validation uses the existing validator/alias contract; capabilities consume the real inventory and ledger constants; README identifies the PDF and all six verified pack artifacts plus manifest, states the independent-audit-only boundary and completeness non-claims, and explicitly discloses eshyra-o9bd.19.3.5. Existing bundle tests are unchanged. The absent candidate record and resulting G-candidate-record failure are intended on this head and are not findings.\n\nValidation: npx vitest run packages/core/test/dnd5eSrdAuditBundleGates.test.ts packages/core/test/dnd5eSrdAuditBundle.test.ts — 2 files, 39 tests passed. npx vitest run packages/core/test/deterministicCapabilityInventory.test.ts packages/core/test/deterministicCapabilityLedger.test.ts packages/core/test/findingRegistry.test.ts — 3 files, 31 tests passed. Read-only/in-memory adversarial probes reproduced S1 and S2. git diff --check passed; worktree clean and HEAD unchanged. No full bundle, formatter, verification workflow, repository edits, commit, push, GitHub comment or merge performed. No non-material findings.\nVERDICT: MATERIAL FINDINGS (2)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T03:18:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T03:23:30Z",
+  "closed_at": "2026-11-01T03:23:30Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.3.2",
+      "depends_on_id": "eshyra-o9bd.19.6.3",
+      "type": "parent-child",
+      "created_at": "2026-10-31T22:18:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

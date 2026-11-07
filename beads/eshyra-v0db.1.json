@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-v0db.1",
+  "title": "Dispatch: v0db (Haiku 5.5, attempt 1)",
+  "description": "Plan for parent eshyra-v0db (bd show eshyra-v0db). WORKTREE: .worktrees/eshyra-v0db.1 (branch eshyra-v0db.1 from origin/main). Deps installed. Edit ONLY test files (find the existing kindSchemas / feature-record validator test file, e.g. grep -rl \"validateDnd5eFeature\\|optFeatureChoiceArray\" packages/core/test). No source changes; if a test reveals a validator bug, STOP and record it in notes (do not fix).\nAdd focused negative tests for the FeatureChoice fields added in eshyra-mdke (packages/core/src/rules/kindSchemas.ts optFeatureChoiceArray; featureChoices.ts): requiresOption whose choiceId names no sibling choice -> rejected; requiresOption whose optionId is not in the sibling's from -> rejected; malformed requiresOption shape -> rejected; optional present but not exactly true (false, string) -> rejected; a valid requiresOption + optional:true choice -> accepted. Use a minimal hand-built feature record, not the real pack. Assert on the error path/message substring.\nPROTOCOL: npm run verify:worktree BEFORE commit; commit (Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>); bd update eshyra-v0db.1 --append-notes; bd close eshyra-v0db.1. No push/PR.",
+  "notes": "Completion: committed test-only change packages/core/test/kindSchemasFeatureChoices.test.ts (new, 9 tests) on branch eshyra-v0db.1. Tests: unknown choiceId, self choiceId, optionId not in sibling from, sibling with no from, non-object requiresOption, missing optionId, optional:false, optional:'true' rejected; valid requiresOption + optional:true accepted. All 9 pass. No source changes. No validator bug found. npm run verify:worktree exit 0 (338 files passed, 2 skipped; 6305 tests passed, 3 skipped). Not pushed; no PR.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:20:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:23:27Z",
+  "closed_at": "2026-10-09T05:23:27Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-v0db.1",
+      "depends_on_id": "eshyra-v0db",
+      "type": "parent-child",
+      "created_at": "2026-10-09T00:20:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

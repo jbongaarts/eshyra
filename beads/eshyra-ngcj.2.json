@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.2",
+  "title": "Model class and subclass feature option catalogs",
+  "description": "Problem:\nSeveral class/subclass features are present as parent records but their gameplay options are prose only. The primary DM model can sometimes discover them via full-text retrieval, but deterministic character creation cannot enumerate, validate, persist, or apply them.\n\nGoal:\nIntroduce a schema-visible representation for feature option catalogs and connect them to the parent feature choices.\n\nDesign expectations:\n- Options should be addressable by stable ids.\n- Options should carry source text and source location.\n- Options should expose prerequisites where the SRD states them.\n- Parent features should link to their option catalogs through structured choices.\n- Effects may start prose-backed, but the selected option must be persistable and queryable.\n- Preserve source fidelity; do not invent non-SRD effects.\n\nAcceptance criteria:\n- Option catalogs are represented consistently for class/subclass build choices.\n- Parent feature records expose deterministic choices that reference the option catalogs.\n- Character creation code can enumerate legal options without parsing prose.\n- Choice-coverage audit has no findings for the modeled option families.\n- Existing pack verification and importer tests pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-29T22:48:16Z",
+  "closed_at": "2026-06-29T23:02:03Z",
+  "close_reason": "Completed all child option-catalog and spell-filter modeling in one PR",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.2",
+      "depends_on_id": "eshyra-ngcj",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

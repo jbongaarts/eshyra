@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.15",
+  "title": "Plan semantic Dolt checkpoint projection for history diffs",
+  "description": "Current Dolt checkpoints preserve restore/fork correctness by storing serialized SQLite snapshot rows. That is good for recovery, but not ideal for semantic 'what changed in the campaign?' diffs.\r\n\r\nPlan, but do not necessarily implement immediately, a semantic projection layer for key campaign tables alongside the restore-safe snapshot format.",
+  "acceptance_criteria": "- Current snapshot format remains the restore authority.\r\n- Design describes optional semantic Dolt tables/projections.\r\n- Design explains which entities are useful for history diffs.\r\n- Work is clearly deferred unless needed for near-term history UX.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-07T18:52:00Z",
+  "closed_at": "2026-06-07T18:55:38Z",
+  "close_reason": "Design delivered: docs/checkpoint-semantic-projection.md plans an optional, deferred semantic projection layer (per-entity identity-keyed proj_* Dolt tables, atomic same-repo commit) while campaign_snapshot remains the sole restore authority. Documents diff-worthy entities, schema-drift handling, secret/no-churn omissions, integration points, cost/risk, reversibility. Implementation gated on a real history UX. PR #170.",
+  "labels": [
+    "architecture",
+    "checkpoint",
+    "deferred",
+    "dolt",
+    "history",
+    "refactor",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.15",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:31:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.15",
+      "depends_on_id": "eshyra-0jq.14",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

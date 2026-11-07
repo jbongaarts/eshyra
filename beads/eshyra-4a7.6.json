@@ -1,0 +1,91 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.6",
+  "title": "Complete SRD class and subclass progression modeling",
+  "description": "Problem\r\n\r\nClass records are structurally incomplete. The latest audit found that class records capture hit die, primary abilities, saves, armor proficiencies, and weapon proficiencies, but omit important SRD class data.\r\n\r\nMissing or insufficiently structured areas\r\n\r\n- class skill choices,\r\n- tool proficiencies,\r\n- starting equipment options,\r\n- spellcasting progression,\r\n- class progression tables,\r\n- feature progression by level,\r\n- class-specific resource columns such as Rage, Rage Damage, Sorcery Points, Pact Magic slots, and similar.\r\n\r\nKnown normalization issue\r\n\r\nclass:druid currently includes this as an armor proficiency token:\r\n\r\nshields (druids will not wear armor or use shields made of metal)\r\n\r\nThe source parenthetical is real, but it should not be part of a normalized proficiency token. It should be represented as a note/restriction or equivalent structured field.\r\n\r\nTask\r\n\r\nComplete class and subclass progression/options modeling.\r\n\r\nImplementation guidance\r\n\r\n- Decide whether class progression tables are represented as table records, structured class progression data, or both.\r\n- The source coverage gate must account for each class progression table either way.\r\n- Do not duplicate feature bodies inside class/subclass descriptions when separate feature records exist.\r\n- Normalize proficiencies while preserving source restrictions and notes.\r\n- Preserve existing class, subclass, and feature ids where possible.\r\n\r\nRegression cases\r\n\r\nAdd tests for:\r\n\r\n- The Barbarian progression table.\r\n- At least one spellcasting class progression table.\r\n- Warlock Pact Magic progression.\r\n- Fighter Action Surge repeated-use progression.\r\n- Druid metal armor/shield restriction represented outside the normalized proficiency token.\r\n- Subclass spell table or progression table such as Oath of Devotion Spells or Circle Spells.\r\n\r\nAcceptance criteria\r\n\r\n- Every class progression table is accounted for.\r\n- Class records include or link to skill/tool/equipment/progression data.\r\n- Druid proficiency normalization is fixed without losing the source restriction.\r\n- Existing feature records remain source-backed and non-duplicated.",
+  "notes": "From eshyra-4a7.3 (table accounting): eshyra-4a7.3 emitted The Barbarian progression table (the only class progression table whose columns share one physical line per row; see table:the-barbarian and parseDocumentTables.ts wrapped-features-column rule, a working pattern for this bead), plus Creating Spell Slots and the subclass spell tables (Life Domain, 7x Circle of the Land, Oath of Devotion, Fiend Expanded). Remaining table items in this bead's bucket (116 total, 21 table-shaped): the 11 spellcaster/martial progression tables (The Bard ... The Wizard) whose Level/Features columns and spell-slot columns print as SEPARATE column blocks with empty feature cells (see p15 Cleric extraction: features block then 20-line slot block) — representation decision (table records vs structured progression vs both) is this bead's call; plus Beast Shapes (p20) and Destroy Undead (p17) — note Destroy Undead's caption is auto-claimed by feature:cleric:destroy-undead via name match with rows flattened in the feature description (masking class documented in eshyra-4a7.3 PR).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T04:30:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-13T19:43:23Z",
+  "closed_at": "2026-06-14T03:14:51Z",
+  "close_reason": "Completed via PR #205 (class progression tables) and PR #206 (full class/subclass progression modeling), both merged to main.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.6",
+      "depends_on_id": "eshyra-4a7.3",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:22:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.6",
+      "depends_on_id": "eshyra-4a7.2",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:22:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.6",
+      "depends_on_id": "eshyra-4a7",
+      "type": "parent-child",
+      "created_at": "2026-06-10T23:30:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "02f66397-94bd-54d0-9d84-5b6ef8327660",
+      "issue_id": "eshyra-4a7.6",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm test; 1587 passed, 19 skipped, 0 failures. Ready to implement.",
+      "created_at": "2026-06-13T19:44:09Z"
+    },
+    {
+      "id": "bd11288f-8efe-53fa-b322-babd7c7fdab3",
+      "issue_id": "eshyra-4a7.6",
+      "author": "Joseph Bongaarts",
+      "text": "PR1 (foundation) open: https://github.com/jbongaarts/eshyra/pull/205 — emits all 13 class-chapter tables (The Bard…The Wizard + Beast Shapes + Destroy Undead) as reviewed `table` records via new class-progression-reconstruction rule in classProgressionTables.ts. Table count 80->93. known-gap:eshyra-4a7.6 116->104 (broad class-chapter known-gap intentionally retained for the rest). verify:dnd5e-srd-pack passes; full suite green.\n\nRemaining for follow-up PRs on this bead: structured class.data.progression (per-level resources/spell-slots/feature refs+detail), progressionTableRef/features wiring, parseClasses Tools:/Skills:/Equipment parsing, Druid metal-armor proficiencyNotes normalization, subclass.data.spellTableRefs + feature.data.tableRefs (Beast Shapes/Destroy Undead), and finally narrowing/removing the broad known-gap:eshyra-4a7.6 rule.",
+      "created_at": "2026-06-13T21:00:21Z"
+    },
+    {
+      "id": "cc193a25-6687-5dbc-a155-5d74a3a82d7a",
+      "issue_id": "eshyra-4a7.6",
+      "author": "Joseph Bongaarts",
+      "text": "PR #205 review (dash cells) evaluation: PARTIALLY ACCEPTED.\n\nREJECTED — change blank cells to '—': source-backed evidence contradicts the premise. Scanned the raw pdfjs text layer of every class table page for dash glyphs: the ONLY genuine table-cell dashes in the whole Classes chapter are Monk L1 (Ki Points '—', Unarmored Movement '—', p26) and Beast Shapes L8 (Limitations '—', p20) — both already preserved verbatim in the emitted records. Bard, Cleric, Druid, Fighter, Paladin, Ranger, Rogue, Warlock have ZERO dash glyphs in their table bodies; Bard/Sorcerer/Wizard's only dash is the header decoration '—Spell Slots per Spell Level—'. The unavailable spell-slot cells and empty feature cells are genuinely BLANK in SRD 5.1, not dashed. Corroborated by variable per-row token counts (Bard L1='2 4 2' 3 tokens vs L20 11 tokens) — dash-filled cells would yield constant token counts. Emitting '—' would fabricate tokens absent from source (violates ADR 0007 + importer-fix-protocol honesty contract).\n\nACCEPTED — strengthen regression tests: the reviewer's concern that tests should pin the source-blank-vs-genuine-dash distinction is valid. Adding assertions that pin (a) genuine '—' cells (Monk/Beast Shapes — already partly covered) and (b) genuine blank '' cells (Bard/Cleric empty-feature rows, Paladin/Ranger half-caster unavailable slots) with the source evidence documented, so a future change that fabricates or drops a dash fails loudly. Also documenting the blank-vs-dash source fact in classProgressionTables.ts.",
+      "created_at": "2026-06-13T21:22:36Z"
+    },
+    {
+      "id": "fd05fcd6-2b2e-5f9c-900d-8cc057c39a7b",
+      "issue_id": "eshyra-4a7.6",
+      "author": "Joseph Bongaarts",
+      "text": "PR #205 review round 2 (claim: cells contain an extracted dash-like glyph U+0336/'̶' that a U+2014-only search missed). Verified at byte level against vendored SRD_CC_v5.1.pdf raw pdfjs text layer (not a filtered search):\n\n(1) Whole-page non-ASCII codepoint census, page 11 (Bard): the ONLY non-ASCII codepoints anywhere are U+2014 x2 (the header '—Spell Slots per Spell Level—'), U+2019 x2 (apostrophes), U+2022 x4 (equipment bullets). No U+0336, no U+2010/2013/2212, no combining mark, nothing dash-like in any cell. Page 15 (Cleric) table band: zero non-ASCII codepoints.\n(2) Per-item hex dump of every numeric row: pure ASCII digits (e.g. '2'=0x32), no attached combining codepoints.\n(3) Geometry: each filled cell is its own pdfjs item; Bard L1 row (y=461) items sorted by x END at x=357.8 ('2', the 1st-level slot value) — the 2nd–9th slot columns (x>=380) have NO item of any kind. The row physically terminates after the last filled column.\n(4) Ruled out ToUnicode-mapped-to-empty dash glyphs: no empty/whitespace/zero-width item exists at the empty-cell x-positions; the 247 whole-page blank items are normal inter-item spacing AFTER each real item, not at empty-cell positions.\n\nConclusion: there is no dash glyph of ANY codepoint (visible or invisible) in the Bard/Cleric unavailable-slot or empty-feature cells. Emitting '—' there would fabricate a token absent from the source text layer (violates ADR 0007 + importer-fix-protocol). Cannot make this change as a source-faithfulness claim. Limitation: no PDF renderer available, so cannot inspect the VISUAL layer; if dashes are visible they are table rule-lines (vector strokes), not text content. Escalated to human partner for direction: keep '' (text-faithful) vs adopt an explicitly-documented pack convention normalizing empty not-applicable cells to '—' (a representation choice, not a source-token claim).",
+      "created_at": "2026-06-13T21:34:39Z"
+    },
+    {
+      "id": "3fbab5f1-7f8d-5caf-9fdf-5341600c098d",
+      "issue_id": "eshyra-4a7.6",
+      "author": "Joseph Bongaarts",
+      "text": "Decision (human partner): keep empty not-applicable cells as '' (text-faithful). No code change; PR #205 stands as-is. Genuine '—' cells (Monk L1, Beast Shapes L8) remain '—'. Replying to reviewer with byte-level evidence.",
+      "created_at": "2026-06-13T21:40:28Z"
+    },
+    {
+      "id": "ed0f4e8c-d380-54f0-adce-3b2e2b074993",
+      "issue_id": "eshyra-4a7.6",
+      "author": "Joseph Bongaarts",
+      "text": "PR2 (completes bead) open: https://github.com/jbongaarts/eshyra/pull/206 — structured class.data.progression (per-level resources/spell-slots/feature refs+detail) derived from emitted table rows; progressionTableRef + class.features; parseClasses Tools/Skills/Equipment; Druid metal-armor -> proficiencyNotes; subclass.spellTableRefs (Life Domain, 7 Circle tables, Oath of Devotion, Fiend); feature.tableRefs (destroy-undead, wild-shape) with table-row trimming; kindSchemas optional validators. SOURCE COVERAGE: broad known-gap:eshyra-4a7.6 REMOVED — all 104 class-chapter items explicitly accounted (84 child-of verified text-present, 9+2 ignore, 8 document-structure). One genuine dropped item (Oath of Devotion 'Tenets of Devotion' prose) held under narrow known-gap:eshyra-citg (follow-up bead filed). Full suite green (1613); verify:dnd5e-srd-pack deterministic. Bead closes on PR2 merge. Acceptance met: no broad class-chapter known-gap remains.",
+      "created_at": "2026-06-14T03:02:44Z"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 6
+}

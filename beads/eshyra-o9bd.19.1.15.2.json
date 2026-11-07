@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.15.2",
+  "title": "Dispatch: pin audit aliases to canonical findings (attempt 2)",
+  "description": "Dispatch for eshyra-o9bd.19.1.15 (Foundation 2). Attempt 2 — bounded fix for the\nsingle blocking finding on PR #507 review at head eff62bb.\n\n## The finding (accepted; the reviewer is right)\n\nStable audit alias identity is no longer pinned to its canonical finding.\n\nThe shipped validator has two INDEPENDENT flat rosters — `CANONICAL_FINDING_IDS`\n(68) and `FINDING_ALIASES` (70) — and only checks set equality plus uniqueness.\nNothing pins WHICH aliases belong to WHICH canonical row. So two rows can trade\naliases and `validateFindingRegistry` still accepts the registry, as long as\n`provenance.auditFinding` is swapped along with them (the provenance check only\nasserts membership in the row's OWN alias list, so it moves with the swap).\n\nConcrete case named by the reviewer: `indep:001` (`audit-readiness-gate`) and\n`sol:CAP-001` (`rule-corpus-procedures`) can trade. Those two aliases were\ndeliberately SPLIT into separate rows by a reviewed #476 correction because they\nname distinct defects with different owners and recurrence boundaries. The hole\ngeneralizes to all 68 rows / 70 aliases.\n\nThis is a regression against #476, which is the authority here: at head 9133201\n`packages/core/src/rules/findingRegistry.ts:273` defines\n\n    const CANONICAL_ROW_ROSTER: Readonly<Record<string, readonly string[]>>\n\nand `canonicalRosterBlockers` (line ~1190) compares each row's alias array to\nthe roster entry for its canonicalId, SORTED on both sides, plus\nduplicate/unexpected/missing canonicalId detection. Read that function before\nwriting the replacement:\n\n    git show 9133201:packages/core/src/rules/findingRegistry.ts | sed -n '273,300p;1190,1235p'\n\n## Required change — `packages/core/src/rules/findingRegistry.ts`\n\n1. Replace the two flat rosters with ONE exact roster:\n\n       export const CANONICAL_ROW_ROSTER: Readonly<Record<string, readonly string[]>>\n\n   68 entries, in the registry's row order, each mapping canonicalId -> its\n   exact alias list. Build it from the committed\n   `docs/audits/dnd5e-srd-5.1-final/finding-registry.json` so it cannot drift;\n   do not retype it by hand. Two rows have two aliases each\n   (`rock-gnome-boundary`: indep:010 + sol:CAP-012; `point-origin-areas`:\n   opus:F-08 + fable:F2); every other row has one.\n\n2. KEEP both existing exports, derived from the roster so they cannot disagree\n   with it:\n       CANONICAL_FINDING_IDS  = Object.keys(CANONICAL_ROW_ROSTER)\n       FINDING_ALIASES        = every alias, sorted\n   They are already exported from internal.ts and asserted in tests; keep the\n   names and the 68/70 counts.\n\n3. Validation, replacing the two `exactSet(...)` calls at the end of\n   `validateFindingRegistry`:\n   - each row's `canonicalId` must be a roster key; if not -> unexpected\n   - each row's alias list must equal that key's roster entry EXACTLY, compared\n     sorted on both sides (match #476: sorted, not order-sensitive)\n   - every roster key must appear exactly once across the rows -> missing /\n     duplicate\n   Keep the existing duplicate-canonicalId and cross-row duplicate-alias checks\n   as belt-and-braces; they fire earlier and with clearer messages.\n   Error messages must name the offending canonicalId, and the missing/unexpected\n   wording must stay greppable — the existing tests assert\n   /canonicalId set mismatch.*missing/ and /canonicalId set mismatch.*unexpected/,\n   so either keep phrasing that still matches or update those two assertions in\n   the same commit. Do not leave a test asserting a message the code no longer\n   emits.\n\n4. Everything else in the module stays as-is. Do NOT reintroduce any Foundation\n   3 / Foundation 4 field, do not touch the deny-list, do not add a pack or\n   subprocess read. The registry JSON itself does not change.\n\n## Required regression test — `packages/core/test/findingRegistry.test.ts`\n\nAdd a test that swaps aliases between two canonical rows AND swaps their\n`provenance.auditFinding` with them, then asserts validation rejects it. Use the\nreviewer's pair: `audit-readiness-gate` (indep:001) and `rule-corpus-procedures`\n(sol:CAP-001). The provenance swap is the point — without it the existing\nprovenance check would catch the mutation and the test would pass for the wrong\nreason. Assert the thrown message names one of the two canonicalIds.\n\nAlso add: `CANONICAL_ROW_ROSTER` has 68 keys and 70 aliases total, and every\nrow's aliases equal its roster entry (a positive pin over the real registry, not\njust the negative case).\n\nKeep every existing test passing. Do not weaken an existing assertion to fit the\nnew code; if an existing message assertion must change, change it deliberately\nand say so in your completion notes.\n\n## Constraints\n\n- Do NOT regenerate any rules pack; `packages/core/data/` is untouched.\n- Do NOT modify `docs/audits/dnd5e-srd-5.1-final/finding-registry.json` or\n  `finding-registry.md` unless the doc's validator paragraph becomes inaccurate\n  — if it does, update that paragraph only.\n- `npm run verify:worktree` BEFORE committing (it rewrites files).\n",
+  "notes": "COMPLETION REPORT 2026-08-30: Implemented the bounded PR #507 fix in commit e8b9b34. Replaced the independent canonical/alias flat rosters with CANONICAL_ROW_ROSTER generated from docs/audits/dnd5e-srd-5.1-final/finding-registry.json; derived CANONICAL_FINDING_IDS and FINDING_ALIASES; exported the roster through @eshyra/core/internal; added per-canonical sorted alias validation while retaining duplicate and set checks; added positive 68-key/70-alias pin coverage and the audit-readiness-gate/rule-corpus-procedures alias+provenance swap regression. npm run verify:worktree passed: 264 test files passed, 4 skipped; 4743 tests passed, 19 skipped. Pre-existing Biome schema info (2.5.5 vs installed 2.5.10) remains tracked by existing follow-up eshyra-wyga. No rules-pack or registry JSON changes.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-08-30T02:49:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-08-30T02:53:01Z",
+  "closed_at": "2026-08-30T02:53:01Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.15.2",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "parent-child",
+      "created_at": "2026-08-29T21:49:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fak.4",
+  "title": "Clarify parseFeatures grantor-tracking documentation",
+  "description": "Review follow-up for PR #163: update the parseFeatures module comment to describe parent class heading-tier validation, body-font table-cell rejection, uniform-fixture fallback, and parent-validated subclass context.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T23:40:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:46Z",
+  "started_at": "2026-06-06T23:40:16Z",
+  "closed_at": "2026-06-06T23:41:21Z",
+  "close_reason": "Accepted review feedback implemented and full verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-fak.4",
+      "depends_on_id": "eshyra-fak",
+      "type": "parent-child",
+      "created_at": "2026-06-06T18:40:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "0b86f041-bf4b-54bb-b4f3-4198177b4c92",
+      "issue_id": "eshyra-fak.4",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run verify:worktree -> exit 0 (Biome/check and typecheck passed; 1265 tests passed, 3 skipped). npm run verify:dnd5e-srd-pack -> exit 0 exact match. Updated the module comment to document heading-tier class anchors, uniform-fixture fallback, parent-validated subclass anchors, and implicit Barbarian context.",
+      "created_at": "2026-06-06T23:41:19Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fa54.1",
+  "title": "Dispatch: fa54 (Haiku 5.5, attempt 1)",
+  "description": "Implementation plan for parent eshyra-fa54 (bd show eshyra-fa54). Supervisor decisions below are made.\n\nWORKTREE/BRANCH: .worktrees/eshyra-fa54.1 on branch eshyra-fa54.1 (cut from origin/main). Deps installed.\nFILE BOUNDARY: a parallel task edits packages/core/src/character/ (levelUpEngine.ts, finalizeCharacter.ts, spellPreparation.ts) and their tests. Do not edit packages/core/src/character/ at all.\n\nCODE SURVEY (verified by supervisor)\n- packages/core/src/state/usageCounters.ts EVENT_RESETS (~line 235): short_rest resets recharge_roll, short_rest, short_or_long_rest; long_rest additionally long_rest; dawn resets dawn.\n- packages/core/src/state/rest.ts (~line 700-725): completeLongRest/completeShortRest call resetUsage(event, owner character) for each participant.\n- packages/core/src/state/classResources.ts: Rage -> long_rest, Ki -> short_or_long_rest, Sorcery Points -> long_rest; counters are pack-bound and created on first spend_usage (tests for this live in packages/core/test/levelUpEngine.test.ts — use them as fixture examples).\n\nDECISIONS\n1. This bead is confirmation evidence, not new behaviour: add end-to-end tests (in packages/core/test/rest.test.ts or usageCounters.test.ts, whichever already has rest fixtures) proving through the real rest operations (completeShortRest / completeLongRest, not resetUsage directly):\n   - monk with Ki partially spent: short rest restores Ki fully;\n   - sorcerer with Sorcery Points spent: short rest does NOT restore them; long rest does;\n   - barbarian Rage spent: short rest does not, long rest does;\n   - a multi-point spend (spend_usage uses: 3 on Sorcery Points) decrements by 3 and is refused when it exceeds remaining.\n   If any of these fails, STOP: do not change behaviour, record the failing case in notes and file a bug bead.\n2. Flexible Casting / Metamagic disposition: Metamagic and other sorcery-point costs are already expressible as spend_usage with uses = cost (DM-adjudicated cost choice). Flexible Casting (sorcery points <-> spell slots via the Creating Spell Slots table) is a genuine deterministic capability touching slot state; do NOT implement it here. File one follow-up bead (bd create, P3, label srd, discovered-from eshyra-fa54) titled 'Flexible Casting: deterministic sorcery-point <-> spell-slot conversion' describing the table, the slot owner (state/spellSlots.ts) and the counter owner (usageCounters.ts).\n3. No source changes expected. If a test reveals a genuine defect, stop as in 1.\n\nPROTOCOL: run `npm run verify:worktree` from the worktree root BEFORE committing (it rewrites files); commit on eshyra-fa54.1; append a completion report with `bd update eshyra-fa54.1 --append-notes` (tests, results, follow-up id); `bd close eshyra-fa54.1`.",
+  "notes": "COMPLETION REPORT (eshyra-fa54.1)\nCommit: ceaf060a on branch eshyra-fa54.1 (not pushed).\nChange: test-only. Added 'class resource counters reset through real rest operations' block to packages/core/test/rest.test.ts (5 tests) driving completeShortRest/completeLongRest:\n- monk Ki partially spent (1 of 2) restored by short rest\n- monk Ki restored by long rest\n- sorcerer Sorcery Points (3 of 3) NOT restored by short rest; restored by long rest\n- multi-point spend (uses 2, then uses 2 refused with UsageCounterError, then uses 1) decrements by cost and refuses overspend\n- barbarian Rage not restored by short rest; restored by long rest\nAll behaviour matched the existing implementation; no source changes, no failing cases.\nVerification: npm run verify:worktree EXIT 0 (format/check/typecheck clean; vitest 334 files passed, 2 skipped; 6154 tests passed, 3 skipped). rest.test.ts alone: 31/31.\nFollow-up: eshyra-09co (P3, label srd) Flexible Casting: deterministic sorcery-point <-> spell-slot conversion.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T03:43:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T03:47:17Z",
+  "closed_at": "2026-10-09T03:47:17Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-fa54.1",
+      "depends_on_id": "eshyra-fa54",
+      "type": "parent-child",
+      "created_at": "2026-10-08T22:43:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

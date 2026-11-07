@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.6.2",
+  "title": "Project creature and action attack mechanics",
+  "description": "Problem:\nCreature records expose stat blocks, traits, and action arrays, but attacks and effects are mostly raw text. Deterministic combat tools cannot reliably extract attack bonus, reach/range, targets, hit damage, save DC, recharge, or condition application.\n\nImplement:\n- Add optional typed action mechanics projections.\n- Cover common SRD action patterns:\n  - Melee Weapon Attack\n  - Ranged Weapon Attack\n  - Melee or Ranged Weapon Attack\n  - Hit damage dice/type\n  - reach/range\n  - one target / target count\n  - recharge notation\n  - saving throw DC and ability where explicit\n- Preserve original action text.\n\nAcceptance criteria:\n- Representative creature attacks can be executed or previewed by deterministic tooling without parsing prose at runtime.\n- Ambiguous actions remain prose-backed with no invented fields.\n- Projection diagnostics identify remaining prose-only actions.\n- Tests cover common attack forms.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T00:12:07Z",
+  "started_at": "2026-06-30T00:11:57Z",
+  "closed_at": "2026-06-30T00:12:07Z",
+  "close_reason": "Implemented first-pass source-backed mechanics projections for spells, creature/action entries, features/ancestry/feats, and hazards; regenerated SRD pack; added schema validation, report, thaw note, and tests.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.6.2",
+      "depends_on_id": "eshyra-ngcj.6",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

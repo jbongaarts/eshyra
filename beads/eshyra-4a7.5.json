@@ -1,0 +1,62 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.5",
+  "title": "Complete SRD creature and NPC stat-block records",
+  "description": "Problem\r\n\r\nCreature records are currently too skeletal for actual SRD-backed play. The audit found that creature records generally capture basic header stats but omit major stat-block content.\r\n\r\nExample\r\n\r\ncreature:aboleth captures AC, HP, speed, ability scores, and CR, but the SRD stat block also contains saving throws, skills, senses, languages, Amphibious, Mucous Cloud, Probing Telepathy, Multiattack, Tentacle, Tail, Enslave, and Legendary Actions.\r\n\r\nTask\r\n\r\nComplete creature and NPC stat-block parsing so creature-like records preserve all structured source sections needed for play.\r\n\r\nExpected fields or equivalent schema\r\n\r\n- armor class,\r\n- hit points,\r\n- speed,\r\n- ability scores,\r\n- saving throws,\r\n- skills,\r\n- damage vulnerabilities,\r\n- damage resistances,\r\n- damage immunities,\r\n- condition immunities,\r\n- senses,\r\n- languages,\r\n- challenge rating,\r\n- traits,\r\n- actions,\r\n- reactions,\r\n- legendary actions,\r\n- lair actions where present,\r\n- regional effects where present,\r\n- spellcasting blocks where present,\r\n- variant notes where present.\r\n\r\nImplementation guidance\r\n\r\n- Use source-backed tests before changing parser logic.\r\n- Preserve text where full semantic decomposition is not yet practical, but place it in the correct structured section.\r\n- Do not discard action names, recharge text, attack bonuses, damage expressions, save DCs, or usage limitations.\r\n- NPCs should follow the same stat-block completeness rules unless there is a documented reason for a separate schema.\r\n\r\nRegression cases\r\n\r\nInclude tests for varied stat blocks:\r\n\r\n- Aboleth: traits, actions, legendary actions.\r\n- Dragon or similar complex creature: legendary/lair/regional content if present in SRD.\r\n- Spellcasting creature/NPC.\r\n- Creature with immunities/resistances.\r\n- Embedded stat block from the document-wide stat-block bead.\r\n\r\nAcceptance criteria\r\n\r\n- Creature-like records contain all stat-block sections present in source.\r\n- No major stat-block section remains only in flattened prose.\r\n- Pack verification and importer tests cover representative complex stat blocks.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T04:30:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-13T15:21:01Z",
+  "closed_at": "2026-06-13T17:37:43Z",
+  "close_reason": "All child slices complete and merged: keyed defensive/sense fields (eshyra-ez6v, #200), trait/action/reaction/legendary sections (eshyra-yevt, #202), and variant sidebars (eshyra-70xr, #203). Creature records now carry every stat-block section the SRD prints (header stats, saves/skills/damage/condition/senses/languages, traits/actions/reactions/legendary actions, variant notes); no major stat-block section remains only in flattened prose. SRD 5.1 has no per-creature lair actions/regional effects. verify:dnd5e-srd-pack green; source-coverage unaccounted=0 for the creature region.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.5",
+      "depends_on_id": "eshyra-4a7",
+      "type": "parent-child",
+      "created_at": "2026-06-10T23:30:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.5",
+      "depends_on_id": "eshyra-70xr",
+      "type": "blocks",
+      "created_at": "2026-06-13T10:25:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.5",
+      "depends_on_id": "eshyra-4a7.4",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:22:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.5",
+      "depends_on_id": "eshyra-ez6v",
+      "type": "blocks",
+      "created_at": "2026-06-13T10:25:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.5",
+      "depends_on_id": "eshyra-yevt",
+      "type": "blocks",
+      "created_at": "2026-06-13T10:25:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 1,
+  "comment_count": 0
+}

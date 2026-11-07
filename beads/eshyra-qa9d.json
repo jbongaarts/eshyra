@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-qa9d",
+  "title": "Remove fenced-text tool protocol from supported gameplay providers",
+  "description": "Problem\nThe released gameplay path relied on a custom fenced-text tool-call protocol even though modern model APIs provide native tool/function calling. The provider-neutral Eshyra tool abstraction was the right architecture, but allowing a custom fenced-text default made a model/provider appear supported before its adapter actually implemented native tool transport. This caused eshyra-eznk: Claude Opus could see no native tools and reported that gameplay tools were not actually present.\n\nDecision\nA model/provider is not considered supported for released gameplay unless its adapter implements native tool transport for Eshyra's provider-neutral tool definitions. Fenced-text tool calls must not be the default or fallback for any supported gameplay provider.\n\nScope\n- Audit all model providers/adapters and identify any that still use or advertise fenced-text tool calls for gameplay.\n- Remove fenced-text as the default gameplay protocol.\n- Add explicit provider capability checks: gameplay startup must fail clearly if the selected model adapter cannot transport Eshyra tools natively.\n- Update provider/model support docs to distinguish:\n  - native-tool supported for gameplay\n  - text-only/maintenance-only\n  - unsupported until native tool transport is implemented\n- Remove prompt instructions that teach supported native providers to emit fenced ```tool_call JSON.\n- Keep any fenced parser only if it is explicitly legacy/test-only and unreachable from released gameplay; otherwise delete it.\n- Ensure debug logging reports native vs unsupported accurately and never masks unsupported providers behind a fenced fallback.\n\nAcceptance Criteria\n- No released gameplay provider defaults to `toolProtocolMode: \"fenced-text\"`.\n- Selecting a provider without native Eshyra tool transport fails before play begins with a clear actionable error.\n- Tests cover provider capability enforcement.\n- Tests prove supported gameplay providers must forward non-empty native tool definitions when `ModelCompleteInput.tools` is non-empty.\n- Prompt snapshots or focused assertions prove native-supported gameplay prompts do not contain fenced tool-call instructions.\n- Documentation explains that the core owns provider-neutral tool semantics while adapters own provider-native transport.\n- Any remaining fenced-text code is either removed or explicitly marked legacy/test-only with tests proving it is not used by released gameplay.\n\nDependencies\n- Should be started after eshyra-eznk lands, because eznk should establish the first working native AgentSDK/Anthropic gameplay path.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T05:42:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-19T23:32:21Z",
+  "started_at": "2026-06-19T23:16:44Z",
+  "closed_at": "2026-06-19T23:32:21Z",
+  "close_reason": "Opened PR #249: buildSystemPrompt defaults to native protocol; new assertGameplayCapable startup gate (UnsupportedGameplayProviderError) wired into CLI for primary DM + auditor; fenced parser retained legacy/test-only and unreachable from released gameplay. Tests cover capability enforcement + native-default prompt. ADR 0010 updated. Full verify:worktree green (2093 pass).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-qa9d",
+      "depends_on_id": "eshyra-eznk",
+      "type": "blocks",
+      "created_at": "2026-06-18T00:44:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

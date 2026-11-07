@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-hiu5",
+  "title": "Inject Codex-subagent supervisor workflow for Fable main agent only",
+  "description": "Port the refined chopcli Codex-subagent dispatch workflow (bead-per-dispatch, thin launch prompts, YOLO sandbox rules, supervisor verification) into eshyra, scoped so ONLY a main-agent Claude Code session running a Fable model sees it. Mechanism: SessionStart hook in .claude/settings.json runs .claude/hooks/fable-supervisor-context.sh, which gates on the hook input's model field and agent_id. Codex never executes Claude Code hooks; subagents never trigger SessionStart; non-Fable main sessions are filtered by the model gate. Content must NOT go into AGENTS.md/CLAUDE.md/bd memories (all visible to Codex and subagents).",
+  "notes": "Implemented on branch eshyra-hiu5; PR open at https://github.com/jbongaarts/eshyra/pull/456. Hook gating verified manually (fable main=inject, sonnet main=silent, subagent=silent, missing model=self-gated inject). Per PR workflow, leave in_progress until PR merges, then close.\nReview fixes pushed: per-child worktree/branch model with supervisor merge-integration into parent branch; hook rewritten in Node (jq dependency removed, fail-closed on bad stdin/EPIPE); resume source skipped to prevent duplicate injection. All gating cases retested (startup/compact inject, resume/sonnet/subagent silent, missing model self-gated); biome clean.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T04:39:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T05:18:00Z",
+  "started_at": "2026-07-19T04:39:33Z",
+  "closed_at": "2026-07-19T05:18:00Z",
+  "close_reason": "PR #456 merged to main; hook live and smoke-tested from main checkout",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

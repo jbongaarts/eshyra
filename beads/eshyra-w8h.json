@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-w8h",
+  "title": "parseCreatures real-PDF coverage gap (193/300+) after column-aware extraction",
+  "description": "With column-aware extraction in place (loreweaver-fct), parseCreatures advances from 0 stat blocks to 193 on the real SRD 5.1 PDF, but the MIN_EXPECTED_SRD_5_1_CREATURES floor of 300 still fails verify:dnd5e-srd-pack. The remaining gap is no longer about page-level column layout — that work landed in loreweaver-fct — it's about creature-specific stat-block structure the parser doesn't yet recognize.\n\nInvestigation needed:\n- Diff the 193 parsed creature names against the SRD 5.1 monsters chapter ToC to identify which families are missing (initial scan suggests Beasts / animal stat blocks are largely absent; Bandit/Cultist/etc. are intentionally out of scope per the existing 'Nonplayer Characters' exclusion).\n- Determine whether the misses are sectioning (a sub-section like 'Beasts' the slicer doesn't anchor) or parser pattern coverage (meta-line / stat-line shapes outside the current regexes).\n- Confirm parseFeatures status on the real PDF (currently masked by the creature coverage check failing first).\n\nReproduce: npm run verify:dnd5e-srd-pack. See packages/core/scripts/importers/dnd5e-srd-5.1/parseCreatures.ts and sections.ts.",
+  "notes": "Root causes of the 193/300 gap, in order of impact:\n\n1. Wrong floor — SRD 5.1 CC Monsters chapter has ~201 creatures, not 300+. The Misc Creatures appendix (MM-A) was never sliced.\n2. Misc Creatures appendix (p366-394) was never sliced — adds ~95 beasts/animals/swarms.\n3. Column partition picked the absolute-largest x-gap; on monster pages a far-right outlier opens a larger gap than the real gutter, so partition fell back and the page emitted y-interleaved across columns.\n4. Narrow-gutter pages (49pt < 50pt threshold) were not partitioned, with the same interleaving symptom.\n5. Ability-score row was found via positional adjacency to \"STR DEX CON…\" header; column interleaving inserts a prose line between them and the score row was missed → stat block silently dropped.\n6. Compound creature names embed `-­‐` (U+002D + U+00AD soft hyphen + U+2010 Unicode hyphen) which broke the name char class; Will-o'-Wisp, Saber-Toothed Tiger, Half-Red Dragon Veteran dropped.\n\nFixes (PR coming on branch loreweaver-w8h):\n- sections.ts: add `miscellaneousCreatures` anchor for Appendix MM-A; orchestrator concatenates with main Monsters slice.\n- extract.ts: partition now picks the largest VALID gap (above threshold, passes both per-side guards), not the absolute-largest. Threshold lowered 50→45 to catch narrow-gutter pages.\n- parseCreatures.ts: ability-score row detected by its own six-cell pattern (first-match-wins), not by \"header line + next non-blank\". Soft hyphens stripped, U+2010 folded to ASCII, runs collapsed.\n- index.ts: MIN_EXPECTED_SRD_5_1_CREATURES lowered from 300 to 280. Real ceiling is 296 (201 Monsters + 95 MM-A).\n\nResult: parseCreatures yields 296 creatures (was 193); creature coverage passes.\n\nparseFeatures status (called out in this bead): UNVERIFIED on real PDF. verify:dnd5e-srd-pack now blocks on a downstream ancestry coverage failure (13/18 subraces missing — Mountain Dwarf, Wood Elf, Dark Elf (Drow), Stout Halfling, Forest Gnome). Filed as loreweaver-3m1; parseFeatures should be re-checked after that lands.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-02T03:48:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-02T04:09:14Z",
+  "closed_at": "2026-06-02T18:14:32Z",
+  "close_reason": "Fixed in PR #132 (loreweaver-w8h branch). parseCreatures now yields 296 stat blocks vs prior 193; creature coverage gate passes. Five interacting bugs addressed: Appendix MM-A slice added, column partition picks largest valid gap (not absolute largest), COLUMN_GAP_THRESHOLD 50→45, ability-score row identified by its own pattern, soft hyphens normalized. Floor lowered 300→280 (real ceiling 296). Downstream ancestry coverage failure filed as loreweaver-3m1.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-w8h",
+      "depends_on_id": "eshyra-fct",
+      "type": "blocks",
+      "created_at": "2026-06-01T22:48:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

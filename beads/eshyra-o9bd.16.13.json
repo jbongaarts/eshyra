@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.13",
+  "title": "Review: Sol confirm PR #704 report corrections (eshyra-o9bd.16 @ daac37e8)",
+  "description": "Bounded confirmation of PR #704 at daac37e84613eb12c11ecab9d6cb79df8fa808f8. Scope: whether commit daac37e8 accurately corrects the 16.12 findings S2, S3 and S4 (see the 16.12 notes), and whether the corrected sentences introduce any new inaccuracy. The diff is 546c0c07..daac37e8. Earlier 16.12 conclusions on unchanged text need not be redone.",
+  "notes": "Bounded confirmation of PR #704 at daac37e84613eb12c11ecab9d6cb79df8fa808f8 (diff 546c0c07..daac37e8, audit report only). Reviewer: Claude Opus fallback (Codex/Sol hit its usage limit). Read-only.\n\nS1 - S2 correction (L4-F1 credit redemption timing): ACCURATE. inventoryLifecycle.ts:67-86 deletes the inventory row and voids open credits only when no item_consumption_receipt exists; with a receipt it preserves them; it chooses/redeems nothing. activeEffects.ts:4334-4375 picks source.bindCreditId (validated in scope) or oldestOpenItemGrantBindCredit at grant binding; :5684-5690 redeems it inside the effect-insert transaction. The new text omits the final-receipt fallback when no credit is open (activeEffects.ts:4339-4341, 5677-5683); that is an omission in a one-line summary, not a false statement. NON-MATERIAL.\n\nS2 - S3 correction (use_item refusal coverage): ACCURATE. itemUseArgsRefusal.test.ts: six of seven parameterized refusals run on both registry and item layers; the {costs:{uses:0},unknown} Bag case is layers:['item'] only, and the registry schema has costs additionalProperties {type:integer,minimum:1} (toolUseItem.ts:70-74), so it refuses uses:0 first; the non-object args test runs only via the registry and asserts code invalid_args plus snapshot equality. Targeted vitest run: 18/18 passed.\n\nS3 - S4 correction (SRD page/quote scope): ACCURATE. .16.2 L2-F2 cites orchestrator.ts/shadow.ts/harness.ts locations and runtime output with no SRD page/quote; .16.4 L4-F3 states that no SRD page applies and cites deterministicCapabilityLedger.ts lines and probe output. The phrase 'such as' does not claim these are the only ones.\n\nS4 - No new inaccuracy introduced by the changed sentences; unchanged text not re-reviewed.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T14:07:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T14:09:43Z",
+  "started_at": "2026-11-01T14:07:20Z",
+  "closed_at": "2026-11-01T14:09:43Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.13",
+      "depends_on_id": "eshyra-o9bd.16",
+      "type": "parent-child",
+      "created_at": "2026-11-01T08:07:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

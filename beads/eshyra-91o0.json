@@ -1,0 +1,42 @@
+{
+  "_type": "issue",
+  "id": "eshyra-91o0",
+  "title": "Choice-coverage gate skips subclass-granted features: model Bonus Cantrip, Circle Spells land, Lore Bonus Proficiencies, Dragon Ancestor",
+  "description": "ROOT CAUSE (Claude Captain review of eshyra-ug4i.2.1, 2026-10-08): srdPlayabilityAudit.checkChoiceCoverage iterates only grantedClassFeatureLevels (features granted by class progression rows), so subclass-granted features are never audited for prose-only build choices. The cantrip signal /\\bcantrips?\\b[^.]*\\bof your choice\\b/ matches feature:circle-of-the-land:bonus-cantrip ('you learn one additional druid cantrip of your choice') but the record is never checked.\n\nUnmodeled subclass build choices found by a prose scan of subclass features (records.json @ 03a7c4d9):\n- feature:circle-of-the-land:bonus-cantrip (L2): one druid cantrip. Level-up now emits an UNSUPPORTED descriptor (UNMODELED_SPELL_GRANT_FEATURES in levelUpSpells.ts), so a Land druid cannot pass level 2 — fail-closed per eshyra-lupf.9, but a visible block.\n- feature:circle-of-the-land:circle-spells (L3): choose the land (arctic, coast, desert, forest, grassland, mountain, swamp); determines always-prepared circle spells. Silently skipped today.\n- feature:college-of-lore:bonus-proficiencies (L3): three skills of your choice. Silently skipped today.\n- feature:draconic-bloodline:dragon-ancestor (L1): choose a dragon type (creation-time; eshyra-nnj6 territory). Silently skipped today.\nModeled already: champion additional fighting style, Lore additional magical secrets, hunter options.\n\nFIX (docs/importer-fix-protocol.md applies): (1) extend the choice-coverage gate to subclass-granted features (audit first; expect exactly these findings); (2) add curated choices in packages/core/scripts/importers/dnd5e-srd-5.1/deriveFeatureChoices.ts (bonus cantrip as category cantrip with a druid-list level-0 spellFilter, like additional-magical-secrets; land as an option list; Lore skills as a skill choice; dragon ancestor as an option list) and regenerate; (3) engine: drop the UNMODELED_SPELL_GRANT_FEATURES entry (levelUpSpells handles the cantrip via its feature spell-choice path), make level-up detect the land/skills choices (fail-closed until applied), and decide where land/ancestor persist (featureChoices). Also check whether the level-up engine's subclass-feature detection silently drops any other unmodeled choice and turn that into a generalized invariant like the spell one.",
+  "notes": "2026-10-08 (Claude Captain reconciliation, audit): proof boundary is the COMPLETE applicable grant graph, not the four named examples. Enumerate every class- and subclass-granted feature reachable by the real consumers (character creation level-1 grants incl. level-1 subclasses; level-up class rows, subclass-feature slots and subclass features gained at the target level) and audit each for prose-only build choices; the four known findings are expected members, not the closed set. Acceptance: the generalized choice-coverage gate iterates that whole graph; every unmodeled player choice is either modeled (curated choice + engine detection/persistence) or an explicit fail-closed descriptor — never silently skipped — in BOTH creation and level-up. Coordinate creation-time members (e.g. dragon ancestor) with eshyra-nnj6 and always-prepared circle spells consumption with eshyra-odpc.\n2026-10-09: child eshyra-91o0.1 (fd5a1236) reviewed + verify:worktree rerun by supervisor (6066 pass/3 skip), merged into eshyra-91o0 (27762780). PR #613 https://github.com/jbongaarts/eshyra/pull/613. Trial merge with eshyra-ug4i.1 (PR #612): textual conflict only in levelUpEngine.ts (keep both blocks); level-up suites 142/142 on combined tree. Stays in_progress until merge.\n2026-10-09: merged origin/main (PR #612) into eshyra-91o0; levelUpEngine.ts conflict resolved keeping both expertise and skill-choice blocks; verify:worktree 6072 pass/3 skip; pushed.\n2026-10-09: PR #613 review 5464545677 @4ba97273 CHANGES REQUESTED: F1 coverage invariant per-feature not per-choice-instance (+ base spellcasting exemption too broad); F2 Lore same-level skills not eligible for Expertise at bard 2->3. Both confirmed by supervisor; fix dispatched as eshyra-91o0.2.\n2026-10-09: review fixes eshyra-91o0.2 (ffc2d6db) reviewed + verified by supervisor (6080 pass/3 skip), merged into eshyra-91o0 at 5c766a5a, pushed; PR #613 comment requests fresh review.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T02:44:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T01:10:56Z",
+  "started_at": "2026-10-09T00:29:01Z",
+  "closed_at": "2026-10-09T01:10:56Z",
+  "close_reason": "PR #613 merged (merge commit d9be4acb11bb66cc629015c239985ef1dadd885e)",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-91o0",
+      "depends_on_id": "eshyra-91o0.2",
+      "type": "blocks",
+      "created_at": "2026-10-08T19:59:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-91o0",
+      "depends_on_id": "eshyra-91o0.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T19:29:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

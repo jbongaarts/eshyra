@@ -1,0 +1,117 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.8",
+  "title": "Integrate the A5 capability beads and the use-an-object ref fix (single PR)",
+  "description": "Supervisor-owned integration bead. One branch and one PR carrying: eshyra-o9bd.19.5.7.4 (suffocation recovery gate), eshyra-o9bd.19.5.7.5 (combatant dying state), eshyra-o9bd.19.5.7.6 (nonlethal knockout), eshyra-o9bd.19.5.7.3 (graded exhaustion increase), eshyra-o9bd.19.5.11.4 (ammunition recovery), eshyra-o9bd.19.5.10.3 (retained-total resolution, rule:hiding, rule:surprise), eshyra-o9bd.19.3.4.6 (state-derived reaction allowance), eshyra-o9bd.19.3.4.5 (action:use-an-object ref). Each capability bead receives a dispatch child cut from this branch. Migrations must stay contiguous, so the five migration-adding capabilities are integrated strictly in order: 0032 suffocation gate, 0033 combatant dying, 0034 ammunition expenditure, 0035 retained checks, 0036 creature head count. Every landed capability re-derives its known limit under R0 and removes its ENGINE_CAPABILITY_GAPS entry (design A5).",
+  "acceptance_criteria": "- All eight beads' acceptance criteria met on this branch; verify:worktree green; one PR opened.",
+  "notes": "Round 1 integrated @622d45d5: eshyra-o9bd.19.5.7.4.1 (suffocation gate, migration 0032) + eshyra-o9bd.19.3.4.5.1 (use-an-object -> rule:other-activity-on-your-turn); supervisor fix: suffocation block shown in HP status line. verify 5591/3. Round 2 dispatched: .19.5.7.5.1 (combatant dying, 0033) and .19.5.7.6.1 (nonlethal knockout).\nRound 2 integrated: .19.5.7.5.1 (combatant dying, 0033) and .19.5.7.6.1 (knockout), conflicts resolved. Supervisor fixes 0d5ad3cd: dead-revival bug, explicit-status bypass, block cleared on death, txn handle, fail-open schema sniff removed, missing lifecycle tests added. verify 5607/3.\nRound 3 integrated: .19.5.11.4.1 (ammunition, 0034) and .19.5.7.3.1 (exhaustion); conflicts resolved. Supervisor fixes ed3c03e4: ammo custody via claimItem + deterministic ids; effectiveHpMax floor of 1. verify 5635/3. Design A5 table row formatting to normalize in the final pass.\nRound 4 integrated: .19.5.10.3.1 (retained checks + surprise, 0035). ENGINE_CAPABILITY_GAPS now empty. Supervisor fixes 23ea3385: pre-encounter Stealth accepted by set_surprised; model: provenance. verify green.\nRound 5 integrated (.19.3.4.6.1, 0036); bookkeeping 1165938c (A5 table, gap registry empty but retained, F-09 row -> narrowed). verify 5650/3. Sol review dispatched as eshyra-o9bd.19.3.4.8.1 (gpt-6.1-sol, read-only).\nSol review eshyra-o9bd.19.3.4.8.1 @1165938c: CHANGES REQUESTED, S1-S15 (11 blocker, 4 should-fix), all accepted. Supervisor decisions: S11 bounded refusal for pre-0036 hydra rows; S12 retire food/water/speed limits, fix suffocation timing; S14 uniform floor halving with explicit 0-HP lifecycle (min-1 exception reverted). Repairs dispatched: .19.3.4.8.2 (batch A: combatant lifecycle S1-S5,S11,S13) and .19.3.4.8.3 (batch B: S6-S10,S12,S14,S15).\nRepairs integrated: batch A bc317dc6, batch B 9690cbe7, supervisor zero-max fix e601316c (closed follow-up eshyra-7vwa in-PR). verify 5672/3. Sol confirmation pass dispatched as eshyra-o9bd.19.3.4.8.4.\nSol confirmation .8.4 @e601316c: CLOSED S1,S2,S6,S7,S9,S10,S12,S13,S15; OPEN S3,S4,S5,S8,S11,S14; new S16-S18. All accepted; repair batch C dispatched as eshyra-o9bd.19.3.4.8.5.\nBatch C integrated @e892bfc2 (verify 5688/3). Sol third pass (fresh full review) dispatched as eshyra-o9bd.19.3.4.8.6.\nSol fresh full review .8.6 @e892bfc2: CLOSED S1,S2,S5-S11,S13,S15-S18; OPEN S3,S4,S12,S14; new S19-S21. All accepted. Batch D (eshyra-o9bd.19.3.4.8.7) adds structural lifecycle invariants (I1-I8) enforced on every write + generated-sequence invariant test; migration 0037 for settled stable recovery.\nBatch D integrated + supervisor suffocation wording fix @b24104e8 (verify 5695/3). Sol fourth pass dispatched as eshyra-o9bd.19.3.4.8.8.\nSol fourth pass .8.8 @b24104e8: CLOSED S12,S21; OPEN S3,S4,S14,S19,S20; new S22-S26. Supervisor decision: lifecycle class has survived repeated narrow repairs -> design consolidation (single pure combatant lifecycle transition function D1 routed through every writer, D2-D9). Batch E dispatched as eshyra-o9bd.19.3.4.8.9 (gpt-6-luna xhigh).\nBatch E attempt 2 (.8.10) integrated + origin/main (PR #597) merged @d4bcc88a; verify 5734/3. Sol fifth pass dispatched as eshyra-o9bd.19.3.4.8.11.\nSol fifth pass .8.11 @d4bcc88a: CLOSED S3,S4,S19,S20,S22,S23,S26; repair entries S24,S25,S27(blocker)-S34. All accepted. Per user (2026-10-03) Sol now unavailable: implementation via Sonnet 5.5 agents, reviews via adversarial Opus 5.5 agent. Dispatched F1 (.8.12, combatant side) and F2 (.8.13, character side) as Sonnet agents.\nF1 (.8.12) + F2 (.8.13) integrated; supervisor fix (lazy creature lookup for non-HP writes; resolver threaded through begin_turn/close) @538d8625. verify 5808/3. Negative proofs: F2 4 tests fail on base, F1 12 fail on base. Adversarial Opus 5.5 review dispatched as eshyra-o9bd.19.3.4.8.14.\nOpus review .8.14 @538d8625: no blockers; CLOSED S24,S25,S27-S33; OPEN S34 (combatant), new S35,S36,S38,S40 should-fix, S37,S39 nits. All accepted. Supervisor decision: reverse D2 (dead stays dead in both modes, SRD rule:healing) — closes S40 structurally. Batch G dispatched to Sonnet as eshyra-o9bd.19.3.4.8.15.\nRESUME POINT 2026-10-03: see claude-captain seat handoff; batch G (.8.15) in flight; then Opus confirmation, open PR, final report with decision list (D2 reversal, F-09 narrowed, migrations 0032-0038, etc.).\nBatch G integrated @d4177b92 (verify 5835/3). Opus confirmation pass dispatched as eshyra-o9bd.19.3.4.8.16.\n2026-10-03: delivered in PR #599 (https://github.com/jbongaarts/eshyra/pull/599), branch eshyra-o9bd.19.3.4.8 @7414d014. Stays in_progress until the PR merges.\n2026-10-03 session 254471df: review 5403780189 (S43 withdrawn in 5403787349; S44 blocking). S44 repaired via .17 (Sonnet child, captain-reviewed + inline fix 06cbb44f), eighth adversarial review .18 found S45-S47, repaired inline in .19 (74334539). Head 74334539 pushed, verify green. Follow-ups eshyra-ysr3, eshyra-7vh3. Awaiting user review.\nS48-S49 (review 5404301046) repaired in .20 (797b3b6f + O-1/O-2 follow-up); ninth review .21 APPROVE. Head dacfbf9e pushed, verify green. Awaiting user review.\nReview 5404301046 (S48 blocker familiar/steed bond, S49 blocker hydra absent settlement) repaired in .20 (797b3b6f); ninth Opus review .21 APPROVE, observations O-1/O-2 fixed at the next commit. Head pushed, verify green. Awaiting user review.\nReview 5404411821 (S50 blocker: vanish-bonded identity + admission bypassing recast) repaired in .22; follow-up eshyra-s02z (familiar/steed recast restoration). Head pushed, verify green. Per user 2026-10-04, no further self-instigated full reviews; awaiting external review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-02T03:41:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-04T06:22:22Z",
+  "started_at": "2026-10-02T03:41:49Z",
+  "closed_at": "2026-10-04T06:22:22Z",
+  "close_reason": "Landed on main via PR #599 (merge commit 12cdb1f8)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4",
+      "type": "parent-child",
+      "created_at": "2026-10-01T22:41:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.13",
+      "type": "blocks",
+      "created_at": "2026-10-03T17:07:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.5",
+      "type": "blocks",
+      "created_at": "2026-10-02T02:14:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.9",
+      "type": "blocks",
+      "created_at": "2026-10-02T04:11:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.10",
+      "type": "blocks",
+      "created_at": "2026-10-03T15:10:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.17",
+      "type": "blocks",
+      "created_at": "2026-10-03T22:06:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.12",
+      "type": "blocks",
+      "created_at": "2026-10-03T17:07:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.15",
+      "type": "blocks",
+      "created_at": "2026-10-03T17:34:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.7",
+      "type": "blocks",
+      "created_at": "2026-10-02T03:16:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.2",
+      "type": "blocks",
+      "created_at": "2026-10-02T01:29:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8.3",
+      "type": "blocks",
+      "created_at": "2026-10-02T01:29:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 10,
+  "dependent_count": 1,
+  "comment_count": 0
+}

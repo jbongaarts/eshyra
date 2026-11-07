@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-kbzm",
+  "title": "Enforce or remove the unenforced operation.excludes field (Candle cast-gate excludes burn)",
+  "description": "operation.excludes is validated for references but no runtime path (useItem) enforces it. Found in eshyra-7f0h.1: the Candle first-light gate is enforced by the unlit-only cast-gate transition instead. Decide: enforce excludes generally, or drop the field and keep state-machine gating. Not blocking.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T22:19:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T22:19:57Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

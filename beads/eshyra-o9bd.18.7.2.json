@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.2",
+  "title": "Add typed mechanics for all core SRD action records",
+  "description": "Finding sources:\n- ChatGPT found 9/10 action records lack data.mechanics; only Dodge has a mechanics projection.\n- Codex cited action:help as an example likely needing deterministic mechanics.\n- Fable's field-frequency scan independently confirms: kind=action has mechanics on exactly 1 of 10 records.\n\nScope:\n- Attack, Cast a Spell, Dash, Disengage, Dodge, Help, Hide, Ready, Search, Use an Object.\n\nAcceptance criteria:\n- Each action has typed action-economy and effect semantics.\n- Cover: extra movement from Dash, opportunity-attack prevention from Disengage, Help advantage timing and target constraints, Ready trigger/reaction behavior and spell-concentration caveat, Hide and Search check linkage, Attack and Cast a Spell action semantics, Use an Object interaction boundaries, and Dodge existing semantics.\n- Add tests for all 10 action records.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-03T00:18:37Z",
+  "started_at": "2026-07-03T00:13:04Z",
+  "closed_at": "2026-07-03T00:18:37Z",
+  "close_reason": "Added typed action-economy and effect mechanics for all ten SRD action records; regenerated pack and covered importer/committed-pack tests.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.2",
+      "depends_on_id": "eshyra-o9bd.18.7",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

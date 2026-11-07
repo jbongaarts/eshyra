@@ -1,0 +1,62 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.8",
+  "title": "Make known-finding regressions test the actual generalized defect",
+  "description": "For durable known findings, make regression evidence evaluate the violated invariant\nrather than merely select a registry row or prove baseline existence. Scope each\npredicate to the known defect class and a justified affected population; do not invent\na universal mechanic census.",
+  "design": "2026-10-09 DESIGN (Claude Captain, main 6f57be85). Profile: rules-clause-complete (permanent evidence for source fidelity). AGENTS.md 'Permanent Test Evidence' governs: no test-per-finding rule, no corpus census, exact source-fidelity regressions may be consolidated only into evidence that preserves or strengthens the same claim (docs/importer-fix-protocol.md).\nPOPULATION (bounded, by query): finding-registry rows whose defect has been repaired on main, i.e. rows owned by beads that CLOSED WITH the repair (currently 19.2.1: opus:F-19, F-20, sol:CAP-008, fable:F1, F5, F7, sol:CAP-009; 19.2.2: indep:008, 009, 010/CAP-012, opus:F-15, F-17, F-30, sol:CAP-010, fable:F4; 19.3.4: sol:CAP-001, CAP-002, opus:F-09 (narrowed)) plus repaired rows of open owners (opus:F-25 half-damage-branches, opus:F-01 hazard-success-branches via PR #567). Rows repaired later by open domain beads (19.3.2, 19.4.x, ...) carry their own evidence in those PRs and are NOT this bead's work; re-run this mapping only for rows repaired before this bead's PR.\nMETHOD per row: (1) locate the permanent evidence (test file + test name) that protects the row's invariant; (2) DISCRIMINATION CHECK: show that the evidence would fail on the defective state, by running the evidence's predicate against the pre-repair committed artifact (git show <pre-repair-sha>:packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json into a temp dir, or temporarily reverting the importer change in a scratch copy) and recording the result; (3) classify: DISCRIMINATING (keep), WEAK (asserts existence/count/baseline only, or passes on the defective state) -> replace with a predicate over the defect class's justified population that fails on the defective state (strengthen; never weaken; source-fidelity exact regressions preserved or strictly strengthened), REDUNDANT (a stronger invariant elsewhere already discriminates the same claim; retire only per importer-fix-protocol consolidation rule, naming the replacing test), MISSING (add one generalized predicate). (4) Record a per-row disposition table in bd notes (row, evidence, check result, action). The table is development evidence, not a new committed ledger.\nEXCLUSIONS: no committed per-finding test index or registry field linking tests (the registry makes no executable membership claim); no new tests for rows whose existing evidence discriminates; no changes to srdGeneratedPack.test.ts blocks unrelated to the population.",
+  "acceptance_criteria": "- Each supported known finding has regression evidence that distinguishes repaired from defective state.\n- Sibling cases within the known defect class are covered where independently identifiable.\n- Unevaluable/unresolvable findings remain unresolved and cannot pass through an empty result.\n- Corpus-wide claims are used only when the exact bounded population is independently established.\n- The finding registry remains audit-fact authority, not executable-universe authority.",
+  "notes": "ADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\n2026-09-22 SCOPE RECONCILIATION with audit T7/T8 (docs/audits/test-suite-and-verification/2026-09-14-test-suite-and-verification-audit.md C4, C5, F4), by eshyra-9l5s.5. T7 (parameterize/decompose srdGeneratedPack.test.ts) and T8 (remove the 9 inline auditSrdStructure/auditSrdPlayability re-runs, still 9 on main) are NOT materialized as separate beads. Remeasurement shows no cost motive: srdGeneratedPack.test.ts is ~1.0 s in the capped suite and ~1.0 GB solo, including the ~500 MB Vitest parent. What remains is maintainability plus the semantic question of which known-finding regressions test the generalized defect, and that question is this bead's. RULE: this bead owns any change to the bead-named known-finding regression blocks in srdGeneratedPack.test.ts. If its work reorganizes that file by invariant (C5) or retires an inline audit re-run (C3), it does so under docs/importer-fix-protocol.md and verifies per site that the replacement distinguishes the same bad state (audit section 13, T8 mitigation). A standalone mechanical .each conversion (C4) is not authorized: it is the audit's highest-risk item and the measurement shows no benefit.\nADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): KEPT - sole owner of making existing known-finding regression blocks test the generalized defect (absorbs the retired eshyra-o9bd.19.6.2). Evidence is attached per repaired defect class; no bulk regression program.\n2026-10-09 rebaseline: KEEP. Boundary corrected: now blocks eshyra-o9bd.19.6.3 (bundle gates) instead of 19.6.4, so the independent audit receives regression evidence that tests the generalized defect. Work is parallelizable with the domain repairs: its residual is the pre-existing bead-named known-finding blocks in packages/core/test/srdGeneratedPack.test.ts (8k lines; many assert baseline existence or counts) for findings already repaired; new repairs attach their own evidence per domain bead.\nPR #645 at head 598f0f77; Sol review eshyra-o9bd.19.1.8.3. Found and repaired surviving opus:F-20 manifest tracker claim.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T15:08:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T03:34:39Z",
+  "started_at": "2026-10-10T03:09:07Z",
+  "closed_at": "2026-10-10T03:34:39Z",
+  "close_reason": "PR #645 merged (6413bcc7) after GPT-6.1-Sol APPROVED at exact head 598f0f77 (eshyra-o9bd.19.1.8.3). All 20 repaired registry rows' evidence verified to discriminate against pre-repair artifacts; surviving opus:F-20 manifest tracker claim repaired at the importer with a prefix-agnostic regression.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1.8.1",
+      "type": "blocks",
+      "created_at": "2026-10-09T22:09:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-26T10:08:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 2,
+  "comment_count": 0
+}

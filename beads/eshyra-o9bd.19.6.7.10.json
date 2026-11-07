@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.10",
+  "title": "A3-F1/F2: source-prose fields must be contiguous verbatim source (Iron Flask cells, interior table splices, bullet joins)",
+  "description": "Second-audit blocker: recurrence of the o9bd.16 L1-F2 class repaired in .16.7.5 (19.6.4 AC: repaired classes must not recur), verified by Captain at 6812cc0b. (1) table:iron-flask rows carry '01-50' (invented leading zero, U+2013) under source-prose; SRD p.228 prints '1' + dash glyph + '50' (curated spec parseDocumentTables.ts:961-1000 hand-writes the cells). (2) Ten records keep source-prose after a printed table was spliced out of the interior: rule:ability-checks, rule:ability-scores-and-modifiers, rule:expenses-lifestyle-expenses, rule:half-dragon-template, rule:hit-points, rule:objects, rule:services, rule:skills, rule:speed, condition:exhaustion /description. (3) Lower-consequence sibling: 11 condition descriptions plus feat:grappler and feature:monk:martial-arts join printed bullets with the glyphs removed while declared verbatim. Full evidence and the contiguity query: Fable report on eshyra-o9bd.19.6.7.3 (branch audit/eshyra-o9bd.19.6.7.3-fable @ 5b153637). Follow docs/importer-fix-protocol.md.",
+  "design": "2026-11-06 DESIGN (Captain), within the 2026-11-05 user adjustment (faithful source-prose; no undisclosed composition or substitution; legitimate extraction/layout differences accommodated; literal cross-extraction contiguity is NOT a universal rule). Follow docs/importer-fix-protocol.md and docs/rules-pack-compiler.md. Extend the mechanism the o9bd.16 L1-F2 repair built (eshyra-o9bd.16.7.2 / .16.7.5, PR #701: stripEmbeddedTableProse.ts, fieldProvenanceDeclarations.ts, the internal-splice report, internalSpliceAndOptionCitations.test.ts, composedDisplayProvenance.test.ts; read their thaw notes 2026-11-01-eshyra-o9bd-16-7-2-*.md and -16-7-5-*.md) rather than inventing a parallel one. (1) INTERIOR SPLICES: every producer that removes a printed table (or list) from the interior of a field emitted as source-prose must report it, so the compiler generates a scoped source-derived declaration with its reason (nothing hand-listed). Known members at 6812cc0b: rule:ability-checks, rule:ability-scores-and-modifiers, rule:expenses-lifestyle-expenses, rule:half-dragon-template, rule:hit-points, rule:objects, rule:services, rule:skills, rule:speed (rule /text) and condition:exhaustion /description; derive membership from the producers, then reconcile against this list. (2) BULLET JOINS: condition descriptions (blinded, charmed, frightened, grappled, invisible, paralyzed, petrified, prone, restrained, stunned, unconscious), feat:grappler and feature:monk:martial-arts join printed bullets with the glyphs removed while declared verbatim with a wrong reason ('intro line'): either keep the printed bullet structure faithfully or declare the composed field source-derived with a correct reason; choose the smaller faithful change and apply it to the whole producer class. (3) SUBSTITUTION: table:iron-flask curated spec (parseDocumentTables.ts ~l.961-1000) hand-writes '01–50'; SRD p.228 prints '1' + dash glyph + '50'. Emit the printed value ('1–50', dash transcribed like other range cells) so no invented character remains; check every other reviewed-reconstruction spec for invented characters. (4) EVIDENCE: a generalized invariant for this class (a source-prose leaf may differ from its cited extraction only by whitespace/hyphenation/layout/glyph-encoding normalisation; interior removal or joined-with-glyph-removal requires a generated scoped declaration), with these records as the reproducer set; regenerate the pack (npm run import:dnd5e-srd as the protocol says) and npm run verify:dnd5e-srd-pack must pass; add a thaw note under docs/audits/dnd5e-srd-5.1-final/thaw-notes/ like the 16.7.x ones. Do NOT touch freeze-manifest.json hashes. Fable report with the full evidence and contiguity query: bd show eshyra-o9bd.19.6.7.3. Implementer: Claude Sonnet 5.5.",
+  "acceptance_criteria": "- No source-prose leaf contains undisclosed composition (interior splice, joined bullets with glyphs removed) or substitution (invented characters such as the Iron Flask leading zero); each such leaf is either restored to faithful text or covered by a generated scoped source-derived declaration with its reason; nothing hand-listed.\n- Legitimate extraction/layout differences (whitespace, hyphenation, column flow, glyph encoding) are accommodated, not reported as defects; literal substring contiguity across extractions is not imposed as a universal rule.\n- Generalized regression evidence for the composition/substitution class, with the Iron Flask cells, the ten interior-splice records and the bullet-join records as the reproducer set; verify:dnd5e-srd-pack passes after regeneration.",
+  "notes": "2026-11-05 USER ADJUSTMENT (supersedes conflicting text above): do NOT make literal substring contiguity across PDF extractions a universal requirement. Preserve the invariant that source-prose is faithful, with no undisclosed composition or substitution, while accommodating legitimate extraction/layout differences (whitespace, hyphenation, column flow, glyph encoding such as CID dashes).\nCaptain: integrated .10.1 (c705ba8a) after own review and verify (exit 0; verify:dnd5e-srd-pack exact). PR https://github.com/jbongaarts/eshyra/pull/715.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-03T02:12:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T04:14:30Z",
+  "started_at": "2026-11-06T03:17:21Z",
+  "closed_at": "2026-11-06T04:14:30Z",
+  "close_reason": "Merged PR #715 (1aadcc649358093b48b2513f6c43a7f0b0e1cb4f) after clean Sol review .10.2",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.10",
+      "depends_on_id": "eshyra-o9bd.19.6.7.10.1",
+      "type": "blocks",
+      "created_at": "2026-11-05T21:17:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.10",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-02T20:12:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

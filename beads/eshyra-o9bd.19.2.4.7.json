@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.4.7",
+  "title": "Captain repair: 19.2.4 punctuation folding after review 19.2.4.6 S1 (attempt 4)",
+  "description": "Second repair of the punctuation-folding class (19.2.4.2 S3 -> 19.2.4.3; surviving per 19.2.4.6 S1: ':' kept as a word character in foldName so 'Darkvision: ...' drops every name route). Done by the captain inline (bounded). Close as a class: every non-letter/number character except the hyphen becomes a boundary on BOTH input and indexed-name sides; apostrophes still dropped. Correct the signals.ts comment and CAP-011 reasoning; extend the punctuation test to derive expected keys independently for names adjacent to every punctuation class (colon, semicolon, period, question/exclamation, quotes, parentheses, slash, em dash) and keep the 7 colon-containing indexed names reachable.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T16:01:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T16:07:45Z",
+  "started_at": "2026-10-11T16:01:20Z",
+  "closed_at": "2026-10-11T16:07:45Z",
+  "close_reason": "Committed 7b6c6bd6 on eshyra-o9bd.19.2.4 (colon and all punctuation fold to boundaries; independent-tokenizer adjacency invariant; comment + CAP-011 corrected); verify 6516 pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.4.7",
+      "depends_on_id": "eshyra-o9bd.19.2.4",
+      "type": "parent-child",
+      "created_at": "2026-10-11T11:01:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

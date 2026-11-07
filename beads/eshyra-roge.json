@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-roge",
+  "title": "Project Djinni scimitar 'lightning or thunder (djinni's choice)' rider via typeOptions",
+  "description": "creature:djinni Scimitar prints 'plus 3 (1d6) lightning or thunder damage (djinni's choice)' (SRD). After eshyra-o9bd.19.6.7.11 it carries hitDamageNotProjected disclosure; hitDamage/damage still omit the rider. Needs a typeOptions damage entry with per-option conditions in parseAttack (cf. spell Fire Shield). Files: mechanicsProjections.ts projectHitDamage; test creatureAttackGrammar.test.ts (pinned disclosure expectation must change to the projection).",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T04:25:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T04:25:39Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

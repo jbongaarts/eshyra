@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vcm3",
+  "title": "Follow-up: apply faithful-or-absent adjudicated spans to non-effect members whose readiness clauses stay typed",
+  "description": "Discovered in eshyra-o9bd.19.4.5.8: adjudicated readiness now supports sourceText, but operations whose only effect payload stayed typed (e.g. Nine Lives Stealer slay-on-critical.cost unconditional charge, Rod of Lordly Might drain-life/paralyze operation activation trigger 'melee hit with rod', Hammer giant-slaying-critical activation trigger, Ring of Shooting Stars launch op) still carry the broader wording on the operation side; owned by eshyra-o9bd.19.4.6 -- use applyAdjudicatedMagicItemEffects-style table or per-producer spans.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T22:07:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T22:08:16Z",
+  "closed_at": "2026-10-11T22:08:16Z",
+  "close_reason": "Duplicate of eshyra-o9bd.19.4.6 (same faithful-or-absent scope for non-effect members); its examples were appended to that bead's notes.",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

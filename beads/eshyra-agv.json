@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-agv",
+  "title": "Create D&D SRD 5.1 rules-pack audit bundle",
+  "description": "﻿Create a complete local audit bundle for external/manual review of the committed D&D SRD 5.1 rules pack.\r\n\r\nContext:\r\n- The committed D&D SRD 5.1 canonical generated pack is intended to be reviewed against the vendored SRD 5.1 PDF.\r\n- A full field-by-field review is easier and cheaper if the reviewer receives a compact bundle containing the exact source artifact, generated pack, manifests, command outputs, extracted PDF text, and machine-generated audit summaries.\r\n- The bundle must be written to D:\\audit-bundle so it can be easily located and uploaded.\r\n\r\nOutput location:\r\nD:\\audit-bundle\r\n\r\nScope:\r\n- Do not change parser behavior.\r\n- Do not regenerate the canonical pack unless needed only to run an existing verification command in a temp location.\r\n- Do not modify committed rules-pack data.\r\n- Do not fix audit findings in this bead.\r\n- Produce files useful for a full source-vs-pack review.\r\n\r\nRequired bundle contents:\r\n1. Exact committed rules-pack artifacts:\r\n   - packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json\r\n   - packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json\r\n\r\n2. Exact source artifacts:\r\n   - packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf\r\n   - packages/core/sources/dnd5e-srd-5.1/manifest.json\r\n   - packages/core/sources/dnd5e-srd-5.1/README.md\r\n\r\n3. Command outputs:\r\n   - npm run verify:dnd5e-srd-pack\r\n   - npm run audit:rules-pack -- packages/core/data/rules-packs/rules__dnd5e-srd-5.1\r\n   - npm run check\r\n   - npm run typecheck\r\n   - npm test\r\n\r\n4. Generated analysis files:\r\n   - pack record counts by kind\r\n   - list of all record keys grouped by kind\r\n   - summary of records with partial fields / missing optional fields from auditPack\r\n   - suspicious-record report from auditPack\r\n   - Unicode/control-character scan of records.json\r\n   - source manifest hash/size verification output\r\n   - PDF text extraction by page, preferably as:\r\n     - D:\\audit-bundle\\pdf-text\\page-001.txt\r\n     - D:\\audit-bundle\\pdf-text\\page-002.txt\r\n     - etc.\r\n   - one combined PDF text file:\r\n     - D:\\audit-bundle\\pdf-text\\all-pages.txt\r\n\r\n5. Optional but preferred:\r\n   - extracted section spans used by the importer, if available\r\n   - per-record source locator summary\r\n   - generated pack diff output from verify:dnd5e-srd-pack, even when empty\r\n   - script used to build the bundle\r\n\r\nImplementation guidance:\r\n- Add a script such as packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts or an equivalent repo-local tool.\r\n- The script should create or clean D:\\audit-bundle.\r\n- The script should copy required artifacts into stable subdirectories, for example:\r\n  - D:\\audit-bundle\\pack\\\r\n  - D:\\audit-bundle\\source\\\r\n  - D:\\audit-bundle\\command-output\\\r\n  - D:\\audit-bundle\\pdf-text\\\r\n  - D:\\audit-bundle\\reports\\\r\n- Prefer plain text, JSON, CSV, or Markdown outputs that are easy to upload and inspect.\r\n- If a command fails, capture stdout/stderr and exit code in the bundle rather than discarding the output.\r\n- Include a top-level README.md in D:\\audit-bundle explaining what each file is and which repo commit produced the bundle.\r\n- Include the git commit SHA, branch name, and timestamp in a top-level metadata JSON file.\r\n- Avoid absolute local paths inside reports except where useful for audit traceability.\r\n- Ensure the bundle is deterministic enough that rerunning it on the same commit produces comparable outputs.\r\n\r\nAcceptance criteria:\r\n- Running the new bundle command creates D:\\audit-bundle.\r\n- D:\\audit-bundle contains the committed D&D SRD 5.1 pack records and manifest.\r\n- D:\\audit-bundle contains the vendored SRD 5.1 PDF and source manifest.\r\n- D:\\audit-bundle contains captured outputs for verify, audit, check, typecheck, and test commands.\r\n- D:\\audit-bundle contains extracted PDF text by page and combined PDF text.\r\n- D:\\audit-bundle contains machine-readable summaries of record keys, counts by kind, suspicious findings, partial/missing fields, and Unicode/control-character scan results.\r\n- D:\\audit-bundle contains a README.md and metadata.json identifying the repo commit and source artifact hash.\r\n- npm run check passes after adding the bundle tool.\r\n- The PR does not modify parser behavior or generated canonical pack data.\r\n- Final handoff explains how to run the bundle command and where to find the output.\r\n",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-03T05:35:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:49Z",
+  "started_at": "2026-06-03T05:38:43Z",
+  "closed_at": "2026-06-03T05:52:22Z",
+  "close_reason": "Bundle script implemented and PR opened at https://github.com/jbongaarts/loreweaver/pull/142",
+  "comments": [
+    {
+      "id": "e03f323e-0c25-5950-b4e6-bf0e88923bb9",
+      "issue_id": "eshyra-agv",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install, tsc --build --force, vitest run; all pass (86 test files, 1072 tests). Proceeding with bundle script implementation.",
+      "created_at": "2026-06-03T05:40:03Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

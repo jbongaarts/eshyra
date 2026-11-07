@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4ua.4",
+  "title": "06b-A T4: CLI failure-mode test for arc-rollup model error",
+  "description": "Objective:\nAdd an integration test in packages/cli/test/play.test.ts that exercises the model-failure skip path: a fake model that throws ModelClientError on the arc-summary call. Verify that the session still closes cleanly (session_recap present, session marked closed), the arc_summary row stays at whatever it was before the failed close (in this test: absent — no prior close), and a warning line is written to io.\n\nFiles:\n- Modify: packages/cli/test/play.test.ts\n\nSteps:\n1. Add the new test in Design to packages/cli/test/play.test.ts inside the existing describe('runPlay') block, alongside the arc-rollup test.\n2. Run: npx vitest run packages/cli/test/play.test.ts --reporter=verbose\n   Expected: the new test passes; full file passes.\n3. Run the whole suite: npx vitest run\n   Expected: all tests pass.\n4. Run: npm run typecheck\n   Expected: success.\n5. Commit:\n     git add packages/cli/test/play.test.ts\n     git commit -m \"Cover arc-rollup model-failure skip path in CLI tests (loreweaver-4ua)\"",
+  "design": "New test (place after the 'rolls the campaign arc up after a session closes' test, around line 385):\n\n  it('skips arc rollup and warns when the model errors during close', async () => {\n    const { db, dispose } = makeDb();\n    const { io, lines } = scriptedIO(['/defer', 'look around', '/quit']);\n    const deps: PlayDeps = {\n      ...baseDeps(db, io),\n      model: {\n        complete: async () => {\n          throw new ModelClientError('provider down');\n        },\n      },\n    };\n\n    const code = await runPlay(deps, { dbPath: 'demo.db' });\n\n    expect(code).toBe(0);\n    const out = lines.join('\\n');\n    expect(out).toContain('closed and recapped');\n    expect(out).toContain('Arc rollup skipped (model error): provider down.');\n\n    const cid = campaignId(db);\n    // Session closed and recap written despite the model error.\n    const session = listSessions(db, { campaignId: cid })[0];\n    expect(getOpenSession(db, { campaignId: cid })).toBeUndefined();\n    const recap = getSessionRecap(db, {\n      campaignId: cid,\n      sessionId: session.sessionId,\n    });\n    expect(recap).toBeDefined();\n    // arc_summary row was NOT written because the model call failed before the\n    // rollupArcSummary write.\n    expect(getArcSummary(db, { campaignId: cid, arcId: 'arc-1' })).toBeUndefined();\n    dispose();\n  });\n\nImports at the top of the test file gain ModelClientError if not already present:\n  ModelClientError,\n\nRationale: this is the test that locks in acceptance criterion #3 from the epic (loreweaver-4ua). The other failure modes — model returning empty string, model throwing a non-ModelClientError — fall back to the same catch-all 'instanceof Error ? error.message : String(error)' path, so one explicit test is sufficient.",
+  "acceptance_criteria": "1. The new 'skips arc rollup and warns when the model errors during close' test exists in packages/cli/test/play.test.ts and passes.\n2. The full vitest suite passes.\n3. npm run typecheck succeeds.\n4. The commit message references loreweaver-4ua.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:48:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:18Z",
+  "started_at": "2026-05-23T05:10:08Z",
+  "closed_at": "2026-05-23T05:17:18Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4ua.4",
+      "depends_on_id": "eshyra-4ua.3",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:48:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4ua.4",
+      "depends_on_id": "eshyra-4ua",
+      "type": "parent-child",
+      "created_at": "2026-05-22T23:48:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "65192567-2956-597a-be5f-774d12b86e47",
+      "issue_id": "eshyra-4ua.4",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for `1a123ad..6eb656d`:\n\nAssessment: Ready to merge\n\nCritical:\n- none\n\nImportant:\n- none\n\nMinor:\n- play.test.ts:411 — `listSessions(db, { campaignId: cid })[0]` is unguarded; if the session were absent the downstream `session.sessionId` dereference would throw a confusing TypeError instead of a clean assertion failure. Mirrored from the arc-rollup test at line 381, so it's consistent, but both could use `expect(sessions[0]).toBeDefined()` before indexing.\n\nFollow-up:\n- none",
+      "created_at": "2026-05-23T05:16:51Z"
+    },
+    {
+      "id": "53fcab7f-bd4d-5b06-8da2-cca3b0c476b6",
+      "issue_id": "eshyra-4ua.4",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 1a123ad..6eb656d: Ready to merge. Critical: none. Important: none. Minor: play.test.ts:411 listSessions[0] is unguarded — TypeError instead of clean failure if session absent. Mirrors the same pattern in the adjacent arc-rollup test (style consistency, not a regression).",
+      "created_at": "2026-05-23T05:17:16Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 2
+}

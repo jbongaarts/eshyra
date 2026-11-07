@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.22",
+  "title": "Spellbook,\r\nYour",
+  "description": "Problem\r\n\r\nPR #162 fixed a real importer bug: gray class/subclass callout boxes such as Your",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T22:51:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:14Z",
+  "closed_at": "2026-06-06T23:15:35Z",
+  "close_reason": "Duplicate malformed bead created by script quoting and copy issue; canonical follow-up is loreweaver-0m9.5.23.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.22",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-06-06T17:51:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

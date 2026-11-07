@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.2",
+  "title": "Fix SRD concentration derivation for no-comma concentration durations",
+  "description": "Finding sources:\n- ChatGPT, Codex, and Fable all found spell:protection-from-evil-and-good has data.duration \"Concentration up to 10 minutes\" but mechanics.concentration false.\n- Fable notes the SRD PDF itself prints \"Duration: Concentration up to 10 minutes\" with no comma on p. 173; this is a known source typo compared to the usual \"Concentration, up to ...\" form.\n- The text was copied faithfully, but the comma-dependent detector mis-derived the concentration flag.\n- Git history comparison showed this was already present before the latest erf5 fixes, so it is not a new erf5 regression.\n\nWhy it matters:\n- A concentration tracker could allow Protection from Evil and Good to stack with another concentration spell.\n- This is a direct source-vs-derived-mechanics accuracy bug.\n- Fable says this is the only spell in the pack with the non-standard concentration duration string.\n\nAcceptance criteria:\n- spell:protection-from-evil-and-good emits mechanics.concentration true.\n- The detector accepts both \"Concentration, up to ...\" and \"Concentration up to ...\".\n- Add a regression test for the exact no-comma SRD duration form.\n- Add a pack-wide gate that compares mechanics.concentration against duration semantics for all 319 spells.\n- Confirm no spell with a non-concentration duration starts emitting concentration true.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-02T03:45:25Z",
+  "closed_at": "2026-07-02T12:47:17Z",
+  "close_reason": "Fixed in PR #383: detector accepts comma and no-comma concentration forms; protection-from-evil-and-good emits concentration true; pack-wide spell-concentration-flag gate added; source typo documented in known-source-typos.md.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.2",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

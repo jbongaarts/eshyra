@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.2.4",
+  "title": "Uniform class Spellcasting/Cantrips subfeature granularity from printed structure",
+  "description": "SCOPE (registry row spellcasting-granularity, alias opus:F-15; plan B2 \"fix class Spellcasting/Cantrips granularity and ownership\").\nPack evidence (c53ba040): cleric/druid/sorcerer/wizard emit BOTH feature:<class>:spellcasting and feature:<class>:cantrips; bard, paladin, ranger emit only :spellcasting (bard prints Cantrips subsection too); warlock emits :pact-magic only. Subfeatures (Cantrips, Spell Slots, Spells Known/Preparing, Spellcasting Ability, Ritual Casting, Spellcasting Focus) are split for some classes and folded for others.\nNeeds a DESIGN DECISION before dispatch: one uniform granularity rule derived from printed structure (each printed subheading under Spellcasting -> child owned by the Spellcasting feature, or all folded), applied to all 8 casting classes; denominator = printed subheadings under each class's Spellcasting/Pact Magic heading. Check consumers (class progression, recordCard, character creation cantrip choice) before changing keys; keep aliases for any removed key (coordinate eshyra-o9bd.19.2.4).\n",
+  "design": "DECIDED 2026-09-23 (user delegated: 'structure it as the Primary DM / auditor would want'). \nONE RECORD PER PRINTED CLASS FEATURE, STRUCTURED SUBSECTIONS INSIDE IT.\n1. Feature membership denominator = each class table's Features column (source-derived). Spellcasting / Pact Magic is ONE feature record per class. Remove the 5 parser-artifact records feature:{cleric,druid,sorcerer,wizard}:cantrips and feature:wizard:spellbook, and the SPELLCASTING_SECTION_MOVES copy-back in classProgression.ts (root cause: parser promotes some 12pt subheadings to features; eshyra-o9bd.4 then duplicated their text into the owner).\n2. Every Spellcasting/Pact Magic record gains data.sections: [{ heading, text }] - one per printed 12pt subheading under the 13.9pt feature heading, verbatim, in print order, with field provenance citing the page each section is printed on (continuations across pages cite all pages). Uniform for all 8 classes (bard/warlock Cantrips, ranger Spell Slots, etc. included). description keeps the intro prose; no text is duplicated between description and sections. Denominator = printed subheadings (source-derived), asserted exactly by an importer gate.\n3. Choices move with the text: wizard spellbook-initial / spellbook-growth choices move onto feature:wizard:spellcasting (ids unchanged); check deriveFeatureChoices.ts:394 and classProgression cantrip/known columns.\n4. The removed keys become aliases resolving to feature:<class>:spellcasting (coordinate record-relationships / eshyra-o9bd.19.2.4) so existing lookups and campaign references resolve; no dangling references in the pack.\n5. Phantom long-rest resources on the removed cantrips records disappear with them; do not re-home them (opus:F-05 is owned by eshyra-o9bd.19.3.2).\nRATIONALE: DM lookup of a level-1 grant returns the one canonical feature the class table names; retrieval of 'wizard ritual casting' hits a labeled verbatim section; auditor can check feature membership against the table and sections against printed subheadings exactly, with no duplicated text to reconcile.",
+  "notes": "2026-09-23 supervisor survey (claude-captain): ROOT CAUSE confirmed - parseFeatures.featureStartAt prose fallback (LEVEL_LEAD_IN 'At 1st level') promotes 12pt subheadings under class features; exactly the 5 artifact keys are the only class-grantor features not anchored by a class progression featureGrant. Printed denominator (extracted, heights 13.9 feature / 12.0 subheading): bard 6 (Cantrips, Spell Slots, Spells Known of 1st Level and Higher, Spellcasting Ability, Ritual Casting, Spellcasting Focus); cleric 5 & druid 5 (Cantrips, Preparing and Casting Spells, Spellcasting Ability, Ritual Casting, Spellcasting Focus); paladin 3 (Preparing and Casting Spells, Spellcasting Ability, Spellcasting Focus); ranger 3 (Spell Slots, Spells Known..., Spellcasting Ability); sorcerer 5 & warlock/Pact Magic 5 (Cantrips, Spell Slots, Spells Known..., Spellcasting Ability, Spellcasting Focus); wizard 7 (Cantrips, Spellbook, Preparing and Casting Spells, Spellcasting Ability, Ritual Casting, Spellcasting Focus, Learning Spells of 1st Level and Higher) = 39 total. Other class features' 12pt lines are option catalogs (Fighting Style, Metamagic, Pact Boon, Ki, Font of Magic) - out of scope. DESIGN REFINEMENTS: sections use {name,text} (matches subclass data.sections + namedEntry field provenance), page evidence via source-region ledger + record multi-page provenance; mechanics/choices/creationFacts keep deriving from full body text; aliases = retired-key fallback in lookupRulesRecord + feature section names indexed as lookup names (no key-alias mechanism exists today).\nPR opened from branch eshyra-o9bd.19.2.2.4 (head ab190d04). Stays in_progress until merge.\nReview F1-F3 addressed at acaa2c54b5c62c21f973b2d4f45a39dd3438c85c; awaiting re-review.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-23T21:52:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-24T23:37:19Z",
+  "started_at": "2026-09-24T02:03:59Z",
+  "closed_at": "2026-09-24T23:37:19Z",
+  "close_reason": "PR #574 merged (5872620a)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.2.4",
+      "depends_on_id": "eshyra-o9bd.19.2.2",
+      "type": "parent-child",
+      "created_at": "2026-09-23T16:52:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.2.4",
+      "depends_on_id": "eshyra-o9bd.19.2.2.4.1",
+      "type": "blocks",
+      "created_at": "2026-09-23T21:04:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.3",
+  "title": "Add generated rules-pack character resolver and remove SRD_CATALOG usage",
+  "description": "Migrate character creation validation off the legacy hand-authored SRD_CATALOG and onto the runtime generated rules pack. This covers the core of eshyra-x50w but should be shaped as the resolver seam needed by the guided character creation architecture.\n\nImplementation direction\n- Add a RulesPackCharacterResolver over getBundledDnd5eSrdPack / lookupRulesRecord or the current generated-pack runtime API.\n- Resolve classes, spells, ancestries, backgrounds, and equipment by generated record data where available.\n- Centralize display-name/common-alias matching so users do not need internal record IDs.\n- Add typed guards/narrowing around generated data:unknown, especially class hitDie and spell classes/level.\n- Migrate existing character creation class/spell/HP validation to the resolver.\n- Remove imports from packages/core/src/rules/srd/ in character creation code.\n- Once nothing depends on it, delete the legacy SRD catalog files and internal exports.\n\nAcceptance criteria\n- Character creation no longer imports SRD_CATALOG, lookupSrdRecord, or legacy Srd* types.\n- Existing class and spell validation behavior is preserved or improved using generated records.\n- Class hit die used for HP comes from generated class data.\n- Spell availability comes from generated spell data.\n- Legacy SRD catalog files and tests are deleted or replaced once unused.\n- rules/README.md no longer documents the legacy catalog as active runtime truth.",
+  "notes": "PR #283 (feat/b69j-rules-pack-resolver) open for review. RulesPackCharacterResolver added; SRD_CATALOG retired; all gates green. Awaiting merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-24T02:35:29Z",
+  "closed_at": "2026-06-24T03:18:58Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.3",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

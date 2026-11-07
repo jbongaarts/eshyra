@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-bnb",
+  "title": "Align rules-pack attributionText with verbatim SRD 5.1 preamble",
+  "description": "The generated rules-pack manifest at packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json carries an abbreviated CC-BY-4.0 attribution under license.attributionText. The exact attribution text required by the SRD 5.1 PDF's first-page Legal Information section is pinned verbatim in packages/core/sources/dnd5e-srd-5.1/manifest.json (under attribution.text) as of loreweaver-60z. Update the importer's emit.ts so the generated pack carries the verbatim preamble statement (with 'material taken from', the quoted '(\"SRD 5.1\")' parenthetical, the dnd.wizards.com URL, and the /legalcode CC license URL), then regenerate / hand-edit the existing seed pack manifest. Keep the redistribution-disclaimer wording 'Please do not include any other attribution regarding Wizards other than that provided above. You may, however, include a statement on your work that it is \"compatible with fifth edition\" or \"5E compatible.\"' out of attributionText itself unless a separate field is added — that sentence is a Wizards-side instruction to redistributors, not part of the attribution string Wizards requires us to carry.",
+  "acceptance_criteria": "- emit.ts produces license.attributionText equal to the verbatim preamble pinned in packages/core/sources/dnd5e-srd-5.1/manifest.json (attribution.text)\n- packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json carries the updated text\n- A test asserts the pack manifest attributionText matches the source manifest attribution.text byte-for-byte\n- No parser behavior or record-content changes outside the attribution field\n- npm run check and relevant tests pass",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-01T05:35:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:14Z",
+  "started_at": "2026-06-01T05:41:53Z",
+  "closed_at": "2026-06-01T05:45:28Z",
+  "close_reason": "Verbatim attribution text updated in emit.ts, seed manifest regenerated, two byte-for-byte tests added.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-bnb",
+      "depends_on_id": "eshyra-60z",
+      "type": "blocks",
+      "created_at": "2026-06-01T00:35:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

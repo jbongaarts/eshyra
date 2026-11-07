@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.10.1",
+  "title": "L4-F1: final unit of a consumable stack must not void bind credits earlier units already paid for",
+  "description": "Repair L4-F1 (evidence, reproducer recipe and code locations in eshyra-o9bd.16.4 notes). itemState.ts ~3072-3079 records one consumption receipt then destroys the row at quantity 0; inventoryLifecycle.ts ~67-72 voids EVERY open bind credit; itemGrantBinding.ts ~496-504 deletes them; activeEffects.ts ~4050-4080/~4378-4380 accept only the final receipt. Result: with an Elemental Gem stack of 2-3, earlier paid-but-unbound elemental grants become unredeemable (SRD p.220: each broken gem summons its own elemental). DESIGN (Captain): preserve an independently redeemable entitlement for every successfully consumed unit across final-row destruction: destruction must NOT void credits issued by earlier successful consumptions; they stay redeemable exactly once with their exact instance/variant/operation identity, with no duplicate redemption and no id-reuse escape. Do not choose the fail-before-consume alternative. Permanent evidence: a generalized conservation invariant over multi-unit consumption (bind-as-you-go AND multiple paid uses before binding) with a real Elemental Gem case; no per-colour duplication. Coordinate nothing outside the item-grant/consumption runtime.",
+  "notes": "COMPLETION (commit ac01599f, not pushed). Mechanism: inventoryLifecycle.destroyInventoryItem voided every open bind credit; it now skips the void when item_consumption_receipt exists for the id (use_item wrote it just before destroying; the receipt retires the id so allocators never reissue it, closing the id-reuse escape). Other destruction routes write no receipt and still void. activeEffects.validateItemGrantBinding: for a destroyed source with a cooldownEconomy grant it now redeems the named or oldest open credit (scoped to the receipt's campaign/pack/variant/economy) and only falls back to the final receipt when no credit is open; the already-redeemed-receipt refusal applies only then. New ItemGrantBinding.sourceDestroyedAt keeps the binding born-tombstoned for either payment. Invariants: each consumed unit has exactly one redeemable entitlement (n-1 credits + 1 receipt), N+1th bind refused, no duplicate redemption, consumed id not reissued and a new stack cannot redeem it. No existing test asserted voiding at destruction. Test: packages/core/test/itemGrantStackConservation.test.ts (4 gem types x qty 2,3 x bind-as-you-go/use-all-then-bind = 16; 8 use-all cases fail without the fix). verify:worktree passed: 388 files, 7266 tests, 3 skipped. toolUseItem.ts untouched.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:42:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:52:53Z",
+  "started_at": "2026-11-01T08:46:46Z",
+  "closed_at": "2026-11-01T08:52:53Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.10.1",
+      "depends_on_id": "eshyra-o9bd.16.10",
+      "type": "parent-child",
+      "created_at": "2026-11-01T02:42:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

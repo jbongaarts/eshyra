@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.20",
+  "title": "Monster X/Day and innate per-day uses must regain on a long rest, not at dawn (SRD p.259)",
+  "description": "Pre-existing SRD contradiction reported by re-audit R2 outside its bounded scope (eshyra-o9bd.19.6.7.15), verified by Captain at origin/main. SRD p.259 rule:limited-usage: 'X/Day. The notation \"X/Day\" means a special ability can be used X number of times and that a monster must finish a long rest to regain expended uses.' packages/core/src/state/usageCounters.ts header says 'X/Day means X uses, regained at dawn (limited-usage)' and assigns resetKind 'dawn' to creature usage.perDay (~l.375-381) and innate per-day spell groups (~l.492-515). Repro: Aboleth Enslave (3/Day) stays spent after a long-rest reset and returns on a dawn reset (/tmp/a2-reaudit/probes/p40-xday.mts). Blocker under the standing SRD-fidelity rule. Scope: creature/monster per-day economies only; magic-item 'regains at dawn' economies are printed as dawn and stay dawn; character features follow their own printed text.",
+  "design": "2026-11-06 DESIGN (Captain): set resetKind for creature usage.perDay and innate per-day spell groups to long_rest (and make sure the long_rest reset event covers them, scoped to the owning monster/actor as reset_usage long_rest already scopes); fix the header comment; check every consumer of the 'dawn' reset for creature counters (reset tables at ~l.232-242, reset_usage, advance_time dawn processing, protocol and tool texts that say per-day monster uses reset at dawn) and update them truthfully, including the capability inventory entries for the usage tools; additive migration only if persisted reset kinds of existing counters must be corrected (check how resetKind is stored and whether it is re-derived from the record). Tests: Aboleth Enslave regains on a long-rest reset and not on a dawn reset; an innate per-day group likewise; a magic-item dawn economy still regains at dawn. Check rule:limited-usage text in records.json. Implementer: Claude Haiku 5.5.",
+  "acceptance_criteria": "- Monster X/Day and innate per-day uses regain only on a long rest, as SRD p.259 prints; magic-item dawn economies are unchanged.\n- Comments, tool descriptions, protocol text and capability inventory state this truthfully; existing campaigns' counters are handled correctly.\n- Regression evidence for a creature X/Day ability, an innate per-day group, and an unchanged item dawn economy.",
+  "notes": "Captain: integrated .20.1 (3d49e973) after own review (no creature prints a dawn recovery, so migration 0055's combatant-dawn selection is safe) and own verify (exit 0).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T07:53:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T08:57:03Z",
+  "started_at": "2026-11-06T07:54:34Z",
+  "closed_at": "2026-11-06T08:57:03Z",
+  "close_reason": "Merged PR #719 (7397d5db27db1e5d87366b7521f63265cbbd7c56) after clean Sol review .20.2 (head updated only by merging main for the kcb0 CI fix; PR diff unchanged)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.20",
+      "depends_on_id": "eshyra-o9bd.19.6.7.20.1",
+      "type": "blocks",
+      "created_at": "2026-11-06T01:54:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.20",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-06T01:53:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

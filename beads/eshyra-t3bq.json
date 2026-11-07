@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-t3bq",
+  "title": "Level-up and character creation use bundled class rules instead of the campaign binding",
+  "description": "Sibling of eshyra-if0j (PR #639), which fixed the same authority defect for rests. The CLI injects getBundledDnd5eCharacterResolver() as PlayDeps.characterResolver (packages/cli/src/index.ts:364) once at startup, regardless of the campaign rules binding. playProgression.ts and playCharacter.ts pass it to level-up and character finalization, and createCharacter.ts:258 does the same. Core defaults to the bundled resolver in levelUpEngine.ts (487, 606, 730, 819), finalizeCharacter.ts:433, creation.ts, characterBuild.ts:170, guidedLevelUpFlow.ts:101, spellPreparation.ts:169 and dnd5eRecipe.ts:199. Suspected consequence (untested): with a campaign add-on that overrides a class (e.g. Wizard 5 gains a level-4 slot), level-up's syncSpellSlots reconciles against bundled capacities. That deletes the add-on slot row, which later binding-aware reconciliation re-seeds full. HP, Hit Die and feature choices would also ignore the override. First step: reproduce with the rest.test.ts add-on Wizard fixture through the real level-up path. Fix direction: resolve the campaign stack per operation (memoizeCampaignRulesPackResolver + resolveStrictCampaignRulesStack + createRulesPackCharacterResolver) instead of a startup-fixed bundled resolver. Character creation outside a campaign (standalone createCharacter) may legitimately use the bundled pack; decide that boundary explicitly.",
+  "notes": "PR opened (head 660a21dd); verify:worktree green. Reproduced at core level (add-on Fighter d12 ignored on level-up). CLI unreachable today (no resolveRulesPack). Creation deliberately excluded. Stays in_progress until merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T22:47:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T23:34:25Z",
+  "started_at": "2026-10-09T22:49:41Z",
+  "closed_at": "2026-10-09T23:34:25Z",
+  "close_reason": "Merged PR #640 (a961fb0b)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

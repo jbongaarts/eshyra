@@ -1,0 +1,74 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.17",
+  "title": "Cut consumers over to the new generated pack model; remove stale overlay read-paths",
+  "description": "Compatibility/cutover bead (review-requested). The thaw changes the generated pack SCHEMA (typed progression rows, structured ASIs/languages/spellcasting/equipment, tableRefs, proficiencyNotes, typed choices). Update every consumer to read the new model and ensure NO stale overlay/prose read-path silently masks a pack deficiency:\n  - rulesPackResolver and the rules-pack loading/validation surface\n  - character creation (level-1 derivation)\n  - level-up / progression engine (consume typed advancement entries from .2)\n  - audit tooling that reads pack records\n  - any CLI path that previously consulted packages/core/src/character/srd*.ts overlays\nMake overlay reads fail-loud or removed rather than fall back to prose, so the smoke tests (.12) and gates (.11) actually exercise pack data. Pairs with .15 (overlay retirement): this bead severs runtime READS; .15 converts the constants to oracle tests. Coordinate schema-version bump / migration if the resolver pins a pack schema version.",
+  "notes": "ABSORBED INTO eshyra-o9bd.2 (2026-06-28): the 'replace now' decision means .2 itself cuts consumers (resolver + level-up engine + tests) over to progression[].advancement[] and removes the old marker/null read-paths. No separate cutover remains. Will close as absorbed when .2 lands; reopen only if a concrete stale read-path is found later.\nDone as part of PR #353 (eshyra-o9bd.2): resolver + level-up engine + .11 gate cut over to progression[].advancement[]; old marker/null read-paths removed. No stale read-path remains. Closing as absorbed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:17:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-28T16:46:27Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.17",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:17:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.17",
+      "depends_on_id": "eshyra-o9bd.2",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.17",
+      "depends_on_id": "eshyra-o9bd.8",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.17",
+      "depends_on_id": "eshyra-o9bd.5",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.17",
+      "depends_on_id": "eshyra-o9bd.6",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.17",
+      "depends_on_id": "eshyra-o9bd.9",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 5,
+  "dependent_count": 2,
+  "comment_count": 0
+}

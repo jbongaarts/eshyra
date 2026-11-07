@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.9",
+  "title": "Model magic item curses, oaths and behavioral restrictions (M7)",
+  "description": "Implement family M7 from docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-3-magic-item-mechanics-inventory.md §4: 12 rows — armor-of-vulnerability, berserker-axe, demon-armor, shield-of-missile-attraction, oathbow (exclusive sworn-enemy state: one at a time, until death or 7th dawn), sword-of-wounding (stacking wound counters 1d4/wound + healing suppression: hp lost regainable only via rest — F6/F7 hooks), ring-of-mind-shielding (soul capture), orb-of-dragonkind (enslavement), robe-of-the-archmagi (alignment attunement gate), talisman-of-pure-good/ultimate-evil (alignment interaction), deck-of-many-things persistent card states (Euryale/Donjon/Void). Source semantics to preserve: reveal-only-on-identify-or-attune, removal-fails-to-end-curse, remove-curse-or-similar as the ending. Interacts with the attunement state machine (Phase 1 F5) — curses constrain unattunement. Recommended agent: Opus 4.8.",
+  "notes": "2026-07-08 ADR 0017 adjustment: Curse/oath/restriction clauses should distinguish source-derived pack semantics from live cursed/attuned/soul/card state and model-adjudicated behavioral rulings. Removal constraints and attunement interactions should bind to F5/F6/F7 or model-adjudicated-supported dispositions as evidence requires.\nImplemented the source-grounded family projector, strict schema validation, clause registry bindings, generated pack projection, and representative/exhaustive tests. The exact 240-row owner-tag conservation census passes; all magic items now carry reviewed executable mechanics.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-06T23:32:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:26Z",
+  "started_at": "2026-07-18T16:34:35Z",
+  "closed_at": "2026-07-18T20:23:26Z",
+  "close_reason": "Source-faithful executable magic-item family complete; canonical regeneration, conservation gates, deep audit, and full worktree verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.9",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-06T18:32:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

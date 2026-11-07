@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-gxt7",
+  "title": "Confirm per-day economies are valid economyDeduction pools (olc5.13.5 follow-up)",
+  "description": "The shared deduction contract (packages/core/src/rules/magicItemMechanics.ts, economyDeductionViolation) treats economy kinds charges and per-day as numeric pools whose remaining count a deduction may lower. Only the Cube charges economy uses this today. Confirm from source that a per-day economy can be drained by an external event and that its dawn reset semantics are unaffected; otherwise restrict NUMERIC_POOL_KINDS to charges.",
+  "notes": "2026-10-17 captain: per-day removed from deductible pool kinds (source: only Cube charges). PR opened; bead stays in_progress until merge.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-15T05:39:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-17T20:17:35Z",
+  "started_at": "2026-10-17T20:04:23Z",
+  "closed_at": "2026-10-17T20:17:35Z",
+  "close_reason": "PR #667 merged after user approval",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-gxt7",
+      "depends_on_id": "eshyra-olc5.13.5",
+      "type": "discovered-from",
+      "created_at": "2026-10-15T00:39:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-gxt7",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-17T14:57:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

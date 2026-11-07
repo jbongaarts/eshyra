@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-w7bp",
+  "title": "Add clean-environment (no native toolchain) release artifact smoke test",
+  "description": "ADR 0016 (docs/adr/0016-native-dependency-install-policy-by-environment.md) requires proving that unpacked release artifacts run without a native build toolchain present, not just with a restricted PATH on a toolchain-equipped GitHub-hosted runner. Add a release.yml job that runs the unpacked launcher (bin/eshyra, no-config exit-1 path) inside an environment that genuinely lacks a C/C++ toolchain (e.g. a minimal Linux container image without build-essential/python3), fed a pre-built artifact from the existing build job. Scope initial coverage to Linux; Windows/macOS GitHub-hosted runners ship toolchains by default and cannot easily be made toolchain-free without self-hosted runners, per ADR 0016.",
+  "acceptance_criteria": "A release.yml job runs the bundled CLI launcher against a genuinely toolchain-free Linux environment and asserts the same no-config behavior validate-release-artifact.mjs already checks (exit 1, expected guidance output). The job is gated the same way as other release-path checks (runs on PR when release inputs change, and on tag pushes). Documented in docs/cli-distribution.md or the ADR itself once implemented.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T01:23:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T04:13:04Z",
+  "started_at": "2026-07-01T03:56:09Z",
+  "closed_at": "2026-07-01T04:13:04Z",
+  "close_reason": "Merged as PR #379 (merge commit 8db918d). clean-env-smoke.sh + the clean-env-smoke release job run the linux-x64 artifact's bundled launcher inside a toolchain-free debian:bookworm-slim container (self-checks gcc/make/python3/node absent), asserting exit 1 + setup guidance; gates tag publication. Confirmed passing in real CI. ADR 0016 layer-3 clean-env requirement now satisfied.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-w7bp",
+      "depends_on_id": "eshyra-le7p",
+      "type": "discovered-from",
+      "created_at": "2026-06-30T20:23:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "d74c909e-25ce-5ce6-8f1d-78e720c39dcd",
+      "issue_id": "eshyra-w7bp",
+      "author": "Joseph Bongaarts",
+      "text": "Implemented in PR #379. scripts/release/clean-env-smoke.sh + the clean-env-smoke release.yml job run the linux-x64 artifact's bundled launcher inside a debian:bookworm-slim container that genuinely lacks gcc/cc/make/cmake/python/python3/node/npm/node-gyp (self-checked), with a scrubbed no-config env, asserting exit 1 + setup guidance. Gates the tag-release job. Linux-only (bundled Node is glibc; Win/mac runners ship toolchains).\n\nConfirmed in real CI: the clean-env-smoke job passed on the Release workflow for PR #379 — container self-check \"confirmed: no gcc/... on PATH\", launcher ran on its own runtime, exit 1 with guidance, PASS. All 34 PR checks green (1 skipped = tag-gated release-attach). Docs (ADR 0016 section, cli-distribution.md) marked implemented; releaseInstallerPolicy.test.ts guards added.",
+      "created_at": "2026-07-01T04:11:08Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

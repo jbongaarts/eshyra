@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7f0h",
+  "title": "Activation grouping: Apparatus of the Crab (one action, up to two levers) and Candle of Invocation (one action to light)",
+  "description": "RECONCILED 2026-10-18 after the architectural boundary review. This supersedes the 2026-10-17 framing where the two differ; the original text is kept verbatim in NOTES.\n\nThis is a PRE-FREEZE source-semantics and design resolution: it blocks eshyra-o9bd.14.\n\nSOURCE\n- Apparatus of the Crab: \"A creature in the compartment can use an action to move as many as two of the apparatus's levers up or down. After each use, a lever goes back to its neutral position.\"\n- Candle of Invocation: \"The candle's magic is activated when the candle is lit, which requires an action. After burning for 4 hours, the candle is destroyed. You can snuff it out early for use at a later time. Deduct the time it burned in increments of 1 minute ...\" and \"Alternatively, when you light the candle for the first time, you can cast the gate spell with it. Doing so destroys the candle.\"\n\nCURRENT STATE (origin/main 318a7eb6, PR #673 head)\n- Apparatus: 11 set-lever-N operations, each moving one lever, with no typed cost. Each triage-stateMachine-op-set-lever-N clause is engine-pending on F2 'activation action economy', F5 and F9.\n- Candle: the burn (budget, 1-minute increments) and cast-gate (single-use, excludes burn) operations have no typed cost.\n- Both items are recorded in UNTYPED_ACTIVATION_PHRASE_DISPOSITIONS (magicItemActivationCostLedger.ts) as ambiguous and therefore absent.\n- Correction to the original \"No engine claim depends on it\": the absence keeps those clauses honestly pending rather than making a false claim. But action accounting for these items is not authoritative today.\n\nTHE DECISION TO MAKE\nRepresent or adjudicate the printed action grouping faithfully, while keeping action accounting and state mutation authoritative.\n- Apparatus: ONE action moves up to TWO levers. Never charge one action per lever mutation, and never allow a third lever in the same action.\n- Candle: ONE action lights the candle. Subsequent burn-time updates cost no action. The gate cast is the first-light alternative: the lighting action, and the candle is destroyed; the spell's own semantics are adjudicated.\n\nCandidate shapes, for the decider and not prescriptive:\n- Apparatus: a single item-local operation that takes 1–2 lever selections and pays one action; or the DM adjudicates the grouping while the engine spends exactly one action per adjudicated use.\n- Candle: a light operation that pays the action and starts the burn, while the burn deduction stays action-free.\n\nNOT REQUIRED: a generalized multi-operation action framework (absent an independently justified requirement); vehicle movement, depth, air supply or geometry for the Apparatus (DM); the effects of the Candle's light zone or its spellcasting (separate hooks).\n",
+  "acceptance_criteria": "1. Decision recorded per item: the supported operation(s), their exclusions, and the remaining DM responsibility.\n2. Authoritative action accounting:\n   - Apparatus: one action covers one or two lever moves; a third lever needs another action.\n   - Candle: one action to light; burn-time updates cost no action; first-light gate = the lighting action plus destruction.\n3. The ledger entries (UNTYPED_ACTIVATION_PHRASE_DISPOSITIONS) and the typed costs are updated to match the decision. The pack is regenerated with a thaw note if records change.\n4. Minimum permanent evidence: a real-pack test of the printed grouping for each item (two levers for one action and a third refused within the same action; light once, then action-free burn updates). This is not a per-lever matrix.\n5. Not required: see NOT REQUIRED in the description.",
+  "notes": "2026-10-18 RECONCILIATION (architectural boundary review; user-authorized tracking-only reconciliation, no code). Description and acceptance rewritten; still REQUIRED PRE-FREEZE (blocks eshyra-o9bd.14; user rules 2026-10-14/17; olc5 stop condition 2026-10-12 applies). Facts verified against origin/main 318a7eb6 and PR #673 head 379c90f8 (OPEN).\nORIGINAL DESCRIPTION (2026-10-17, superseded where the reconciled description differs):\nFound in eshyra-xwau.1: Apparatus of the Crab prints ONE action for moving up to TWO levers while each set-lever-N operation moves one; Candle of Invocation prints that LIGHTING requires an action but burn/cast-gate model continuous burn time / a gate cast. Faithful typing cannot be distinguished cheaply, so both stay untyped (see magicItemActivationCostLedger.ts UNTYPED_ACTIVATION_PHRASE_DISPOSITIONS). Needs a design decision (e.g. a per-use grouping or a separate light-candle operation) before any cost can be typed. No engine claim depends on it.\n2026-10-18 addendum: PR #673 merged into main as dbbede8d at the same reviewed head 379c90f8, so every 'PR #673 head (OPEN)' fact in this description now holds on origin/main dbbede8d. The eshyra-c58j dependency is satisfied (c58j closed).\nPR #694 merged at reviewed head 0d313a8c (Sol r1 S1 repaired in eshyra-7f0h.3; r2 eshyra-7f0h.4 clean). Follow-up eshyra-kbzm (excludes unenforced) left open, non-blocking.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-17T20:39:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T22:47:10Z",
+  "started_at": "2026-10-31T22:02:41Z",
+  "closed_at": "2026-10-31T22:47:10Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7f0h",
+      "depends_on_id": "eshyra-7f0h.1",
+      "type": "blocks",
+      "created_at": "2026-10-31T17:02:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7f0h",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-17T15:40:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7f0h",
+      "depends_on_id": "eshyra-7f0h.3",
+      "type": "blocks",
+      "created_at": "2026-10-31T17:26:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

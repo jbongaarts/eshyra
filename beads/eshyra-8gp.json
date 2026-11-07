@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-8gp",
+  "title": "parseFeatures emits duplicate feature:cleric:destroy-undead from SRD 5.1 PDF",
+  "description": "With loreweaver-3m1's ancestry coverage fix landing, verify:dnd5e-srd-pack now passes the ancestry check but hits the next pipeline failure:\n\n> importer failed: records has duplicate key: feature:cleric:destroy-undead\n\nReproduce: npm run verify:dnd5e-srd-pack on a tree that has loreweaver-3m1 merged.\n\nInvestigation pointers:\n- This failure is pre-existing — it was masked by the AncestryCoverageError firing first. The progression-table feature parser likely emits Destroy Undead twice (perhaps once per progression-table row that lists it, or once via the leading-prose fallback and again via the table anchor).\n- Cleric's class progression lists Destroy Undead at multiple character levels (2, 5, 8, 11, 14, 17) as the SAME feature gaining bigger effect — the parser should de-duplicate by (class, feature name) and keep the EARLIEST level, or rename later rows.\n- See packages/core/scripts/importers/dnd5e-srd-5.1/parseFeatures.ts.\n- Tests live in packages/core/test/importers/dnd5e-srd-5.1/parseFeatures.test.ts.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-02T21:44:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:50Z",
+  "started_at": "2026-06-02T22:29:20Z",
+  "closed_at": "2026-06-02T22:41:58Z",
+  "close_reason": "Fixed by output-level dedup+merge in parseFeatures when the same (grantor, name) anchor matches twice — covers both Cleric Destroy Undead in-body table caption and Warlock Eldritch Invocations end-of-chapter option-list. PR https://github.com/jbongaarts/loreweaver/pull/136 open against main. Follow-up loreweaver-9bu filed for the next pipeline failure (subclass:champion duplicate in parseSubclasses).",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

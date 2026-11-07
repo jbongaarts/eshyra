@@ -1,0 +1,25 @@
+{
+  "_type": "issue",
+  "id": "eshyra-dxb7",
+  "title": "Redesign eshyra.app for terminal-themed long-form reading",
+  "description": "User-authorized redesign based on the selected Midnight Workstation mockup: cyan terminal chrome, warm ivory proportional article text, dark opaque reading surfaces, warm fantasy artwork, essays prominent on the homepage with Lessons learned building Eshyra introduction, and a published-essay index. Preserve both existing article bodies and stable URLs, download bundle/provenance/license behavior, static dependency-free site architecture, and tag-triggered deployment. Standard review profile: presentation/navigation only. Excludes article rewrites, rules or application changes, deployment, and the planned Making of Eshyra series scope owned by eshyra-ss08.1.",
+  "acceptance_criteria": "Responsive homepage, essays index, and both article pages match the selected direction. Desktop contents rail and compact mobile contents navigation. Keyboard-accessible links and opaque readable text. Existing article wording unchanged. Site build, internal links, download checks and proportionate visual checks pass; repository verification completed. Deliverable is an open PR; no merge or release tag.",
+  "notes": "PR: https://github.com/jbongaarts/eshyra/pull/581. Head e1ee84f31a7c662c29400edd02a37be9224ff738. Standard profile. Site build, content/link/download verification, Chromium responsive checks (320-1440px), and verify:worktree:sandbox passed (5482 passed, 30 skipped). Remains in_progress until merge. Canonical sync blocked by this workspace lacking authenticated Git push; preserve the actual Dolt state for handoff, never synthesize the projection.\nPR #581 review repair published at 4f5e95227ea2a5169f194066f3b92506bc6af5d2: restored collapsed author aside with keyboard/pointer reveal and bounded mobile placement. Chromium checks pass at 320,390,768,1024,1440; article copy unchanged. Sandbox verification: 5482 passed,30 skipped. Canonical sync remains pending authenticated Git access; user explicitly authorized sync. Remains in_progress until merge.\n2026-09-27 (claude-captain, closing on the user's instruction because the ChatGPT Work session cannot sync): canonical Beads sync completed via a Dolt merge of beads-handoff/eshyra-dxb7 with refs/dolt/data (additive only) and a fast-forward push; the earlier 'sync pending' notes are superseded. PR #581 re-reviewed at 4f5e9522 (both blockers closed) and merged as e4262963.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Codex",
+  "owner": "codex@openai.com",
+  "created_at": "2026-09-27T02:01:54Z",
+  "created_by": "Codex",
+  "updated_at": "2026-09-27T05:33:54Z",
+  "started_at": "2026-09-27T02:02:06Z",
+  "closed_at": "2026-09-27T05:33:54Z",
+  "close_reason": "Merged in PR #581 (e4262963).",
+  "labels": [
+    "site"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cim4.1",
+  "title": "Dispatch: cim4 (Sonnet 5.5, attempt 1)",
+  "description": "Plan for parent eshyra-cim4 (bd show eshyra-cim4). Decisions made; STOP and note if code contradicts.\nWORKTREE: .worktrees/eshyra-cim4.1 (branch eshyra-cim4.1 from origin/main). Deps installed. Do not edit packages/core/src/rules/kindSchemas.ts or its tests (parallel task).\n\nSRD: both Flexible Casting operations take \"a bonus action on your turn\".\nCODE: packages/core/src/state/flexibleCasting.ts (flexibleCasting(), one transaction; result has actionCost); packages/core/src/state/actionEconomy.ts spendTurnResource(db, SpendTurnResourceInput) (~line 1032; resource 'bonus_action'; enforces whose turn it is, already-used, surprised); orchestrator/toolFlexibleCasting.ts (description currently says the DM tracks the bonus action); protocol.ts sentence.\n\nDECISIONS\n1. When the campaign has an ACTIVE combat instance, flexibleCasting spends the character's bonus action through spendTurnResource (resource 'bonus_action', participant = the character, activity e.g. 'Flexible Casting: create level N slot' / 'convert level N slot') INSIDE the same transaction, BEFORE any point/slot mutation, so any refusal (not this character's turn, bonus action already used, surprised) aborts atomically and surfaces as a FlexibleCastingError with the action-economy message. Do not pass spellRef (this is not a spell cast).\n2. Outside active combat: no action-economy consumption (turn timing only exists in structured combat); unchanged behaviour.\n3. Update the tool description and protocol sentence: the tool spends the bonus action itself in combat; do not also call spend_turn_resource.\n4. Result: include whether a bonus action was spent (e.g. bonusActionSpent: true) in combat.\n\nEVIDENCE: in combat on the sorcerer's turn: create succeeds and the turn budget shows the bonus action used; a second flexible_casting the same turn is refused with nothing changed; on another participant's turn refused; outside combat unchanged (existing tests). Reuse existing combat/turn fixtures from actionEconomy or flexibleCasting tests.\nPROTOCOL: npm run verify:worktree BEFORE commit; commit (Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>); bd update eshyra-cim4.1 --append-notes; bd close eshyra-cim4.1. No push/PR.",
+  "notes": "Done at bc926812: flexibleCasting spends bonus_action via spendTurnResource in-transaction before mutation when combat active (FlexibleCastingError on refusal); bonusActionSpent in result; tool/protocol text updated; new test/flexibleCastingCombat.test.ts (3 tests fail pre-fix). verify:worktree green.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:20:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:24:19Z",
+  "closed_at": "2026-10-09T05:24:19Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cim4.1",
+      "depends_on_id": "eshyra-cim4",
+      "type": "parent-child",
+      "created_at": "2026-10-09T00:20:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

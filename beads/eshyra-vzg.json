@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vzg",
+  "title": "Address PR #142 review: strengthen PDF text extraction in audit bundle",
+  "description": "Review feedback on PR #142 (loreweaver-agv): the extractPdfPages function groups items by y-coordinate but joins in pdfjs return order, which is not guaranteed left-to-right. Three improvements requested: (1) sort each y-group by x before joining, (2) emit coordinate-preserving JSON items artifact per page, (3) update README to note plain text is a review aid. Scope: packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts only. No parser/pack/canonical data changes.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-03T05:56:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:49Z",
+  "started_at": "2026-06-03T05:56:17Z",
+  "closed_at": "2026-06-03T06:00:13Z",
+  "close_reason": "All three review items implemented and verified in f9d9938; pushed to PR #142.",
+  "comments": [
+    {
+      "id": "344eaf73-358f-5794-8657-66481500cc95",
+      "issue_id": "eshyra-vzg",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 1 (x-sort): ACCEPTED. Current code groups by y but joins in pdfjs stream order, which is not left-to-right on multi-column/stat-block pages. The importer's extract.ts confirms this at line 390: row.sort((a, b) => a.transform[4] - b.transform[4]). Same fix applies here — sort each y-group by transform[4] before joining. Technically correct and within scope.\n\nReview item 2 (coordinate JSON): ACCEPTED. pdfjs provides transform[4]=x, transform[5]=y, height, and width on every text item. Emitting per-page JSON at pdf-text/page-NNN.items.json co-locates items with existing text files and lets reviewers cross-reference exact positions. No behavior change to existing outputs. Technically correct and within scope.\n\nReview item 3 (README disclaimer): ACCEPTED. Plain text is a secondary review artifact; the coordinate JSON plus the original PDF are the authoritative sources for position-sensitive review. Documentation is accurate.",
+      "created_at": "2026-06-03T05:56:56Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

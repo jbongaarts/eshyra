@@ -1,0 +1,25 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lx2j",
+  "title": "Implement zone/form active-effect projection runtimes (S3 ward + form transformation consumers)",
+  "description": "Owner bead for the engine work that eshyra-2n1t.5.2 Part B was waiting on: the 'zone' and 'form' active_effect_link kinds are schema-reserved (migration 0009 CHECK; state/activeEffects.ts documents CreateActiveEffectInput exposes no creation path) and fail closed. Implement validated projection create/remove operations for (a) ward/spatial zone effects (S3 slice consumers such as antimagic field / guards-and-wards class effects) and (b) form transformations (C1 changeShape runtime), wiring both through the existing F3 link cleanup contract (cleanup_on_end/cleanup_on_break, 'missing' holders) rather than any parallel mechanism — see docs/active-effect-lifecycle.md §2/§6. When the first consumer lands, also expose suppress_effect/unsuppress_effect DM tools if not already exposed (eshyra-2n1t.5.2 Part A shipped them as domain operations + tools). Not required for the o9bd pack re-freeze.",
+  "notes": "Implemented canonical effect_spatial_zone and effect_transformation_form projections, validated zone/form creation, collision and replacement handling, and F3 remove/release/missing cleanup. Suppress/unsuppress tools were already exposed.\nPR #471 review follow-up: reject zone/form release until canonical released-state mutation exists; license creature-trait and magic-item transformation sources; enforce and adversarially test zone iff scope topology.\nAddressed PR #471 blocking review: zone/form release now fails closed; transformation licenses creature-trait and magic-item sources with tests; migration enforces zone iff scope and integrity audit detects constraint-bypassed corruption.\nPR #471 second re-review: persist and independently audit removal-only cleanup policies for zone/form links, including constraint-bypass adversarial coverage.\nAdded schema CHECK requiring remove/remove for every zone/form link and integrity audit coverage for the same invariant across persisted statuses; adversarial test proves both constraint rejection and constraint-bypass detection.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T07:53:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-22T06:10:53Z",
+  "started_at": "2026-07-22T05:21:50Z",
+  "closed_at": "2026-07-22T06:10:53Z",
+  "close_reason": "Second re-review durable cleanup-policy invariant addressed and verified",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

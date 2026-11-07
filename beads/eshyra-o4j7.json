@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o4j7",
+  "title": "Extract SRD spell-embedded tables as table records",
+  "description": "Follow-up from eshyra-4a7.3 document-wide table accounting. The Spellcasting chapter embeds 9 tables inside spell descriptions that are currently flattened into spell prose and tracked as known-gap coverage items: Animated Object Statistics (p116, animate objects), d10 Behavior (p127, confusion), Precipitation / Temperature / Wind (p131, control weather), Material Duration (p132, creation), d100 Race (p174, reincarnate), Knowledge/Save Modifier table (p176, scrying), and the Teleport 'Familiarity / Mishap / Similar Area / Off Target / On Target' matrix (p186). Emit each as a table record (or structured spell child data) with source row order and page provenance preserved, update the eshyra-4a7.3-followup known-gap coverage rule to record:/child-of: mappings, extend EXPECTED_SRD_5_1_TABLE_NAMES, and add exact-row regression tests. Several are multi-column with wrapped cells (Animated Object Statistics, Teleport) and may need bespoke reconstruction like the existing paired-column tables.",
+  "notes": "Implemented nine spell-embedded table records with fail-closed source fingerprints, exact row/page regression coverage, explicit source-inventory mappings, and regenerated canonical pack. Follow-up: added optional spell.data.tableRefs links for the seven owning spells, shared importer/audit ownership invariants, dangling/missing/duplicate link checks, and source-preserving prose regression coverage. Table count remains 102; only seven generated spell records changed. Verified npm run verify:worktree (1657 passed, 19 skipped), npm run verify:dnd5e-srd-pack (exact), and rules-pack audit (0 suspicious).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-12T00:21:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-14T05:09:47Z",
+  "started_at": "2026-06-14T04:26:12Z",
+  "closed_at": "2026-06-14T05:09:47Z",
+  "close_reason": "Spell-embedded tables are emitted and linked from their owning spells with fail-closed invariants.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o4j7",
+      "depends_on_id": "eshyra-4a7.3",
+      "type": "blocks",
+      "created_at": "2026-06-11T19:21:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

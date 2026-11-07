@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.12.3",
+  "title": "Dispatch: repair Sol S4 on PR #714, typed-absent item-power refresh wording (attempt 2)",
+  "description": "Repair the Sol review eshyra-o9bd.19.6.7.12.2 S4 (bd show it) on PR #714, branch eshyra-o9bd.19.6.7.12 (head 51700e05). Worktree .worktrees/eshyra-o9bd.19.6.7.12.3, branch eshyra-o9bd.19.6.7.12.3 cut from eshyra-o9bd.19.6.7.12. Declarative only, no runtime change. In deterministicCapabilityInventory.ts (refresh_effect entry, ~l.560-570) and toolRefreshEffect.ts (~l.25-35), split case (b) into item-power effects WITH a printed typed duration (a supplied duration different from it needs durationOverride, which records dm-override; equal records typed-fixed) and item-power effects WITHOUT one (activeEffects.ts itemBoundTypedDuration ~l.554-585 and the branch at ~l.7604: a supplied non-timed duration replaces without an override and clears duration provenance; a supplied timed duration needs durationOverride; an omitted duration keeps the stored duration and provenance). Verify every sentence against the code. Evidence: one proportionate generalized declaration/behaviour test over {typed-present, typed-absent} x {timed, non-timed} supplied durations, with and without durationOverride, using existing fixtures (e.g. the reviewer's magic-item:wings-of-flying / m3-wings-of-flying-fly-speed example is typed-absent). Implementer: Claude Haiku 5.5.",
+  "notes": "COMPLETE. Commit 421ab760 on branch eshyra-o9bd.19.6.7.12.3 (declarative + test only; activeEffects.ts untouched). Typed-absent behaviour as verified in code: itemBoundTypedDuration (activeEffects.ts:544-585) returns typed=undefined when the printed effect has no duration object; refresh branch (activeEffects.ts:7565-7621): with no printed typed duration, a supplied timed duration without durationOverride throws (~7607-7613, 'none printed: a timed duration is DM-adjudicated'); with durationOverride it records dm-override after basis/reason check (~7593-7605); a supplied non-timed duration without override takes the branch at ~7604-7606 and sets provenance to null (cleared), with override records dm-override; omitted duration keeps row provenance (nextProvenance undefined, ~7620). Typed-present (printed {amount,unit}): matching timed -> typed-fixed (~7587-7592, override ignored); any other duration without override throws (~7607-7613); with override records dm-override. Files: packages/core/src/rules/deterministicCapabilityInventory.ts (refresh_effect operation + case (b) exclusion), packages/core/src/orchestrator/toolRefreshEffect.ts (description + durationOverride schema description), packages/core/test/itemGrantSummons.test.ts (new it.each matrix 'item-power refresh' over 10 rows: typed-present/typed-absent x timed/until-removed x with/without override, asserting ok/refused, unchanged duration on refusal, and provenance typed-fixed/dm-override/unchanged/cleared; fixtures armor-of-invulnerability c2-activate-immunity-payload (typed 10 minute) and wings-of-flying m3-wings-of-flying-fly-speed (no typed duration)). Targeted: itemGrantSummons+activeEffects+deterministicCapabilityInventory+tools 329 pass. verify:worktree EXIT=0: 396 files passed, 2 skipped; 7397 tests passed, 3 skipped. Not pushed; no PR; beads:sync not run (dispatch scope). Open point, not changed: a magic-item effect with no source_effect_ref gets no item-bound check (itemBoundTypedDuration returns undefined) and refuses durationOverride with 'applies only to' message; untouched by this bead.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T04:00:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T04:06:48Z",
+  "closed_at": "2026-11-06T04:06:48Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.12.3",
+      "depends_on_id": "eshyra-o9bd.19.6.7.12",
+      "type": "parent-child",
+      "created_at": "2026-11-05T22:00:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

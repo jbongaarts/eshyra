@@ -1,0 +1,114 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7",
+  "title": "Second independent cross-model ADR-0020 audit of the candidate @ 6812cc0b",
+  "description": "Second independent, cross-model, maximum-effort audit of the ADR-0020 SRD candidate after the eshyra-o9bd.16 blocker repairs (#699-#703, report #704). It is a prerequisite of acceptance (eshyra-o9bd.19.6.4); it does not reopen eshyra-o9bd.16 and does not create a second freeze lifecycle (re-freeze stays eshyra-o9bd.14).\n\nCANDIDATE (pinned): main merge commit 6812cc0b89daa0e2503cd06521ec5c60a7103651 (tree 1a6589e87ab3db274fc8c70e3b8de8ce53eec139). records.json sha256 ef9f51a1cae0a7ee12e04b8ba40a54a951f6e413d96c07639b4a388a262bd83a; pack manifest.json sha256 36e6e529ea7b88f10eec3985cd1888bb42d7cc3b958f5eb266d60ee65c39070a; vendored SRD_CC_v5.1.pdf sha256 2504d2a0abb0a4d491a939be4f17910a2dde0312570ab8d208080225ccf0a1f0 (matches packages/core/sources/dnd5e-srd-5.1/manifest.json). Every auditor audits this SHA, never a moving main.\n\nAUDITORS (one child bead each; overlapping scopes, independent investigation): GPT-6 via ChatGPT (broad: source fidelity, discovery, architectural consistency); Opus 5.5 local Claude Code (vertical: real execution paths, state integrity, persistence, replay); Fable 5.1 Claude Code Cloud (source-to-pack fidelity, provenance, discovery, readiness, adjudication support); GPT-6.1 Sol via Codex (deep adversarial capability, identity, mutation, migration, state integrity); GPT-6 Astra via Codex (bounded cross-boundary adversarial audit).\n\nAUTHORITY given to every auditor: AGENTS.md; ADR 0020 and section 5.9 of docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md (nine-condition bounded truthfulness bar, NOT universal completeness); docs/design-and-pr-review-policy.md (From observation to finding; Findings discipline); docs/rules-pack-compiler.md; docs/importer-fix-protocol.md; finding-registry.json; the candidate's in-tree audit docs. Prior reports (incl. the o9bd.16 report) are evidence, not conclusions or a checklist.\n\nINDEPENDENCE: no auditor receives another auditor's findings before it submits. Auditors must not read sibling child beads of this bead. The Captain does not relay findings between auditors.\n\nFINDING PROMOTION: a finding is admitted only with (1) governing invariant + authority, (2) concrete evidence at the pinned SHA (record key or file:line; SRD page + quote where printed rules govern), (3) reachability/applicability, (4) actual consequence, (5) sibling analysis (same defect class elsewhere), (6) proportionate closure condition and evidence. Otherwise it is dispositioned \"no requirement\" in one line. Disclosed limits stay limits.\n\nRETENTION: each auditor's report is recorded on its own child bead (Codex/local via bd; ChatGPT and Fable reports are committed artifacts or verbatim transcriptions recorded by the Captain with source attribution).\n\nRECONCILIATION (Captain, after all submissions): de-duplicate by defect class; verify every claimed finding against the pinned SHA; classify BLOCKER / NON-BLOCKER / NO-REQUIREMENT / LIMIT; cross-check against the o9bd.16 registry of repaired classes (recurrence); each blocker gets an owning bead that blocks eshyra-o9bd.19.6.4; consolidated report under docs/audits/dnd5e-srd-5.1-final/.\n\nNON-SCOPE: no pack/engine modification during audit, no repair PRs from auditors, no freeze authorization.",
+  "design": "2026-11-01 PREPARATION (Claude Captain). Launch artifacts (local, gitignored): .worktrees/.dispatch/eshyra-o9bd.19.6.7.{common.md,1..5.prompt,cloud-setup.sh,cloud-env.txt}. Every lane prompt embeds the identical shared charter (pinned identity, authority, bar, independence, promotion rule, report format).\n\nBUNDLE PROCEDURE (reuse audit-bundle:dnd5e-srd, no new tooling): git worktree add --detach .worktrees/<name> 6812cc0b89daa0e2503cd06521ec5c60a7103651; cd there; npm_config_build_from_source=false npm ci; npm run audit-bundle:dnd5e-srd -- <outdir> <zipcopy>. Pass both args (the default zip copy target is /mnt/d). Requires Node 24, zip on PATH; Dolt optional (its tests skip when absent). The bundle is reproducible in content, not bytes (generatedAt timestamp, absolute repoRoot, captured logs). Compare bundles by metadata.commitSha, source hash, pack hashes and gate results. Source archive for ChatGPT: git archive --format=zip --prefix=eshyra-6812cc0b/ 6812cc0b... (deterministic for a given git version).\n\nLAUNCH PLAN: A4 Sol and A5 Astra via dispatch-codex.sh into worktrees/branches named after their beads at the pinned SHA (max 2 Codex concurrent); A2 Opus in a fresh local session in .worktrees/eshyra-o9bd.19.6.7.2 with repo hooks disabled; A3 Fable in a Claude Code Cloud session on a dedicated environment (setup script installs Node 24 + zip + poppler; ESHYRA_SEAT_ROLE=dispatched-worker); A1 ChatGPT GPT-6 with uploaded bundle zip + source zip. Fable's report is retained as one file on a pushed report-only branch audit/eshyra-o9bd.19.6.7.3-fable (no PR); ChatGPT's as the returned Markdown. The Captain records both verbatim on their beads with attribution (bd is unavailable to those auditors).\n\nRECONCILIATION (Captain, only after all lanes submit or are recorded as not run):\n1. Collect each report; check its IDENTITY block names the pinned SHA and hashes (a report on another SHA is evidence only).\n2. Normalize every claimed finding into one table: lane, claim, invariant+authority, evidence, reachability, consequence, siblings.\n3. De-duplicate by defect class, not wording; record which auditors found each class independently (agreement is confidence, not proof; a single-auditor finding is not discounted).\n4. Re-verify every candidate finding at the pinned SHA myself (reproduce the probe, read the SRD page). Disposition: BLOCKER (owning bead, blocks 19.6.4) / NON-BLOCKER (owning bead or existing owner) / NO REQUIREMENT (one line: missing invariant or authority) / LIMIT (disclosed, not a defect) / REFUTED (with evidence).\n5. Apply ADR 0020 bounded bar: no finding is promoted for lack of universal completeness; a disclosed engine-pending/adjudicated clause is not a defect; an SRD contradiction always is.\n6. Check recurrence of o9bd.16 and registry classes; a recurrence means the earlier repair did not close the class and its owner is reopened via a new bead, not by reopening closed beads.\n7. Disagreements between auditors on the same object: decide on the artifact, record both positions.\n8. Write docs/audits/dnd5e-srd-5.1-final/<date>-o9bd-19-6-7-second-independent-audit.md (per-lane result, findings with dispositions, limits, non-claims). It does not authorize re-freeze.\n9. Close this bead when every lane is dispositioned and the report merges; 19.6.4 then decides acceptance.",
+  "acceptance_criteria": "- Every auditor audited exactly 6812cc0b89daa0e2503cd06521ec5c60a7103651 and recorded its identity checks, method, findings and LIMITS on its child bead (or the bead records why an auditor did not run).\n- Every reported finding is reconciled and dispositioned (BLOCKER with owning bead blocking eshyra-o9bd.19.6.4 / NON-BLOCKER with owner / no requirement / disclosed limit), with the promotion evidence above.\n- Reconciliation records cross-auditor agreement and disagreement, and any recurrence of an o9bd.16 repaired class.\n- A consolidated report states bounded scope and non-claims; it does not authorize re-freeze (that is eshyra-o9bd.19.6.4).",
+  "notes": "2026-11-01 Captain: reference bundle generated at the pinned SHA from detached worktree .worktrees/eshyra-o9bd.19.6.7-bundle (Node v24.22.1, npm 11.19.1, own npm ci, better-sqlite3 prebuild loaded). npm run audit-bundle:dnd5e-srd exit 0 in ~3 min; all 8 candidate gates PASS; source hash match; suite 396 files passed / 2 skipped, 7377 tests passed / 3 skipped; check, typecheck, verify:dnd5e-srd-pack, audit:rules-pack exit 0; 1799 records, 403 PDF pages, source coverage 2258 structures / 0 unaccounted. metadata.commitSha 6812cc0b89daa0e2503cd06521ec5c60a7103651 (branch empty: detached). Reference zip sha256 af249274318e13ec3b3bdfa1892eeff0377c1f2ab5aa2626d47a160c605ea248 (content-reproducible, not byte-reproducible). Source archive (git archive --format=zip --prefix=eshyra-6812cc0b/) sha256 a2f991a8f6dca13f059ae812c7d3ca9e7ebad4d6d5f3156f02fa502ac04bf58d with local git. Gate results are entry evidence, not audit conclusions; they are not given to auditors as findings.\n2026-11-02 Captain, procedure note: in the cloud VM without Dolt, audit-bundle exits 1 because G-capabilities fails (checkpoint-store-v1 evidence file checkpoint.doltRepo.test.ts is Dolt-gated, so not executed). The gate correctly refuses to credit unexecuted evidence; a fully passing bundle needs Dolt installed. Not an A3 finding.\n2026-11-03 RECONCILIATION (Claude Captain). All five lanes submitted at 6812cc0b with matching identity: A1 ChatGPT BLOCKERS(1); A2 Opus BLOCKERS(1)+3 NB; A3 Fable 0+3 NB; A4 Sol BLOCKERS(1); A5 Astra no blocker (4 seams). Every claim re-verified by the Captain at 6812cc0b (code read, pack/PDF text, A2 custody probe re-run).\nDISPOSITIONS:\n- A1-F1 REFUTED as stated: the candidate record's bullet is scoped to undeclared nested condition-name leaves (19.3.5 scope); the five top-level mechanics.conditions record-name declarations predate the record (48133699, 2026-09-12). Residual currency (record names the #698 merge as candidate; lists 19.6.3/o9bd.16 as open) -> closure task .7.13.\n- A2-F1 BLOCKER confirmed (SRD p.98 contradiction) -> .7.6.\n- A2-F2 BLOCKER (auditor: non-blocker) -> .7.7. Protocol routes time to update_clock (label only) and dawn to reset_usage; advance_time never mentioned and explicit-action gated. Same class as o9bd.16 L3-F3 (blocker precedent). Sub-claims on round durations to verify in repair.\n- A2-F3 BLOCKER (auditor: non-blocker) -> .7.8. Reproduced; violates ADR 0012 'stale campaign database can never revert the timeline'.\n- A2-F4 BLOCKER, low consequence (auditor: non-blocker) -> .7.9, under the standing rule that SRD contradictions are hard blockers; SRD p.56 has no floor. User may downgrade.\n- A3-F1 + A3-F2 BLOCKER (auditor: non-blocker) -> .7.10: recurrence of repaired o9bd.16 L1-F2 class; 19.6.4 AC forbids recurrence. Data verified (Iron Flask '01–50' vs p.228 '1 50'; exhaustion splice).\n- A3-F3 BLOCKER (auditor: non-blocker) -> .7.11: recurrence of registry rows creature-statblock-mechanics / unicode-minus-damage. Data verified.\n- A4-F1 BLOCKER confirmed -> .7.12 (declaration contradicts runtime; o9bd.16 L3-F3 class).\n- A5: no findings; its upcast-to-effect lifecycle limit stays a limit.\nCross-auditor: no two lanes found the same class; A2-F2 and A4-F1 both touch effect durations but are distinct (time advancement guidance vs refresh declaration). Every blocker bead blocks eshyra-o9bd.19.6.4. The repairs change the candidate, so acceptance needs a new pinned candidate plus bounded re-audit of the repairs.\n2026-11-06 A2-F4 RE-DISPOSITIONED by user decision: the per-level HP minimum is the official 2018 PHB errata, adopted as separate authority; the defect narrows to the false 'SRD floor' attribution (repair .7.9, PR #713).\n2026-11-06 Captain: all seven second-audit blockers repaired and merged (#710 .7.6, #712 .7.7, #711 .7.8, #713 .7.9, #715 .7.10, #716 .7.11, #714 .7.12); successor candidate record merged in #717 (9106487d9a094f4d39914ed135e2da7e5371af3d). Repaired candidate = 9106487d9a094f4d39914ed135e2da7e5371af3d (pack bytes = 73083baf). Required next state per the reconciliation: bounded re-audit of the repairs at this candidate before eshyra-o9bd.19.6.4 acceptance. Consolidated audit report not yet written.\n2026-11-06 USER DECISION: the bounded re-audit of the repairs is run by the original finders at 9106487d (R1 ChatGPT optional A1 residual eshyra-o9bd.19.6.7.14, R2 Opus eshyra-o9bd.19.6.7.15, R3 Fable eshyra-o9bd.19.6.7.16, R4 Sol eshyra-o9bd.19.6.7.17).",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T18:00:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T07:02:28Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.4",
+      "type": "blocks",
+      "created_at": "2026-11-01T12:00:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.2",
+      "type": "blocks",
+      "created_at": "2026-11-01T12:00:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.3",
+      "type": "blocks",
+      "created_at": "2026-11-01T12:00:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.16",
+      "type": "blocks",
+      "created_at": "2026-11-06T01:02:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.5",
+      "type": "blocks",
+      "created_at": "2026-11-01T12:00:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.14",
+      "type": "blocks",
+      "created_at": "2026-11-06T01:02:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6",
+      "type": "parent-child",
+      "created_at": "2026-11-01T12:00:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.17",
+      "type": "blocks",
+      "created_at": "2026-11-06T01:02:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.1",
+      "type": "blocks",
+      "created_at": "2026-11-01T12:00:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.15",
+      "type": "blocks",
+      "created_at": "2026-11-06T01:02:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.21",
+      "type": "blocks",
+      "created_at": "2026-11-06T03:07:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 10,
+  "dependent_count": 1,
+  "comment_count": 0
+}

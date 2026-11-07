@@ -1,0 +1,54 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.14",
+  "title": "Task 6: Replace model-facing SRD tool with lookup_rules",
+  "description": "Objective:\nMove the default deterministic rules lookup tool and prompt from D&D-only `lookup_srd` to provider-neutral `lookup_rules`.\n\nFiles:\n- Modify: `packages/core/src/orchestrator/tools.ts`\n- Modify: `packages/core/src/orchestrator/protocol.ts`\n- Modify: `packages/core/src/orchestrator/orchestrator.ts` if rules-resolution trace names require updates\n- Modify: `packages/core/src/index.ts`\n- Test: `packages/core/test/tools.test.ts`\n- Test: `packages/core/test/protocol.test.ts`\n- Test: `packages/core/test/e5.integration.test.ts`\n\nSteps:\n1. Write failing tests that the default registry includes `lookup_rules`, the system prompt names `lookup_rules`, and a D&D campaign lookup returns the goblin record through the campaign binding.\n2. Update existing tests that assert `lookup_srd` as default behavior to assert `lookup_rules`; leave explicit compatibility tests for `lookup_srd` only if the wrapper remains exported.\n3. Run `npx vitest run packages/core/test/tools.test.ts packages/core/test/protocol.test.ts packages/core/test/e5.integration.test.ts`; expected: FAIL.\n4. Implement `lookupRulesTool` using `readCampaignRulesBinding`, bundled rules packs, `resolveRulesStack`, and `lookupRulesRecord`.\n5. Keep `lookup_srd` registered only if needed for compatibility; otherwise export a wrapper function but remove it from the default prompt.\n6. Update trace aggregation from `srdLookups` to a neutral key such as `rulesLookups`, with compatibility only where tests require it.\n7. Run focused tests; expected: PASS.\n8. Commit with `git add packages/core/src/orchestrator packages/core/src/index.ts packages/core/test/tools.test.ts packages/core/test/protocol.test.ts packages/core/test/e5.integration.test.ts` and `git commit -m feat-add-lookup-rules-tool`.",
+  "design": "The tool input should be `{ kind, name? , ref?, systemId? }`; omitted `systemId` means use the campaign binding. Tool data should include `{ record, sourcePack, license, overrideChain }`. Prompt language should say before running any creature or rules mechanic, call `lookup_rules`; avoid D&D-only wording such as SRD or monster/spell/class only.\n\nInitial test sketch:\n```ts\nconst registry = createDefaultToolRegistry();\nexpect(registry.list()).toContain('lookup_rules');\nexpect(buildSystemPrompt(registry)).toContain('lookup_rules');\nconst result = registry.invoke('lookup_rules', { kind: 'creature', name: 'Goblin' }, ctx());\nexpect(result.ok).toBe(true);\n```",
+  "acceptance_criteria": "Focused tools/protocol/e5 tests pass. Default prompt and registry use `lookup_rules`. Lookup results route through the campaign binding and include source/license metadata.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T05:10:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-23T21:55:07Z",
+  "close_reason": "Replaced lookup_srd in the default tool registry with provider-neutral lookup_rules backed by the campaign rules binding (default D&D SRD) and an explicit systemId override that targets bundled rules systems (D&D 5e SRD / Pathfinder 2e Remaster). System prompt now says lookup_rules and avoids SRD-only wording. Orchestrator rules-resolution trace key renamed srdLookups → rulesLookups. lookupSrdRecord and srd.test.ts retained as the lower-level legacy API. Verified: focused tools + protocol + e5 vitest pass (37/37 RED→GREEN), full npm run typecheck and npm run test pass (373 passed, 2 documented skips).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.14",
+      "depends_on_id": "eshyra-x3w.11",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.14",
+      "depends_on_id": "eshyra-x3w.12",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.14",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-23T00:10:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.14",
+      "depends_on_id": "eshyra-x3w.10",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

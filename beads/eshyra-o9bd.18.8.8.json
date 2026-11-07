@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.8.8",
+  "title": "Decide typed boundary for semi-structured SRD strings",
+  "description": "Finding source:\n- Fable P4 observation: some regular semi-structured strings still require consumer parsing, including weapon properties like \"Ammunition (range 150/600)\" and \"Versatile (1d10)\", plus creature savingThrows/skills/senses strings.\n- Fable marked these as regular and parseable, but the audit policy requires explicit closure.\n\nAcceptance criteria:\n- Inventory semi-structured fields still requiring consumer parsing.\n- Decide which remain strings, which need typed projections, and which should have shared parser/accessor helpers.\n- Create implementation beads for any fields deterministic tools should not parse ad hoc.\n- Document accepted non-issue decisions.",
+  "notes": "2026-07-08 ADR 0017 adjustment: Use the compiler decision procedure for each semi-structured string family. Repeated regular forms should become structural parsers/shared accessors; irregular reviewed families may become source-grounded curated specs; remaining contextual cases need model-adjudicated-supported evidence. Deterministic tools should not parse ad hoc strings when the pack can expose a typed semantic substrate.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:28:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-14T05:11:42Z",
+  "started_at": "2026-07-14T05:01:50Z",
+  "closed_at": "2026-07-14T05:11:42Z",
+  "close_reason": "ADR 0019 and reproducible 787-path inventory committed; no pack data changed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.8.8",
+      "depends_on_id": "eshyra-o9bd.18.8",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

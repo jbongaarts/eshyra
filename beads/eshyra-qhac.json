@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-qhac",
+  "title": "Make repeated SRD feature choices advancement-level aware",
+  "description": "Combined vk23 audit follow-up.\n\nRepeated features such as Ability Score Improvement are source-correctly represented as a feature whose source prose starts at the first level where it appears, while class advancement grants the same feature at later levels.\n\nExample:\n- Fighter has one Ability Score Improvement feature with source level metadata around level 4.\n- Fighter progression grants ASI at levels 4, 6, 8, 12, 14, 16, and 19.\n\nThis is source-faithful, but deterministic level-up tooling must instantiate the choice using the class advancement row level, not only the static feature choice level. Otherwise repeated ASI choices can be mis-leveled or collapsed.\n\nAcceptance criteria:\n- Define the contract for repeated feature choice instantiation:\n  - feature source level identifies where the feature prose originates\n  - advancement grant level identifies the level at which a choice instance is available\n- Ensure character-creation/level-up consumers can derive separate choice instances for repeated grants.\n- Add regression coverage for Fighter ASI levels, including non-4 ASI grants such as levels 6 and 14.\n- Audit other repeated features with choices and ensure the same contract holds.\n- Document the distinction between feature source metadata and advancement instance metadata.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T22:57:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T23:57:56Z",
+  "started_at": "2026-06-30T23:52:31Z",
+  "closed_at": "2026-06-30T23:57:56Z",
+  "close_reason": "Added repeatedFeatureChoices.ts: separates feature source level from advancement grant level, derives one choice instance per grant level. Mystic Arcanum's already-correct per-level entries are not duplicated. Regression coverage for Fighter ASI (incl. levels 6/14), Channel Divinity, Expertise, Metamagic against the real pack",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-qhac",
+      "depends_on_id": "eshyra-ajpc",
+      "type": "parent-child",
+      "created_at": "2026-06-30T18:06:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

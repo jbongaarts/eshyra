@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ct8d",
+  "title": "Protocol: exempt flexible_casting from the 'record every bonus action with spend_turn_resource' rule",
+  "description": "Non-material S1 from Opus review eshyra-cim4.2 of PR #633: protocol.ts ~274 tells the DM to record every bonus action via spend_turn_resource; flexible_casting now spends its own, so calling both refuses the conversion (fails safe). Add the exception to that sentence. Also S2: derive the spent resource from the pack's actionCost instead of hard-coding bonus_action.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:30:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T08:09:03Z",
+  "started_at": "2026-10-09T08:01:41Z",
+  "closed_at": "2026-10-09T08:09:03Z",
+  "close_reason": "Merged PR #636",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

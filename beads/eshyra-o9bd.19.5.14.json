@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.14",
+  "title": "DECISION (user): must dice-consuming mutation tools bind seeded roll evidence deterministically?",
+  "description": "Surfaced by eshyra-o9bd.19.5.13 triage. record_death_save and restore_usage accept a caller-supplied natural die result (range-checked only). Today that result is model-audited: the mechanics auditor (turnAuditor.ts ~L158-167) rejects a turn whose hand-written roll contradicts tool output. Level-up HP rolls instead bind deterministic evidence (validateDiceRollEvidence). ADR 0020 section 3 makes random-number generation a deterministic responsibility. Options: (A) keep auditor-checked binding (current; inventory states the trust boundary truthfully); (B) require these tools to consume a roll-tool result id/evidence from the same turn and refuse otherwise (sibling search over every tool taking a natural/roll input). This is an architectural/authority decision reserved for the user; no implementation until decided.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T07:27:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T07:27:13Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.14",
+      "depends_on_id": "eshyra-o9bd.19.5",
+      "type": "parent-child",
+      "created_at": "2026-10-10T02:27:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

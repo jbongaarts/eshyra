@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.20",
+  "title": "Represent SRD general trap rules in addition to sample hazards",
+  "description": "Problem\r\nThe importer emits sample hazard/trap-like records, but the general SRD trap rules preceding the examples are not adequately represented.\r\n\r\nEvidence from the 2026-06-07 audit\r\nUnrepresented or underrepresented source content includes:\r\n- General traps rules around pages 194-195.\r\n- Rules that explain how traps are detected, triggered, resolved, and assigned save/check/DC/damage behavior.\r\n\r\nRequired behavior\r\n- Import general trap rules as rule records or an explicit trap-rules representation.\r\n- Preserve sample traps/hazards separately from general explanatory rules.\r\n- Ensure hazard records do not substitute for missing general rule coverage.\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "notes": "SESSION HANDOFF (2026-06-09, scouted but not started — start fresh from these notes):\n\nAPPROACH (third repetition of a now-established template — see merged worked examples: PR #187 / commit 5c97e61 (eshyra-0m9.18, Beyond 1st Level rules + chapterIntro mechanism) and PR #188 / commit 2f2a447 (eshyra-0m9.21, Magic Items usage rules via a dedicated rules sub-slice)). Feed the general-trap-rules prose to the existing nesting-aware parseRules; no new parser behavior expected.\n\nSCOUTED SOURCE FACTS (real extraction, vendored SRD 5.1 PDF, traps slice = anchor /^Traps$/ .. /^Diseases$/):\n- p195: section intro prose (body h9.8, precedes any heading — emit via parseRules chapterIntro option as rule:traps, name 'Traps'); then 'Traps in Play' (h13.9); 'Triggering a Trap' (h12); 'Detecting and Disabling a Trap' (h12).\n- p196: 'Trap Effects' (h12); table captions 'Trap Save DCs and Attack Bonuses' + 'Damage Severity by Level' (both h12 — already table records; add both to TABLE_CAPTION_LEAF_TITLES in parseRules.ts, tier-3 gated, exactly like the Beyond-1st-Level captions); 'Complex Traps' (h12); 'Sample Traps' (h13.9); then the 8 sample trap names (h12, pp196-198) which the hazard kind owns.\n\nPLAN:\n1. New anchor trapRules in sections.ts: start /^Traps$/, end /^Sample Traps$/, requireEndHeading, best-effort start — bounds the rules parse BEFORE the sample traps so no rule duplicates a hazard record. GOTCHA: verify whether h13.9 lines are extractor heading-flagged before setting matchHeadings on the END anchor (the poisons anchor comment says h≈12 is below the heading-flag threshold; h13.9 untested — if not flagged, matchHeadings would miss 'Sample Traps' and the requireEndHeading guard would throw; dump headingLineIndexes for p196 to check, or leave matchHeadings off the end via a non-heading-matched anchor only if safe against body-prose 'Sample Traps' mentions).\n2. index.ts: slice trapRules (sliceSectionOrEmptyPages), parse with parseRules(slice, reservedSlugsFromAllPriorRules, { name: 'Traps', keySlug: 'traps' }), append to nonClassRules after magicItemRules.\n3. Expected new keys (+6, rule count 200 -> 206): rule:traps (intro), rule:traps-in-play, rule:triggering-a-trap, rule:detecting-and-disabling-a-trap, rule:trap-effects, rule:complex-traps. No collisions with existing keys expected; reserved-slug set guards anyway. Add to EXPECTED_SRD_5_1_RULE_KEYS with a comment block.\n4. Tests: srdGeneratedPack.test.ts rule count 200 -> 206 + new describe pinning bodies/boundaries (esp.: trap-effects body must NOT contain the two table captions' row text; complex-traps must NOT contain 'Collapsing Roof'; sample traps stay hazard-kind only). Check pipeline.test.ts fixture: it has a Traps page; its expectedRuleKeys gate is exact, so if the fixture slice yields heuristic-path rules the fixture key list must be extended (0m9.21 note: uniform-font fixtures often yield 0 rules from such slices — verify, don't assume).\n5. README.md (importer): rule row count + description; section-anchor table row for trapRules; IMPORTANT: the hazard kind row explicitly claims the leading trap guidance prose 'is not emitted' — that sentence must be updated for traps (the same claim was updated for magic items in 0m9.21).\n6. Regenerate canonical pack (npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1), expect generated diff exactly +6/0/0, npm run verify:dnd5e-srd-pack, then npm run verify:worktree.\n\nWORKFLOW: npm run agent:preflight; git worktree add .worktrees/eshyra-0m9-20 -b feat/srd-trap-rules-eshyra-0m9-20 origin/main; npm install in the worktree; PR to main; stop at open PR unless told to merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-10T02:55:21Z",
+  "started_at": "2026-06-10T02:49:11Z",
+  "closed_at": "2026-06-10T02:55:21Z",
+  "close_reason": "PR #189 open — six trap general-rules records added, rule count 200→206, all tests passing",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.20",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

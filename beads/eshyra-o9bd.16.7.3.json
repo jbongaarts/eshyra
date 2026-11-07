@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.7.3",
+  "title": "L1-F1: record locators must cover table continuations and inherited/flattened source spans",
+  "description": "Repair independent-audit blocker L1-F1 (full evidence and ten witnesses in the NOTES of eshyra-o9bd.16.1; read them first): retained prose/table cells sit under record locators that omit the page they are printed on (ADR-0020 bar 2). Follow docs/importer-fix-protocol.md.\n\nTwo shapes: (a) TABLES that continue across a page break carry only the first page: table:bag-of-beans p.209 (rows continue on p.210), table:celtic-deities p.360 (last five rows on p.361), table:gray-bag-of-tricks p.210 (p.211), table:half-dragon-damage-resistance p.320 (p.321), table:lifestyle-expenses p.72 (p.73), table:food-drink-and-lodging p.73 (most rows on p.74). (b) Content copied/flattened from another span: subraces carrying parent-race traits (ancestry:hill-dwarf p.4 lacks p.3; ancestry:lightfoot-halfling p.5 lacks p.4), ancestry:dragonborn p.5 whose traits continue on p.6, and magic-item:bag-of-tricks p.210 whose /variants copy table content printed on p.211.\n\nDESIGN (decided by the Captain): fix in the compiler from the actual source spans, never by widening locators arbitrarily. Use the existing multi-page locator convention (records already use e.g. 'pp. 68, 69'); use a truthful field-level locator only where a field-locator mechanism already exists and is the more precise statement. Then generalize: find EVERY table and every flattened/inherited record whose content crosses a page boundary not covered by its locator (derive from the extractor's per-line/page positions, not from a hand list), and fix all of them. The lane notes that the source-accounting ledger has no targetKey entry for some tables (bag-of-beans, food-drink-and-lodging), so the existing locator-completeness gate never saw them: correct that ownership/accounting so the existing gate (recordLocatorCompleteness / locator-completeness, registry indep:008) has an independent denominator for emitted table and flattened ancestry content, and it would have caught these.\n\nRegenerate the canonical pack with `npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1/`; `npm run verify:dnd5e-srd-pack` must match. Permanent evidence: a generalized continuation/inheritance provenance invariant, keeping the exact source-backed witnesses above until equivalently protected; modest text/page assertions suffice. Add thaw note docs/audits/dnd5e-srd-5.1-final/thaw-notes/2026-11-01-eshyra-o9bd-16-7-3-continuation-locators.md listing every changed locator. If the finding registry's indep:008 disposition text becomes inaccurate, update it truthfully. Do not weaken tests; do not touch freeze-manifest hashes or the freeze guard.\n",
+  "notes": "COMPLETE 3a364d4d (verify:worktree PASS; verify:dnd5e-srd-pack matches). All ten witness pages verified in PDF. Locators: ancestry:dragonborn p.5->pp.5,6; hill-dwarf p.4->pp.3,4; lightfoot-halfling p.5->pp.4,5; table:bag-of-beans p.209->pp.209,210; celtic-deities p.360->pp.360,361; gray-bag-of-tricks p.210->pp.210,211; half-dragon-damage-resistance p.320->pp.320,321; lifestyle-expenses p.72->pp.72,73; food-drink-and-lodging p.73->pp.73,74; magic-item:bag-of-tricks p.210->pp.210,211; plus found by generalized pass: table:draconic-bloodline-draconic-ancestry p.44->pp.44,45 (Red/Silver/White rows on p.45). Rejected false positive: table:the-barbarian (short wrapped cell collided with a heading on p.9) -> excluded via >=5-token fallback; stays p.8. Accounting: sourceRegionLedger now always emits record:table:* entries for table-owned cell runs (was only on otherwise unaccounted pages) and the stray 'Suggested Domains Symbol' item takes the last table caption as owner; new contentSpanPages.ts (producer) + recordLocatorCompleteness check (e) as independent content denominator for tables, ancestry traits, magic-item variants. Tests: continuationLocators.test.ts (new); pins updated in srdGeneratedPack, sourceRegionLedger, srdSourceInventoryArtifact tests; inventory regenerated; indep:008 text extended; thaw note 2026-11-01-eshyra-o9bd-16-7-3-continuation-locators.md.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:21:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:54:15Z",
+  "started_at": "2026-11-01T08:32:20Z",
+  "closed_at": "2026-11-01T08:54:15Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.7.3",
+      "depends_on_id": "eshyra-o9bd.16.7",
+      "type": "parent-child",
+      "created_at": "2026-11-01T02:21:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

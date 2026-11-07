@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-knh9.2",
+  "title": "deep-audit-dnd5e-srd default --out dir lives under tmpdir() (by design, not a leak)",
+  "description": "Follow-up from eshyra-knh9.1 (per-run test temp root + script temp leaks). packages/core/scripts/deep-audit-dnd5e-srd/cli.ts defaults its --out report directory to mkdtempSync(join(tmpdir(), 'deep-audit-dnd5e-srd-')) when --out is not passed, and deliberately does NOT clean it up: the JSON reports it writes (deep-audit-findings.json, page-coverage-report.json) ARE the tool's deliverable, printed to the user as 'Reports: <dir>' for them to open afterward. This is correct behavior, not the leak bug eshyra-knh9.1 fixed elsewhere (verify-dnd5e-srd-pack/cli.ts, generate-creature-name-baseline/cli.ts, doltProvision.ts, smoke-installer.mjs all had process.exit() bypassing a finally{} cleanup -- this script has no such bug). Optional low-priority DX nit: consider defaulting --out to a repo-local directory (e.g. ./deep-audit-reports/) instead of the OS temp dir, so a human running 'npm run audit:dnd5e-srd-deep' without --out doesn't have to dig through tmpdir() to find the reports, and so they don't eventually get swept by an unrelated tmpdir cleanup. Not part of any required gate (verify:worktree/test/CI never invoke this script).",
+  "status": "open",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-24T22:07:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-24T22:07:02Z",
+  "labels": [
+    "testing"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-knh9.2",
+      "depends_on_id": "eshyra-knh9",
+      "type": "parent-child",
+      "created_at": "2026-09-24T17:07:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

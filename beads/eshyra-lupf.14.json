@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.14",
+  "title": "Implement core-owned CharacterSheet model, store, projection, and CLI migration",
+  "description": "Implements ADR 0011 (eshyra-lupf.13). Evolve FinalizedCharacter into a versioned, root-exported core CharacterSheet document. Add a core-owned CharacterSheetStore (save/load/list) backed by SQLite — a character_sheet table keyed by character id with schema_version / system / rules_pack_id columns plus a sheet_json document column. Implement the sheet -> live 'character' row projection (sheet authors identity/class/level/hp_max; live row keeps hp_current/conditions). Switch CLI creation/selection wiring (packages/cli/src/index.ts, playCharacter.ts) from createFileFinalizedCharacterStore to the core store, and add a best-effort one-time importer for any existing finalized-character JSON files. Demote/remove the CLI JSON store as authoritative.",
+  "acceptance_criteria": "- Core exports a versioned CharacterSheet type (evolved from FinalizedCharacter) and a CharacterSheetStore with SQLite-backed default.\n- character_sheet table persists schema_version/system/rules_pack_id + sheet_json; reads validate pack binding.\n- sheet->live-row projection keeps level/hp_max/identity in sync; per-turn hp_current/conditions remain owned by the live row.\n- CLI creation/selection use the core store; existing CLI finalized JSON files are migrated; CLI JSON persistence is no longer authoritative.\n- Tests cover round-trip persistence, projection, pack-binding validation, and migration.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T01:07:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T02:00:46Z",
+  "closed_at": "2026-06-27T19:17:34Z",
+  "close_reason": "All children (.14.1–.14.4) delivered and merged to main (PRs #326/#328/#331/#333). Core-owned CharacterSheet model, store, projection, CLI cutover, custody lifecycle, and timeline conflict-resolution UX complete.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.14",
+      "depends_on_id": "eshyra-lupf.13",
+      "type": "blocks",
+      "created_at": "2026-06-26T20:07:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.14",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T20:07:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

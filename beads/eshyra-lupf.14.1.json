@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.14.1",
+  "title": "Core CharacterSheet type + character_sheet store + migration",
+  "description": "First half of ADR 0011 implementation (eshyra-lupf.14). Evolve the FinalizedCharacter type into a versioned, root-exported core CharacterSheet (keep a deprecated FinalizedCharacter alias so existing consumers compile until the CLI cutover). Add a 0002_character_sheet.sql migration: character_sheet(character_id PK, schema_version, system, rules_pack_id, sheet_json, updated_at). Add a core-owned CharacterSheetStore (createSqliteCharacterSheetStore: save/load/list) that persists the sheet document with binding columns mirrored from the document, validates the document/binding on read, and exposes a pack-match guard. Regenerate the schema snapshot. No CLI behavior change yet. Note: the finalized->live-row projection already exists as importFinalizedCharacter.",
+  "acceptance_criteria": "- CharacterSheet exported from core root; FinalizedCharacter kept as deprecated alias.\n- 0002 migration adds character_sheet; schema.snapshot.sql regenerated; snapshot drift test passes.\n- CharacterSheetStore save/load/list round-trips through SQLite; binding columns persisted; load validates and a pack-match guard is available.\n- Tests cover round-trip, list ordering, missing load, and pack-binding validation.",
+  "notes": "PR #326 (https://github.com/jbongaarts/eshyra/pull/326). Core CharacterSheet type + character_sheet migration + store. Open for review; close on merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T02:03:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T02:03:33Z",
+  "closed_at": "2026-06-27T02:28:05Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.14.1",
+      "depends_on_id": "eshyra-lupf.14",
+      "type": "parent-child",
+      "created_at": "2026-06-26T21:03:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

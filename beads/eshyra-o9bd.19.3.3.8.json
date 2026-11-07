@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.3.8",
+  "title": "Dispatch: 19.3.3 comprehensive language-subsystem repair from full review 19.3.3.7 (attempt 4)",
+  "description": "ONE comprehensive repair per the fresh full subsystem review eshyra-o9bd.19.3.3.7 (read its full notes: the 50-row comparison-boundary table, S1, S2, and the recommended closure). Policy context: this class hit the two-repair hard stop; the subsystem review is the complete picture, so close EVERY defect row in that table in this one repair - do not leave any 'exact'/'lowercase' language comparison the table marks as a defect. Architecture (from the review): (1) Core owns 'which languages does this character already hold for this choice': compute the held-language set ONCE per draft, in the same ordered pass as isLanguageChoiceSatisfied (fixed grants + languages claimed by earlier language groups, by languageKey), and use that single result BOTH to filter each language choice's offered from-domain (requiredChoices.ts:592-599 and wherever choice state is built) AND to judge satisfaction; expose it on each language choice's state (e.g. heldLanguages / excluded) plus an explicit unsatisfied reason (duplicate of held X, needs approval, wrong count) so UIs can explain. Anything offered must be acceptable; anything held must not be offered. (2) languageKey is the ONLY identity function: promote it to the @eshyra/core ROOT export (the CLI may only import the root; AGENTS.md permits promotion for a real consumer) and use it in the CLI wizard for selection marking (characterWizard.ts:~1190), the default-pick duplicate guard (~1131) and the other-language guard (~1166-1168, delete the inline copy), each checked against the current selection PLUS the core-provided held set, with a clear message instead of the 'This group is full' dead end; earlier valid picks must never be lost. (3) Optional per review: canonical spelling at write/load - only if it falls out naturally; spelling must remain pack/draft-sourced (no hard-coded SRD lists). Permanent evidence: ONE generalized invariant 'offered => acceptable, held => not offered' across every bundled language-choice producer (Human, Half-Elf, High Elf; each with ordinary and custom Acolyte) with canonical and variant spellings, plus ONE CLI test: cross-group duplicate refused without losing earlier picks, resumed variant-spelling draft marked correctly, distinct pick completes. Re-check the review's dismissed 'no requirement' items stay untouched. SRD fidelity: rule:languages p.59, High Elf, Acolyte, Customizing a Background. Report in notes the full 50-row table with each defect row's resolution. Host memory: wait until pgrep -fc '^node .*verify-current-worktree' prints 0 or 1; npm run verify:worktree && git commit. Notes; close this bead. No push/PR.",
+  "notes": "COMPLETED (commit on branch eshyra-o9bd.19.3.3.8; verify:worktree passed; not pushed). Architecture: characterDraft.mechanicalChoices computes the held-language map ONCE in the same ordered pass (fixed grants incl. custom background, then claims of earlier satisfied language groups, all by languageKey); it both filters each language choice's from and judges satisfaction (judgeLanguageChoice, with reasons: blank / already held X / selected twice / wrong count / needs GM approval). MechanicalChoiceState gained heldLanguages + unsatisfiedReason. requiredChoices.chooseableLanguages now uses languageKey. languageKey promoted to @eshyra/core root export; CLI wizard uses it (languageConflict helper vs selection UNION held) for marking, default-pick guard, typed-name guard and other-language guard (inline copy deleted); reasons shown instead of 'group is full' dead end; no earlier pick/approval mutated on refusal. Tests: one generalized invariant (Human/Half-Elf/High Elf x ordinary/custom Acolyte, variant spellings, forced held pick refused with reason) in languageExtensionPoint.test.ts; one CLI test (cross-group + held 'common' via other refused, Elvish kept, Giant completes, resumed variant ' dwarvish ' marked).\nTABLE RESOLUTION: rows 1,4-8,10-12,14-17,19-20,22-27,29-35,37-38,40-42,48-50 correct/no requirement, untouched. 2: FIXED (languageKey in chooseableLanguages; cross-group scope via single held set in mechanicalChoices). 3: FIXED (all 3 producers inherit). 9,13: declared exact-domain admission policy, unchanged (dismissed). 14: FIXED (menus now mirror the claim via row 2/3 set). 18,48: producers - not canonicalized at write (optional item 3 skipped); S1 can no longer reach menus/CLI since all comparisons use languageKey. 21,28,36: n/a. 39: FIXED (options = core-filtered from). 43: FIXED (held names refused with reason before approval path). 44: FIXED (inline identity deleted, languageKey + held set). 45: FIXED. 46: FIXED. 47: FIXED (reason shown, full/unsatisfied message includes it). S1, S2 closed. Dismissed 'no requirement' items untouched.\nNote: first verify run hit an unrelated 5s timeout flake in hpLifecycle.test.ts under load; rerun green.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T16:00:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T16:09:51Z",
+  "closed_at": "2026-10-11T16:09:51Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.3.8",
+      "depends_on_id": "eshyra-o9bd.19.3.3",
+      "type": "parent-child",
+      "created_at": "2026-10-11T11:00:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

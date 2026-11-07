@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fa54.2",
+  "title": "Review: Sol final review of PR #625 (eshyra-fa54 @ ceaf060a)",
+  "description": "Final read-only review of PR #625 (branch eshyra-fa54, exact head ceaf060a8c204b2f4336277cfc268eb07a478f86) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #625 at exact head ceaf060a8c204b2f4336277cfc268eb07a478f86.\nReview profile: rules-clause-complete, bounded to the class-resource rest-accounting confirmation specified by eshyra-fa54 and its completed dispatch eshyra-fa54.1.\n\nReviewed AGENTS.md, docs/design-and-pr-review-policy.md, ADR 0020, docs/design/character-progression.md (class resource capacities), and importer-fix-protocol applicability. Full origin/main...HEAD diff and origin/main..HEAD log contain one commit and 178 added lines in packages/core/test/rest.test.ts; runtime/importer/generated-pack contracts are unchanged. refs/beads/state is stale (2026-09-10) and lacks these beads; scope and dependencies were reconciled against live bd show records.\n\nInspected the real bundled-pack loader and class-level resolver, classResources bindings, spendUsage capacity/accounting/rollback, resetUsage event and owner selection, completeShortRest/completeLongRest, and the provider-neutral tool consumers. Checked sibling evidence for aliasing, absent/unlimited capacity, level-up reconciliation, owner scoping, overspend, and rest qualification/replay. Independently checked vendored SRD_CC_v5.1.pdf: Barbarian/Rage p.8, Monk table/Ki pp.26-27, Sorcerer/Font of Magic p.43. The new tests protect class-bound accounting through real completed rest operations, including partial/full consumption, short-versus-long reset distinctions, and unchanged balance on refused multi-point overspend. They are bounded invariant evidence, not a claim of exhaustive feature adjudication.\n\nAll dispatch acceptance scenarios are covered. Flexible Casting exclusion is authorized and its requested follow-up eshyra-09co exists with the slot/counter owners and conversion scope. Multi-point costs remain expressible through spend_usage.\n\nVerification: npx --no-install vitest run packages/core/test/rest.test.ts packages/core/test/usageCounters.test.ts packages/core/test/levelUpEngine.test.ts --configLoader runner --no-cache: 3 files and 93 tests passed (4.04s). Dependencies resolved from the parent checkout; no worktree-local install was performed. git diff --check passed and git status stayed clean. No format, full verification, repository edits, commits, pushes, or GitHub comments were performed.\n\nFindings: none (MATERIAL: 0; NON-MATERIAL: 0).\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T03:49:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T03:51:59Z",
+  "closed_at": "2026-10-09T03:51:59Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-fa54.2",
+      "depends_on_id": "eshyra-fa54",
+      "type": "parent-child",
+      "created_at": "2026-10-08T22:49:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

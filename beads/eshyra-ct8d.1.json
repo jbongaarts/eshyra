@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ct8d.1",
+  "title": "Review: Sol final review of PR #636 (eshyra-ct8d @ fd865057)",
+  "description": "Final read-only review of PR #636 (branch eshyra-ct8d, exact head fd865057ea9cea071bdc21e08d324c56d687e311) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #636 at exact head fd865057ea9cea071bdc21e08d324c56d687e311 (branch eshyra-ct8d.1).\nReviewed AGENTS.md, docs/design-and-pr-review-policy.md, ADR 0020, importer-fix-protocol, live owning bead eshyra-ct8d and prior review eshyra-cim4.2, the complete origin/main...HEAD diff and origin/main..HEAD log. Applied rules-clause-complete depth to the bounded Flexible Casting/protocol boundary. refs/beads/state is stale (September 9 commit, missing these October beads); reconciled scope/status against live bd records. No current blockers/dependencies were listed on the owning bead.\n\nFindings: none (0 MATERIAL, 0 NON-MATERIAL).\n\nPrior S1: resolved at packages/core/src/orchestrator/protocol.ts:275-276. The general combat instruction now explicitly exempts flexible_casting, matching the existing spell-resource instruction and toolFlexibleCasting.ts description. Traced buildSystemPrompt through the orchestrator and the registered provider-neutral tool into flexibleCasting and spendTurnResource. Both conversion directions spend exactly their own bonus action inside the outer transaction; off-turn/already-used/surprised refusals abort, later conversion failures roll back, and outside combat no turn resource is spent. The exception does not exempt ordinary spells or remove spellRef timing instructions.\n\nPrior S2: rejected, no requirement for an additional derivation mechanism. The proposed non-bonus-action pack scenario is already refused: boundedProcedures.ts:539-544 and :589-594 assert the literal bonus-action for both operations; resourceConversionMaximum at :788-794 calls procedureOfKind/readBoundedProcedures, validating both costs before flexibleCasting.ts:173 spends anything. Thus the existing validation already supplies the prior review's suggested assertion, and deriving from this singleton would change no admitted cost. The added comment accurately records that invariant; no correctness or acceptance-purpose defect survives this disposition.\n\nSource and evidence: independently read the vendored SRD_CC_v5.1.pdf printed pp. 43-44; both operations require a bonus action on the sorcerer's turn. Confirmed the real Font of Magic record, compiler projection's source assertions, bounded evaluator, combat state owner, transaction owner, tool targeting/result handling, and existing Flexible Casting/combat/bounded-procedure/protocol tests. Considered create/convert, own/off turn, used/unused budget, combat/no combat, malformed or missing procedure costs, and spell/non-spell activity. No importer, generated pack, exports, schema, or executable state behavior changes in this PR.\n\nVerification: read-only Node assertion passed for the rendered exception and retained spellRef instruction in both native and fenced prompt modes. git diff --check passed. Vitest not run: this worktree has no node_modules; no install performed. No repository files changed, no formatting/build verification or GitHub mutation performed.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T08:03:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T08:06:44Z",
+  "closed_at": "2026-10-09T08:06:44Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ct8d.1",
+      "depends_on_id": "eshyra-ct8d",
+      "type": "parent-child",
+      "created_at": "2026-10-09T03:03:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.1.2",
+  "title": "Remove false verbatim source authority: synthesized table headers and composed sourceText (19.2.1 item 5)",
+  "description": "Slice of eshyra-o9bd.19.2.1 item 5, selected as the first repair of the 2026-09-22 ADR-0020 recovery sequence (source -> capture -> identity/provenance -> emitted pack).\n\nDEFECT CLASS: a value the importer composed or synthesized is emitted at a pointer that field-provenance-v1 (packages/core/data/rules-packs/rules__dnd5e-srd-5.1/field-provenance.json) declares 'source-prose' - the only class the context packet presents to the DM as verbatim, authoritative source. Discovery places such text into context as authority (ADR 0020 Consequences), so this launders compiler-authored text through the authoritative channel.\n\nKNOWN MEMBERS (verified on main 2026-09-22):\n- table:scrying-save-modifiers: merges the SRD's two printed Scrying save-modifier tables under invented column headers 'Basis'/'Circumstance'; table /columns is declared source-prose.\n- class spellPreparation.sourceText (e.g. class:cleric): stitches two separate SRD passages into one string; /spellPreparation/sourceText is declared source-prose.\n\nSIBLING SEARCH: enumerate every value emitted at a source-prose pointer and check it against the pinned source extraction; repair every non-verbatim member, or reclassify the pointer truthfully where the field is not a quotation by design.\n\nEVIDENCE: one generalized invariant at the correct boundary - a value emitted at a source-prose pointer is a verbatim span of the pinned source (modulo documented whitespace/hyphenation normalization) - rather than per-example reproducers. Follow docs/importer-fix-protocol.md; regenerate the pack; npm run verify:dnd5e-srd-pack must stay green.\n\nOUT OF SCOPE: 19.2.1 item 2 (Animal Friendship) and item 3 (Bag of Beans, repaired with the half-damage class).",
+  "notes": "PR #566 https://github.com/jbongaarts/eshyra/pull/566 opened at head e0e72584; verify:worktree green (5342 passed / 3 skipped), verify:dnd5e-srd-pack exact. Fixed: scrying tables split to their printed headers; animated-object Str/Dex; class spellPreparation.sourceText reclassified source-derived. Residuals -> eshyra-o9bd.19.2.1.3. Bead stays in_progress until merge.\nReview F1 (review 5286316985, CHANGES REQUESTED on e0e72584) addressed at ff0293ef: literal-span header predicate with adversarial cases; the predicate exposed and this commit repaired table:half-dragon-breath-weapon 'Optional Prerequisite'. verify:worktree green (5343/3).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-23T01:42:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-23T03:24:47Z",
+  "started_at": "2026-09-23T01:42:58Z",
+  "closed_at": "2026-09-23T03:24:47Z",
+  "close_reason": "Merged in PR #566 (77b2d475). Fixed: scrying tables split to their printed headers; animated-object Str/Dex; half-dragon 'Optional Prerequisite'; class spellPreparation.sourceText reclassified source-derived. Literal-span header invariant added. Residuals in eshyra-o9bd.19.2.1.3.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.1.2",
+      "depends_on_id": "eshyra-o9bd.19.2.1",
+      "type": "parent-child",
+      "created_at": "2026-09-22T20:42:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

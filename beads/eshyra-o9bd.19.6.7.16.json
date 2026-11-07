@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.16",
+  "title": "Re-audit R3: Fable 5.1 (cloud) A3-F1..F3 @ 9106487d",
+  "description": "Bounded re-audit of the second-audit repairs at the repaired candidate 9106487d9a094f4d39914ed135e2da7e5371af3d (main after PR #717; pack bytes = 73083baf). The charter is in .worktrees/.dispatch/eshyra-o9bd.19.6.7.reaudit-common.md (also embedded in each launch prompt). The finder re-checks its OWN findings: is each class closed for its whole class at this candidate, and did the repair introduce a new defect in the touched area? This is not a new broad audit. Report: identity checks; per finding CLOSED / NOT CLOSED / REGRESSED with evidence; new material findings in touched areas only; LIMITS; final line RE-AUDIT RESULT: CLEAN or BLOCKERS (<n>).\n\nSCOPE: A3-F1/F2 source-prose composition and substitution (PR #715), A3-F3 creature attack damage components (PR #716). The user launches it manually from the cloud profile; report on a pushed report-only branch audit/eshyra-o9bd.19.6.7-reaudit-fable, no PR.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T07:02:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T07:02:16Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.16",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-06T01:02:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

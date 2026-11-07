@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3xi0",
+  "title": "Admit effective random-initialization table contracts at stack resolution",
+  "description": "Sibling of eshyra-w750: item randomInitialization procedures read tables through resolveTable (state/itemRandomInitialization.ts); no pack or stack admission checks the effective (add-on-overridden) table, so violations surface only at execution. Found while closing eshyra-w750.1; not fixed there.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-17T20:07:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-17T22:51:37Z",
+  "started_at": "2026-10-17T20:57:54Z",
+  "closed_at": "2026-10-17T22:51:37Z",
+  "close_reason": "PR #672 merged after user approval",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-3xi0",
+      "depends_on_id": "eshyra-w750.1",
+      "type": "discovered-from",
+      "created_at": "2026-10-17T15:07:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-3xi0",
+      "depends_on_id": "eshyra-3xi0.1",
+      "type": "blocks",
+      "created_at": "2026-10-17T15:57:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-3xi0",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-17T15:11:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-c1v",
+  "title": "Allow retry after session-close checkpoint failure",
+  "description": "Review finding from loreweaver-niw. A checkpoint failure after graceful close leaves the session closed, and a later close call skips checkpointing forever because the session status is already closed. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "A failed close-time checkpoint can be retried without duplicating rollups or reopening the session; tests cover first checkpoint failure followed by successful retry.",
+  "notes": "Fix: record checkpoint completion in meta (session_checkpoint:<c>:<s>) instead of inferring from session status. RED proven (retry returned checkpointId undefined). GREEN: 204 pass, existing idempotency test still green.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:43:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:45Z",
+  "started_at": "2026-05-21T05:30:11Z",
+  "closed_at": "2026-05-21T05:33:05Z",
+  "close_reason": "Fixed in PR #21 (merged) — checkpoint completion recorded in meta, failed checkpoints retryable",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

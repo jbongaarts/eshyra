@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.7.1",
+  "title": "L1-F3/F4/F5: source-true spell roll-modifier subjects, Empty Body force exception, save-owned attack damage",
+  "description": "Repair independent-audit blockers L1-F3, L1-F4 and L1-F5 (full evidence, witnesses and sibling census in the NOTES of eshyra-o9bd.16.1; read them first). All three are retained typed projections that contradict the vendored SRD source (ADR-0020 bar 1). Follow docs/importer-fix-protocol.md and docs/rules-pack-compiler.md. Fix the compiler; regenerate the canonical pack with `npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1/`; `npm run verify:dnd5e-srd-pack` must match.\n\nDESIGN RULE (decided by the Captain): a projection must either state the source truthfully in the EXISTING effect vocabulary (kindSchemas.ts) or be OMITTED (fail closed: the authoritative prose stays and the DM adjudicates). Do NOT add new schema fields or effect kinds. Never default an unrecognized grammatical subject to target/caster.\n\nF3 (spell rollModifier wrong subject; mechanicsProjections.ts ~1047-1060, ~1363-1374): Guiding Bolt (advantage belongs to the next attack roll AGAINST the target), Irresistible Dance (OTHER creatures have advantage on attacks against it), Holy Aura (creatures of your choice in the radius, not the caster; embedded 'when you cast this spell' must not steal the subject). Fix the subject matcher for the object-of-preposition / explicit-other-creatures / embedded-caster-clause forms; if the existing vocabulary cannot truthfully express the recipient, omit that effect. Re-check all 45 rollModifier projections across 31 spells (the lane's census); the lane's controls (Dominate spells, Blur, Hunter's Mark, Shocking Grasp, Haste, Resurrection) must not regress.\n\nF4 (feature:monk:empty-body emits damageResistance types:'all' though SRD p.28 says 'resistance to all damage but force damage'; mechanicsProjections.ts ~5376): the all-damage grammar must reject (or truthfully represent, if the existing schema can) a following exception. Controls: Petrified all-damage resistance stays; Armor of Invulnerability keeps its magical exclusion.\n\nF5 (same-Hit-sentence save-governed damage merged into unconditional attacks[].hitDamage; mechanicsProjections.ts ~615-686, ~758-805): damage that the Hit sentence makes conditional on a failed save must be owned by the save (damageOnFailure, with damageOnSuccess half/none as printed), exactly as Swarm of Poisonous Snakes already does, and must not remain in hitDamage. Cohort (14 attacks in 13 records): Assassin Shortsword and Light Crossbow; Giant Centipede, Giant Poisonous Snake, Giant Scorpion Sting, Giant Spider, Giant Wasp, Giant Wolf Spider, Guardian Naga, Imp Sting, Phase Spider, Purple Worm Tail Stinger, Quasit Claws, Spirit Naga. Controls that must NOT change: Bone Devil, Erinyes, Ettercap (extra on-hit poison + separate condition save), Balor Whip. If executionReadiness clause classification depends on these projections, keep it consistent and truthful.\n\nPermanent evidence (AGENTS.md Permanent Test Evidence): generalized invariants with the exact source-backed witnesses (Guiding Bolt, Irresistible Dance, Holy Aura; Empty Body p.28; Giant Centipede p.374 and Giant Scorpion p.378) plus the named positive controls. Add a thaw note under docs/audits/dnd5e-srd-5.1-final/thaw-notes/ (2026-11-01-eshyra-o9bd-16-7-1-...md) listing every changed record and why. Do not weaken any existing test; if an existing pin encoded the wrong value, change it only with the source quote in the thaw note. Do not touch freeze-manifest hashes or the freeze guard.\n",
+  "notes": "COMPLETE b9c87d26 (verify:worktree PASS 387 files/7255 tests; verify:dnd5e-srd-pack matches). F3: subject matcher rejects candidates that are objects of prepositions/embedded clauses/followed by another NP; new explicit forms 'other creatures have (dis)advantage on attack rolls against the target/it' and 'the next attack roll made against this target ... has' -> subject attackers-against-target. Guiding Bolt: target->attackers-against-target, scope=printed next-attack limit. Irresistible Dance: target->attackers-against-target scope attack-rolls. Holy Aura: wrong caster modifier OMITTED (chosen creatures not representable). Foresight gained its printed attackers-against-target disadvantage (previously unprojected). Controls unchanged. F4: all-damage resistance rejects but/except/other than; Empty Body effect omitted; Armor of Invulnerability + Petrified unchanged. F5: Hit-sentence save-owned damage -> saves[0].damageOnFailure (+damageOnSuccess half where printed), removed from hitDamage and entry damage; 14 audited attacks plus siblings Poisonous Snake, Scorpion, Spider (flat 1 piercing now hitDamage) and Guardian Naga Spit Poison (no hitDamage); Bone Devil/Erinyes/Ettercap/Balor unchanged. 21 records changed. Tests: sourceFidelityProjections.test.ts (new); creatureAttackGrammar.test.ts pin partitioned at the save clause (source quote in thaw note). Regenerated docs/inventories semi-structured-boundary. Thaw note: 2026-11-01-eshyra-o9bd-16-7-1-source-true-projections.md.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:21:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:40:25Z",
+  "started_at": "2026-11-01T08:25:48Z",
+  "closed_at": "2026-11-01T08:40:25Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.7.1",
+      "depends_on_id": "eshyra-o9bd.16.7",
+      "type": "parent-child",
+      "created_at": "2026-11-01T02:21:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

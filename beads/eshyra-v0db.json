@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-v0db",
+  "title": "Add kindSchemas validator regression tests for FeatureChoice requiresOption/optional",
+  "description": "eshyra-mdke.1 added requiresOption (sibling must exist and list optionId) and optional:true validation in optFeatureChoiceArray (kindSchemas.ts). It is exercised only via the real pack and the importer guard tests; add focused negative validator tests (missing sibling, optionId not in sibling from, optional:false).",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:44:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:30:07Z",
+  "started_at": "2026-10-09T05:20:31Z",
+  "closed_at": "2026-10-09T05:30:07Z",
+  "close_reason": "Merged PR #632",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-v0db",
+      "depends_on_id": "eshyra-mdke.1",
+      "type": "discovered-from",
+      "created_at": "2026-10-08T23:44:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-v0db",
+      "depends_on_id": "eshyra-v0db.1",
+      "type": "blocks",
+      "created_at": "2026-10-09T00:20:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

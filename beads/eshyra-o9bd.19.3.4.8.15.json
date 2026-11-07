@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.8.15",
+  "title": "Dispatch: Opus-review repairs batch G (Sonnet 5.5, attempt 1)",
+  "description": "Repair batch G for the integration branch eshyra-o9bd.19.3.4.8, from the adversarial Opus review bead eshyra-o9bd.19.3.4.8.14 (run `bd show eshyra-o9bd.19.3.4.8.14`; read S34 (reopened, combatant side), S35, S36, S37, S38, S39, S40 in full, each with a registry repro). Lifecycle design: `bd show eshyra-o9bd.19.3.4.8.10` (D1-D9). Keep every lifecycle rule inside nextCombatantLifecycle (D1).\n\nSUPERVISOR DECISIONS:\nD2 REVERSED (closes S40 structurally, SRD rule:healing: a creature that has died can't regain hit points until magic restores it to life): a dead combatant stays dead in BOTH death-rule modes; positive hpDelta and non-'dead' explicit statuses on a dead combatant are refused. No revival operation exists in this PR. Update the I8 invariant/comments, the transition matrix rows, the combatant tests that asserted monster revival (replace with the refusal), and the update_combatant description (\"a dead combatant cannot be healed\" for both modes). Monster suffocation still kills (monster default) and needs no block because death is now terminal.\nS34 (combatant): resolveCombatantDeathSave (encounterCombatants.ts ~2098) must arm the seeded recovery schedule whenever the transition result is stable, including the zero-effective-max natural-20 third success; route the schedule through the same path as an ordinary third success. Registry test: PC goblin 1/1, adjust_exhaustion 4, saves 12, 12, 20 → stable with a schedule; then advance_time settles per D5.\nS35: under monster rules, damage to a combatant at 0 HP (unconscious from a knockout) kills it (main's behaviour; rule:stabilizing-a-creature / monsters die at 0). Critical or not. Fix combatantLifecycle.ts (~274) and the matrix row at combatantLifecycle.test.ts (~700).\nS36: a dying player-character combatant's turn is AVAILABLE for its start-of-turn death save, like a character's: begin_turn must not auto-complete a dying combatant's turn, so record_death_save can run at the start of that turn; end-of-turn effects (hydra regrowth) settle when its turn actually ends (the next begin_turn). Stable/unconscious/dead stay unavailable as today. Update the begin_turn description to state this. Registry test reproducing the review's hydra sequence: the save is recorded before regrowth; with two failures banked a failed save kills it before any regrowth.\nS38: admitting/projecting a monster-rules campaign actor that is unconscious at 0 HP (knocked out) keeps it unconscious at 0 HP and leaves the canonical actor unchanged (main behaviour); only real terminal causes make it dead. Registry test through close and start_encounter.\nS37 (nit, accepted): set_surprised description: when creatures on both sides are hiding, call set_surprised once per side, each with the passive comparisons for that side's hiders against the other side's observers. Add a registry test for the both-sides case through two calls.\nS39 (nit, accepted): record_death_save and stabilize_character descriptions (combatant parameter): combatant death saves and stabilization happen only during the combatant's active combat instance; a dying player-character actor whose encounter closed continues its death saves when it is next brought into an encounter. No behaviour change.\n\nEach fix with a generalized regression through the tool registry where model-facing. Run `npm run verify:worktree` before the final commit; commit; record a completion report (files, each finding → test names, any deviation, verify result) with `bd update <your bead> --append-notes`, then `bd close <your bead>`. Do not push, open a PR, or modify any other bead.",
+  "acceptance_criteria": "Listed findings repaired with generalized regressions; D2 reversed; npm run verify:worktree green before commit; completion report in bd notes; bead closed by the agent.",
+  "notes": "Completed on branch eshyra-o9bd.19.3.4.8.15, final commit c79a8dbe (60542649 + c79a8dbe). Files: src/state/combatantLifecycle.ts, encounterCombatants.ts, actionEconomy.ts; orchestrator toolBeginTurn/toolUpdateCombatant/toolSetSurprised/toolRecordDeathSave/toolStabilizeCharacter descriptions; tests: combatantLifecycle, encounterCombatants, exhaustion, actionEconomy, NEW combatantRepairsBatchG.test.ts.\nD2 reversed: dead stays dead in both modes (lifecycle heal exception, I8 assertion, upsertCampaignActor exception removed; actor dead->non-dead refused). Tests: combatantLifecycle 'keeps dead terminal in both death-rule modes' + matrix row 'monster dead: healing refused'; encounterCombatants 'keeps ordinary monster-rules death terminal'; exhaustion state-aware generator rewritten (monster killed in cycle 2, refusedDamage/Heal/Revival classes).\nS34: resolveCombatantDeathSave arms schedule unless nat20 actually revives; outcome derived from lifecycle.status. Test: batchG 'S34' table 4 rolls x max{positive,zero} x {blocked,unblocked} via record_death_save (incl. PC goblin 1/1 exh 4 12,12,20 -> stable, advance_time settles).\nS35: monster damage to unconscious-at-0 kills. Tests: matrix rows (damage, critical) + S29 registry test.\nS36: dying PC combatant turn available; begin_turn description updated. Tests: batchG S36 (hydra save-before-regrowth; two failures banked -> dead, no regrowth); actionEconomy hydra test updated to new flow.\nS38: projection keeps unconscious monster knockout. Tests: batchG S38 table (unconscious monster, dead, dying PC, stable PC) through close and start_encounter, projection+actor.\nS37: description + batchG both-sides two-call registry test (mixed call refused). S39: description assertions.\nNegative proof: reverted each fix and confirmed new tests fail (S34: 'third save 20, zero, unblocked'; S38; S36 x2; S35 x3; D2 7 failures against pre-batch lifecycle/encounterCombatants sources); restored.\nDeviations: none code-forced. exhaustion generator min counts adjusted (damage 7, heal 5) because the dead monster can no longer be revived. Existing actionEconomy test asserting a dying hydra's turn auto-completed was updated to the S36 behaviour.\nverify:worktree: pass, 322 files passed / 2 skipped, 5835 tests passed / 3 skipped (documented skips only).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-03T22:34:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-03T22:43:08Z",
+  "started_at": "2026-10-03T22:35:07Z",
+  "closed_at": "2026-10-03T22:43:08Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8.15",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8",
+      "type": "parent-child",
+      "created_at": "2026-10-03T17:34:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

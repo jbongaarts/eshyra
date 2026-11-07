@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fk9x",
+  "title": "Inventory classifies typed proficiency fields as model-adjudicated",
+  "description": "After eshyra-olc5.7.1, the semi-structured boundary inventory (docs/inventories/o9bd-18-8-8-semi-structured-boundary.*) lists proficiency typed fields (mechanics.effects[].skills[], savingThrows[], armor[]; option mechanics.effects[] kind/grant/skills[]) as model-adjudicated with the generic string-shape note. They are validated fail-closed by kindSchemas.ts (closed vocabularies), so the disposition should be complete with a typedSchemaOrConsumer reference. Fix the classifier in packages/core/scripts/inventory-semi-structured-boundary.ts and regenerate the inventory.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T02:34:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T02:36:27Z",
+  "closed_at": "2026-10-10T02:36:27Z",
+  "close_reason": "Absorbed into eshyra-olc5.7.2 (same PR as eshyra-olc5.7; findings discipline: current-PR work is not deferred to follow-up beads)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-8uh",
+  "title": "Make CLI package executable after install",
+  "description": "Review finding from loreweaver-den. packages/cli declares a bin target, but src/index.ts has no shebang; installed loreweaver may fail on POSIX shells unless packaging injects one. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Built dist/index.js starts with a valid shebang; package smoke test can run the loreweaver bin after npm pack or equivalent install; Windows execution remains covered.",
+  "notes": "Fix: #!/usr/bin/env node shebang in packages/cli/src/index.ts; tsc preserves it into dist/index.js. RED: new test 'built dist/index.js starts with a node shebang' failed pre-fix. GREEN: 205 pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:45:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:44Z",
+  "started_at": "2026-05-21T05:34:00Z",
+  "closed_at": "2026-05-21T22:57:13Z",
+  "close_reason": "Verified merged: PR #19 (67y) and PR #22 (8uh) are merged to main; re-closing after beads-state drift reverted the original closes.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

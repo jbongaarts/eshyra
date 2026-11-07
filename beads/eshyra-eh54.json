@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eh54",
+  "title": "Add first-class adventure module support",
+  "description": "Problem\n\nEshyra currently has campaign state persistence and static rules-pack content, but it does not have a first-class representation for pre-written adventure or dungeon module content. That leaves no clear place for starter adventure content to go and forces setting-scale material such as the Emberfall setting to carry responsibilities that belong to a scenario-scale module.\n\nA campaign template should represent a broad reusable world or setting, in the same general scope category as The Grand Duchy of Karameikos, Dragonlance, or Forgotten Realms. A dungeon or adventure module should represent an authored playable scenario, in the same general scope category as Castle Amber or The Lost Mine of Phandelver.\n\nGoal\n\nIntroduce adventure modules as first-class immutable authored content, distinct from rules packs, campaign templates, and mutable campaign instance state. A campaign instance should be able to bind to one or more active modules via a campaign-owned adventure run / module binding, expose bounded module context to the DM runtime, persist module progress, and record player-driven deviations without mutating the source module.\n",
+  "design": "Architectural rule - four layers, defined in ADR 0012 (eshyra-eh54.1):\n\n1. Rules packs define mechanical truth (immutable authored/imported source).\n2. Campaign templates define reusable worlds/settings (immutable setting-scale source).\n3. Adventure modules define authored playable scenarios (immutable scenario-scale source).\n4. Campaign instances define actual play history and mutable state.\n\nAdventure modules are immutable authored scenario content. A campaign may contain one or more campaign-owned adventure runs or module bindings that reference modules and record module-specific progress. These adventure runs are part of campaign instance state, not a fifth content/state layer. Do not introduce an \"adventure instance\" as a peer top-level layer.\n\nRuntime adaptation belongs in campaign instance state as discovered facts, altered facts, completed objectives, revealed secrets, encounter outcomes, and explicit deviations from module assumptions - never written back to the module source.\n\nThis epic should avoid third-party adventure conversion until the module schema and runtime destination exist. The frozen starter-content bead can remain blocked until this epic creates somewhere for that content to go.\n\nNaming glossary (see ADR 0012 and eshyra-eh54.7):\n- Emberfall - the setting-scale village/region; campaign-template concept.\n- The Hollow Beneath Emberfall - the first-party starter adventure module title (scenario-scale).\n- Ember Hollow - informal project shorthand only; not a separate canonical entity.\n- EMBERFALL_HOLLOW - the existing legacy sample that conflates setting and scenario, to be split by later eh54 work.\n",
+  "acceptance_criteria": "- Eshyra has a documented architecture distinction between the four layers: rules packs, campaign templates/settings, adventure modules, and campaign instances (ADR 0012).\n- Adventure module content is represented as immutable authored source material.\n- Module progress is represented as mutable campaign instance state via a campaign-owned adventure run / module binding, not as a fifth peer layer.\n- A campaign instance can bind to one or more active adventure modules without mutating module source.\n- The DM runtime has a path to receive bounded module context without dumping an entire module each turn.\n- The Emberfall setting is preserved as setting-scale campaign template content, not forced to become the starter module itself.\n- Follow-up work exists for a small first-party starter module (The Hollow Beneath Emberfall) that serves as the gameplay hello-world scenario.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T06:11:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "labels": [
+    "adventure-module",
+    "campaign-runtime",
+    "domain-model"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eh54",
+      "depends_on_id": "eshyra-ss08.8",
+      "type": "relates-to",
+      "created_at": "2026-07-09T23:28:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

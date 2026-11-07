@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-prai",
+  "title": "Generate refreshed D&D SRD importer audit bundle",
+  "description": "Generate a new self-contained D&D SRD 5.1 importer audit bundle from current main, including captured checks, tests, pack verification, source coverage reports, PDF text, metadata, and ZIP archive.",
+  "acceptance_criteria": "A fresh audit bundle and ZIP are generated from current origin/main; captured command outputs are reviewed for nonzero exits; archive integrity and metadata commit are verified.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T13:06:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-15T13:08:19Z",
+  "started_at": "2026-06-15T13:06:10Z",
+  "closed_at": "2026-06-15T13:08:19Z",
+  "close_reason": "Generated and validated refreshed D&D SRD 5.1 audit bundle from commit eb30391; all captured commands exited 0, ZIP integrity passed, and standard output copies match.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,67 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.13",
+  "title": "Capability: apply table-defined charge loss from external item events",
+  "description": "Add a provider-neutral, fail-closed path for an external event on an item state machine to deduct the source-defined amount from that item’s economy. The concrete retained case is Cube of Force: when its barrier is targeted by listed spells or contacts listed effects, the event must resolve the matching table:cube-of-force-charges-lost row and deduct the printed charges without charging the item owner’s action.\n\nCurrent gap: item_state_event accepts instanceId and an exact condition, then applies a state transition; it has no event context or economy-deduction input. Cube of Force therefore keeps its full source predicate on each face self-loop, but the event effect cannot execute and the enclosing machine remains engine-pending. Do not infer a table row or charge amount from prose or invent a new deduction mechanism without an explicit contract.",
+  "acceptance_criteria": "Define explicit inputs, exclusions, identity/revision, residual DM interpretation, and fail-closed behavior for missing or ambiguous event context. Bind the operation to the generated item condition/effect/table reference. Implement deterministic economy mutation for a uniquely resolved table row with no owner action/resource cost. Add generated-pack conformance proving the real Cube of Force representation drives the deduction, and prove unknown/unmatched events leave both state and charges unchanged.\n- item_state_event REFUSES atomically (no state, economy, or timer change; no success result) any condition transition whose effects it cannot execute; effectless condition events keep working. (PR #663 review P2, user 2026-10-14.)\n- A condition SELF-LOOP (from == to) preserves pending timers and cooldown anchors unless the source explicitly authorizes a reset; Cube of Force same-face contact must not restart the 1-minute barrier duration. Permanent evidence on a configured Cube face and on the Immovable Rod DC 30 self-loop.\n- Pre-freeze: blocks eshyra-o9bd.14.",
+  "notes": "USER 2026-10-14: everything under eshyra-olc5 is required pre-freeze unless there is a compelling reason otherwise; linked as blocker of eshyra-o9bd.14. Took ownership of PR #663 review P2 (effect-bearing condition events succeed partially; self-loop re-anchors the Cube timer), which is therefore not a #663 finding.\nMerged PR #666 (head 6bf9e85f) after Sol r4 CLEAN (eshyra-olc5.13.7); r1-r3 findings S1-S5 repaired (.13.3/.13.5 Haiku, S5 captain).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-14T22:02:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-15T06:03:23Z",
+  "started_at": "2026-10-15T04:35:05Z",
+  "closed_at": "2026-10-15T06:03:23Z",
+  "close_reason": "Merged via PR #666",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.13",
+      "depends_on_id": "eshyra-olc5.13.5",
+      "type": "blocks",
+      "created_at": "2026-10-15T00:26:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.13",
+      "depends_on_id": "eshyra-olc5.11.4",
+      "type": "discovered-from",
+      "created_at": "2026-10-14T17:02:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.13",
+      "depends_on_id": "eshyra-olc5.13.1",
+      "type": "blocks",
+      "created_at": "2026-10-14T22:48:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.13",
+      "depends_on_id": "eshyra-olc5.13.3",
+      "type": "blocks",
+      "created_at": "2026-10-15T00:01:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.13",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-14T17:02:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

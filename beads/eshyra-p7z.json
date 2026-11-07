@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p7z",
+  "title": "Merge dependabot PRs with fixed CI",
+  "description": "Review the three open dependabot PRs, verify dependency changes do not break functionality, fix any Biome CI issues on the PR branches, and merge them after verification.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-30T15:39:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:42Z",
+  "started_at": "2026-05-30T15:40:00Z",
+  "closed_at": "2026-05-30T18:15:35Z",
+  "close_reason": "Merged all three Dependabot PRs after fixing and verifying CI issues",
+  "comments": [
+    {
+      "id": "5e2eeead-82d7-583f-96e1-27429a919a41",
+      "issue_id": "eshyra-p7z",
+      "author": "Joseph Bongaarts",
+      "text": "Evidence: PR #113 updates @anthropic-ai/claude-agent-sdk 0.3.143 -> 0.3.158; CI typecheck/test/smoke passed, build-test fails only npm run check because packages/core/package.json formatting was changed away from Biome output. PR #114 updates pdfjs-dist 4.10.38 -> 5.7.284 and pdfkit 0.15.2 -> 0.18.0; CI is green. PR #115 updates Biome 1.9.4 -> 2.4.16, TypeScript 5.9.3 -> 6.0.3, and @types/node 24.12.4 -> 25.9.1; CI install smoke passes, build-test fails nodeRuntimePolicy because @types/node must stay on 24.x for Node 24 runtime support.",
+      "created_at": "2026-05-30T15:43:34Z"
+    },
+    {
+      "id": "2ee9205e-eb23-5fd7-bdab-a87f6fc9faa7",
+      "issue_id": "eshyra-p7z",
+      "author": "Joseph Bongaarts",
+      "text": "Verification for PR #113 branch: npm run check -> exit 0; npm run typecheck -> exit 0; npm run test -> exit 0 with 899 passed, 3 skipped across 80 files. Root cause confirmed as mechanical packages/core/package.json formatting drift; fix is npm run format output only.",
+      "created_at": "2026-05-30T15:45:32Z"
+    },
+    {
+      "id": "4be7d388-ac92-5d62-b2fa-22c96a4a7d02",
+      "issue_id": "eshyra-p7z",
+      "author": "Joseph Bongaarts",
+      "text": "Evidence on PR #115: after reverting @types/node to ^24.0.0 and npm install, the nodeRuntimePolicy targeted test passes. npm run check now fails earlier because Biome 2.4.16 rejects the existing Biome 1.9.4 config schema, organizeImports key, and files.ignore key; root cause is an unmigrated Biome 2 config, not application behavior.",
+      "created_at": "2026-05-30T15:46:54Z"
+    },
+    {
+      "id": "2a5b5954-c7ab-5ad3-9941-48daf252e0e0",
+      "issue_id": "eshyra-p7z",
+      "author": "Joseph Bongaarts",
+      "text": "Merged Dependabot PRs #113, #114, and #115. #113 fixed by formatting packages/core/package.json for the SDK bump; local gates passed before push and GitHub CI/CodeQL/install-smoke were green before merge. #114 had no code changes beyond dependency update and was already green before merge. #115 fixed Node runtime policy by keeping @types/node on 24.x, migrated biome.json to Biome 2, applied Biome 2 safe import/format fixes, resolved post-merge package.json/package-lock conflicts, and passed npm run check, npm run typecheck, npm run test locally plus GitHub CI/CodeQL/install-smoke before merge. Filed follow-up loreweaver-2pu for non-failing Biome 2 unused-code warnings.",
+      "created_at": "2026-05-30T18:15:22Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.9.2",
+  "title": "Gate ledger-owned source regions on emitted prose or structured equivalents",
+  "description": "Finding source:\n- Fable found rule:skills dropped post-list prose even though source coverage considered the region owned by rule:skills.\n- This proves unaccounted=0 is insufficient when owner assignment does not prove emitted content.\n\nAcceptance criteria:\n- Extend source-region/source-coverage gates so owned body prose must appear in emitted record prose or an explicit structured equivalent.\n- Handle embedded list/table interruption cases.\n- Add regression fixture modeled on rule:skills p. 77-78.\n- Reports should distinguish owned-but-unemitted from truly represented.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:28:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-03T15:49:17Z",
+  "started_at": "2026-07-03T03:20:19Z",
+  "closed_at": "2026-07-03T15:49:17Z",
+  "close_reason": "PR #395: source-region ledger emission proofs. Every owned (record:/child-of:) prose region must prove emission: full-body containment, bullet-aware sentence containment (handles embedded list/table interruption), machine-proven label-block coverage against the target record's structured fields + reviewed label vocabulary, or a reviewed STRUCTURED_EQUIVALENT_REGIONS entry. unemitted fails assertSourceRegionLedger closed; report distinguishes owned-but-unemitted from truly represented via summary.ownedEmission. Regression fixture modeled on rule:skills p.77-78 added. Gate immediately caught real truncation: wrapped meta lines dropped Werebear neutral-good/Werewolf chaotic-evil/Bandit(+Captain) alignments; parseCreatures fixed, pack regenerated.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.9.2",
+      "depends_on_id": "eshyra-o9bd.18.9",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:28:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.5",
+  "title": "Reconcile active SRD/engine Bead authority with ADR 0020",
+  "description": "Program-level authority migration for the active D&D SRD/rules/capability task graph.\nReconcile claims and invariants, not just terminology. Preserve real source/discovery/\ncapability/adjudication/state defects; rewrite surviving responsibility to its ADR-0020\nboundary; retire obsolete proof/census machinery with named replacement ownership; and\nrepair dependency edges that preserve superseded global closure. Do not create duplicate\nreplacement Beads when existing owners can be corrected.",
+  "acceptance_criteria": "- Active rules-transition and cross-tree capability/re-freeze owners are reconciled against ADR 0020 and accepted transition design.\n- Operative title/description/AC no longer rely on notes to contradict obsolete global closure.\n- Obsolete global census/registry/proof tasks are retired with replacement responsibilities named.\n- Dependencies no longer make universal classification, source-negative proof, or complete legacy engine backlog prerequisites for re-freeze.\n- Bounded source-fidelity and positive-capability proof mechanisms retain appropriately strong evidence requirements.\n- Discovery telemetry does not inherit an unauthorized self-authenticating proof-object standard.\n- bd dep cycles is clean and updated state is synced to refs/beads/state.",
+  "notes": "ADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\n2026-09-10 reconciliation completed: operative SRD/engine/re-freeze\nauthority was migrated to ADR 0020; stale global census/proof dependency\nedges were removed; obsolete duplicate/global-closure owners were retired;\nno replacement Beads were created. bd dep cycles passed before closure.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-02T05:52:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-11T00:00:42Z",
+  "started_at": "2026-09-10T23:51:23Z",
+  "closed_at": "2026-09-11T00:00:42Z",
+  "close_reason": "ADR-0020 Beads authority migration completed: active SRD/engine/re-freeze requirements and dependencies reconciled; obsolete global closure/census owners retired; graph cycle check passed.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.5",
+      "depends_on_id": "eshyra-o9bd.19.6",
+      "type": "parent-child",
+      "created_at": "2026-09-02T00:52:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

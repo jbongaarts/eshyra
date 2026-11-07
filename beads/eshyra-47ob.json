@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-47ob",
+  "title": "Invoke adventure module selector for new sessions at CLI session start",
+  "description": "Split from eshyra-w8f2 (which now implements only the replay-on-resume half).\n\n## Context\neshyra-w8f2 asked for two session-start branches: (1) replay the DM's last output when resuming an existing campaign, and (2) invoke an adventure module selector when there is no prior DM output (a fresh campaign). Branch (1) is implemented and merged. Branch (2) was deferred because eh54 (adventure module support) landed module loading, binding (startAdventureRun), and audit, but never a *selector* — nothing lists installed adventure modules under <root>/adventure-modules/ and lets the player pick one, and nothing is wired into the CLI session-start path. The current new-campaign flow (resolveCampaign in packages/cli/src/playSession.ts) just auto-forks from deps.pack with no choice.\n\n## What needs to be done\n1. Build a module selector: enumerate installed adventure modules (adventureModulesDir(root), each holding adventure-module.json; load via loadAdventureModuleFromDir), present them, and accept a player choice through the CliIO seam.\n2. Wire it into the new-session branch: in playSession.ts launch(), the 'start_new' case where state.lastDmOutput === undefined (brand-new campaign, no prior DM output) should invoke the selector and bind the chosen module to the campaign via startAdventureRun, instead of (or alongside) the current auto-fork from deps.pack.\n3. Handle the empty/none case (no installed modules) gracefully — fall back to current behavior.\n4. Tests for the selector and the new-session-with-selector path.\n\n## Pointers\n- Seam already in place: playSession.ts renderResumeRecap() documents this deferral; the 'start_new' + undefined lastDmOutput branch is the hook point.\n- Existing infra: packages/core/src/campaign/adventureRun.ts (startAdventureRun, listAdventureRuns), packages/cli/src/adventures.ts (makeModuleResolver pattern, adventureModuleDirName, loadAdventureModuleFromDir), packages/cli/src/dataRoot.ts (adventureModulesDir).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-22T03:15:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-23T21:46:57Z",
+  "closed_at": "2026-06-23T23:05:02Z",
+  "close_reason": "Implemented and merged in PR #280 (squashed to main as 59ad611): adventure-module selector at fresh-campaign session start, plus the renderResumeRecap comment fix and the '1abc' parse hardening.",
+  "comments": [
+    {
+      "id": "eb1320cb-651e-5bd1-970e-ee266f833486",
+      "issue_id": "eshyra-47ob",
+      "author": "Joseph Bongaarts",
+      "text": "Implemented in PR #280 (branch eshyra-47ob-module-selector): core listAdventureModulesInDir/listBundledAdventureModules enumeration, CLI playModuleSelector (chooseAdventureModule + bindAdventureModule), wired into launch() start_new + no-prior-DM-output branch, PlayDeps.listAdventureModules seam (default = bundled + <root>/adventure-modules/). Also fixed the renderResumeRecap comment from w8f2/#277. 2316 tests pass. Awaiting review/merge.",
+      "created_at": "2026-06-23T22:05:07Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

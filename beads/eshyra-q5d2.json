@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-q5d2",
+  "title": "Formalize rules-pack compiler & executable-curation architecture (ADR + guide + agent guidance)",
+  "description": "The historical SRD 'importer' has evolved into a source-grounded rules compiler and executable curation system. Playtesting showed the pack must be a semantic substrate for the agreed model/engine execution boundary, not just a reference corpus. Make this durable architecture: (A) a new ADR that refines ADR 0007 (preserving its source-authority rule); (B) a canonical guide docs/rules-pack-compiler.md; (C) concise agent-guidance updates in packages/core/scripts/importers/AGENTS.md, docs/importer-fix-protocol.md, and the root AGENTS.md pointer. Documentation-only: no generated pack records, no importer refactor, no schema/engine/Pathfinder implementation. Must give a future agent a clear decision hierarchy for: parser vs declarative curated spec vs procedural projection vs model adjudication vs engine dependency, and the grounding evidence each requires.",
+  "design": "Preserve ADR 0007 source-authority + model-assistance boundary; refine the reference-completeness-first framing. Use current execution-boundary vocabulary (code-enforced/model-adjudicated-supported/partial/implementation-required/design-blocked, families F1-F10/D1-D2), the three-layer magic-item state contract, and the rule-disposition/coverage registers. Terminology: rules-pack compiler / executable curation / importer (existing paths) / curator. No mass rename during the thaw.",
+  "acceptance_criteria": "ADR created at next available number cross-referencing 0007; canonical guide added; three agent files updated concisely with no duplicated policy block; all internal links resolve; npm run check + hidden-unicode pass; no generated pack artifact or freeze manifest changed; PR opened targeting main.",
+  "notes": "Relates to (does not block) epic eshyra-o9bd (SRD thaw/re-freeze). Bead-dep wiring skipped: bd refuses task->epic block edges. Documentation-only PR.\nPR #417 opened (ready for review, not draft) targeting main: https://github.com/jbongaarts/eshyra/pull/417 . ADR 0017 + docs/rules-pack-compiler.md + agent-guidance updates. Verified: check/typecheck/verify:worktree green (3650 passed/19 skipped); 0 broken internal links; records.json byte-identical to origin/main; no freeze-manifest update required. Awaiting review/merge (do not self-merge per repo policy).\nPR #417 review round 1 addressed (commit 6fbdc08): (1) §6 cover example -> clause-level hybrid ownership (context model-adjudicated; ±2/±5 AC math is F9 engine); (2) corrected eshyra-2zyy vs eshyra-o9bd.14 (o9bd.14 = re-freeze gate; 2zyy = re-enables thaw-note gating after); (3) restored 'shared semantic grammar' as its own §10 outcome (6 outcomes); (4) tightened ADR §3/guide §3 terminology (curated spec = legitimate compiler input, not authoritative source). Docs-only; pack+audit artifacts byte-identical to origin/main; verify:worktree green 3650/19; 0 broken links.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-08T02:53:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-08T04:10:08Z",
+  "started_at": "2026-07-08T02:53:15Z",
+  "closed_at": "2026-07-08T04:10:08Z",
+  "close_reason": "Merged via PR #417 (merge commit 9cc6866) into main. ADR 0017 + docs/rules-pack-compiler.md + agent-guidance updates landed; two review rounds addressed (cover clause-ownership, bead refs, shared-grammar outcome, source-authority terminology, +2/+5 sign). Docs-only; no pack/freeze artifact change. Branch + worktree cleaned up.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

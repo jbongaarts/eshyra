@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.9.3",
+  "title": "Review: Sol bounded review of PR #713 after the errata decision (eshyra-o9bd.19.6.7.9 @ d900749f)",
+  "description": "Read-only Sol review of PR #713 at exact head d900749fc107f41c1e10b830e5cc29c3897ce94e.",
+  "notes": "Captain: dispatched gpt-6.1-sol high, PGID 290240.\nS1. REVIEW IDENTITY, SCOPE AND AUTHORITY. Bounded read-only review of PR #713 at exact HEAD d900749fc107f41c1e10b830e5cc29c3897ce94e on branch eshyra-o9bd.19.6.7.9.3. Inspected the full net git diff origin/main...HEAD: only packages/core/src/character/levelUpEngine.ts, packages/core/src/rules/deterministicCapabilityInventory.ts and packages/core/test/levelUpEngine.test.ts. Read live bd show for this bead, parent .19.6.7.9 and every child (.9.1/.9.2/.9.3), including the superseding 2026-11-06 USER DECISION and prior Sol S3/S4; ran bd memories errata and recalled official-errata-may-override-srd-omission. Applied that specific authorized errata decision without reopening it, AGENTS.md, design-and-pr-review-policy.md and ADR 0020. Effective profile: rules-clause-complete within the assigned HP attribution/advancement boundary. refs/beads/state is the stale 2026-09-09 projection 9e4bb40c789e3364b1605e7321c1537117a4ca02; live Beads supplies current authority/status.\n\nS2. NON-MATERIAL / ATTRIBUTION REPAIR CONFIRMED; NO DEFECT. levelUpEngine.ts:162-166 and :1760-1766 explicitly credit the minimum to the official 2018 Player's Handbook errata, adopted as separate authority, and explicitly state SRD 5.1 p.56 omits it. level-up-v1 at deterministicCapabilityInventory.ts:1951 discloses fixed, rolled and Constitution-recompute minimums with the same separation. levelUpEngine.test.ts:863-891 credits the errata and protects CON -4/fixed d6 -> 1 and CON -1/natural 1 -> 1. Inspected the vendored SRD_CC_v5.1.pdf p.56 directly with pdftotext: 'Roll that Hit Die, add your Constitution modifier to the roll, and add the total to your hit point maximum.' The following sentence permits the fixed class value, the rounded-up die average; neither sentence states a minimum. No remaining SRD-floor attribution was found in the affected engine, declaration or tests. The net diff has no source, importer, generated pack or provenance change; no errata wording is copied into the SRD pack. The brief errata quotation stays in code/test comments, outside the pack.\n\nS3. NON-MATERIAL / CONSISTENT EXECUTION CONFIRMED; NO DEFECT. Executable HP arithmetic is unchanged from main: fixed helper levelUpEngine.ts:1772-1773, rolled path :1797-1800 and CON recompute :1543-1548 all use Math.max(1, base + CON). Base maximum projection :837-848 adds the positive increment; recompute :1560-1562 adds that increment and the retroactive adjustment. ASI selection :1460-1483 only increases scores by 1 or 2, so a valid sheet's CON modifier cannot decrease. Independent source-TypeScript probe /tmp/eshyra-713-errata-review.mts: Wizard level 3, CON 1 -> 3 (modifier -5 -> -4), old maximum 6, real level-4 CON/cantrip/spellbook choices: BOTH fixed and rolled natural-1 preview yield increment 1, retroactive adjustment +3, maximum 6 -> 10. SRD p.56 separately says a CON-modifier increase of 1 raises maximum by 1 'for each level you have attained'; the errata minimum remains distinct authority. Diagnostic probes are temporary evidence, not proposed permanent tests. Existing regression assertions protect the requested boundary; no test edits or new permanent proof machinery are warranted by this comment/declaration repair.\n\nS4. NON-MATERIAL / PRIOR .9.2 S3 AND S4 ARE MOOT AT THIS HEAD. Re-ran the prior failing state dimensions using this worktree's SOURCE imports, real bundled resolver, in-memory SQLite, sheet store, XP 300/eligible advancement, immutable rollDice evidence, real Wizard level-2 subclass/spell choices, applyLevelUp, saved sheet and progression ledger. CON 6/modifier -2, max 4/current 1, natural 1 now produces max 5/current 2/alive. CON 3/modifier -4, max/current 2, natural 2 now produces 3/3/alive. The prior S4 natural-1 sibling at CON 3 likewise previews and applies 2 -> 3, rather than previewing -1 and throwing. Fixed-average CON 1/modifier -5, max/current 1 now produces 2/2/alive. Controls CON 6/max=current 4/natural 1 and CON 8/max 5/current 1/natural 1 also gain 1 maximum/current HP. All six cases retain alive state, save the same positive maximum, and append exactly one progression event. projectToLiveCharacter :2084-2113 adds the positive maximum delta to current HP and caps at effectiveHpMax; for valid initial HP and unchanged exhaustion that cap is nondecreasing. No negative-increment route survives in the authorized fixed/rolled/CON-recompute paths. Consequently this repair does not create the zero-HP lifecycle transition or negative-maximum preview/apply conflict reported at 032e90a3. Those findings' removed-path repair obligations are superseded by the accepted authority decision; no lifecycle patch is required here.\n\nS5. VERIFICATION AND LIMITS. Targeted read-only runs: npx vitest run packages/core/test/levelUpEngine.test.ts packages/core/test/guidedLevelUpFlow.test.ts --no-cache --configLoader runner: 43 passed; npx vitest run packages/core/test/deterministicCapabilityInventory.test.ts packages/core/test/levelUpFeatureChoices.test.ts --no-cache --configLoader runner: 59 passed. Total 102 tests passed in 4 files. Independent probe assertions passed for the six live transitions and two CON recompute previews above. No material finding and no independent non-material defect admitted. This is a bounded attribution and HP-path review, not a claim of universal rules/state correctness. No repository files edited, formatted or created; no build, verify:worktree, full suite, commit, push, GitHub comment or merge. Only the diagnostic script under /tmp was written. Last repository status was clean and HEAD remained d900749fc107f41c1e10b830e5cc29c3897ce94e. Findings recorded solely on this review bead; no other bead modified. Beads sync/push is excluded by this explicit read-only dispatch.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T03:16:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T03:20:30Z",
+  "started_at": "2026-11-06T03:16:11Z",
+  "closed_at": "2026-11-06T03:20:30Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.9.3",
+      "depends_on_id": "eshyra-o9bd.19.6.7.9",
+      "type": "parent-child",
+      "created_at": "2026-11-05T21:16:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

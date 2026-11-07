@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wsv.4",
+  "title": "Prove bounded always-on memory footprint",
+  "description": "Add tests or measurement helpers showing always-on memory context remains bounded as session count grows.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T05:12:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:07Z",
+  "started_at": "2026-05-19T05:21:07Z",
+  "closed_at": "2026-05-19T05:22:23Z",
+  "close_reason": "Proved bounded always-on memory footprint with capped context selector; focused test and typecheck pass with RED evidence recorded.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-wsv.4",
+      "depends_on_id": "eshyra-wsv",
+      "type": "parent-child",
+      "created_at": "2026-05-19T00:12:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "1daebf5c-1eb6-53be-b302-6ed719208cb4",
+      "issue_id": "eshyra-wsv.4",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/memorySummary.test.ts -> failed as expected; selectAlwaysOnMemory API is missing while scene/session/arc/drilldown tests pass.",
+      "created_at": "2026-05-19T05:21:41Z"
+    },
+    {
+      "id": "d4dc5b30-a06e-56e2-9462-b966e7479300",
+      "issue_id": "eshyra-wsv.4",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN/REFACTOR verification: npm run test -- packages/core/test/memorySummary.test.ts -> passed (5 tests); npm run typecheck -> passed. Added selectAlwaysOnMemory with capped recent recaps, campaign bible, omitted count, and drilldown availability.",
+      "created_at": "2026-05-19T05:22:23Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

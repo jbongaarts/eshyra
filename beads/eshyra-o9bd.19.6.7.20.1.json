@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.20.1",
+  "title": "Dispatch: monster X/Day and innate per-day regain on a long rest (attempt 1)",
+  "description": "Implement the design on eshyra-o9bd.19.6.7.20 (description, DESIGN, ACCEPTANCE). Worktree .worktrees/eshyra-o9bd.19.6.7.20.1, branch eshyra-o9bd.19.6.7.20.1 from parent branch eshyra-o9bd.19.6.7.20 (origin/main 1f48027344197f8b73ad748a1a24610002e8c0ca). Implementer Claude Haiku 5.5 subagent.",
+  "notes": "Commit 3d49e973 on eshyra-o9bd.19.6.7.20.1. CHANGE: creature usage.perDay and innate per-day spell groups (usageCounters.ts deriveUsageEconomy) now derive resetKind long_rest (was dawn), so they regain on a long rest scoped to the monster (reset_usage event long_rest + combatantId) and not at dawn (SRD p.259). Magic-item and legacy charge dawn economies unchanged. Header and reset-table comments corrected. CONSUMERS TOUCHED: usageCounters.ts (derivation, EVENT_RESETS comments, formatUsageCounter/depletedHintFor are resetKind-driven), toolResetUsage.ts description, protocol.ts reset guidance (protocol.ts ~l.300-315), deterministicCapabilityInventory.ts reset_usage and complete_long_rest entries. rest.ts (party rests) and advance_time/item reset executor not changed: they never touched creature counters. MIGRATION: YES, additive 0055_creature_long_rest_usage.sql: UPDATE entity_usage_counter SET reset_kind='long_rest' WHERE owner_kind='combatant' AND reset_kind='dawn'. Reason: reset_kind is persisted per counter row and spendUsage reuses an existing row's stored kind, so re-deriving would not fix existing campaigns. Combatant economies are record-only (declared refused), so only creature rows match. Character/item rows untouched. schema.snapshot.sql regenerated and unchanged (data-only). TESTS: new usageCounters tests for Aboleth Enslave (long rest scoped to monster regains, dawn does not, party rest does not), innate group + Legendary Resistance long-rest vs dawn, magic-item declared dawn economy regains at dawn and not on long rest; migrationRunner test for 0055 rewrite of combatant dawn only. CORRECTED (not deleted) pins: usageCounters 'derives an X/Day...' resetKind dawn->long_rest and hint; 'derives per-day innate' resetKind; 'dawn restores per-day economies for every owner' rewritten into long-rest/dawn split; migrationLegacyAdoption applied lists and ledger extended to 55; persistence.test and checkpoint.restore latest-ledger pin 54->55. VERIFY: npm run verify:worktree EXIT 0 (400 files passed, 2 skipped; 7460 passed, 3 skipped) on the final tree, run in foreground without VITEST_MAX_FORKS. COMMIT: 3d49e973",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T07:54:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T08:07:30Z",
+  "closed_at": "2026-11-06T08:07:30Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.20.1",
+      "depends_on_id": "eshyra-o9bd.19.6.7.20",
+      "type": "parent-child",
+      "created_at": "2026-11-06T01:54:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}
