@@ -12,6 +12,7 @@ import {
   assertRecordRelationshipDeclarationsCoverBoundedShapes,
   buildRecordRelationshipManifest,
   bundledDnd5eSrdRecordRelationshipManifestSource,
+  CONDITION_NAME_LEAF_POINTER_SHAPES,
   DND5E_SRD_PACK_ID,
   expandTypedRelationships,
   getBundledDnd5eSrdPack,
@@ -579,6 +580,54 @@ describe('F3: the bounded coverage gate is two-directional', () => {
     ]);
   });
 
+  it('adds exactly the enumerated condition-name leaf shapes, still never a corpus-wide claim', () => {
+    expect(CONDITION_NAME_LEAF_POINTER_SHAPES).toEqual([
+      '/traits/*/mechanics/conditions/*/condition',
+      '/actions/*/mechanics/conditions/*/condition',
+      '/legendaryActions/entries/*/mechanics/conditions/*/condition',
+      '/reactions/*/mechanics/conditions/*/condition',
+      '/mechanics/effects/*/conditions/*',
+      '/mechanics/effects/*/failedSaveCondition',
+      '/mechanics/effects/*/onSuccessfulSave/condition',
+      '/mechanics/effects/*/condition',
+      '/variants/*/mechanics/effects/*/condition',
+      '/traits/*/mechanics/effects/*/condition',
+      '/actions/*/mechanics/effects/*/condition',
+      '/actions/*/mechanics/attacks/*/alternatives/*/condition',
+      '/traits/*/mechanics/effects/*/forms/*/statlineRefs/*/condition',
+      '/mechanics/stateMachine/transitions/*/condition',
+      '/mechanics/damage/*/typeOptions/*/condition',
+      '/useProfile/clauses/*/semantics/condition',
+      '/useProfile/clauses/*/semantics/failureCondition',
+    ]);
+  });
+
+  it('catches an emitted condition-name leaf shape left undeclared for its kind', () => {
+    for (const [kind, pointerPrefix] of [
+      ['creature', '/actions/*/mechanics/conditions/*/condition'],
+      ['ancestry', '/traits/*/mechanics/conditions/*/condition'],
+      ['magic-item', '/mechanics/effects/*/conditions/*'],
+      ['magic-item', '/mechanics/effects/*/failedSaveCondition'],
+      ['action', '/mechanics/effects/*/condition'],
+      ['equipment', '/useProfile/clauses/*/semantics/failureCondition'],
+    ] as const) {
+      const shipped = manifest.declarations.find(
+        (decl) => decl.kind === kind && decl.pointerPrefix === pointerPrefix,
+      );
+      if (!shipped)
+        throw new Error(`missing shipped (${kind}, ${pointerPrefix})`);
+      const without = buildRecordRelationshipManifest(
+        manifest.declarations.filter((decl) => decl !== shipped),
+      );
+      expect(() =>
+        assertRecordRelationshipDeclarationsCoverBoundedShapes(
+          pack.records,
+          without,
+        ),
+      ).toThrow(new RegExp(`${kind}${pointerPrefix.replaceAll('*', '\\*')}`));
+    }
+  });
+
   it('passes for the shipped manifest, which declares every bounded shape the pack emits', () => {
     expect(() =>
       assertRecordRelationshipDeclarationsCoverBoundedShapes(
@@ -1011,6 +1060,17 @@ describe('committed SRD pack relationship integrity (eshyra-o9bd.19.3.4)', () =>
     const justifiedExclusions = new Set([
       'condition|/mechanics/effects/*/condition|conditionEndsWhen',
     ]);
+    // eshyra-o9bd.19.3.5: overloaded `condition` fields whose prose leaves are
+    // excluded by (kind, pointer); conditionRelationships.test.ts verifies
+    // every such leaf is not a condition name.
+    const justifiedOverloadedPointers = new Set([
+      'magic-item|/mechanics/effects/*/condition',
+      'equipment|/useProfile/clauses/*/semantics/condition',
+    ]);
+    // The single printed non-condition value in a conditions list.
+    const justifiedLeafExclusions = new Set([
+      'magic-item:dust-of-sneezing-and-choking|/mechanics/effects/*/conditions/*|suffocating',
+    ]);
     const failures = pack.records
       .flatMap((r) => resolveRecordRelationships(manifest, r, stack))
       .filter((resolution) => {
@@ -1021,8 +1081,17 @@ describe('committed SRD pack relationship integrity (eshyra-o9bd.19.3.4)', () =>
           case 'indeterminate':
             return true;
           case 'excluded':
-            return !justifiedExclusions.has(
-              `${resolution.declaration.kind}|${resolution.declaration.pointerPrefix}|${resolution.relationFieldValue}`,
+            if (resolution.reason === 'leaf-value-exclusion')
+              return !justifiedLeafExclusions.has(
+                `${resolution.sourceRecordKey}|${resolution.pointer}|${resolution.rawValue}`,
+              );
+            return !(
+              justifiedExclusions.has(
+                `${resolution.declaration.kind}|${resolution.declaration.pointerPrefix}|${resolution.relationFieldValue}`,
+              ) ||
+              justifiedOverloadedPointers.has(
+                `${resolution.declaration.kind}|${resolution.declaration.pointerPrefix}`,
+              )
             );
           default: {
             const exhaustive: never = resolution;
@@ -1144,6 +1213,122 @@ describe('record-name relation tables and fixed relations', () => {
         targetRecordKey: 'condition:incapacitated',
       },
     ]);
+  });
+
+  it("reads an array element's relation from the containing object with '../key'", () => {
+    const source = record('action:dodge');
+    const declaration: RecordRelationshipDeclaration = {
+      kind: 'action',
+      pointerPrefix: '/effects/*/conditions/*',
+      linkField: 'data.effects[].conditions',
+      disposition: 'reference',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: '../kind',
+      relationByFieldValue: { imposes: 'imposed-condition', immunity: null },
+      reason: 'synthetic array-element contract test',
+    };
+    const synthetic: RulesRecord = {
+      ...source,
+      data: {
+        effects: [
+          { kind: 'imposes', conditions: ['Incapacitated', 'suffocating'] },
+          { kind: 'immunity', conditions: ['poisoned'] },
+          { kind: 'future', conditions: ['stunned'] },
+          { conditions: ['stunned'] },
+        ],
+      },
+    };
+    const found = resolveRecordRelationships(
+      buildRecordRelationshipManifest([declaration]),
+      synthetic,
+      stack,
+    );
+    expect(found.map((item) => item.outcome)).toEqual([
+      'resolved',
+      'unresolved-target',
+      'excluded',
+      'indeterminate',
+      'indeterminate',
+    ]);
+    expect(found[0]).toMatchObject({
+      relation: 'imposed-condition',
+      targetRecordKey: 'condition:incapacitated',
+    });
+    expect(found[1]).toMatchObject({
+      reason: 'no-record-with-name',
+      rawValue: 'suffocating',
+    });
+    expect(found[2]).toMatchObject({ relationFieldValue: 'immunity' });
+    expect(found[3]).toMatchObject({ reason: 'relation-not-recognized' });
+    expect(found[4]).toMatchObject({ reason: 'relation-sibling-missing' });
+    for (const bad of ['../../kind', '../', '..', 'a/b', '../a/b'])
+      expect(() =>
+        buildRecordRelationshipManifest([
+          { ...declaration, relationField: bad },
+        ]),
+      ).toThrow();
+  });
+
+  it('excludes a declared leaf value instead of reporting an unresolved target', () => {
+    const source = record('action:dodge');
+    const declaration: RecordRelationshipDeclaration = {
+      kind: 'action',
+      pointerPrefix: '/names/*',
+      linkField: 'data.names',
+      disposition: 'reference',
+      relation: 'listed-condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      excludedLeafValues: ['suffocating'],
+      reason: 'synthetic leaf-value exclusion',
+    };
+    const manifestUnderTest = buildRecordRelationshipManifest([declaration]);
+    const found = resolveRecordRelationships(
+      manifestUnderTest,
+      {
+        ...source,
+        data: { names: ['Incapacitated', 'Suffocating', 'unknown'] },
+      },
+      stack,
+    );
+    expect(found.map((item) => item.outcome)).toEqual([
+      'resolved',
+      'excluded',
+      'unresolved-target',
+    ]);
+    expect(found[1]).toMatchObject({
+      reason: 'leaf-value-exclusion',
+      rawValue: 'Suffocating',
+    });
+    expect(found[1]).not.toHaveProperty('relation');
+    for (const bad of [[], [''], ['ok', ' ']])
+      expect(() =>
+        buildRecordRelationshipManifest([
+          { ...declaration, excludedLeafValues: bad },
+        ]),
+      ).toThrow(/excludedLeafValues/);
+    expect(() =>
+      buildRecordRelationshipManifest([
+        {
+          ...declaration,
+          targetResolution: 'record-key',
+          targetKind: undefined,
+        },
+      ]),
+    ).toThrow(/excludedLeafValues/);
+    expect(() =>
+      buildRecordRelationshipManifest([
+        {
+          kind: 'action',
+          pointerPrefix: '/x',
+          linkField: 'data.x',
+          disposition: 'not-a-reference',
+          excludedLeafValues: ['a'],
+          reason: 'r',
+        },
+      ]),
+    ).toThrow();
   });
 
   it('rejects malformed relation-table declarations', () => {
