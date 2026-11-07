@@ -27,7 +27,7 @@ ADR 0008 conflated into one policy:
    (`.github/workflows/ci.yml`).
 2. **Release CI** — `.github/workflows/release.yml`, which builds the
    artifact once per (edition, OS/arch) leg on GitHub-hosted runners
-   (`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-14`, `windows-latest`) that
+   (`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`, `windows-latest`) that
    ship full native toolchains for exactly the four supported targets.
 3. **The end-user machine** that unpacks a published release archive and
    never installs or compiles anything.
