@@ -1944,10 +1944,25 @@ export function auditActiveEffectIntegrity(
         issue: `campaign actor '${pocketed.actor_id}' is pocketed but is held by ${holders.length} active actor link(s) of live spell-sourced summoning effects; a pocketed actor needs exactly one`,
       });
   }
+  // A combatant-targeted actor link carrying a campaign_actor_id is the NORMAL
+  // state of a durable summon bound mid-combat: the link stays on the combatant
+  // while its combat instance is active, and is retargeted to the campaign
+  // actor only by rebindCombatantReferencesToActor (combat closure, or a
+  // bonded-summon presence transition). It is therefore stale only when its
+  // combatant can no longer be live: the combatant row is missing, or its
+  // combat instance is not 'active' (closure should have rebound it). Fail
+  // closed: anything not provably in an active instance is still reported.
   const stalePersistentLinks = db
     .prepare(
-      `SELECT effect_id, target_ref FROM active_effect_link
-     WHERE campaign_id = ? AND link_kind = 'actor' AND target_kind = 'combatant' AND status = 'active' AND campaign_actor_id IS NOT NULL`,
+      `SELECT l.effect_id, l.target_ref FROM active_effect_link l
+     WHERE l.campaign_id = ? AND l.link_kind = 'actor' AND l.target_kind = 'combatant'
+       AND l.status = 'active' AND l.campaign_actor_id IS NOT NULL
+       AND NOT EXISTS (
+         SELECT 1 FROM encounter_combatant c
+         JOIN combat_instance i
+           ON i.campaign_id = c.campaign_id AND i.combat_instance_id = c.combat_instance_id
+         WHERE c.campaign_id = l.campaign_id AND c.combatant_id = l.target_ref
+           AND i.status = 'active')`,
     )
     .all(campaignId) as { effect_id: string; target_ref: string }[];
   for (const link of stalePersistentLinks) {
