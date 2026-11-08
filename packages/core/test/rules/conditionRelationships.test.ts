@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { ToolContext } from '../../src/internal.js';
+import type {
+  RelationshipResolution,
+  ToolContext,
+} from '../../src/internal.js';
 import {
   bundledDnd5eSrdRecordRelationshipManifestSource,
   createDefaultToolRegistry,
@@ -14,6 +17,7 @@ import {
   resolveRulesStack,
   startSession,
 } from '../../src/internal.js';
+import { walkFieldPointers } from '../../src/rules/fieldProvenance.js';
 
 const pack = getBundledDnd5eSrdPack();
 const stack = resolveRulesStack({ base: pack });
@@ -66,6 +70,9 @@ describe('condition discovery relationships in the committed SRD pack', () => {
         .filter(
           (resolution) =>
             resolution.outcome === 'resolved' &&
+            // The magic-item effect `condition` pointer shares this prefix;
+            // this test is about condition records only.
+            resolution.declaration.kind === 'condition' &&
             (resolution.declaration.pointerPrefix === conditionEffectPrefix ||
               resolution.declaration.pointerPrefix === conditionTriggerPrefix),
         )
@@ -133,10 +140,17 @@ describe('condition discovery relationships in the committed SRD pack', () => {
   });
 
   it('checks every actual excluded leaf against its source record name', () => {
+    // Scoped to condition records: their `conditionEndsWhen` exclusion is the
+    // self-reference this test checks. Exclusions declared on other kinds
+    // (overloaded prose `condition` fields) are checked by the
+    // 'outside condition records' tests below.
     const excluded = pack.records.flatMap((record) =>
       resolveRecordRelationships(manifest, record, stack).flatMap(
         (resolution) =>
-          resolution.outcome === 'excluded' ? [{ record, resolution }] : [],
+          resolution.outcome === 'excluded' &&
+          resolution.declaration.kind === 'condition'
+            ? [{ record, resolution }]
+            : [],
       ),
     );
     expect(
@@ -258,5 +272,218 @@ describe('condition discovery relationships in the committed SRD pack', () => {
         pointer: conditionEffectPrefix,
       }),
     );
+  });
+});
+
+describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)', () => {
+  function outcomes(key: string, pointerPrefix: string) {
+    return resolveRecordRelationships(
+      manifest,
+      entry(key).record,
+      stack,
+    ).filter(
+      (resolution) => resolution.declaration.pointerPrefix === pointerPrefix,
+    );
+  }
+
+  const resolvedEdge = (
+    sourceKey: string,
+    pointerPrefix: string,
+  ): readonly [string, string][] =>
+    outcomes(sourceKey, pointerPrefix).flatMap((resolution) =>
+      resolution.outcome === 'resolved'
+        ? [
+            [resolution.relation, resolution.targetRecordKey] as [
+              string,
+              string,
+            ],
+          ]
+        : [],
+    );
+
+  it('resolves a creature action, an ancestry trait, and the magic-item shapes against the printed clause', () => {
+    // Aboleth Enslave: "... or be magically charmed by the aboleth."
+    expect(
+      resolvedEdge(
+        'creature:aboleth',
+        '/actions/*/mechanics/conditions/*/condition',
+      ),
+    ).toContainEqual(['mention', 'condition:charmed']);
+    // Elf Fey Ancestry: advantage on saving throws against being charmed.
+    expect(
+      resolvedEdge(
+        'ancestry:elf',
+        '/traits/*/mechanics/conditions/*/condition',
+      ),
+    ).toEqual([['advantage', 'condition:charmed']]);
+    // Wand of Paralysis: "... or be paralyzed for 1 minute".
+    expect(
+      resolvedEdge(
+        'magic-item:wand-of-paralysis',
+        '/mechanics/effects/*/conditions/*',
+      ),
+    ).toEqual([['imposed-condition', 'condition:paralyzed']]);
+    // Periapt of Proof against Poison: "immune to the poisoned condition".
+    expect(
+      resolvedEdge(
+        'magic-item:periapt-of-proof-against-poison',
+        '/mechanics/effects/*/conditions/*',
+      ),
+    ).toEqual([['condition-immunity', 'condition:poisoned']]);
+    // Giant Slayer: "must succeed on a DC 15 Strength saving throw or fall prone".
+    expect(
+      resolvedEdge(
+        'magic-item:giant-slayer',
+        '/mechanics/effects/*/failedSaveCondition',
+      ),
+    ).toEqual([['failed-save-condition', 'condition:prone']]);
+    // Philter of Love: the imposesCondition effect names charmed.
+    expect(
+      resolvedEdge(
+        'magic-item:philter-of-love',
+        '/mechanics/effects/*/condition',
+      ),
+    ).toEqual([['imposed-condition', 'condition:charmed']]);
+    // Ball Bearings: "... Dexterity saving throw or fall prone".
+    expect(
+      resolvedEdge(
+        'equipment:ball-bearings-bag-of-1-000',
+        '/useProfile/clauses/*/semantics/failureCondition',
+      ),
+    ).toEqual([['failed-save-condition', 'condition:prone']]);
+    // Net: "A Large or smaller creature hit by a net is restrained until it is freed."
+    expect(
+      resolvedEdge(
+        'equipment:net',
+        '/useProfile/clauses/*/semantics/condition',
+      ),
+    ).toEqual([['imposed-condition', 'condition:restrained']]);
+  });
+
+  it('declares Dodge ending circumstances as not-a-reference and emits no outcome for them', () => {
+    const declaration = manifest.declarations.find(
+      (item) =>
+        item.kind === 'action' &&
+        item.pointerPrefix === '/mechanics/effects/*/conditions/*',
+    );
+    expect(declaration).toMatchObject({ disposition: 'not-a-reference' });
+    expect(entry('action:dodge').record.data).toMatchObject({
+      mechanics: {
+        effects: expect.arrayContaining([
+          {
+            kind: 'benefitEndsWhen',
+            conditions: ['you-are-incapacitated', 'your-speed-is-0'],
+          },
+        ]),
+      },
+    });
+    expect(
+      outcomes('action:dodge', '/mechanics/effects/*/conditions/*'),
+    ).toEqual([]);
+  });
+
+  it('excludes the non-condition value suffocating by declaration, with nothing left unresolved', () => {
+    const all = pack.records.flatMap((record) =>
+      resolveRecordRelationships(manifest, record, stack),
+    );
+    expect(
+      all.filter((resolution) => resolution.outcome === 'unresolved-target'),
+    ).toEqual([]);
+    expect(
+      all.filter(
+        (resolution) =>
+          resolution.outcome === 'excluded' &&
+          resolution.reason === 'leaf-value-exclusion',
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        sourceRecordKey: 'magic-item:dust-of-sneezing-and-choking',
+        pointer: '/mechanics/effects/*/conditions/*',
+        rawValue: 'suffocating',
+      }),
+      expect.objectContaining({
+        sourceRecordKey: 'magic-item:dust-of-sneezing-and-choking',
+        pointer: '/mechanics/effects/*/conditions/*',
+        rawValue: 'suffocating',
+      }),
+    ]);
+    // Printed: "A creature affected in this way is incapacitated and
+    // suffocating." The pack has rule:suffocating but no condition of that
+    // name, and incapacitated still resolves.
+    expect(stack.recordsByKey.has('rule:suffocating')).toBe(true);
+    expect(stack.recordsByKey.has('condition:suffocating')).toBe(false);
+    expect(
+      resolvedEdge(
+        'magic-item:dust-of-sneezing-and-choking',
+        '/mechanics/effects/*/conditions/*',
+      ),
+    ).toEqual([
+      ['imposed-condition', 'condition:incapacitated'],
+      ['imposed-condition', 'condition:incapacitated'],
+    ]);
+  });
+
+  it('excludes only prose leaves in overloaded condition fields, never a condition name', () => {
+    const conditionNames = new Set(
+      pack.records
+        .filter((record) => record.kind === 'condition')
+        .map((record) => normalizeRulesRecordName(record.name)),
+    );
+    const excludedByRecord: [string, string][] = [];
+    for (const record of pack.records) {
+      const excludedPointers = new Set(
+        resolveRecordRelationships(manifest, record, stack).flatMap(
+          (resolution: RelationshipResolution) =>
+            resolution.outcome === 'excluded' &&
+            resolution.reason === 'relation-table-exclusion' &&
+            resolution.declaration.kind !== 'condition'
+              ? [resolution.pointer]
+              : [],
+        ),
+      );
+      if (excludedPointers.size === 0) continue;
+      walkFieldPointers(record.data, (pointer, value) => {
+        if (!excludedPointers.has(pointer)) return;
+        // Only the excluded entries (not the resolved imposesCondition name)
+        // are checked: a resolved philter-of-love charmed is a name by design.
+        if (
+          typeof value === 'string' &&
+          conditionNames.has(normalizeRulesRecordName(value))
+        )
+          excludedByRecord.push([record.key, `${pointer}=${value}`]);
+      });
+    }
+    // The only condition-name leaves under an excluded-capable pointer are the
+    // three `charmed` triggered/imposing effects; the imposesCondition one is
+    // resolved, and the two triggeredEffect ones are the documented
+    // follow-up gap (the table cannot separate them from prose by kind).
+    expect(excludedByRecord.sort()).toEqual([
+      ['magic-item:philter-of-love', '/mechanics/effects/*/condition=charmed'],
+      ['magic-item:philter-of-love', '/mechanics/effects/*/condition=charmed'],
+      ['magic-item:rod-of-rulership', '/mechanics/effects/*/condition=charmed'],
+    ]);
+    const lance = outcomes(
+      'equipment:lance',
+      '/useProfile/clauses/*/semantics/condition',
+    );
+    expect(lance).toEqual([
+      expect.objectContaining({
+        outcome: 'excluded',
+        relationFieldValue: 'model',
+      }),
+    ]);
+  });
+
+  it('lets a seeded creature record reach the condition record through one-hop expansion', () => {
+    const trace = expandTypedRelationships([seed('creature:aboleth')], stack, {
+      relationshipManifestSource:
+        bundledDnd5eSrdRecordRelationshipManifestSource(),
+    });
+    expect(trace.traversals).toContainEqual({
+      sourceRecordKey: 'creature:aboleth',
+      linkField: 'data.actions[].mechanics.conditions',
+      relation: 'mention',
+      targetRecordKey: 'condition:charmed',
+    });
   });
 });

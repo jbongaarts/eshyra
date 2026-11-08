@@ -299,6 +299,7 @@ function parseRecordRelationshipDeclaration(
     'targetKind',
     'relationField',
     'relationByFieldValue',
+    'excludedLeafValues',
     'reason',
   ]);
   for (const key of Object.keys(o))
@@ -370,6 +371,17 @@ function parseRecordRelationshipDeclaration(
           `${path}.relationByFieldValue entries must have non-empty keys and non-empty string or null values`,
         );
   }
+  const excludedLeafValues = o.excludedLeafValues;
+  if (
+    excludedLeafValues !== undefined &&
+    (!Array.isArray(excludedLeafValues) ||
+      excludedLeafValues.some(
+        (item) => typeof item !== 'string' || item.trim().length === 0,
+      ))
+  )
+    throw new RulesPackError(
+      `${path}.excludedLeafValues must be an array of non-empty strings when present`,
+    );
   const reason = o.reason;
   if (typeof reason !== 'string' || reason.trim().length === 0)
     throw new RulesPackError(`${path}.reason must be a non-empty string`);
@@ -392,6 +404,9 @@ function parseRecordRelationshipDeclaration(
             string | null
           >,
         }),
+    ...(excludedLeafValues === undefined
+      ? {}
+      : { excludedLeafValues: excludedLeafValues as readonly string[] }),
     reason,
   };
 }
