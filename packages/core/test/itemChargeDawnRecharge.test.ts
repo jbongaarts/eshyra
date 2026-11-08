@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import type { ToolContext } from '../src/internal.js';
 import {
   advanceWorldTime,
-  attuneItem,
+  createDefaultToolRegistry,
   createInitialItemState,
   createSeededRng,
   getBundledDnd5eSrdPack,
   giveItem,
   holdItem,
+  listActiveEffects,
   readItemState,
   useItem,
   writeItemState,
@@ -77,121 +79,328 @@ describe('charge dawn recharge on the unmodified SRD pack', () => {
     }
   });
 
-  it('pins the exact Pipes blocker: its creature grant prints no engine-computed ending or count (eshyra-j9rc)', () => {
+  it('owns the Pipes grant as an upper-bound, no-printed-ending lifecycle, so call-rat-swarms reaches cost validation (eshyra-ffoo)', () => {
     const record = pack.records.find((entry) => entry.key === PIPES);
     if (record === undefined) throw new Error('bundled pack has no Pipes');
     const data = record.data as {
+      description: string;
       mechanics: {
         entityGrant: { grants: Record<string, unknown>[] };
+        effects?: unknown;
       };
       executionReadiness: {
         clauses: {
           clauseId: string;
           readiness: string;
           missingEngines?: string[];
+          representation: { sourceText?: string };
         }[];
       };
     };
-    // creatureGrantLifecycleOwned keeps a grant pending unless every grant
-    // prints a count and an engine-computed ending. Pipes prints neither: the
-    // swarm count equals the charges spent (variable) and a called swarm has
-    // no printed ending. While this holds, call-rat-swarms cannot reach cost
-    // validation, so the spend-2 / refuse-2-with-1-remaining sequence is
-    // unreachable without a pack change. When this test fails, the boundary
-    // has moved: add that no-waiver sequence and delete this pin.
+    // Only what is printed is typed: a CEILING of one swarm per charge spent
+    // and an explicit statement that no ending is printed. No count, no
+    // duration and no reversion is invented.
     const [grant] = data.mechanics.entityGrant.grants;
-    expect(grant).not.toHaveProperty('revertOn');
-    expect(grant).not.toHaveProperty('count');
-    expect(grant).not.toHaveProperty('countRoll');
-    const m4 = data.executionReadiness.clauses.find(
-      (clause) => clause.clauseId === `${PIPES}/m4-pipes-of-the-sewers`,
-    );
-    expect(m4).toMatchObject({ readiness: 'engine-pending' });
-    expect(m4?.missingEngines).toEqual(['F2', 'F3', 'F5']);
+    expect(grant).toMatchObject({
+      id: 'called-rat-swarms',
+      cooldownEconomy: 'charges',
+      maxCountPerCost: { economy: 'charges', perUnit: 1 },
+      noPrintedEnding: true,
+    });
+    for (const absent of ['count', 'countRoll', 'revertOn', 'duration'])
+      expect(grant).not.toHaveProperty(absent);
+
+    const clause = (id: string) =>
+      data.executionReadiness.clauses.find(
+        (entry) => entry.clauseId === `${PIPES}/${id}`,
+      );
+    expect(clause('m4-pipes-of-the-sewers')).toMatchObject({
+      readiness: 'green',
+    });
+    // Arrival, availability, control and the rat attitude are adjudicated by
+    // design, each carrying a VERBATIM span of the printed description.
+    for (const id of [
+      'm4-availability-pipes-of-the-sewers',
+      'm4-control-pipes-of-the-sewers',
+      'c2-residual-rat-indifference',
+    ]) {
+      const adjudicated = clause(id);
+      expect(adjudicated, id).toMatchObject({
+        readiness: 'adjudicated-by-design',
+      });
+      expect(adjudicated?.representation.sourceText).toBeTruthy();
+      expect(data.description).toContain(
+        adjudicated?.representation.sourceText as string,
+      );
+    }
+    expect(data.mechanics.effects).toBeUndefined();
+    expect(
+      data.executionReadiness.clauses.filter(
+        (entry) => entry.readiness === 'engine-pending',
+      ),
+    ).toEqual([]);
   });
 
-  it('keeps Pipes refused on its pending grant while the real record can recharge', () => {
-    const record = pack.records.find((entry) => entry.key === PIPES);
-    if (record === undefined) throw new Error('bundled pack has no Pipes');
-    const readiness = (
-      record.data as {
-        executionReadiness: {
-          clauses: { clauseId: string; readiness: string }[];
-        };
-      }
-    ).executionReadiness.clauses;
-    expect(readiness).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          clauseId: `${PIPES}/c1-economy-charges`,
-          readiness: 'green',
-        }),
-        expect.objectContaining({
-          clauseId: `${PIPES}/c1-operation-call-rat-swarms`,
-          readiness: 'green',
-        }),
-      ]),
-    );
-
+  it('drives the Pipes sequence on the unmodified pack with no waiver: spend 2, bind at most 2, refuse 2 with 1 left, dawn regains 1d3 capped at 3, end_effect closes the link', () => {
     const db = freshDbWithSession();
     try {
-      const item = giveItem(
+      const registry = createDefaultToolRegistry();
+      const ctx: ToolContext = {
         db,
-        { id: 'pipes', name: 'Pipes of the Sewers', packRef: PIPES },
-        CTX,
-      );
-      holdItem(db, { ...CTX, itemId: item.id });
-      attuneItem(db, {
-        ...CTX,
-        characterRef: 'pc-1',
-        itemId: item.id,
-        itemRef: PIPES,
+        rng: createSeededRng(23),
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: 'ffoo',
+        at: CTX.at,
+        resolveRulesPack: () => pack,
+      };
+      const call = (name: string, args: unknown) =>
+        registry.invoke(name, args, ctx);
+      const must = (name: string, args: unknown) => {
+        const result = call(name, args);
+        if (!result.ok) throw new Error(`${name} failed: ${result.message}`);
+        return result;
+      };
+      must('start_encounter', {
+        combatInstanceId: 'c',
+        actors: [
+          {
+            actorId: 'pc',
+            rulesRef: 'creature:goblin',
+            hpMax: 20,
+            hpCurrent: 20,
+            side: 'ally',
+          },
+          ...[0, 1, 2].map((n) => ({
+            actorId: `s${n}`,
+            rulesRef: 'creature:swarm-of-rats',
+            hpMax: 24,
+            hpCurrent: 24,
+            side: 'ally',
+          })),
+        ],
       });
+      let round = 0;
+      const nextTurn = () => {
+        round += 1;
+        must('begin_turn', { character: 'pc-1', round });
+      };
+      const id = (
+        must('give_item', {
+          id: 'pipes',
+          name: 'Pipes of the Sewers',
+          packRef: PIPES,
+        }).data as { id: string }
+      ).id;
+      must('attune_item', { character: 'pc-1', itemId: id });
+      const remaining = () =>
+        readItemState(db, id)?.economies?.charges?.remaining;
       const use = (amount: number) =>
-        useItem(db, {
-          ...CTX,
-          instanceId: item.id,
-          characterId: 'pc-1',
+        call('use_item', {
+          instanceId: id,
           operationId: 'call-rat-swarms',
           args: { costs: { charges: amount } },
-          resolveRulesPack: () => pack,
+        });
+      const credits = () =>
+        db
+          .prepare(
+            'SELECT credit_id, spent_amount, redeemed_effect_id FROM item_grant_bind_credit ORDER BY insertion_order',
+          )
+          .all() as {
+          credit_id: string;
+          spent_amount: number | null;
+          redeemed_effect_id: string | null;
+        }[];
+      const bind = (
+        effectId: string,
+        swarms: readonly number[],
+        creditId: string | undefined,
+      ) =>
+        call('start_effect', {
+          effectId,
+          kind: 'summoning',
+          displayName: effectId,
+          source: {
+            kind: 'magic-item',
+            ref: PIPES,
+            grantRef: 'called-rat-swarms',
+            itemInstanceId: id,
+            ...(creditId === undefined ? {} : { bindCreditId: creditId }),
+          },
+          actors: swarms.map((n) => ({ combatantId: `c-s${n}` })),
+          duration: { kind: 'until-removed' },
         });
 
-      expect(() => use(2)).toThrow(/m4-pipes-of-the-sewers \(engine-pending/);
-      expect(readItemState(db, item.id)).toBeUndefined();
-      const initial = createInitialItemState(PIPES, record);
-      writeItemState(
-        db,
-        item.id,
-        { ...initial, economies: { charges: { remaining: 2 } } },
-        CTX,
-      );
-
-      const reset = advanceWorldTime(db, {
-        ...CTX,
-        minutes: 360,
-        rng: createSeededRng(23),
-        resolveRulesPack: () => pack,
+      // Spend 2 of 3 charges: the unmodified-pack preflight passes.
+      nextTurn();
+      const first = must('use_item', {
+        instanceId: id,
+        operationId: 'call-rat-swarms',
+        args: { costs: { charges: 2 } },
       });
-      expect(reset.itemResets).toHaveLength(1);
-      const [evidence] = reset.itemResets;
+      expect(remaining()).toBe(1);
+      const credit = (
+        first.data as {
+          hint?: {
+            bindCredits?: {
+              creditId: string;
+              grantIds: string[];
+              boundedCounts?: { grantId: string; max: number }[];
+            }[];
+          };
+        }
+      ).hint?.bindCredits?.[0];
+      expect(credit).toMatchObject({
+        grantIds: ['called-rat-swarms'],
+        boundedCounts: [{ grantId: 'called-rat-swarms', max: 2 }],
+      });
+      const creditId = credit?.creditId as string;
+      expect(credits()).toMatchObject([
+        { credit_id: creditId, spent_amount: 2, redeemed_effect_id: null },
+      ]);
+
+      // The upper bound is the ENGINE's recorded spend: no credit named, a
+      // third swarm, and a credit with no recorded spend are all refused and
+      // leave the credit open.
+      const unnamed = bind('fx-unnamed', [0, 1], undefined);
+      expect(unnamed).toMatchObject({ ok: false });
+      expect(unnamed.message).toMatch(/upper bound[\s\S]*source\.bindCreditId/);
+      const third = bind('fx-third', [0, 1, 2], creditId);
+      expect(third).toMatchObject({ ok: false });
+      expect(third.message).toMatch(/at most 2[\s\S]*3 linked actor/);
+      db.prepare('UPDATE item_grant_bind_credit SET spent_amount = NULL').run();
+      const unrecorded = bind('fx-unrecorded', [0, 1], creditId);
+      expect(unrecorded).toMatchObject({ ok: false });
+      expect(unrecorded.message).toMatch(/records no spend/);
+      db.prepare('UPDATE item_grant_bind_credit SET spent_amount = 2').run();
+      expect(credits()[0]?.redeemed_effect_id).toBeNull();
+
+      // Two swarms bind; the use is redeemed and cannot pay again.
+      const bound = bind('fx-swarms', [0, 1], creditId);
+      expect(bound, bound.message).toMatchObject({ ok: true });
+      expect(credits()[0]?.redeemed_effect_id).toBe('fx-swarms');
+      expect(bind('fx-again', [2], creditId)).toMatchObject({ ok: false });
+
+      // A 2-charge spend with 1 remaining is refused and changes nothing.
+      nextTurn();
+      const refused = use(2);
+      expect(refused).toMatchObject({ ok: false });
+      expect(remaining()).toBe(1);
+      expect(credits()).toHaveLength(1);
+
+      // Crossing dawn regains 1d3, capped at 3.
+      const dawn = must('advance_time', { minutes: 1440 });
+      const resets = (
+        dawn.data as {
+          itemResets?: {
+            packRef: string;
+            economy: string;
+            event: string;
+            maximum: number;
+            previousRemaining: number;
+            remaining: number;
+            roll?: { notation: string; total: number };
+          }[];
+        }
+      ).itemResets;
+      expect(resets).toHaveLength(1);
+      const [evidence] = resets ?? [];
       expect(evidence).toMatchObject({
         packRef: PIPES,
         economy: 'charges',
         event: 'dawn',
         maximum: 3,
-        previousRemaining: 2,
+        previousRemaining: 1,
       });
-      expect(evidence.roll?.notation).toBe('1d3');
-      expect(evidence.remaining).toBe(
-        Math.min(2 + (evidence.roll?.total ?? 0), 3),
+      expect(evidence?.roll?.notation).toBe('1d3');
+      expect(evidence?.remaining).toBe(
+        Math.min(1 + (evidence?.roll?.total ?? 0), 3),
       );
-      expect(evidence.remaining).toBe(3);
-      expect(readItemState(db, item.id)?.economies?.charges?.remaining).toBe(
-        evidence.remaining,
-      );
+      expect(remaining()).toBe(evidence?.remaining);
+
+      // Binding NONE is legitimate: the GM ruled too few rats answered, so the
+      // charge is wasted and the use is still redeemed.
+      nextTurn();
+      must('use_item', {
+        instanceId: id,
+        operationId: 'call-rat-swarms',
+        args: { costs: { charges: 1 } },
+      });
+      const secondCredit = credits()[1]?.credit_id as string;
+      const none = bind('fx-none', [], secondCredit);
+      expect(none, none.message).toMatchObject({ ok: true });
+      expect(credits()[1]?.redeemed_effect_id).toBe('fx-none');
+
+      // The printed text gives no ending: the DM ends a swarm with end_effect,
+      // which closes the link to its creatures.
+      const linksOf = (effectId: string) =>
+        db
+          .prepare(
+            "SELECT status FROM active_effect_link WHERE effect_id = ? AND link_kind = 'actor'",
+          )
+          .all(effectId) as { status: string }[];
+      expect(linksOf('fx-swarms').map((link) => link.status)).toEqual([
+        'active',
+        'active',
+      ]);
+      must('end_effect', {
+        effectId: 'fx-swarms',
+        reason: 'ruled',
+        note: 'the swarms scattered',
+      });
+      expect(
+        linksOf('fx-swarms').every((link) => link.status !== 'active'),
+      ).toBe(true);
+      const ended = listActiveEffects(db, DEFAULT_TEST_CAMPAIGN_ID, {
+        includeEnded: true,
+      }).find((effect) => effect.effectId === 'fx-swarms');
+      expect(ended?.status).toBe('ended');
     } finally {
       db.close();
     }
+  });
+
+  it('caps the Pipes dawn regain at 3 whatever the 1d3 rolls (real record)', () => {
+    const record = pack.records.find((entry) => entry.key === PIPES);
+    if (record === undefined) throw new Error('bundled pack has no Pipes');
+    const rolls = new Set<number>();
+    for (let seed = 1; seed <= 12; seed += 1) {
+      const db = freshDbWithSession();
+      try {
+        const item = giveItem(
+          db,
+          { id: 'pipes', name: 'Pipes of the Sewers', packRef: PIPES },
+          CTX,
+        );
+        holdItem(db, { ...CTX, itemId: item.id });
+        writeItemState(
+          db,
+          item.id,
+          {
+            ...createInitialItemState(PIPES, record),
+            economies: { charges: { remaining: 1 } },
+          },
+          CTX,
+        );
+        const reset = advanceWorldTime(db, {
+          ...CTX,
+          minutes: 360,
+          rng: createSeededRng(seed),
+          resolveRulesPack: () => pack,
+        });
+        const [evidence] = reset.itemResets;
+        const total = evidence?.roll?.total ?? 0;
+        rolls.add(total);
+        expect(evidence?.remaining).toBe(Math.min(1 + total, 3));
+        expect(readItemState(db, item.id)?.economies?.charges?.remaining).toBe(
+          evidence?.remaining,
+        );
+      } finally {
+        db.close();
+      }
+    }
+    // The seeds exercise an uncapped regain and the cap itself (1 + 3 > 3).
+    expect(rolls.has(1)).toBe(true);
+    expect(rolls.has(3)).toBe(true);
   });
 });

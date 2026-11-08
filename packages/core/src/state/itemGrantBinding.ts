@@ -291,6 +291,9 @@ export function issueItemGrantBindCredit(
     readonly rolledCounts?: readonly ItemGrantRolledCount[];
     /** Engine rolls of the credit's grants that print a `creatureRoll`. */
     readonly rolledCreatures?: readonly ItemGrantRolledCreature[];
+    /** Units of `economyId` the issuing use spent (eshyra-ffoo): the count a
+     *  grant's `maxCountPerCost` bounds against. */
+    readonly spentAmount?: number;
   },
 ): string {
   const prefix = `${credit.itemInstanceId}:${credit.operationId}:`;
@@ -305,8 +308,8 @@ export function issueItemGrantBindCredit(
        credit_id, campaign_id, item_instance_id, pack_ref, variant_id,
        economy_id, operation_id, issued_at, issued_elapsed_minutes,
        provenance, session_id, rolled_counts_json, rolled_creatures_json,
-       insertion_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+       spent_amount, insertion_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
        (SELECT COALESCE(MAX(insertion_order), 0) + 1 FROM item_grant_bind_credit))`,
   ).run(
     creditId,
@@ -326,8 +329,28 @@ export function issueItemGrantBindCredit(
     credit.rolledCreatures === undefined || credit.rolledCreatures.length === 0
       ? null
       : JSON.stringify(credit.rolledCreatures),
+    credit.spentAmount ?? null,
   );
   return creditId;
+}
+
+/** The units of its economy the use that issued a credit spent, or undefined
+ *  when the credit recorded none (issued before the spend was recorded, or a
+ *  value that is not a positive integer). Never throws: "no recorded spend"
+ *  refuses the bounded bind. */
+export function readItemGrantBindCreditSpent(
+  db: Db,
+  creditId: string,
+): number | undefined {
+  const row = db
+    .prepare(
+      'SELECT spent_amount FROM item_grant_bind_credit WHERE credit_id = ?',
+    )
+    .get(creditId) as { spent_amount: number | null } | undefined;
+  const spent = row?.spent_amount;
+  return typeof spent === 'number' && Number.isInteger(spent) && spent >= 1
+    ? spent
+    : undefined;
 }
 
 /** The engine roll persisted on a credit for a grant, or undefined when the

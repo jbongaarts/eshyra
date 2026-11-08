@@ -65,10 +65,12 @@ function asObject(value: unknown): Obj | undefined {
  *    (illusion and object grants are DM-adjudicated and refused by
  *    `start_effect`; a block mixing one in, Feather Token, stays pending);
  *  - EVERY grant prints at least one ending and EVERY printed ending is
- *    engine-computed ({@link ENGINE_COMPUTED_GRANT_ENDINGS}). A grant that
- *    prints no ending (Pipes of the Sewers, Manual of Golems, Staff of the
- *    Python) leaves the engine's remove-on-end an inference, and any DM-ended
- *    value is a printed lifecycle term the runtime does not compute;
+ *    engine-computed ({@link ENGINE_COMPUTED_GRANT_ENDINGS}), OR declares the
+ *    explicit `noPrintedEnding` marker (with no duration and no revertOn:
+ *    Pipes of the Sewers, whose called swarms the DM ends with end_effect). A
+ *    grant that merely omits its ending (Manual of Golems) leaves the
+ *    engine's remove-on-end an inference, and any DM-ended value is a printed
+ *    lifecycle term the runtime does not compute;
  *  - A grant names exactly one creature, or selects it by a `creatureRoll`
  *    (`1dN` over exactly N `creatureRefs` in table order): the engine rolls the
  *    row per use, persists it on the bind credit, and the binder admits only
@@ -78,7 +80,9 @@ function asObject(value: unknown): Obj | undefined {
  *    fixed count, and enforces a `countRoll` against the engine's own roll
  *    persisted on the use's bind credit (never a caller-supplied number). A
  *    grant with neither would admit any number of linked actors, so it stays
- *    pending;
+ *    pending. Or an upper-bound `maxCountPerCost` on the grant's own cooldown
+ *    economy (Pipes: one swarm per charge expended, 0..N), which the binder
+ *    enforces against the units the paying use's credit recorded as spent;
  *  - NO grant prints an UNTYPED `onEntityDeath` item consequence. No runtime
  *    applies a curated note, so a green clause would hide it (PR #673 review,
  *    P2-2). A source-grounded consequence is either typed AND executed (the
@@ -127,10 +131,20 @@ export function creatureGrantLifecycleOwned(
           ? creatureRefs.length === 0
           : creatureRefs.length === 1;
     if (!oneCreature) return false;
-    if (typeof grant.count !== 'number' && typeof grant.countRoll !== 'string')
+    if (
+      typeof grant.count !== 'number' &&
+      typeof grant.countRoll !== 'string' &&
+      !upperBoundCountDeclared(grant)
+    )
       return false;
     if (grant.onEntityDeath !== undefined) return false;
     const revertOn = Array.isArray(grant.revertOn) ? grant.revertOn : [];
+    // The source prints no ending and says so explicitly (Pipes of the
+    // Sewers): the engine then computes none and the DM ends the grant. The
+    // marker must be explicit and consistent (no duration, no revertOn); a
+    // grant that merely OMITS its ending stays pending.
+    if (grant.noPrintedEnding === true)
+      return revertOn.length === 0 && grant.duration === undefined;
     return (
       revertOn.length > 0 &&
       revertOn.every(
@@ -139,6 +153,21 @@ export function creatureGrantLifecycleOwned(
       )
     );
   });
+}
+
+/** A declared upper-bound count (`maxCountPerCost`) the binder can enforce: it
+ *  counts the units of the grant's own cooldown economy that the paying use
+ *  spent, at a positive integer number of creatures per unit. */
+function upperBoundCountDeclared(grant: Obj): boolean {
+  const bound = asObject(grant.maxCountPerCost);
+  return (
+    bound !== undefined &&
+    typeof bound.economy === 'string' &&
+    bound.economy === grant.cooldownEconomy &&
+    typeof bound.perUnit === 'number' &&
+    Number.isInteger(bound.perUnit) &&
+    bound.perUnit >= 1
+  );
 }
 
 function stableJson(value: unknown): string {

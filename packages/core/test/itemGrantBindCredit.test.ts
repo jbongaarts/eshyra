@@ -117,6 +117,9 @@ interface Carrier {
   /** The creature is chosen by an engine roll (`creatureRoll`: the Bag of
    *  Tricks' d8 on its color's table, eshyra-olc5.16.1). */
   readonly rolledCreature: boolean;
+  /** The grant prints only an upper bound on its count (`maxCountPerCost`:
+   *  Pipes of the Sewers, eshyra-ffoo): its bind must name the use's credit. */
+  readonly upperBound: boolean;
 }
 
 /** Every non-anchored cooldownEconomy grant of every variant, from the pack. */
@@ -177,6 +180,7 @@ function enumerateCarriers(): Carrier[] {
             grant.control.startsWith('as spell:'),
           rolledCount: typeof grant.countRoll === 'string',
           rolledCreature: typeof grant.creatureRoll === 'string',
+          upperBound: typeof grant.maxCountPerCost === 'object',
         });
       }
     }
@@ -331,6 +335,21 @@ function setup(creatures: readonly string[] = []) {
         ref: carrier.key,
         grantRef: carrier.grantId,
         itemInstanceId: id,
+        // An upper-bound grant (eshyra-ffoo) binds only against the credit its
+        // use issued, so the helper names this instance's oldest open one.
+        ...(carrier.upperBound &&
+        credits().some(
+          (c) => c.item_instance_id === id && c.redeemed_effect_id === null,
+        )
+          ? {
+              bindCreditId: credits().find(
+                (c) =>
+                  c.item_instance_id === id &&
+                  c.economy_id === carrier.economyId &&
+                  c.redeemed_effect_id === null,
+              )?.credit_id,
+            }
+          : {}),
       },
       actors: [{ combatantId: combatant }],
       ...(carrier.typedDuration || carrier.nextDawn
@@ -422,6 +441,11 @@ describe('olc5.12.3 the pack carriers, enumerated from the pack', () => {
           creditId: `${id}:${carrier.operationId}:1`,
           economyId: carrier.economyId,
           grantIds: expect.arrayContaining([carrier.grantId]),
+          // An upper-bound grant advertises its ceiling: one charge spent, one
+          // swarm per charge (eshyra-ffoo).
+          ...(carrier.upperBound
+            ? { boundedCounts: [{ grantId: carrier.grantId, max: 1 }] }
+            : {}),
         },
       ]);
       expect(s.open()).toHaveLength(1);

@@ -984,6 +984,95 @@ describe('magic-item mechanics schema', () => {
     ).not.toThrow();
   });
 
+  describe('upper-bound count and the explicit no-printed-ending marker (eshyra-ffoo)', () => {
+    const economies = {
+      charges: { kind: 'charges', charges: { max: 3 } },
+      uses: { kind: 'per-day', perDay: { uses: 1 } },
+    };
+    const grant = (extra: Record<string, unknown> = {}) => ({
+      id: 'called',
+      kind: 'creature',
+      creatureRefs: ['creature:swarm-of-rats'],
+      cooldownEconomy: 'charges',
+      maxCountPerCost: { economy: 'charges', perUnit: 1 },
+      noPrintedEnding: true,
+      ...extra,
+    });
+    const withGrant = (g: Record<string, unknown>) => ({
+      economies,
+      entityGrant: { runtimeOwner: 'encounter-combatant', grants: [g] },
+    });
+
+    it('accepts a bounded, no-printed-ending creature grant on its own cooldown economy', () => {
+      expect(() => validate(withGrant(grant()))).not.toThrow();
+    });
+
+    it.each([
+      [
+        'a bound on an economy that is not the cooldown economy',
+        { maxCountPerCost: { economy: 'uses', perUnit: 1 } },
+        /must be the grant's cooldownEconomy/,
+      ],
+      [
+        'a bound on an unknown economy',
+        {
+          cooldownEconomy: undefined,
+          maxCountPerCost: { economy: 'missing', perUnit: 1 },
+        },
+        /unknown economy/,
+      ],
+      [
+        'a zero per-unit count',
+        { maxCountPerCost: { economy: 'charges', perUnit: 0 } },
+        /perUnit must be a positive integer/,
+      ],
+      [
+        'a fractional per-unit count',
+        { maxCountPerCost: { economy: 'charges', perUnit: 1.5 } },
+        /perUnit must be a positive integer/,
+      ],
+      [
+        'an unknown bound key',
+        { maxCountPerCost: { economy: 'charges', perUnit: 1, extra: 1 } },
+        /unsupported key "extra"/,
+      ],
+      [
+        'a bound beside a fixed count',
+        { count: 1 },
+        /mutually exclusive with count, countRoll and creatureRoll/,
+      ],
+      [
+        'a bound beside a count roll',
+        { countRoll: '1d3' },
+        /mutually exclusive with count, countRoll and creatureRoll/,
+      ],
+      [
+        'a bound on a non-creature grant',
+        { kind: 'object', creatureRefs: undefined, note: 'x' },
+        /valid only on a creature grant/,
+      ],
+      [
+        'a marker that is not true',
+        { noPrintedEnding: false },
+        /noPrintedEnding must be true/,
+      ],
+      [
+        'a marker beside a printed ending',
+        { revertOn: ['one-hour-ended'] },
+        /excludes duration and revertOn/,
+      ],
+      [
+        'a marker beside a duration',
+        { duration: { amount: 1, unit: 'hour' } },
+        /excludes duration and revertOn/,
+      ],
+    ])('rejects %s', (_name, extra, message) => {
+      expect(() => validate(withGrant(grant(extra)))).toThrow(
+        message as RegExp,
+      );
+    });
+  });
+
   it.each([
     [
       'unknown economy',
