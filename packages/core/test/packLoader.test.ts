@@ -338,6 +338,79 @@ describe('loadRecordRelationshipManifest — negative paths', () => {
     );
   });
 
+  it('round-trips excludedLeafValues and rejects a malformed list', () => {
+    const declaration = {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/conditions/*',
+      linkField: 'data.mechanics.effects[].conditions',
+      disposition: 'reference',
+      relation: 'imposed-condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      excludedLeafValues: ['suffocating'],
+      reason: 'fixture',
+    };
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'record-relationships.json'),
+      JSON.stringify({
+        schema: RECORD_RELATIONSHIP_SCHEMA,
+        declarations: [declaration],
+      }),
+      'utf8',
+    );
+    expect(
+      loadRecordRelationshipManifest(dir)?.declarations[0]?.excludedLeafValues,
+    ).toEqual(['suffocating']);
+    for (const bad of ['suffocating', [''], [3]]) {
+      writeFileSync(
+        join(dir, 'record-relationships.json'),
+        JSON.stringify({
+          schema: RECORD_RELATIONSHIP_SCHEMA,
+          declarations: [{ ...declaration, excludedLeafValues: bad }],
+        }),
+        'utf8',
+      );
+      expect(() => loadRecordRelationshipManifest(dir)).toThrow(
+        /excludedLeafValues/,
+      );
+    }
+  });
+
+  it('round-trips listDelimiter and rejects a malformed one', () => {
+    const declaration = {
+      kind: 'creature',
+      pointerPrefix: '/conditionImmunities',
+      linkField: 'data.conditionImmunities',
+      disposition: 'reference',
+      relation: 'condition-immunity',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      listDelimiter: ', ',
+      reason: 'fixture',
+    };
+    const dir = makeTmpDir();
+    const write = (decl: unknown) =>
+      writeFileSync(
+        join(dir, 'record-relationships.json'),
+        JSON.stringify({
+          schema: RECORD_RELATIONSHIP_SCHEMA,
+          declarations: [decl],
+        }),
+        'utf8',
+      );
+    write(declaration);
+    expect(
+      loadRecordRelationshipManifest(dir)?.declarations[0]?.listDelimiter,
+    ).toBe(', ');
+    for (const bad of ['', ' ', 3, ['x']]) {
+      write({ ...declaration, listDelimiter: bad });
+      expect(() => loadRecordRelationshipManifest(dir)).toThrow(
+        /listDelimiter/,
+      );
+    }
+  });
+
   it('fails closed on a non-string pointerPrefix instead of an unrelated native error', () => {
     const dir = makeTmpDir();
     writeFileSync(

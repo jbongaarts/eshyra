@@ -1,4 +1,162 @@
+import { CONDITION_RELATION_VALUES } from '../../../src/rules/conditionRelations.js';
 import type { RecordRelationshipDeclaration } from '../../../src/rules/recordRelationships.js';
+import type { RulesRecordKind } from '../../../src/rules/types.js';
+
+/**
+ * The relation each `mechanics.conditions[].relation` sibling value produces.
+ * It is the closed `CONDITION_RELATION_VALUES` vocabulary mapped to itself, so
+ * the emitted relation names are unchanged from the former
+ * placeholder-plus-override form, and no value is excluded: every one of the
+ * eleven values states what the printed clause says about a condition named
+ * by the record (`mention` is a source-text mention with no structured claim,
+ * kept as an edge). A value outside the vocabulary stays `indeterminate`.
+ */
+const MECHANICS_CONDITION_RELATION_TABLE: Readonly<Record<string, string>> =
+  Object.fromEntries(CONDITION_RELATION_VALUES.map((value) => [value, value]));
+
+function mechanicsConditionDeclaration(
+  kind: RulesRecordKind,
+  pointerPrefix: string,
+  linkField: string,
+  owner: string,
+): RecordRelationshipDeclaration {
+  return {
+    kind,
+    pointerPrefix,
+    linkField,
+    disposition: 'reference',
+    targetResolution: 'record-name',
+    targetKind: 'condition',
+    relationField: 'relation',
+    relationByFieldValue: MECHANICS_CONDITION_RELATION_TABLE,
+    reason: `Condition names in ${owner} mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.`,
+  };
+}
+
+/**
+ * eshyra-o9bd.19.3.5: every `mechanics.conditions[].condition` leaf in a
+ * non-condition record. The top-level kinds were declared earlier; the nested
+ * creature (actions, legendary actions, reactions, traits) and ancestry
+ * (traits) shapes carry the identical entry shape and sibling vocabulary.
+ */
+const MECHANICS_CONDITION_DECLARATIONS: readonly RecordRelationshipDeclaration[] =
+  [
+    ...(['action', 'feat', 'feature', 'hazard', 'spell'] as const).map((kind) =>
+      mechanicsConditionDeclaration(
+        kind,
+        '/mechanics/conditions/*/condition',
+        'data.mechanics.conditions',
+        `a ${kind} record's`,
+      ),
+    ),
+    mechanicsConditionDeclaration(
+      'ancestry',
+      '/traits/*/mechanics/conditions/*/condition',
+      'data.traits[].mechanics.conditions',
+      "an ancestry trait's",
+    ),
+    mechanicsConditionDeclaration(
+      'creature',
+      '/actions/*/mechanics/conditions/*/condition',
+      'data.actions[].mechanics.conditions',
+      "a creature action's",
+    ),
+    mechanicsConditionDeclaration(
+      'creature',
+      '/legendaryActions/entries/*/mechanics/conditions/*/condition',
+      'data.legendaryActions.entries[].mechanics.conditions',
+      "a creature legendary action's",
+    ),
+    mechanicsConditionDeclaration(
+      'creature',
+      '/reactions/*/mechanics/conditions/*/condition',
+      'data.reactions[].mechanics.conditions',
+      "a creature reaction's",
+    ),
+    mechanicsConditionDeclaration(
+      'creature',
+      '/traits/*/mechanics/conditions/*/condition',
+      'data.traits[].mechanics.conditions',
+      "a creature trait's",
+    ),
+  ];
+
+const PROSE_PRECONDITION_REASON =
+  'A free-text precondition clause (for example "While raging"), not a condition name; it is not a reference to a condition record.';
+
+function prosePrecondition(
+  kind: RulesRecordKind,
+  pointerPrefix: string,
+  linkField: string,
+): RecordRelationshipDeclaration {
+  return {
+    kind,
+    pointerPrefix,
+    linkField,
+    disposition: 'not-a-reference',
+    reason: PROSE_PRECONDITION_REASON,
+  };
+}
+
+/**
+ * The magic-item `effects[].condition` shape is overloaded within one kind:
+ * most effect kinds store a prose activation precondition there, while an
+ * `imposesCondition` effect (Philter of Love) stores the condition it imposes.
+ * The effect `kind` therefore selects the meaning. Every emitted effect kind
+ * is listed so a new kind is `indeterminate`, not silently misread.
+ * `triggeredEffect` stores prose only: the two triggered effects that impose
+ * `charmed` (Rod of Rulership, Philter of Love's residual effect) carry it in
+ * `conditions[]` (declared below with the other imposing effects), so no
+ * condition name is left under this field for a table-excluded kind.
+ */
+const MAGIC_ITEM_EFFECT_CONDITION_PROSE_KINDS = [
+  'abilityScoreIncrease',
+  'abilityScoreSet',
+  'acFormula',
+  'advantage',
+  'breathes',
+  'castSpell',
+  'climbAnywhere',
+  'damageResistance',
+  'extraDamage',
+  'hover',
+  'ignoreDifficultTerrain',
+  'immunity',
+  'jumpDistanceMultiplier',
+  'leavesNoTracks',
+  'light',
+  'proficiency',
+  'regeneration',
+  'rollModifier',
+  'rollPenaltyDice',
+  'sense',
+  'slowFall',
+  'speedBonus',
+  'speedMultiplier',
+  'speedSet',
+  'triggeredEffect',
+  'walkOnLiquids',
+] as const;
+
+/**
+ * Creature and stat-block `conditionImmunities` is the verbatim printed
+ * stat-block label: a comma-separated list of condition names ("charmed,
+ * exhaustion, poisoned"). Every printed name is a condition record, so each
+ * list entry is a `condition-immunity` reference (the same relation a magic
+ * item's immunity effect uses).
+ */
+const CONDITION_IMMUNITY_DECLARATIONS: readonly RecordRelationshipDeclaration[] =
+  (['creature', 'stat-block'] as const).map((kind) => ({
+    kind,
+    pointerPrefix: '/conditionImmunities',
+    linkField: 'data.conditionImmunities',
+    disposition: 'reference',
+    relation: 'condition-immunity',
+    targetResolution: 'record-name',
+    targetKind: 'condition',
+    listDelimiter: ', ',
+    reason: `The ${kind} record's printed "Condition Immunities" label lists the conditions it is immune to as a comma-separated string; each printed name resolves against the condition kind (for example the zombie's "poisoned", the ghoul's "charmed, exhaustion, poisoned").`,
+  }));
 
 /** Curated relationship meaning for the fields formerly guessed by discovery. */
 export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationshipDeclaration[] =
@@ -108,66 +266,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       reason:
         'The parser emits canonical spell-table record keys referenced by this subclass.',
     },
-    {
-      kind: 'action',
-      pointerPrefix: '/mechanics/conditions/*/condition',
-      linkField: 'data.mechanics.conditions',
-      disposition: 'reference',
-      relation: 'condition',
-      targetResolution: 'record-name',
-      targetKind: 'condition',
-      relationField: 'relation',
-      reason:
-        'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
-    },
-    {
-      kind: 'feat',
-      pointerPrefix: '/mechanics/conditions/*/condition',
-      linkField: 'data.mechanics.conditions',
-      disposition: 'reference',
-      relation: 'condition',
-      targetResolution: 'record-name',
-      targetKind: 'condition',
-      relationField: 'relation',
-      reason:
-        'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
-    },
-    {
-      kind: 'feature',
-      pointerPrefix: '/mechanics/conditions/*/condition',
-      linkField: 'data.mechanics.conditions',
-      disposition: 'reference',
-      relation: 'condition',
-      targetResolution: 'record-name',
-      targetKind: 'condition',
-      relationField: 'relation',
-      reason:
-        'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
-    },
-    {
-      kind: 'hazard',
-      pointerPrefix: '/mechanics/conditions/*/condition',
-      linkField: 'data.mechanics.conditions',
-      disposition: 'reference',
-      relation: 'condition',
-      targetResolution: 'record-name',
-      targetKind: 'condition',
-      relationField: 'relation',
-      reason:
-        'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
-    },
-    {
-      kind: 'spell',
-      pointerPrefix: '/mechanics/conditions/*/condition',
-      linkField: 'data.mechanics.conditions',
-      disposition: 'reference',
-      relation: 'condition',
-      targetResolution: 'record-name',
-      targetKind: 'condition',
-      relationField: 'relation',
-      reason:
-        'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
-    },
+    ...MECHANICS_CONDITION_DECLARATIONS,
     // eshyra-o9bd.19.3.4: rule/action/condition discovery. These fields
     // already carried resolvable record keys, but no declaration said they
     // were links, so discovery could not follow them.
@@ -320,5 +419,203 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       targetResolution: 'record-key',
       reason:
         'A magic item the printed text names as a prerequisite of this item: worn for attunement (Hammer of Thunderbolts: belt of giant strength, gauntlets of ogre power) or coating its storage container (Sovereign Glue: oil of slipperiness).',
+    },
+    // eshyra-o9bd.19.3.5: condition-name leaves outside condition records.
+    // Each is a typed reference or an explicit not-a-reference.
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/conditions/*',
+      linkField: 'data.mechanics.effects[].conditions',
+      disposition: 'reference',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: '../kind',
+      relationByFieldValue: {
+        imposesCondition: 'imposed-condition',
+        triggeredEffect: 'imposed-condition',
+        immunity: 'condition-immunity',
+      },
+      excludedLeafValues: ['suffocating'],
+      reason:
+        'The conditions a magic-item effect names: imposesCondition and triggeredEffect impose them on a failed save or trigger (Wand of Paralysis: paralyzed; Robe of Eyes: blinded), and immunity states immunity to them (Periapt of Proof against Poison: immune to the poisoned condition). The relation comes from the containing effect kind. Dust of Sneezing and Choking also lists suffocating ("incapacitated and suffocating"), which the SRD defines as a rule (rule:suffocating) and not a condition; it is declared as an excluded leaf value rather than left as an unresolved reference, and the importer keeps it in the conditions list because no existing field carries that meaning.',
+    },
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/failedSaveCondition',
+      linkField: 'data.mechanics.effects[].failedSaveCondition',
+      disposition: 'reference',
+      relation: 'failed-save-condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      reason:
+        'The condition a creature suffers on a failed saving throw (Dagger of Venom: poisoned; Giant Slayer: prone; Horn of Blasting: deafened; Hammer of Thunderbolts: stunned). Every emitted occurrence is a triggeredEffect failed-save rider with this one meaning.',
+    },
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/onSuccessfulSave/condition',
+      linkField: 'data.mechanics.effects[].onSuccessfulSave.condition',
+      disposition: 'reference',
+      relation: 'successful-save-condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      reason:
+        'Mace of Disruption: on a successful save the creature becomes frightened of the wielder until the end of the wielder next turn.',
+    },
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/condition',
+      linkField: 'data.mechanics.effects[].condition',
+      disposition: 'reference',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: 'kind',
+      relationByFieldValue: {
+        imposesCondition: 'imposed-condition',
+        ...Object.fromEntries(
+          MAGIC_ITEM_EFFECT_CONDITION_PROSE_KINDS.map((kind) => [kind, null]),
+        ),
+      },
+      reason:
+        'Overloaded field: an imposesCondition effect names the condition it imposes (Philter of Love: charmed), while every other effect kind, triggeredEffect included, stores a prose activation precondition here (for example "while the sword is ablaze") that is excluded. The importer emits the condition a triggeredEffect imposes (Rod of Rulership, Philter of Love) in its conditions[] array, not here.',
+    },
+    // eshyra-o9bd.19.3.5.2 (eshyra-1fx7): condition names under field names
+    // other than condition/conditions/failedSaveCondition.
+    ...CONDITION_IMMUNITY_DECLARATIONS,
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/state',
+      linkField: 'data.mechanics.effects[].state',
+      disposition: 'reference',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: 'kind',
+      relationByFieldValue: { visibility: 'imposed-condition' },
+      reason:
+        'A visibility effect names the condition it imposes: Dust of Disappearance ("you and each creature and object within 10 feet of you become invisible for 2d4 minutes") and Potion of Invisibility ("you become invisible for 1 hour"). The SRD defines Invisible as a condition (Appendix PH-A). Any other effect kind carrying a state is indeterminate, not silently read.',
+    },
+    {
+      kind: 'condition',
+      pointerPrefix: '/mechanics/effects/*/state',
+      linkField: 'data.mechanics.effects[].state',
+      disposition: 'not-a-reference',
+      reason:
+        'The Invisible condition record describes its own state ("impossible-to-see"), a descriptor of that condition, not a condition name.',
+    },
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/ends/*',
+      linkField: 'data.mechanics.effects[].ends',
+      disposition: 'reference',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: '../kind',
+      relationByFieldValue: {
+        conditionEndsWhen: 'removed-condition',
+        triggeredEffect: 'removed-condition',
+      },
+      excludedLeafValues: ['disease', 'any-disease'],
+      reason:
+        'What a magic-item effect ends. Restorative Ointment: "ceases to be poisoned, and is cured of any disease" lists the poisoned condition it removes beside diseases. Diseases are not condition records (the SRD treats them as a separate rules topic), so disease and any-disease are declared excluded leaf values rather than unresolved references.',
+    },
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/variants/whip/endsOn/*',
+      linkField: 'data.mechanics.effects[].variants.whip.endsOn',
+      disposition: 'reference',
+      relation: 'ending-trigger-condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      excludedLeafValues: ['dismiss-action', 'death'],
+      reason:
+        'Feather Token (whip): "The whip disappears after 1 hour, when you use an action to dismiss it, or when you are incapacitated or die." The incapacitated entry names the condition that ends the effect; dismiss-action and death are not conditions and are declared excluded leaf values.',
+    },
+    prosePrecondition(
+      'magic-item',
+      '/variants/*/mechanics/effects/*/condition',
+      'data.variants[].mechanics.effects[].condition',
+    ),
+    prosePrecondition(
+      'magic-item',
+      '/mechanics/stateMachine/transitions/*/condition',
+      'data.mechanics.stateMachine.transitions[].condition',
+    ),
+    prosePrecondition(
+      'action',
+      '/mechanics/effects/*/condition',
+      'data.mechanics.effects[].condition',
+    ),
+    prosePrecondition(
+      'ancestry',
+      '/traits/*/mechanics/effects/*/condition',
+      'data.traits[].mechanics.effects[].condition',
+    ),
+    prosePrecondition(
+      'creature',
+      '/actions/*/mechanics/effects/*/condition',
+      'data.actions[].mechanics.effects[].condition',
+    ),
+    prosePrecondition(
+      'creature',
+      '/traits/*/mechanics/effects/*/condition',
+      'data.traits[].mechanics.effects[].condition',
+    ),
+    prosePrecondition(
+      'creature',
+      '/actions/*/mechanics/attacks/*/alternatives/*/condition',
+      'data.actions[].mechanics.attacks[].alternatives[].condition',
+    ),
+    prosePrecondition(
+      'creature',
+      '/traits/*/mechanics/effects/*/forms/*/statlineRefs/*/condition',
+      'data.traits[].mechanics.effects[].forms[].statlineRefs[].condition',
+    ),
+    prosePrecondition(
+      'feature',
+      '/mechanics/effects/*/condition',
+      'data.mechanics.effects[].condition',
+    ),
+    prosePrecondition(
+      'spell',
+      '/mechanics/effects/*/condition',
+      'data.mechanics.effects[].condition',
+    ),
+    prosePrecondition(
+      'spell',
+      '/mechanics/damage/*/typeOptions/*/condition',
+      'data.mechanics.damage[].typeOptions[].condition',
+    ),
+    {
+      kind: 'action',
+      pointerPrefix: '/mechanics/effects/*/conditions/*',
+      linkField: 'data.mechanics.effects[].conditions',
+      disposition: 'not-a-reference',
+      reason:
+        'Dodge benefitEndsWhen lists the circumstances that end the benefit (you-are-incapacitated, your-speed-is-0), which are clauses, not condition names. The Dodge incapacitated edge is already carried by its mechanics.conditions exclusion entry.',
+    },
+    {
+      kind: 'equipment',
+      pointerPrefix: '/useProfile/clauses/*/semantics/failureCondition',
+      linkField: 'data.useProfile.clauses[].semantics.failureCondition',
+      disposition: 'reference',
+      relation: 'failed-save-condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      reason:
+        'Ball Bearings: a creature moving across the area must succeed on a DC 10 Dexterity saving throw or fall prone.',
+    },
+    {
+      kind: 'equipment',
+      pointerPrefix: '/useProfile/clauses/*/semantics/condition',
+      linkField: 'data.useProfile.clauses[].semantics.condition',
+      disposition: 'reference',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: '../owner',
+      relationByFieldValue: {
+        F3: 'imposed-condition',
+        model: null,
+      },
+      reason:
+        'Overloaded field in equipment use-profile clauses. The F3 (save/condition) clause owner stores a condition name (Net: a creature hit by a net is restrained until it is freed); the model-owned clause stores a free-text precondition (Lance: wielder-not-mounted), which is excluded. Any other clause owner is indeterminate, not silently read.',
     },
   ];
