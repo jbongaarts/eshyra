@@ -344,6 +344,25 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
         '/mechanics/effects/*/condition',
       ),
     ).toEqual([['imposed-condition', 'condition:charmed']]);
+    // Rod of Rulership: "must succeed on a DC 15 Wisdom saving throw or be
+    // charmed by you for 8 hours".
+    expect(
+      resolvedEdge(
+        'magic-item:rod-of-rulership',
+        '/mechanics/effects/*/conditions/*',
+      ),
+    ).toEqual([['imposed-condition', 'condition:charmed']]);
+    expect(
+      outcomes('magic-item:rod-of-rulership', '/mechanics/effects/*/condition'),
+    ).toEqual([]);
+    // Philter of Love: both the imposesCondition effect and the residual
+    // triggeredEffect ("become charmed by that creature for 1 hour") reach it.
+    expect(
+      resolvedEdge(
+        'magic-item:philter-of-love',
+        '/mechanics/effects/*/conditions/*',
+      ),
+    ).toEqual([['imposed-condition', 'condition:charmed']]);
     // Ball Bearings: "... Dexterity saving throw or fall prone".
     expect(
       resolvedEdge(
@@ -444,8 +463,6 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
       if (excludedPointers.size === 0) continue;
       walkFieldPointers(record.data, (pointer, value) => {
         if (!excludedPointers.has(pointer)) return;
-        // Only the excluded entries (not the resolved imposesCondition name)
-        // are checked: a resolved philter-of-love charmed is a name by design.
         if (
           typeof value === 'string' &&
           conditionNames.has(normalizeRulesRecordName(value))
@@ -453,15 +470,10 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
           excludedByRecord.push([record.key, `${pointer}=${value}`]);
       });
     }
-    // The only condition-name leaves under an excluded-capable pointer are the
-    // three `charmed` triggered/imposing effects; the imposesCondition one is
-    // resolved, and the two triggeredEffect ones are the documented
-    // follow-up gap (the table cannot separate them from prose by kind).
-    expect(excludedByRecord.sort()).toEqual([
-      ['magic-item:philter-of-love', '/mechanics/effects/*/condition=charmed'],
-      ['magic-item:philter-of-love', '/mechanics/effects/*/condition=charmed'],
-      ['magic-item:rod-of-rulership', '/mechanics/effects/*/condition=charmed'],
-    ]);
+    // No exceptions: every table-excluded leaf outside condition records is
+    // prose. A condition name under an excluded-capable pointer would be a
+    // silently lost edge (the earlier charmed triggeredEffect gap, eshyra-y0us).
+    expect(excludedByRecord).toEqual([]);
     const lance = outcomes(
       'equipment:lance',
       '/useProfile/clauses/*/semantics/condition',

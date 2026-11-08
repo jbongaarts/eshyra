@@ -104,9 +104,10 @@ function prosePrecondition(
  * `imposesCondition` effect (Philter of Love) stores the condition it imposes.
  * The effect `kind` therefore selects the meaning. Every emitted effect kind
  * is listed so a new kind is `indeterminate`, not silently misread.
- * `triggeredEffect` is mixed (Rod of Rulership and Philter of Love's
- * triggered effect store `charmed`; five others store prose) and a table keyed
- * by kind cannot separate them, so it is excluded and tracked as a follow-up.
+ * `triggeredEffect` stores prose only: the two triggered effects that impose
+ * `charmed` (Rod of Rulership, Philter of Love's residual effect) carry it in
+ * `conditions[]` (declared below with the other imposing effects), so no
+ * condition name is left under this field for a table-excluded kind.
  */
 const MAGIC_ITEM_EFFECT_CONDITION_PROSE_KINDS = [
   'abilityScoreIncrease',
@@ -455,7 +456,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
         ),
       },
       reason:
-        'Overloaded field: an imposesCondition effect names the condition it imposes (Philter of Love: charmed), while every other effect kind stores a prose activation precondition here (for example "while the sword is ablaze") that is excluded. triggeredEffect is mixed (two charmed names, five prose clauses) and cannot be told apart by kind, so it is excluded and tracked as a follow-up.',
+        'Overloaded field: an imposesCondition effect names the condition it imposes (Philter of Love: charmed), while every other effect kind, triggeredEffect included, stores a prose activation precondition here (for example "while the sword is ablaze") that is excluded. The importer emits the condition a triggeredEffect imposes (Rod of Rulership, Philter of Love) in its conditions[] array, not here.',
     },
     prosePrecondition(
       'magic-item',

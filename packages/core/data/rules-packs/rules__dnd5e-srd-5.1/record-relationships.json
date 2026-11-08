@@ -526,7 +526,7 @@
         "triggeredEffect": null,
         "walkOnLiquids": null
       },
-      "reason": "Overloaded field: an imposesCondition effect names the condition it imposes (Philter of Love: charmed), while every other effect kind stores a prose activation precondition here (for example \"while the sword is ablaze\") that is excluded. triggeredEffect is mixed (two charmed names, five prose clauses) and cannot be told apart by kind, so it is excluded and tracked as a follow-up."
+      "reason": "Overloaded field: an imposesCondition effect names the condition it imposes (Philter of Love: charmed), while every other effect kind, triggeredEffect included, stores a prose activation precondition here (for example \"while the sword is ablaze\") that is excluded. The importer emits the condition a triggeredEffect imposes (Rod of Rulership, Philter of Love) in its conditions[] array, not here."
     },
     {
       "kind": "magic-item",
