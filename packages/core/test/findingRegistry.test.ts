@@ -22,19 +22,19 @@ describe('finding registry', () => {
   it('loads the real registry with the fixed audit inventory', () => {
     expect(real.version).toBe(2);
     expect(real.explicitNonClaims.length).toBeGreaterThan(0);
-    expect(real.rows).toHaveLength(68);
-    expect(FINDING_ALIASES).toHaveLength(70);
-    expect(new Set(real.rows.flatMap((row) => row.aliases)).size).toBe(70);
-    expect(CANONICAL_FINDING_IDS).toHaveLength(68);
-    expect(Object.keys(CANONICAL_ROW_ROSTER)).toHaveLength(68);
-    expect(Object.values(CANONICAL_ROW_ROSTER).flat()).toHaveLength(70);
+    expect(real.rows).toHaveLength(69);
+    expect(FINDING_ALIASES).toHaveLength(71);
+    expect(new Set(real.rows.flatMap((row) => row.aliases)).size).toBe(71);
+    expect(CANONICAL_FINDING_IDS).toHaveLength(69);
+    expect(Object.keys(CANONICAL_ROW_ROSTER)).toHaveLength(69);
+    expect(Object.values(CANONICAL_ROW_ROSTER).flat()).toHaveLength(71);
     for (const row of real.rows)
       expect(row.aliases).toEqual(CANONICAL_ROW_ROSTER[row.canonicalId]);
   });
 
   it('resolves every alias exactly once and round-trips lookups', () => {
     const index = aliasIndex(real);
-    expect(index.size).toBe(70);
+    expect(index.size).toBe(71);
     for (const alias of FINDING_ALIASES)
       expect(index.get(alias)?.aliases).toContain(alias);
     expect(findingByAlias('opus:F-19', real)?.canonicalId).toBe(
@@ -46,7 +46,7 @@ describe('finding registry', () => {
   });
 
   it('preserves status reasoning and non-accepted dispositions', () => {
-    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(68);
+    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(69);
     expect(
       real.rows.find((row) => row.canonicalId === 'source-authority-opus-f19')
         ?.statusReasoning,
