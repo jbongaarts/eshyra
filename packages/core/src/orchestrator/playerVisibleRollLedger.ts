@@ -14,7 +14,8 @@ import type { ExecutedToolCall } from './turnLoop.js';
 /**
  * Engine-rendered, mathematically authoritative "Rolls:" ledger appended to
  * player-visible narration. Reads successful `roll`, `resolve_check`,
- * `resolve_contest`, and `resolve_damage` tool results (F1/F9: rolled dice,
+ * `resolve_contest`, `resolve_damage`, `record_death_save`, and recharge-mode
+ * `restore_usage` tool results (F1/F9: rolled dice,
  * kept/dropped selection, natural results, declared modifiers, and outcomes
  * all come from tool data — never from model prose).
  */
@@ -309,6 +310,139 @@ function readResolveDamageEntry(
   };
 }
 
+function readRollEvidence(value: unknown):
+  | {
+      source: 'engine' | 'dm-supplied';
+      dice: string;
+      rolls: number[];
+      dropped: number[];
+      natural: number;
+      total?: number;
+      basis?: string;
+    }
+  | undefined {
+  const e = asDataRecord(value);
+  if (e === undefined || !Number.isInteger(e.natural)) return undefined;
+  const total = Number.isInteger(e.total) ? (e.total as number) : undefined;
+  if (e.source === 'engine') {
+    if (typeof e.dice !== 'string' || !isIntArray(e.rolls)) return undefined;
+    return {
+      source: 'engine',
+      dice: e.dice,
+      rolls: e.rolls,
+      dropped: isIntArray(e.dropped) ? e.dropped : [],
+      natural: e.natural as number,
+      ...(total === undefined ? {} : { total }),
+    };
+  }
+  if (e.source === 'dm-supplied' && typeof e.basis === 'string')
+    return {
+      source: 'dm-supplied',
+      dice: '',
+      rolls: [],
+      dropped: [],
+      natural: e.natural as number,
+      ...(total === undefined ? {} : { total }),
+      basis: e.basis,
+    };
+  return undefined;
+}
+
+function formatRollEvidence(
+  evidence: NonNullable<ReturnType<typeof readRollEvidence>>,
+): string {
+  if (evidence.source === 'dm-supplied')
+    return `DM-supplied (${evidence.basis}) nat ${evidence.natural}`;
+  const droppedIndexes = new Set<number>();
+  const remaining = [...evidence.dropped];
+  evidence.rolls.forEach((die, index) => {
+    const at = remaining.indexOf(die);
+    if (at >= 0) {
+      droppedIndexes.add(index);
+      remaining.splice(at, 1);
+    }
+  });
+  const shown =
+    evidence.rolls.length > 1
+      ? `${evidence.dice} [${evidence.rolls
+          .map((die, index) =>
+            droppedIndexes.has(index) ? `${die} dropped` : `${die}`,
+          )
+          .join(' | ')}]`
+      : evidence.dice;
+  return `${shown} nat ${evidence.natural}`;
+}
+
+function readDeathSaveEntry(
+  data: Record<string, unknown>,
+): PlayerVisibleRollEntry | undefined {
+  if (data.visibility !== 'player_visible') return undefined;
+  const evidence = readRollEvidence(data.rollEvidence);
+  if (
+    evidence === undefined ||
+    !Number.isInteger(data.saveBonus) ||
+    !Number.isInteger(data.total) ||
+    typeof data.outcome !== 'string'
+  )
+    return undefined;
+  const bonus = data.saveBonus as number;
+  const sources =
+    Array.isArray(data.bonusSources) && data.bonusSources.length > 0
+      ? ` (${data.bonusSources.join(', ')})`
+      : '';
+  const bonusPart =
+    bonus === 0 ? '' : ` ${bonus > 0 ? '+' : '-'} ${Math.abs(bonus)}${sources}`;
+  return {
+    label: CATEGORY_LABELS.death_save,
+    reason:
+      typeof data.reason === 'string' ? data.reason : 'Death saving throw',
+    visibility: 'player_visible',
+    category: 'death_save',
+    detail: `${formatRollEvidence(evidence)}${bonusPart} = ${data.total} → ${data.outcome}`,
+  };
+}
+
+function readRechargeEntry(
+  data: Record<string, unknown>,
+): PlayerVisibleRollEntry | undefined {
+  if (data.visibility !== 'player_visible') return undefined;
+  const evidence = readRollEvidence(data.rollEvidence);
+  const counter = asDataRecord(data.counter);
+  if (evidence === undefined || counter === undefined) return undefined;
+  const name =
+    typeof counter.displayName === 'string' ? `${counter.displayName}: ` : '';
+  if (typeof data.rechargeThreshold === 'string') {
+    if (typeof data.recharged !== 'boolean') return undefined;
+    return {
+      label: 'Recharge',
+      reason: `${name}${typeof data.reason === 'string' ? data.reason : 'Recharge roll'}`,
+      visibility: 'player_visible',
+      category: 'other',
+      detail: `${formatRollEvidence(evidence)} vs ${data.rechargeThreshold} → ${data.recharged ? 'recharged' : 'not recharged'}`,
+    };
+  }
+  // A dawn rechargeFormula restore (e.g. 1d6+1): no threshold. The ledger
+  // reports the uses the counter actually regained (`restored`, measured from
+  // state), which stops at zero expended uses; a larger rolled or supplied
+  // total is shown as capped, never as regained.
+  if (typeof data.restored !== 'number') return undefined;
+  const amount = evidence.total ?? evidence.natural;
+  const regained =
+    data.restored < amount
+      ? `regains ${data.restored} (${amount}, capped at uses expended)`
+      : `regains ${data.restored}`;
+  return {
+    label: 'Restore',
+    reason: `${name}${typeof data.reason === 'string' ? data.reason : 'Rolled restore'}`,
+    visibility: 'player_visible',
+    category: 'other',
+    detail:
+      evidence.source === 'dm-supplied'
+        ? `DM-supplied (${evidence.basis}) ${regained}`
+        : `${formatRollEvidence(evidence)} → ${regained}`,
+  };
+}
+
 const ENTRY_READERS: Record<
   string,
   (data: Record<string, unknown>) => PlayerVisibleRollEntry | undefined
@@ -320,6 +454,8 @@ const ENTRY_READERS: Record<
   resolve_retained_check: readResolveRetainedCheckEntry,
   resolve_damage: readResolveDamageEntry,
   spend_rest_hit_die: readRestHitDieEntry,
+  record_death_save: readDeathSaveEntry,
+  restore_usage: readRechargeEntry,
 };
 
 function stripTrailingModelRollLedger(narration: string): string {
