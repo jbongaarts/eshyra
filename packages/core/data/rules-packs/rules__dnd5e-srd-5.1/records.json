@@ -81436,11 +81436,11 @@
         "conditions": [
           {
             "condition": "charmed",
-            "relation": "applies"
+            "relation": "removes"
           },
           {
             "condition": "frightened",
-            "relation": "mention"
+            "relation": "removes"
           }
         ]
       }
