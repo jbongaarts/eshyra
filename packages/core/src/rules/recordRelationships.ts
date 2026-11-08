@@ -46,13 +46,18 @@ export interface RecordRelationshipDeclaration {
   readonly targetResolution?: RelationshipTargetResolution;
   readonly targetKind?: RulesRecordKind;
   /**
-   * For `record-name` resolution only: the sibling key, beside the matched
+   * The sibling key, beside the matched
    * leaf, that carries this occurrence's own relation. Declared rather than
    * assumed, because the alternative is re-deriving it from the pointer
    * string (`/condition` -> `/relation`), which is the same undeclared
    * consumer-side coupling this module exists to delete — and it fails
    * SILENTLY, since an unreadable relation is skipped as a data-validity
-   * case. Required exactly when `targetResolution` is `record-name`.
+   * case. Optional for `record-name` (absent means a fixed `relation`, or the
+   * `CONDITION_RELATION_VALUES` vocabulary); `record-key` may carry it only
+   * with `relationByFieldValue` (eshyra-ry69: a list or field that holds record
+   * keys for one sibling value and plain names for another, for example a
+   * choice whose `category` says whether `from` lists spell records or skill
+   * names).
    *
    * A leaf that is an ARRAY ELEMENT (`conditions/*`) has no sibling keys of
    * its own: its siblings are the other elements. Such a declaration names
@@ -65,9 +70,9 @@ export interface RecordRelationshipDeclaration {
    * explicit per-occurrence exclusion. */
   readonly relationByFieldValue?: Readonly<Record<string, string | null>>;
   /**
-   * For `record-name` resolution only: leaf values (compared after
-   * `normalizeRulesRecordName`) the declaration says are NOT references to a
-   * `targetKind` record although they sit in a field of references. Such a
+   * Leaf values (compared after `normalizeRulesRecordName`) the declaration
+   * says are NOT references to a target record although they sit in a field of
+   * references. Valid for `record-name` and `record-key` resolution. Such a
    * value yields exactly one `excluded` outcome (reason `leaf-value-exclusion`)
    * rather than an `unresolved-target` loss. It is for a printed value that is
    * not a record of the target kind (Dust of Sneezing and Choking lists
@@ -180,14 +185,13 @@ export function buildRecordRelationshipManifest(
         `${where}.targetKind ${JSON.stringify(decl.targetKind)} is not a known RulesRecordKind`,
       );
     if (
-      decl.targetResolution === 'record-name' &&
       decl.relationField !== undefined &&
       (decl.relationField.trim() === '' ||
         !/^(?:\.\.\/)?[^/]+$/.test(decl.relationField) ||
         decl.relationField.endsWith('..'))
     )
       throw new RecordRelationshipError(
-        `${where}: record-name requires a non-empty relationField naming a ` +
+        `${where}: relationField must be a non-empty relationField naming a ` +
           "single sibling key (or '../key' for an array element's container)",
       );
     if (
@@ -199,12 +203,9 @@ export function buildRecordRelationshipManifest(
         `${where}: fixed record-name relation requires relation and omits relationField`,
       );
     if (decl.relationByFieldValue !== undefined) {
-      if (
-        decl.targetResolution !== 'record-name' ||
-        decl.relationField === undefined
-      )
+      if (decl.relationField === undefined)
         throw new RecordRelationshipError(
-          `${where}: relationByFieldValue requires record-name with relationField`,
+          `${where}: relationByFieldValue requires relationField`,
         );
       if (decl.relation !== undefined)
         throw new RecordRelationshipError(
@@ -237,7 +238,6 @@ export function buildRecordRelationshipManifest(
     }
     if (decl.excludedLeafValues !== undefined) {
       if (
-        decl.targetResolution !== 'record-name' ||
         !Array.isArray(decl.excludedLeafValues) ||
         decl.excludedLeafValues.length === 0 ||
         decl.excludedLeafValues.some(
@@ -245,7 +245,7 @@ export function buildRecordRelationshipManifest(
         )
       )
         throw new RecordRelationshipError(
-          `${where}.excludedLeafValues requires record-name and a non-empty list of non-empty strings`,
+          `${where}.excludedLeafValues requires a non-empty list of non-empty strings`,
         );
     }
     if (
@@ -260,10 +260,11 @@ export function buildRecordRelationshipManifest(
       );
     if (
       decl.targetResolution === 'record-key' &&
-      decl.relationField !== undefined
+      decl.relationField !== undefined &&
+      decl.relationByFieldValue === undefined
     )
       throw new RecordRelationshipError(
-        `${where}: record-key cannot carry relationField`,
+        `${where}: record-key relationField requires relationByFieldValue`,
       );
     if (decl.targetResolution === 'record-key' && decl.targetKind !== undefined)
       throw new RecordRelationshipError(
@@ -456,73 +457,44 @@ export function resolveRecordRelationships(
       });
       return;
     }
-    if (declaration.targetResolution === 'record-name') {
-      if (declaration.relationField === undefined) {
-        // Fixed-relation record-name declarations do not read a sibling.
-      } else {
-        // The sibling the DECLARATION names, not a pointer-string rewrite.
-        // A leading `../` steps from the leaf's container (an array, for an
-        // array-element leaf) up to the object holding it.
-        let siblingBase = actualPointer.slice(
-          0,
-          actualPointer.lastIndexOf('/'),
-        );
-        let siblingKey = declaration.relationField as string;
-        if (siblingKey.startsWith('../')) {
-          siblingBase = siblingBase.slice(0, siblingBase.lastIndexOf('/'));
-          siblingKey = siblingKey.slice(3);
-        }
-        const entry = valueAtActualPointer(
-          record.data,
-          `${siblingBase}/${siblingKey}`,
-        );
-        if (entry === undefined) {
-          resolutions.push({
-            outcome: 'indeterminate',
-            sourceRecordKey: record.key,
-            pointer,
-            reason: 'relation-sibling-missing',
-            declaration,
-          });
-          return;
-        }
-        if (typeof entry !== 'string') {
-          resolutions.push({
-            outcome: 'indeterminate',
-            sourceRecordKey: record.key,
-            pointer,
-            reason: 'relation-sibling-not-a-string',
-            rawValue: entry,
-            declaration,
-          });
-          return;
-        }
-        if (declaration.relationByFieldValue !== undefined) {
-          if (!Object.hasOwn(declaration.relationByFieldValue, entry)) {
-            resolutions.push({
-              outcome: 'indeterminate',
-              sourceRecordKey: record.key,
-              pointer,
-              reason: 'relation-not-recognized',
-              rawValue: entry,
-              declaration,
-            });
-            return;
-          }
-          const mappedRelation = declaration.relationByFieldValue[entry];
-          if (mappedRelation === null) {
-            resolutions.push({
-              outcome: 'excluded',
-              sourceRecordKey: record.key,
-              pointer,
-              reason: 'relation-table-exclusion',
-              relationFieldValue: entry,
-              declaration,
-            });
-            return;
-          }
-          relation = mappedRelation;
-        } else if (!CONDITION_RELATION_VALUES.includes(entry as never)) {
+    // Fixed-relation declarations do not read a sibling.
+    if (declaration.relationField !== undefined) {
+      // The sibling the DECLARATION names, not a pointer-string rewrite.
+      // A leading `../` steps from the leaf's container (an array, for an
+      // array-element leaf) up to the object holding it.
+      let siblingBase = actualPointer.slice(0, actualPointer.lastIndexOf('/'));
+      let siblingKey = declaration.relationField as string;
+      if (siblingKey.startsWith('../')) {
+        siblingBase = siblingBase.slice(0, siblingBase.lastIndexOf('/'));
+        siblingKey = siblingKey.slice(3);
+      }
+      const entry = valueAtActualPointer(
+        record.data,
+        `${siblingBase}/${siblingKey}`,
+      );
+      if (entry === undefined) {
+        resolutions.push({
+          outcome: 'indeterminate',
+          sourceRecordKey: record.key,
+          pointer,
+          reason: 'relation-sibling-missing',
+          declaration,
+        });
+        return;
+      }
+      if (typeof entry !== 'string') {
+        resolutions.push({
+          outcome: 'indeterminate',
+          sourceRecordKey: record.key,
+          pointer,
+          reason: 'relation-sibling-not-a-string',
+          rawValue: entry,
+          declaration,
+        });
+        return;
+      }
+      if (declaration.relationByFieldValue !== undefined) {
+        if (!Object.hasOwn(declaration.relationByFieldValue, entry)) {
           resolutions.push({
             outcome: 'indeterminate',
             sourceRecordKey: record.key,
@@ -532,8 +504,31 @@ export function resolveRecordRelationships(
             declaration,
           });
           return;
-        } else relation = entry;
-      }
+        }
+        const mappedRelation = declaration.relationByFieldValue[entry];
+        if (mappedRelation === null) {
+          resolutions.push({
+            outcome: 'excluded',
+            sourceRecordKey: record.key,
+            pointer,
+            reason: 'relation-table-exclusion',
+            relationFieldValue: entry,
+            declaration,
+          });
+          return;
+        }
+        relation = mappedRelation;
+      } else if (!CONDITION_RELATION_VALUES.includes(entry as never)) {
+        resolutions.push({
+          outcome: 'indeterminate',
+          sourceRecordKey: record.key,
+          pointer,
+          reason: 'relation-not-recognized',
+          rawValue: entry,
+          declaration,
+        });
+        return;
+      } else relation = entry;
     }
     // Table-bearing declarations have now handled their sibling, including a
     // declared exclusion. Only surviving occurrences need a string leaf.
@@ -730,6 +725,92 @@ export const CONDITION_NAME_LEAF_POINTER_SHAPES: readonly string[] = [
 ];
 
 /**
+ * eshyra-ry69: the explicitly enumerated KIND-QUALIFIED pointer shapes
+ * (`<kind><pointer>`) at which an emitted leaf equals an existing record key
+ * and which eshyra-ry69 declared as a `reference` or an explicit
+ * `not-a-reference`. Found by the deterministic predicate "a data leaf whose
+ * value exactly equals a record key, at a (kind, normalized pointer) no
+ * declaration covered" and fixed here as literals, never derived from the
+ * manifest under test. Kind-qualified because pointers such as `/features/*`
+ * are emitted by several kinds that carry no record keys there. Bounded on
+ * purpose: a claim about these shapes, never about `RulesRecord.data` as a
+ * whole (ADR 0020 section 6); a record-key leaf at any shape NOT listed here
+ * is not claimed.
+ */
+export const RECORD_KEY_LEAF_KIND_POINTER_SHAPES: readonly string[] = [
+  'ancestry/choices/*/extension/exoticTableRef',
+  'ancestry/choices/*/extension/ruleRef',
+  'ancestry/choices/*/from/*',
+  'ancestry/languages/*/extension/exoticTableRef',
+  'ancestry/languages/*/extension/ruleRef',
+  'ancestry/subraceOf',
+  'ancestry/subraces/*',
+  'ancestry/traits/*/mechanics/spellGrants/*/spell',
+  'background/choices/*/tableRef',
+  'background/equipmentGrants/*/ref',
+  'background/languages/*/extension/exoticTableRef',
+  'background/languages/*/extension/ruleRef',
+  'class/features/*',
+  'class/progression/*/advancement/*/ref',
+  'class/progression/*/advancement/*/targetRefs/*',
+  'class/startingEquipment/entries/*/grants/*/ref',
+  'class/startingEquipment/entries/*/options/*/grants/*/ref',
+  'equipment/contents/*/ref',
+  'feature/choices/*/from/*',
+  'feature/choices/*/from/classLists/*',
+  'feature/choices/*/from/countsAsClassSpell',
+  'feature/choices/*/from/maxSpellLevel/classRef',
+  'feature/choices/*/options/*/mechanics/spellGrants/*/spell',
+  'feature/choices/*/options/*/prerequisites/*/classRef',
+  'feature/choices/*/options/*/prerequisites/*/featureRef',
+  'feature/choices/*/options/*/prerequisites/*/ref',
+  'feature/choices/*/options/*/summonFormExtensions/*/forms/*/creatureRef',
+  'feature/choices/*/options/*/summonFormExtensions/*/spell',
+  'feature/mechanics/effects/*/progression/classRef',
+  'feature/mechanics/effects/*/spell',
+  'feature/mechanics/resources/*/appliesTo',
+  'magic-item/executionReadiness/clauses/*/representation/ref',
+  'magic-item/mechanics/curse/endedBy/*',
+  'magic-item/mechanics/curse/revealedBy/*',
+  'magic-item/mechanics/effects/*/economyDeduction/tableRef',
+  'magic-item/mechanics/effects/*/endsOn/*',
+  'magic-item/mechanics/effects/*/gemTypeTableRef',
+  'magic-item/mechanics/effects/*/includes',
+  'magic-item/mechanics/effects/*/maximumCapacity/tableRef',
+  'magic-item/mechanics/effects/*/removableOnlyBy/*',
+  'magic-item/mechanics/effects/*/revealedBy',
+  'magic-item/mechanics/effects/*/saveDcAndAttackBonusTableRef',
+  'magic-item/mechanics/effects/*/spell',
+  'magic-item/mechanics/effects/*/spellRef',
+  'magic-item/mechanics/effects/*/spellRefs/*',
+  'magic-item/mechanics/effects/*/spellSelectionTableRef',
+  'magic-item/mechanics/effects/*/tableRef',
+  'magic-item/mechanics/effects/*/threshold/tableRef',
+  'magic-item/mechanics/effects/*/typeFrom',
+  'magic-item/mechanics/effects/*/valueTableRef',
+  'magic-item/mechanics/effects/*/variants/bird/creatureRef',
+  'magic-item/mechanics/entityGrant/grants/*/creatureRefs/*',
+  'magic-item/mechanics/entityGrant/grants/*/statBlockRef',
+  'magic-item/mechanics/entityGrant/grants/*/tableRefs/*',
+  'magic-item/mechanics/interItem/counters/*/itemRefs/*',
+  'magic-item/mechanics/interItem/counters/*/targetRef',
+  'magic-item/mechanics/interItem/nestingHazard/withItemRefs/*',
+  'magic-item/mechanics/interItem/portalInteraction/portalRefs/*',
+  'magic-item/mechanics/interItem/portalInteraction/tableRefs/*',
+  'magic-item/mechanics/operations/*/leverSelection/tableRef',
+  'magic-item/mechanics/randomProcedure/procedures/*/tableRef',
+  'spell/mechanics/effects/*/creation/creatureRef',
+  'spell/mechanics/effects/*/creation/options/*/resultRef',
+  'spell/mechanics/effects/*/creation/outcomes/*/resultRef',
+  'spell/mechanics/effects/*/scaling/*/options/*/choices/*/creatureRefs/*',
+  'spell/mechanics/effects/*/statBlockOverlay/tableRef',
+  'spell/mechanics/effects/*/tableRefs/*',
+  'subclass/features/*',
+  'subclass/featuresByLevel/*/features/*',
+  'table/projection/sourceRuleRef',
+];
+
+/**
  * The coverage gate's OTHER direction.
  * {@link assertRecordRelationshipDeclarationsAreLive} catches a declaration
  * that matches nothing emitted; this catches the reverse — an EMITTED leaf,
@@ -747,7 +828,8 @@ export const CONDITION_NAME_LEAF_POINTER_SHAPES: readonly string[] = [
  * recreate it under a different name, so this throws instead.
  *
  * Deliberately narrow: this asserts coverage of the seven legacy shapes and
- * the enumerated {@link CONDITION_NAME_LEAF_POINTER_SHAPES} only. It is not, and must never become, a coverage claim over `RulesRecord.data`
+ * the enumerated {@link CONDITION_NAME_LEAF_POINTER_SHAPES} and
+ * {@link RECORD_KEY_LEAF_KIND_POINTER_SHAPES} only. It is not, and must never become, a coverage claim over `RulesRecord.data`
  * as a whole (ADR 0020 rejects that global negative).
  */
 export function assertRecordRelationshipDeclarationsCoverBoundedShapes(
@@ -759,7 +841,10 @@ export function assertRecordRelationshipDeclarationsCoverBoundedShapes(
     walkFieldPointers(record.data, (pointer) => {
       if (
         !LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES.includes(pointer) &&
-        !CONDITION_NAME_LEAF_POINTER_SHAPES.includes(pointer)
+        !CONDITION_NAME_LEAF_POINTER_SHAPES.includes(pointer) &&
+        !RECORD_KEY_LEAF_KIND_POINTER_SHAPES.includes(
+          `${record.kind}${pointer}`,
+        )
       )
         return;
       if (

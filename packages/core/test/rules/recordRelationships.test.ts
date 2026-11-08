@@ -93,7 +93,13 @@ describe('pack-owned record relationships', () => {
         targetRecordKey: 'class:barbarian',
       }),
     );
-    expect(resolutions('ancestry:dwarf')).toEqual([]);
+    // The /source structural field emits no outcome for an ancestry (other
+    // pointers, such as the subrace list, are declared by eshyra-ry69).
+    expect(
+      resolutions('ancestry:dwarf').filter(
+        (resolution) => resolution.pointer === '/source',
+      ),
+    ).toEqual([]);
   });
 
   it('fails closed when a declaration is dead', () => {
@@ -951,7 +957,13 @@ describe('F1: relationship declarations resolve per PRODUCING pack, not per stac
     // The WINNING producer's relation, and ONLY it — never the base
     // overrideChain producer's 'granted-by', proving semantics follow
     // `entry.pack`, not the record's kind/field shape alone.
-    expect(trace.traversals).toEqual([
+    expect(
+      trace.traversals.filter(
+        (traversal) =>
+          traversal.sourceRecordKey ===
+          'feature:barbarian:ability-score-improvement',
+      ),
+    ).toEqual([
       {
         sourceRecordKey: 'feature:barbarian:ability-score-improvement',
         linkField: 'data.source',
@@ -1082,8 +1094,17 @@ describe('committed SRD pack relationship integrity (eshyra-o9bd.19.3.4)', () =>
       'magic-item:feather-token|/mechanics/effects/*/variants/whip/endsOn/*|dismiss-action',
       'magic-item:feather-token|/mechanics/effects/*/variants/whip/endsOn/*|death',
     ]);
+    // eshyra-ry69: the record-key declarations it adds are justified shape by
+    // shape in recordKeyReferences.test.ts; this allowlist covers the
+    // condition-name (record-name) families.
     const failures = pack.records
       .flatMap((r) => resolveRecordRelationships(manifest, r, stack))
+      .filter(
+        (resolution) =>
+          resolution.declaration.targetResolution !== 'record-key' ||
+          resolution.outcome === 'unresolved-target' ||
+          resolution.outcome === 'indeterminate',
+      )
       .filter((resolution) => {
         switch (resolution.outcome) {
           case 'resolved':
@@ -1319,15 +1340,29 @@ describe('record-name relation tables and fixed relations', () => {
           { ...declaration, excludedLeafValues: bad },
         ]),
       ).toThrow(/excludedLeafValues/);
-    expect(() =>
-      buildRecordRelationshipManifest([
-        {
-          ...declaration,
-          targetResolution: 'record-key',
-          targetKind: undefined,
-        },
-      ]),
-    ).toThrow(/excludedLeafValues/);
+    // eshyra-ry69: excludedLeafValues is also valid for record-key resolution
+    // (a list mixing record keys with printed tokens): the excluded token
+    // yields the one `excluded` outcome and any other non-key stays an
+    // unresolved loss.
+    const keyDeclaration: RecordRelationshipDeclaration = {
+      ...declaration,
+      relation: 'listed-record',
+      targetResolution: 'record-key',
+      targetKind: undefined,
+    };
+    const keyFound = resolveRecordRelationships(
+      buildRecordRelationshipManifest([keyDeclaration]),
+      {
+        ...source,
+        data: { names: ['condition:prone', 'Suffocating', 'not-a-key'] },
+      },
+      stack,
+    );
+    expect(keyFound.map((item) => item.outcome)).toEqual([
+      'resolved',
+      'excluded',
+      'unresolved-target',
+    ]);
     expect(() =>
       buildRecordRelationshipManifest([
         {
