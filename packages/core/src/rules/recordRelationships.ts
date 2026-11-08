@@ -75,6 +75,15 @@ export interface RecordRelationshipDeclaration {
    * reference that merely fails to resolve.
    */
   readonly excludedLeafValues?: readonly string[];
+  /**
+   * For `record-name` resolution only: the leaf is a verbatim delimited list
+   * of names (a creature stat-block `conditionImmunities` label prints
+   * "charmed, exhaustion, poisoned"), not a single name. The leaf is split on
+   * this exact delimiter, each part is trimmed, and every part yields its own
+   * typed outcome at the leaf's pointer; an empty part is `indeterminate`
+   * (`list-entry-empty`), never skipped. Without it the whole leaf is one name.
+   */
+  readonly listDelimiter?: string;
   readonly reason: string;
 }
 
@@ -131,7 +140,8 @@ export function buildRecordRelationshipManifest(
         decl.targetKind !== undefined ||
         decl.relationField !== undefined ||
         decl.relationByFieldValue !== undefined ||
-        decl.excludedLeafValues !== undefined)
+        decl.excludedLeafValues !== undefined ||
+        decl.listDelimiter !== undefined)
     )
       throw new RecordRelationshipError(
         `${where}: not-a-reference cannot carry relationship fields`,
@@ -239,6 +249,16 @@ export function buildRecordRelationshipManifest(
         );
     }
     if (
+      decl.listDelimiter !== undefined &&
+      (decl.targetResolution !== 'record-name' ||
+        typeof decl.listDelimiter !== 'string' ||
+        decl.listDelimiter.trim().length === 0 ||
+        decl.listDelimiter.length > 4)
+    )
+      throw new RecordRelationshipError(
+        `${where}.listDelimiter requires record-name and a short non-blank string`,
+      );
+    if (
       decl.targetResolution === 'record-key' &&
       decl.relationField !== undefined
     )
@@ -321,6 +341,7 @@ export type RelationshipResolution =
       readonly pointer: string;
       readonly reason:
         | 'value-not-a-string'
+        | 'list-entry-empty'
         | 'relation-sibling-missing'
         | 'relation-sibling-not-a-string'
         | 'relation-not-recognized';
@@ -527,76 +548,96 @@ export function resolveRecordRelationships(
       });
       return;
     }
-    if (
-      declaration.excludedLeafValues?.some(
-        (excluded) =>
-          normalizeRulesRecordName(excluded) ===
-          normalizeRulesRecordName(value),
-      )
-    ) {
-      resolutions.push({
-        outcome: 'excluded',
-        sourceRecordKey: record.key,
-        pointer,
-        reason: 'leaf-value-exclusion',
-        rawValue: value,
-        declaration,
-      });
-      return;
-    }
-    if (relation === undefined)
-      throw new RecordRelationshipError(
-        `reference declaration for (${declaration.kind}, ${declaration.pointerPrefix}) has no relation`,
-      );
-    if (declaration.targetResolution === 'record-key') {
-      const target = index.recordsByKey.get(value);
+    const resolvedRelation = relation;
+    const resolveName = (name: string): void => {
+      if (
+        declaration.excludedLeafValues?.some(
+          (excluded) =>
+            normalizeRulesRecordName(excluded) ===
+            normalizeRulesRecordName(name),
+        )
+      ) {
+        resolutions.push({
+          outcome: 'excluded',
+          sourceRecordKey: record.key,
+          pointer,
+          reason: 'leaf-value-exclusion',
+          rawValue: name,
+          declaration,
+        });
+        return;
+      }
+      if (resolvedRelation === undefined)
+        throw new RecordRelationshipError(
+          `reference declaration for (${declaration.kind}, ${declaration.pointerPrefix}) has no relation`,
+        );
+      if (declaration.targetResolution === 'record-key') {
+        const target = index.recordsByKey.get(name);
+        resolutions.push(
+          target === undefined
+            ? {
+                outcome: 'unresolved-target',
+                sourceRecordKey: record.key,
+                pointer,
+                relation: resolvedRelation,
+                rawValue: name,
+                reason: 'no-record-with-key',
+                declaration,
+              }
+            : {
+                outcome: 'resolved',
+                sourceRecordKey: record.key,
+                pointer,
+                relation: resolvedRelation,
+                targetRecordKey: target.record.key,
+                declaration,
+              },
+        );
+        return;
+      }
+      const matches =
+        index.recordsByKind
+          .get(declaration.targetKind as RulesRecordKind)
+          ?.byName.get(normalizeRulesRecordName(name)) ?? [];
       resolutions.push(
-        target === undefined
+        matches.length === 1
           ? {
-              outcome: 'unresolved-target',
-              sourceRecordKey: record.key,
-              pointer,
-              relation,
-              rawValue: value,
-              reason: 'no-record-with-key',
-              declaration,
-            }
-          : {
               outcome: 'resolved',
               sourceRecordKey: record.key,
               pointer,
-              relation,
-              targetRecordKey: target.record.key,
+              relation: resolvedRelation,
+              targetRecordKey: matches[0].record.key,
+              declaration,
+            }
+          : {
+              outcome: 'unresolved-target',
+              sourceRecordKey: record.key,
+              pointer,
+              relation: resolvedRelation,
+              rawValue: name,
+              reason:
+                matches.length === 0 ? 'no-record-with-name' : 'ambiguous-name',
               declaration,
             },
       );
+    };
+    if (declaration.listDelimiter === undefined) {
+      resolveName(value);
       return;
     }
-    const matches =
-      index.recordsByKind
-        .get(declaration.targetKind as RulesRecordKind)
-        ?.byName.get(normalizeRulesRecordName(value)) ?? [];
-    resolutions.push(
-      matches.length === 1
-        ? {
-            outcome: 'resolved',
-            sourceRecordKey: record.key,
-            pointer,
-            relation,
-            targetRecordKey: matches[0].record.key,
-            declaration,
-          }
-        : {
-            outcome: 'unresolved-target',
-            sourceRecordKey: record.key,
-            pointer,
-            relation,
-            rawValue: value,
-            reason:
-              matches.length === 0 ? 'no-record-with-name' : 'ambiguous-name',
-            declaration,
-          },
-    );
+    for (const part of value.split(declaration.listDelimiter)) {
+      const name = part.trim();
+      if (name === '')
+        resolutions.push({
+          outcome: 'indeterminate',
+          sourceRecordKey: record.key,
+          pointer,
+          reason: 'list-entry-empty',
+          rawValue: value,
+          declaration,
+        });
+      else resolveName(name);
+    }
   });
   return resolutions;
 }
@@ -658,8 +699,10 @@ export const LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES: readonly string[] = [
  * pair must be declared as a `reference` or an explicit `not-a-reference`.
  * Bounded on purpose, exactly like the legacy list: a claim about these
  * enumerated shapes, never about `RulesRecord.data` as a whole (ADR 0020
- * section 6). Leaves that name a condition under other field names
- * (creature `conditionImmunities`, magic-item `state`/`ends`) are NOT claimed.
+ * section 6). eshyra-1fx7 adds the four enumerated shapes where a condition
+ * name sits under another field name (`conditionImmunities`, magic-item
+ * `state`, `ends`, and the Feather Token whip `endsOn`); condition-name leaves
+ * under any other field name are NOT claimed.
  */
 export const CONDITION_NAME_LEAF_POINTER_SHAPES: readonly string[] = [
   '/traits/*/mechanics/conditions/*/condition',
@@ -679,6 +722,11 @@ export const CONDITION_NAME_LEAF_POINTER_SHAPES: readonly string[] = [
   '/mechanics/damage/*/typeOptions/*/condition',
   '/useProfile/clauses/*/semantics/condition',
   '/useProfile/clauses/*/semantics/failureCondition',
+  // eshyra-1fx7: condition names under other field names.
+  '/conditionImmunities',
+  '/mechanics/effects/*/state',
+  '/mechanics/effects/*/ends/*',
+  '/mechanics/effects/*/variants/whip/endsOn/*',
 ];
 
 /**

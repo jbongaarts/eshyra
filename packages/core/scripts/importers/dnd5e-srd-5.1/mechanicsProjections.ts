@@ -197,6 +197,17 @@ const DAMAGE_TERM_RE =
   /(?:(\d+)\s*\()?(\d+d\d+(?:\s*[+\u2212\u2013-]\s*\d+)?)\)?\s+([a-z]+)\s+damage/gi;
 
 /**
+ * One "<avg> (<dice>) <typeA> or <typeB> damage (<chooser>'s choice)" term: one
+ * roll whose type is the attacker's choice between two printed types — the SRD
+ * Djinni Scimitar's "plus 3 (1d6) lightning or thunder damage (djinni's
+ * choice)" (eshyra-roge). Projected as a `typeOptions` entry, the same
+ * representation spell Fire Shield uses; both options carry the printed
+ * parenthetical as their condition.
+ */
+const CHOICE_TYPE_DAMAGE_TERM_RE =
+  /(?:(\d+)\s*\()?(\d+d\d+(?:\s*[+\u2212\u2013-]\s*\d+)?)\)?\s+([a-z]+) or ([a-z]+)\s+damage\s*\(([^()]*\bchoice)\)/gi;
+
+/**
  * One flat "<N> <type> damage" term with no dice ("Hit: 1 piercing damage").
  * Only meaningful outside a dice term's span (see `projectHitDamage`).
  */
@@ -641,6 +652,32 @@ function projectHitDamage(hit: string):
       }),
     });
   }
+  // Choice-of-type terms ("3 (1d6) lightning or thunder damage (djinni's
+  // choice)"): one roll, the type chosen by the attacker among printed options.
+  for (const match of hit.matchAll(CHOICE_TYPE_DAMAGE_TERM_RE)) {
+    const first = match[3].toLowerCase();
+    const second = match[4].toLowerCase();
+    if (
+      first === second ||
+      !SRD_5_1_DAMAGE_TYPES.has(first) ||
+      !SRD_5_1_DAMAGE_TYPES.has(second)
+    ) {
+      continue;
+    }
+    const condition = match[5].trim();
+    terms.push({
+      start: match.index,
+      end: match.index + match[0].length,
+      damage: compact({
+        average: match[1] === undefined ? undefined : Number(match[1]),
+        dice: normalizeDice(match[2]),
+        typeOptions: [
+          { type: first, condition },
+          { type: second, condition },
+        ],
+      }),
+    });
+  }
   // Flat terms ("1 piercing damage plus 7 (3d4) poison damage"): a flat match
   // inside a dice term's span is that term's own tail, not a second component.
   for (const match of hit.matchAll(FLAT_DAMAGE_TERM_RE)) {
@@ -823,15 +860,17 @@ function parseAttack(text: string): Mechanics | undefined {
 
 /**
  * A Hit clause that prints a flat component beside a dice component ("1
- * piercing damage plus 7 (3d4) poison damage"). `parseDamage` is dice-only, so
- * the entry's top-level damage must come from the attack's own hitDamage.
+ * piercing damage plus 7 (3d4) poison damage") or a choice-of-type component
+ * (`typeOptions`). `parseDamage` matches neither, so the entry's top-level
+ * damage must come from the attack's own hitDamage.
  */
 function hitDamageMixesFlat(attack: Mechanics): boolean {
   const hitDamage =
     (attack.hitDamage as readonly Mechanics[] | undefined) ?? [];
   return (
-    hitDamage.some((entry) => entry.dice === undefined) &&
-    hitDamage.some((entry) => entry.dice !== undefined)
+    hitDamage.some((entry) => entry.typeOptions !== undefined) ||
+    (hitDamage.some((entry) => entry.dice === undefined) &&
+      hitDamage.some((entry) => entry.dice !== undefined))
   );
 }
 

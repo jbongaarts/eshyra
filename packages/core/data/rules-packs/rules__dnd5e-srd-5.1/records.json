@@ -27521,9 +27521,22 @@
                     "average": 12,
                     "dice": "2d6 + 5",
                     "type": "slashing"
+                  },
+                  {
+                    "average": 3,
+                    "dice": "1d6",
+                    "typeOptions": [
+                      {
+                        "type": "lightning",
+                        "condition": "djinni’s choice"
+                      },
+                      {
+                        "type": "thunder",
+                        "condition": "djinni’s choice"
+                      }
+                    ]
                   }
-                ],
-                "hitDamageNotProjected": "12 (2d6 + 5) slashing damage plus 3 (1d6) lightning or thunder damage (djinni’s choice)"
+                ]
               }
             ],
             "damage": [
@@ -27531,6 +27544,20 @@
                 "average": 12,
                 "dice": "2d6 + 5",
                 "type": "slashing"
+              },
+              {
+                "average": 3,
+                "dice": "1d6",
+                "typeOptions": [
+                  {
+                    "type": "lightning",
+                    "condition": "djinni’s choice"
+                  },
+                  {
+                    "type": "thunder",
+                    "condition": "djinni’s choice"
+                  }
+                ]
               }
             ]
           }
@@ -116305,7 +116332,9 @@
             "kind": "triggeredEffect",
             "trigger": "drinker next sees creature within 10 minutes",
             "result": "impose charmed for one hour",
-            "condition": "charmed",
+            "conditions": [
+              "charmed"
+            ],
             "triggerWindow": {
               "amount": 10,
               "unit": "minute"
@@ -130073,7 +130102,9 @@
               "ability": "wisdom",
               "dc": 15
             },
-            "condition": "charmed",
+            "conditions": [
+              "charmed"
+            ],
             "duration": {
               "amount": 8,
               "unit": "hour"
