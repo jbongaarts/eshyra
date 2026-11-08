@@ -43487,7 +43487,7 @@
               },
               {
                 "condition": "grappled",
-                "relation": "mention"
+                "relation": "removes"
               },
               {
                 "condition": "prone",
@@ -175485,11 +175485,11 @@
         "conditions": [
           {
             "condition": "blinded",
-            "relation": "mention"
+            "relation": "removes"
           },
           {
             "condition": "deafened",
-            "relation": "mention"
+            "relation": "removes"
           }
         ]
       }
@@ -181532,7 +181532,7 @@
         "conditions": [
           {
             "condition": "restrained",
-            "relation": "mention"
+            "relation": "removes"
           }
         ]
       }

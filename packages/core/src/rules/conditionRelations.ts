@@ -174,6 +174,20 @@ const RELATION_PATTERNS: readonly {
       new RegExp(`\\bceases?\\s+to\\s+be\\s+${c}\\b`, 'i').test(s) ||
       new RegExp(`\\b${c}\\s+condition\\s+(?:also\\s+)?ends\\b`, 'i').test(s) ||
       new RegExp(`\\bremoves?\\s+the\\s+${c}\\b`, 'i').test(s) ||
+      // Mass Heal (eshyra-53fm): "cured of all diseases and any effect making
+      // them blinded or deafened" — the cure ends the causing effect. Closed
+      // form: the object must be "any effect making/causing" the condition.
+      new RegExp(
+        `\\bcured\\s+of\\s+(?:\\w+\\s+){0,4}any\\s+effects?\\s+(?:making|causing)\\s+(?:\\w+\\s+)?${LIST}${c}\\b`,
+        'i',
+      ).test(s) ||
+      // Speak with Plants (eshyra-53fm): "cause the plants created by the
+      // entangle spell to release a restrained creature" frees the creature.
+      new RegExp(`\\breleases?\\s+an?\\s+${c}\\s+creature\\b`, 'i').test(s) ||
+      // Swallow actions (eshyra-53fm): "that creature is swallowed, and the
+      // grapple ends" ends the grappled condition.
+      (c === 'grappled' &&
+        /\bswallowed,\s+and\s+the\s+grapple\s+ends\b/i.test(s)) ||
       // Lesser Restoration's removal list: "end either one disease or one
       // condition afflicting it. The condition can be blinded, deafened,
       // paralyzed, or poisoned."

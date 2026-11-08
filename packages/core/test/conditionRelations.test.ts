@@ -203,3 +203,57 @@ describe('residual non-copular infliction phrasings (eshyra-xogv)', () => {
     });
   }
 });
+
+describe('printed removal phrasings read as removes (eshyra-53fm)', () => {
+  const relationOf = (text: string, condition: string) =>
+    deriveConditionMechanics(text).find((e) => e.condition === condition)
+      ?.relation;
+
+  // Exact printed SRD sentences.
+  for (const [text, condition] of [
+    [
+      'Creatures healed by this spell are also cured of all diseases and any effect making them blinded or deafened.',
+      'blinded',
+    ],
+    [
+      'Creatures healed by this spell are also cured of all diseases and any effect making them blinded or deafened.',
+      'deafened',
+    ],
+    [
+      'This spell can cause the plants created by the entangle spell to release a restrained creature.',
+      'restrained',
+    ],
+    [
+      'If the target is a Large or smaller creature grappled by the kraken, that creature is swallowed, and the grapple ends.',
+      'grappled',
+    ],
+  ] as const) {
+    it(`removes ${condition}: ${text.slice(0, 70)}`, () => {
+      expect(relationOf(text, condition)).toBe('removes');
+    });
+  }
+
+  // Controls: neighbouring phrasings keep their non-removal readings.
+  for (const [text, condition, relation] of [
+    [
+      'The creature is cured of all diseases and poison, becomes immune to poison and being frightened.',
+      'frightened',
+      'immune',
+    ],
+    ['The spell can target a restrained creature.', 'restrained', 'mention'],
+    [
+      'The roper pulls each creature grappled by it up to 25 feet, and the grapple ends.',
+      'grappled',
+      'mention',
+    ],
+    [
+      'It can spend 5 feet of movement to escape from nonmagical restraints or being grappled.',
+      'grappled',
+      'mention',
+    ],
+  ] as const) {
+    it(`keeps ${relation} for ${condition}: ${text.slice(0, 70)}`, () => {
+      expect(relationOf(text, condition)).toBe(relation);
+    });
+  }
+});
