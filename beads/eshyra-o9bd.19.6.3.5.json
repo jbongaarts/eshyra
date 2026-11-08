@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.3.5",
+  "title": "Dispatch: repair Sol re-review S1 (citation identity) and S2 (executed-evidence admission) in candidate gates (attempt 1)",
+  "description": "Repair the two MATERIAL findings from Sol's bounded re-review of PR #697 (`bd show eshyra-o9bd.19.6.3.4`). Base is branch eshyra-o9bd.19.6.3 at 8f96fc05. The design below is decided; implement it exactly.\n\nS2: evidence is credited only if it was executed in the captured suite run.\n- Change the bundle's `test` command capture so the SAME run that G-suite judges also writes Vitest's JSON results into the bundle. Use `npm run test -- --reporter=default --reporter=json --outputFile.json=<outDir>/reports/vitest-results.json`. Verify the exact flag syntax against the installed vitest 5.0.5, and keep the console output in command-output/test.txt.\n- Parse the JSON: testResults[].name is an absolute path, normalize it to repo-relative; assertionResults[].status is the per-test status.\n- EXECUTED-EVIDENCE set: files with at least one assertion whose status is 'passed', and none that is 'failed'.\n- G-finding-evidence, G-capabilities and G-replay credit a cited test file only if it is in that set. A file that was listed but wholly skipped, filtered or todo is a FAILURE with the reason 'not executed in the captured suite run'.\n- A missing, unparseable or empty results file makes the dependent gates failed-to-run.\n- Remove the `vitest list --filesOnly` membership producer entirely.\n- doesNotObserve must state that a partially skipped file is credited at file granularity, so an individual skipped assertion inside an executed file is not detected.\n- If a CURRENT registry or inventory citation points at a documented environmental-skip file (model.integration.test.ts, campaignBibleFaithfulness.integration.test.ts, the Dolt-gated checkpoint tests), do not special-case it. Report it, and I will decide.\n\nS1: citation identity.\n- A file-shaped token is either of:\n  (i) any token containing '/' whose final segment has an extension (letters or digits after a dot);\n  (ii) a bare token ending in one of a broad known extension set: ts, tsx, mts, cts, js, jsx, mjs, cjs, json, jsonl, md, txt, pdf, yml, yaml, map, csv, html, sh, sql, toml.\n- Match the WHOLE token greedily, so `x.test.ts.map` is one token and is never truncated to its `.test.ts` prefix. Trim only trailing sentence punctuation and closing brackets or quotes.\n- Anchoring is terminal:\n  - A root-anchored token (starting with packages/, docs/, scripts/, .github/, sources/ or reports/) resolves only to that exact path. Absent means FAIL, with no suffix fallback.\n  - A `test/...` token resolves only to packages/core/test/... Absent means FAIL, with no fallback.\n  - `reports/...` tokens may name bundle outputs. If they are not tracked, fail them unless you find a principled reason; report any that occur in the current registry.\n  - The pack-artifact rule (d) and unique-suffix resolution (c) apply only to otherwise unanchored tokens. Zero or several matches means FAIL.\n- Add one generalized citation-identity test that varies extension, compound suffix, anchoring (root and test/ misses must not fall back), suffix collisions and missing targets, alongside the existing forms.\n- Add an execution-admission test with a fixture vitest JSON. It must cover an executed file (credited), a wholly skipped file (fails), a file absent from the results (fails), and missing or unparseable results (failed-to-run).\n\nThen run the real-tree gate computation against a real vitest JSON results file. Generate it yourself with the same flags and output it outside the repo. Report the G-finding-evidence, G-capabilities and G-replay results.\n\nRun `npm run verify:worktree` before committing, and commit only on success. The message starts `eshyra-o9bd.19.6.3.5 `, ends with `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`. Append the report to the bead, close it, and do not push.\n",
+  "notes": "Commit 6500b351. S2: bundle test capture now adds --reporter=default --reporter=json --outputFile.json=<outDir>/reports/vitest-results.json (same run G-suite judges; flag syntax verified on vitest 5.0.5); parseVitestResults builds executed set (>=1 passed, 0 failed); list --filesOnly producer removed; unavailable results => failed-to-run; partial-skip non-claim added to the 3 gates. S1: whole-token extraction (slash-containing with extension, or bare with 21-ext set); root anchors (packages/ docs/ scripts/ .github/ sources/ reports/) and test/ terminal; (d)/(c) only for unanchored. Real tree with real JSON (385 executed files): G-finding-evidence pass 32/0 unresolved, G-capabilities pass 119, G-replay pass 10. No registry citation hit environmental-skip files or reports/ paths. verify:worktree exit 0.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T03:36:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T03:41:22Z",
+  "started_at": "2026-11-01T03:37:15Z",
+  "closed_at": "2026-11-01T03:41:22Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.3.5",
+      "depends_on_id": "eshyra-o9bd.19.6.3",
+      "type": "parent-child",
+      "created_at": "2026-10-31T22:36:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

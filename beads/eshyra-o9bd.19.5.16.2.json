@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.16.2",
+  "title": "Dispatch: 19.5.16 engine-rolled dawn recharge formulas (eshyra-lyzj) (attempt 1)",
+  "description": "Implement the PLAN note on eshyra-lyzj (bd show eshyra-lyzj), following the contract already built for eshyra-o9bd.19.5.16 (bd show eshyra-o9bd.19.5.16; commit 21ca3b58 on this branch). Worktree .worktrees/eshyra-o9bd.19.5.16.2 on branch eshyra-o9bd.19.5.16.2, cut from eshyra-o9bd.19.5.16 at 21ca3b58; dependencies installed with npm ci. Implementer: Claude Haiku 5.5 subagent. Run every command from the worktree root; npm run verify:worktree must pass BEFORE committing. Commit on eshyra-o9bd.19.5.16.2 only; do not push or open a PR; do not close eshyra-lyzj or eshyra-o9bd.19.5.16.",
+  "notes": "Completed eshyra-lyzj PLAN on branch eshyra-o9bd.19.5.16.2. Commit fa1551f9 (on top of 21ca3b58).\nChanged: restore_usage on a dawn counter with rechargeFormula rolls the formula from ctx.rng when amount is omitted (regains total under the existing cap); a supplied amount there requires rollOverride (dm-supplied evidence); amount on a non-formula counter unchanged; neither roll nor amount on a counter with no die/formula refused with a clear message; formula that is not dice or can regain <1 refused before rolling. rollEvidence gains optional total (set only with a modifier; DM amount recorded as natural and total). Ledger renders 'Restore (...): 1d6+1 nat N → regains T'. reset_usage and depleted hint point at the engine roll; auditor policy and capability inventory restore_usage entry updated. protocol.ts needed no change (it does not mention the formula path).\nTests: usageCounters.test.ts new 'restoreUsage — dawn rechargeFormula (engine-rolled)' block (seeded engine roll, refusals, non-formula amount unchanged, depleted hint, tool+ledger, override amount); existing wand test now supplies rollOverride; engineRolledDeathSaveAndRecharge inventory assertion extended.\nVerify: npm run verify:worktree EXIT 0 (typecheck, biome ci, 401 files / 7483 tests passed, 3 skipped). Not pushed; no PR.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:25:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-07T23:32:34Z",
+  "closed_at": "2026-11-07T23:32:34Z",
+  "close_reason": "Implemented in fa1551f9; verify:worktree passed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.16.2",
+      "depends_on_id": "eshyra-o9bd.19.5.16",
+      "type": "parent-child",
+      "created_at": "2026-11-07T17:25:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

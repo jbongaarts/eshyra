@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0dtg",
+  "title": "Zero-actor bind of an upper-bound grant leaves an active empty summoning effect",
+  "description": "eshyra-ffoo.1: start_effect admits binding 0 linked actors for a maxCountPerCost grant (Pipes of the Sewers: charge wasted, per user spec) and records an active summoning effect with no actor links that the DM must end with end_effect. Consider whether such a bind should create the effect already ended (or a dedicated outcome) so no empty effect lingers. Not a pre-freeze blocker: the spec explicitly requires 'bind 0 OK'; the evidence test pins current behavior. Files: packages/core/src/state/activeEffects.ts (validateItemGrantBinding), packages/core/test/itemChargeDawnRecharge.test.ts.",
+  "notes": "Captain 2026-11-07: PRE-FREEZE (user bias against deferral; state-integrity smell). DECISION: a zero-actor bind of an upper-bound grant redeems the credit and then ends the new effect immediately through the same path as the last-owned-creature rule (closeActorLinkAtZeroHp -> finalizeEnd, reason source-removed), with detail no-creatures-answered and a note quoting 'If there aren't enough rats to form a swarm, the charge is wasted.' No empty active summoning effect may remain. Tests: bind 0 -> the effect is ended, the credit is redeemed (a second bind on it is refused), and auditActiveEffectIntegrity is clean; bind 2 is unchanged.\nCaptain 2026-11-07: integrated (ffoo 489d724c, 0dtg 36734512) after own review and verify (exit 0, 7481; pack exact). PR https://github.com/jbongaarts/eshyra/pull/731 (stacked on #727). Stays in_progress until merged.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T01:19:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T01:31:43Z",
+  "started_at": "2026-11-08T01:31:43Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0dtg",
+      "depends_on_id": "eshyra-0dtg.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T19:23:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

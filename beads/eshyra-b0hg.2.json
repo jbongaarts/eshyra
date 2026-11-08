@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b0hg.2",
+  "title": "Review: Sol final review of PR #634 (eshyra-b0hg @ 7a2e1846)",
+  "description": "Final read-only review of PR #634 (branch eshyra-b0hg, exact head 7a2e18468717e12a7c4e2d2f4188d5fb73849c40) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #634 at exact head 7a2e18468717e12a7c4e2d2f4188d5fb73849c40 (branch eshyra-b0hg.2). Reviewed the complete origin/main...HEAD diff and origin/main..HEAD log; AGENTS.md; docs/design-and-pr-review-policy.md; owning eshyra-b0hg and its implementation dispatch eshyra-b0hg.1; ADRs 0018 and 0020; expertise creation/level-up producers, canonical sheet persistence/load, SRD skill mapping, context assembly/rendering and auditor consumption, resolve_check description/schema/arithmetic, and every changed test/export. Effective review profile: rules-clause-complete for the bounded skill derivation/context path. No importer or generated-pack changes. refs/beads/state is stale (generated 2026-09-10 and lacks these beads); reconciled scope/status/dependencies against live bd. PR head also matches GitHub. Follow-up eshyra-r8en exists; server-side check derivation is deliberately excluded.\n\nS1 — MATERIAL (P2), packages/core/src/character/skillBonuses.ts:120. The Remarkable Athlete context note is gated on whether an unproficient named skill received its bonus, rather than whether the character holds the feature. Concrete supported scenario: level-7 Champion, PB +3, proficient in Athletics and Acrobatics from Fighter plus Stealth and Sleight of Hand from a custom background. These cover every Strength/Dexterity skill; Constitution has no named skill. renderSkillsLine therefore outputs only the four proficient skills and passive Perception, with no Remarkable Athlete note. The feature still grants +2 to eligible raw Str/Dex/Con checks (including initiative and Constitution checks). This deterministically drops the promised feature guidance from the model-facing sheet and auditor snapshot before those checks, violating dispatch decision 2 and SRD 5.1 p.25; no claim that the DM necessarily makes a wrong roll is needed. Reproduced by evaluating the actual TypeScript source in memory; removing each one of the four proficiencies restores the note. Defect class: feature availability inferred from membership in a narrower set of named skill applications. Sibling analysis: Jack of All Trades note uses the same predicate at line 115; its availability should likewise be independent of named skill coverage. Suggested fix: derive feature-note availability from the sheet's class/subclass and level (prefer shared gating with derivation), independent of whether any named skill consumes the bonus. Owner: skillBonuses/context implementation. Required next state: eligible feature notes survive complete proficiency coverage, without changing per-skill arithmetic or resolve_check's contract. Permanent evidence: a generalized rendering invariant varying proficiency coverage and feature acquisition level, including a valid all-four-physical-skills Champion and a context-render assertion. This inexpensive invariant is proportionate to losing rules guidance and protects the defect class rather than only one character.\n\nS2 — NON-MATERIAL (source-reference nit), packages/core/src/character/skillBonuses.ts:33. The Jack of All Trades comment cites SRD p.11; its feature prose is on printed p.12 in the vendored SRD_CC_v5.1.pdf, also reflected by feature:bard:jack-of-all-trades provenance. A reader following the cited page misses the governing prose; the quoted rule and implemented math are correct. Suggested correction: p.11 -> p.12. No dedicated permanent test needed for a comment locator.\n\nVerification: git diff --check passed and repository status remained clean. No installed node_modules in this worktree, so Vitest was not run and dependencies were not installed. Read-only, in-memory Node 24 evaluation of the actual source passed 825 assertions for all 18 skills across PB 2–6, none/proficient/expertise states, Jack of All Trades and Remarkable Athlete rounding; separate checks passed expertise/tool-ID separation, passive Perception, and four omission siblings. Independently checked Fighter skill admission, Champion ownership, feature identities/levels, and relevant arithmetic/feature/passive clauses against the generated pack and vendored SRD (pp.12,25,39,77–78). The PR's new tests use synthetic sheets; they do not cover S1. Supervisor's full verification is reported evidence, not rerun here. No repository edits, formatting, commits, pushes, GitHub comments, or merge performed.\n\nVERDICT: MATERIAL FINDINGS (1)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T07:45:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T07:49:15Z",
+  "closed_at": "2026-10-09T07:49:15Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b0hg.2",
+      "depends_on_id": "eshyra-b0hg",
+      "type": "parent-child",
+      "created_at": "2026-10-09T02:45:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

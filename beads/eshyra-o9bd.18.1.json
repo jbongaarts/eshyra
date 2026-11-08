@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.1",
+  "title": "Restore dropped SRD Skills proficiency prose after embedded skill list",
+  "description": "Finding source:\n- Fable P1.\n- rule:skills silently drops operative prose after the embedded skill-to-ability list.\n- Existing rule:skills text ends at approximately: \"...examples of how to use a skill associated with an ability\" on p. 77 and carries structured skillsByAbility.\n- Missing p. 78 prose resumes after the list and explains what skill proficiency means: an individual can add proficiency bonus to ability checks involving that skill; without proficiency the individual makes a normal ability check; it also includes the climbing-a-cliff example.\n\nRoot cause hypothesis from Fable:\n- Parser does not resume prose capture after an embedded bullet/list region.\n- The unaccounted=0 source-region ledger gate misses the loss because the region is owned by rule:skills, even though the post-list prose is not actually emitted.\n\nWhy it matters:\n- This is a core D&D rule for what skill proficiency does.\n- Primary DM lookup loses the canonical rule explanation.\n- Deterministic ability-check and character proficiency tooling cannot cite/ground the rule from the pack.\n\nAcceptance criteria:\n- rule:skills includes the post-list p. 78 prose after the skillsByAbility embedded list.\n- The structured skillsByAbility mapping remains intact.\n- Add regression coverage for prose resuming after embedded lists/tables inside a rule region.\n- Add or extend a source-coverage/source-region gate so owned regions only count as represented when their prose is emitted or deliberately transformed into a structured equivalent.\n- Regenerate committed SRD artifacts and update freeze metadata/thaw note as required.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-02T03:45:22Z",
+  "closed_at": "2026-07-02T12:47:12Z",
+  "close_reason": "Fixed in PR #383: parseRules re-flows post-bullet prose from excluded bullet captions into the enclosing rule; rule:skills carries the p78 proficiency prose; region ledger reclassifies to record:rule:skills with containment guard. General owned-region gate remains 18.9.2.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.1",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

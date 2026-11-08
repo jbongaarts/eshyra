@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-nuf2",
+  "title": "Decide whether PreCompact 'bd prime' (a bd init default) is doing what it should",
+  "description": "The PreCompact handler in .claude/settings.json runs 'bd prime', presumably to re-prime the agent across a compaction. That is not what a PreCompact hook's stdout does. In Claude Code 2.1.278 the PreCompact handler collects the stdout of every succeeded, non-blocked hook and returns it as newCustomInstructions — the custom instructions handed to the COMPACTION SUMMARIZER (the same field '/compact <instructions>' sets). It is not context injected for the model to act on after the compaction. So bd prime's full output (memories, command reference, workflow rules) is currently being used as summarization guidance. Evidence: the PreCompact handler builds its payload as {...base, hook_event_name:'PreCompact', trigger, custom_instructions} and returns {newCustomInstructions: <joined hook stdout>, userDisplayMessage, blockedBy}. Compare SessionStart, whose raw stdout genuinely becomes session context. Discovered while resolving eshyra-oqvj.",
+  "acceptance_criteria": "Either the PreCompact handler is changed to something whose effect matches the intent (e.g. move re-priming to a PostCompact or SessionStart path, or emit a short summarizer instruction deliberately), or the bead records that feeding bd prime to the summarizer is intended and why.",
+  "notes": "PROVENANCE (checked after the bead was filed, in response to a challenge that the original framing asserted intent it had not verified):\n\n1. MECHANISM — verified, high confidence. The PreCompact handler collects the stdout of every succeeded, non-blocked hook and returns it as newCustomInstructions. Four call sites consume it, all identically: it is merged with any user-supplied /compact text and passed as customInstructions to the summary generator. Hook stdout steers the compaction SUMMARIZER; it is not context injected for the model to act on afterwards.\n\n2. NOT THIS REPO'S DESIGN — high confidence. 'git log -S PreCompact -- .claude/settings.json' returns exactly one commit: 1423dbe7 'bd init: initialize beads issue tracking' (2026-05-16). Never edited since. The bd binary ships this exact template: PreCompact -> matcher '' -> command 'bd prime'. It is upstream generated boilerplate, the class of thing AGENTS.md already warns about ('a stale generated block is what introduced the push-policy conflict').\n\n3. UPSTREAM INTENT — UNRESOLVED, and the bead must not assume it. Against deliberateness: bd prime describes itself as 'Context Recovery: run after compaction, clear, or new session', which a PreCompact hook structurally cannot do; bd also installs a SessionStart hook, which fires with source=compact and DOES recover context; and bd prime's multi-KB workflow reference makes no sense as summarizer instructions. For deliberateness: upstream may want bead context to survive summarization, and the registration may have been correct on an older Claude Code whose PreCompact stdout behaved differently. That last possibility cannot be checked from here.\n\nCONSEQUENCE IS MODEST: priming after compaction still happens via SessionStart, so nothing is lost. The cost is that a large irrelevant string is steering compaction summaries.\n\nThis is an upstream question before it is a local one.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-22T04:28:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-22T05:01:51Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

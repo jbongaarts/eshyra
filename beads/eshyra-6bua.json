@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6bua",
+  "title": "deps: bump @openai/codex-sdk 0.157.0 -> 0.162.0 (gpt-6.1-sol support)",
+  "description": "Pinned @openai/codex-sdk 0.157.0 bundles codex 0.157, which the server rejects for gpt-6.1-sol (400, ChatGPT account); codex 0.162.0 works (smoke 2026-10-09). Bump the exact pin in packages/core/package.json + lockfile only, per docs/dependencies.md. Supersedes Dependabot #603 (0.160.0). Unblocks eshyra-i9sb's gpt-6.1-sol default.",
+  "notes": "PR #620 opened 2026-10-09; verify green; bundled codex 0.162 smoke ok for gpt-6.1-sol and gpt-6-luna.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T03:09:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T03:19:13Z",
+  "started_at": "2026-10-09T03:09:44Z",
+  "closed_at": "2026-10-09T03:19:13Z",
+  "close_reason": "Merged PR #620",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

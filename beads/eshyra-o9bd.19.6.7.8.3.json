@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.8.3",
+  "title": "Dispatch: repair Sol S2 (linearizable custody validation) and S3 (idle synced revision) for PR #711 (attempt 2)",
+  "description": "Repair BOTH material findings of the Sol review eshyra-o9bd.19.6.7.8.2 (bd show it: S2 and S3 with locations, reproducers and required next state) on PR #711, branch eshyra-o9bd.19.6.7.8 (head 7f1599c7). Worktree .worktrees/eshyra-o9bd.19.6.7.8.3, branch eshyra-o9bd.19.6.7.8.3 cut from eshyra-o9bd.19.6.7.8.\nS2 DESIGN: make stale validation and the registry write one atomic unit. Run the custody/head check and appendRevision (characterRegistry.ts:351-380) inside a single registry write transaction (BEGIN IMMEDIATE or the registry store's existing transaction helper), passing the expected head the guard validated; appendRevision refuses if the head moved. Acquire stamps the revision it actually validated (the one the sheet was compared against), never an unvalidated re-read of head; if head moved between validation and stamping, refuse/re-classify instead of granting freshness. Apply to sync-back, release, and acquire on both the idle and already-held paths. Campaign-DB stamp writes follow the registry commit (the crash-between case is already handled by sheet==head).\nS3 DESIGN: the idle stale-copy classification (characterCustody.ts:~692) must report localRevision = readSyncedRevision(...) ?? metadata.sourceRevision, exactly like the held branch (:665-670), and the CLI fork/keep consumers (packages/cli/src/playCharacter.ts:480-531, packages/cli/src/playFork.ts:70-83) must fork the campaign's actual current sheet at its synced revision, keeping the presented and selected revision truthful.\nEVIDENCE: generalized tests per the reviewer: an interleaving test over idle/already-held x acquire/sync/release using two separate SQLite connections (a deterministic hook between validation and write is fine; no /tmp barrier machinery), asserting both stale refusal and that valid original progress survives; and an idle+held invariant test with syncedRevision > sourceRevision through the real fork consumer. Update the capability inventory residual text so it states what actually happens under concurrency. Implementer: Claude Sonnet 5.5 subagent.",
+  "notes": "Commit 2e055e0c. S2: CharacterRegistryStore.atomically (BEGIN IMMEDIATE, nested joins) + appendRevision expectedHead option (CharacterRegistryHeadMovedError). syncBack, release (sync+chronicle+clearCustody), acquire (idle and already-held), checkout, catch-up, registerNewCharacter and forkCharacterTimeline each validate+write in one atomic unit; campaign stamps are written after registry commit and acquire stamps only the validated head. S3: idle classification localRevision = readSyncedRevision ?? sourceRevision; forkCharacterTimeline gains optional sheet; CLI playFork forks the campaign's actual current sheet with synced revision as parent. Files: core characterCustody.ts, characterRegistry.ts, deterministicCapabilityInventory.ts (residual text rewritten), cli playFork.ts. Tests: core characterCustody.test.ts (idle/held x acquire/sync/release with two file-backed connections and a pre-unit hook asserting stale refusal, no fresh stamp, original progress preserved; BUSY exclusion while unit in flight; expectedHead; synced>source classification idle+held) and cli playCharacterCustody.test.ts (real fork consumer idle+held). verify:worktree passed (396 files, 7394 tests). Residuals: legacy-unstamped and same-synced-revision indistinguishable copies; /quit silent no-op (eshyra-nwu2). Campaign-DB and registry-DB writes remain separate (stamp after commit, crash recovered by sheet==head).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T02:29:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T02:36:26Z",
+  "closed_at": "2026-11-06T02:36:26Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.8.3",
+      "depends_on_id": "eshyra-o9bd.19.6.7.8",
+      "type": "parent-child",
+      "created_at": "2026-11-05T20:29:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

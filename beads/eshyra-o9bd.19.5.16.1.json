@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.16.1",
+  "title": "Dispatch: 19.5.16 engine-rolled death saves and recharge rolls (attempt 1)",
+  "description": "Implement the plan in eshyra-o9bd.19.5.16 (bd show eshyra-o9bd.19.5.16: description and notes). Worktree .worktrees/eshyra-o9bd.19.5.16.1 on branch eshyra-o9bd.19.5.16.1, cut from eshyra-o9bd.19.5.16 at origin/main e4740161; dependencies installed with npm ci. Implementer: Claude Sonnet 5.5 subagent (2026-11-07). Environment: run every command from the worktree root; npm run verify:worktree must pass BEFORE committing (it rewrites files). Commit on eshyra-o9bd.19.5.16.1 only; do not push, open a PR, or modify eshyra-o9bd.19.5.16.",
+  "notes": "Commit 21ca3b58 on eshyra-o9bd.19.5.16.1; npm run verify:worktree PASSED (401 files, 7475 tests).\nSpec items: (1) record_death_save: roll optional; engine rolls 1d20 / 2d20kh1 / 2d20kl1 via ctx.rng and effectiveAdvantageState cancellation, nat 1/20 on kept die; supplied roll needs rollOverride (new orchestrator/toolRollOverride.ts, same validation as durationOverride incl. active house-rule ruleId lookup); adv/dis with supplied roll refused; visibility default player_visible. (2) restore_usage: omit roll+amount => engine rolls the counter recharge die inside restoreUsage after window refusals (so refused attempts do not consume RNG); supplied roll needs rollOverride; visibility default dm_only; amount mode unchanged, description/inventory say DM-supplied. (3) Provenance: new state/rollEvidence.ts; results carry rollEvidence {source engine: dice/rolls/kept/dropped/natural | dm-supplied: basis/reason/ruleId}; mutation provenance column gets #dm-roll:<basis>[:ruleId] suffix for overrides; no schema change, old rows/results without rollEvidence load unchanged. (4) Ledger readers for record_death_save and restore_usage (Death save / Recharge), DM-supplied marked. (5) AUDIT_POLICY bullet. (6) protocol.ts, tool descriptions, usageCounters depleted hints updated; reset_usage needsRolledRestore text keeps roll+amount (see follow-up). (7) Inventory entries rewritten; toolRollOverride.ts/rollEvidence.ts added as runtime owners. (9) Replay: same-seed determinism test (engineRolledDeathSaveAndRecharge.test.ts), mirrors resolve_check. (10) No candidateGates.ts / generated text names 19.5.14 as undecided; nothing to change.\nSibling search: record_death_save roll -> converted; restore_usage roll -> converted; restore_usage amount -> DM-supplied, documented, follow-up bead filed for rolled formula restores; roll tool -> engine rolls; resolve_check/contest/damage/concentration/retained -> engine rolled, no die input; spend_rest_hit_die/rest -> engine rolled (rollEvidence from state/rest.ts); level-up HP roll (levelUpEngine validateDiceRollEvidence) and ability allocation / starting wealth -> bound by validateDiceRollEvidence, not a model tool input, unchanged; use_item rolled counts/creatures -> engine-owned credits, start_effect refuses supplied; start_effect item duration -> existing override precedent; start_encounter/join_combat initiative -> narrated, no die input; adjust_hp/grant_temp_hp amounts -> DM rulings, not die results.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:06:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-07T23:21:17Z",
+  "closed_at": "2026-11-07T23:21:17Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.16.1",
+      "depends_on_id": "eshyra-o9bd.19.5.16",
+      "type": "parent-child",
+      "created_at": "2026-11-07T17:06:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

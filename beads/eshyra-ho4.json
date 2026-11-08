@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ho4",
+  "title": "CLI main() test coverage: ConfigError branch + entrypoint guard",
+  "description": "cck.6 code review (Important): packages/cli/test/cli.test.ts only covers buildBanner. main()'s ConfigError branch (process.exitCode=1 + stderr), the happy-path stdout, and the import.meta.url entrypoint guard are untested. Proper coverage needs vi.spyOn on console.error/process.exitCode for the ConfigError path, and either a child-process spawn harness or a createMain(env?) factory refactor (mirroring loadConfig(env)) to make the guard/main fully unit-testable. Beyond E0 thin-CLI scope and the spec's required test; track separately.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-18T04:52:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:10Z",
+  "started_at": "2026-05-21T00:17:09Z",
+  "closed_at": "2026-05-21T00:31:08Z",
+  "close_reason": "Implemented in PR #10 (branch work/cck-followups); typecheck clean, 166 tests pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ho4",
+      "depends_on_id": "eshyra-cck.6",
+      "type": "blocks",
+      "created_at": "2026-05-17T23:52:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

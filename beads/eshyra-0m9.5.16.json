@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.16",
+  "title": "Add 'subclass' RulesRecordKind + kindSchema",
+  "description": "Per ADR 0009, add a first-class `subclass` record kind (Champion, Life domain, School of Evocation, ...). Base classes stay `class`; subclasses are their own addressable kind so the DM can lookup_rules them by name.\n\nScope:\n- Add 'subclass' to RulesRecordKind union in packages/core/src/rules/types.ts.\n- Add a BASE_KIND_VALIDATORS entry + validateDnd5eSubclass in packages/core/src/rules/kindSchemas.ts. A subclass links to its parent base class via data.parentClass (parent class record key). Validate ONLY fields a subclass carries (parentClass, description, granted-feature references) — NOT the base-class scalar fields (hitDie/proficiencies).\n- Extend lookup_rules enum in packages/core/src/orchestrator/toolLookupRules.ts (two enum sites).\n\nLinkage is data-side only (data.parentClass); do NOT use 'overrides' (that is the pack-layering replacement mechanism in stack.ts). Infrastructure only — the subclass parser is a separate bead.",
+  "acceptance_criteria": "- 'subclass' is a member of RulesRecordKind and validated by BASE_KIND_VALIDATORS.\n- validateDnd5eSubclass enforces data.parentClass + description; does NOT require base-class fields.\n- lookup_rules accepts kind='subclass' in both enum sites.\n- Typecheck + tests pass.\n- ADR 0009 referenced in code comments.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-30T02:24:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-30T04:06:45Z",
+  "closed_at": "2026-05-30T04:10:22Z",
+  "close_reason": "Added subclass RulesRecordKind + kindSchema (validateDnd5eSubclass), validate.ts + lookup_rules enums, tests",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.16",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-29T21:24:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

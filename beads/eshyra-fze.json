@@ -1,0 +1,51 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fze",
+  "title": "Repair dependency policy and tooling drift after Dependabot merges",
+  "description": "Fix the post-Dependabot main-branch drift without runtime behavior changes: restore Node 24 CI policy and CLI install smoke coverage, update agent dependency guidance, make Biome 2 respect ignored/generated artifacts, tighten Dependabot major update policy, and verify dependency/importer behavior.",
+  "acceptance_criteria": "CI uses Node 24 and cross-platform CLI install smoke; better-sqlite3 source-build fallback is guarded; AGENTS.md reflects Node 24 / better-sqlite3 12 / @types/node 24; Biome respects .gitignore/generated artifacts; Dependabot ignores semver-major @types/node, Biome, TypeScript, and better-sqlite3; required npm gates pass or limitations are documented.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-30T18:27:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:42Z",
+  "started_at": "2026-05-30T18:27:24Z",
+  "closed_at": "2026-05-30T18:40:12Z",
+  "close_reason": "Repaired dependency policy/tooling drift; verification passed: npm ci, npm run check, npm run typecheck, npm run test, npm run smoke:cli-install, focused policy test, and git diff --check. SRD import blocked only by missing local source PDF.",
+  "comments": [
+    {
+      "id": "de8d5e45-1461-5f53-8fc2-2a1c7d2cb404",
+      "issue_id": "eshyra-fze",
+      "author": "Joseph Bongaarts",
+      "text": "Evidence: existing CI was already on Node 24 with install-smoke matrix and native fallback guard; remaining drift reproduced by focused policy test. RED npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> failed for AGENTS policy text, Biome vcs.useIgnoreFile, and Dependabot major ignores. GREEN same command -> 5 passed after docs/config/test updates.",
+      "created_at": "2026-05-30T18:31:42Z"
+    },
+    {
+      "id": "441410ae-b5ed-5118-a3c5-73633b1bdc87",
+      "issue_id": "eshyra-fze",
+      "author": "Joseph Bongaarts",
+      "text": "Result: npm run check initially failed after enabling Biome VCS ignore because the bd worktree is physically under ignored .worktrees/. Root cause is the script target 'biome ci .'; explicit project paths still respect .gitignore for nested/generated artifacts and let the gate run in bd worktrees. Verification: npm run check -> exit 0; 209 files checked; 7 existing warnings.",
+      "created_at": "2026-05-30T18:35:48Z"
+    },
+    {
+      "id": "ea388985-d822-5289-8fec-8de3bebbfb16",
+      "issue_id": "eshyra-fze",
+      "author": "Joseph Bongaarts",
+      "text": "Importer verification: npm run import:dnd5e-srd -> exit 1 because packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf is not present locally (source directory contains only README.md and .gitkeep). No parser/runtime changes made.",
+      "created_at": "2026-05-30T18:39:04Z"
+    },
+    {
+      "id": "d7b50347-fb1e-5156-a5f2-6f4dff5288c0",
+      "issue_id": "eshyra-fze",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm ci -> exit 0; npm run check -> exit 0 (209 files, 7 existing warnings); npm run typecheck -> exit 0; npm run test -> exit 0 (928 passed, 3 skipped); npm run smoke:cli-install -> exit 0; npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 0 (5 passed); git diff --check -> exit 0.",
+      "created_at": "2026-05-30T18:39:39Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

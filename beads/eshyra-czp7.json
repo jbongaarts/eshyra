@@ -1,0 +1,87 @@
+{
+  "_type": "issue",
+  "id": "eshyra-czp7",
+  "title": "Drive PR #455 to merge: final adversarial review rounds and fixes",
+  "description": "Supervisor tracking bead for driving PR #455 (branch agent/complete-2n1t-o9bd, epics eshyra-2n1t + eshyra-o9bd.18) to merge. Scope: repeated adversarial Codex review waves at the importer/compiler final-audit quality bar (mechanical playability correctness + source faithfulness), fix dispatches per finding batch, re-review until clean, then merge PR #455 per repo merge policy (merge commit, PR number + bead in title) and clean up worktrees/branches. Blocks the start of o9bd re-freeze work (o9bd.14/.16).",
+  "notes": "Workflow correction (user, 2026-07-19): supervisor performs all review and planning directly; Codex subagents are dispatched only for implementation/code-writing. Review dispatch beads ojnq/ewi7/r73p cancelled.\nRound-1 supervisor review complete (2026-07-19). Engine/custody/attunement/creation/tests clean. Importer findings -> fix dispatches: j1zq (4 modeling defects: staff-of-frost fixed DC17 vs owner DC; rod same-button revert; cube face-6 deactivate; staff-T&L combined op), yfeb (10 simple C2 payload clauses missing), as87 (7 complex M5/M8 payloads missing), 3kpz (numeric-conservation gate + onFailure/effects schema guard, after A/B). Root cause: tag-level conservation gate cannot see clause-payload omissions; deep audit excludes mechanics.*.\nCOMPLETE: PR #455 merged to main as 9d252b9 (2026-07-19) after two clean adversarial review rounds. Fix batches j1zq/yfeb/as87 merged + verified (4,640 tests); conservation gate efg5 merged; round-2 independent audits: byte-exact regen, 0 suspicious, deep audit 0 findings; CI fully green at merge. Branches and worktrees cleaned up.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T06:55:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T07:50:20Z",
+  "started_at": "2026-07-19T06:56:08Z",
+  "closed_at": "2026-07-19T07:50:20Z",
+  "close_reason": "PR #455 merged to main (9d252b9) with clean final review, gate added, cleanup done",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-czp7",
+      "depends_on_id": "eshyra-3kpz",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:11:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-czp7",
+      "depends_on_id": "eshyra-ojnq",
+      "type": "blocks",
+      "created_at": "2026-07-19T01:55:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-czp7",
+      "depends_on_id": "eshyra-j1zq",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:11:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-czp7",
+      "depends_on_id": "eshyra-efg5",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:37:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-czp7",
+      "depends_on_id": "eshyra-yfeb",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:11:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-czp7",
+      "depends_on_id": "eshyra-ewi7",
+      "type": "blocks",
+      "created_at": "2026-07-19T01:56:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-czp7",
+      "depends_on_id": "eshyra-as87",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:11:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-czp7",
+      "depends_on_id": "eshyra-r73p",
+      "type": "blocks",
+      "created_at": "2026-07-19T01:56:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 8,
+  "dependent_count": 0,
+  "comment_count": 0
+}

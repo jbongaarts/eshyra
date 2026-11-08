@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cxuc",
+  "title": "auditActiveEffectIntegrity reports a live combat link of a durable summon as a stale persistent link",
+  "description": "Found integrating eshyra-0dtg (Pipes test, PR to come). auditActiveEffectIntegrity (packages/core/src/state/activeEffects.ts, stalePersistentLinks) flags EVERY active actor link with target_kind combatant and a non-null campaign_actor_id as 'persistent actor link still points at combatant'. During an ACTIVE combat that is the normal state: rebindCombatantReferencesToActor retargets those links to the campaign actor only at combat closure (or a bonded-summon transition). So the audit appears to over-report for any durable summon bound mid-combat (Pipes swarms; likely Horn of Valhalla berserkers and other untimed or hour-scale item grants). Re-derive: should the predicate exclude links whose combatant is in an active combat instance? Confirm against the closure and replay code and every caller of the audit; fix the predicate or document the intended call point; add a regression for a live durable summon mid-combat (clean) and after closure without a rebind (flagged). Pre-freeze: the integrity audit's in-band scope must be truthful (ADR 0020 bar).",
+  "notes": "Captain 2026-11-07: integrated e1ab87b2 (merged with main) after own review and verify (exit 0, 7489). PR https://github.com/jbongaarts/eshyra/pull/732. Stays in_progress until merged.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T01:29:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:08:29Z",
+  "started_at": "2026-11-08T01:39:51Z",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cxuc",
+      "depends_on_id": "eshyra-cxuc.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T19:39:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

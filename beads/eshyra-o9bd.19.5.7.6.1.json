@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.7.6.1",
+  "title": "Dispatch: nonlethal knockout for characters (attempt 1)",
+  "description": "Implements capability bead eshyra-o9bd.19.5.7.6 (read `bd show eshyra-o9bd.19.5.7.6`). Integration branch eshyra-o9bd.19.3.4.8 (single PR for eight beads). Your branch already contains eshyra-o9bd.19.5.7.4 (character suffocation gate in hpLifecycle.ts) — read hpLifecycle.ts in full first. Read AGENTS.md; docs/design/rule-record-runtime-statements.md amendment A5; ADR 0020 §§2-3.\n\nSOURCE (SRD rule:knocking-a-creature-out): \"Sometimes an attacker wants to incapacitate a foe, rather than deal a killing blow. When an attacker reduces a creature to 0 hit points with a melee attack, the attacker can knock the creature out. The attacker can make this choice the instant the damage is dealt. The creature falls unconscious and is stable.\"\n\nSCOPE: CHARACTERS (adjust_hp / hpLifecycle.ts). Encounter combatants already take status 'unconscious' through update_combatant; do not touch encounterCombatants.ts (another child owns it concurrently).\n\nDESIGN (decided by the supervisor; implement exactly):\n1. adjustHp / applyDamage gain an optional `knockOut: true` on a damage application (negative amount). Semantics, in one transaction:\n   - Temporary HP absorb damage first, exactly as today.\n   - If the character was above 0 HP and the remaining damage reduces hp_current to 0 (including any overflow, however large), the result is hp_current 0, life_state 'stable', both death-save counters 0, and the stable-recovery deadline armed exactly as stabilizeCharacter arms it (seeded rng). No instant death, no 'dying' step. Leaving 'alive' breaks concentration through the existing writeHpFields hook (incapacitated, not dead). The result reports `knockedOut: true` and the overflow that was NOT applied as death.\n   - If the damage does not reduce the character to 0, knockOut has no effect: normal damage, result `knockedOut: false`.\n   - If the character is already at 0 HP (dying or stable) or dead, knockOut is refused with a MutateStateError (\"a knockout applies only when the damage reduces the character to 0 hit points\"), so damage-at-0 rules are never bypassed.\n   - knockOut with a positive amount (healing) is refused.\n   - While a suffocation recovery block is set (recovery_block, from eshyra-o9bd.19.5.7.4), knockOut is refused: the character cannot be stabilized.\n   Whether the attack was a melee attack and whether the attacker chose to knock out stay DM interpretation.\n2. adjust_hp tool (toolAdjustHp.ts): add the `knockOut` boolean to the schema and a contract sentence in the description (applies only when this damage reduces the character from above 0 to 0; the character becomes unconscious and stable instead of dying or dead). No per-rule prose beyond that.\n3. Known limit rule:knocking-a-creature-out (ruleKnownLimits.ts), R0 re-derivation: the instant-death trap is gone. Rewrite to a bounded statement only if a trap remains (e.g. that damage must be applied through adjust_hp with knockOut at the moment it is dealt, since a later stabilize_character call cannot undo instant death), else retire the entry and say so in your notes. Remove 'nonlethal-knockout' from ENGINE_CAPABILITY_GAPS. Participants rule as validated (each named tool listed and present in the statement). Update the identity-pinned gapsByKey map and the knockout assertions in packages/core/test/rules/ruleAwareness.test.ts (replace the 'instant death' assertion with the new contract; do not just delete it). Design doc A5 table: note the nonlethal-knockout gap as landed in eshyra-o9bd.19.5.7.6.\n\nTESTS (hpLifecycle.test.ts and a tool-registry case): knockout from above 0 with overflow >= hp_max → stable not dead; exact-to-0 → stable; temp HP absorbing part; damage not reaching 0 → normal; refused at 0 / dead / healing / while suffocating; concentration broken (incapacitated); recovery deadline armed and later resolved by the clock path.\n\nOUT OF SCOPE: combatants; anything not listed.",
+  "acceptance_criteria": "Implementation per the description on its own branch; npm run verify:worktree green before commit; completion report in bd notes; bead closed by the child.",
+  "notes": "Dispatched gpt-6-luna high, pgid 2424461, off eshyra-o9bd.19.3.4.8@622d45d5.\nImplemented character nonlethal knockout atomically in adjust_hp/adjustHp. Files: packages/core/src/state/hpLifecycle.ts, packages/core/src/orchestrator/toolAdjustHp.ts, packages/core/src/rules/ruleKnownLimits.ts, packages/core/test/hpLifecycle.test.ts, packages/core/test/tools.test.ts, packages/core/test/rules/ruleAwareness.test.ts, docs/design/rule-record-runtime-statements.md. Decisions: knockOut=true only applies to negative damage that drops a character from above 0 to 0; temporary HP still absorbs first; stable state/counters/recovery deadline and concentration break are written in the same transaction. Overflow remains reported without instant death. At-0/dead, healing, and suffocation-block cases are refused. Re-derived the known limit as bounded, removed the nonlethal-knockout capability gap, and marked the A5 table landed. Deviation: none. Evidence: focused suites 166/166 passed; npm run verify:worktree passed (5,596 passed, 3 skipped; format/check/typecheck green). Commit: 490e852b on eshyra-o9bd.19.5.7.6.1.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-02T04:04:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-02T04:14:35Z",
+  "closed_at": "2026-10-02T04:14:35Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.7.6.1",
+      "depends_on_id": "eshyra-o9bd.19.5.7.6",
+      "type": "parent-child",
+      "created_at": "2026-10-01T23:04:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

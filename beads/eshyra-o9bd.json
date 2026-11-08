@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd",
+  "title": "Thaw & re-freeze D&D 5e SRD importer/rules-pack under complete-accurate-playable bar",
+  "description": "Re-audit (2026-06) of the frozen D&D 5e SRD 5.1 importer and exported rules-pack under a NEW standard: complete, accurate, and PLAYABLE — not merely source-accounted. The prior final freeze (docs/audits/dnd5e-srd-5.1-final/, 1811 records, 0 unaccounted/0 gaps) was valid for archival/source-completeness, but its methodology only asked 'is the source represented somewhere?' It did NOT prove the pack can drive character creation, level-up, spell choice, equipment grants, subclass choices, and advancement without consumer-side hardcoding or prose guessing.\n\nProof the pack is not yet self-sufficient: deterministic overlays now exist OUTSIDE the generated pack (packages/core/src/character/srdAncestryAbilityScoreIncreases.ts, srdClassSpellcasting.ts, srdClassStartingEquipment.ts, srdLanguages.ts) precisely because the frozen pack lacked machine-readable facts for character creation. PR #336 further found unresolved class-progression rows (subclass feature slots, improvement labels, aliases, Ranger spellsKnown:null placeholder) that a level-up engine cannot safely apply.\n\nVerdict: reopen the importer for a FULL thaw and re-freeze pass. Re-freeze only when the pack itself is complete, accurate, and playable enough that character creation and level-up need no special hardcoded SRD knowledge outside the generated rules model.\n\nFollow docs/importer-fix-protocol.md for all thaw work. Children below are organized by modeling area, plus new re-freeze gates, runtime smoke tests, regeneration+full re-audit, overlay retirement, and a final max-effort re-audit.\n\nRe-freeze bar (all must be green):\n1. Old gates still green: reproducible importer, source coverage 0, region ledger 0, suspicious records 0, hidden/control bytes 0.\n2. No consumer overlay required for core character creation (ASIs, languages, spellcasting ability/prep, starting equipment are generated pack data).\n3. All class levels typed: no raw no-ref feature markers except typed subclass slots; no null numeric spellcasting placeholders.\n4. All level-up rows classifiable/applicable: feature grants, subclass slots, feature improvements, resource increases, ASIs/feats, spellcasting changes have explicit models.\n5. No missing feature headings (Rogue Thieves' Cant-style cases fail).\n6. No mixed mechanical note tokens (Druid metal restriction separated from proficiency arrays).\n7. Feature/rule/spell/magic-item table links complete; no important standalone table unreachable from its owner.\n8. No duplicate table linearization in primary prose unless deliberately modeled under sourceText.\n9. Choice coverage gate: every level-1/level-up player choice is structured or explicitly out-of-scope with a named unsupported marker.\n10. Runtime smoke tests: create+derive level-1 chars for every legal SRD class/ancestry/background path; level representatives through 20 with subclass selections.",
+  "notes": "2026-07-08 ADR 0017 / rules-pack compiler guidance review: This epic predates PR #417 but remains directionally correct. Interpret 'complete/accurate/playable' as the compiler guide now defines it: reference substrate plus source-grounded semantic substrate, with explicit runtime ownership/support tracked separately. Existing importer paths/bead names stay as-is; no mass rename is implied. Generated records remain outputs and must only change through compiler inputs plus regeneration.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:05:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

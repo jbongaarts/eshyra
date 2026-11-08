@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.9",
+  "title": "Close SRD audit gate blind spots from 2026-07-01 review",
+  "description": "Finding source:\n- Fable found all existing repo gates green despite: one dropped core rule, one wrong derived mechanic, systemic creature statline loss, CR-0 XP under-modeling, and dangling nested prerequisite refs.\n- Fable's explicit gate blind spots:\n  1. Coverage ledger accounts regions to owners but does not prove the owner's emitted record actually carries prose after embedded lists.\n  2. Derived flags are not cross-checked against duration semantics.\n  3. Statline parentheticals/formulas were never modeled, so no gate could notice their loss.\n  4. Ref-integrity gates do not cover choices[].options[].prerequisites[].ref.\n- Codex/ChatGPT added readiness/reporting blind spots around spell-list coverage classification, duplicate ownership, and broad deterministic mechanics gaps.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:28:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-03T15:49:28Z",
+  "close_reason": "Epic complete: .3/.5 closed earlier (PR #383), .4 closed as covered by PR #394's creature-statline-fidelity + creature-cr-xp gates, .1/.2/.6 closed in PR #395 (region-ledger emission proofs incl. 4 source-confirmed alignment fixes, deep pre-freeze audit tooling with 0-finding baseline, fail-closed readiness dispositions).",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.9",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:28:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

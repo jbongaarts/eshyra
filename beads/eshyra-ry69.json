@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ry69",
+  "title": "Declare or disposition the remaining undeclared record-key reference leaves (non-condition)",
+  "description": "Successor owner for the remaining undeclared reference-like leaves that eshyra-o9bd.16.2 L2-F1 identified. The population is the deterministic predicate: a data leaf whose value exactly equals an existing record key, at a (kind, normalized pointer) shape that no relationship declaration covers. Excluded are the families eshyra-o9bd.16.6.2 declares and the condition-name leaves of eshyra-o9bd.19.3.5. For each shape, either declare it (a reference with its relation) or declare it not-a-reference with a reason, and prove any intended expansion. This is a disclosed discovery limit of the candidate (bar 9), not a re-freeze blocker.",
+  "notes": "User decision 2026-11-07: BLOCKING for the re-freeze (no post-freeze deferral); repair before the final candidate (eshyra-o9bd.19.6.7.22). This supersedes the earlier 'not blocking' / 'disclosed limit' text above.\nPLAN (Captain 2026-11-07): base on branch eshyra-y0us (PR #728, stacked on #724), which carries the excludedLeafValues, ../key and listDelimiter declaration machinery.\n1. POPULATION from the bead's deterministic predicate, computed by a generated query (never a hand list): every data leaf whose value exactly equals an existing record key, at a (kind, normalized pointer) shape that no declaration covers, after excluding the families already declared (o9bd.16.6.2, 19.3.5, y0us, 1fx7). Record the query and the shape table (kind, shape, leaf count, example) in the report.\n2. Per shape, decide against the printed source and the field's meaning: a record-key reference with a relation name that states the meaning, or not-a-reference with a reason. Reuse the existing relation vocabulary where it fits; justify any new relation name. A shape that holds both references and non-references must be separated truthfully (sibling-keyed table, excludedLeafValues), never excluded wholesale to hide real references.\n3. Add the enumerated new shapes to a bounded gate list (or a sibling bounded constant) so an undeclared emitted leaf at them throws. It stays enumerated; no corpus-wide claim (ADR 0020 section 6).\n4. Prove intended expansion with one discovery regression per newly traversed relation family, and assert the whole pack has no unresolved or indeterminate outcome for the new declarations.\n5. Regenerate via the importer; verify:dnd5e-srd-pack must be exact; explain the generated diff (record-relationships.json; records.json should not change). Update disclosure text in candidateGates.ts / cli.ts that still names eshyra-ry69 as open. Do not edit dated candidate-record docs, freeze-manifest.json, thaw notes, or conditionRelations.ts.\nCaptain 2026-11-07: integrated 4d08195d plus the Captain invariant 3121fa42 (no record key excluded by a sibling category) after own review and verify (exit 0, 7546 passed; pack exact). PR https://github.com/jbongaarts/eshyra/pull/730 (stacked on #728). Stays in_progress until merged.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T04:17:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T01:11:47Z",
+  "started_at": "2026-11-08T00:53:53Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ry69",
+      "depends_on_id": "eshyra-ry69.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:53:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

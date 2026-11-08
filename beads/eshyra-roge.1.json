@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-roge.1",
+  "title": "Dispatch: roge djinni scimitar choice-of-type rider (attempt 1)",
+  "description": "Implement the PLAN note on eshyra-roge (bd show eshyra-roge). Base: branch eshyra-roge, cut from origin/main e4740161. Worktree .worktrees/eshyra-roge.1 on branch eshyra-roge.1; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. npm run verify:worktree must pass BEFORE committing; commit on eshyra-roge.1 only; no push or PR; do not close eshyra-roge.",
+  "notes": "Commit 36d1f826 on eshyra-roge.1 (not pushed). Change: mechanicsProjections.ts projectHitDamage gains CHOICE_TYPE_DAMAGE_TERM_RE -> one hitDamage entry {average:3,dice:'1d6',typeOptions:[{lightning,'djinni’s choice'},{thunder,'djinni’s choice'}]} (same typeOptions shape as spell Fire Shield; schema already validates it for hitDamage); hitDamageMixesFlat extended so top-level mechanics.damage carries it; hitDamageNotProjected removed for Djinni Scimitar. Requires a printed '(…choice)' parenthetical; absent chooser still discloses. Tests: creatureAttackGrammar pinned expectation changed from disclosure to projection (strengthening; oracle printedTerms/projectedModes extended independently); mechanicsProjections unit test adds projection case and keeps disclosure case for unattributed choice. Generated diff: records.json only creature:djinni Scimitar (attack hitDamage + top-level damage gain rider, disclosure removed); nothing else churned. Also regenerated docs/inventories/o9bd-18-8-8-semi-structured-boundary.{json,md} via npx tsx packages/core/scripts/inventory-semi-structured-boundary.ts (test-enforced recompute; row for hitDamageNotProjected replaced by typeOptions condition/type rows; precedent eshyra-o9bd.19.6.7.11). SRD text checked: 'plus 3 (1d6) lightning or thunder damage (djinni’s choice)'. Sibling search: all 1799 records scanned for 'X or Y damage' and any hitDamageNotProjected: only creature:djinni; other hits are traits (Split, Troll regeneration), not attack riders. No follow-ups needed. Verify: verify:dnd5e-srd-pack exact match; verify:worktree passed (7462 passed, 3 skipped).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T00:40:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T00:48:55Z",
+  "closed_at": "2026-11-08T00:48:55Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-roge.1",
+      "depends_on_id": "eshyra-roge",
+      "type": "parent-child",
+      "created_at": "2026-11-07T18:40:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

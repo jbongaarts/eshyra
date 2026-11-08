@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-212h",
+  "title": "Record death-save saving-throw bonus in a structured event, not only the tool result",
+  "description": "eshyra-o9bd.19.6.7.6.1 accepts saveBonus/bonusSources on record_death_save and returns them in the tool result (and on the combatant lifecycle event). Mutation provenance is a plain string and there is no durable structured death-save event payload, so the bonus is not persisted per save. Decide whether death-save events need a structured record (provenance/event schema change) before relying on the bonus for audit replay.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T02:04:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T02:04:21Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

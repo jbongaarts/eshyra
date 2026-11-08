@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.15.4",
+  "title": "W15.4: Phase 4 exit disposition of discovery experiment infrastructure",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:37:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-07T23:37:45Z",
+  "labels": [
+    "architecture",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.15.4",
+      "depends_on_id": "eshyra-o9bd.19.15.2",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:37:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.15.4",
+      "depends_on_id": "eshyra-o9bd.19.15.3",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:38:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.15.4",
+      "depends_on_id": "eshyra-o9bd.19.15",
+      "type": "parent-child",
+      "created_at": "2026-11-07T17:37:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

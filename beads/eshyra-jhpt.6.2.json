@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.6.2",
+  "title": "Amendment A2: make active ambiguity rulings available to bounded capability preflight (with eshyra-olc5 readiness owner)",
+  "description": "ADR 0020 transition amendment A2 (integrated transition design 8.3 R5), carved out of eshyra-jhpt.6 on 2026-09-05 so the .4/.5/.6 PR could land without it. Define how an ACTIVE ambiguity ruling (campaign_rule with ambiguity provenance, read through the .2 APIs / assembleCampaignRulesContext) is made available to bounded deterministic capability preflight where execution depends on it — the verified case is magic-item:cube-of-force press-face-1 resetsDuration { kind:'source-ambiguity', ambiguityId:'ambiguity:cube-of-force-same-face-duration-reset' } where state/itemState.ts matchStateTransition throws ItemStateAmbiguityError. Constraints from the .6 spec: assertMagicItemOperationReady runs before the first matchStateTransition, so readiness throws first today; A2 must be designed WITH the eshyra-olc5 readiness owner (eshyra-olc5.6, transition W13): a ruling does not make an engine-pending clause ready, and a capability may never consult a ruling that did not come through this runtime. Discovery consumer eshyra-o9bd.19.13 (W11) depends on this output and may not substitute a discovery-local store. Probe P7 expects: no active ruling -> packet carries the ambiguity, both interpretations, explicit unresolved; active ruling -> packet carries the ruling beside the ambiguity and preflight still reports blocked. Ownership stays under eshyra-jhpt.6.",
+  "notes": "A2 design reconciled with the closed eshyra-olc5.6 capability-contract owner and its landed MAGIC_ITEM_OPERATION_READINESS_CAPABILITY: campaign-owned preflight returns active ambiguity/ruling projections from persisted current position alongside the original readiness result. useItem consumes this wrapper before mutation; blocked tool results carry that evidence. Rulings never discharge engine-pending clauses; no new state-transition execution or discovery-owned resolver. Included in jhpt-completion PR.\nSingle completion PR opened: https://github.com/jbongaarts/eshyra/pull/536 at 5162e6d (base 84e8e79). Covers .7 accepted implicit precedents, .8 explicit disputed-turn replay/recovery, .9 all ten end-to-end scenarios, and .6.2 campaign-aware bounded preflight. npm run verify:worktree passed: 285 files/5049 tests, 3 files/20 documented live-API/Dolt skips. 27 new core/CLI acceptance tests cover negative audit/rollback boundaries, persisted parity, source bytes, approval, recovery/checkpoint round trip, and replay-triggered player choices. Feature branch pushed; awaiting external review. Beads stay in_progress until PR merges. No merge authorized.\nReview of PR #536 at 4dd0241 found two new material blockers: semantic schema objects omitted by snapshot/hash/checkpoint restoration, and capability preflight global ambiguity expansion coupling unrelated source defects to item readiness. Repair remains in PR #536. Reconcile all snapshot producers/readers, schema enforcement and drift checks, plus bounded target ambiguity validation and real use_item behavior; add negative regressions before fixes and perform fresh full self-review/verification before handoff.\nMaterial repair design and self-review: snapshot schema payload v2 retains each table/view plus standalone indexes/triggers while keeping Dolt outer record kinds unchanged. Capture uses one read transaction; materialize creates tables/views and indexes before rows (including standalone UNIQUE FK parents), defers trigger installation to preserve grandfathered data and avoid duplicate side effects, then atomically publishes. Replay hashes all schema, excluding only diagnostic/recovery rows. Old payloads lack enough evidence to reconstruct lost objects and now reject with a fresh-checkpoint-from-original-DB instruction, consistent with the pre-v1 fail-closed policy; no migration replay/guessing. A2 validates target declared IDs before expanding matching stack declarations, retaining duplicate/malformed/missing relevant-ID failures and the original readiness gate. Negative regressions reproduced both new finding classes; expanded coverage includes base/add-on defects with empty and nonempty target ambiguity sets, useItem execution, Dolt payload transport seam, views/INSTEAD OF triggers, side-effect triggers, inventory insert/update guards, uniqueness, deferred FK parents, legacy rejection, and failed-restore destination cleanup. Fresh full review of the new head is required.\nBoth material findings from review at 4dd0241 repaired in ec229d1 on the existing PR #536: https://github.com/jbongaarts/eshyra/pull/536 . Completed class/sibling self-review and final npm run verify:worktree before commit: 286 files / 5070 tests passed; 3 files / 20 documented live-API/Dolt skips. New schema-integrity suite exercises the actual Dolt payload reader without requiring Dolt, then materialization/reopen and real constraints. Test coverage also includes the reserved sqlite_ prefix filter, in-place replay views, and schema changes on excluded-row recovery tables. PR description documents material scope and old incomplete-checkpoint rejection; fresh full review required at ec229d1. No additional known implementation finding remains from this pass; independent review is pending. All owning beads remain in_progress until merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-05T07:25:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-08T03:27:26Z",
+  "started_at": "2026-09-07T22:52:51Z",
+  "closed_at": "2026-09-08T03:27:26Z",
+  "close_reason": "Merged via PR #536, merge commit 59d2ef905eaddc82ba38e6e84168c662ef6cf682. Reviewed head ec229d1; all CI checks passed.",
+  "labels": [
+    "ambiguity",
+    "audit",
+    "campaign-runtime",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.6.2",
+      "depends_on_id": "eshyra-jhpt.6",
+      "type": "parent-child",
+      "created_at": "2026-09-05T02:25:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

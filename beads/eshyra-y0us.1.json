@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-y0us.1",
+  "title": "Dispatch: y0us + 1fx7 condition-name leaf declarations (attempt 1)",
+  "description": "Implement the PLAN notes on eshyra-y0us AND eshyra-1fx7 (bd show each), one commit per bead. Base: branch eshyra-y0us, cut from eshyra-o9bd.19.3.5 (PR #724 head efe80bf4), which carries the declaration machinery these extend. Worktree .worktrees/eshyra-y0us.1 on branch eshyra-y0us.1; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. docs/importer-fix-protocol.md governs. npm run verify:worktree must pass BEFORE each commit; npm run verify:dnd5e-srd-pack must report an exact match. Commit on eshyra-y0us.1 only; no push or PR; do not close eshyra-y0us or eshyra-1fx7.",
+  "notes": "COMPLETE. Commits on branch eshyra-y0us.1 (not pushed, no PR): 2b7ffacb (eshyra-y0us), 0168e885 (eshyra-1fx7). verify:worktree passed before each commit (final: 400 files passed/2 skipped; 7479 tests passed/3 skipped); verify:dnd5e-srd-pack exact match after each.\neshyra-y0us: importer magicItemResidualCombatEffects.ts now emits conditions:['charmed'] (not condition) for Rod of Rulership c2-residual-rulership-charm and Philter of Love c2-residual-love-charm; checked against printed text ('be charmed by you for 8 hours'; 'become charmed by that creature for 1 hour'). Generated diff: records.json 2 leaves (condition -> conditions[]), record-relationships.json only the overloaded-effect-condition reason text. Outcomes: effects/*/conditions/* gained 2 resolved imposed-condition edges to condition:charmed (Rod of Rulership new edge, Philter residual); effects/*/condition lost the 3 table-excluded charmed leaves (now 0 condition names excluded). Allowlist test now asserts zero; exact Rod/Philter regressions added. Semi-structured boundary inventory (docs/inventories o9bd-18-8-8) regenerated (condition 98->96, conditions[] 15->17), required by its recompute test.\neshyra-1fx7: FINDING: creature /conditionImmunities is NOT an array; it is a verbatim comma-separated string ('charmed, exhaustion, poisoned'): 89 records (creature + 1 stat-block) with 315 printed names (35 were single-name leaves). The single-name-per-leaf resolver could not declare it, so added declaration key listDelimiter (record-name only; validated in builder and packLoader; empty entry -> indeterminate list-entry-empty). Declarations added: creature + stat-block /conditionImmunities -> condition-immunity (315 resolved, 0 unresolved); magic-item /mechanics/effects/*/state (kind visibility -> imposed-condition invisible, x2; Invisible is an SRD condition; other kinds indeterminate); condition /mechanics/effects/*/state not-a-reference ('impossible-to-see' descriptor, needed by the bounded gate); magic-item effects/*/ends/* (conditionEndsWhen, triggeredEffect -> removed-condition poisoned x2; disease/any-disease excluded leaf values, 'cured of any disease'); magic-item variants/whip/endsOn/* (incapacitated -> ending-trigger-condition; dismiss-action, death excluded; printed 'when you are incapacitated or die'). CONDITION_NAME_LEAF_POINTER_SHAPES extended by 4 shapes. Generated diff: record-relationships.json +74 lines only (records.json unchanged). Tests: listDelimiter builder/resolver/loader tests, per-record exact edges, whole-pack no-unresolved/indeterminate, seeded creature:ghoul one-hop discovery reaching charmed/exhaustion/poisoned. Justified leaf-exclusion sets extended.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T00:23:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T00:42:49Z",
+  "closed_at": "2026-11-08T00:42:49Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-y0us.1",
+      "depends_on_id": "eshyra-y0us",
+      "type": "parent-child",
+      "created_at": "2026-11-07T18:23:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

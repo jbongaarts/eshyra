@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.11.2",
+  "title": "REFACTOR: action parser cleanup",
+  "description": "Clean naming/structure after GREEN while keeping tests passing.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T05:44:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:55Z",
+  "started_at": "2026-05-28T05:51:33Z",
+  "closed_at": "2026-05-28T05:51:52Z",
+  "close_reason": "REFACTOR stage complete: doc/comment cleanup done with importer suite still green.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.11.2",
+      "depends_on_id": "eshyra-0m9.5.11.3",
+      "type": "blocks",
+      "created_at": "2026-05-28T00:44:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.11.2",
+      "depends_on_id": "eshyra-0m9.5.11",
+      "type": "parent-child",
+      "created_at": "2026-05-28T00:44:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "e90b24df-cc97-56cc-bdf3-8764507e2f6d",
+      "issue_id": "eshyra-0m9.5.11.2",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: updated importer comments/README for action coverage and reran npx vitest run packages/core/test/importers/dnd5e-srd-5.1 -> passed (8 files, 142 tests).",
+      "created_at": "2026-05-28T05:51:48Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

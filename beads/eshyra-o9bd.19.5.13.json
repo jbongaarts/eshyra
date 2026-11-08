@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.13",
+  "title": "Caller-supplied natural die results and model-supplied campaignId in in-force tools: verify integrity boundary",
+  "description": "Reported by the eshyra-o9bd.19.5.12 inventory pass (2026-10-09, main 6f57be85), not yet verified as defects. (1) record_death_save (toolRecordDeathSave.ts) and restore_usage (toolRestoreUsage.ts) accept a caller-supplied natural d20/recharge result and only range-check it; nothing binds it to a roll-tool result. ADR 0020 section 3 makes random-number generation a deterministic responsibility. Determine whether another layer (mechanics auditor, roll ledger/playerVisibleRollLedger, turn audit) already enforces that the natural came from a seeded roll this turn; if not, the defect class is 'declared die result accepted without seeded-roll evidence' - enumerate every tool taking a natural/roll input (sibling search) and bind them to roll evidence (compare validateDiceRollEvidence used by level-up HP rolls). (2) memory_drilldown (toolMemoryDrilldown.ts) passes the model-supplied campaignId to memoryDrilldown(ctx.db, selector) without comparing it to ctx.campaignId; determine whether ctx.db is campaign-scoped (then no requirement) or shared (then a cross-campaign read). (3) the roll tool description omits category hit_die although the schema enum accepts it (model-facing doc mismatch). Profile: semantic-system. The capability inventory already states each trust boundary truthfully, so this is not an inventory defect.",
+  "notes": "Additional suspects from the 19.5.12 attempt-2 re-derivation (2026-10-09), unverified: (4) accept_ambiguity_precedent description tells the model to supply all matching interpretation ids, but the schema/code accept exactly one (model-facing contract mismatch). (5) set_suffocation description says the drop to 0 HP happens at the start of the next turn, but the tool applies it when called (check against SRD Suffocating: 'At the start of its next turn, it drops to 0 hit points and is dying' - a description/behavior mismatch that can misplace the SRD timing). (6) expend_ammunition does not verify the item is ammunition. (7) reset_usage fails the whole call if any spent in-scope counter belongs to a pack-bound item. (8) resolve_concentration rolls the d20 before checking the owner is concentrating (no state persisted, RNG advances). (9) applyLevelUp relies on callers to gate eligibility. Triage each: operative invariant + authority, or 'no requirement'.\nTRIAGE 2026-10-09 (Claude Captain, main 6413bcc7). (1) caller-supplied naturals in record_death_save / restore_usage: NOT a code defect against current authority - the design deliberately routes them through the mechanics auditor (turnAuditor.ts ~L158-167: 'Any dice roll ... requires roll'; 'Reject if a hand-written roll result contradicts tool output'), i.e. model-audited, not deterministically bound. Whether dice-consuming mutation tools must instead bind seeded roll evidence deterministically (as level-up HP rolls do via validateDiceRollEvidence) is an ARCHITECTURAL DECISION under ADR 0020 section 3 (RNG ownership) - surfaced to the user; no change without that decision. The capability inventory states the trust boundary truthfully. (2) memory_drilldown campaignId: no requirement - each campaign has its own SQLite file (CLI resolves target.entry.dbPath; ESHYRA_DB_PATH is an explicit single-campaign DB, ADR 0004), so a mismatched campaignId cannot read another campaign. (3) roll description omits hit_die: REAL model-facing contract mismatch (schema enum ROLL_CATEGORIES includes hit_die; description hand-lists the others). Fix: derive the description's category list from ROLL_CATEGORIES + a test that the description names every category. (4) accept_ambiguity_precedent: no requirement - matchingInterpretationIds is deliberately an array the model fills with ALL matches and the engine refuses unless exactly one matches (fail-closed ambiguity gate); description and code agree. (5) set_suffocation: no requirement - the description tells the DM to call event drop at the start of the creature's next turn after the survival interval; applying when called is that contract. (6) expend_ammunition not checking ammunition: no requirement - no authority requires the defensive check; the DM names the item. (7) reset_usage atomic refusal: no requirement - fail-closed all-or-nothing is correct. (8) resolve_concentration advancing RNG before the concentrating check: no requirement - replay re-executes the identical call sequence, so the seeded stream stays deterministic and nothing persists on refusal. (9) applyLevelUp eligibility gated by callers: no requirement - the inventory states it; callers (guidedLevelUpFlow, playProgression) gate.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T03:06:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T07:27:15Z",
+  "started_at": "2026-10-10T03:44:05Z",
+  "closed_at": "2026-10-10T07:27:15Z",
+  "close_reason": "PR #647 merged (16eea662) after GPT-6.1-Sol APPROVED at exact head f6bd2819 (eshyra-o9bd.19.5.13.1), which also reviewed the nine-item triage. Only operative defect (roll description omitted hit_die) fixed; others no requirement with reasons; the dice-binding architectural question moved to decision bead eshyra-o9bd.19.5.14.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.13",
+      "depends_on_id": "eshyra-o9bd.19.5",
+      "type": "parent-child",
+      "created_at": "2026-10-09T22:06:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

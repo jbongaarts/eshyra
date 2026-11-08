@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xogv",
+  "title": "SRD condition relations: residual non-copular infliction phrasings still read as mention",
+  "description": "Discovered under eshyra-mx0d. Still 'mention' though the printed text inflicts: 'poisoned for 5 minutes and unconscious while poisoned' (homunculus), 'grappled (escape DC 13) and restrained' (otyugh), 'subjected to the petrified condition' (flesh-to-stone, prismatic spray/wall), 'is stable but poisoned' (giant centipede/spider/wasp/phase spider). Re-derive each against printed text and extend the applies grammar.",
+  "notes": "Captain 2026-11-07: integrated 28f9a61b after own review and verify (exit 0, 7513; pack exact). PR https://github.com/jbongaarts/eshyra/pull/734 (stacked on #733). Stays in_progress until merged.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T02:01:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:20:52Z",
+  "started_at": "2026-11-08T02:12:07Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-xogv",
+      "depends_on_id": "eshyra-xogv.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T20:12:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

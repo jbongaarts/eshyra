@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.8.9",
+  "title": "Dispatch: re-take character custody across in-process close-and-recap session rollover for PR #711 (attempt 5)",
+  "description": "Repair the fresh full Sol review eshyra-o9bd.19.6.7.8.8 S2 (bd show it: mechanism, locations, reproducer under /tmp/pr711-single-writer-review/ if present) on PR #711, branch eshyra-o9bd.19.6.7.8 (head fe2f8fa9). Worktree .worktrees/eshyra-o9bd.19.6.7.8.9, branch eshyra-o9bd.19.6.7.8.9 cut from eshyra-o9bd.19.6.7.8.\nDESIGN (Captain): packages/cli/src/play.ts:~85 acquires character custody before launch and enters turnLoop without reacquiring; playSession.ts:~131-139 handles close/c by gracefulClose (which releases every character, playClose.ts:~276) then startNewSession, so the replacement session plays without custody. Re-establish custody for every already-linked party character immediately after the in-process close-and-start-new transition and BEFORE any new gameplay, through the same acquire path resume uses (acquireCustodyOnResume / the resume classification), keeping the pre-launch stale-copy and held-elsewhere fail-closed checks; mirror how runDemo's close branch reacquires after launch (play.ts:~161-167) and unify the two paths if that is the smaller change. Do not remove the core holder guard, and add no concurrent-writer CAS (ADR 0012 single-writer decision). EVIDENCE: one generalized session-rollover invariant test covering normal resume, close, its c alias, and the demo sibling: linked characters hold custody throughout the subsequent session, legitimate state changes reach the registry on final exit, and the original resume does not become stale. Implementer: Claude Sonnet 5.5.",
+  "notes": "Built: playSession.launch close/c branch now calls activateCampaignCustody (resume's acquire path, fail-closed held-elsewhere/stale checks) after gracefulClose and before startNewSession; launch returns string|undefined and runPlay/runDemo exit 1 on undefined. Demo's later activate is an already-held no-op. Paths: packages/cli/src/playSession.ts, play.ts. Test: packages/cli/test/playSessionRollover.test.ts (resume, close, c, demo close; real runPlay/runDemo + writer lock; custody at first play prompt, registry 15gp on exit, not stale-copy); close/c fail without the fix. verify:worktree passed (397 files, 7400 tests). Commit 15e55a21.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T04:23:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T04:28:05Z",
+  "closed_at": "2026-11-06T04:28:05Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.8.9",
+      "depends_on_id": "eshyra-o9bd.19.6.7.8",
+      "type": "parent-child",
+      "created_at": "2026-11-05T22:23:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

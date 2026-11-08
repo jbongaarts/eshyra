@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3wsg",
+  "title": "Re-migrate biome.json to the installed Biome 2.5.14",
+  "description": "biome.json pins $schema 2.5.12 while the installed @biomejs/biome is 2.5.13, so every `npm run check` reports one info-level diagnostic (\"Run the command biome migrate to migrate the configuration file\"). Info does not fail the build, but AGENTS.md Formatting & Linting requires keeping biome.json migrated to the installed Biome precisely so info noise cannot accumulate.\n\nCause: the config was migrated under eshyra-ldtn (a5779df0) and a later routine dependency bump moved Biome to 2.5.13 without re-running the migration.\n\nFix: `npx biome migrate --write` from the worktree root, confirm `npm run check` reports zero info, and keep it in its own dependency-adjacent PR - not folded into feature work.\n\nObserved on branch eshyra-5wbx (2026-09-22); present on main.",
+  "notes": "PR #563 (https://github.com/jbongaarts/eshyra/pull/563). Target moved to 2.5.14 after PR #555 bumped the lockfile. verify:worktree clean. Close after merge.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-22T05:14:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-22T22:34:15Z",
+  "started_at": "2026-09-22T21:53:57Z",
+  "closed_at": "2026-09-22T22:34:15Z",
+  "close_reason": "Merged via PR #563 (83a4a3ac)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

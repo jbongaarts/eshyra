@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ss08.2",
+  "title": "Who Actually Rolls the Dice?",
+  "description": "Tell the story of who actually rolls the dice.\n\nNarrative hook and core question: If the AI is the Dungeon Master, why isn't it allowed to roll the dice?\n\nResearch concrete Eshyra incidents: early combat where deterministic tools resolved attacks and damage but results were not coherently visible; the differing treatment of initiative and death saves; the distinction between a model-generated number and an actual deterministic die result; and playtest failures around Stealth and Perception secrecy. Explain why deterministic randomness alone is insufficient without meaning, ownership, visibility, and audit evidence. Cover model-declared roll intent and visibility, tool-owned randomness, a deterministic roll ledger or equivalent evidence model, auditor verification that narration agrees with mechanics, provider-neutral tool contracts, and the evolution from fenced-text pseudo-tool protocol toward native tool calls if that history materially supports the story.\n\nExpected architectural conclusion: the model decides what is attempted and interprets what the result means; deterministic tools produce the mechanical result; the runtime preserves enough evidence to prove narration and mechanics agree.\n\nBoundaries: do not turn this into the actor, encounter, or combatant identity story; do not make it a generic random-number article; stay anchored in actual Eshyra playtest failures.\n\nEvidence and editorial requirements: use repository history, PRs, design docs, ADRs, audits, and playtest transcripts as evidence. Verify claims against artifacts, not model memory. Distinguish implemented behavior from planned design. Keep the result public, readable, static, and search-indexable. Follow Joseph's voice rules: analytical and curious, concrete before abstraction, dry humor when earned, deliberate we/I attribution, reflect praise, absorb blame, no em dashes, and no generic LLM prose.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T04:27:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-10T04:29:26Z",
+  "labels": [
+    "docs",
+    "site",
+    "storytelling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ss08.2",
+      "depends_on_id": "eshyra-ss08",
+      "type": "parent-child",
+      "created_at": "2026-07-09T23:27:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.16",
+  "title": "Portable character chronicle (character-scoped memory vs campaign canon)",
+  "description": "A character carries subjective, portable memory — relationships, scars, debts, vows, titles, subjective knowledge, and campaign-participation history — that travels across campaigns, distinct from campaign-owned OBJECTIVE world canon. Define a CharacterChronicle separate from the mechanical CharacterSheet, attached to the global character identity (registry, ADR 0012), with source campaign/session provenance and portability/visibility flags.\n\nOn entering a campaign, selected chronicle facts inform character context WITHOUT being asserted as that campaign's world facts (Mira remembers King Aldren; Campaign B's world does not automatically contain him). Intersects the existing memory subsystem (docs/memory/, campaign bible / arc / session recap) — must not blindly merge prior-campaign world canon into new campaigns. Out of scope for the progression/leveling beads.",
+  "design": "Design kickoff in docs/design/character-chronicle.md. Epic decomposed into child beads: .16.2 registry model/store, .16.3 release capture, .16.4 context injection, .16.1 CLI curation. Storage/model is the first implementation dependency; chronicle context must stay separate from campaign bible/overlay lore.",
+  "acceptance_criteria": "- A CharacterChronicle model, separate from CharacterSheet, attaches to the global character identity with source campaign/session provenance and portability/visibility flags.\n- Character-scoped facts travel across campaigns; campaign-scoped world facts do not.\n- Entering a campaign surfaces selected chronicle facts as character context, never as asserted world canon.\n- Integration with the existing memory subsystem is defined.\n- (Decomposed into children before implementation.)",
+  "notes": "PR #346 opened for design kickoff: docs/design/character-chronicle.md defines CharacterChronicle boundaries and the epic is decomposed into child beads .16.2/.16.3/.16.4/.16.1. Verification: npm run verify:worktree.\nAll 4 children landed on main (PRs #346/#347/#348/#349/#350). CharacterChronicle model+store, release capture, context injection, and CLI inspection/curation complete. Closing epic.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T04:33:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T04:18:54Z",
+  "closed_at": "2026-06-28T06:12:33Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.16",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T23:33:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

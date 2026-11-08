@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.9",
+  "title": "Add gameplay-readiness audit report for SRD pack",
+  "description": "Problem:\nCurrent audits are strong for source coverage, suspicious text, table links, and advancement, but they do not summarize whether records are usable by:\n1. the primary DM model through discoverable, well-linked records, and\n2. deterministic tools through typed choices, grants, filters, and mechanics projections.\n\nImplement:\n- Add a gameplay-readiness report to the audit bundle.\n- Summarize, by record kind:\n  - total records.\n  - records with structured choices.\n  - records with unresolved choice-bearing prose.\n  - records with deterministic grants.\n  - records with mechanics projections.\n  - records that remain prose-only.\n- Include high-impact examples and direct record ids.\n- Make the report stable enough to compare between audit bundles.\n\nAcceptance criteria:\n- The report would have surfaced the 2026-06-29 findings around option catalogs and equipment modeling.\n- The report is generated as part of the audit bundle.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:42:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T01:13:26Z",
+  "started_at": "2026-06-30T01:01:15Z",
+  "closed_at": "2026-06-30T01:13:26Z",
+  "close_reason": "Completed together in PR: traps now expose category trap with schema/tests/generated pack updates; verifier/importer summaries report final record-kind and hazard-category counts; rogue fixed equipment sourceText normalized; audit bundle emits gameplay-readiness report.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.9",
+      "depends_on_id": "eshyra-ngcj",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:42:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,51 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.16",
+  "title": "Engine-rolled death saves and recharge rolls with a recorded DM override",
+  "description": "Implements the user decision on eshyra-o9bd.19.5.14 (2026-11-07). record_death_save and restore_usage (recharge mode) today accept a caller-supplied natural die result that is only range-checked; the auditor model is the only guard. ADR 0020 section 3 makes random-number generation a deterministic responsibility.\n\nDECISION: the engine rolls by default; the DM may still supply its own result, following the start_effect item-duration precedent (packages/core/src/orchestrator/toolStartEffect.ts: omit duration = engine rolls the printed dice; a supplied value requires durationOverride { basis: \"dm-adjudicated\" | \"house-rule\", reason, ruleId? }, ruleId must name an active house-rule campaign rule, and the override is recorded as unbound). The engine roll must honor modifiers that only the DM knows about.\n\nSCOPE\n1. record_death_save: roll becomes optional. Omitted: the engine rolls the d20 from ctx.rng (seeded, exactly as resolve_check does), honoring new optional advantage/disadvantage (reuse ADVANTAGE_SCHEMA/DISADVANTAGE_SCHEMA and resolve_check's cancellation; natural 1/20 are judged on the KEPT die). saveBonus/bonusSources stay as the DM-identified modifiers (bonus dice such as Bless's d4 are still rolled through roll and passed as part of saveBonus). Supplied roll: requires rollOverride { basis, reason, ruleId? } with the same validation as durationOverride (reuse the house-rule lookup); refused without it; advantage/disadvantage together with a supplied roll is refused (the supplied value is the final natural). Add optional visibility (VISIBILITY_SCHEMA, default player_visible).\n2. restore_usage recharge mode: for a recharge_roll counter, omitting roll (and amount) makes the engine roll the counter's recharge die from ctx.rng and judge it against the threshold. A supplied roll requires rollOverride as above. No modifier input (the SRD prints none for recharge). Optional visibility, default dm_only. amount mode is unchanged (DM rulings and legacy/ad-hoc items; canonical items use use_item) but its description must not imply the amount is verified, and the inventory must state that it is DM-supplied.\n3. Provenance: the tool result and the persisted state/event record carry roll provenance: engine-rolled (dice, kept, dropped, natural) or dm-supplied (basis, reason, ruleId). The existing window/once-per-turn refusals for recharge rolls keep working for both paths.\n4. Player-visible roll ledger (orchestrator/playerVisibleRollLedger.ts) renders engine-rolled death saves (category death_save) and recharge rolls, from tool data, honoring visibility; a dm-supplied roll renders marked as DM-supplied.\n5. Turn auditor policy (orchestrator/turnAuditor.ts AUDIT_POLICY): an engine roll inside record_death_save/restore_usage is executed roll evidence; a supplied roll is acceptable only with a rollOverride, and the narration must match the recorded result.\n6. Tool descriptions and DM guidance: remove every instruction to roll via roll first and pass the natural (grep packages/core/src and docs for record_death_save/restore_usage guidance).\n7. rules/deterministicCapabilityInventory.ts entries for both tools: operation, requiredInputs, exclusions and residualDmInterpretation state the new contract truthfully (engine-rolled by default; override recorded and unbound; amount is DM-supplied).\n8. Sibling search: enumerate every tool input that accepts a die result (natural, roll, rolls, total, rolled counts) across orchestrator tool*.ts, rests, level-up, use_item, start_effect. Record each with its disposition in the completion notes; anything else that is caller-supplied and unverified is brought under the same contract here or filed as a pre-freeze bead blocking eshyra-o9bd.19.6.7.22 with a stated reason.\n9. Replay: engine rolls come from ctx.rng, so checkpoint/replay must reproduce them as it does for resolve_check; prove it where the existing replay tests cover tool rolls.\n10. If packages/core/scripts/create-dnd5e-srd-audit-bundle/candidateGates.ts or other generated-limit text names eshyra-o9bd.19.5.14 as undecided, update it. Do NOT edit dated candidate-record docs under docs/audits (history), freeze-manifest.json or thaw notes.\n\nEVIDENCE: proportionate permanent tests per AGENTS.md Permanent Test Evidence: engine path (seeded natural, advantage/disadvantage kept die, nat1/nat20 with saveBonus), override path (accepted with basis; refused without; house-rule ruleId validated; advantage+supplied refused), recharge engine roll vs threshold and window refusal, ledger rendering, inventory statements.\n",
+  "acceptance_criteria": "Both tools roll from the seeded RNG when no result is supplied, honoring DM-declared modifiers; a supplied result requires a recorded override (start_effect precedent); provenance persisted and rendered; auditor policy, guidance and capability inventory truthful; sibling search recorded; npm run verify:worktree passes; reviewed PR merged.",
+  "notes": "Captain 2026-11-07: integrated 21ca3b58 (.1) and fa1551f9 (.2, eshyra-lyzj) after own diff review and verify (exit 0, 7483 passed). PR https://github.com/jbongaarts/eshyra/pull/725. Final review: Sol deferred while Codex is busy with Astra; stays in_progress until merged.\nCaptain 2026-11-07: review F1 (the ledger reported the rolled total, not the capped amount restored) repaired in aa1daa6f: restore_usage returns restored, measured from the counter; the ledger shows a capped total as capped; engine and override paths covered. verify exit 0 (7484). Pushed to PR #725.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:05:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T01:24:02Z",
+  "started_at": "2026-11-07T23:05:15Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.16",
+      "depends_on_id": "eshyra-o9bd.19.5.16.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:06:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.16",
+      "depends_on_id": "eshyra-o9bd.19.5",
+      "type": "parent-child",
+      "created_at": "2026-11-07T17:05:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.16",
+      "depends_on_id": "eshyra-o9bd.19.5.16.2",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:25:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.8.7",
+  "title": "Dispatch: single writer per campaign database (crash-released OS lock) for PR #711 (attempt 4)",
+  "description": "Implement the user's 2026-11-06 architectural decision for PR #711 (branch eshyra-o9bd.19.6.7.8, head cfbb47cf): ONE active writing process per physical campaign database; concurrent readers fine; concurrent campaign writers unsupported and fail closed. The authority text is already written into docs/adr/0012-character-continuity-and-custody.md, section 'Single writer per campaign database' (uncommitted in this worktree; commit it with your change; you may only correct factual details such as the entrypoint list, never the decision). Worktree .worktrees/eshyra-o9bd.19.6.7.8.7, branch eshyra-o9bd.19.6.7.8.7 cut from eshyra-o9bd.19.6.7.8.\nDESIGN: (1) core: a campaign writer lock = exclusive SQLite lock on a sidecar lock database beside the campaign DB (e.g. '<campaign db path>.writer-lock'), opened with better-sqlite3, PRAGMA locking_mode=EXCLUSIVE, and a held BEGIN EXCLUSIVE for the writer session; refusal (SQLITE_BUSY) -> a typed CampaignWriterLockedError with a clear message; release() closes the connection; the OS releases it on exit or crash; no PID files or stale-lock logic. Confirm a second connection in the same process is refused. Internal export unless the CLI needs the root export (CLI may only depend on the root per AGENTS.md conventions; promote minimally). (2) CLI: enumerate EVERY supported campaign-mutating entrypoint (start from deps.openDb sites: play.ts, campaigns.ts, checkpoints.ts, adventures.ts, rules.ts, characterDraftStore/characterRegistry flows, playCharacter/playFork/playClose, index.ts commands) and acquire the lock before the first campaign write, holding it for the command/session and releasing on exit; read-only listings do not take it. Report the full entrypoint list in your notes and correct the ADR list if needed. (3) Keep all existing custody protections (synced-revision stamp, stale-copy classification, atomically/expectedHead registry writes, nesting guard); add NO new compare-and-set machinery. (4) Capability inventory: add/adjust the entries describing the writer lock and state that concurrent writers on one campaign DB are refused; keep custody residual text truthful. EVIDENCE: a test that a second writer (second connection, and a second process via a small child process) is refused while the first holds the lock and succeeds after release; a test that the lock is released when the holding process exits without cleanup (kill the child); a CLI-level test that a second play/resume (or another mutating command) on the same campaign fails closed with a clear error and no writes. Implementer: Claude Sonnet 5.5.",
+  "notes": "Commit fe2f8fa9 on eshyra-o9bd.19.6.7.8.7 (not pushed). LOCK: core acquireCampaignWriterLock/CampaignWriterLockedError (packages/core/src/persistence/campaignWriterLock.ts, root export): better-sqlite3 on <realpath campaign db>.writer-lock, timeout 0, locking_mode=EXCLUSIVE, held BEGIN EXCLUSIVE; release() closes; OS frees on crash; no PID files. CLI seam packages/cli/src/campaignLock.ts (PlayDeps/CampaignDeps.acquireWriterLock, CheckpointDeps optional). LOCKED entrypoints: play (runPlay, incl ESHYRA_DB_PATH; all in-session writes /rules /addpc fork release graceful-close checkpoint run under it), demo (runDemo), new + play-picker first-campaign create (forkNewCampaignDb), checkpoint restore and fork (source campaign; fork writes a branch). READ-ONLY/no lock: adventures, checkpoint list, campaigns list/add/remove/rename (registry JSON only), usage, chronicle, create-character, fork-character (character registry only), dolt install, banner. There is no separate checkpoint-create or rules command (in-session). ADR CORRECTIONS: only the entrypoint list in the scope bullet (enumerated precisely); decision untouched. Inventory: new campaign-writer-lock-v1 entry; resume-custody residual notes concurrent writers on one DB are refused. TESTS: core/test/campaignWriterLock.test.ts (second connection refused/after release, no wait, other campaign independent, nonexistent db, second process refused/admitted, this process refused while child holds, SIGKILLed holder releases); cli/test/campaignWriterLock.test.ts (play, demo, checkpoint restore/fork refused: exit 1, clear message, db never opened/created). VERIFY: npm run verify:worktree passed (398 files, 7412 tests). RESIDUALS: lock is advisory among Eshyra processes and unreliable on network filesystems with broken locks; sidecar .writer-lock files remain beside DBs (harmless, not cleaned); checkpoint restore is locked per ADR scope though it only reads the source; child-process test relies on Node type-stripping of the lock .ts file.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T04:01:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T04:09:24Z",
+  "closed_at": "2026-11-06T04:09:24Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.8.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.8",
+      "type": "parent-child",
+      "created_at": "2026-11-05T22:01:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

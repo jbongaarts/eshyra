@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.12",
+  "title": "Fix SRD class proficiency boundary contamination",
+  "description": "Problem\r\nThe SRD importer emits class records whose proficiency fields are contaminated by class advancement tables and nearby feature prose.\r\n\r\nEvidence from the 2026-06-07 audit\r\nAffected class records include:\r\n- class:bard\r\n- class:cleric\r\n- class:druid\r\n- class:monk\r\n- class:paladin\r\n- class:ranger\r\n- class:sorcerer\r\n- class:warlock\r\n- class:wizard\r\n\r\nExample failure pattern\r\nA class proficiency field such as armor or weapon proficiency should contain only the explicit proficiency list from the class prose, but instead continues into table text such as The",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-08T01:19:01Z",
+  "started_at": "2026-06-08T01:09:04Z",
+  "closed_at": "2026-06-08T01:19:01Z",
+  "close_reason": "Parser now stops proficiency continuation at the class level-progression table (title 'The <ClassName>' or a level-row cell); regenerated canonical pack. class-proficiency-bleed audit findings: 9 -> 0.",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.12",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

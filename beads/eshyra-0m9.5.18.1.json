@@ -1,0 +1,61 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.18.1",
+  "title": "Address PR #119 feature parser review",
+  "description": "Review feedback on PR #119 for loreweaver-0m9.5.18: make feature parsing table-driven for grant levels and feature identity, avoid splitting option subheadings, and add feature coverage guards. Done means accepted feedback is implemented with RED/GREEN evidence, importer tests pass, and PR branch is updated.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-31T03:37:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-31T03:38:00Z",
+  "closed_at": "2026-05-31T03:48:10Z",
+  "close_reason": "All PR #119 review feedback evaluated, implemented, and verified; child tasks closed with evidence.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.18.1",
+      "depends_on_id": "eshyra-0m9.5.18",
+      "type": "parent-child",
+      "created_at": "2026-05-30T22:37:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "a6b9ecd1-fb8f-5d7b-953a-76f6887ead94",
+      "issue_id": "eshyra-0m9.5.18.1",
+      "author": "Joseph Bongaarts",
+      "text": "Review evaluation: item 1 accepted. Current parseFeatures reads level from leading prose and defaults to 1, but bead design explicitly says class features often require progression-table name->level mapping. This can emit incorrect feature.data.level. Item 2 accepted. Current broad title-case heuristic can split option subheadings inside feature bodies because it treats any matching title-case line after a feature as a new feature. Item 3 accepted. runImporter currently wires features without any coverage guard, unlike creatures/classes/subclasses. Suggested direction accepted with scope: parse progression tables from the Classes slice into grant-level anchors, use those anchors as the primary feature identity/level source, and keep prose lead-ins as fallback/validation for subclass features and fixtures where no table anchor is present.",
+      "created_at": "2026-05-31T03:38:12Z"
+    },
+    {
+      "id": "2d19fe03-d205-5a29-aeab-96bd9086a867",
+      "issue_id": "eshyra-0m9.5.18.1",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseFeatures.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> exit 1 as expected. Failures show current parser promotes class-table headers and option subheadings as features, defaults no-table Second Wind to level 1, does not use table level for Action Surge, and runImporter writes packs with 0 features / ignores minFeatureCount.",
+      "created_at": "2026-05-31T03:41:40Z"
+    },
+    {
+      "id": "0e718ad1-9569-5473-9e6b-8defd2cfd48e",
+      "issue_id": "eshyra-0m9.5.18.1",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseFeatures.test.ts packages/core/test/importers/dnd5e-srd-5.1/emit.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> exit 0 (79 passed); npx biome ci --vcs-enabled=false <touched importer files> -> exit 0; npm run typecheck -> exit 0; npm run test -> exit 0 (80 files passed, 2 skipped; 957 tests passed, 3 skipped); git diff --check -> exit 0. All accepted review items have child tasks closed.",
+      "created_at": "2026-05-31T03:47:52Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 3
+}

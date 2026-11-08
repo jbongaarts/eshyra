@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.3.1",
+  "title": "Dispatch: 19.2.3 madness durations, vehicle taxonomy, empty cells, dispositions (attempt 1)",
+  "description": "Implement eshyra-o9bd.19.2.3's DESIGN field (R1-R5). Importer parts follow docs/importer-fix-protocol.md (no hand edits; regenerate with npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1 plus the default .generated run; npm run verify:dnd5e-srd-pack must exit 0; regenerate docs/inventories/o9bd-18-8-8-semi-structured-boundary.{json,md} with npx tsx packages/core/scripts/inventory-semi-structured-boundary.ts if required). Grep consumers before changing any projected field; stop and report if a deterministic consumer would change behavior. Diff records.json: every changed record must belong to an R1-R4 population; list each before/after; other churn: stop and report. HARD STOP: If the failure map reveals a new root cause, requires a new parser or extractor strategy, or creates generated churn outside the direct consequences of the current minimal fix, stop and report instead of broadening the implementation. Host memory: wait until pgrep -fc '^node .*verify-current-worktree' prints 0 or 1; verify:worktree then commit only on success (&&). Report (bd notes): consumers, changed records, R3 source comparison method and result, R4 findings, every registry disposition with evidence. Close this bead. No push/PR.",
+  "notes": "COMPLETION (commit ac0fc3dd, verify:worktree PASS 6439 tests). Consumers checked: madness tables (srdAudit owner map only); equipmentGroup (only named-group resolution + inventory); class tables read by classProgression.ts and foundation1ProcedureProjections.ts (both adapted to the dash). Changed records (26): 3 madness tables (+projection madnessDuration {1d10 minute | 1d10x10 hour | until-cured} from rule:madness-effects sentence); 13 equipment rows of Tack/Harness/Drawn Vehicles table (+equipmentGroup tack-harness-drawn-vehicles); rule:mounts-and-vehicles (+bardingTransformation 4x cost/2x weight/armor-table); 8 class tables (484 '' -> em dash); class:sorcerer progression L1 (+resourceProgression sorceryPoints '—', consumer-equivalent to absent = none). No other churn; pack matches importer exactly. R3: PDF shows the 484 empty cells are printed dashes (U+0336 glyph dropped by extraction; per-page counts 74/77/80/44/45/79/5/80 = 484 exactly; Bard page rendered and viewed) -> repaired in classProgressionTables specs, invariant: no empty table cell (srdTaxonomyDurations.test.ts); the old comment/tests claiming blank cells corrected with this evidence. R4: 30/30 Features parenthetical qualifiers survive as featureGrant detail (asserted); cantrip scaling text preserved; eldritch-blast structured beam scaling owned by spell beads. Dispositions: madness-durations accepted (repaired); equipment-taxonomy accepted (repaired; Barding has no item record so typed on the rule); table-empty-cells accepted (repaired); advancement-qualifiers accepted (verified); damage-field-shape narrowed; choice-identifiers narrowed; proficiency-grants narrowed. Inventory docs regenerated.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T17:19:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T21:19:13Z",
+  "closed_at": "2026-10-10T21:19:13Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.3.1",
+      "depends_on_id": "eshyra-o9bd.19.2.3",
+      "type": "parent-child",
+      "created_at": "2026-10-10T12:19:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

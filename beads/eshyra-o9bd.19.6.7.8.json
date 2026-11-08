@@ -1,0 +1,78 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.8",
+  "title": "A2-F3: restoring an older checkpoint must not overwrite a character's newer registry head (custody already-held bypasses stale-copy check)",
+  "description": "Second-audit blocker (lane A2 rated non-blocker; Captain raised to blocker). ADR 0012 (docs/adr/0012-character-continuity-and-custody.md:126-137): 'a stale campaign database can never revert the timeline'; 'Resume fails closed when ... the registry head has advanced past this campaign's copy'. Reproduced by Captain at 6812cc0b with /tmp/a2-audit/probes/p16-custody-restore.ts: when custody is still held (crash, no /quit) and the player restores an older checkpoint of the same campaign, classification is already-held, acquire succeeds, and release commits the stale sheet as the new head (revision 4: xp 900 -> 150). With idle custody the same copy is correctly classified stale-copy. Restored/forked campaign copies keep the campaign id custody uses. Recoverable from history, but silent. Same restore boundary as o9bd.16 L5-F1.",
+  "design": "2026-11-05 DESIGN (Captain). Discriminator = the registry revision this campaign database last synchronized with, stored INSIDE the campaign database (so a Dolt checkpoint restore or a fork carries the older value). Today packages/core/src/character/characterCustody.ts stamps sheet metadata sourceRevision only at checkout; syncBackCharacterFromCampaign (l.~348) appends a registry revision but never restamps the campaign copy, and classifyResumeConflict (l.~529) returns already-held whenever custody (campaignId, characterId) matches, before any head comparison. Change: (1) after every committed sync-back and every resume acquire, write syncedRevision = registry head into the campaign DB (sheet metadata or a small campaign-side table; excluded from sheetsEqual/stripCampaignProvenance comparisons; additive migration if a table). (2) In classifyResumeConflict, for already-held AND the idle path: if the copy's syncedRevision < head AND the campaign sheet differs from the head sheet -> stale-copy (route to the existing conflict-resolution UX); if syncedRevision < head but the sheet equals the head sheet -> treat as synced (crash between registry append and campaign stamp) and restamp on acquire; if syncedRevision == head -> legitimate resume, unsynced progress kept and later sync-back commits it. (3) syncBack/release must apply the same guard so a stale copy holding custody cannot commit (no-op + conflict, never an append over head). (4) Legacy copies with no syncedRevision keep today's behaviour (no regression for existing campaigns) and get stamped at their next acquire/sync; disclose this residual in the capability inventory entry. Residual to disclose: two same-campaign-id copies that have both diverged from the same synced revision cannot be told apart until one syncs; the first sync wins and the other becomes stale-copy. Update deterministicCapabilityInventory.ts character-custody entries and ADR-0012-facing docs only where they describe this check. Tests: reproduce A2 probe /tmp/a2-audit/probes/p16-custody-restore.ts as a test (crash -> restore older checkpoint -> resume -> release => head not reverted, stale-copy/conflict); crash -> resume original DB with unsynced progress -> release => progress committed; crash between append and stamp => resumable; legacy unstamped copy unchanged. Implementer: Sonnet 5.5 (design-sensitive state integrity; Haiku judged insufficient).",
+  "acceptance_criteria": "- A restored or forked campaign copy whose state is behind the registry head can never sync back or release over it, including when custody is still held under the same campaign id after a crash.\n- A legitimate crash/resume of the ORIGINAL campaign database keeps its valid unsynchronized progress and can sync and release normally; the discriminator between the two cases is explicit, durable and documented (not an unconditional head comparison).\n- The fail-closed path explains the conflict and routes to the existing timeline conflict-resolution UX.\n- Regression evidence covers both: crash -> restore older checkpoint -> resume -> release (head not reverted), and crash -> resume original database with unsynced progress -> release (progress kept).",
+  "notes": "2026-11-05 USER ADJUSTMENT (supersedes conflicting text above): the repair must distinguish a restored or forked campaign copy from a legitimate crash/resume of the original database. Comparing the local revision against the registry head unconditionally could reject valid unsynchronized progress made in the original database before a crash.\n2026-11-06 Captain: integrated .7.8.1 (7f1599c7a48ce38c6c57b16dfaf0565418ccc08f) after own diff review (checkpoint serialize enumerates every sqlite_master table, so restores/forks carry character_registry_sync; acquire classifies and throws on stale-copy before restamping) and own verify:worktree (exit 0, 7382 passed / 3 skipped). PR https://github.com/jbongaarts/eshyra/pull/711. Follow-up eshyra-nwu2 (P3, /quit no-op message). Note: the A2 probe file had been removed from /tmp; the test simulates restore by rewriting rows.\n2026-11-06 Captain: fresh full Sol review .8.6 at cfbb47cf found MATERIAL (1): a delayed post-commit campaign stamp from one process can regress a newer synced revision or overwrite a newer fork identity on the same physical campaign DB (no process lock prevents two processes on one campaign DB). This is the 4th material round on #711; surfaced to the user before another repair loop.\n2026-11-06 USER DECISION (architectural): single writing process per physical campaign database, readers fine, concurrent writers fail closed, enforced across all campaign-mutating entrypoints via a crash-released OS lock (no PID-file machinery); keep sequential custody protections; no further CAS for concurrent writers; update authority (Captain wrote the ADR 0012 section 'Single writer per campaign database') and require a fresh full Sol review of the affected subsystem. Dispatched as eshyra-o9bd.19.6.7.8.7 (Sonnet).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-03T02:12:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T04:54:30Z",
+  "started_at": "2026-11-06T01:56:57Z",
+  "closed_at": "2026-11-06T04:54:30Z",
+  "close_reason": "Merged PR #711 (f356d2395a3fd689416b1583dc9c912360d639e6) after clean fresh full Sol review .8.10 (single-writer decision in ADR 0012)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.8",
+      "depends_on_id": "eshyra-o9bd.19.6.7.8.1",
+      "type": "blocks",
+      "created_at": "2026-11-05T19:56:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.8",
+      "depends_on_id": "eshyra-o9bd.19.6.7.8.7",
+      "type": "blocks",
+      "created_at": "2026-11-05T22:02:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.8",
+      "depends_on_id": "eshyra-o9bd.19.6.7.8.9",
+      "type": "blocks",
+      "created_at": "2026-11-05T22:23:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.8",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-02T20:12:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.8",
+      "depends_on_id": "eshyra-o9bd.19.6.7.8.5",
+      "type": "blocks",
+      "created_at": "2026-11-05T21:07:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.8",
+      "depends_on_id": "eshyra-o9bd.19.6.7.8.3",
+      "type": "blocks",
+      "created_at": "2026-11-05T20:29:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 5,
+  "dependent_count": 1,
+  "comment_count": 0
+}

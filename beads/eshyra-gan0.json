@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-gan0",
+  "title": "One-time audit: remove tests that fail the permanent-test standard",
+  "description": "One-time full-repository audit of every test against AGENTS.md 'Permanent Test Evidence'. The ONLY adjudication is keep/remove per test, judged against that standard. Each test is either removed completely or kept exactly as it is.\n\nRULES (user instruction, 2026-09-22):\n- Do not add, modify, fix, or refactor any code or documentation. The only change allowed is deleting tests that fail the standard. Deleting a test also removes imports, fixtures, and helpers that ONLY the deleted tests used; this is part of removing it completely, and the lint gate requires it.\n- Rules-compiler/importer tests are not exempt, but they get the benefit of the doubt. Non-importer tests need more justification to stay.\n- Judge tests together. If test X is removed because test Y already guards its invariant or regression risk, Y must be kept. Never remove both halves of an overlap on each other's account.\n- No test-count target.",
+  "acceptance_criteria": "Every test file has a recorded keep/remove decision. Every removed test has a one-line reason under the standard, and where the reason is 'covered by Y', Y is named and kept. The only diff is test deletions plus now-unused test-only imports and helpers. verify:worktree is green.",
+  "notes": "PR #565 https://github.com/jbongaarts/eshyra/pull/565 opened: 266 test blocks removed; the per-test ledger is in the PR body; verify:worktree green (5340 passed / 3 skipped). Bead stays in_progress until merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-22T23:39:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-23T00:44:49Z",
+  "started_at": "2026-09-22T23:39:06Z",
+  "closed_at": "2026-09-23T00:44:49Z",
+  "close_reason": "Merged in PR #565",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

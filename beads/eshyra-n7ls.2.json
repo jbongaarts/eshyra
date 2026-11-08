@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-n7ls.2",
+  "title": "Review: Sol final review of PR #629 (eshyra-n7ls @ 3d557df8)",
+  "description": "Final read-only review of PR #629 (branch eshyra-n7ls, exact head 3d557df85f524cf746495d743e6089534e939742) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "FINAL REVIEW of PR #629 at exact head 3d557df85f524cf746495d743e6089534e939742.\n\nAuthority: read AGENTS.md, docs/design-and-pr-review-policy.md, live eshyra-n7ls.2, owning eshyra-n7ls, dispatch eshyra-n7ls.1, and predecessor eshyra-eb9n. Resolved refs/beads/state (9e4bb40c789e3364b1605e7321c1537117a4ca02; dated 2026-09-09); the projection lacks these recent issues, so live Beads records govern. The owning description and dispatch authorize the bounded interactive wizard audit despite the older parent title mentioning legacy creation paths. Reviewed the complete origin/main...HEAD diff and origin/main..HEAD log: one commit, two CLI files; no importer, pack, dependency, or persistence edits.\n\nReview: traced characterWizard.ts:1251-1288 through resolver class progression parsing, creationSpellCounts.level1SpellRequirements, characterDraft.validateSpellCounts, wizard applySpells/applyReview, createCharacter.finalizeIfComplete, and finalizeCharacter.finalSpellState. The new casting predicate agrees with the core predicate, including pactSlots. Checked known, prepared, spellbook, and non-casting siblings (Bard/Sorcerer/Warlock, Cleric/Druid, Wizard, Fighter/Paladin/Ranger); initial and completed/resumed prompt branches, shortfall and excess handling, subclass always-prepared exclusions, class resolution, and finalization gates. The wording change does not alter count validation or durable state. Independently checked the vendored SRD PDF: Cleric preparation/domain exemption pp. 16-17, Druid circle exemption p. 22, Paladin/Ranger spellcasting start pp. 31/36, Sorcerer four cantrips and two known spells p. 43. The existing Bard skill-option gap is outside the dispatch's CLI-only repair boundary and is not introduced or masked by this diff.\n\nEvidence: all 36 tests passed in packages/cli/test/characterWizard.test.ts, packages/core/test/creationSpellCounts.test.ts, and packages/cli/test/characterCreationTranscript.test.ts. The worktree has no local node_modules; used the installed ancestor Vitest runner programmatically with both @eshyra/core import paths aliased to this exact worktree's source, config loading disabled, result cache disabled, and Vite cache outside the repository. No install, build, formatting, full verification, or repository file writes. git diff --check passed; git status remained clean and HEAD stayed at the exact reviewed SHA. Reviewed the new tests as durable UX evidence: real bundled lists with source-backed fixed count assertions, correction/error paths, legal completion, and Life Domain exclusion.\n\nFindings: none. No concrete material defect or non-material finding identified within the authorized scope. CI was still running when inspected; this review does not claim a completed full CI gate.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:42:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:45:25Z",
+  "closed_at": "2026-10-09T04:45:25Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-n7ls.2",
+      "depends_on_id": "eshyra-n7ls",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:42:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

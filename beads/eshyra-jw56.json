@@ -1,0 +1,82 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jw56",
+  "title": "Item state timers re-anchor on transitions that do not restate the duration",
+  "description": "Every operation transition re-resolves the entered state's timer declarations, and reconcileItemStateTimers replaces the prior deadline (packages/core/src/state/itemState.ts selectStateTransition + line ~2061). A self-transition that the source does not describe as restating the duration therefore extends it.\n\nConfirmed for Cube of Force (eshyra-0p7c): press-face-1 at minute 0 anchors the barrier timer at deadline 1; firing 'spell-contact-loss' (a free reaction to a listed spell contacting the barrier, from face-N to face-N) at minute 1 re-anchors it to deadline 2. SRD 5.1 resets the duration only when 'pressing a different face of the cube and expending the requisite number of charges'; a spell contact only deducts charges. Repeated contacts can extend the barrier indefinitely.\n\nSame class, pre-existing: Ring of Shooting Stars declares 'active' -> 'active' via move-ball-lightning (bonus action) alongside a 1-minute timer, so moving a sphere extends the one-minute window.\n\nExpected: a transition should be able to enter/re-enter a state without re-anchoring that state's pending timers, defaulting to preserving the existing deadline unless the source restates the duration. Likely needs a schema-level marker on the transition (or on the timer) plus itemState/itemTimers support, and source-backed curation of which existing transitions reset.\n\nFiles: packages/core/src/state/itemState.ts, packages/core/src/state/itemTimers.ts, packages/core/src/rules/magicItemMechanics.ts, packages/core/scripts/importers/dnd5e-srd-5.1/magicItemComplexStateMachines.ts. Tests: packages/core/test/itemState.test.ts, packages/core/test/itemTimers.test.ts.",
+  "notes": "## Supervisor design decision (2026-07-21)\n\nChosen model: **state-scoped timers are preserved on re-entry by default; a\ntransition opts in to restating the duration.**\n\n- Timers are already state-scoped (`reconcileItemStateTimers` drops timers whose\n  `from` !== entered state), so a cross-state transition necessarily anchors\n  fresh and is already correct. The defect is confined to transitions whose\n  destination equals the current `machineState`.\n- Rule: when `selectedTransition.nextState === state.machineState`, each declared\n  timer of that state that is already pending (same `from` + `to`) keeps its\n  existing `anchorElapsedMinutes` / `deadlineElapsedMinutes` / `roll`, unless the\n  transition declares `resetsDuration: true`.\n- New schema key `resetsDuration?: true` on `stateMachine.transitions[]`, legal\n  only when `from === to`. `false` is rejected (it is the default; no dead\n  declarations).\n- Dice-defined timers must NOT be re-rolled when preserved (no RNG consumption).\n\n### Source-backed curation (SRD 5.1, all three affected machines)\n\n| item | self-transition | ruling |\n|---|---|---|\n| Cube of Force | `face-N --press-face-N--> face-N` | **resetsDuration: true** — \"press one of the cube's faces... a barrier of invisible force springs into existence... and lasts for 1 minute\" applies to any face press |\n| Cube of Force | `face-N --spell-contact-loss--> face-N` | preserve — source only says \"The cube loses charges when the barrier is targeted by certain spells\"; no duration language |\n| Bead of Force | `sphere --move-force-sphere--> sphere` | preserve — \"encloses the area for 1 minute\"; pushing the wall only moves the sphere |\n| Ring of Shooting Stars | `active --move-ball-lightning--> active` | preserve — \"last as long as you concentrate... up to 1 minute\"; moving is a bonus action |\n\nCross-face presses (`face-N -> face-M`, M != N) keep re-anchoring, which is the\nsource behaviour (\"pressing a different face... resetting the duration\").\n\n### Acceptance criteria\n\n1. Repeated `spell-contact-loss` cannot extend the Cube of Force barrier.\n2. Bead of Force / Ring of Shooting Stars self-transitions preserve the deadline.\n3. `press-face-N` from `face-N` still re-anchors, via the explicit marker.\n4. Schema rejects `resetsDuration` on a non-self transition and rejects `false`.\n5. Generated pack regenerated through the importer; diff limited to the three\n   machines; `npm run verify:dnd5e-srd-pack` clean.\n6. `npm run verify:worktree` clean.\n\n### Out of scope (decided)\n\n- `itemResetExecutor.applyDueTimer` is timer-fired only and re-anchors the\n  entered state's timers deliberately (it also guards against non-advancing\n  timers); no change.\n- No new field on `UseItemResult['transition']` — the persisted\n  `state.pendingTimers` deadline is already the observable.\n- `docs/audits/dnd5e-srd-5.1-final/freeze-manifest.json` records.json hash\n  already mismatches on `main` (thawed re-audit, re-freeze is eshyra-o9bd.14).\n  Do not \"fix\" the manifest here.\nPR #470 open: https://github.com/jbongaarts/eshyra/pull/470 (branch eshyra-jw56 at a105d69). All six acceptance criteria met. Children eshyra-iohn, eshyra-289j, eshyra-ffuq closed. Leave this bead in_progress until the PR merges.\nReview response complete (2026-07-22). PR #470 updated at d37e7bd with a rewritten body. All three review findings addressed: P1 cube same-face reset is now an ambiguity gate that fails closed (reviewer overruled the provisional preserve default); P2 resetsDuration requires via; P2 one timer-bearing transition per from/to pair. Children eshyra-us0u and eshyra-eut5 closed. Parent branch verified: verify:worktree exit 0 / 4699 passed, verify:dnd5e-srd-pack exact match. Awaiting re-review.\nAttempt 6 (eshyra-llo3) merged at d612f38 and pushed. Both remaining review findings fixed: (1) ambiguity preflight runs before lazy-init RNG via a shared pure matchStateTransition, proven by a zero-RNG regression; (2) duplicate RulesAmbiguity interface removed, rules/types.ts is the single definition site with a compile-time identity assertion. Supervisor verification: npm ci exit 0, verify:worktree exit 0 (4702 passed/19 skipped), verify:dnd5e-srd-pack exact match, focused suites 435 passed, git status clean. PR #470 body updated in place.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-21T06:01:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-22T06:34:02Z",
+  "started_at": "2026-07-22T04:20:27Z",
+  "closed_at": "2026-07-22T06:34:02Z",
+  "close_reason": "PR #470 merged to main as d18d9b1. Timer re-entry preservation, the cube same-face source-ambiguity gate (fails closed before any mutation or RNG draw), resetsDuration via/self-transition rules, one-timer-per-from/to-pair, and the canonical RulesAmbiguity consolidation all landed. Reviewer approved at d612f38 with no remaining findings.",
+  "labels": [
+    "importer"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jw56",
+      "depends_on_id": "eshyra-iohn",
+      "type": "blocks",
+      "created_at": "2026-07-21T23:21:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jw56",
+      "depends_on_id": "eshyra-289j",
+      "type": "blocks",
+      "created_at": "2026-07-21T23:36:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jw56",
+      "depends_on_id": "eshyra-0p7c",
+      "type": "discovered-from",
+      "created_at": "2026-07-21T01:01:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jw56",
+      "depends_on_id": "eshyra-us0u",
+      "type": "blocks",
+      "created_at": "2026-07-22T00:20:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jw56",
+      "depends_on_id": "eshyra-llo3",
+      "type": "blocks",
+      "created_at": "2026-07-22T01:11:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jw56",
+      "depends_on_id": "eshyra-eut5",
+      "type": "blocks",
+      "created_at": "2026-07-22T00:37:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jw56",
+      "depends_on_id": "eshyra-ffuq",
+      "type": "blocks",
+      "created_at": "2026-07-21T23:46:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 6,
+  "dependent_count": 0,
+  "comment_count": 0
+}

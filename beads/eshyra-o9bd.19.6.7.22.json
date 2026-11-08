@@ -1,0 +1,176 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.22",
+  "title": "Final current-candidate record and audit bundle at main after eshyra-30xi",
+  "description": "Closure task, not a finding (user direction 2026-11-07): the FINAL ADR-0020 candidate is main after the eshyra-30xi merge. Following the .7.13 / PR #717 pattern: (1) pin the candidate: merge SHA, tree, records.json and pack manifest.json sha256, vendored PDF sha256; (2) generate the audit bundle at that SHA and run the bounded automated gates (19.6.3 procedure); (3) write a successor current-candidate record that names this SHA, keeps the 9106487d record as history, and states the disclosed limits in-band: R1 CLEAN per the user (report not transcribed); R3 not run because Fable credits expired, so the A3-F1..F3 repairs (#715, #716) rest on regression tests plus clean Sol reviews .10.2/.11.2 only; the outcome of R2b (.7.21); the eshyra-30xi repair and its review. Do NOT touch freeze-manifest.json hashes (that is eshyra-o9bd.14).",
+  "acceptance_criteria": "Record and bundle identify exactly the post-30xi main SHA; all gates pass; disclosed limits stated in-band; reviewed PR merged.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T22:43:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-07T22:43:12Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-30xi",
+      "type": "blocks",
+      "created_at": "2026-11-07T16:43:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-0dtg",
+      "type": "blocks",
+      "created_at": "2026-11-07T19:23:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-ffoo",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:35:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-xogv",
+      "type": "blocks",
+      "created_at": "2026-11-07T20:01:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-kbzm",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:22:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-o9bd.19.15",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:38:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-mx0d",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:31:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-07T16:43:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-lyzj",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:20:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-y0us",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:22:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-o9bd.19.3.5",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:05:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-j9rc",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:22:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-1fx7",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:22:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-roge",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:22:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-cxuc",
+      "type": "blocks",
+      "created_at": "2026-11-07T19:29:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-53fm",
+      "type": "blocks",
+      "created_at": "2026-11-07T20:17:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-o9bd.19.5.16",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:05:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-sexr",
+      "type": "blocks",
+      "created_at": "2026-11-07T20:31:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.22",
+      "depends_on_id": "eshyra-ry69",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:22:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 18,
+  "dependent_count": 1,
+  "comment_count": 0
+}

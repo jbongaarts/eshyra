@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-t2ra",
+  "title": "Adopt the generated SRD rules pack at runtime and retire the in-code placeholder",
+  "description": "Gameplay currently resolves rules against the 3-record in-code placeholder DND5E_SRD_RULES_PACK (packages/core/src/rules/dnd5eSrd.ts, built from the hand-literal SRD_CATALOG in rules/srd/data.ts: 1 creature 'monster:goblin', 1 spell, 1 class, NO magic-items). The complete importer-generated SRD pack (packages/core/data/rules-packs/rules__dnd5e-srd-5.1/, 1811 records, keys like creature:goblin and magic-item:potion-of-healing) is shipped in the package 'files' but is NOT loaded at runtime. toolLookupRules.ts and the default binding bind to the stub. ADR 0012 already assumes the generated pack is the runtime rules truth, so this aligns code with the stated design.\n\nMake the runtime SRD pack the generated pack and retire the placeholder. Concrete blockers found while probing:\n1. resolveRulesStack (rules/stack.ts) enforces unique record NAMES per kind; the full SRD has legitimate duplicates (e.g. 'Ability Score Improvement' as a feature on every class), so resolving the generated pack THROWS today. The name-uniqueness model must handle real-SRD duplicates (key-addressed primary, name as best-effort/non-unique, or kind+owner scoping).\n2. Bundling/perf: loading 1811 records at startup vs lazy; ensure all shipped editions still resolve the data dir.\n3. ~7 test files assert against the stub's tiny contents and will need updating.\n\nDecision recorded in ADR 0013. This unblocks eshyra-8bit (adventure rulesRef resolution) by giving the runtime real records incl. magic-items; the rulesRef<->key addressing-convention fix stays in 8bit (or rides along).",
+  "notes": "Runtime implementation complete; PR #273 open (branch eshyra-t2ra-runtime) targeting main, awaiting review. All four ADR 0013 decision points implemented: (1) lazy+cached runtime load via getBundledDnd5eSrdPack/bundledSrdPack.ts; (2) stack.ts allows duplicate names per kind + lookup.ts new 'ambiguous' result with capped candidate keys; (3) toolLookupRules.ts returns 'retired_pack' error for the retired rules:dnd5e-srd id, canonical id rules:dnd5e-srd-5.1; (4) DND5E_SRD_RULES_PACK/dnd5eSrd.ts deleted, exports repointed, ~8 test files updated. SCOPE: SRD_CATALOG NOT deleted — character/creation.ts still depends on it; ADR gates that on 'nothing depends on them'. Filed eshyra-x50w for the character-creation migration + catalog retirement. verify:worktree green (2272 passed/19 skipped). Unblocks eshyra-8bit.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-21T06:54:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-21T06:55:10Z",
+  "closed_at": "2026-06-22T02:24:04Z",
+  "close_reason": "Implemented via PR #273 (squash-merged to main). Generated SRD pack now loaded at runtime; placeholder retired. See ADR 0013. Follow-up eshyra-x50w tracks SRD_CATALOG retirement; eshyra-8bit now unblocked.",
+  "dependency_count": 0,
+  "dependent_count": 3,
+  "comment_count": 0
+}

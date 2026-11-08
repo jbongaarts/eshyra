@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.11.2",
+  "title": "Review: Sol final review of PR #716 (eshyra-o9bd.19.6.7.11 @ ebe748b3)",
+  "description": "Read-only Sol review of PR #716 at exact head ebe748b35f1d3488ae3f6c0e4f5647c6b053ed1c.",
+  "notes": "Captain: dispatched gpt-6.1-sol high, PGID 493580.\n2026-11-05 22:35 CST Captain: dispatch died on the Codex usage limit (resets 2026-11-06 01:08 CST) before recording any finding. Codex session 01a1af20-8855-7b43-919c-30616e0d6058. Re-run after the reset.\nCaptain: re-dispatched after the usage-limit reset (attempt 2, fresh session), gpt-6.1-sol high, PGID 518499.\nS1. NON-MATERIAL — Scope and authority reviewed; no defect. Reviewed PR #716 at exact HEAD ebe748b35f1d3488ae3f6c0e4f5647c6b053ed1c, the WHOLE seven-file diff git diff origin/main...HEAD, live beads .19.6.7.11.2, .11, .11.1, .19.6.7.3 (A3-F3), and eshyra-roge; AGENTS.md including Permanent Test Evidence, importer-fix-protocol, rules-pack-compiler, design-and-pr-review-policy, ADR 0020, integrated design section 5.9, and the new thaw note. Effective profile: rules-clause-complete. refs/beads/state resolves to 9e4bb40c (September projection, missing these November tasks); live bd show is the current authority. The bead explicitly permits an unprojectable Hit component to remain with truthful in-band disclosure; it does not require global deterministic closure.\n\nS2. NON-MATERIAL — Independently re-derived membership and closure; no defect. /tmp/review716.py recursively admits every committed-pack text block containing a Weapon/Spell Attack lead-in, independently splits printed damage clauses and extracts full average/dice/type or amount/type values (including unsupported tails), then compares with emitted default/alternative modes. Denominator: 515 entries = 514 actions + Diseased Giant Rats variant, across the entire pack; 19 flat-containing entries, 27 alternative-bearing entries, 29 Hit sentences containing a save. Comparing source clauses with origin/main projections independently finds exactly creature:flying-snake, creature:jackal, creature:djinni. HEAD has zero recognized-component/value mismatches; its only unrecognized direct-damage tail is Djinni, and that attack has the exact in-band clause disclosure. Independent re-derivation through deriveCreatureEntryMechanics for all 515 entries also exactly matches committed attacks, damage, and saves. Only those three records differ from origin/main; no additions/removals or other-kind churn.\n\nS3. NON-MATERIAL — Source-confirmed repairs; no defect. Vendored SRD independently extracted with pdftotext -layout and -raw, scratch output only under /tmp. Flying Snake p.372: \"Hit: 1 piercing damage plus 7 (3d4) poison damage.\" records.json:31562,31570,31583 now project [{amount:1,type:piercing},{average:7,dice:3d4,type:poison}] in both hitDamage and damage, in print order. Jackal stat block starts p.382, Bite appears p.383: \"Hit: 1 (1d4 – 1) piercing damage.\" records.json:42802,42810,42819 now projects [{average:1,dice:1d4 - 1,type:piercing}] in both fields. Compiler mechanicsProjections.ts:196-207 accepts and normalizes U+2013/U+2212, and :646-658 projects non-overlapping flat terms in print order.\n\nS4. NON-MATERIAL — Djinni residual explicitly disclosed within authorized scope; no defect. SRD p.310 Scimitar: \"plus 3 (1d6) lightning or thunder damage (djinni’s choice)\"; records.json:27511-27534 retains the correct slashing {average:12,dice:2d6 + 5,type:slashing} and adds hitDamageNotProjected with the complete printed Hit clause at :27526. mechanicsProjections.ts:778-783 compares printed damage mentions with projected term count. The omitted choice-of-type rider is neither silently dropped nor claimed implemented. Its separate projection design remains tracked by existing eshyra-roge; that bead was read but not modified. Existing whole-subtree compiler-projection provenance covers /actions/*/mechanics (field-provenance.json:396); discovery/packetMessage.ts:120 renders projection leaves, so the disclosure reaches the model alongside the typed values. This is model-facing support, not a new deterministic attack execution capability.\n\nS5. NON-MATERIAL — Regression and proof review; no defect. Every other generated record is unchanged, including the prior flat-only, flat-plus-save, versatile, shillelagh, swarm and shared-rider cases. /tmp/review716-probe.mts additionally varies flat-before-dice, dice-before-flat, flat alternatives with shared dice rider, dice alternatives with shared flat rider, and flat-plus-save: order, mode exclusivity, shared riders and save ownership remain correct. Fifteen pre-existing flat-only/condition-rider entries omit the optional top-level damage duplicate while retaining the complete amount/type in hitDamage; no requirement for universal duplication was established, and this PR leaves them unchanged. creatureAttackGrammar.test.ts:93-117 strengthens the prior dice-only oracle with flat and en-dash terms, :189-204 adds disclosure checks in both directions, and :226-251 pins all three source cases. Existing assertions and audit expectations are not weakened or deleted. The generalized invariant plus exact source-backed values is proportionate permanent evidence; exploratory probes remain /tmp only. It is bounded evidence over the committed corpus, not proof of arbitrary future English grammar.\n\nS6. NON-MATERIAL — Verification passed; no defect. npx vitest run creatureAttackGrammar.test.ts mechanicsProjections.test.ts --no-cache (full repository paths supplied): 2 files, 200 tests passed. Additional parseCreatures.test.ts, creatureAttackLeadIns.test.ts, creatureLegendaryBudgetSavesRiders.test.ts: 3 files, 94 tests passed. Total 294 targeted tests passed. npm run verify:dnd5e-srd-pack exited 0: manifest/records unchanged versus regeneration; source-inventory, source-coverage, source-region-ledger, field-provenance and record-relationships all match exactly. Vendored PDF SHA-256 2504d2a0abb0a4d491a939be4f17910a2dde0312570ab8d208080225ccf0a1f0. inventory-semi-structured-boundary.ts --check exited 0, 1882 rows: new disclosure row and +1 dice/+2 type populations agree in JSON and Markdown. Thaw note accounts for all three records; freeze-manifest.json untouched. git diff --check passed; git status --short remained empty and HEAD unchanged. No repository edits/formatting, full worktree verification, commits, pushes, GitHub comments or merges were performed. Limits: targeted review and tests, not a full-suite rerun or universal source/grammar audit.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T04:31:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T04:46:06Z",
+  "started_at": "2026-11-06T04:31:47Z",
+  "closed_at": "2026-11-06T04:46:06Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.11.2",
+      "depends_on_id": "eshyra-o9bd.19.6.7.11",
+      "type": "parent-child",
+      "created_at": "2026-11-05T22:31:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

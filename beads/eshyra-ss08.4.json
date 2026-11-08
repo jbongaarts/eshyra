@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ss08.4",
+  "title": "The Turn That Did Not Happen, Except That It Did",
+  "description": "Tell the story of rejected turns, rollback, and retries.\n\nNarrative hook and core question: What does it mean to reject an AI-generated turn after its tools have already changed the world?\n\nBegin with the concrete failure: give_item successfully mutates state, the auditor rejects the candidate turn, repair/retry runs, and the supposedly rejected turn has already changed reality. Expand to repeated damage, resources consumed twice, duplicate combats and combatants, repeated inventory grants, exactly-once effects, speculative candidate execution versus committed turn, audit evidence, repair/retry lifecycle, rollback or transactional boundaries, and invariants showing that a rejected candidate plus repaired retry leaves one accepted world transition.\n\nExpected architectural conclusion: an auditor cannot merely judge prose after the fact. Candidate execution, evidence, rollback, repair, and commit semantics form a transaction protocol.\n\nBoundaries: focus on transactionality and audit lifecycle. Do not turn this into the general rules-pack story.\n\nUse repository history, PRs, design docs, ADRs, audits, and playtest transcripts as evidence. Verify claims against artifacts, not model memory; distinguish implemented architecture from planned architecture; preserve static search-indexable public readability; and follow Joseph's voice rules: analytical and curious, concrete before abstraction, dry humor when earned, deliberate we/I attribution, reflect praise, absorb blame, no em dashes, and no generic LLM prose.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T04:27:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-10T04:29:35Z",
+  "labels": [
+    "docs",
+    "site",
+    "storytelling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ss08.4",
+      "depends_on_id": "eshyra-ss08",
+      "type": "parent-child",
+      "created_at": "2026-07-09T23:27:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.12.3",
+  "title": "REFACTOR: table parser verification and docs",
+  "description": "Clean up the table-parser implementation, update importer documentation, and record final verification while tests stay green.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T17:43:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:55Z",
+  "started_at": "2026-05-28T17:49:06Z",
+  "closed_at": "2026-05-28T17:51:41Z",
+  "close_reason": "Docs and verification complete; npm run check, npm run test, and npm run typecheck passed.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.12.3",
+      "depends_on_id": "eshyra-0m9.5.12",
+      "type": "parent-child",
+      "created_at": "2026-05-28T12:43:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.12.3",
+      "depends_on_id": "eshyra-0m9.5.12.2",
+      "type": "blocks",
+      "created_at": "2026-05-28T12:43:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "9c3b23b6-db21-5f8e-a9cc-2a59335f1ffb",
+      "issue_id": "eshyra-0m9.5.12.3",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: npm run check -> passed; npm run test -> passed (67 files passed, 2 skipped; 746 tests passed, 3 skipped); npm run typecheck -> passed. README documents covered simple tables and deferred wide/nested tables with follow-up loreweaver-0m9.5.13.",
+      "created_at": "2026-05-28T17:51:36Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xogv.1",
+  "title": "Dispatch: xogv residual non-copular infliction phrasings (attempt 1)",
+  "description": "Implement eshyra-xogv (bd show eshyra-xogv is the spec), building on eshyra-mx0d's classifier change (commit be867c0d). Base: branch eshyra-xogv, cut from eshyra-mx0d (PR head 5edc4a20). Worktree .worktrees/eshyra-xogv.1 on branch eshyra-xogv.1; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. docs/importer-fix-protocol.md governs. npm run verify:worktree must pass BEFORE committing; commit on eshyra-xogv.1 only; no push or PR; do not close eshyra-xogv. No thaw note.",
+  "notes": "Commit 28f9a61b on eshyra-xogv.1. Grammar (conditionRelations.ts): 'stable but' added to the closed APPLIES_ADVERBS lead-in set; closed APPLIES_MEMBER_QUALIFIER (escape DC N / if you chose X parentheticals, 'for N (xdy) minute|hour|round|day' durations) allowed after earlier list members; applies alternatives 'subjected to the C condition', 'trapped <=3 words and [list] C', and Divine Word bullets '• N hit points or fewer: [list] C'. Pack churn: 15 leaves mention->applies, nothing else changed: giant-centipede/spider/wasp/wolf-spider/phase-spider poisoned (stable but poisoned), homunculus unconscious, otyugh restrained, flesh-to-stone/prismatic-spray/prismatic-wall petrified, falling-net restrained, draconic-presence frightened, divine-word blinded/deafened/stunned. Each is inflicting in printed text. Tests: exact-sentence applies regressions + controls (nearly invisible, chuul grappled-by, ankheg no creature grappled, early-end exclusion, gate with qualifier, negated subjected). verify:worktree exit 0 (7513 pass, 3 skip); verify:dnd5e-srd-pack exact. Inventories unchanged. Residual 70 mention leaves, all non-inflicting: gating participles/targets (creature grappled/charmed by X, one prone creature, frightened creature, vampire grappled/incapacitated/restrained list), negated/conditioned (isn't incapacitated, can't use blindsight while deafened, isn't knocked unconscious, instead of falling unconscious, no creature grappled, not grappled by), descriptive 'invisible' adjective (sensor, eye, barrier, wall, glyph, mark, entrance, sphere, see invisible, Blindsense/Feral Senses locating invisible), incidental ('dead or incapacitated crawler/wyvern/etc', 'even when stunned or otherwise incapacitated', kraken 'escape ... being grappled', frog/toad 'exiting prone', rug-of-smothering 'creature grappled by the rug', Grappler 'pin a creature grappled by you', aboleth 'creature charmed by the aboleth', succubus 'creature it has charmed'), and two removals left as mention: mass-heal (cured of effect making them blinded/deafened) and speak-with-plants (release a restrained creature), filed as follow-up bead blocking o9bd.19.6.7.22.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T02:12:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:17:31Z",
+  "closed_at": "2026-11-08T02:17:31Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-xogv.1",
+      "depends_on_id": "eshyra-xogv",
+      "type": "parent-child",
+      "created_at": "2026-11-07T20:12:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

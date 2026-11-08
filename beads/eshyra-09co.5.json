@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-09co.5",
+  "title": "Fix: Sol re-review S1/S2 on PR #627 (Sonnet 5.5, attempt 1)",
+  "description": "Fix the two MATERIAL findings from the Sol re-review of PR #627 (read them in full: `bd show eshyra-09co.4`). Branch eshyra-09co.5, cut from the PR head (origin/eshyra-09co). Deps installed. Do not edit packages/core/src/character/.\n\nS1: pin ONE rules resolution per Flexible Casting operation. At the top of flexibleCasting(), memoize input.resolveRulesPack (wrap it so the first result per pack id/key is cached for the rest of the call; check the CampaignRulesPackResolver signature in state/campaignRecordLookup.ts) and pass that memoized resolver to EVERY downstream call: the feature lookup, readBoundClassResourceBalance, spendUsage, restoreUsage, slot helpers. No other behaviour change. Atomic failure preserved.\n\nS2: restoreUsage on a pack-bound class resource must reconcile the counter to the ACTIVE class capacity before restoring: in findCounter (or restoreUsage) retain the resolved bound binding+capacity and run the existing reconcileBoundCounterRows (most-spent adoption rule, max/reset/source normalization, 'none'/'unlimited' handling as spendUsage does) before selecting/restoring the row, so the result and persisted state report the active table maximum. Apply the same to any other findCounter consumer for bound resources (reset paths) only if it shares the defect; note what you checked.\n\nEVIDENCE (small generalized invariants, in-memory DB):\n- S1: a resolver whose override maximum changes between calls (first call 4, later 2) yields an operation consistent with the FIRST resolution for both create and convert (or refuses consistently), never a mixed result.\n- S2: restore on an existing stale canonical counter and on an alias counter persists/reports the active maximum, for bound maxima above (4) and below (2) the stored 3, with prior expenditure preserved before restoration.\n- Existing tests green.\n\nPROTOCOL: run `npm run verify:worktree` BEFORE committing; commit on eshyra-09co.5; `bd update eshyra-09co.5 --append-notes` with the report; `bd close eshyra-09co.5`. Do not push or open/comment on PRs.",
+  "notes": "Commit 5414cd46. S1: flexibleCasting memoizes input.resolveRulesPack (memoizeCampaignRulesPackResolver) once and passes it to lookup, balance, spend, restore. S2: usageCounters findCounter now runs reconcileBoundCounterRows for pack-bound resources (none/unlimited throw 'nothing to restore'); findCounter's only consumer is restoreUsage, reset paths do not use it. Tests: 3 drift tests (create/convert/refuse) and 4 restore_usage tests (canonical/alias x bound 4/2) in flexibleCasting.test.ts. verify:worktree green (6182 passed).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:27:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:30:38Z",
+  "closed_at": "2026-10-09T04:30:38Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-09co.5",
+      "depends_on_id": "eshyra-09co",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:27:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

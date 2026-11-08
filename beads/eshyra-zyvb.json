@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-zyvb",
+  "title": "Illusion and object grants (Deck of Illusions, Feather Token whip) are DM-adjudicated; start_effect refuses them",
+  "description": "olc5.12.1 scope note. start_effect refuses non-creature grants so the summoning path cannot fabricate combatants for them. A future illusion/object capability needs its own bead.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-15T04:02:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-15T04:02:19Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cjrm",
+  "title": "Claude Captain and supervisor SessionStart hooks inject nothing in the Claude desktop app (startup payload omits model)",
+  "description": "Observed 2026-10-14, session f3819369 (entrypoint claude-desktop, Claude Code 2.1.295, model claude-opus-5-5, source startup). Only bd prime appears in the transcript's SessionStart results; claude-captain-context.mjs and .claude/hooks/supervisor-context.mjs produced no output and no ledger record was written under eshyra-seats/claude-captain/sessions. CLI sessions d1f49350 (2.1.281) and 8b83194c (2.1.296) got all three hooks. Both scripts fail closed on missing/empty input.model (seatContext.mjs classifyClaudeOccupant 'no-model-identity'; supervisor SUPERVISOR_MODEL test). Replaying a startup payload by hand: with model claude-opus-5-5 the supervisor hook emits ~16KB, without model it emits 0 bytes. The model regex (fable|opus) is fine. Most likely cause: the desktop app's Agent-SDK SessionStart payload omits model. NOT YET CONFIRMED: capture a real desktop SessionStart stdin (a temporary capture hook was blocked by the permission classifier) to rule out the alternatives (empty model string, hooks not run). Fix options once confirmed: late admission from the transcript's first assistant message.model (the mechanism PR #591 added for /clear), keeping fail-closed for subagents/unauthorized models; or an explicit operator opt-in. Supervisor hook needs the same treatment. Docs: docs/agent-captain-seats.md 'Occupying a seat'.",
+  "notes": "CONFIRMED 2026-10-14: captured a real desktop SessionStart stdin (session 9d540aa6, claude-desktop 2.1.295, source startup). Keys: session_id, transcript_path, cwd, scratchpad_dir, hook_event_name, source. No model key at all. That session's transcript shows message.model claude-opus-5-5, so the session was eligible but unidentifiable at SessionStart. Temporary capture hook removed.\nPR https://github.com/jbongaarts/eshyra/pull/664 (branch eshyra-cjrm-desktop-seat): desktop main sessions admitted regardless of model via process-tree evidence (classifyDesktopHostSession). Personal charter sentence updated. Bead stays in_progress until merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-15T02:30:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-15T03:34:00Z",
+  "started_at": "2026-10-15T02:59:56Z",
+  "closed_at": "2026-10-15T03:34:00Z",
+  "close_reason": "Merged PR #664 (merge 339487f1): desktop main sessions admitted to Captain seat and supervisor overlay via process-tree evidence",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

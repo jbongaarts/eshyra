@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-roge",
+  "title": "Project Djinni scimitar 'lightning or thunder (djinni's choice)' rider via typeOptions",
+  "description": "creature:djinni Scimitar prints 'plus 3 (1d6) lightning or thunder damage (djinni's choice)' (SRD). After eshyra-o9bd.19.6.7.11 it carries hitDamageNotProjected disclosure; hitDamage/damage still omit the rider. Needs a typeOptions damage entry with per-option conditions in parseAttack (cf. spell Fire Shield). Files: mechanicsProjections.ts projectHitDamage; test creatureAttackGrammar.test.ts (pinned disclosure expectation must change to the projection).",
+  "notes": "User decision 2026-11-07: BLOCKING for the re-freeze (no post-freeze deferral); repair before the final candidate (eshyra-o9bd.19.6.7.22). This supersedes the earlier 'not blocking' / 'disclosed limit' text above.\nPLAN (Captain 2026-11-07): importer fix under docs/importer-fix-protocol.md. Project the Djinni Scimitar rider 'plus 3 (1d6) lightning or thunder damage (djinni's choice)' as a damage entry whose type is a choice between the printed options. Reuse the existing typeOptions representation (as the spell Fire Shield uses it) in parseAttack / mechanicsProjections.ts projectHitDamage, rather than inventing a new field; the choice is the attacker's, so the DM picks it. Remove the hitDamageNotProjected disclosure for this attack and change the pinned expectation in creatureAttackGrammar.test.ts to the projection; that strengthens the contract. Sibling search: query every creature attack for 'X or Y damage' rider phrasing and for any remaining hitDamageNotProjected disclosure, and fix the same class or file a blocker bead. Regenerate with npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1; npm run verify:dnd5e-srd-pack must report an exact match; explain the generated diff. Do not edit conditionRelations.ts.\nCaptain 2026-11-07: integrated 36d1f826 after own review and verify (exit 0, 7462 passed; pack exact). PR https://github.com/jbongaarts/eshyra/pull/729. Stays in_progress until merged.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T04:25:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:05:21Z",
+  "started_at": "2026-11-08T00:40:10Z",
+  "closed_at": "2026-11-08T02:05:21Z",
+  "close_reason": "Merged PR #729 (f7e27781).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-roge",
+      "depends_on_id": "eshyra-roge.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:40:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

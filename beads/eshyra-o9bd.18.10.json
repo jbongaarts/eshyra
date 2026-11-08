@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.10",
+  "title": "Record positive SRD audit assurances as freeze evidence",
+  "description": "Purpose:\n- Preserve the high-value positive results from Fable/Codex so future agents do not re-litigate already verified clean areas while fixing findings.\n\nEvidence to record:\n- Every spell: name, level/school line, ritual tag, casting time, range, components/material text, duration, higher-levels text, description, damage dice/save abilities/attack flags verified; concentration flags correct except Protection from Evil and Good.\n- Class spell lists: exact parity both directions for pages 105-113, 70 groups, 778 memberships.\n- Every creature: all ability scores, speeds, saves, skills, senses, languages, immunities/resistances, CR, traits/actions/reactions/legendary action text verified; attack average/dice/DC consistency clean.\n- Every equipment row, magic item type/rarity/attunement/description, table record, condition/rule/feature/hazard/background/ancestry reviewed; Fable reported numeric fidelity essentially perfect.\n- Modeling strengths: typed per-level advancement, structured starting-equipment refs/filter catalogs, 22 typed table projections, structured ancestry ASI/languages, exhaustion levels, deck/flask/apparatus tables complete.\n- Audit artifacts: durable harness + reports at ~/src/dnd5e-srd-audit-harness-070126/, bundle dnd5e-srd-audit-bundle-070126.zip at commit beb9a21.\n\nAcceptance criteria:\n- Add a durable audit note/evidence doc summarizing positive assurances and the exact bundle/commit reviewed.\n- Cross-link this audit epic and child findings.\n- Make clear that positive assurance does not close the outstanding finding beads.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:28:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-02T23:43:34Z",
+  "started_at": "2026-07-02T23:41:46Z",
+  "closed_at": "2026-07-02T23:43:34Z",
+  "close_reason": "PR #386 opened: added docs/audits/dnd5e-srd-5.1-final/2026-07-01-external-audit-positive-assurances.md",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.10",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:28:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

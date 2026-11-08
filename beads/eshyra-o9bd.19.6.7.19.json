@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.19",
+  "title": "A2-F2 (re-audit R2, not closed): DM-facing clock never states the engine's day phase, so narrated dawn and engine dawn diverge",
+  "description": "Re-audit R2 (eshyra-o9bd.19.6.7.15) found A2-F2 NOT CLOSED; verified by Captain at origin/main. worldClockBoundaries.ts fixes dawn at minute 360 and dusk at minute 1080 of each 1,440-minute day counted from campaign start (elapsed_minutes 0 = 00:00 of day 1), but the DM context shows only 'Clock: <label> [elapsed N minutes]' (contextAssembler.ts ~1054) and no prompt/tool text states the engine day phase. protocol.ts ~308 tells the DM to 'use advance_time at dawn' to recharge pack-bound items, which only works at the engine's dawn; generic reset_usage dawn counters reset at the narrated dawn, giving one campaign two dawns (63 dawn-reset items, 1 dusk-reset item, 2 next-dawn grant endings). Repro /tmp/a2-reaudit/probes/p23-dawn-phase.mts.",
+  "design": "2026-11-06 DESIGN (Captain), bounded in-band truthfulness, no schema change and no automatic narrative alignment: (1) contextAssembler clock line adds the engine time of day and day number derived from elapsed_minutes and worldClockBoundaries (e.g. 'engine Day 2, 05:40; dawn 06:00, dusk 18:00'); (2) protocol.ts states that the engine clock starts at 00:00 on Day 1, that dawn is 06:00 and dusk 18:00 on that clock, that narrated time must follow the engine clock (at campaign start, if the story starts at another hour, advance_time to it), and that dawn means crossing 06:00 with advance_time or a rest tool, with generic reset_usage dawn counters applied at that same crossing; (3) advance_time, rest-tool and update_clock descriptions and the capability inventory name the engine dawn/dusk; (4) evidence: the context line shows the phase; a prompt assertion keeps the day-phase contract in the protocol. Implementer: Claude Sonnet 5.5, after eshyra-o9bd.19.6.7.20 merges (both edit protocol.ts).",
+  "acceptance_criteria": "- The DM context shows the engine day and time of day, and the protocol and tool descriptions state the engine's dawn and dusk and how narrated time stays aligned with them.\n- Dawn guidance for pack-bound and generic counters points to the same engine dawn.\n- Regression evidence for the context clock line and the protocol day-phase contract.",
+  "notes": "Captain: integrated .19.1 (e995a7cc) and merged main; own verify exit 0 at 886133852e0b2b21ee56aafe6ca09b3e37f6053c.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T07:53:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T09:06:59Z",
+  "started_at": "2026-11-06T08:27:23Z",
+  "closed_at": "2026-11-06T09:06:59Z",
+  "close_reason": "Merged PR #721 (20f047cfee5ffcc66ab1192df87823c4199020d3) after clean Sol review .19.2",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.19",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-06T01:53:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.19",
+      "depends_on_id": "eshyra-o9bd.19.6.7.19.1",
+      "type": "blocks",
+      "created_at": "2026-11-06T02:27:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

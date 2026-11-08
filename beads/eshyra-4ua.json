@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4ua",
+  "title": "Model-authored arc summary (06b-A)",
+  "description": "Replace the mechanical recap join in CLI rollupCampaignArc (packages/cli/src/play.ts:497-521) with a model-authored arc summary. Use deps.model: ModelClient to produce a coherent campaign-arc narrative from the campaign's accumulated session recaps. Parent: loreweaver-06b.",
+  "design": "Approach: new core module memory/arcSummary.ts mirrors memory/recapBuilder.ts placement.\n\nAPI:\n  composeArcSummary(model: ModelClient, input: {\n    campaignId: string;\n    arcId: string;\n    recaps: SessionRecapRecord[];  // chronological\n  }): Promise<string>\n\nPure read-side (no DB writes). Builds a fixed system prompt ('you write continuity primers for a future DM model') and a user message that renders each session's recap text plus a compact stateDelta listing. Throws ModelClientError on provider failure (default contract).\n\nCLI changes in packages/cli/src/play.ts:\n  - rollupCampaignArc becomes async; replaces .join(' ') with await composeArcSummary(deps.model, ...).\n  - On ModelClientError (or any thrown error): write a warning via deps.io and return WITHOUT updating arc_summary. Prior arc_summary row remains; next successful close retries.\n  - gracefulClose becomes async; turnLoop close path and post-quit close path become await.\n\nData flow:\n  await gracefulClose\n    -> closeSessionGracefully (transactional: scene_summary, session_recap, session close)\n    -> await rollupCampaignArc\n        -> listSessions -> getSessionRecap x N\n        -> try { await composeArcSummary(deps.model, {recaps}) }\n           catch (e) { deps.io.write('arc rollup skipped: ' + msg); return }\n        -> rollupArcSummary(db, {summary, ...})   // unchanged: writes arc_summary + bible\n\nFile map:\n  NEW packages/core/src/memory/arcSummary.ts\n  NEW packages/core/test/arcSummary.test.ts\n  MOD packages/core/src/index.ts (export composeArcSummary)\n  MOD packages/cli/src/play.ts (async rollupCampaignArc, async gracefulClose, error handling)\n  MOD packages/cli/test/play.test.ts (fake model handles arc-summary call; failure-mode test)\n\nTradeoffs:\n  - Caller-composes pattern (CLI calls composeArcSummary before rollupArcSummary) mirrors composeSessionRecap. Rejected alternative: threading ModelClient through closeSessionGracefully — mixes transactional DB writes with network I/O.\n  - Caller-composes also makes errors recoverable at the CLI boundary without unwinding the close transaction.\n\nPrompt content: drafted in implementation, tuned via test snapshot. Continuity-primer framing, ~300-500 words target, second person present tense.\n\nOpen follow-ups: bible extraction (06b-B = loreweaver-5ze), multi-arc (06b-C = loreweaver-x63) are separate beads.",
+  "acceptance_criteria": "1. composeArcSummary exists in @loreweaver/core and resolves with the model-authored string from a SessionRecapRecord[] plus a ModelClient.\n2. CLI rollupCampaignArc uses composeArcSummary; the mechanical .join(' ') is removed.\n3. On model error during the close arc rollup, gracefulClose still completes: session closed, session_recap written, prior arc_summary row untouched, warning written to deps.io.\n4. composeArcSummary unit tests cover: happy path; ModelClientError propagation.\n5. CLI play.test.ts is updated: fake model handles the arc-summary call; a failure-mode test exercises the model-error skip path.\n6. npm run typecheck and npm run test (vitest run) both succeed.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:28:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T04:51:13Z",
+  "closed_at": "2026-05-23T15:46:15Z",
+  "close_reason": "Merged via PR #50 (commit 9013971)",
+  "comments": [
+    {
+      "id": "f7c30d78-981b-5dd7-a162-3edda720d596",
+      "issue_id": "eshyra-4ua",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline (2026-05-22 @ work/loreweaver-4ua): npm install OK; npm run typecheck OK; npm run test = 334 passed / 2 skipped / 0 failed.",
+      "created_at": "2026-05-23T04:52:57Z"
+    },
+    {
+      "id": "add3bcb4-2234-506f-aa40-a37ac7ca52e2",
+      "issue_id": "eshyra-4ua",
+      "author": "Joseph Bongaarts",
+      "text": "Final verification on branch work/loreweaver-4ua @ 63d11b0: npm run typecheck clean; npm run test = 339 passed / 2 skipped / 0 failed (the 2 skips are the documented live-API and Dolt-gated tests). 4 child tasks (T1-T4) all closed via TDD with spec + code-quality review per task. Final whole-branch review verdict: Ready to merge.",
+      "created_at": "2026-05-23T15:35:50Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 2
+}

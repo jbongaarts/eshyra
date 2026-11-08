@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.15",
+  "title": "Add 'feature' RulesRecordKind + kindSchema",
+  "description": "Per ADR 0009, add a first-class `feature` record kind for class/subclass-granted features (Action Surge, Channel Divinity, Rage, ...), distinct from player-selected `feat`.\n\nScope:\n- Add 'feature' to RulesRecordKind union in packages/core/src/rules/types.ts.\n- Add a BASE_KIND_VALIDATORS entry (exhaustive Record forces this) in packages/core/src/rules/kindSchemas.ts, plus a validateDnd5eFeature validator. Feature links to its grantor via data.source (granting class/subclass record key) and the level gained; description text required.\n- Extend the lookup_rules tool enum in packages/core/src/orchestrator/toolLookupRules.ts (inputSchema enum AND the JSON-schema enum block — two places).\n- Decide whether to promote 'feature' on the root export (index.ts) — RulesRecordKind is already exported there; adding a union member is additive.\n\nThis is infrastructure only: no parser, no records emitted here. The feature parser is a separate bead.",
+  "acceptance_criteria": "- 'feature' is a member of RulesRecordKind and validated by BASE_KIND_VALIDATORS.\n- A dnd5e feature validator enforces description + grantor/level linkage fields.\n- lookup_rules accepts kind='feature' in both enum sites.\n- Typecheck + tests pass.\n- ADR 0009 referenced in the schema/validator code comments.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-30T02:24:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-30T03:47:10Z",
+  "closed_at": "2026-05-30T03:51:59Z",
+  "close_reason": "Implemented in PR #109 (work/0m9-5-15-feature-kind): feature RulesRecordKind + validateDnd5eFeature + lookup_rules enum + RULES_RECORD_KINDS sync. Typecheck/tests/Biome green.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.15",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-29T21:24:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

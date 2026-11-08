@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-tmqa",
+  "title": "Update Biome schema migration for 2.5.2",
+  "description": "Biome was upgraded to 2.5.2; run the Biome migration step and commit any required configuration changes so repo checks remain clean.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T03:58:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-07T03:58:52Z",
+  "started_at": "2026-07-07T03:58:20Z",
+  "closed_at": "2026-07-07T03:58:52Z",
+  "close_reason": "Biome 2.5.2 migration completed; biome.json schema updated and verify:worktree passed.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

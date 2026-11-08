@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ffoo.1",
+  "title": "Dispatch: ffoo Pipes upper-bound grant and no-waiver sequence (attempt 1)",
+  "description": "Implement the USER DECISION / SPEC note on eshyra-ffoo (bd show eshyra-ffoo; also bd show eshyra-j9rc for the sequence's history). Base: branch eshyra-ffoo, cut from eshyra-kbzm (PR #727 head 98ca8787, which carries the Pipes blocker-pin test to replace). Worktree .worktrees/eshyra-ffoo.1 on branch eshyra-ffoo.1; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. docs/importer-fix-protocol.md governs the pack change. npm run verify:worktree must pass BEFORE committing; commit on eshyra-ffoo.1 only; no push or PR; do not close eshyra-ffoo or eshyra-j9rc.",
+  "notes": "COMPLETE (commit 489d724c on eshyra-ffoo.1, not pushed). \nPACK REPRESENTATION: grant called-rat-swarms gains maxCountPerCost { economy: 'charges', perUnit: 1 } (must equal the grant's cooldownEconomy) and noPrintedEnding: true (mutually exclusive with duration/revertOn); no count/revertOn/duration invented. Schema+validator in packages/core/src/rules/magicItemMechanics.ts (maxCountPerCost excl. count/countRoll/creatureRoll, creature-only, known economy, positive-integer perUnit); triage GRANT_KEEP keeps both fields. Clauses: m4-pipes-of-the-sewers green; new adjudicated m4-availability-pipes-of-the-sewers (verbatim 'provided that enough rats ... the charge is wasted.') and m4-control-pipes-of-the-sewers (verbatim contest paragraph; supersedes triage-entityGrant-1); c2-residual-rat-indifference withheld via magicItemAdjudicatedEffects (verbatim span).\nOWNERSHIP: creatureGrantLifecycleOwned now accepts (count | countRoll | valid maxCountPerCost on its own cooldownEconomy) AND (engine-computed endings | noPrintedEnding with no revertOn/duration). Omission stays pending (tests: neither, count-no-marker, bound-no-marker, marker-no-bound, bad bound shapes, marker beside ending/duration).\nBINDING RULE: use_item records spent_amount on the bind credit (migration 0056, schema snapshot regenerated) and advertises hint.bindCredits[].boundedCounts [{grantId,max}]. start_effect for a maxCountPerCost grant requires source.bindCreditId, requires a credit with recorded spend, binds 0..spent*perUnit actors (0 allowed), and refuses more / no credit / unrecorded spend with typed ActiveEffectError. Horn countRoll path untouched. Tool descriptions (start_effect, use_item) and capability inventory (start_effect exclusions + evidence) state the contract.\nEVIDENCE (packages/core/test/itemChargeDawnRecharge.test.ts, unmodified real pack, no waiver): pin test replaced by (1) pack-shape/readiness test (grant fields, m4 green, adjudicated spans verbatim, no engine-pending Pipes clause); (2) sequence: use_item call-rat-swarms spend 2 -> credit boundedCounts max 2, remaining 1; bind unnamed refused, 3 actors refused, null spend refused; 2 swarms bind OK and redeem; second bind on same credit refused; spend 2 with 1 remaining refused unchanged; advance_time crosses dawn restores min(1+1d3,3); spend 1 then bind 0 OK; end_effect closes both actor links; (3) cap test over seeds 1-12 proving rolls 1 and 3 (cap hit). Other test updates (contract-changing only where user decision supersedes): itemGrantBindCredit (Pipes passes bindCreditId, expects boundedCounts), ownership test (Pipes OWNED, independent derivation extended), entityGrants census (availability clause), effect source agreement (rat effect now ABSENT row with exception span), operation READY + real-pack readiness lists (+Pipes call-rat-swarms), srdGeneratedPack counts (1369->1370 clauses; adjudicated 358->360, pending 769->767, green 241->242), legacy backlog (890->889 + fingerprint), migration ledgers (v56), semi-structured inventory regenerated via packages/core/scripts/inventory-semi-structured-boundary.ts.\nGENERATED DIFF: only magic-item:pipes-of-the-sewers in records.json (grant fields added; effects block removed; m4 green; rat clause adjudicated; +availability, +control clauses; triage-entityGrant-1 dropped as contained in control span). verify:dnd5e-srd-pack: exact match.\nVERIFY: npm run verify:worktree passed (400 files passed, 2 skipped; 7481 tests passed, 3 skipped) before commit.\nNOTE: 0-HP closure uses the generic linked-actor behavior (no zero-hp rule invented). FOLLOW-UP filed: zero-actor bind leaves an active empty summoning effect (P3, not a freeze blocker).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T00:59:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T01:19:19Z",
+  "closed_at": "2026-11-08T01:19:19Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ffoo.1",
+      "depends_on_id": "eshyra-ffoo",
+      "type": "parent-child",
+      "created_at": "2026-11-07T18:59:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

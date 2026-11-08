@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.13",
+  "title": "Task 5: Add module rules requirements and neutral encounter refs",
+  "description": "Objective:\nMake module packs declare compatible rules requirements and stop hardcoding `srdRef` as the public module-to-rules seam.\n\nFiles:\n- Modify: `packages/core/src/world/types.ts`\n- Modify: `packages/core/src/world/validate.ts`\n- Modify: `packages/core/src/world/forkCampaign.ts`\n- Modify: `packages/core/src/world/samples/emberfallHollow.ts`\n- Modify: `packages/core/src/campaign.ts`\n- Test: `packages/core/test/world.test.ts`\n- Test: `packages/core/test/campaignRulesBinding.test.ts`\n\nSteps:\n1. Write failing world tests for required `meta.rulesRequirements`, provider-neutral encounter creature `rulesRef`, and rejection when `rulesRequirements.baseSystemId` is missing.\n2. Write a failing campaign test that creating a campaign with a Pathfinder binding and the D&D Emberfall module rejects before module rows are forked.\n3. Run `npx vitest run packages/core/test/world.test.ts packages/core/test/campaignRulesBinding.test.ts`; expected: FAIL.\n4. Add `ModuleRulesRequirements` to module meta and validation.\n5. Rename or dual-read encounter creature refs from `srdRef` to `rulesRef`; preserve read compatibility only if needed by existing tests.\n6. Update `EMBERFALL_HOLLOW` to require D&D SRD and use `rulesRef` values.\n7. In `createCampaign`, validate module requirements against the selected campaign rules binding before `forkModuleIntoCampaign`.\n8. Run focused tests; expected: PASS.\n9. Commit with `git add packages/core/src/world packages/core/src/campaign.ts packages/core/test/world.test.ts packages/core/test/campaignRulesBinding.test.ts` and `git commit -m feat-validate-module-rules-requirements`.",
+  "design": "Module requirements should include `baseSystemId`, compatible base versions, required packs, and optional packs. For the first implementation, exact base system and required pack presence are enough; version ranges can be represented as strings and interpreted conservatively. Use provider-neutral `rulesRef` in fixtures and DB JSON.\n\nInitial test sketch:\n```ts\nconst pack = validateModulePack({ ...module, meta: { ...module.meta, rulesRequirements: dndRequirements } });\nexpect(pack.encounters[0].creatures[0].rulesRef).toBe('creature:goblin');\nexpect(() => createCampaign(db, { campaignId: 'c1', pack: EMBERFALL_HOLLOW, rulesBinding: pathfinderBinding })).toThrow(CampaignError);\n```",
+  "acceptance_criteria": "World and campaign focused tests pass. Module packs declare rules requirements. Campaign creation rejects incompatible module/rules pairings. Encounter creature refs are provider-neutral.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T05:10:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-23T18:39:12Z",
+  "close_reason": "Module packs now require meta.rulesRequirements (baseSystemId + optional version/addon constraints); EncounterCreature.srdRef renamed to provider-neutral rulesRef and Emberfall updated accordingly; createCampaign rejects bindings incompatible with the module before forking; docs/world.md refreshed. Verified: focused world + campaignRulesBinding tests pass (34/34), full npm run typecheck and npm run test pass (372 passed, 2 documented skips).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.13",
+      "depends_on_id": "eshyra-x3w.12",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.13",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-23T00:10:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.13",
+      "depends_on_id": "eshyra-x3w.10",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

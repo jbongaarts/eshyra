@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-r8en",
+  "title": "Derive resolve_check modifiers server-side from the character sheet",
+  "description": "Follow-up to eshyra-b0hg.1: resolve_check still takes caller-declared modifiers/proficiency multiplier; derive them from the sheet via deriveSkillBonuses (skillBonuses.ts) so expertise and half-proficiency features are applied by the engine.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:32:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T08:33:27Z",
+  "started_at": "2026-10-09T08:05:59Z",
+  "closed_at": "2026-10-09T08:33:27Z",
+  "close_reason": "Merged PR #637",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-r8en",
+      "depends_on_id": "eshyra-r8en.1",
+      "type": "blocks",
+      "created_at": "2026-10-09T03:06:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

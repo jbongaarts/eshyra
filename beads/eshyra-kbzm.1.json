@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-kbzm.1",
+  "title": "Dispatch: kbzm + j9rc use_item excludes enforcement and Pipes evidence (attempt 1)",
+  "description": "Implement the PLAN notes on eshyra-kbzm AND eshyra-j9rc (bd show each), one commit per bead. Base: branch eshyra-kbzm, cut from origin/main e4740161. Worktree .worktrees/eshyra-kbzm.1 on branch eshyra-kbzm.1; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. npm run verify:worktree must pass BEFORE each commit. Commit on eshyra-kbzm.1 only; no push or PR; do not close eshyra-kbzm or eshyra-j9rc.",
+  "notes": "COMPLETION. Commits on eshyra-kbzm.1: 23a1fa33 (eshyra-kbzm), 98ca8787 (eshyra-j9rc). verify:worktree passed before each (7465 then 7466 passed, 3 skipped, 400 files). EXCLUDES SEMANTICS: only use in pack is Candle of Invocation cast-gate excludes [burn]. Source: 'when you light the candle for the first time, you can cast the gate spell with it. Doing so destroys the candle' plus 'After burning for 4 hours, the candle is destroyed' (pack economy note: gate-use is 'first-light alternative; mutually exclusive with continued burning'). Derived: excludes is a symmetric either/or between operations of one item instance; A refused once a listed op was performed on the instance and vice versa. Implemented in useItem (itemState.ts): paired ops recorded in new state field usedOperations (validated: distinct strings, must be declared ops); check runs after assertRequiredState and before turn-resource spend/cost/transition, throwing ItemStateError \"operation 'X' is mutually exclusive with 'Y', which has already been used on this item\". Stateless items with a pairing fail closed. CAST-GATE INTERACTION: on the real pack cast-gate is refused earlier by readiness (c2-effect-cast-gate F4), message unchanged (existing tests untouched, pass). The excludes refusal precedes the unlit-only transition, so with readiness green both refuse; excludes names burn. Tested via fixture reusing real Candle mechanics. PIPES: call-rat-swarms NOT reachable. Blocker: m4-pipes-of-the-sewers engine-pending (F2,F3,F5) because creatureGrantLifecycleOwned (magicItemGrantOwnership.ts) requires every creature grant to print count/countRoll and engine-computed revertOn; Pipes grant has neither (count = charges spent, no printed ending). Fix needs importer/pack change (not done); filed eshyra-ffoo (blocks o9bd.19.6.7.22). Added test pinning the exact blocker in itemChargeDawnRecharge.test.ts; existing truthful-refusal + real-record dawn 1d3 test preserved. TESTS ADDED: itemState.test.ts 'operation.excludes enforcement' x3 (symmetric both directions + state untouched; stateless fail-closed; Candle real mechanics agreement); itemChargeDawnRecharge.test.ts Pipes blocker pin. No pack data, freeze manifest, thaw notes, dated docs or conditionRelations touched. Dated candidate docs still name kbzm (left untouched per rules).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T00:23:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T00:35:27Z",
+  "closed_at": "2026-11-08T00:35:27Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-kbzm.1",
+      "depends_on_id": "eshyra-kbzm",
+      "type": "parent-child",
+      "created_at": "2026-11-07T18:23:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

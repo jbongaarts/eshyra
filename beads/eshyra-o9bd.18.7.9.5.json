@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.9.5",
+  "title": "S2 — Implement small deterministic spell clauses",
+  "description": "Implement the 17 S2 spells and typed clauses: percentChance, createsProvisions, createsOrDestroysWater, conjuredUtilityObject, onsetTime, stagedTableShift, messengerTravel, communicationBarriers, terrainAlteration, recastLockout, questionLimit, corpseEligibility, concurrentEffectLimit, and permanenceAfterRepetition. Evidence: PR #416, classification, small-contracts design, and exact committed-pack coverage.",
+  "notes": "The S2 rollout landed in PR #416.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T04:09:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-11T04:09:28Z",
+  "closed_at": "2026-07-11T04:09:28Z",
+  "close_reason": "The S2 rollout landed in PR #416.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.9.5",
+      "depends_on_id": "eshyra-o9bd.18.7.9",
+      "type": "parent-child",
+      "created_at": "2026-07-10T23:09:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

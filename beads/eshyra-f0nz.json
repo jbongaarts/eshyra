@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-f0nz",
+  "title": "Integrate PR #455 review follow-ups (custody economics, adoption-review repair, dice gate)",
+  "description": "Integration parent for the three PR #455 post-merge review follow-ups:\n\n- eshyra-4ygd (P1): sold-item 'returned' basis bypasses sale-proceeds reversal (economic dupe loop)\n- eshyra-eks3 (P2): migration-0018 oversized-stack reviews with quantity <=100 permanently unresolvable\n- eshyra-2n3n (P2): numeric-conservation gate accepts family-only dice matches, hiding modifier drift\n\nSee those beads for full defect analysis with file/line references.\n\n## Supervisor design decisions\n\n- eshyra-4ygd: selling never credits the wallet inside removeItem — proceeds are a separate, unlinked model-initiated currency event — so a 'sale-reversed' basis cannot deterministically compute a refund. Fix is therefore: restrict 'returned' to lost custody; sold rows must use 'repurchased' with its existing atomic exact-denomination payment (a rescinded sale = repurchase at the refunded price). No schema change needed. A payment-free gift-back basis stays unsupported absent a new decision.\n- eshyra-eks3: new migration reclassifies oversized-stack reviews whose inventory quantity is <= 100 to malformed-evidence (discard-evidence path works and preserves raw evidence). 0018 stays untouched.\n- eshyra-2n3n: exact normalized dice tokens both directions; family tolerance removed; token-scoped exceptions with source-backed rationale for the (measured) 3 current family-only matches across robe-of-useful-items and staff-of-striking, adjudicated per docs/importer-fix-protocol.md.\n\n## Acceptance criteria\n\n1. reacquire_item rejects sold+returned; lost+returned and sold+repurchased(+payment) still work; tests updated without weakening economic guarantees; tool schema/description and list_recoverable_items basis filtering consistent.\n2. New migration reclassifies impossible oversized-stack reviews; genuine oversized rows (>100) unaffected; regression test proves the previously-permanent quarantine becomes resolvable.\n3. Conservation gate requires exact dice tokens; scoped exceptions carry rationale; no weakened expectations; gate still fails on a synthetic dropped/invented modifier.\n4. npm run verify:worktree passes on the integration branch.\n\n## Coordination\n\nMIGRATION NUMBERING: branch eshyra-geny (PR #457 follow-ups, in flight) also adds migration 0022. Whichever PR merges second must renumber its migration before merge — the runner enforces contiguous 1..N. Supervisor handles this at integration/rebase time.\n\nWork lands via child dispatch branches merged into branch eshyra-<this-bead>; single PR to main. Close the three defect beads when the PR merges.\n",
+  "notes": "PR #458 open: https://github.com/jbongaarts/eshyra/pull/458 — all three children merged (eshyra-lbda c4cb671, eshyra-lq61 2379962, eshyra-jjti 360d02d+9c5fea2), branch verify green (4652 passed). Parent stays in_progress until PR merges; then close eshyra-4ygd/eks3/2n3n and this bead. Migration renumber needed if PR from eshyra-geny merges first.\nPR #458 review fixes merged (eshyra-j5e5, 9197ad6): zero-quantity review resolution (delete empty row, fail closed on surviving attunement — supervisor hardening), value-scoped dice/DC exceptions replacing record-wide accepts, stale-exception detection, restored stateful repurchase regression. Branch re-verified green (4656 passed) and pushed; PR #461 (stray child PR) closed. Merge order per reviewer: #459 first, then rebase this branch and renumber its migration 0022→0023.\nPost-#459 coordination done: origin/main merged into eshyra-f0nz (3fcef0f), migration renumbered 0022->0023 (file + reason marker + ledger test expectations), verify green (4664 passed), pushed. PR #458 is now mergeable; awaiting user merge decision.\nRe-review 4732180674 P1 fixed (cc74b1a): zero-quantity resolution atomically reconciles surviving attunement into discarded_structure_json instead of deadlocking against the quarantine-gated end_attunement. Verify green (4664), pushed. PR #458 awaiting merge decision.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:19:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-20T04:40:30Z",
+  "started_at": "2026-07-20T00:21:16Z",
+  "closed_at": "2026-07-20T04:40:30Z",
+  "close_reason": "Integration complete: PR #458 merged to main as 958d6d0b. Children eshyra-lbda/lq61/jjti/j5e5 all closed; two review rounds resolved; migration renumbered to 0023 post-#459.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-f0nz",
+      "depends_on_id": "eshyra-j5e5",
+      "type": "blocks",
+      "created_at": "2026-07-19T19:56:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-f0nz",
+      "depends_on_id": "eshyra-jjti",
+      "type": "blocks",
+      "created_at": "2026-07-19T19:21:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-f0nz",
+      "depends_on_id": "eshyra-lq61",
+      "type": "blocks",
+      "created_at": "2026-07-19T19:21:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-f0nz",
+      "depends_on_id": "eshyra-lbda",
+      "type": "blocks",
+      "created_at": "2026-07-19T19:21:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 0,
+  "comment_count": 0
+}

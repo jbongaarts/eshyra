@@ -1,0 +1,51 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2llo",
+  "title": "Class resource capacities: reconcile selected tracked counters (e.g. Rage, Ki, Sorcery Points) with pack resourceProgression at level-up",
+  "description": "Source: 2026-10-08 targeted engine integration audit (result B), verified by Claude Captain against main f7d70b64.\n\nDEFECT: class resource capacities do not follow advancement.\n  - rulesPackResolver.ts parseAdvancement validates resourceProgression entries (resource must be a string) and then discards them; nothing retains a consumable value.\n  - levelUpEngine.ts never reconciles any capacity.\n  - state/usageCounters.ts: a character ability counter is created on first spend from a model-DECLARED economy (maxUses + reset), stores uses_max, refuses a redeclaration on an existing counter, and never changes uses_max on spend/restore/reset.\nExample: a Barbarian who used Rage at level 2 (pack rages = 2) keeps uses_max 2 after reaching level 3 (pack rages = 3) and 6, permanently.\n\nSCOPE STEP 1 — CLASSIFY the source-backed resourceProgression columns (query: every advancement entry kind 'resourceProgression' on class progression rows). At records.json @ f7d70b64:\n  Barbarian rages (2..6, 'Unlimited' at 20) — candidate expendable capacity;\n  Barbarian rageDamage (+2..+4) — damage bonus, not a capacity;\n  Monk kiPoints ('—' at 1, then 2..20) — candidate expendable capacity;\n  Monk martialArts (1d4..1d10) — die scaling;\n  Monk unarmoredMovement (+10..+30 ft.) — speed bonus;\n  Rogue sneakAttack (1d6..10d6) — dice scaling;\n  Sorcerer sorceryPoints (2..20, from level 2) — candidate expendable capacity.\nOnly expendable tracked capacities are in scope for counter reconciliation. Non-capacity columns get a recorded disposition (descriptive / derived value / out of scope), not deterministic handling. Level-scaling capacities that live only in feature prose (e.g. Channel Divinity, Action Surge, Indomitable, Lay on Hands pool, Wild Shape) are NOT in scope unless this bead positively selects one with a demonstrated gameplay consumer; they are not implied requirements.\n\nSCOPE STEP 2 — for each SELECTED counter (bounded resource-accounting procedures with a demonstrated gameplay consumer, i.e. spend_usage/restore_usage/reset_usage on a character ability), design and implement: a binding from the character's class level to the pack value (resolver retains the value instead of discarding it); initial character state (creation or first use derives max from the pack, not a model-declared number — declared economies for a pack-bound class resource fail closed, mirroring the combatant record rule); maximum-capacity reconciliation at level-up (apply path + ledger change set); used/remaining preservation (uses_used preserved; new remaining = new max - used, clamped; no free restoration unless the SRD says so); reset behavior unchanged except operating on the reconciled max; special values ('Unlimited', '—') handled explicitly; ledger/state consistency in one transaction.\n\nEXCLUSIONS: no global deterministic handling of every resource column; no change to creature (record-derived) or item counters; no rest-engine rewrite; pack source-fidelity defects found while classifying go to eshyra-o9bd.19.3.2 (Lane A), not here.\n",
+  "acceptance_criteria": "- Recorded classification of every source-backed resourceProgression column (capacity vs damage bonus / dice scaling / speed / descriptive), with the selected counters named and justified by a gameplay consumer.\n- Representative progression: a tracked character ability counter used before level-up (e.g. Barbarian Rage with one use spent at level 2) shows the correct new maximum after level-up, with used uses preserved and no free restoration unless the SRD requires it.\n- Selected class resources cannot be minted with a model-declared max that disagrees with the pack.\n- No double economy (one counter per resource per character) and no regression of creature record-derived or item counters (existing usageCounters tests stay green).\n- Ledger change set records the capacity change.",
+  "notes": "PR opened (head 21b99cd4) 2026-10-09; supervisor added alias-aware findCounter fix + regression; verify green. Stays in_progress until merge. Follow-up eshyra-fa54.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T21:46:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T02:39:47Z",
+  "started_at": "2026-10-09T01:50:22Z",
+  "closed_at": "2026-10-09T02:39:47Z",
+  "close_reason": "Merged PR #616",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2llo",
+      "depends_on_id": "eshyra-ghzh",
+      "type": "relates-to",
+      "created_at": "2026-10-08T16:46:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-2llo",
+      "depends_on_id": "eshyra-2llo.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T20:50:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-2llo",
+      "depends_on_id": "eshyra-o9bd.19.3.2",
+      "type": "relates-to",
+      "created_at": "2026-10-08T16:46:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

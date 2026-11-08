@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6531",
+  "title": "Validate rechargeFormula as a dice expression at spend time",
+  "description": "spend_usage stores declared.rechargeFormula without checking it parses as dice notation (usageCounters.ts declared-economy validation only checks reset === dawn). restore_usage now refuses a non-dice or sub-1 formula when it tries to roll, but the bad economy is accepted at spend time and only fails later. Validate with parseDice/minimumDiceTotal at declaration. Found while implementing eshyra-lyzj (fa1551f9).",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:33:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-07T23:33:12Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

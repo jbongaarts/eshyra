@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.5.5",
+  "title": "Dispatch: 19.4.5 repair after Sol 19.4.5.4 S1 (attempt 3)",
+  "description": "Repair PR #653 per Sol review eshyra-o9bd.19.4.5.4 S1 (read in full incl. sibling/state-dimension analysis and closure). This is the SECOND repair of the qualifier-fidelity class (prior: 19.4.5.2 S2), so attack the class's state space, not just the three members. (1) Fix the three named effects through curated importer inputs, re-reading the printed SRD text: Crystal Ball c2-residual-crystal-scrying - base use requires TOUCHING the ball and keeps Scrying's normal casting time (no action-speed casting; the variants' one-action detect thoughts/suggestion permissions stay local to the variants); Dimensional Shackles c2-residual-dimensional-movement-block - restore the printed interdimensional-portal exception; Dust of Dryness c2-residual-water-elemental-damage - trigger is EXPOSURE to a pinch, not throwing (reconcile with the sprinkle activation/absorb-water accounts so the record has one agreeing account of the damage clause). (2) CLASS SWEEP: re-read every remaining represented magic-item effect whose kind carries a trigger, condition, requirement, appliesTo, activation, exception, or delivery field (all triggeredEffect, immunity, reaction, advantage/disadvantage, castSpell/spell-grant, rollModifier, resistance, movement, aura kinds) beside its source sentence along these state dimensions: touching vs merely attuned/wearing/holding; action economy vs printed casting time; parent vs variant permissions; printed exceptions/carve-outs; delivery (thrown vs sprinkled vs exposed vs touched); trigger event (hit vs damage vs failed save); target class (creature vs target vs object). Fix every disagreement found; record in notes a per-kind table (kind, effects read, disagreements found/fixed). Do not copy delivery wording between siblings (Dust of Disappearance/Sneezing print throwing; Dryness does not). (3) Extend the generalized scope/qualifier assertions with cheap source-backed cases for prerequisite, exception and delivery forms and meaningful siblings (Orb of Dragonkind's printed action-speed Scrying; Spell Scroll normal casting time). Regenerate pack (npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1) and inventory (npx tsx packages/core/scripts/inventory-semi-structured-boundary.ts), npm run verify:dnd5e-srd-pack, reconcile registry magic-item-effects statusReasoning truthfully. Importer protocol; HARD STOP if a new extractor strategy is needed. Host memory: wait until pgrep -fc '^node .*verify-current-worktree' prints 0 or 1; npm run verify:worktree && git commit. Notes; close this bead. No push/PR.",
+  "notes": "COMPLETE, commit 59053823 (verify:worktree green 6489 passed/3 skipped; verify:dnd5e-srd-pack exact). No push/PR.\nNamed: Crystal Ball trigger 'user is touching the crystal ball' + castingTime spell-normal (Orb of Dragonkind action-speed Scrying and Spell Scroll normal time kept); Dimensional Shackles exceptions [passing through an interdimensional portal]; Dust of Dryness trigger = elemental mostly of water exposed to a pinch, absorb-water no longer carries a duplicate waterElemental damage payload or elemental trigger, sprinkle-dust target 'water' (Disappearance/Sneezing keep 'thrown into air').\nCLASS SWEEP (all 213 records / 472 effects read beside source, 56 kinds; dims: touching/wearing/holding/on-person, action vs casting time, parent vs variant, exceptions, delivery, trigger event, target class). Per kind (read/disagreements fixed): triggeredEffect 90/16 (Crystal Ball, Dust of Dryness, Amulet of the Planes familiar location, Decanter geyser object target, Gloves Swim/Climb Strength (Athletics), Ring of Invisibility + Plate Armor of Etherealness end-on-removal, Sun Blade finesse while blade exists, Talisman of the Sphere (no wearer), War Mage holder, Sword of Sharpness + Life Stealing creature-only rider [Life Stealing/Sharpness are triggeredEffect/extraDamage]); immunity 17/2 (Shackles, Ioun Awareness orbit); castSpell 134/2 (Cubic Gate press one side / same side twice; Crystal Ball); advantage+disadvantage 36/1 (Scarab on person); rollModifier 7/2 (Luck Blade, Luckstone on person); speedMultiplier 2/1 (Boots of Speed activated); extraDamage 14/2 (Sharpness, Life Stealing creature); reaction 3/0; damageResistance 16/0; resistance 1/0; movement kinds (speedSet 14, movementRestriction, ignore*, jump, climb, swim, hover, walkOnLiquids) 28/0; sense/light/visibility/breathes 21/0; remaining kinds (acBonus, attack/damage, ability score, proficiency, healing, temp HP, imposesCondition, etc.) 120+/0. Totals: 21 disagreements fixed across ~19 items in addition to the 3 named. Judged-consistent (not changed): static held/worn-state effects whose item is naturally held/worn (Staff of Fire/Frost, Spellguard, Frost Brand resistance, Shield of Missile Attraction) since the equipped item state governs; Orb scrying/Hammer hurl op requirements; Scarab reaction (rollManipulation carries necromancy/undead qualifier).\nEvidence: extended scope/qualifier assertions in magicItemEffectSourceAgreement.test.ts (prerequisite, exception, delivery forms + siblings); Boots of Speed exact-projection test updated for the printed activation condition; registry magic-item-effects statusReasoning updated; pack + inventory regenerated.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T15:47:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T15:56:27Z",
+  "closed_at": "2026-10-11T15:56:27Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.5.5",
+      "depends_on_id": "eshyra-o9bd.19.4.5",
+      "type": "parent-child",
+      "created_at": "2026-10-11T10:47:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

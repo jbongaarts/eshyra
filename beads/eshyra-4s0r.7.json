@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r.7",
+  "title": "Clean stale Node and distribution wording",
+  "description": "Clean stale comments and documentation left over from runtime/distribution changes.\n\nKnown examples from review:\n- A pack-loader comment still refers to Node 22 even though the project engine policy is Node 24.\n- ADR/context wording still references npm distribution in places where README now describes GitHub Releases as the end-user channel and npm packages as private/internal for now.\n\nAcceptance criteria:\n- Search for stale Node 22 wording and update/remove it where no longer accurate.\n- Search for stale npm-distribution wording and update it to reflect current GitHub Releases/private-package policy where appropriate.\n- Preserve historical ADR context where it is intentionally historical, but add clarifying notes if needed.\n- No behavioral code changes unless directly required by corrected docs/comments.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T03:06:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T05:25:03Z",
+  "started_at": "2026-06-26T05:19:49Z",
+  "closed_at": "2026-06-26T05:25:03Z",
+  "close_reason": "Updated stale Node 22 and npm-distribution wording while preserving intentional ADR history.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4s0r.7",
+      "depends_on_id": "eshyra-4s0r",
+      "type": "parent-child",
+      "created_at": "2026-06-25T22:06:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

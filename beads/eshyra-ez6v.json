@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ez6v",
+  "title": "Creature stat blocks: keyed defensive & sense fields",
+  "description": "Slice of eshyra-4a7.5. Extend parseCreatures + creature emit to capture the keyed trailing stat-block fields the SRD prints between the ability-score row and the trait/action body: saving throws, skills, damage vulnerabilities, damage resistances, damage immunities, condition immunities, senses, languages. Reuse the keyed-field extraction machinery proven in parseStatBlocks (eshyra-4a7.4). All fields optional (a stat block carries only those the SRD prints). Strict creature schema stays integer-AC/HP/required-CR; new fields are optional strings. Regression: Aboleth (saves/skills/senses/languages), Deva (damage resistances + condition immunities), an NPC. Follow docs/importer-fix-protocol.md.",
+  "notes": "Implemented + PR open: https://github.com/jbongaarts/eshyra/pull/200 (branch feat/creature-keyed-fields-ez6v). Adds optional keyed fields (savingThrows/skills/damage*/conditionImmunities/senses/languages) to all 317 creature records via label-position slicing. All gates green; verify:dnd5e-srd-pack exit 0. Close on merge. Remaining 4a7.5 scope: eshyra-yevt (traits/actions/reactions/legendary), eshyra-70xr (lair/regional/variants).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-13T15:24:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-13T15:25:24Z",
+  "closed_at": "2026-06-13T15:53:49Z",
+  "close_reason": "Merged in PR #200 (commit 95506fd). All 317 creature records now carry the keyed defensive/sense fields their source prints.",
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

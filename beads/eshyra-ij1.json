@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ij1",
+  "title": "Agent worktree verification workflow",
+  "description": "Goal: make agent workflow efficient and deterministic by replacing generic bd preflight usage with a cheap origin/main fetch before worktree creation and full verification from the active linked worktree root. Scope: AGENTS.md workflow guidance, small PowerShell helper scripts, and npm wrappers if they fit existing script style. Non-goals: changing Biome to scan parent .worktrees or running bd preflight --check as a repo gate.",
+  "design": "Architecture: keep parent checkout validation lightweight because CI keeps origin/main clean; scripts/agent-preflight-main.ps1 fetches origin main and reports the fetched base only. scripts/verify-current-worktree.ps1 resolves git rev-parse --show-toplevel, Set-Location to that root, prints the root, then runs canonical npm scripts from package.json: npm run format, npm run check, npm run typecheck, npm run test. AGENTS.md documents that any Biome no-files result caused by .worktrees means the command was run from the wrong checkout; agents must cd to the intended worktree root, not delete/recreate it. package.json may add agent:preflight and verify:worktree wrappers using PowerShell. Biome config stays unchanged, preserving !**/.worktrees.",
+  "acceptance_criteria": "AGENTS.md distinguishes cheap pre-worktree preflight from full pre-commit/pre-push verification; AGENTS.md requires Set-Location (git rev-parse --show-toplevel) after worktree creation and before verification; AGENTS.md says Biome ignoring .worktrees means wrong checkout, not invalid worktree; helper scripts exist and fail fast; package scripts wrap helpers if added; Biome continues to exclude .worktrees; validation includes running agent preflight from parent and verification from a linked worktree root plus repo normal verification.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T23:56:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-06T00:12:35Z",
+  "close_reason": "Implemented and verified agent worktree verification workflow via loreweaver-ij1.1.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

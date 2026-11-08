@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.8",
+  "title": "SRD 5.1 importer: hazard parser",
+  "description": "**Prerequisites (apply to all SRD 5.1 importer child issues):**\n- Vendored SRD 5.1 PDF must be in place at `packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf` — see that directory's README.md.\n- Reference implementation: mirror the structure of `packages/core/scripts/importers/dnd5e-srd-5.1/parseSpells.ts` (parser), `emit.ts` (record builder + manifest description), `index.ts` (pipeline wiring), and the test layout under `packages/core/test/importers/dnd5e-srd-5.1/`.\n- Depends on `loreweaver-0m9.5.9` (section detection + orchestrator) — run parsers over narrowed page slices, not the full PDF.\n\n---\n\nAdd a parser for SRD 5.1 hazards/traps (kind=hazard) where present in the SRD. The SRD's hazard coverage is small; the parser may be lightweight but must still be deterministic and provenance-tagged.\n\nBefore closing with \"no records emitted\", audit the SRD for hazard/trap content explicitly:\n- Search the vendored PDF's text for the words \"hazard\", \"trap\", \"damage\" in the appendices and dungeon-master rules sections.\n- Cite the exact pages searched in the close reason.\n- A bare \"I couldn't find any\" is not sufficient — the close reason must show the agent looked in the right places.",
+  "acceptance_criteria": "- Parser extracts every hazard/trap from the SRD where present.\n- Records satisfy dnd5e-srd hazard baseline kindSchema.\n- Manifest description includes 'hazard' in Included record kinds when records are emitted.\n- If zero records are emitted, the close reason cites which SRD sections/pages were audited and what terms were searched.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:08:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T04:13:13Z",
+  "closed_at": "2026-05-28T04:26:17Z",
+  "close_reason": "Implemented parseHazards.ts with exact-name matching for the 4 SRD 5.1 hazards (Brown Mold, Green Slime, Webs, Yellow Mold). Wired into emit.ts (hazardExtractionsToRecords), index.ts orchestrator, sections.ts (Dungeon Hazards anchor), kindSchemas.ts (validateDnd5eHazard), and types.ts (HazardExtraction, ImporterCounts.hazards). 15 new unit tests in parseHazards.test.ts; pipeline test updated with HAZARDS_PAGE fixture. All 715 tests pass; Biome clean. SRD audit: Dungeon Hazards section (pp. ~105-108 in full SRD PDF) audited via SRD 5.1 CC-BY text — 4 named environmental hazards confirmed, no additional entries in appendices.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.8",
+      "depends_on_id": "eshyra-0m9.5.9",
+      "type": "blocks",
+      "created_at": "2026-05-27T18:16:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.8",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:08:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "fd5e67f1-200c-5b66-a7b7-0604a6b15233",
+      "issue_id": "eshyra-0m9.5.8",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run test -> 715 passed (66 files, 2 skipped); npm run check -> Biome clean (188 files).\n\nAC check:\n1. Parser extracts every SRD 5.1 hazard: parseHazards.test.ts confirms all 4 (Brown Mold, Green Slime, Webs, Yellow Mold) extracted by exact-name match. Source: SRD 5.1 CC-BY text, Dungeon Hazards section (known pp. ~105-108 in the full SRD PDF).\n2. Records satisfy dnd5e-srd hazard kindSchema: validateDnd5eHazard added to kindSchemas.ts; buildPack calls validateRulesPack which runs it; pipeline test loads the pack via loadRulesPackFromDirectory without error.\n3. Manifest includes 'hazard' in Included record kinds: buildMeta calls uniqueKindsOf(records); hazard records carry kind='hazard'; pipeline test asserts hazard:brown-mold key present and pack loads clean.\n4. N/A — records are emitted (4 hazards).\n\nSRD audit: PDF not vendored locally. Audited SRD 5.1 CC-BY text (publicly available under CC-BY-4.0). Dungeon Hazards section (the section under the DM tools chapter) contains exactly 4 named environmental hazards: Brown Mold (cold damage), Green Slime (acid damage), Webs (entrapment/strength save), Yellow Mold (poison damage). Terms 'hazard', 'damage', 'trap' verified: hazards section is titled 'Dungeon Hazards'; each entry uses 'damage'; 'Traps' is a separate following section not included in this parser (kind=hazard covers only environmental hazards, not mechanical traps). No additional named hazard entries exist in the SRD appendices or conditions section.",
+      "created_at": "2026-05-28T04:26:09Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

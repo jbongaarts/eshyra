@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cxuc.1",
+  "title": "Dispatch: cxuc (attempt 1)",
+  "description": "Implement eshyra-cxuc (bd show eshyra-cxuc: description and notes are the spec). Base: branch eshyra-cxuc, cut from origin/main b26f40f1. Worktree .worktrees/eshyra-cxuc.1 on branch eshyra-cxuc.1; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. npm run verify:worktree must pass BEFORE committing; commit on eshyra-cxuc.1 only; no push or PR; do not close eshyra-cxuc.",
+  "notes": "Commit e1ab87b2 on eshyra-cxuc.1. Rule (activeEffects.ts): a combatant-targeted actor link with campaign_actor_id is legitimate while its combatant row exists in an ACTIVE combat_instance; rebindCombatantReferencesToActor retargets it only at closeCombatInstance or bonded-summon departure (callers at ~7224, ~8549). Stale iff the combatant is missing or its instance is not active (fail closed). Predicate now NOT EXISTS(encounter_combatant JOIN combat_instance status=active). Audit callers are tests only (no runtime/checkpoint callers found); itemChargeDawnRecharge test not touched. Tests in bondedSummonTransitions.test.ts: mid-combat clean, post-closure clean, corrupted link on closed/missing combatant flagged. verify:worktree passed (7482 tests).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T01:39:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T01:56:41Z",
+  "closed_at": "2026-11-08T01:56:41Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cxuc.1",
+      "depends_on_id": "eshyra-cxuc",
+      "type": "parent-child",
+      "created_at": "2026-11-07T19:39:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

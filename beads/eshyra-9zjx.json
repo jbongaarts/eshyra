@@ -1,0 +1,24 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9zjx",
+  "title": "Flaky test: contextAssembler bounds character chronicle records",
+  "description": "packages/core/test/contextAssembler.test.ts > 'bounds character chronicle records in assembled context' failed once on CI for docs-only PR #400 (run 28773134507, job 85310992499, 2026-07-06) with an ordering-looking deep-equal mismatch on ['Portable memory 1.', ...]; the same commit's push-event CI run and local runs pass (18/18). Likely order/seed-dependent selection of chronicle records. Investigate determinism of the bounding/selection; do not just rerun-until-green.",
+  "notes": "Root cause: listRecords/listEvents tiebroke updated_at/occurred_at ties on TEXT id columns (record_id/event_id), which sort lexicographically ('chronicle-10' < 'chronicle-2'). Fixed to tiebreak on rowid (insertion order), matching scene.ts's getLastDmOutput pattern. Added deterministic regression test with fixed clock. PR: https://github.com/jbongaarts/eshyra/pull/432",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-06T06:58:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-12T01:23:40Z",
+  "started_at": "2026-07-11T21:42:33Z",
+  "closed_at": "2026-07-12T01:23:40Z",
+  "close_reason": "Merged in PR #432 (commit 7fbbaef on main): fixed listRecords/listEvents to tiebreak on rowid instead of the TEXT id column, eliminating the lexicographic-sort flakiness.",
+  "labels": [
+    "testing"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,135 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.1",
+  "title": "Define campaign-rule domain model and precedence",
+  "description": "Objective\nDefine the closed campaign-owned contract for two distinct kinds: ruling (resolution of a source ambiguity, stable table interpretation, or recurring rules question) and house-rule (intentional override/supplement to clear canonical behavior). Rule meaning is player-provided or player-approved prose.\n\nRequired design\nDeterministic fields own stable identity, campaign association, kind, status, provenance/origin, effective campaign position, deterministic ordering, and supersession/revocation. Define precedence among canonical pack semantics, unresolved RulesAmbiguity metadata from PR #419, active rulings, and active house rules. A ruling linked to a known ambiguity records the ambiguity ID and selected interpretation ID as provenance while retaining approved prose as semantic content. Specify ordinary prospective effectiveness versus effectiveness at the start of the immediately disputed turn.\n\nArchitecture and references\nFollow ADR 0017 and docs/rules-pack-compiler.md. Immutable packs remain canonical semantics plus source ambiguities; campaign state/history owns prose campaign rules. Reuse campaign rules-pack binding concepts from eshyra-x3w.12 without conflating pack identity with a campaign rule.\n\nNon-goals\nNo arbitrary prose-to-mechanics compiler; no campaign state in a rules pack; no arbitrary historical retroactivity; no automatic house-rule inference from canonical-rule violations; no persistence of one-off cover, visibility, terrain, or similar fictional judgments.",
+  "acceptance_criteria": "Reviewed types/invariants distinguish ruling from house-rule; define status, origin, effective position, ordering, supersession/revocation, and precedence; known ambiguity linkage is explicit; prospective and immediately-disputed-turn timing are the only initial temporal modes; invalid combinations fail validation; architecture/non-goals are documented and tested.",
+  "notes": "Supervisor review of attempt 1 (ce3f9a5) found 4 defects: (1) campaign position ordering is session-lexical-first, so cross-session chronological order inverts (s2/ordinal 5 sorts after s10/ordinal 6); (2) compareCampaignPositions and the orderCampaignRules tie-break use localeCompare, which is locale/ICU-dependent and diverges from codepoint order on case; (3) projectCampaignRule fabricates ambiguityId 'question:<id>' and selectedInterpretationId for recurring-question rulings, inventing source linkage and a selection that never happened; (4) tests declare sessionId once, so no ordering test crosses a session or turn. Attempt 2 dispatched as eshyra-jhpt.1.2.\nAttempt 2 (88060a7) reviewed and ACCEPTED for findings 1-4: comparator now ordinal-first with codepoint tie-breaks; localeCompare removed from both ordering paths; recurring-question rulings no longer fabricate ambiguityId/selectedInterpretationId. Supervisor independently verified the new tests are regression-catching: 2 of them fail when attempt-1 source is restored. Attempt 2 also filed eshyra-neus for the now-unsound discovery seam cast. Review found one further defect, FINDING 5: formatCampaignPosition still emits session-first, so the serialized position is not self-sorting - SQL 'ORDER BY effective_position' mis-orders, and 'effective_position <= cutoff' silently drops a chronologically active rule (rule s2/ordinal 5 vs cutoff s10/ordinal 6). That is a direct hazard to eshyra-jhpt.2's active-at-position query and eshyra-jhpt.4's parity requirement. Attempt 3 dispatched as eshyra-jhpt.1.3 to make the encoding ordinal-first.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T06:09:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-05T06:34:58Z",
+  "started_at": "2026-09-03T01:01:54Z",
+  "closed_at": "2026-09-05T06:34:58Z",
+  "close_reason": "Merged to main via PR #524 (merge of 286c329)",
+  "labels": [
+    "architecture",
+    "audit",
+    "campaign-runtime",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.rev10",
+      "type": "blocks",
+      "created_at": "2026-09-04T18:14:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.rev15",
+      "type": "blocks",
+      "created_at": "2026-09-05T00:10:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.rev5",
+      "type": "blocks",
+      "created_at": "2026-09-03T01:12:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.rev3",
+      "type": "blocks",
+      "created_at": "2026-09-03T00:03:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.rev2",
+      "type": "blocks",
+      "created_at": "2026-09-02T23:15:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.rev6",
+      "type": "blocks",
+      "created_at": "2026-09-03T01:49:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.rev11",
+      "type": "blocks",
+      "created_at": "2026-09-04T19:26:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.1.2",
+      "type": "blocks",
+      "created_at": "2026-09-02T20:14:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.1.1",
+      "type": "blocks",
+      "created_at": "2026-09-02T20:02:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.rev4",
+      "type": "blocks",
+      "created_at": "2026-09-03T00:33:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.1.3",
+      "type": "blocks",
+      "created_at": "2026-09-02T20:19:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt",
+      "type": "parent-child",
+      "created_at": "2026-07-10T01:09:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.1",
+      "depends_on_id": "eshyra-jhpt.rev14",
+      "type": "blocks",
+      "created_at": "2026-09-04T23:34:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 12,
+  "dependent_count": 5,
+  "comment_count": 0
+}

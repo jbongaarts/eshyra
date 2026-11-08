@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cck.3",
+  "title": "Task 3: SQLite persistence with atomic withTransaction",
+  "description": "Objective:\nAdd the SQLite persistence layer: `openDatabase`, `withTransaction` (atomic\nunit-of-work with automatic rollback on throw), and `initSchema`. This satisfies\nepic acceptance #2 (transactional write/rollback test).\n\nFiles:\n- Create: `packages/core/src/persistence/db.ts`\n- Create: `packages/core/src/persistence/schema.ts`\n- Modify: `packages/core/package.json` (add deps)\n- Modify: `packages/core/src/index.ts`\n- Test:   `packages/core/test/persistence.test.ts`\n\nSteps:\n\n1. Add deps to `packages/core/package.json` — add a `dependencies` and extend\n   `devDependencies` block so it reads:\n```json\n  \"dependencies\": { \"better-sqlite3\": \"^11.3.0\" },\n  \"devDependencies\": { \"@types/better-sqlite3\": \"^7.6.11\" }\n```\n   Then install.\n   Command: `npm install`\n   Expected: better-sqlite3 builds/installs, exit 0.\n\n2. Write the failing test `packages/core/test/persistence.test.ts`:\n```ts\nimport { describe, expect, it } from 'vitest';\nimport { openDatabase, withTransaction } from '../src/persistence/db.js';\nimport { initSchema, SCHEMA_VERSION } from '../src/persistence/schema.js';\n\ndescribe('persistence', () => {\n  it('initSchema records the schema version', () => {\n    const db = openDatabase(':memory:');\n    initSchema(db);\n    const row = db\n      .prepare('SELECT value FROM meta WHERE key = ?')\n      .get('schema_version') as { value: string } | undefined;\n    expect(row?.value).toBe(String(SCHEMA_VERSION));\n    db.close();\n  });\n\n  it('withTransaction commits on success', () => {\n    const db = openDatabase(':memory:');\n    initSchema(db);\n    withTransaction(db, (d) =>\n      d.prepare('INSERT INTO meta(key, value) VALUES (?, ?)').run('a', '1'),\n    );\n    const row = db.prepare('SELECT value FROM meta WHERE key = ?').get('a') as\n      | { value: string }\n      | undefined;\n    expect(row?.value).toBe('1');\n    db.close();\n  });\n\n  it('withTransaction rolls back when the function throws', () => {\n    const db = openDatabase(':memory:');\n    initSchema(db);\n    expect(() =>\n      withTransaction(db, (d) => {\n        d.prepare('INSERT INTO meta(key, value) VALUES (?, ?)').run('b', '2');\n        throw new Error('boom');\n      }),\n    ).toThrow('boom');\n    const row = db.prepare('SELECT value FROM meta WHERE key = ?').get('b');\n    expect(row).toBeUndefined();\n    db.close();\n  });\n});\n```\n\n3. Run the test to verify it FAILS.\n   Command: `npx vitest run packages/core/test/persistence.test.ts`\n   Expected: FAIL — cannot resolve `../src/persistence/db.js`.\n\n4. Create `packages/core/src/persistence/db.ts`:\n```ts\nimport Database from 'better-sqlite3';\n\nexport type Db = Database.Database;\n\nexport function openDatabase(path: string): Db {\n  const db = new Database(path);\n  db.pragma('journal_mode = WAL');\n  db.pragma('foreign_keys = ON');\n  return db;\n}\n\nexport function withTransaction<T>(db: Db, fn: (db: Db) => T): T {\n  const txn = db.transaction(fn);\n  return txn(db);\n}\n```\n\n5. Create `packages/core/src/persistence/schema.ts`:\n```ts\nimport type { Db } from './db.js';\n\nexport const SCHEMA_VERSION = 1;\n\nexport function initSchema(db: Db): void {\n  db.exec(\n    'CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);',\n  );\n  db.prepare('INSERT OR REPLACE INTO meta(key, value) VALUES (?, ?)').run(\n    'schema_version',\n    String(SCHEMA_VERSION),\n  );\n}\n```\n\n6. Add to `packages/core/src/index.ts` (append):\n```ts\nexport { openDatabase, withTransaction } from './persistence/db.js';\nexport type { Db } from './persistence/db.js';\nexport { initSchema, SCHEMA_VERSION } from './persistence/schema.js';\n```\n\n7. Run the test to verify it PASSES.\n   Command: `npx vitest run packages/core/test/persistence.test.ts`\n   Expected: 3 passed (including rollback assertion).\n\n8. Typecheck.\n   Command: `npm run build`\n   Expected: exit 0.\n\n9. Commit.\n   Command: `git add -A && git commit -m \"feat(e0): SQLite persistence with atomic withTransaction\"`\n",
+  "design": "`better-sqlite3` is synchronous, so the unit-of-work is a plain function — no\nasync/Promise. `db.transaction(fn)` returns a wrapped function that runs fn inside\n`BEGIN`/`COMMIT` and automatically issues `ROLLBACK` if fn throws, then re-throws.\n`withTransaction` simply invokes it, giving E3 (`mutate_state`) an atomic-per-turn\nprimitive. `:memory:` databases are used in tests (fast, isolated, supports\ntransactions). `Db` is re-exported as the canonical handle type so later epics\ndepend on this module, not on better-sqlite3 directly. `initSchema` is idempotent\n(`IF NOT EXISTS` + `INSERT OR REPLACE`); E3/E4 will extend it with real tables.\nWAL + foreign_keys pragmas set at open time for crash-safety/integrity per the\nparent-epic design.\n",
+  "acceptance_criteria": "npx vitest run packages/core/test/persistence.test.ts shows 3 passed including the rollback assertion; npm run build exits 0.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:43:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:12Z",
+  "started_at": "2026-05-17T06:08:35Z",
+  "closed_at": "2026-05-17T06:23:56Z",
+  "close_reason": "SQLite persistence complete; spec-compliant and code-quality approved. Commits aa3e04e, 0d27b2b, 66362c4.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cck.3",
+      "depends_on_id": "eshyra-cck.1",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:43:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-cck.3",
+      "depends_on_id": "eshyra-cck",
+      "type": "parent-child",
+      "created_at": "2026-05-16T23:43:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "5863427f-963b-58a9-9dc2-99bc55637fa6",
+      "issue_id": "eshyra-cck.3",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for `6f2f3ff..66362c4`:\n\nAssessment: Ready to merge\n\nCritical:\n- none\n\nImportant:\n- none\n\nMinor:\n- `packages/core/src/persistence/schema.ts` — `initSchema` runs two separate implicit transactions (`db.exec(...)` then `db.prepare().run(...)`). If the process crashes between them the meta table exists but has no `schema_version` row. Because `initSchema` is idempotent the next call will repair it, so this is safe in practice; but wrapping both statements in a single `db.transaction(...)` call would make the intent explicit and guard against hypothetical future statements being inserted between them.\n- `packages/core/src/persistence/db.ts:7` — WAL pragma silently degrades to `memory` journal mode on `:memory:` databases (confirmed: `pragma('journal_mode = WAL')` returns `[{journal_mode:'memory'}]`). The production code path (file DBs) is correct. The tests still validate all three real behaviors (commit, rollback, schema version). No test incorrectly asserts WAL mode is active, so this is a documentation/comment gap only, not a test accuracy issue.\n- `packages/core/src/persistence/db.ts` — `openDatabase` lets `new Database(path)` throw natively on bad path (e.g., `TypeError: Cannot open database because the directory does not exist`). This is fine for a foundational primitive; just note that callers will need to handle or wrap this if user-facing error messages are required in E3/E8.\n- `package-lock.json` — `prebuild-install` is marked deprecated in the lock file (`\"deprecated\": \"No longer maintained…\"`). `better-sqlite3` v11 still uses it as the prebuild download mechanism, falling back to `node-gyp rebuild` when no prebuilt matches. On this machine it compiled via node-gyp (no `prebuilds/` dir present). CI environments without C++ build tools will need either a `.npmrc` with `msvs_version` / a build container, or a later `better-sqlite3` version that ships napi prebuilds for Node 24. Not a blocker for merging (works locally, tests pass), but worth a follow-up chore before adding a CI pipeline.\n\nFollow-up:\n- none (prebuild/CI concern is a chore for the CI setup task, not a code change here)",
+      "created_at": "2026-05-17T06:23:08Z"
+    },
+    {
+      "id": "bd989902-c638-5635-ad77-1e0f6eddd7e1",
+      "issue_id": "eshyra-cck.3",
+      "author": "Joseph Bongaarts",
+      "text": "Code review 6f2f3ff..66362c4: Ready to merge. Critical: none. Important: none. Minor (deferred/optional): (1) initSchema uses two implicit txns - idempotent so safe; (2) WAL pragma no-ops on :memory: - doc-only; (3) openDatabase no error wrapping on bad path; (4) better-sqlite3 compiled from source (no prebuilt for Node24 ABI) -> CI without build tools will fail npm install (filed as follow-up). withTransaction correctly delegates to better-sqlite3 auto-rollback; Db abstraction leak-free; 3/3 tests real-behavior; build green. Both review gates passed.",
+      "created_at": "2026-05-17T06:23:55Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 2
+}

@@ -1,0 +1,57 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5ze.2",
+  "title": "06b-B T2: extractCampaignBible error and empty-input tests",
+  "description": "Objective:\nExtend extractCampaignBible coverage with five failure-mode tests and add an empty-recaps validation. The function must throw MemorySummaryError for: missing fence, malformed JSON, wrong shape, empty recaps. ModelClientError from the provider must propagate.\n\nFiles:\n- Modify: packages/core/test/campaignBibleExtractor.test.ts\n- Modify: packages/core/src/memory/campaignBibleExtractor.ts\n\nSteps:\n1. Add the five tests in the Design field to packages/core/test/campaignBibleExtractor.test.ts. Add ModelClientError and MemorySummaryError to the existing import-from-'../src/index.js' block.\n2. Run: npx vitest run packages/core/test/campaignBibleExtractor.test.ts --reporter=verbose\n   Expected: 4 PASS (missing-fence, malformed-JSON, wrong-shape, ModelClientError propagation already work from T1 impl). 1 FAIL (empty-recaps test — no validation yet, function calls model with empty content).\n3. Add the empty-recaps validation block in the Design field as the first statement of extractCampaignBible.\n4. Re-run the vitest command. Expected: all 7 tests in this file PASS (2 happy + 5 failure).\n5. Run: npm run typecheck. Expected: success.\n6. Commit:\n     git add packages/core/test/campaignBibleExtractor.test.ts packages/core/src/memory/campaignBibleExtractor.ts\n     git commit -m \"Validate extractCampaignBible inputs and cover error paths (loreweaver-5ze)\"",
+  "design": "New tests (paste inside the existing describe('extractCampaignBible') block in packages/core/test/campaignBibleExtractor.test.ts):\n\n  it('throws MemorySummaryError when the model response has no fenced bible_json block', async () => {\n    const model = fakeModel(() => 'Here is the bible: {\"worldFacts\": []}');\n    await expect(\n      extractCampaignBible(model, {\n        campaignId: 'camp-1',\n        recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],\n      }),\n    ).rejects.toBeInstanceOf(MemorySummaryError);\n  });\n\n  it('throws MemorySummaryError when the fenced content is not valid JSON', async () => {\n    const model = fakeModel(\n      () => '<BT><BT><BT>bible_json\\nnot json at all\\n<BT><BT><BT>',\n    );\n    await expect(\n      extractCampaignBible(model, {\n        campaignId: 'camp-1',\n        recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],\n      }),\n    ).rejects.toBeInstanceOf(MemorySummaryError);\n  });\n\n  it('throws MemorySummaryError when the JSON has the wrong shape', async () => {\n    const model = fakeModel(\n      () =>\n        '<BT><BT><BT>bible_json\\n{\"worldFacts\": [\"ok\"], \"majorNpcs\": [\"ok\"]}\\n<BT><BT><BT>',\n    );\n    await expect(\n      extractCampaignBible(model, {\n        campaignId: 'camp-1',\n        recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],\n      }),\n    ).rejects.toBeInstanceOf(MemorySummaryError);\n  });\n\n  it('propagates ModelClientError from the provider', async () => {\n    const model: ModelClient = {\n      complete: async () => {\n        throw new ModelClientError('boom');\n      },\n    };\n    await expect(\n      extractCampaignBible(model, {\n        campaignId: 'camp-1',\n        recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],\n      }),\n    ).rejects.toBeInstanceOf(ModelClientError);\n  });\n\n  it('throws MemorySummaryError when recaps is empty', async () => {\n    const model: ModelClient = {\n      complete: async () => 'unused',\n    };\n    await expect(\n      extractCampaignBible(model, {\n        campaignId: 'camp-1',\n        recaps: [],\n      }),\n    ).rejects.toBeInstanceOf(MemorySummaryError);\n  });\n\nImports at the top of the test file gain (added to the existing import-from-'../src/index.js' block):\n  ModelClientError,\n  MemorySummaryError,\n\nValidation block to add at the top of extractCampaignBible (before any other work, before model.complete is awaited):\n\n  export async function extractCampaignBible(\n    model: ModelClient,\n    input: ExtractCampaignBibleInput,\n  ): Promise<CampaignBibleInput> {\n    if (input.recaps.length === 0) {\n      throw new MemorySummaryError(\n        'extractCampaignBible requires at least one session recap',\n      );\n    }\n    const userContent = renderRecaps(input.recaps);\n    ...\n\nNOTE TO IMPLEMENTER: <BT><BT><BT> represents three real backtick characters. Replace each with three real backticks when writing the test file. The fake-model responses with malformed JSON / wrong-shape JSON ARE wrapped in real fence markers; only the missing-fence test sends a fence-free string.\n\nRationale on the empty-recaps guard: matches the pattern set by composeArcSummary in 4ua. The CLI rollupCampaignArc already guards on recaps.length===0 before calling either function, so reaching this throw indicates a programming error — fail loud.",
+  "acceptance_criteria": "1. packages/core/test/campaignBibleExtractor.test.ts contains exactly 7 tests (2 happy + 5 failure) and all pass.\n2. extractCampaignBible throws MemorySummaryError for empty recaps, missing fence, malformed JSON, and wrong-shape JSON.\n3. ModelClientError from the provider propagates out of extractCampaignBible unchanged.\n4. npm run typecheck succeeds.\n5. The commit message references loreweaver-5ze.",
+  "notes": "UPDATE: The empty-recaps guard was added in T1's fix-up commit (962f6d6). Step 3 of the original brief (adding the validation block) is now a no-op; the implementer should still add the empty-recaps test from the Design field as regression coverage — it will pass immediately when added, which is acceptable for the regression case. The other 4 failure-mode tests (missing fence, non-JSON, wrong shape, ModelClientError) still need to be added and exercise paths that already throw.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T16:10:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T21:57:35Z",
+  "closed_at": "2026-05-23T22:03:07Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-5ze.2",
+      "depends_on_id": "eshyra-5ze.1",
+      "type": "blocks",
+      "created_at": "2026-05-23T11:10:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-5ze.2",
+      "depends_on_id": "eshyra-5ze",
+      "type": "parent-child",
+      "created_at": "2026-05-23T11:10:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "80355a0c-586b-5586-bee1-1bc8cce4dd19",
+      "issue_id": "eshyra-5ze.2",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for `962f6d6..4f288b3`:\n\nAssessment: Ready to merge\n\nCritical: none\nImportant: none\nMinor: wrong-shape test omits `factions` and `openThreads` keys — the payload `{\"worldFacts\":[\"ok\"],\"majorNpcs\":[\"ok\"]}` is missing both required fields, so `isCampaignBibleInput` short-circuits on `factions` rather than exercising a realistic bad-shape (e.g. a string value where an array is expected). The test still reaches the right branch and passes; the stimulus just isn't as targeted as it could be.\nFollow-up: none",
+      "created_at": "2026-05-23T22:02:43Z"
+    },
+    {
+      "id": "7492cbc5-c9dc-559a-8a7b-1a9a3af14b05",
+      "issue_id": "eshyra-5ze.2",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 962f6d6..4f288b3: Ready to merge. Critical: none. Important: none. Minor: wrong-shape test payload is missing keys; a non-array-value variant (e.g. factions:'not an array') would pin the guard more precisely. Not blocking.",
+      "created_at": "2026-05-23T22:03:05Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 2
+}

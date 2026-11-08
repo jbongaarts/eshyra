@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-dsj",
+  "title": "Fix SRD 5.1 magic-item column interleaving + Sword of Sharpness boundary (PR #150)",
+  "description": "PR #150 review found three contamination defects in the committed SRD 5.1 magic-item records.\n\nRoot cause 1 (extraction): SRD p217-p218 (Deck of Many Things / Defender / Demon Armor) justify the right column, pushing three line-final words (wish, spell, remove curse) flush to the page edge. That 3-item island opened a ~106pt x-gap wider than the real ~78pt gutter; the column splitter's tiny-outlier guard was capped at 2 items, so the widest-gap cut isolated the stragglers as a phantom column and collapsed both real columns into one y-interleaved flow. This spliced the embedded Avatar of Death stat block line-by-line into the Defender and Demon Armor item bodies.\n\nRoot cause 2 (parser): Sword of Sharpness wraps its category mid-rarity ('Weapon (any sword that deals slashing damage), very' / 'rare (requires attunement)'). The line ends with the bare word 'very' (no trailing punctuation, balanced parens), so categoryStartTextAt rejected it and the item heading+body were swallowed into Sword of Life Stealing. Sword of Sharpness was also missing from EXPECTED_SRD_5_1_MAGIC_ITEM_NAMES (the baseline encoded the bug).\n\nFix: raise TINY_OUTLIER_SIDE_MAX_ITEMS 2->3 (changes column decision on only p217/p218); accept a category-start line whose top-level comma opened the rarity field even when the rarity phrase wraps mid-word; add Sword of Sharpness to the name baseline and bump counts 237->238. Regenerated pack: +sword-of-sharpness, changed deck-of-many-things/defender/demon-armor/sword-of-life-stealing, nothing else.\n\nAcceptance: verify:dnd5e-srd-pack exits 0; audit suspiciousRecords=0; check/typecheck/test pass; regression tests added in extract.test.ts, parseMagicItems.test.ts, srdGeneratedPack.test.ts.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T04:14:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:48Z",
+  "started_at": "2026-06-05T04:14:50Z",
+  "closed_at": "2026-06-05T04:15:35Z",
+  "close_reason": "Fixed: extraction tiny-outlier ceiling 2->3 de-interleaves p217/p218 columns; parser accepts mid-word rarity wrap for Sword of Sharpness; baseline+counts updated; pack regenerated; all gates pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-dsj",
+      "depends_on_id": "eshyra-ecr",
+      "type": "blocks",
+      "created_at": "2026-06-04T23:14:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

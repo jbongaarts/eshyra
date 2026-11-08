@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0dtg.1",
+  "title": "Dispatch: 0dtg end zero-actor upper-bound bind immediately (attempt 1)",
+  "description": "Implement the Captain DECISION note on eshyra-0dtg (bd show eshyra-0dtg; context bd show eshyra-ffoo). Base: branch eshyra-ffoo (head 489d724c). Worktree .worktrees/eshyra-0dtg.1 on branch eshyra-0dtg.1; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. npm run verify:worktree must pass BEFORE committing; commit on eshyra-0dtg.1 only; no push or PR; do not close eshyra-0dtg or eshyra-ffoo.",
+  "notes": "Commit 36734512. activeEffects.ts: ItemGrantBinding.upperBounded; createActiveEffect ends a zero-actor upper-bound bind via finalizeEnd (source-removed / no-creatures-answered, note quotes rats text) after credit redemption. Test in itemChargeDawnRecharge.test.ts: bind 0 -> ended, second bind refused, audit clean for the effect; bind 2 unchanged. verify:worktree passed (7481 tests).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T01:23:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T01:27:40Z",
+  "closed_at": "2026-11-08T01:27:40Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0dtg.1",
+      "depends_on_id": "eshyra-0dtg",
+      "type": "parent-child",
+      "created_at": "2026-11-07T19:23:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

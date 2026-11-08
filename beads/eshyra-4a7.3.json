@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.3",
+  "title": "Extract and account for every SRD table document-wide",
+  "description": "Problem\r\n\r\nThe latest audit found that table coverage is still incomplete. The pack has more table records than before, but many SRD tables are still missing or flattened into prose.\r\n\r\nHigh-confidence missing or insufficiently represented examples\r\n\r\n- Dragonborn Draconic Ancestry table, p. 5.\r\n- The 12 class progression tables.\r\n- Druid Circle Spells tables.\r\n- Oath of Devotion Spells table.\r\n- Sorcerer Creating Spell Slots table.\r\n- Draconic Bloodline Draconic Ancestry table.\r\n- Apparatus of the Crab Levers table.\r\n- Bag of Beans tables.\r\n- Bag of Tricks table.\r\n- Carpet of Flying table.\r\n- Feather Token table.\r\n- Horn of Valhalla table.\r\n- Iron Flask table.\r\n- Robe of Useful Items table.\r\n- Wand of Wonder table.\r\n- Sentient magic item property tables.\r\n- Other magic-item option tables with dice rows or named choices.\r\n\r\nTask\r\n\r\nMake table extraction document-wide and require every source table to be accounted for.\r\n\r\nImplementation guidance\r\n\r\n- Use PDF text and coordinate artifacts where needed.\r\n- Detect table captions, heading-adjacent tables, repeated column-header patterns, and dice-result tables.\r\n- Do not limit table extraction to one chapter or to previously known tables.\r\n- Preserve source row order, typography, and page provenance.\r\n- For nested/grouped tables, use the representation already chosen for the importer, or document and test the chosen representation if not yet formalized.\r\n- Some tables may ultimately become structured child data rather than top-level table records. That is acceptable if the coverage gate records the mapping.\r\n\r\nTests\r\n\r\nAdd regression tests for at least:\r\n\r\n- Dragonborn Draconic Ancestry.\r\n- One class progression table.\r\n- One subclass spell table.\r\n- Sorcerer Creating Spell Slots.\r\n- One magic-item dice-result table.\r\n- One magic-item option/property table.\r\n\r\nAcceptance criteria\r\n\r\n- Document-wide source table inventory exists.\r\n- Every detected table is emitted, mapped to structured child data, or explicitly ignored.\r\n- Known missing tables from the audit no longer disappear into prose without accounting.\r\n- Table parsing fails closed when expected row counts or headers change.",
+  "notes": "PR #195 review fix pushed (a68115c): coverage evaluator now resolves explicit record-type rules BEFORE the name auto-match, fixing the duplicate-caption bug where both 'Draconic Ancestry' captions (p5 Races, p44 Sorcerer) were claimed by table:draconic-ancestry. p44 now maps to table:draconic-bloodline-draconic-ancestry via an explicit per-chapter record rule; sentinels + evaluator unit tests pin both mappings. Close this bead when the PR merges.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T04:30:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-12T00:04:28Z",
+  "closed_at": "2026-06-12T05:02:57Z",
+  "close_reason": "Merged as PR #195 (7a5684c): 24 document-wide tables emitted via parseDocumentTables (table kind 29->53), 4a7.3 coverage catch-all removed, every table item explicitly accounted (4a7.6/4a7.8/4a7.10/eshyra-o4j7 scoped gaps), duplicate Draconic Ancestry captions mapped to distinct records via record-rule precedence.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.3",
+      "depends_on_id": "eshyra-4a7",
+      "type": "parent-child",
+      "created_at": "2026-06-10T23:30:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.3",
+      "depends_on_id": "eshyra-4a7.1",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:22:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 5,
+  "comment_count": 0
+}

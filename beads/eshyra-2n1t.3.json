@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.3",
+  "title": "F1: Dice-grammar extension (advantage/disadvantage, keep/drop)",
+  "description": "Extend packages/core/src/orchestrator/dice.ts + the roll tool schema with 2d20kh1/kl1 and NdMkhX/klX/drop notation, plus adv/dis cancellation and no-stacking documented in the tool description. Members: advantage-and-disadvantage (IMPL); clause: abilities (4d6-drop-lowest). Highest leverage — small change unblocks the largest number of PARTIAL rows sharing F9. Recommended order: land with F9. Source: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4.",
+  "notes": "Landed in PR #430 (branch eshyra-2n1t-f1-f9). dice.ts grammar NdM[khX|klX|dhX|dlX][+/-K]; canonical result separates rolls (all dice) / kept+dropped (+indices, deterministic ties) / natural / modifier / total; identity keeps (2d20kh2) and total drops fail closed; roll tool description documents adv/dis cancellation + no-stacking and steers d20 tests to resolve_check, which enforces cancellation as typed booleans. Contract doc: docs/dice-and-resolution.md. Evidence: diceGrammar.test.ts, resolutionTools.test.ts. Coverage rows advantage-and-disadvantage + abilities -> implemented. Note: SRD adv/dis rule's Lucky-trait single-die reroll is feat territory (D2, eshyra-2n1t.2) — deliberately out of F1 scope.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:40:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-11T20:50:50Z",
+  "started_at": "2026-07-11T20:21:22Z",
+  "closed_at": "2026-07-11T20:50:50Z",
+  "close_reason": "Acceptance criteria satisfied in PR #430; remaining rollout tracked in eshyra-2n1t.11.1 / eshyra-2n1t.11.2",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.3",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-07T00:40:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

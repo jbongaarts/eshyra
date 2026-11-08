@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cck.1",
+  "title": "Task 1: Monorepo scaffold + vitest smoke test",
+  "description": "Objective:\nStand up the npm-workspaces monorepo (core + cli), TypeScript strict ESM build,\nand vitest, proving the toolchain with one smoke test.\n\nFiles:\n- Create: `package.json` (root)\n- Create: `tsconfig.base.json`\n- Create: `tsconfig.json` (root solution)\n- Create: `vitest.config.ts`\n- Create: `.env.example`\n- Create: `packages/core/package.json`\n- Create: `packages/core/tsconfig.json`\n- Create: `packages/core/src/index.ts`\n- Create: `packages/cli/package.json`\n- Create: `packages/cli/tsconfig.json`\n- Create: `packages/cli/src/index.ts`\n- Test:   `packages/core/test/smoke.test.ts`\n\nSteps:\n\n1. Create `package.json` (root):\n```json\n{\n  \"name\": \"loreweaver\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"workspaces\": [\"packages/core\", \"packages/cli\"],\n  \"scripts\": {\n    \"build\": \"tsc --build\",\n    \"typecheck\": \"tsc --build --force\",\n    \"test\": \"vitest run\"\n  },\n  \"devDependencies\": {\n    \"@types/node\": \"^24.0.0\",\n    \"typescript\": \"^5.6.0\",\n    \"vitest\": \"^2.1.0\"\n  }\n}\n```\n\n2. Create `tsconfig.base.json`:\n```json\n{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"module\": \"NodeNext\",\n    \"moduleResolution\": \"NodeNext\",\n    \"strict\": true,\n    \"declaration\": true,\n    \"composite\": true,\n    \"esModuleInterop\": true,\n    \"skipLibCheck\": true,\n    \"forceConsistentCasingInFileNames\": true\n  }\n}\n```\n\n3. Create `tsconfig.json` (root solution):\n```json\n{\n  \"files\": [],\n  \"references\": [\n    { \"path\": \"packages/core\" },\n    { \"path\": \"packages/cli\" }\n  ]\n}\n```\n\n4. Create `vitest.config.ts`:\n```ts\nimport { defineConfig } from 'vitest/config';\n\nexport default defineConfig({\n  test: { include: ['packages/**/test/**/*.test.ts'] },\n});\n```\n\n5. Create `.env.example`:\n```\n# Path to the SQLite database file for the active campaign\nLOREWEAVER_DB_PATH=./campaigns/dev.db\n# Claude model id used by the DM agent\nLOREWEAVER_MODEL=claude-opus-4-7\n# Anthropic API key for the Claude Agent SDK\nANTHROPIC_API_KEY=\n```\n\n6. Create `packages/core/package.json`:\n```json\n{\n  \"name\": \"@loreweaver/core\",\n  \"version\": \"0.0.0\",\n  \"type\": \"module\",\n  \"main\": \"./dist/index.js\",\n  \"types\": \"./dist/index.d.ts\",\n  \"exports\": { \".\": \"./dist/index.js\" },\n  \"scripts\": { \"build\": \"tsc --build\" }\n}\n```\n\n7. Create `packages/core/tsconfig.json`:\n```json\n{\n  \"extends\": \"../../tsconfig.base.json\",\n  \"compilerOptions\": { \"rootDir\": \"src\", \"outDir\": \"dist\" },\n  \"include\": [\"src\"]\n}\n```\n\n8. Create `packages/core/src/index.ts`:\n```ts\nexport const CORE_VERSION = '0.0.0';\n```\n\n9. Create `packages/cli/package.json`:\n```json\n{\n  \"name\": \"@loreweaver/cli\",\n  \"version\": \"0.0.0\",\n  \"type\": \"module\",\n  \"bin\": { \"loreweaver\": \"./dist/index.js\" },\n  \"scripts\": { \"build\": \"tsc --build\" },\n  \"dependencies\": { \"@loreweaver/core\": \"0.0.0\" }\n}\n```\n\n10. Create `packages/cli/tsconfig.json`:\n```json\n{\n  \"extends\": \"../../tsconfig.base.json\",\n  \"compilerOptions\": { \"rootDir\": \"src\", \"outDir\": \"dist\" },\n  \"references\": [{ \"path\": \"../core\" }],\n  \"include\": [\"src\"]\n}\n```\n\n11. Create `packages/cli/src/index.ts`:\n```ts\nimport { CORE_VERSION } from '@loreweaver/core';\n\nexport function placeholder(): string {\n  return `cli wired to core ${CORE_VERSION}`;\n}\n```\n\n12. Write the failing smoke test `packages/core/test/smoke.test.ts`:\n```ts\nimport { describe, expect, it } from 'vitest';\nimport { CORE_VERSION } from '../src/index.js';\n\ndescribe('toolchain smoke', () => {\n  it('exposes a core version string', () => {\n    expect(typeof CORE_VERSION).toBe('string');\n    expect(CORE_VERSION.length).toBeGreaterThan(0);\n  });\n});\n```\n\n13. Install dependencies.\n   Command: `npm install`\n   Expected: installs root devDeps and links workspaces, exit 0.\n\n14. Run the smoke test (should now PASS — pure scaffold, no RED phase for pure config).\n   Command: `npx vitest run packages/core/test/smoke.test.ts`\n   Expected: 1 passed.\n\n15. Verify the build (proves project refs + core/cli wire up).\n   Command: `npm run build`\n   Expected: exit 0, `packages/core/dist/index.js` and `packages/cli/dist/index.js` exist.\n\n16. Commit.\n   Command: `git add -A && git commit -m \"feat(e0): npm-workspaces TS scaffold + vitest smoke test\"`\n",
+  "design": "Scaffold-only task: no RED phase because there is no behavior yet — the \"test\"\nis that the toolchain (install, vitest, tsc project-reference build) works end to end.\n\nKey constraints:\n- ESM everywhere: `\"type\": \"module\"`, `module`/`moduleResolution` = NodeNext.\n  Relative imports in source/tests MUST use the `.js` extension (e.g.\n  `../src/index.js`) even though the file is `.ts` — required by NodeNext.\n- `composite: true` is mandatory for `tsc --build` project references.\n- `@loreweaver/cli` depends on `@loreweaver/core` and never the reverse; npm\n  workspaces symlink resolves the dependency.\n- `.db` is already gitignored (campaign DBs are not committed).\n\nThis task only establishes structure; config/persistence/model/seam modules are\nadded by Tasks 2–6 which import from `packages/core/src`.\n",
+  "acceptance_criteria": "npm install exits 0; npx vitest run packages/core/test/smoke.test.ts shows 1 passed; npm run build exits 0 with packages/core/dist/index.js and packages/cli/dist/index.js present.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:43:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-17T05:47:59Z",
+  "closed_at": "2026-05-17T06:00:34Z",
+  "close_reason": "Scaffold complete; spec-compliant and code-quality approved. Commits caa915b, 2c3ba58, a997ea0.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cck.1",
+      "depends_on_id": "eshyra-cck",
+      "type": "parent-child",
+      "created_at": "2026-05-16T23:43:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "6f9f4886-0a41-5d83-b314-5541cb5853f0",
+      "issue_id": "eshyra-cck.1",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for `1423dbe..2c3ba58`:\nAssessment: Ready to merge\n\nCritical:\n- none\n\nImportant:\n- `packages/core/package.json` exports map uses only the bare string `\"./dist/index.js\"` with no condition keys (`import`/`default`). NodeNext consumers can resolve this, but when later tasks add CJS interop or type-only re-exports the lack of a `types` condition in the exports map will require a breaking change. Recommendation: expand now to `{ \".\": { \"import\": \"./dist/index.js\", \"types\": \"./dist/index.d.ts\" } }` so the `types` field inside `exports` is authoritative for TypeScript ≥5.0 `bundler`/NodeNext resolution (the top-level `\"types\"` key is a fallback).\n- `.env` is not gitignored. `.env.example` is committed (correct), but if a developer creates `.env` from it the actual secrets file will be untracked but not ignored — no protection against accidental `git add`. Add `.env` to `.gitignore` in the same chore commit or a follow-up.\n\nMinor:\n- `package.json` has no `engines` field. The repo is running Node 24; later tasks will use Node-24-only APIs (e.g. the Anthropic Agent SDK). Adding `\"engines\": { \"node\": \">=22\" }` now documents the minimum and npm will warn on mismatched installs.\n- `package.json` has no `packageManager` field. Adding `\"packageManager\": \"npm@11.12.1\"` (current version) enables corepack enforcement and signals intent to future contributors.\n- `vitest.config.ts` glob `packages/**/test/**/*.test.ts` will silently skip a test file placed in e.g. `packages/core/src/__tests__/foo.test.ts`. The pattern is fine for the current layout; just document the convention (tests go in `test/`) somewhere visible (CLAUDE.md architecture section) before task 2 adds more tests.\n- `typecheck` script uses `tsc --build --force` which re-compiles all packages regardless of cache, making it slow at scale. It is a reasonable escape hatch but the name `typecheck` implies type-checking-only (no emit), whereas `--force` still emits. Consider `tsc --build --noEmit` or renaming to `rebuild`.\n\nFollow-up:\n- loreweaver-cck.2+ authors should be aware: adding new source files to `packages/core/src` requires no tsconfig change (glob via `include: [\"src\"]`), but test files outside `packages/*/test/` will not be picked up by vitest — document in CLAUDE.md.\n- Expand `exports` map in core before first public-facing release (task 6 or sooner).\n- Add `.env` to `.gitignore` (can be done in task 2 chore).",
+      "created_at": "2026-05-17T05:57:03Z"
+    },
+    {
+      "id": "3024645a-08e0-5abb-b877-3dce40ac9b6a",
+      "issue_id": "eshyra-cck.1",
+      "author": "Joseph Bongaarts",
+      "text": "Re-review 1423dbe..a997ea0: Ready to merge. Critical: none. Important: none (both prior Important issues - conditional exports map + .env gitignore - resolved in a997ea0, no regressions, no scope creep). Minor: deferred (engines/packageManager/typecheck) intentionally not addressed. Both review gates passed.",
+      "created_at": "2026-05-17T06:00:33Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 5,
+  "comment_count": 2
+}

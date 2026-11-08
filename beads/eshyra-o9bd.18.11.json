@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.11",
+  "title": "Close PR #455 compatibility and custody re-review gaps",
+  "description": "Address the four P1 findings from the external re-review of PR #455 at f7ebe7a: enforce canonical attunement boundaries during legacy adoption, expose held legacy ids and bounded GM-review markers in model context, distinguish dropped claimable custody from sold/lost rows, and make Orb of Dragonkind's pending conditional unattunement semantics fail closed before bond creation rather than creating an unconditional lock. Add cross-boundary regression tests and perform a holistic adjacent-code review.",
+  "notes": "Implemented PR #455 re-review fixes. Centralized the canonical attunement contract so adoption and normal attune share requiresAttunement, variant, and pending-curse gates; Orb conditional blocksUnattune now fails closed before bond creation while nonvoluntary cleanup remains operable. Held inventory context always exposes exact ids and a bounded durable adoption-review marker/reason. Migration 0017 persists explicit dropped/sold/lost unheld disposition; only co-located dropped rows are rendered, listed, claimable, destructible, or eligible for give-item guidance. Audited every inventory INSERT/UPDATE and added the direct nonmagical-ammunition producer. Root cause of prior misses: fixes were reviewed at the reported functions and schema-family tests, but lifecycle invariants were not traced across all producers, persistence states, and downstream consumers; duplicated attunement validation and the false unheld=claimable assumption escaped. Verification: npm run verify:worktree passes 260 files / 4,629 tests with 19 documented skips; focused cross-boundary suite passes 268 tests.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T04:49:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T05:04:01Z",
+  "started_at": "2026-07-19T04:49:20Z",
+  "closed_at": "2026-07-19T05:04:01Z",
+  "close_reason": "All four PR #455 compatibility/custody P1 findings fixed with cross-boundary regression coverage and full worktree verification.",
+  "external_ref": "gh-455",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.11",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-18T23:49:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

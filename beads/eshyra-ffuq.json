@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ffuq",
+  "title": "Dispatch: restore preserved-timer no-RNG assertion (attempt 3)",
+  "description": "Small follow-up dispatch for eshyra-jw56. Tests only; no production code changes.\n\nWorktree: `.worktrees/<this-bead-id>`, branch `<this-bead-id>`, cut from branch\n`eshyra-jw56`. Work only inside that worktree.\n\n## What happened\n\nAttempt 2 (eshyra-289j) was asked to ADD an unmatched-preserved-entry case to\n`packages/core/test/itemTimers.test.ts`. It instead REPLACED the existing\nassertion that a preserved dice-defined timer is never re-rolled: the throwing\n`Rng` (`nextInt: () => { throw new Error('preserved timer must not roll') }`)\nand its `preservedRolled` fixture were deleted, and the `Rng` type import went\nwith them. That guarantee is now uncovered.\n\nIt matters beyond the deadline value: re-resolving a preserved timer would draw\nfrom the seeded RNG stream, desyncing every later roll in a replayed session.\n\n## Task\n\nIn `packages/core/test/itemTimers.test.ts`, restore that assertion **alongside**\nthe unmatched case attempt 2 added — keep both, do not trade one for the other:\n\n- a declaration whose `from`+`to` matches an entry in `preserved`, resolved with\n  an `Rng` whose `nextInt` throws, asserting the preserved timer is returned\n  verbatim (anchor, deadline, amount, unit, and `roll` all unchanged) and that\n  no roll occurred;\n- the existing unmatched case, which must keep resolving fresh against the\n  clock.\n\nSplit into two `it(...)` blocks if that reads better than one. Restore the\n`import type { Rng }` line that was removed.\n\n## Constraints\n\n- Tests only. If you think production code must change, stop and report it in\n  your completion notes instead of changing it.\n- Do not weaken, delete, or trade away any existing assertion\n  (`docs/importer-fix-protocol.md`).\n- `npm ci` first (fresh worktree). `npm run verify:worktree` **before**\n  committing (it rewrites files). Commit on your branch.\n- Do not push, do not open a PR, do not merge. Never modify eshyra-jw56.",
+  "notes": "Dispatched 2026-07-21: codex exec -m gpt-5.6-luna, medium reasoning, sandbox workspace-write, cwd .worktrees/eshyra-ffuq, branch off eshyra-jw56 at 0dc4341. session 019f8825-b857-7cd3-a232-15886aadf074. PGID 1518591. Log: .worktrees/.dispatch/eshyra-ffuq.log\nImplemented tests-only restoration in packages/core/test/itemTimers.test.ts: added type Rng import and a preserved matching dice-defined timer assertion using a throwing RNG, while retaining the unmatched fresh-resolution case. Focused test passed (4/4). npm run verify:worktree initially hit the sandbox's default per-user SQLite path; rerun with worktree-local ESHYRA_HOME passed format/check/typecheck and full suite: 262 files passed, 4 skipped; 4695 tests passed, 19 skipped. Commit was attempted but blocked because linked-worktree Git metadata (/home/jhbongaarts/src/eshyra/.git/worktrees/eshyra-ffuq) is read-only in this sandbox; no push/PR/merge performed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-22T04:45:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-22T04:51:10Z",
+  "started_at": "2026-07-22T04:46:09Z",
+  "closed_at": "2026-07-22T04:51:10Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

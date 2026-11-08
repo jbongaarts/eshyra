@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3lq",
+  "title": "Unify mutate_state field allowlists into one descriptor",
+  "description": "Tech-debt review finding. packages/core/src/state/mutateState.ts defines writable columns twice as membership Sets and type-dispatch Sets which must hand-sync with schema.ts. Replace with a single per-table field descriptor deriving both. The allowlist is load-bearing for SQL safety. Parent context: loreweaver-d4r.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T21:25:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:20Z",
+  "started_at": "2026-05-24T03:46:54Z",
+  "closed_at": "2026-05-24T03:51:21Z",
+  "close_reason": "Refactor landed in PR #56: parallel membership Sets and type-dispatch Sets collapsed into a single FieldDescriptor record per writable table. Allowlist is still SQL-safety-load-bearing and still hand-synced with schema.ts, but only in one place now.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.5.3",
+  "title": "Dispatch: 19.4.5 repair after Sol S1-S5 (attempt 2)",
+  "description": "Repair PR #653 per Sol review eshyra-o9bd.19.4.5.2 (read S1-S5 in full incl. sibling analysis, closure and NOT-A-FINDING lines; do not exceed them). Fix every class through curated importer inputs, re-reading each item's printed SRD text: (S1) Mace of Smiting and Sword of Life Stealing riders trigger on rolling a 20 on the attack roll, not any critical hit; keep Nine Lives Stealer / Adamantine Armor genuine critical-hit clauses and the natural-20 siblings; add a cheap generalized source-trigger invariant (natural-20 vs critical hit). (S2) restore every dropped/redistributed qualifier Sol lists - Arrow-Catching Shield target (not creature); Cloak of Elvenkind checks made to hide; Eyes of Minute Seeing relies on sight; Gloves of Missile Snaring free hand governs the reduction itself; Figurine goat terror aura only while riding; Arrow of Slaying on taking damage not on hit; Robe of Eyes light cast ON the robe vs daylight within 5 feet; both alignment talismans wearing OR holding - plus every confirmed sibling; keep qualifiers on the stage they govern; extend the representative scope assertions with these qualifier forms. (S3) Javelin of Lightning line runs from you to the target (target within 120 ft), not a fixed 120-ft length; Instant Fortress pushes to an unoccupied space outside but next to the fortress, no invented nearest tie-break; keep Staff of Thunder and Lightning's printed fixed 120-ft line; add spatial source-agreement assertions incl. the fixed-length sibling. (S4) Pipes of the Sewers: restore the printed ordinary/giant-rat protection (indifferent, won't attack unless you threaten or harm them), keep the swarm-control contest separate; add a no-added-claims assertion. (S5) the vocabulary screen must cover the canonical sense vocabulary and all 18 canonical skills under their actual effect keys; recognized-but-unlisted canonical values must not be silently skipped; justified exceptions individually; add adversarial substitutions (Gem of Seeing truesight->blindsight; Spell Scroll arcana->survival) proving both are caught. Schema/consumer changes only where a field shape genuinely must change (check producers/consumers, kindSchemas). Regenerate pack (npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1), regenerate inventory (npx tsx packages/core/scripts/inventory-semi-structured-boundary.ts), npm run verify:dnd5e-srd-pack, reconcile registry row magic-item-effects statusReasoning truthfully. Importer protocol; HARD STOP if a new extractor strategy is needed. Host memory: wait until pgrep -fc '^node .*verify-current-worktree' prints 0 or 1; npm run verify:worktree && git commit. Notes per finding (root cause, change, evidence, siblings); close this bead. No push/PR.",
+  "notes": "COMPLETE, commit 074373a1 (verify:worktree green: 352 files/6471 tests passed; verify:dnd5e-srd-pack exact). No push/PR.\nS1 root cause: Mace of Smiting and Sword of Life Stealing riders curated as trigger 'critical hit'. Change: trigger 'attack roll 20' (printed 'roll a 20'); effect ids unchanged (the legacy-capability backlog fingerprint pins ids). Siblings: Hammer/Sharpness/Vicious/Vorpal kept; Nine Lives Stealer and Adamantine Armor keep genuine critical-hit clauses. Evidence: new generalized trigger check in the source-agreement screen (critical-hit trigger needs printed 'critical hit'; natural-20 trigger needs printed 'roll a 20') plus adversarial probe (Mace widened to critical hit is caught, Nine Lives Stealer clean).\nS2 root cause: local qualifiers dropped/moved at curation. Changes: Arrow-Catching trigger 'target' not creature; Cloak of Elvenkind stealth 'made to hide while hood is up'; Eyes of Minute Seeing 'rely on sight while searching ... within 1 foot'; Gloves of Missile Snaring free hand in effect+operation trigger (catch keeps 'in that hand'); goat of terror 'while wearer is riding it'; Arrow of Slaying trigger 'takes damage from slaying arrow' on effect and new operation activation (free, trigger); Robe of Eyes 'light spell cast on the robe or daylight spell cast within 5 feet of the robe'; both alignment talismans 'wearing or holding'. Siblings checked per Sol (Boots of Elvenkind, Eyes of the Eagle, Cloak of the Bat, Dwarven Plate, Shield of Missile Attraction) unchanged. Evidence: representative qualifier assertions added to scope test.\nS3 root cause: invented geometry. Javelin line now {widthFeet 5, from user, to target within 120 feet} (no lengthFeet); Instant Fortress pushTo 'unoccupied space outside but next to the fortress' (pushToNearestUnoccupied removed; no schema consumer existed). Staff of Thunder and Lightning keeps lengthFeet 120. Evidence: spatial assertions incl. fixed-length sibling.\nS4: Pipes rat-indifference now 'rat is indifferent toward wearer and will not attack wearer unless wearer threatens or harms it' with trigger attuned+near rat; no command wording; swarm contest stays in entityGrant/operation. Evidence: no-added-claims assertion.\nS5 root cause: VOCABULARY_BY_KEY lacked sense and had 8/18 skills with silent skip. Change: full 4 canonical senses under sense/senses, all 18 skills under skill/skills (hyphen-normalised), non-canonical descriptive sense labels each individually tied to a printed phrase (9 entries) else flagged 'sense-label'. Evidence: adversarial probes Gem of Seeing truesight->blindsight, Spell Scroll arcana->survival, echolocation label all caught.\nRegistry row magic-item-effects statusReasoning reconciled; inventory regenerated. No follow-ups needed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T15:15:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T15:22:55Z",
+  "closed_at": "2026-10-11T15:22:55Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.5.3",
+      "depends_on_id": "eshyra-o9bd.19.4.5",
+      "type": "parent-child",
+      "created_at": "2026-10-11T10:15:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

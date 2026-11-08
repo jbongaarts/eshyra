@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.1.5",
+  "title": "Dispatch: reduce PR #475 to the clause completeness contract (attempt 5)",
+  "description": "User-approved DECOMPOSITION of PR #475 after the churn stop rule triggered a second\ntime at efde702. This is a SCOPE REDUCTION, not a fix round. Do not attempt to fix\nthe six review findings — they belong to the two new beads.\n\n=== WHY ===\nThe obligation registry keeps failing review because it is asked to be\nAUTHORITATIVE while nothing underwrites its authority: a real source census is\ndeferred to eshyra-s38f / eshyra-o9bd.19.6.1. Mutable contract tables, an\nevidence taxonomy with no valid home for known-missing clauses, partially\ncaptured multi-part evidence, colliding identities, unprovable scope membership\n— all symptoms of an authority layer with no source of authority.\n\nThe per-clause completeness CONTRACT has stabilised across rounds and was not\namong this round's findings. That is what PR #475 becomes.\n\n=== FILES YOU OWN ===\n  docs/adr/0020-source-clause-semantic-ir-and-completeness-contracts.md\n  packages/core/src/rules/clauseIr/types.ts\n  packages/core/src/rules/clauseIr/contracts.ts\n  packages/core/src/rules/clauseIr/obligations.ts\n  packages/core/src/rules/clauseIr/index.ts\n  packages/core/test/clauseIrContracts.test.ts\n  packages/core/test/clauseIrObligations.test.ts\n\n=== #475 RETAINS ===\n  * clause and facet type vocabulary, including recurrence and immunity windows;\n  * canonical base requirements — identity, sourceSpans, provenance,\n    semanticOwner, recordOwner — unremovable, extensions additive only;\n  * facet implication closure (specialized implies base);\n  * ONE OBLIGATION PER CLAUSE;\n  * per-clause completeness evaluation and its structured failure reasons;\n  * the four readiness dimensions reporting independently, with capability\n    failures against SUPPORTED and CAPTURED restricted to source evidence;\n  * the closed engine:F1..F10 capability identity with ownership by actual bead\n    identity;\n  * the obligation TYPE and lookup needed by per-clause evaluation.\n\n=== MOVES OUT — REMOVE FROM THIS PR ===\n  eshyra-o9bd.19.1.12 — registry AUTHORITY: construction, validation,\n    immutability of facet tables, the evidence taxonomy (including\n    known-missing-source-clause), multi-part evidence capture, and identity\n    uniqueness across synthetic scalar and projected atom IDs.\n  eshyra-o9bd.19.1.13 — SCOPE and AGGREGATE CLOSURE: createObligationScope,\n    branded scopes, evaluateObligationClosure, and everything that proves\n    membership or record ownership.\n\nDelete those surfaces from this PR and from index.ts. Per-clause evaluation must\naccept an obligation source as an INTERFACE it does not construct or validate;\ntests build minimal in-test obligation fixtures rather than a validated registry.\nDo not leave a stub that looks authoritative — an interface with a documented\n'authority lives in eshyra-o9bd.19.1.12' boundary is correct; a hollow\ncreateObligationRegistry that validates nothing is not.\n\nAny test that exercises the removed surfaces moves out with them. Do not delete\na test to make a finding disappear — relocate its intent to a note on the\nreceiving bead if it cannot live here.\n\n=== ADR 0020 ===\nRewrite to describe the reduced scope honestly: what the clause contract\nguarantees, and that obligation authority and aggregate closure are separate\nwork owned by the two beads because authority requires a source census that does\nnot yet exist. Keep the accurate cross-PR statement (#475/#477 share\nobl:::<sourceRef>:::<locator>:::<facet>; #476 does not participate).\n\n=== ENVIRONMENT / CONSTRAINTS ===\nnpm ci first; npm run verify:worktree BEFORE committing. Edit only the files\nabove. A sibling dispatch runs on PR #476. Do not touch package.json,\ninternal.ts, AGENTS.md, CLAUDE.md, .github/, or any script/CI file. Do not\nregenerate the pack or run the importer. Do not modify any bead but your own; no\nbd dolt push; no push, PR comment, or merge. The PR body is the supervisor's to\nfix, after the push.",
+  "acceptance_criteria": "\n• Registry construction/validation, scope construction, and aggregate closure are removed from this PR and from index.ts.\n• Per-clause evaluation accepts an obligation source as an interface it does not construct or validate; no hollow authoritative-looking stub remains.\n• All retained behaviour and its tests survive: base requirements, facet implications, one obligation per clause, dimension independence, capability identity.\n• Tests for removed surfaces move out; none are deleted to suppress a finding.\n• ADR 0020 states the reduced scope and names the two receiving beads and why.\n• npm run verify:worktree passes.",
+  "notes": "Completion report (2026-07-28): Reduced PR #475 to the per-clause completeness contract. Removed registry construction/validation, evidence-authority and identity checks, scope construction, and aggregate closure from obligations.ts and index.ts; introduced the non-authoritative ObligationSource lookup interface; preserved one-obligation-per-clause evaluation, canonical base requirements, facet implication closure, structured failures, independent CAPTURED/PROJECTED/SUPPORTED/DISCOVERABLE dimensions, source-only capture handling, and closed engine:F1..F10 capability identity. Reworked the owned tests to use minimal in-test obligation-source fixtures and relocated authority/closure regression intent into follow-ups eshyra-bv68 and eshyra-r1ct. Rewrote ADR 0020 to state the reduced boundary, ownership by eshyra-o9bd.19.1.12/.13, and the accurate #475/#477 shared identity with #476 excluded. Decision disagreement: none. Obligation not satisfied: source census, authoritative registry semantics, multi-part evidence/known-missing representation, sealed scope membership, and aggregate closure remain intentionally unimplemented here because the child dispatch assigns them to the two receiving beads. npm ci, targeted tests, typecheck, and npm run verify:worktree passed (4738 passed, 19 skipped). Commit: 68e5253.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T01:42:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T01:50:30Z",
+  "closed_at": "2026-07-28T01:50:30Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.1.5",
+      "depends_on_id": "eshyra-o9bd.19.1.1",
+      "type": "parent-child",
+      "created_at": "2026-07-27T20:42:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

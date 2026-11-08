@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ffoo",
+  "title": "Pipes of the Sewers: own creature-grant count/ending so call-rat-swarms reaches cost validation (pack change)",
+  "description": "eshyra-j9rc found call-rat-swarms still refused by m4-pipes-of-the-sewers (engine-pending F2/F3/F5). creatureGrantLifecycleOwned (packages/core/scripts/importers/dnd5e-srd-5.1/magicItemGrantOwnership.ts) requires each grant to print a count/countRoll and engine-computed revertOn; the Pipes grant (magicItemEntityGrants.ts) has neither (count = charges spent; swarm control ends when it cannot hear pipes; 24h lockout). Needs an importer/pack change under docs/importer-fix-protocol.md, then add the no-waiver sequence: spend 2, refuse 2 with 1 remaining, dawn restores 1d3 capped at 3 (itemChargeDawnRecharge.test.ts pin fails when the boundary moves).",
+  "notes": "Captain 2026-11-07: USER DECISION NEEDED (kept-capability stop condition). Printed: 'expend 1 to 3 charges, calling forth one swarm of rats with each expended charge, provided that enough rats are within half a mile ... (as determined by the GM). If there aren't enough rats ..., the charge is wasted. Called swarms ... aren't under your control otherwise.' Options: (A) keep the grant typed with a spend-bound count (up to the charges spent on that use's credit, like Horn of Valhalla's credit-bound rolledCounts), no printed ending (ordinary creatures, ended by the DM through end_effect), control DM-adjudicated; (B) make the grant DM-adjudicated (a verbatim span), keeping only the variable charge spend typed. Either way the no-waiver sequence (spend 2, refuse 2 with 1 left, dawn 1d3 capped at 3) follows.\nUSER DECISION 2026-11-07: OPTION C. Keep the swarms linked to the pipes and type ONLY what is printed.\nSPEC:\n1. PACK (importer curated spec magicItemEntityGrants.ts, 'Pipes of the Sewers'): the called-rat-swarms grant gains a declared UPPER-BOUND count tied to the cost, e.g. maxCountPerCost { economy: 'charges', perUnit: 1 } (name it to fit the existing schema; validate it in the magic-item mechanics schema). There is NO printed ending: state it explicitly in the grant (an explicit no-printed-ending marker, never an invented duration or revertOn). The DM ends a swarm through end_effect; the link closes at 0 HP as for any linked creature. The grant clause (m4-pipes-of-the-sewers) becomes green for the link and the bound. Arrival and availability ('provided that enough rats are within half a mile ... (as determined by the GM). If there aren't enough rats ..., the charge is wasted') and control (the contest, 'as long as you continue to play', the 24-hour lockout) become adjudicated-by-design clauses carrying VERBATIM sourceText, mirroring Horn of Valhalla's m4-control clause. c2-residual-rat-indifference becomes adjudicated-by-design with its verbatim span. That follows the user's 2026-10-12 faithful-or-absent triage: attitude effects are not a kept category.\n2. OWNERSHIP (magicItemGrantOwnership.ts creatureGrantLifecycleOwned): accept an upper-bound count and an EXPLICIT no-printed-ending grant. A grant lacking both a count and the explicit marker stays pending, so nothing becomes green by omission.\n3. ENGINE (start_effect grant binding, state/activeEffects.ts): an upper-bound grant binds 0..N creatures against the named use_item credit (source.bindCreditId required), where N = units of the economy spent on that credit; binding beyond N, or without a credit, is refused with a typed error. The Horn's exact-count rolledCounts path is unchanged. Tool descriptions and the capability inventory state the contract.\n4. EVIDENCE (real pack, no waivers): use_item call-rat-swarms passes preflight; spend 2 charges → bind 2 swarms OK, a third refused; bind 0 OK (charges wasted); refuse a 2-charge spend with 1 remaining; crossing dawn restores 1d3 capped at 3; ending a swarm via end_effect closes its link. Replace the j9rc blocker-pin test in itemChargeDawnRecharge.test.ts with this sequence (the pin's own comment says to). Regenerate the pack; verify:dnd5e-srd-pack exact; explain the generated diff (only pipes-of-the-sewers should change in records.json).\nCaptain 2026-11-07: integrated (ffoo 489d724c, 0dtg 36734512) after own review and verify (exit 0, 7481; pack exact). PR https://github.com/jbongaarts/eshyra/pull/731 (stacked on #727). Stays in_progress until merged.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T00:35:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T01:31:39Z",
+  "started_at": "2026-11-08T00:59:39Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ffoo",
+      "depends_on_id": "eshyra-ffoo.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:59:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ffoo",
+      "depends_on_id": "eshyra-0dtg",
+      "type": "blocks",
+      "created_at": "2026-11-07T19:23:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

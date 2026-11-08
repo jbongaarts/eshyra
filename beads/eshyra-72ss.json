@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-72ss",
+  "title": "Scope numeric conservation dice tokens per variant/clause",
+  "description": "Follow-up from eshyra-jjti: numericConservationFindings currently pools parent and all variant mechanics in mechanicsTokens, so a sibling variant or unrelated effect can satisfy another prose dice token. Refactor the SRD magic-item numeric conservation gate to compare tokens within the relevant variant/clause scope, preserving exact-token matching and scoped exceptions. Add synthetic cross-variant regression coverage and adjudicate any newly exposed committed-pack findings against SRD source.",
+  "notes": "Implemented parent/per-variant dice-token conservation scopes with scoped exceptions and synthetic sibling-variant regression. Committed pack exposes no new findings; regeneration verification has zero generated changes.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:26:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-22T05:29:31Z",
+  "started_at": "2026-07-22T05:21:49Z",
+  "closed_at": "2026-07-22T05:29:31Z",
+  "close_reason": "Implemented and verified in codex/72ss-lx2j",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

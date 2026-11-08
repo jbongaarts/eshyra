@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.13",
+  "title": "Close PR #455 reconciliation, counter, payment, and discovery gaps",
+  "description": "Address the five findings from the e21ecd8 re-review: fully quarantine dependent legacy usage counters; replace boolean-only review retry with typed atomic reconciliation for every structural review producer; enforce paid repurchase composition; restrict migration 0018 to genuine unbound review rows without canonical-state destruction; and expose bounded co-located sold/lost recovery identities. Audit dependent records, all review producers/consumers, cross-domain transaction composition, migration near-misses, and model reachability.",
+  "notes": "Final producer/resolver matrix audit added successful atomic resolution coverage for every adoption review-producing branch, including incompatible property mechanics, incompatible persisted state, multiple evidence sources, invalid persisted JSON, stateless target evidence, malformed properties, oversize, stale attunement, and legacy counter. Full verify:worktree passes 260 files / 4,636 tests, with 4 files / 19 tests documented skipped.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T05:58:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T06:48:18Z",
+  "started_at": "2026-07-19T05:59:10Z",
+  "closed_at": "2026-07-19T06:48:18Z",
+  "close_reason": "Every producer now has positive typed-resolution proof; full verification passed",
+  "external_ref": "gh-455",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.13",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-19T00:58:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

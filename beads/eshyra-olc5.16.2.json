@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.16.2",
+  "title": "Review: Sol final review of PR #691 (eshyra-olc5.16 @ cc1dcd93)",
+  "description": "Final read-only review of PR #691 (branch eshyra-olc5.16, exact head cc1dcd93) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "dispatch: gpt-6.1-sol high, pgid 1731244\nFINAL READ-ONLY REVIEW of PR #691 at exact head cc1dcd93394359e8af85d19f25b93785f7f222d6 (branch eshyra-olc5.16.2).\nProfile: rules-clause-complete, including semantic-system review of durable rolls and bind-credit identity.\nAuthority/context: read AGENTS.md, docs/design-and-pr-review-policy.md, docs/importer-fix-protocol.md, relevant compiler/ADR 0017 and ADR 0020 boundaries, live owning bead eshyra-olc5.16, implementation plan/report eshyra-olc5.16.1, and this review bead. The local refs/beads/state projection is old and lacks these recent beads; reconciled against the requested live bd show records. Reviewed both commits (ed355686 and cc1dcd93) and the complete 31-file diff against origin/main.\n\nSource and scope: independently read the vendored SRD_CC_v5.1.pdf pages 210-211. Gray/Rust/Tan and all 24 d8 rows match the pinned constant, emitted variants and ordered creatureRefs. Color is persistent instance identity; use_item owns the d8; start_effect binds only that use's row. Placement, bonus-action commands and behavior remain DM-adjudicated, with source prose preserved and a separate control clause. No generic selection engine or Elemental Gem/Horn semantic expansion.\n\nProducer/consumer review: inspected give_item variant resolution, effective mechanics and grant variant admission, operation readiness, use_item transaction/cost/credit production, tool result forwarding, credit persistence/readers/scope/redemption, start_effect creature/count/identity/lifecycle validation and atomic redemption, ownership derivation/triage, migration 0051 and schema snapshot/legacy adoption, and schema-driven checkpoint serialization. Checked missing/malformed/stale roll records, notation/row agreement, foreign and reused credits, missing color and explicit credit, multiple outstanding credits, per-dawn usage and creature endings. The cc1dcd93 repair checks the stored creature against creatureRefs[roll-1], rather than trusting a syntactically valid stored ref.\n\nGenerated/proof review: only magic-item:bag-of-tricks changes in records.json; no records added/removed. Readiness deltas match: pending 763->762, green 254->255, adjudicated 366->367, total 1384->1385. The control clause, variant inventory/count changes, numeric-conservation exception and thaw note are consistent with this bounded source-backed change. Pack SHA-256 matches the thaw note. Existing regression changes preserve their boundaries through real use_item flows or the fixed-creature Pipes carrier; dedicated Bag evidence replaces generic table admission. Git diff --check passed.\n\nVerification: npx vitest run --no-cache over itemGrantBagOfTricks, itemGrantRealPackReadiness, itemGrantBindCredit, itemGrantSummons, itemGrantRolledCount, itemPerDayDawnEconomy, magicItemMechanicsSchema, migrationLegacyAdoption, persistence, importer bagOfTricksVariants/magicItemEntityGrants/magicItemGrantOwnership/magicItemOperationSourceAgreement, and srdGeneratedPack: 14 files / 589 tests passed, no failures. An additional stdin-only in-memory probe exercised all 24 color/table rows, rejected sibling actors and corrupted stored sibling refs, redeemed outstanding credits in reverse order, refused second redemptions, and proved missing-RNG rollback by byte-identical database serialization before/after refusal. All passed. No repository files were edited or created; no formatting/full mutating verification, commit, push, GitHub comment or merge was performed.\n\nFindings: none (no MATERIAL or NON-MATERIAL findings).\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T21:39:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T21:43:05Z",
+  "closed_at": "2026-10-31T21:43:05Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.16.2",
+      "depends_on_id": "eshyra-olc5.16",
+      "type": "parent-child",
+      "created_at": "2026-10-31T16:39:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.16",
+  "title": "Close the bead-lifecycle gap that makes Codex close beads at PR-open",
+  "description": "PROBLEM\n\nCodex running as a main agent closes an owning bead as soon as it opens the\nPR, then reopens it when a blocking review arrives. Claude main-agent sessions\nhold the bead in_progress until the PR merges. The divergence is structural,\nnot a model quirk.\n\nDIAGNOSIS (verified against the tree at e30340d)\n\n1. The only statement in the repo that resolves the question lives in\n   `.claude/hooks/codex-subagent-workflow.md` (the \"Bead-per-dispatch pattern\"\n   section): \"In this repo handoff stops at an open PR: if the PR is not yet\n   merged when the session ends, leave the parent in_progress with the PR URL\n   in its notes and close it in a later session once merged.\"\n\n   That file is injected by `.claude/settings.json` SessionStart ->\n   `.claude/hooks/supervisor-context.mjs`, which Codex can never reach. The\n   script's own header says so: \"Codex never executes Claude Code hooks, so\n   Codex-driven sessions can't reach this script at all.\" It further gates on\n   `agent_id` (main agent only) and fail-closed on a Fable/Opus model match.\n\n   The file header also forbids the remedy: \"Keep this content OUT of\n   AGENTS.md, CLAUDE.md, bd memories, and bead descriptions.\" That restriction\n   is correct for supervisor policy (subagents must not be told to dispatch\n   children) but the bead-lifecycle sentence is not supervisor policy; it is\n   general repository lifecycle that was swept in with it.\n\n2. AGENTS.md, the authority Codex does read, points the other way. Its\n   \"Session Completion\" section opens \"An open, unmerged PR is a complete\n   handoff\" and then instructs \"Close finished beads and update in-progress\n   ones.\" The natural reading is: PR open -> handoff complete -> bead finished\n   -> close it. Nothing separates \"the work is finished\" from \"the bead may\n   close.\"\n\n3. `bd prime` injects a generated \"SESSION CLOSE PROTOCOL\" into BOTH Claude and\n   Codex whose first checklist item is `bd close <id>` (\"close completed\n   issues\"), marked CRITICAL and triggered on \"before saying done or\n   complete.\" AGENTS.md has a precedence rule for a disagreeing generated\n   block, but it does not disagree here -- AGENTS.md is silent on\n   merge-vs-open, so the generated block fills the vacuum unopposed.\n\nThe reopen-on-blocking-review behavior follows rationally from (2)+(3): if\nclosing at PR-open is correct, a blocking review means the work was not\nfinished, so the bead reopens.\n\nSCOPE\n\n- Add the lifecycle rule to AGENTS.md \"Session Completion\", scoped by\n  DELIVERABLE rather than by agent role, so it stays correct for dispatched\n  children: a child's deliverable is a commit handed back to an integrating\n  agent, not a PR, and children must still close their own beads.\n- State explicitly that the rule narrows the generated bd-prime checklist, so\n  AGENTS.md's existing generated-block precedence rule engages.\n- Replace the inline sentence in `.claude/hooks/codex-subagent-workflow.md`\n  with a pointer to AGENTS.md, so there is one source of truth (the DRY\n  principle CLAUDE.md and AGENTS.md already state) and the hook's own\n  \"keep this content out of AGENTS.md\" header stops contradicting the tree.\n\nNON-GOALS\n\n- No change to the supervisor/subagent boundary the hook exists to enforce:\n  dispatch policy stays supervisor-only and out of AGENTS.md.\n- No change to the child-dispatch protocol, which must keep closing its own\n  bead and handing back a commit.\n- No change to bd or its generated onboarding snippet; AGENTS.md is\n  hand-maintained and narrows it, per the existing rule that this file wins\n  over a generated block.\n",
+  "notes": "PR #519 opened 2026-09-01 from branch eshyra-o9bd.19.16 (head 5866b30), awaiting review. AGENTS.md Session Completion now carries the rule scoped by deliverable; the supervisor hook points at it instead of restating it; the hook header's blanket 'keep out of AGENTS.md' is narrowed to supervisor policy. packages/core/test/beadLifecyclePolicy.test.ts pins it, verified as a real guard (4/5 assertions fail against the previous AGENTS.md, the fifth against the previous hook). Verification: 267 files, 4769 passed / 19 skipped. Bead stays in_progress until PR #519 merges -- which is the rule this PR adds.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-02T04:25:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-02T04:36:33Z",
+  "started_at": "2026-09-02T04:25:41Z",
+  "closed_at": "2026-09-02T04:36:33Z",
+  "close_reason": "Merged to main as PR #519, merge commit f0fad2a. AGENTS.md Session Completion now carries the deliverable-scoped bead lifecycle rule; the supervisor hook points at it instead of restating it; the hook header's blanket 'keep out of AGENTS.md' is narrowed to supervisor policy. packages/core/test/beadLifecyclePolicy.test.ts pins it. Closing now (not at PR-open) is exactly the rule this bead added.",
+  "labels": [
+    "architecture",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.16",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-09-01T23:25:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

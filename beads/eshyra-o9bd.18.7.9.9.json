@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.9.9",
+  "title": "S3c — Model portal and passage spatial semantics",
+  "description": "Model Gate using reviewed planeShift reuse plus portal parameters, and model Demiplane and Passwall. Represent deterministic spatial boundaries/state without importer-only ad hoc engine behavior; preserve explicit engine-hook ownership; complete exact membership, pack, freeze, readiness, and audit reconciliation.",
+  "notes": "Complete exact registry/membership removals and count reconciliation; verify readiness-report delta; regenerate through the importer; add committed-pack assertions; update thaw evidence and freeze hash as appropriate; run verify:dnd5e-srd-pack, verify:dnd5e-srd-freeze, relevant focused tests, full required worktree/check/typecheck tests, and audit-bundle verification where required.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T04:09:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-13T00:32:24Z",
+  "started_at": "2026-07-13T00:22:25Z",
+  "closed_at": "2026-07-13T00:32:24Z",
+  "close_reason": "Implemented and verified final S3c portal and spatial-boundary slice: exact Gate, Demiplane, and Passwall projections, closed schemas, membership/readiness reconciliation, regenerated pack, freeze, audit, and full worktree checks.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.9.9",
+      "depends_on_id": "eshyra-o9bd.18.7.9.6",
+      "type": "parent-child",
+      "created_at": "2026-07-10T23:10:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

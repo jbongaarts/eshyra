@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.10",
+  "title": "Build rules-pack audit and diff tooling",
+  "description": "Create tooling to compare generated rules-pack outputs across runs, detect nondeterminism, list missing fields, flag suspicious parser failures, and produce human-readable import summaries.",
+  "acceptance_criteria": "- Audit command or script exists.\r\n- Diff report identifies added/removed/changed records.\r\n- Missing-field and parser-failure summaries are produced.\r\n- Tooling is usable in CI or local verification.",
+  "notes": "Implemented on work/loreweaver-0m9.10. PR #125 open. Adds packages/core/src/rules/audit.ts (auditPack + diffPacks, generic over RulesPack), packages/core/scripts/rules-pack-audit/cli.ts with audit/diff subcommands and --json/--strict flags, root npm scripts audit:rules-pack and diff:rules-pack, internal exports, 16 unit tests + 7 CLI smoke tests. Scope kept narrow per direction: no SRD vendoring (60z), no exact creature name-set check (0m9.5.14), no per-system coverage assertions (0m9.6/0m9.9). CI hard-gating left for a follow-up bead.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:01:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:58Z",
+  "started_at": "2026-06-01T04:28:25Z",
+  "closed_at": "2026-06-01T04:59:57Z",
+  "close_reason": "Merged to main via PR #125 (squash c518f5c). Adds generic auditPack/diffPacks library, rules-pack-audit CLI with audit/diff subcommands, --json/--strict flags, root npm scripts, internal exports, and 20 tests (16 unit + 4 wiring assertions). Scope kept narrow: no SRD vendoring (60z), no exact creature name-set check (0m9.5.14), no per-system coverage assertions (0m9.6/0m9.9), no default CI hard-gate (follow-up). Follow-up commit on the same PR fixed the CLI usage docs and added an npm-script wiring regression test.",
+  "labels": [
+    "audit",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "tooling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.10",
+      "depends_on_id": "eshyra-0m9.2",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.10",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:01:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

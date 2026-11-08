@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-mx0d",
+  "title": "Condition-relation classifier reads 'be magically charmed by the aboleth' as mention, not applies",
+  "description": "creature:aboleth Enslave prints 'must succeed on a DC 14 Wisdom saving throw or be magically charmed by the aboleth'; the emitted mechanics.conditions relation is 'mention' where 'applies' is the printed meaning. The applies grammar in packages/core/src/rules/conditionRelations.ts does not allow an adverb between 'be' and the condition. Not caused by 19.3.5.1 (discovered while source-checking its aboleth regression); re-derive and fix under docs/importer-fix-protocol.md, then check other 'be <adverb> <condition>' phrasings across the pack.",
+  "notes": "Captain 2026-11-07: pre-freeze (wrong relation label in pack data; user bias against post-freeze deferral). Same classifier as eshyra-30xi (Astra's removal-grammar repair), so it starts after 30xi merges, to avoid conflicting edits to conditionRelations.ts.\nCaptain 2026-11-07: eshyra-30xi merged (PR #726, ff775d13), so this is unblocked. PLAN: under docs/importer-fix-protocol.md, extend the applies grammar in packages/core/src/rules/conditionRelations.ts so that 'be magically charmed by X' (an adverb between 'be' and the condition) classifies as applies; build on 30xi's governing-grammar structure rather than adding a one-off pattern. Sibling search: query every mechanics.conditions leaf whose source sentence has 'be/is/are/becomes <adverb> <condition>' and every leaf that is currently 'mention'; re-derive each against the printed text; fix the class, and keep 30xi's removal / prevention / suppression controls green. Regenerate the pack; verify:dnd5e-srd-pack must be exact; explain every generated relation change; add exact source-backed regressions (aboleth Enslave -> applies) plus a generalized one for the class. Register the finding in the finding registry if the protocol requires it. Do NOT add a thaw note.\nCaptain 2026-11-07: integrated be867c0d with main (inventory conflict resolved by regeneration; pack regenerated) after own review and verify (exit 0, 7499; pack exact). PR https://github.com/jbongaarts/eshyra/pull/733. Stays in_progress until merged.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:22:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:12:05Z",
+  "started_at": "2026-11-08T01:39:53Z",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-mx0d",
+      "depends_on_id": "eshyra-mx0d.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T19:40:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-mx0d",
+      "depends_on_id": "eshyra-30xi",
+      "type": "blocks",
+      "created_at": "2026-11-07T17:31:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-mx0d",
+      "depends_on_id": "eshyra-o9bd.19.3.5",
+      "type": "discovered-from",
+      "created_at": "2026-11-07T17:22:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

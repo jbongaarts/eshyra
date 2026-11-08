@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1pw",
+  "title": "Commit canonical D&D SRD 5.1 generated rules pack",
+  "description": "﻿Generate and commit the canonical D&D SRD 5.1 rules-pack output from the vendored SRD 5.1 PDF.\r\n\r\nContext:\r\n- The SRD 5.1 PDF is now vendored and pinned under packages/core/sources/dnd5e-srd-5.1/.\r\n- loreweaver-0m9.10 added generic rules-pack audit/diff tooling.\r\n- loreweaver-0m9.6 adds committed-pack validation and a manual/path-gated verify:dnd5e-srd-pack command.\r\n- The committed D&D SRD pack is still a seed pack and must be replaced by the canonical generated output once the importer can parse the real vendored PDF.\r\n- loreweaver-0m9.5.20 tracks the importer bug where the current real-PDF import fails due section-anchor / vendored-PDF parsing issues.\r\n- This bead should run after loreweaver-0m9.5.20 is fixed and after loreweaver-0m9.6 is merged.\r\n\r\nGoal:\r\nMake the committed D&D SRD 5.1 rules pack the durable canonical artifact generated from the vendored SRD 5.1 PDF, then make reproducibility verification strict.\r\n\r\nScope:\r\n- Run the D&D SRD 5.1 importer against the vendored SRD_CC_v5.1.pdf.\r\n- Replace the current seed generated pack under the committed D&D SRD rules-pack output location with the full generated pack.\r\n- Review the generated output using the audit/diff tooling from loreweaver-0m9.10.\r\n- Update committed-pack coverage/count/audit baselines from seed-pack values to reviewed full-pack values.\r\n- Update verify:dnd5e-srd-pack expectations/documentation so the command is expected to exit 0 after canonical regeneration.\r\n- Flip the path-gated SRD importer reproducibility workflow from informational to strict/failing, if that workflow exists.\r\n- Keep changes focused on committing canonical generated output and its validation baselines.\r\n\r\nOut of scope:\r\n- Do not implement exact creature name-set validation; that remains loreweaver-0m9.5.14.\r\n- Do not make broad parser improvements except for tiny fixes required to complete generation and already covered by loreweaver-0m9.5.20.\r\n- Do not change SRD source vendoring/provenance policy.\r\n- Do not change license attribution wording except to keep generated pack metadata aligned with the pinned source manifest.\r\n- Do not introduce Pathfinder importer or Pathfinder coverage work.\r\n- Do not hand-curate generated records.\r\n\r\nImplementation guidance:\r\n1. Confirm loreweaver-0m9.5.20 is complete and the importer can parse the vendored SRD 5.1 PDF.\r\n2. Run the importer from the vendored source artifact into a temporary directory first.\r\n3. Run rules-pack audit tooling against the temporary output.\r\n4. Review counts by kind, suspicious findings, missing-field summaries, and manifest metadata.\r\n5. If output contains obvious parser failures, stop and either fix a narrow importer bug or file a child bead. Do not commit known-bad canonical output.\r\n6. Once output is reviewed, replace the committed D&D SRD generated pack with the generated output.\r\n7. Update tests/baselines from seed-pack values to reviewed full-pack values.\r\n8. Run verify:dnd5e-srd-pack and ensure it exits 0.\r\n9. Change the path-gated SRD importer reproducibility workflow from informational/warning-only to strict failure on nonzero verify exit, if present.\r\n10. Update docs/comments that previously described transitional states so they now describe the canonical steady state.\r\n\r\nAcceptance criteria:\r\n- The committed D&D SRD 5.1 rules pack is no longer the two-record seed pack.\r\n- The committed generated pack is produced from the vendored SRD_CC_v5.1.pdf by the deterministic importer.\r\n- Generated records validate successfully with validateRulesPack.\r\n- Committed-pack tests cover full-pack reviewed baselines rather than seed-pack baselines.\r\n- audit:rules-pack reports no suspicious findings, or only an explicitly documented reviewed baseline.\r\n- verify:dnd5e-srd-pack exits 0 after canonical output is committed.\r\n- diff:rules-pack or equivalent tooling shows no difference between temp regenerated output and committed output.\r\n- Source provenance, license metadata, and attribution in the generated pack align with packages/core/sources/dnd5e-srd-5.1/manifest.json.\r\n- The path-gated SRD importer reproducibility workflow, if present, is strict/failing rather than informational after this bead.\r\n- npm run check passes.\r\n- npm test passes.\r\n- The PR notes include the generated record counts by kind and a short audit summary.\r\n- No exact creature name-set validation is added in this bead.\r\n",
+  "notes": "Canonical pack committed on branch loreweaver-1pw-canonical-srd-pack; PR #140 open for review. 834 records (319 spells, 296 creatures, 144 features, 15 conditions, 13 ancestries, 12 classes, 12 subclasses, 10 actions, 10 rules, 1 equipment, 1 feat, 1 table). audit:rules-pack 0 suspicious; verify:dnd5e-srd-pack exits 0. Discovered+fixed real-PDF feat parser bug under child loreweaver-0m9.5.21 (required for clean output). Close on merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-01T21:29:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:51Z",
+  "started_at": "2026-06-03T00:39:27Z",
+  "closed_at": "2026-06-03T05:29:33Z",
+  "close_reason": "Canonical SRD 5.1 pack (834 records) committed and merged in PR #140 (merge commit 86df579). audit:rules-pack 0 suspicious; verify:dnd5e-srd-pack exits 0. Child feat-parser bug loreweaver-0m9.5.21 also fixed in the same PR.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-1pw",
+      "depends_on_id": "eshyra-0m9.5.21",
+      "type": "blocks",
+      "created_at": "2026-06-02T23:07:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cc3c",
+  "title": "Rest completion omits stableRecoveries from benefits payload and persisted evidence",
+  "description": "Post-merge review of PR #457 (verified against current main, 2026-07-19).\n\n## Defect\n\nRest completion hides automatic stable recoveries from its evidence. In `complete()` (`packages/core/src/state/rest.ts:588-611`), `advanceWorldTime` returns `time.stableRecoveries`, but the constructed `benefits` object copies `expiredEffects`, `previousElapsedMinutes`, `elapsedMinutes`, `inGameTime`, `narrativeLabelStale`, and `closedRecoveryWindows` from `time` while omitting `stableRecoveries`. That object is both the tool response and the persisted `benefits_json` (rest.ts:684-688).\n\nGameplay consequence: a short rest can wake a stable character (recovery deadline falls inside the rest's elapsed window → `adjustHp(+1)` → conscious at 1 HP) while the model and the turn auditor receive no evidence of the HP/life-state transition. Their pre-tool context still says the character is stable at 0 HP — a direct narration/audit blind spot, and the persisted rest record is incomplete for later history traversal.\n\n## Required fix (per review)\n\nAdd `stableRecoveries: time.stableRecoveries` to the benefits payload; test both the returned tool value and the persisted `benefits_json` for a rest whose window crosses a stable-recovery deadline.\n\nCoordinate with the advanceWorldTime atomicity bead (same review) — moving recovery resolution inside the clock transaction changes where `stableRecoveries` comes from, so these two are best fixed in one PR.\n\nRelated (same PR #457 review): Demon Armor permanent doff block, migration-0020 stranded stable characters, advanceWorldTime recovery atomicity.\n",
+  "notes": "Sibling beads from PR #457 post-merge review: eshyra-gacz (Demon Armor doff), eshyra-q93i (migration-0020 stranding), eshyra-r2ps (clock/recovery atomicity — fix together with this one, shared advanceWorldTime result shape).\nFix merged to branch eshyra-geny; PR #459 open (https://github.com/jbongaarts/eshyra/pull/459). Close after PR merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:09:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-20T01:12:17Z",
+  "started_at": "2026-07-20T00:15:00Z",
+  "closed_at": "2026-07-20T01:12:17Z",
+  "close_reason": "Fixed in PR #459 (merge commit 846a52f5), including review-round hardening: migration partial-schedule guard and canonical conditions validation.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

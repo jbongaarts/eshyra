@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-53fm.1",
+  "title": "Dispatch: 53fm removal phrasings read as mention (attempt 1)",
+  "description": "Implement eshyra-53fm (bd show eshyra-53fm is the spec), building on eshyra-xogv (commit 28f9a61b) and eshyra-mx0d (be867c0d). Base: branch eshyra-53fm, cut from eshyra-xogv. Worktree .worktrees/eshyra-53fm.1 on branch eshyra-53fm.1; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. docs/importer-fix-protocol.md governs. npm run verify:worktree must pass BEFORE committing; commit on eshyra-53fm.1 only; no push or PR; do not close eshyra-53fm. No thaw note.",
+  "notes": "Commit 07f2190f on eshyra-53fm.1. Classifier (conditionRelations.ts, removes) gains three closed forms: 'cured of [<=4 words] any effect(s) making/causing [them] <LIST><cond>'; 'release(s) a/an <cond> creature'; (grappled only) 'swallowed, and the grapple ends'. Changed leaves (mention->removes, 4): spell:mass-heal blinded + deafened ('cured of all diseases and any effect making them blinded or deafened'); spell:speak-with-plants restrained ('release a restrained creature'); creature:kraken Swallow action grappled ('that creature is swallowed, and the grapple ends'). Sibling search (70 mention leaves + all removal-verb sentences): all other mention leaves are gate/targeting/ability/sense/location prose (grappled/prone/incapacitated/invisible in 'creature grappled by X', 'isn't incapacitated', 'invisible sensor', etc.) = stay mention. Kept deliberately: kraken trait + freedom-of-movement 'escape ... being grappled' (granted escape capability, not an effect that removes); giant-frog/giant-toad prone 'exiting prone' (not a removal; possible prone-infliction question, see follow-up). Leaves with both applies and removal sentences (djinni 'no longer restrained', prismatic spray 'no longer blinded', web, sunburst, antipathy, behir/swallow siblings) stay applies by AGGREGATION_PRIORITY, unchanged. Tests: conditionRelations.test.ts new describe with exact printed sentences + controls. Pack regenerated via importer; verify:dnd5e-srd-pack exact match; docs/inventories regenerated, no diff. verify:worktree passed (400 files passed, 7521 tests passed, 3 skipped).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T02:21:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:27:10Z",
+  "closed_at": "2026-11-08T02:27:10Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-53fm.1",
+      "depends_on_id": "eshyra-53fm",
+      "type": "parent-child",
+      "created_at": "2026-11-07T20:21:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.11",
+  "title": "L5-F1: checkpoint/replay restore must preserve runtime-significant insertion chronology (combatant, combat instance, bind credit)",
+  "description": "Independent audit lane L5 (eshyra-o9bd.16.5 notes, full evidence and reproducers) found a BLOCKER. Checkpoint serialization (persistence/checkpoint/serialize.ts:84-89) sorts rows by canonical JSON. Both checkpoint materialization (checkpoint/store.ts:102-118) and replay restore (campaign/turnReplayStore.ts:109-125) re-INSERT named columns only, which assigns fresh implicit rowids.\nConsumers that order by rowid then change behavior after restore while replayStateHash stays identical:\n- encounterCombatants.ts:329, 1187 (current actor projection: i.rowid DESC, c.rowid DESC), 3208, 3337, 3449, 3524 (findLiveActorCombatantId), 3650;\n- activeEffects.ts:8475 (combat closure skips older projections by rowid);\n- itemGrantBinding.ts:431 (oldest open credit: ORDER BY issued_at, rowid).\nReproducer A: Find Familiar with nine dismiss/recall pairs. After restore, the latest-row choice moves from c-fam-10 to c-fam-9; update_combatant desyncs the durable actor's HP, and close_combat_instance writes the actor as absent at stale HP.\nReproducer B: ten Bowl of Commanding Water Elementals uses with equal issued_at. Credit order goes from 1..10 to 1,10,2..9.\nPrecedent: migration 0029_persistent_event_order.sql fixed the same class for scene_log and character_wallet_event with an explicit insertion_order column.",
+  "design": "Follow the 0029 precedent exactly.\n1. Migration 0053_<name>.sql. Add insertion_order INTEGER NOT NULL DEFAULT 0 to encounter_combatant, combat_instance and item_grant_bind_credit; backfill it from rowid; add a unique index per table, as in 0029.\n2. Producers (encounterCombatants.ts:1911 and :2424, itemGrantBinding.ts:304, plus any other INSERT into these tables) allocate (SELECT COALESCE(MAX(insertion_order),0)+1 FROM <table>) inside the INSERT, as scene.ts:264 does.\n3. Replace every rowid ordering or comparison on these tables with insertion_order. Grep all of packages/core/src for rowid.\n4. characterChronicle.ts uses rowid as well. Verify whether its tables travel through campaign checkpoint/replay. If they do, fix them the same way. If they do not, document why in the guard allowlist.\n5. Add a structural guard test: no SQL 'rowid' in packages/core/src outside an explicit, justified allowlist.\n6. Permanent evidence: generalized round-trip behavioral invariants through BOTH checkpoint serialize/materialize AND in-place replay restore. Cover repeated admissions of one durable actor with 10+ rows whose IDs sort differently from chronology, and equal-timestamp credit issuance with 10+ credits. Assert the live actor identity, HP sync with the durable actor after update_combatant, presence and HP after close_combat_instance, and oldest-credit selection. Extend the existing checkpoint/encounterCombatants/itemGrantBindCredit suites.\nMake sure pre-0053 checkpoints still restore: check how checkpoint schema versioning and migrations handle restored snapshots (see how 0029 handled checkpoint.schemaIntegrity). Update migration count/parity pins only where they are counts, with justification. Do not weaken any test.",
+  "acceptance_criteria": "Both reproducers produce identical behavior before and after restore; all rowid consumers on checkpointed tables use durable order; guard test in place; verify:worktree passes; commit on branch.",
+  "notes": "Implementation commit: 9a2e954f8807d02990bbc663e36b066979194f63.\n\nVerification: `npm run verify:worktree` passed. Vitest reported 388 files passed, 2 skipped; 7,256 tests passed, 3 skipped, 0 failed. The skipped cases are the suite's documented integration gates.\n\nRowid consumer dispositions:\n- `state/encounterCombatants.ts`: the current active actor projection selector, `currentActorProjectionId`, `updateCampaignActor`, `revertCampaignActorToNaturalForm`, `removeCampaignActorFromPlay`, `restoreBondedCampaignActor`, `findLiveActorCombatantId`, and `recallPocketedCampaignActor` now use `insertion_order` on `encounter_combatant` and/or `combat_instance`.\n- `state/activeEffects.ts` combat closure's newer-projection comparison now uses `encounter_combatant.insertion_order`.\n- `state/itemGrantBinding.ts` oldest open credit ordering now uses `issued_at, insertion_order` on `item_grant_bind_credit`.\n- `character/characterChronicle.ts` retains its record and event `rowid` tiebreaks. The chronicle tables live in the separate character-registry SQLite store, not the campaign database; checkpoint serialization and turn-replay snapshots cannot include them. This is documented as the sole SQL rowid allowlist entry in `test/rowidSqlGuard.test.ts`.\n- `state/domainMutations.ts` uses the TypeScript local `rowId` for inventory identifiers, not SQLite `rowid`; no SQL rowid consumer remains there.\n- Migration 0053 uses `rowid` only to backfill durable order for pre-migration rows, following migration 0029.\n\nPre-0053 checkpoints: their snapshots materialize with the captured version-52 schema and remain restorable. On normal campaign database open, `initSchema` runs the versioned migration runner and applies migration 0053, adding/backfilling the order columns and unique indexes. A checkpoint restore regression test builds and materializes an actual through-0052 schema to verify this upgrade path.\n\nMigration count pins updated from 52 to 53; no rules-pack or freeze files changed.\n",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T13:19:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T13:52:28Z",
+  "started_at": "2026-11-01T13:19:23Z",
+  "closed_at": "2026-11-01T13:52:28Z",
+  "close_reason": "PR #703 merged after clean Sol review 16.11.1",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.11",
+      "depends_on_id": "eshyra-o9bd.16",
+      "type": "parent-child",
+      "created_at": "2026-11-01T07:19:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,25 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ond1",
+  "title": "Dispatch: c7sx executor review fixes (attempt 1)",
+  "description": "Supervisor review findings on the eshyra-pukl implementation (branch eshyra-pukl, commits 0dc1454 / 7f481c3 / f9f9565). Work continues on the SAME branch and worktree (.worktrees/eshyra-pukl) — sequential follow-up dispatch, no parallel writer.\n\n## 1. Missing acceptance-criteria test coverage (blocking)\n\nThe parent bead eshyra-c7sx requires EVERY pack reset shape exercised; packages/core/test/itemResetExecutor.test.ts has no test for dusk, days-anchored, or rest-event long-rest shapes. Add tests (fixture style is fine, mirror the existing file):\n- dusk dice-expr charges regain (robe-of-stars shape): crossing minute-of-day 1080 fires; a dawn-only advance does not.\n- days:N cooldown 'all' (horn-of-valhalla shape, cooldown.duration {7,day} + reset {at:'days',days:7,amount:'all'}): spend-to-zero anchors availableAt; advancing 7 days restores; advancing 6 days does not.\n- charges days:N + onDepleted becomes inert (figurine shape): depletion sets inert; after 7 days the reset restores charges AND clears inert.\n- budget days 'all' (manual/tome century shape, days:36500 with loseProperty+inert): same mechanism at large scale — verify no overflow and restore-at-boundary.\n- budget long-rest 'all' (boots-of-speed shape) via completeLongRest: participant's item restored, evidence in benefits.itemResets; a short rest does NOT restore it.\n- per-day long-rest 'all' (ring-of-x-ray-vision shape) via completeLongRest.\n- long-rest gate: item held by a NON-participant character is not reset by the rest.\n\n## 2. Rest benefits drop clock-derived item evidence (code fix)\n\nIn rest.ts complete(), benefits.itemResets is initialized to [] and only rest-event resets are pushed; time.itemResets (dawn/dusk crossings during the rest's own advanceWorldTime — a long rest routinely crosses dawn) are applied to state but silently missing from the persisted benefits_json evidence. Initialize benefits.itemResets from time.itemResets (mirroring itemTimerResolutions) and add a test: a long rest that crosses dawn records both the dawn reset and the rest-event reset in benefits.\n\n## 3. Anchored-reset evidence boundary (code fix, minor)\n\nIn itemResetExecutor.ts resetAnchoredItem, the hour/days branch passes elapsedMinutes as boundaryElapsedMinutes to applyReset, recording the application time instead of the true due time. Pass availableAt as the boundary (lastReset then records the due minute, matching the per-period branch which correctly uses its anchor).\n\n## 4. pendingTerminal destruction rule (comment or guard, minor)\n\nresolveTimers destroys the item when ANY timer fires while lifecycle.pendingTerminal === 'destroyed'. For the only real case (bead-of-force sphere->destroyed) the fired timer is itself terminal, so behavior is correct today, but a hypothetical multi-step machine with pendingTerminal would be destroyed prematurely at its first intermediate timer. Either tighten the condition (destroy when timer.to === 'destroyed', or when pendingTerminal is set AND the entered state has no outgoing transitions) or document the current assumption with a comment explaining why it is safe for the shipped pack. Your judgment; keep it fail-safe.\n\n## Completion protocol\n\nRun `npm run verify:worktree` (use writable ESHYRA_HOME as before if sandbox requires), commit on branch eshyra-pukl, append a completion report with `bd update <this-bead> --append-notes`, then `bd close <this-bead>`. Never close or modify eshyra-c7sx.",
+  "notes": "Implemented supervisor follow-ups in commit 9222f5d (branch eshyra-pukl). Added acceptance coverage for dusk dice resets, seven-day cooldown boundary evidence, inert figurine restoration, 36,500-day budget overflow/boundary restoration, boots-style budget long-rest reset, ring-style per-day long-rest reset, short-rest non-reset behavior, long-rest participant scoping, and combined dawn plus rest-event evidence. Fixed complete() benefits to persist time.itemResets, fixed hour/days anchored evidence to use availableAt as the due boundary, and tightened pendingTerminal destruction so intermediate timer states with outgoing transitions are not destroyed prematurely; terminal state or explicit destroyed destination remains fail-safe. Verification: npm run verify:worktree passed with 262 files passed / 4 skipped and 4,680 tests passed / 19 skipped, using worktree-local ESHYRA_HOME. Focused itemResetExecutor suite passed 16/16. No additional follow-up beads required.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T05:30:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-20T05:32:42Z",
+  "closed_at": "2026-07-20T05:42:50Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1fx7",
+  "title": "Declare condition-name leaves under non-condition field names (creature conditionImmunities, magic-item state/ends/endsOn)",
+  "description": "eshyra-o9bd.19.3.5.1 declared every leaf named condition/conditions[]/failedSaveCondition outside condition records, but condition names also appear under other field names with no relationship declaration: creature /conditionImmunities (35 leaves), magic-item /mechanics/effects/*/state (invisible x2: Dust of Disappearance, Potion of Invisibility), /mechanics/effects/*/ends/* (poisoned x2), /mechanics/effects/*/variants/whip/endsOn/* (incapacitated: Feather Token). Query records.json for exact membership; declare each as a typed reference or explicit not-a-reference (state may be a derived state rather than a condition; check printed text), extend CONDITION_NAME_LEAF_POINTER_SHAPES in packages/core/src/rules/recordRelationships.ts.",
+  "notes": "PLAN (Captain 2026-11-07): declare every condition-name leaf under other field names, membership from a generated query (leads: creature /conditionImmunities/* (35); magic-item /mechanics/effects/*/state, /mechanics/effects/*/ends/*, /mechanics/effects/*/variants/*/endsOn/*). Use the declaration machinery from PR #724: record-name references with a relation that matches the printed meaning (for example immune for condition immunities; for ending triggers, a relation naming the ending, checked against source), or not-a-reference with a reason. Extend CONDITION_NAME_LEAF_POINTER_SHAPES with the new enumerated shapes, keeping it bounded. Regenerate; prove expansion with one discovery regression (a seeded creature with condition immunities reaches the condition).\nCaptain 2026-11-07: integrated (2b7ffacb y0us, 0168e885 1fx7) after own review and verify (exit 0, 7479 passed; pack exact). PR https://github.com/jbongaarts/eshyra/pull/728 (stacked on #724). Stays in_progress until merged.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:22:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:05:19Z",
+  "started_at": "2026-11-08T00:23:33Z",
+  "closed_at": "2026-11-08T02:05:19Z",
+  "close_reason": "Merged PR #728 (c4877c72).",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-1fx7",
+      "depends_on_id": "eshyra-o9bd.19.3.5",
+      "type": "discovered-from",
+      "created_at": "2026-11-07T17:22:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-1fx7",
+      "depends_on_id": "eshyra-y0us.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:23:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

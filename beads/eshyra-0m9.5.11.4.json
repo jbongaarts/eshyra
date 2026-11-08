@@ -1,0 +1,75 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.11.4",
+  "title": "PR #98 review fixes: action validation and stale docs",
+  "description": "Address blocking review feedback on PR #98: register D&D-specific action validation requiring data.description, add a validation regression test, and remove duplicate stale importer scope documentation.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T06:16:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:55Z",
+  "started_at": "2026-05-28T06:16:47Z",
+  "closed_at": "2026-05-28T06:20:28Z",
+  "close_reason": "Implemented PR #98 review fixes: D&D action validation now requires data.description and stale scope wording is current; verification passed: npm run check, npm run typecheck, npm run test.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.11.4",
+      "depends_on_id": "eshyra-0m9.5.11",
+      "type": "parent-child",
+      "created_at": "2026-05-28T01:16:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "c882c21a-4dc8-591f-a9c1-55330db09833",
+      "issue_id": "eshyra-0m9.5.11.4",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 1: action is not registered for D&D-specific schema validation. Evaluation: accepted. Reason: D&D importer emits action records with required descriptions, but kindSchemas currently falls back to baseline action validation where description is optional.",
+      "created_at": "2026-05-28T06:16:46Z"
+    },
+    {
+      "id": "eb5215ae-0fca-531d-a30a-002d66720af5",
+      "issue_id": "eshyra-0m9.5.11.4",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 2: duplicate stale comments/docs remain after merge cleanup. Evaluation: accepted. Reason: duplicated old/new scope text is documentation debt and can misstate implemented importer slices without changing behavior.",
+      "created_at": "2026-05-28T06:16:46Z"
+    },
+    {
+      "id": "5dd0cf46-4d55-5c64-8b6c-ee3c1f7185aa",
+      "issue_id": "eshyra-0m9.5.11.4",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/rulesPack.test.ts -> failed as expected; D&D action without data.description validated when it should throw.",
+      "created_at": "2026-05-28T06:17:41Z"
+    },
+    {
+      "id": "0c145aab-0489-5ee3-98a8-ad6b005caf17",
+      "issue_id": "eshyra-0m9.5.11.4",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: npx vitest run packages/core/test/rulesPack.test.ts -> passed after adding validateDnd5eAction and registering dnd5e-srd action validation.",
+      "created_at": "2026-05-28T06:18:25Z"
+    },
+    {
+      "id": "7b732eb2-412c-5f05-8cb6-ba9232f3cf35",
+      "issue_id": "eshyra-0m9.5.11.4",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run check -> exit 0 (Biome checked 191 files); npm run typecheck -> exit 0; npm run test -> exit 0 (66 files passed, 2 skipped; 739 tests passed, 3 skipped). Focused RED/GREEN evidence recorded above.",
+      "created_at": "2026-05-28T06:20:20Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 5
+}

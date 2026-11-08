@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.4.9",
+  "title": "Review: bounded Sol review of #596 fixed-total repair before handback",
+  "description": "READ-ONLY bounded review of PR #596 commit 0d7c217c (integration branch eshyra-o9bd.19.3.4.4), requested by the user before handback. No edits, commits, pushes, or PR comments. Deliverable: findings via `bd update <this-bead> --append-notes`, then `bd close`.\n\nRead: the latest PR #596 review (`gh api repos/jbongaarts/eshyra/issues/596/comments -q '.[-1].body'`), docs/design/rule-record-runtime-statements.md Amendment A4 (incl. the new \"never offers model-side arithmetic\" rule), ADR 0020 §2, packages/core/src/orchestrator/protocol.ts Hybrid Contract, and `git show 0d7c217c`.\n\nCheck:\n1. Does the repair close the reviewer's defect class exactly as required (descriptions state only actual contracts; no model-side comparison/arithmetic fallback; rule:hiding known limit truthful and finding-backed; no model-held fallback)?\n2. **Sibling sweep of the same class across ALL remaining model-facing text**: every tool description in packages/core/src/orchestrator/tool*.ts and every RULE_KNOWN_LIMITS statement — does any other text tell the model to compute a mechanical outcome itself (compare totals, add/subtract to get a result, compute a DC, decide success numerically) where ADR 0020 §2 / the Hybrid Contract say the tool or engine owns it? (Choosing modifiers, setting a DC, and choosing which rule applies are rulings and are fine.) Note specifically the known limits that tell the DM to resolve with resolve_check at a computed DC (action:ready \"DC 10 or half the damage\") — is that a model-computed mechanical value, and does any tool (calc, resolve_concentration) own it?\n3. Evidence: do the new tests actually fail on the old wording and protect the boundary rather than this wording?\n4. Anything else in 0d7c217c that a strict reviewer would block.\nOutput OK / FINDING lines with evidence and minimal fix, most severe first. Don't invent findings.\n",
+  "notes": "Dispatched 2026-10-01T16:27:46-05:00: gpt-6-sol effort=high, read-only, PGID 2178896.\nRead-only review at 0d7c217c50561beadda2e9dfbd79e5117f9a7ee6 (PR #596 head). Authority: ADR 0020 sections 2-3, protocol.ts Hybrid Contract, F-09 design A4; reviewed latest PR comment, full commit diff, every orchestrator/tool*.ts model-facing description and all RULE_KNOWN_LIMITS statements. No files changed; no npm install or tests run.\n\nFINDING 1 (blocking, sibling arithmetic): ruleKnownLimits.ts:161, action:ready tells the DM to use resolve_check at DC 10 or half damage, whichever is higher. That requires computing max(10, floor(damage/2)) before calling the tool. calc.ts has no concentration DC formula. resolve_concentration computes this DC internally but resolveConcentrationCheck rejects an owner without a tracked concentration effect (activeEffects.ts:3612 onward), and the limit correctly says the readied spell is untracked. Minimal fix: make the gap truthful without instructing the model to compute the DC; or add a deterministic operation that accepts damage and supplies the DC/check for this case.\n\nFINDING 2 (blocking, sibling arithmetic): toolUpdateCombatant.ts:35 and :80-85 describe reactionAllowance as the current total for a state-dependent mechanic, exemplified by hydra Reactive Heads: 1 + heads beyond one. The caller must supply that derived total. setReactionAllowance in actionEconomy.ts:1294 onward checks that the creature has a formula grant but records the supplied integer without deriving or validating its value; calc.ts has no reaction-allowance formula. Minimal fix: have a deterministic operation derive the allowance from declared current state, or disclose the unsupported numeric step without directing model arithmetic.\n\nFINDING 3 (blocking, sibling arithmetic): ruleKnownLimits.ts:202 instructs the DM to recover half of expended ammunition rows with claim_item. claim_item accepts exact row IDs and claims each entire row; calc.ts has no ammunition-recovery count formula. Selecting how many rows to claim therefore asks the model to compute a mechanical half-count. Minimal fix: provide a deterministic count/selection operation or state this numeric recovery limit without a model-computed fallback.\n\nOK: The commit removes the model-side fixed-total comparison from both resolution descriptions. resolve_check states its 1-99 DC/AC and equality contract; resolve_contest states both sides roll and excludes fixed-side contests. rule:hiding is a finding-backed partial limit that describes retained Stealth, the incompatible tool semantics, and the passive comparison gap without offering a model-held fallback. This meets the latest PR comment for that concrete defect.\n\nOK (bounded evidence): The new tools.test.ts negative assertion matches the old compare wording, and its exact description assertions also fail on the old text; ruleAwareness.test.ts fails without the new hiding limit. The negative assertion protects these two descriptions against the prior wording class, though it is lexical rather than a universal semantic proof. Existing resolution tests cover ordinary DC/contest behavior. No additional issue in 0d7c217c itself found beyond the sibling arithmetic cases.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-01T21:27:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-01T21:29:47Z",
+  "started_at": "2026-10-01T21:27:43Z",
+  "closed_at": "2026-10-01T21:29:47Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.4.9",
+      "depends_on_id": "eshyra-o9bd.19.3.4.4",
+      "type": "parent-child",
+      "created_at": "2026-10-01T16:27:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

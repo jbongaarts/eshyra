@@ -1,0 +1,63 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wsv",
+  "title": "E4 Memory pyramid + roll-up + structural drill-down",
+  "description": "Hierarchical memory as the CORE continuity mechanism: scene to session to arc to campaign_bible, bounded always-on context independent of campaign length, anchored by E3 structured state. Raw scene_log persisted for future RAG (deferred).",
+  "design": "Tables: scene_log (append-only raw), scene_summary (incremental, salient_refs linking to state/overlay rows), session_recap, arc_summary, campaign_bible (standing world_facts, major_npcs, factions, open_threads). Roll-up steps are separate focused agent invocations writing strictly upward, each citing source ids (re-runnable, idempotent). memory_drilldown(selector) pulls a specific older summary/log slice into context on demand only. Semantic/RAG retrieval DEFERRED - structural drill-down only for MVP.",
+  "acceptance_criteria": "1. Scene summaries written incrementally during play. 2. Session close produces a recap from scene summaries plus state delta. 3. Arc milestone folds recaps into arc_summary and reconciles campaign_bible. 4. Roll-up idempotent (re-run yields no corruption). 5. memory_drilldown returns a specific past scene/session without it being permanently in context. 6. Always-on memory footprint stays bounded as session count grows.",
+  "notes": "SYNTHESIS UPDATE 2026-05-17: Memory rollups should also preserve structured turn traces useful for future eval/helper-model training: retrieved context, prompt profile, model output, tool calls, accepted/rejected state deltas, memory updates, corrections, and quality flags. Raw transcripts alone are not the valuable future dataset.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:31:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T05:08:22Z",
+  "closed_at": "2026-05-19T05:22:50Z",
+  "close_reason": "E4 complete: memory pyramid tables/APIs, rollups, drilldown, bounded always-on context, and structured trace capture implemented; build/test/typecheck pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-wsv",
+      "depends_on_id": "eshyra-c07",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "12eed54d-5052-523f-aca2-d265e1fb4a8f",
+      "issue_id": "eshyra-wsv",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install exit 0; npm run build exit 0; npm run typecheck exit 0; first parallel npm run test raced before workspace dist was resolvable; rerun after build exit 0 (74 passed / 1 skipped).",
+      "created_at": "2026-05-19T05:09:56Z"
+    },
+    {
+      "id": "646b108e-e50d-536c-8b4b-2880b9104477",
+      "issue_id": "eshyra-wsv",
+      "author": "Joseph Bongaarts",
+      "text": "Progress verification: npm run build -> exit 0; npm run test -> exit 0 (75 passed / 1 skipped); npm run typecheck -> exit 0. Completed structured turn trace child loreweaver-wsv.1 and opened follow-up child tasks for remaining E4 acceptance criteria.",
+      "created_at": "2026-05-19T05:12:49Z"
+    },
+    {
+      "id": "ce9cd92b-1a3b-5aab-9db8-215f8be0b0f1",
+      "issue_id": "eshyra-wsv",
+      "author": "Joseph Bongaarts",
+      "text": "Final verification: npm run build -> exit 0; npm run test -> exit 0 (80 passed / 1 skipped); npm run typecheck -> exit 0. Acceptance: scene summaries incremental; session recaps roll up scene summaries + state delta; arc summaries reconcile campaign_bible idempotently; memoryDrilldown returns scene/session/arc slices read-only; selectAlwaysOnMemory caps recent recaps and reports omitted sessions; structured turn traces preserved for future eval/helper models. TDD RED/GREEN evidence recorded on wsv.1-wsv.6.",
+      "created_at": "2026-05-19T05:22:50Z"
+    },
+    {
+      "id": "b4a264ea-794f-5f63-9f12-fbf4674f6e1b",
+      "issue_id": "eshyra-wsv",
+      "author": "Joseph Bongaarts",
+      "text": "Post-rebase verification after integrating origin/main: npm run build -> exit 0; npm run test -> exit 0 (95 passed / 1 skipped); npm run typecheck -> exit 0. Schema conflict resolved by preserving both E2 module tables and E4 memory tables.",
+      "created_at": "2026-05-19T05:29:00Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 4
+}

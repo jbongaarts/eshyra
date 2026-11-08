@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lyzj",
+  "title": "restore_usage amount for rolled dawn recharge formulas (1d6+1) is DM-supplied and unverified",
+  "description": "Surfaced by eshyra-o9bd.19.5.16.1 sibling search. reset_usage returns needsRolledRestore for dawn counters with a rechargeFormula (e.g. wand 1d6+1); the DM rolls it via roll and passes restore_usage amount, which is a DM-supplied unverified number. 19.5.16 states this truthfully in the tool description and inventory but did not bring it under the engine-roll contract (the counter formula is a dice expression with modifier; needs an engine roll of rechargeFormula with override for supplied amounts). Decide/implement engine-rolled formula restore with recorded override, or accept as DM ruling.",
+  "notes": "Captain 2026-11-07: covered by the user's 19.5.14 decision (engine rolls; the DM may supply its own with a recorded override). Implemented in the eshyra-o9bd.19.5.16 PR as dispatch eshyra-o9bd.19.5.16.2.\n\nPLAN: in restore_usage, for a counter whose reset is dawn and which carries a rechargeFormula (e.g. 1d6+1), omitting amount (and roll) makes the engine roll the formula from ctx.rng and restore that many, under the existing restore cap/validation. Supplying amount for such a counter requires rollOverride (reuse toolRollOverride.ts parseRollOverride and state/rollEvidence.ts; extend the evidence type if a formula with a modifier needs a total field rather than natural, keeping engine/dm-supplied as the two sources). amount on a counter WITHOUT a rechargeFormula stays a DM ruling (not a die result), unchanged. Neither roll nor amount on a counter that has neither a recharge die nor a formula is refused with a clear message. Update reset_usage's needsRolledRestore result/hint and the depleted-counter hint in usageCounters.ts, the restore_usage description and amount schema text, the protocol.ts guidance if it mentions the formula path, the player-visible ledger (render the engine-rolled formula; default visibility dm_only as for recharge), the AUDIT_POLICY lines added in 19.5.16 (cover the formula roll), and the restore_usage entry in rules/deterministicCapabilityInventory.ts. Persisted-state compatibility as in 19.5.16. Tests: engine roll of the formula with a seeded RNG; supplied amount refused without an override and accepted with one; non-formula amount unchanged; ledger; inventory text.\nImplemented in fa1551f9; in PR https://github.com/jbongaarts/eshyra/pull/725. Close on merge.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:20:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-07T23:36:03Z",
+  "started_at": "2026-11-07T23:25:11Z",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

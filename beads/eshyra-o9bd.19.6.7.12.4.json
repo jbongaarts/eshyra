@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.12.4",
+  "title": "Review: Sol bounded confirmation of PR #714 S4 repair (eshyra-o9bd.19.6.7.12 @ 421ab760)",
+  "description": "Read-only Sol review of PR #714 at exact head 421ab760b281e206d7880f36501e77e81c90251f.",
+  "notes": "Captain: dispatched gpt-6.1-sol high, PGID 412783.\nS1. BOUNDED REVIEW of PR #714 at exact HEAD 421ab760b281e206d7880f36501e77e81c90251f on branch eshyra-o9bd.19.6.7.12.4. Read live bd show for .12.4, parent .12 (spec/design/acceptance), .12.1, .12.2 (including S4), and .12.3, plus docs/design-and-pr-review-policy.md and supplied AGENTS.md. Applied the declaration-truthfulness portion of rules-clause-complete review, under the parent bead's ADR 0020 Decision 3 / design 5.9 condition 6 authority. refs/beads/state resolves to 9e4bb40c789e3364b1605e7321c1537117a4ca02, generated 2026-09-10 and missing these review/repair records; current live Beads controls. Review remains bounded to S4 and git diff 51700e05..HEAD.\n\nS2. NON-MATERIAL repair verified; previous review .12.2 S4 is CLOSED at this head. packages/core/src/rules/deterministicCapabilityInventory.ts:562,567 and packages/core/src/orchestrator/toolRefreshEffect.ts:28-35,48 now distinguish typed-present and typed-absent powers truthfully. Sentence-by-sentence mapping: activeEffects.ts:554-585 resolves the item and returns its bound effect's duration object, or typed=undefined when no object is printed. :7581-7592 records typed-fixed only for a supplied timed duration matching numeric printed amount/unit, even with an override; :7593-7603 records a valid explicit dm-override for other supplied durations. Without an override, typed-absent/non-timed alone reaches :7604-7605 and clears provenance; all other mismatches refuse at :7606-7613. Omission bypasses the supplied-duration branch (:7579) and preserves stored provenance (:7616-7621), while reconstructing/re-anchoring the stored duration (:7461-7494,7623-7660). Inventory :567 accurately says an override without duration, or with a matching printed duration, records no override. Tool parser :71-88 validates basis/reason and translates durationOverride into dm-override provenance. Unchanged non-item/spell/grant qualifiers remain consistent with activeEffects.ts:7497-7558; no runtime guard was changed.\n\nS3. Permanent evidence is a proportionate generalized behavior matrix, not a per-item reproducer collection. packages/core/test/itemGrantSummons.test.ts:1915-2065 uses actual bundled pack fixtures (armor immunity prints 10 minutes; wings flight prints no duration) and default tool registry (:97-129). Its 10 rows cover all four {typed-present,typed-absent} x {timed,non-timed} cells with/without durationOverride, adding matching versus differing timed duration for typed-present. Assertions discriminate success/refusal (:2050), replacement kind/amount/unit (:2052-2058), exact effect-view conservation on refusal (:2059), and typed-fixed/dm-override/preserved/cleared provenance (:2060-2064). The typed-absent fixture starts with dm-override provenance (:2032-2040), so the clearing assertion cannot pass merely because provenance was already absent. Existing omission evidence remains at :1885-1912. No semantic prose checker is claimed: declarations were directly reviewed against code; behavior matrix supplies runtime evidence. Ran npx vitest run packages/core/test/itemGrantSummons.test.ts packages/core/test/activeEffects.test.ts packages/core/test/deterministicCapabilityInventory.test.ts --configLoader runner --no-cache with npm cache under /tmp: 3 files, 228 tests PASS, no skips, 39.47 seconds.\n\nS4. Independent adversarial siblings passed via /tmp/pr714-bounded-review.ts, importing this worktree's source and using fresh in-memory DB, real default registry, seeded RNG, and unmodified bundled pack. Both wings flight and armor static resistance lack printed typed duration: timed refresh without override refuses with exact serializeCampaign conservation; after advance_time, omitted duration with and without override preserves stored duration/provenance; supplied until-trigger succeeds without override and clears provenance; supplied until-removed with house-rule override records dm-override. Potion of Heroism (typed 1 hour) refuses equivalent 60-minute supply without override with canonical state conserved; matching 1-hour supply plus override records typed-fixed. New start_effect with a rules-pack magic-item ref but neither effectRef nor grantRef refuses, matching toolStartEffect.ts:375-383. NON-MATERIAL disposition of .12.3's open-point observation: no additional repair requirement in this bounded task; that unbound case is refused by the new-effect tool producer and the declaration explicitly scopes powers to a printed item-effect binding. No speculative legacy-state defect is promoted.\n\nS5. Entire git diff 51700e05..HEAD inspected: exactly three files, 162 additions/6 deletions: toolRefreshEffect.ts description/schema-description only (8/4), deterministicCapabilityInventory.ts operation/exclusion prose only (2/2), itemGrantSummons.test.ts matrix only (152/0). activeEffects.ts and toolStartEffect.ts unchanged. git diff --check passed; git status --short remained empty at the reviewed exact HEAD after tests/probes. No repository edits, formatting/build/verify commands, commits, pushes, GitHub comments, or merge. No material findings or deferred accepted defects in the authorized scope. Only this review bead is updated/closed.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T04:13:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T04:16:08Z",
+  "started_at": "2026-11-06T04:13:40Z",
+  "closed_at": "2026-11-06T04:16:08Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.12.4",
+      "depends_on_id": "eshyra-o9bd.19.6.7.12",
+      "type": "parent-child",
+      "created_at": "2026-11-05T22:13:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

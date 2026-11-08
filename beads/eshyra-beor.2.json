@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-beor.2",
+  "title": "Review: Sol final review of PR #638 (eshyra-beor @ d00c5676)",
+  "description": "Final read-only review of PR #638 (branch eshyra-beor, exact head d00c5676ec94f2066c2b699dbb065fa371fe604c) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #638 at exact head d00c5676ec94f2066c2b699dbb065fa371fe604c (branch eshyra-beor.2).\nAuthority: read AGENTS.md, docs/design-and-pr-review-policy.md, owning eshyra-beor, and completed dispatch eshyra-beor.1. The dispatch supplies the precise paging/search acceptance criteria; the owning description and notes bound this work to CLI usability. The local refs/beads/state projection is dated 2026-09-10 and lacks these newer beads; reconciled against live bd show records.\nScope: reviewed the complete origin/main...HEAD diff and origin/main..HEAD log: one commit, packages/cli/src/playProgression.ts and packages/cli/test/play.test.ts. Standard review profile for the presentation change; traced the affected rules-backed descriptor/selection boundary through playTurnLoop, CliIO/nodeIO, runLevelUpCommand, guidedLevelUpFlow, LevelUpRequiredChoice, spell/feature descriptor producers and selection validation. Consulted docs/design/character-progression.md and vendored SRD 5.1 Magical Secrets, Mystic Arcanum, and Spell Mastery source text. No importer, generated-pack, rules-execution, schema, or persistence change; importer-fix protocol is not triggered.\nFindings: none (MATERIAL: 0; NON-MATERIAL: 0). Paging changes presentation only; search/more consume no selection and preserve the full legal option set. Lists of at most 40 retain their prior behavior. Multi-selection parsing, optional skipping, cancellation on EOF, replacement/preparation hints, re-prompting and downstream engine validation remain intact.\nEvidence: git diff --check passed. Ran 57 read-only in-memory probes by stripping TypeScript from the actual HEAD functions with the Node 24 built-in loader; no copied implementation or repository files created. Compared short-list output and selections against origin/main at lengths 0/1/39/40; exercised 41/80/81/300 pagination boundaries, complete option reachability, case-insensitive filtering, empty matches, end-of-list, clearing/resetting filters, filtered paging, EOF, optional blank, multiple choices and replace/prepare hints. A pack-backed level-10 Magical Secrets list (237 eligible spells, choose 2) retained comma-separated selections across searches. Reviewed all three added permanent tests and the unchanged live /levelup tests. Vitest/full verification not run because this worktree has no installed dependencies; no installs/builds/formatters were run. Git tree remained clean. GitHub head matched; build-test checks were still in progress at the last observation, with CodeQL and install smoke checks successful. This is a code-review verdict, not a completed-CI claim.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T08:18:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T08:21:53Z",
+  "closed_at": "2026-10-09T08:21:53Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-beor.2",
+      "depends_on_id": "eshyra-beor",
+      "type": "parent-child",
+      "created_at": "2026-10-09T03:18:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

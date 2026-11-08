@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7",
+  "title": "Model SRD magic item deterministic effects in phases",
+  "description": "Finding sources:\n- ChatGPT found 216/240 magic items with mechanical language but no mechanics projection.\n- Codex readiness reported about 210 magic items prose-only.\n- Fable specifically noted prose-only charge economies such as \"7 charges... regains 1d6 + 1\" and confirmed the magic-item kind has no mechanics field at all in its schema today.\n- Codex example: magic-item:armor-of-invulnerability.\n\nReason for epic:\n- The finding is too broad for one implementation bead, but it must not be dropped.\n- Children should add reusable projection shapes and then apply them by category.",
+  "notes": "STATE-CONTRACT DESIGN COMPLETE (2026-07-06, Fable final session; PR #408). Artifact: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-magic-item-state-contract-design.md. Three-layer architecture for ALL children (.1/.2/.4-.11): (1) immutable pack-side data.mechanics blocks (schema sketches: useEconomy/effects/stateMachine/entityGrant/containment/curse/randomProcedure/spellStore/rollManipulation/interItem); (2) validated per-instance item-state owner + semantic use_item tool enforcing invariants at the tool boundary (properties_json upsert = transitional only, never green; overlay_facts prohibited per corrected #406); (3) engine hooks into F1-F10 — items subscribe to reset/rest/concentration/slot/temp-HP engines, never re-implement. 8 ordered golden examples; potion-of-healing + staff-of-fire templatize ~140 items for Codex. Unresolved decisions in artifact §7. Review order: #406 -> #407 -> #408. Epic status: inventory complete (.3), contract designed, children .4-.11 created with exact memberships, implementation not started.\nREVISED 2026-07-06 (Fable final session, PR #408 head 7090d6c): contract finalized. (1) Stateful-singleton invariant: instance = inventory row; stateful pack mechanics force quantity=1 (fail-closed both sides); packRef = type identity; instance ids minted by the mutation layer (give_item's upsert-by-model-chosen-global-id must not own instance creation — it even reassigns character_id on collision); explicit split; migration rules. item_state as dedicated 1:1 cascade table recommended. (2) Multi-economy: keyed economies Record<EconomyId,...> + operations binding costs to economy ids (shared pools, independent pools, doesNotExpend combined-use, budget+conditional regain, reset-event subscription, per-economy depletion). (3) Clause-level readiness: MAGIC_ITEM_CLAUSES registry with stable clause ids + concrete bindings (block/economy/operation/engine-hook/adjudicated); integrity in normal CI; transitional properties_json never green. Parent owns shared infra: identity invariant, use_item core, clause-registry framework. use_item is operation-id-driven; attune/unattune separate character-scoped tool (F5). No new children needed.\n18.7.7.5 progress (2026-07-07): CLOSED via PR #415 (branch eshyra-o9bd-18-7-7-5-passive-modifiers). Implemented via magicItemPassiveEffects.ts, reusing the existing shared mechanics.effects vocabulary (optMechanics/validateMechanicsEffect) rather than this epic's item_state/use_item architecture -- M2/M3 are pure passive while-worn/attuned modifiers with no charge economy or live state, so that shared infra was not needed for this slice. 56/58 uniquely M2/M3-tagged items modeled; Ioun Stone and Ring of Elemental Command deferred pending inline variant structuring, tracked as new child eshyra-xjp4. Remaining open children: .1 (C1 economies), .2 (C2 combat bonuses), .4 (M1 consumables), .6-.11 (M4-M11), plus new .xjp4 (ioun-stone/ring-of-elemental-command variants).\n2026-07-08 ADR 0017 adjustment: The existing state-contract notes are aligned with the new guidance, with one required interpretation: magic-item children own source-grounded pack mechanics, clause registry bindings, and explicit engine hooks/dispositions. Reusable live-state services, reset buses, attunement counters, dice/roll transforms, slot economy, HP/temp-HP, and currency/trade behavior belong to shared engine owners unless a child is explicitly scoped as that runtime slice. A clause may be pack-represented and still engine-pending.\nCompletion verification: canonical SRD pack regenerates byte-exactly; rules-pack audit reports 0 suspicious records; independent deep audit reports 0 findings; verify:worktree passes Biome, forced typecheck, and 4,533 passing tests (19 documented skips).\nReopened after PR #455 review identified merge-blocking end-to-end execution and readiness gaps.\nReopened for PR #455 holistic re-review task eshyra-o9bd.18.7.7.13.\nReopened for PR #455 source-semantic re-review task eshyra-o9bd.18.7.7.14.\nReopened for PR #455 lifecycle/compatibility re-review task eshyra-o9bd.18.7.7.15.\nPR #455 re-review child .15 complete after independent Sol adversarial closure. Canonical magic-item state/runtime/compiler lifecycle is locally green; conservative blocksDoff fail-closed boundary remains until separate follow-up eshyra-mq4n adds authoritative wear state.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-18T16:34:25Z",
+  "closed_at": "2026-07-19T02:44:37Z",
+  "close_reason": "PR #455 review findings and Sol adversarial blockers are closed; full worktree, test, importer reproducibility, and freeze verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7",
+      "depends_on_id": "eshyra-o9bd.18.7",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

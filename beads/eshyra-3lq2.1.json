@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3lq2.1",
+  "title": "Dispatch: 3lq2 (Sonnet 5.5, attempt 1)",
+  "description": "Plan for parent eshyra-3lq2 (bd show eshyra-3lq2, including its NOTES). Research first, then the minimum fix.\nWORKTREE: .worktrees/eshyra-3lq2.1 (branch eshyra-3lq2.1 from origin/main). Deps installed. A parallel task edits derivedValues.ts and contextAssembler.ts: do not edit those.\n\nSTEP 1 (source semantics, record in notes with quotes from the pack records): for each of Magical Secrets (bard), Pact of the Tome (three cantrips from any class list), Book of Ancient Secrets (rituals in the Book of Shadows), determine from the SRD text whether the picks (a) count against cantrips/spells known, (b) are eligible for the level-up \"replace one known spell\" rule, (c) are \"known\" at all. Leads (verify, do not assume): Magical Secrets spells \"count as bard spells for you and are included in the number in the Spells Known column\" (so likely no distinction needed); Pact of the Tome cantrips \"don't count against your number of cantrips known\"; Book of Ancient Secrets rituals are written in the book and cast as rituals while you have it, i.e. likely not spells known.\nSTEP 2: compare with the real implementation (packages/core/src/character/levelUpSpells.ts: where these picks are placed — spellcasting.cantrips / known / designations; the cantrips/known counts and the replace descriptor eligibility). If the current placement makes picks count against the known/cantrip totals or makes them replaceable when the SRD says otherwise, fix it with the MINIMUM change: e.g. a dedicated bucket or a provenance marker on CharacterSpellcasting (update the validator and spellsUnion), excluded from counts and replacement where the text says so. If the SRD needs no distinction for a feature, say so and change nothing for it. Do not add provenance for its own sake.\nEVIDENCE: for each feature that changed, one test showing count/replacement behaviour matches the SRD (warlock 3 Pact of the Tome: still offered the normal number of cantrips at later levels; Book rituals not offered as replaceable known spells, etc.). Existing level-up spell tests stay green.\nPROTOCOL: npm run verify:worktree BEFORE commit; commit (Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>); bd update eshyra-3lq2.1 --append-notes (step 1 findings + changes); bd close eshyra-3lq2.1. No push/PR. Never use git stash. If step 1 concludes no change is needed anywhere, commit nothing and record the disposition.",
+  "notes": "Step 1: Magical Secrets (bard L10): 'The chosen spells count as bard spells for you and are included in the number in the Spells Known column' -> real known spells, count against known (pack countsAgainstKnown:true), replaceable if on bard list; no change. Pact of the Tome: 'They don't count against your number of cantrips known. If they don't appear on the warlock spell list, they are nonetheless warlock spells for you.' -> stored in cantrips; cantrip offers are table-delta based so unaffected; cantrips never replaceable (replace filters level>0); no change (test added). Book of Ancient Secrets: 'The spells appear in the book and don't count against the number of spells you know ... can't cast the spells except as rituals, unless you've learned them by some other means' -> were stored in known, so warlock-listed rituals (comprehend languages, illusory script, unseen servant) became replaceable known spells. Fix: new CharacterSpellcasting.ritualBook bucket (validator, spellsUnion, placements), excluded from replacement. Not changed: Lore Additional Magical Secrets (out of scope). Tests in levelUpSpellSelection.test.ts; verify:worktree green.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:29:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:33:25Z",
+  "closed_at": "2026-10-09T05:33:25Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-3lq2.1",
+      "depends_on_id": "eshyra-3lq2",
+      "type": "parent-child",
+      "created_at": "2026-10-09T00:29:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

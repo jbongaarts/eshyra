@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.18",
+  "title": "Represent SRD advancement, multiclassing, languages, and inspiration rules",
+  "description": "Problem\r\nSeveral core character rules sections are present in the SRD source but are not adequately represented in the imported pack.\r\n\r\nEvidence from the 2026-06-07 audit\r\nUnrepresented or underrepresented sections include:\r\n- Beyond 1st Level\r\n- Character Advancement\r\n- Multiclassing\r\n- Alignment\r\n- Languages\r\n- Inspiration\r\n- Standard and Exotic language tables\r\n- Character advancement and multiclassing tables\r\n\r\nRequired behavior\r\n- Import these sections as rule and/or table records with complete source text and provenance.\r\n- Mechanically meaningful tables should be represented as table records, not only embedded prose.\r\n- Preserve enough structure for future rules lookup to answer questions about advancement, multiclassing prerequisites, proficiency bonus by level, languages, and inspiration.\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "notes": "Implementation complete; PR #187 open for review (https://github.com/jbongaarts/eshyra/pull/187, branch feat/srd-beyond-1st-level-rules-eshyra-0m9-18). 18 new rule records (chapter intro via new parseRules chapterIntro option + Multiclassing tree + Alignment/Languages/Inspiration) and the Multiclass Spellcaster: Spell Slots per Spell Level table (missed by 0m9.23). Generated diff: exactly +19/0/0; verify:worktree green (1387 passed/19 skipped). Close this bead when the PR merges.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-10T00:58:48Z",
+  "started_at": "2026-06-10T00:09:15Z",
+  "closed_at": "2026-06-10T00:58:48Z",
+  "close_reason": "Merged to main as 5c97e61 (PR #187): 18 Beyond-1st-Level prose rules (chapter intro, Multiclassing tree, Alignment, Languages, Inspiration) + the Multiclass Spellcaster spell-slot table. Rule coverage 172->190, tables 18->19.",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.18",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

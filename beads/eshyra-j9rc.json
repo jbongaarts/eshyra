@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-j9rc",
+  "title": "Prove Pipes variable-charge spend after its grant contract is owned",
+  "description": "Pipes of the Sewers now has green C1 charge economy and operation clauses, but useItem still refuses call-rat-swarms at the unmodified real-pack preflight because m4-pipes-of-the-sewers remains engine-pending on creature-grant lifecycle, controlled-entity action budget, and cooldown/identity ownership. This dispatch proved the real-record dawn 1d3 regain and separately verified that useItem refuses a variable spend larger than remaining charges; the exact Pipes 2-then-2-with-1-remaining sequence cannot reach cost validation without crossing the independent m4 boundary.\\n\\nAfter the existing grant contract is owned or otherwise resolved, add no-waiver real-pack evidence that spending 2 charges, refusing another 2 with 1 remaining, and crossing dawn restores 1d3 capped at 3. Preserve the current truthful refusal until that boundary changes.",
+  "notes": "User decision 2026-11-07: BLOCKING for the re-freeze (no post-freeze deferral); repair before the final candidate (eshyra-o9bd.19.6.7.22). This supersedes the earlier 'not blocking' / 'disclosed limit' text above.\nPLAN (Captain 2026-11-07): eshyra-olc5.12 (item-granted creatures via the summon system) has since closed. Re-derive at HEAD whether useItem still refuses call-rat-swarms at the unmodified real-pack preflight, and why: name the exact engine-pending clause or readiness that blocks it. If it is now reachable, add the no-waiver real-pack evidence described above (spend 2; refuse 2 with 1 remaining; dawn restores 1d3 capped at 3). If a remaining boundary blocks it, implement the smallest truthful ownership that removes the block, or STOP and report the exact blocker; do not waive the readiness check in a test.\nCaptain 2026-11-07: 98ca8787 (in PR #727) pins the exact blocker: m4-pipes-of-the-sewers grant engine-pending (creatureGrantLifecycleOwned needs a printed count/countRoll and revertOn). Resolution awaits the USER DECISION recorded on eshyra-ffoo.\nCaptain 2026-11-07: integrated (ffoo 489d724c, 0dtg 36734512) after own review and verify (exit 0, 7481; pack exact). PR https://github.com/jbongaarts/eshyra/pull/731 (stacked on #727). Stays in_progress until merged.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T22:32:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T01:31:42Z",
+  "started_at": "2026-11-08T00:23:36Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-j9rc",
+      "depends_on_id": "eshyra-9ooo.1",
+      "type": "discovered-from",
+      "created_at": "2026-10-31T17:32:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-j9rc",
+      "depends_on_id": "eshyra-ffoo",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:40:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-j9rc",
+      "depends_on_id": "eshyra-kbzm.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:23:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

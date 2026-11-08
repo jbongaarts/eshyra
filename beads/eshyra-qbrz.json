@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-qbrz",
+  "title": "Audit: rest.ts Hit Dice recovery uses Math.max(1, floor(max/2)) floor",
+  "description": "packages/core/src/state/rest.ts:717 restores Math.max(1, floor(diceMaximum/2)) Hit Dice. This is a Hit Dice pool count, not an HP increment, so it was out of scope for A2-F4. Check it against SRD long-rest text (regain half the max Hit Dice, minimum 1 per SRD rule if one exists) and document or fix.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T02:21:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T02:21:30Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

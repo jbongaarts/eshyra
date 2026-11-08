@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4ua.1",
+  "title": "06b-A T1: composeArcSummary core function + happy-path test",
+  "description": "Objective:\nAdd the new core module that authors an arc summary by calling a ModelClient with a chronological list of SessionRecapRecord. Cover the happy path with two tests: (a) the function returns the model's text verbatim, (b) the user message rendered to the model contains each session id, recap text, and any stateDelta entries.\n\nFiles:\n- Create: packages/core/src/memory/arcSummary.ts\n- Create: packages/core/test/arcSummary.test.ts\n- Modify: packages/core/src/index.ts (re-export composeArcSummary and ComposeArcSummaryInput)\n\nSteps:\n1. Create packages/core/test/arcSummary.test.ts with the two happy-path tests (see Design field for exact code). Imports come from '../src/index.js'.\n2. Run: npx vitest run packages/core/test/arcSummary.test.ts --reporter=verbose\n   Expected: FAIL — `composeArcSummary` not exported from '@loreweaver/core' (module not found).\n3. Create packages/core/src/memory/arcSummary.ts with the implementation in the Design field.\n4. Add the re-export to packages/core/src/index.ts:\n     export { composeArcSummary } from './memory/arcSummary.js';\n     export type { ComposeArcSummaryInput } from './memory/arcSummary.js';\n   Place next to the existing composeSessionRecap re-export (around line 58).\n5. Run the same vitest command.\n   Expected: 2 tests PASS.\n6. Run: npm run typecheck\n   Expected: success.\n7. Commit:\n     git add packages/core/src/memory/arcSummary.ts packages/core/test/arcSummary.test.ts packages/core/src/index.ts\n     git commit -m \"Add composeArcSummary core function with happy-path tests (loreweaver-4ua)\"",
+  "design": "Test file (packages/core/test/arcSummary.test.ts):\n\n  import { describe, expect, it } from 'vitest';\n  import {\n    composeArcSummary,\n    type ModelClient,\n    type ModelCompleteInput,\n    type SessionRecapRecord,\n  } from '../src/index.js';\n\n  function fakeModel(\n    handler: (input: ModelCompleteInput) => Promise<string> | string,\n  ): ModelClient {\n    return { complete: async (input) => handler(input) };\n  }\n\n  function recap(\n    sessionId: string,\n    text: string,\n    createdAt: string,\n    stateDelta: SessionRecapRecord['stateDelta'] = [],\n  ): SessionRecapRecord {\n    return {\n      campaignId: 'camp-1',\n      sessionId,\n      recap: text,\n      sourceSceneIds: [],\n      stateDelta,\n      createdAt,\n      updatedAt: createdAt,\n    };\n  }\n\n  describe('composeArcSummary', () => {\n    it('returns the model-authored summary text verbatim', async () => {\n      const model = fakeModel(() => 'You opened the wayhouse door.');\n      const summary = await composeArcSummary(model, {\n        campaignId: 'camp-1',\n        arcId: 'arc-1',\n        recaps: [\n          recap('session-1', 'Mira found the chalk sigil.', '2026-05-20T10:00:00.000Z'),\n          recap('session-2', 'The warden welcomed you in.', '2026-05-21T10:00:00.000Z'),\n        ],\n      });\n      expect(summary).toBe('You opened the wayhouse door.');\n    });\n\n    it('renders each session recap and stateDelta into the user prompt', async () => {\n      let captured: ModelCompleteInput | undefined;\n      const model = fakeModel((input) => {\n        captured = input;\n        return 'OK';\n      });\n      await composeArcSummary(model, {\n        campaignId: 'camp-1',\n        arcId: 'arc-1',\n        recaps: [\n          recap('session-1', 'Mira found the chalk sigil.', '2026-05-20T10:00:00.000Z', [\n            { target: 'plot_flags', field: 'found_sigil', op: 'set', value: true },\n          ]),\n        ],\n      });\n      expect(captured?.system).toMatch(/continuity primer/i);\n      expect(captured?.messages).toHaveLength(1);\n      const userContent = captured?.messages[0].content ?? '';\n      expect(userContent).toContain('session-1');\n      expect(userContent).toContain('Mira found the chalk sigil.');\n      expect(userContent).toContain('found_sigil');\n    });\n  });\n\nImplementation (packages/core/src/memory/arcSummary.ts):\n\n  import type {\n    ModelClient,\n    ModelCompleteInput,\n    ModelMessage,\n  } from '../model/client.js';\n  import type { SessionRecapRecord } from './summary.js';\n\n  /**\n   * System prompt the arc-summary model call runs under. The text is shaped for\n   * the future-DM-model audience: a continuity primer it can read on the next\n   * session to keep canon and tone consistent across multi-session arcs.\n   */\n  const ARC_SUMMARY_SYSTEM_PROMPT = [\n    'You write continuity primers for a fantasy tabletop campaign DM model.',\n    'Read the chronological session recaps below and produce a concise narrative',\n    'summary of the campaign arc so far, suitable to feed back into the DM model',\n    'context in future sessions. Write in second person, present tense.',\n    'Target 300-500 words. Highlight ongoing threads, named NPCs, factions, and',\n    'recent canon mutations. Write as an in-world chronicle; do not address the',\n    'player about meta concerns.',\n  ].join(' ');\n\n  export interface ComposeArcSummaryInput {\n    campaignId: string;\n    arcId: string;\n    recaps: SessionRecapRecord[];\n  }\n\n  /**\n   * Author an arc summary from the campaign's ordered session recaps.\n   *\n   * Pure read-side: no DB access, no writes. Caller supplies the recap list and\n   * a ModelClient; the returned text is the model's completion verbatim. Errors\n   * from the provider propagate as ModelClientError per the ModelClient\n   * contract; the caller decides how to handle them (the CLI close pipeline\n   * skips the rollup and logs a warning).\n   */\n  export async function composeArcSummary(\n    model: ModelClient,\n    input: ComposeArcSummaryInput,\n  ): Promise<string> {\n    const userContent = renderRecaps(input.recaps);\n    const messages: ModelMessage[] = [{ role: 'user', content: userContent }];\n    return model.complete({ system: ARC_SUMMARY_SYSTEM_PROMPT, messages });\n  }\n\n  function renderRecaps(recaps: SessionRecapRecord[]): string {\n    const blocks = recaps.map((recap) => {\n      const delta =\n        recap.stateDelta.length === 0\n          ? '(no canon mutations)'\n          : recap.stateDelta\n              .map((entry) => '  - ' + JSON.stringify(entry))\n              .join('\\n');\n      return [\n        '## ' + recap.sessionId + ' (' + recap.createdAt + ')',\n        recap.recap,\n        'Canon mutations:',\n        delta,\n      ].join('\\n');\n    });\n    return blocks.join('\\n\\n');\n  }",
+  "acceptance_criteria": "1. packages/core/src/memory/arcSummary.ts exists and exports composeArcSummary plus ComposeArcSummaryInput.\n2. packages/core/src/index.ts re-exports both.\n3. packages/core/test/arcSummary.test.ts contains the two happy-path tests; both pass.\n4. npm run typecheck succeeds.\n5. The commit message references loreweaver-4ua.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:46:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T04:53:36Z",
+  "closed_at": "2026-05-23T04:58:07Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4ua.1",
+      "depends_on_id": "eshyra-4ua",
+      "type": "parent-child",
+      "created_at": "2026-05-22T23:46:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "81ee5017-c667-52f6-a1a0-b6dbae19b395",
+      "issue_id": "eshyra-4ua.1",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for d07505e9..6ccad41: Assessment Ready to merge. Critical: none. Important: none. Minor: (1) arcSummary.ts ComposeArcSummaryInput.campaignId/arcId unused at T1 scope — deferred to T2; (2) test helper hardcodes campaignId='camp-1' — fine for T1. Follow-up: T2 already planned; consider adding arcId to prompt header in T2.",
+      "created_at": "2026-05-23T04:58:05Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

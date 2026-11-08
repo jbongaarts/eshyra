@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7z0z",
+  "title": "Importer: parseActions/parseFeats fall back to the entry name when the body is empty (fail closed instead)",
+  "description": "Latent, found by the eshyra-o9bd.16.7.2 provenance sweep: parseActions.ts and parseFeats.ts substitute the entry name for an empty body, which would emit compiler text under a source-prose declaration. No current record hits it. Make it fail closed.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:43:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:43:05Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.11",
+  "title": "A3-F3: creature attack projections must list every printed damage component (Flying Snake flat+dice, Jackal U+2013 minus)",
+  "description": "Second-audit blocker: recurrence of registry classes creature-statblock-mechanics (sol:CAP-004) and unicode-minus-damage (opus:F-29), verified by Captain at 6812cc0b. creature:flying-snake actions[0] prints 'Hit: 1 piercing damage plus 7 (3d4) poison damage.' (p.372) but mechanics.attacks[0].hitDamage and mechanics.damage carry only the poison component. creature:jackal actions[0] prints 'Hit: 1 (1d4 – 1) piercing damage.' (pp.382-383, U+2013) but its attack has no hitDamage and no disclosure. Model-facing only (no runtime consumer of creature hitDamage). Fable's corpus parse found these two as the only disagreements among 514 attacks. Follow docs/importer-fix-protocol.md.",
+  "design": "2026-11-06 DESIGN (Captain). Follow docs/importer-fix-protocol.md and docs/rules-pack-compiler.md; the attack lead-in grammar lives in the creature importer (creatureAttackLeadIns.ts / creatureAttackGrammar; see packages/core/test/importers/dnd5e-srd-5.1/creatureAttackGrammar.test.ts and parseCreatures.test.ts, and the opus:F-29 unicode-minus repair). (1) Extend the Hit-clause grammar to the 'N type damage plus M (dice) type damage' form (flat component first), so creature:flying-snake actions[0] projects both {amount:1,type:piercing} and {average:7,dice:3d4,type:poison} in hitDamage and mechanics.damage (SRD p.372). (2) Accept U+2013 (en dash) as a minus inside dice expressions like the existing U+2212 normalisation, so creature:jackal actions[0] ('1 (1d4 – 1) piercing', pp.382-383) projects hitDamage. (3) If any Hit clause still cannot parse, the attack must carry an in-band disclosure that its damage is not projected rather than silently omitting hitDamage. (4) Evidence: a generalized invariant over all creature attack lead-ins in the committed pack: for every parsed Hit clause, hitDamage lists every printed damage component (flat and dice), with Flying Snake and Jackal pinned; regenerate the pack (npm run import:dnd5e-srd per the protocol) and npm run verify:dnd5e-srd-pack must pass; thaw note under docs/audits/dnd5e-srd-5.1-final/thaw-notes/ like the recent ones; do NOT touch freeze-manifest.json. Fable's corpus parse (bd show eshyra-o9bd.19.6.7.3, A3-F3) found these two as the only disagreements among 514 attacks; re-derive membership yourself. Implementer: Claude Sonnet 5.5.",
+  "acceptance_criteria": "- Attack grammar handles 'N type damage plus M (dice) type' and a U+2013 minus, or the attack fails closed with in-band disclosure.\n- Generalized invariant: for every parsed Hit clause, hitDamage lists every printed component; Flying Snake and Jackal pinned.\n- Regeneration verified with verify:dnd5e-srd-pack.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-03T02:12:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T05:00:20Z",
+  "started_at": "2026-11-06T04:15:20Z",
+  "closed_at": "2026-11-06T05:00:20Z",
+  "close_reason": "Merged PR #716 (73083baf00d76f90f93708ba5e68d2c34008938a) after clean Sol review .11.2",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.11",
+      "depends_on_id": "eshyra-o9bd.19.6.7.11.1",
+      "type": "blocks",
+      "created_at": "2026-11-05T22:15:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.11",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-02T20:12:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-kbzm",
+  "title": "Enforce or remove the unenforced operation.excludes field (Candle cast-gate excludes burn)",
+  "description": "operation.excludes is validated for references but no runtime path (useItem) enforces it. Found in eshyra-7f0h.1: the Candle first-light gate is enforced by the unlit-only cast-gate transition instead. Decide: enforce excludes generally, or drop the field and keep state-machine gating. Not blocking.",
+  "notes": "User decision 2026-11-07: BLOCKING for the re-freeze (no post-freeze deferral); repair before the final candidate (eshyra-o9bd.19.6.7.22). This supersedes the earlier 'not blocking' / 'disclosed limit' text above.\nPLAN (Captain 2026-11-07, architecture decision): ENFORCE operation.excludes generally in useItem rather than drop the field, because the pack carries a validated, source-tied field and leaving it unenforced is fail-open. First read the field's schema/validator doc and the Candle of Invocation printed text to pin the exact semantics (what excludes what, and over which window or state), then enforce it in the useItem operation preflight as a typed refusal naming the excluding operation. Keep the existing cast-gate state-machine gating; verify the two agree on the real pack (no double-refusal message drift). Update the capability inventory and any disclosure text naming eshyra-kbzm.\nCaptain 2026-11-07: integrated 23a1fa33 after own review and verify (exit 0, 7466 passed). PR https://github.com/jbongaarts/eshyra/pull/727. Stays in_progress until merged.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T22:19:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:05:16Z",
+  "started_at": "2026-11-08T00:23:34Z",
+  "closed_at": "2026-11-08T02:05:16Z",
+  "close_reason": "Merged PR #727 (b26f40f1).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-kbzm",
+      "depends_on_id": "eshyra-kbzm.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:23:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

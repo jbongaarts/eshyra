@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-c58j",
+  "title": "Item grants: F3 owned-entity lifecycle and F2 control hooks not landed; persistent-actor runtimeOwner not enforced",
+  "description": "olc5.12.1 follow-up. Grant clauses carry F3 encounter/persistent/owned-entity lifecycle, F2 controlled-entity command budget, and F5 owned-entity identity hooks. None is landed. Control and obedience stay DM-adjudicated. Also, grants with runtimeOwner persistent-actor (Ring of Djinni, Efreeti Bottle, Feather Token whip, Manual of Golems, Staff of the Python, Iron Flask, Figurines not included) bind without campaignActorId, so combat closure may release the link. Decide whether persistent-actor requires a durable campaign actor before landing F3.",
+  "notes": "olc5.12.2 (commit b205724d): persistent-actor grants now require campaignActorId (or a campaign-actor combatant) on each linked actor, so combat closure rebinds rather than releases the summon. Closure does NOT end the effect (probed); it released the link and left the effect active with no creature. F3/F2/F5 owned-entity hooks remain unlanded. Discrepancy: the pack lists figurine grants as persistent-actor, which was applied.\n2026-10-17: user review 5560277927 (2 P2) fixed by the captain inline. Ownership now also requires a fixed count and no onEntityDeath. Owned set: Elemental Gem only. Ready grant ops: none. Follow-ups olc5.14 and olc5.15 filed, not started. Verified 7083 passed, pack exact. Pushed for re-review.\n2026-10-18 reconciliation: PR #673 still OPEN (head 379c90f8) under user review. Follow-ups olc5.14, olc5.15, 7gkh, xt6m.1 now depend on c58j because they edit its ownership predicate/real-pack readiness test; 7gkh related to olc5.14 (vessel ops need both). Scopes reconciled per the architectural boundary review; c58j stays in_progress until #673 merges.\n2026-10-18: PR #673 MERGED (merge commit dbbede8d, reviewed head 379c90f8, verified ancestor of origin/main). Deliverable complete; closing. Follow-ups olc5.14, olc5.15, 7gkh, xt6m.1 (which depended on this) are now unblocked by it.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-15T04:02:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-19T00:01:12Z",
+  "started_at": "2026-10-17T21:09:36Z",
+  "closed_at": "2026-10-18T23:50:37Z",
+  "close_reason": "PR #673 merged after user approval",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-c58j",
+      "depends_on_id": "eshyra-c58j.1",
+      "type": "blocks",
+      "created_at": "2026-10-17T16:09:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-c58j",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-17T14:57:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 5,
+  "comment_count": 0
+}
