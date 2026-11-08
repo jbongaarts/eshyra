@@ -837,3 +837,56 @@ describe('pocketed integrity audit', () => {
     ]);
   });
 });
+
+describe('stale persistent actor link audit (eshyra-cxuc)', () => {
+  const staleLinks = (s: ReturnType<typeof setup>) =>
+    auditActiveEffectIntegrity(s.db, campaign).filter((i) =>
+      i.issue.includes('persistent actor link still points at combatant'),
+    );
+
+  it('treats a durable summon bound mid-combat as clean while its combat is live', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    const link = s.effect('fam-fx').links.find((l) => l.linkKind === 'actor');
+    expect(link).toMatchObject({
+      target: { kind: 'combatant', ref: 'c-fam' },
+      campaignActorId: 'fam',
+    });
+    expect(auditActiveEffectIntegrity(s.db, campaign)).toEqual([]);
+  });
+
+  it('is clean after combat closure rebinds the link to the campaign actor', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    s.must('close_combat_instance', { status: 'completed' });
+    expect(
+      s.effect('fam-fx').links.find((l) => l.linkKind === 'actor'),
+    ).toMatchObject({ target: { kind: 'campaign_actor', ref: 'fam' } });
+    expect(auditActiveEffectIntegrity(s.db, campaign)).toEqual([]);
+  });
+
+  it('flags a link left on a closed combat combatant, and on a missing one', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    s.must('close_combat_instance', { status: 'completed' });
+    // Corrupt: point the rebound link back at the now-closed combatant.
+    s.db
+      .prepare(
+        `UPDATE active_effect_link SET target_kind = 'combatant', target_ref = 'c-fam'
+         WHERE effect_id = 'fam-fx' AND link_kind = 'actor'`,
+      )
+      .run();
+    expect(staleLinks(s)).toEqual([
+      {
+        effectId: 'fam-fx',
+        issue: "persistent actor link still points at combatant 'c-fam'",
+      },
+    ]);
+    s.db
+      .prepare(
+        "UPDATE active_effect_link SET target_ref = 'c-gone' WHERE effect_id = 'fam-fx'",
+      )
+      .run();
+    expect(staleLinks(s)).toHaveLength(1);
+  });
+});
