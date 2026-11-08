@@ -109,14 +109,24 @@ const LIST = String.raw`(?:\w+(?:,\s*(?:(?:or|and)\s+)?|\s+(?:or|and)\s+))*`;
 // petrified", "is either blinded or deafened", "are both restrained". A
 // closed set (eshyra-mx0d). It is deliberately not "any -ly word": "The glyph
 // is nearly invisible" describes concealment, not the Invisible condition.
-const APPLIES_ADVERBS = String.raw`(?:(?:magically|instantly|immediately|permanently|automatically|already|also|either|both|then|instead)\s+)*`;
+// "stable but" is the one non-adverb lead-in ("the target is stable but
+// poisoned" — giant centipede, eshyra-xogv).
+const APPLIES_ADVERBS = String.raw`(?:(?:magically|instantly|immediately|permanently|automatically|already|also|either|both|then|instead|stable\s+but)\s+)*`;
+
+// A closed qualifier that may trail an earlier condition-list member before the
+// list continues (eshyra-xogv): a printed save-DC parenthetical ("grappled
+// (escape DC 13) and restrained" — otyugh), a chosen-option parenthetical
+// ("charmed (if you chose awe) or frightened" — Draconic Presence) or a
+// duration ("poisoned for 5 (1d10) minutes and unconscious" — homunculus).
+// Each form is a fixed shape, not a free parenthetical or open phrase.
+const APPLIES_MEMBER_QUALIFIER = String.raw`(?:\s+\((?:escape DC \d+|if you chose \w+)\)|\s+for\s+\d+(?:\s*\(\w+\))?\s+(?:minute|hour|round|day)s?)?`;
 
 // Earlier members of a condition list that precede the classified condition:
 // "is deafened and frightened" must classify `frightened` as well as
 // `deafened`; the gate/exclusion grammars use it too, so "a creature that is
 // charmed, frightened, or possessed" gates `frightened` rather than reading
 // as an application. Members are SRD condition names only.
-const APPLIES_CONDITION_LIST_PREFIX = String.raw`(?:(?:${MECHANICS_CONDITION_NAMES.join('|')})(?:,\s*(?:(?:or|and)\s+)?|\s+(?:or|and)\s+))*`;
+const APPLIES_CONDITION_LIST_PREFIX = String.raw`(?:(?:${MECHANICS_CONDITION_NAMES.join('|')})${APPLIES_MEMBER_QUALIFIER}(?:,\s*(?:(?:or|and)\s+)?|\s+(?:or|and)\s+))*`;
 
 /**
  * Negation immediately preceding an applies-shaped phrase ("it isn't knocked
@@ -286,13 +296,20 @@ const RELATION_PATTERNS: readonly {
         // an adverbed condition classifies the same as the bare form. Both
         // extensions are bounded: adverbs are a closed word set, list members are SRD condition names only, so the wildcard
         // cannot swallow an unrelated clause.
+        // eshyra-xogv: non-copular infliction printed in the SRD — "subjected
+        // to the petrified condition" (Flesh to Stone, Prismatic Spray/Wall),
+        // "trapped under the net and restrained" (Falling Net), and Divine
+        // Word's hit-point-threshold effect bullets ("• 40 hit points or
+        // fewer: deafened and blinded for 10 minutes"). "is stable but
+        // poisoned" (giant centipede) and the qualified list members above
+        // ride the shared adverb / list-prefix sets.
         // "both" may interpose ("you and the creature are both restrained"
         // — the Grappler feat's pin applies restrained on success;
         // eshyra-o9bd.18.7.5). The second alternative is Cackle Fever's
         // "gains one level of exhaustion", which applies the condition just
         // like "suffers … levels of" (eshyra-o9bd.18.7.9).
         new RegExp(
-          `\\b(?:becom(?:es?|ing)|falls?|be|is|are|knocked)\\s+${APPLIES_ADVERBS}${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|\\b(?:suffers?|gains?)(?:\\s+\\w+)?\\s+levels?\\s+of\\s+${c}\\b`,
+          `\\b(?:becom(?:es?|ing)|falls?|be|is|are|knocked)\\s+${APPLIES_ADVERBS}${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|\\bsubjected\\s+to\\s+the\\s+${c}\\s+condition\\b|\\btrapped\\s+(?:\\w+\\s+){0,3}and\\s+${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|•\\s*\\d+\\s+hit\\s+points\\s+or\\s+fewer:\\s+${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|\\b(?:suffers?|gains?)(?:\\s+\\w+)?\\s+levels?\\s+of\\s+${c}\\b`,
           'gi',
         ),
       ),

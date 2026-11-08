@@ -123,3 +123,83 @@ describe('adverbed and listed infliction (eshyra-mx0d)', () => {
     });
   }
 });
+
+describe('residual non-copular infliction phrasings (eshyra-xogv)', () => {
+  const relationOf = (text: string, condition: string) =>
+    deriveConditionMechanics(text).find((e) => e.condition === condition)
+      ?.relation;
+
+  // Exact printed SRD sentences.
+  for (const [text, condition] of [
+    [
+      'If the poison damage reduces the target to 0 hit points, the target is stable but poisoned for 1 hour, even after regaining hit points, and is paralyzed while poisoned in this way.',
+      'poisoned',
+    ],
+    [
+      'If the saving throw fails by 5 or more, the target is instead poisoned for 5 (1d10) minutes and unconscious while poisoned in this way.',
+      'unconscious',
+    ],
+    [
+      'If the target is Medium or smaller, it is grappled (escape DC 13) and restrained until the grapple ends.',
+      'restrained',
+    ],
+    [
+      'If it fails its saves three times, it is turned to stone and subjected to the petrified condition for the duration.',
+      'petrified',
+    ],
+    [
+      'If it fails its save three times, it permanently turns to stone and is subjected to the petrified condition.',
+      'petrified',
+    ],
+    [
+      'Those in the area are trapped under the net and restrained, and those that fail a DC 10 Strength saving throw are also knocked prone.',
+      'restrained',
+    ],
+    [
+      'each hostile creature that starts its turn in this aura must succeed on a Wisdom saving throw or be charmed (if you chose awe) or frightened (if you chose fear) until the aura ends.',
+      'frightened',
+    ],
+    [
+      'On a failed save, a creature suffers an effect based on its current hit points: • 50 hit points or fewer: deafened for 1 minute • 40 hit points or fewer: deafened and blinded for 10 minutes • 30 hit points or fewer: blinded, deafened, and stunned for 1 hour • 20 hit points or fewer: killed instantly',
+      'stunned',
+    ],
+  ] as const) {
+    it(`applies ${condition}: ${text.slice(0, 70)}`, () => {
+      expect(relationOf(text, condition)).toBe('applies');
+    });
+  }
+
+  // Controls: the extensions must not turn gates/exclusions into applications.
+  for (const [text, condition, relation] of [
+    [
+      'The glyph is nearly invisible and requires a check to be found.',
+      'invisible',
+      'mention',
+    ],
+    [
+      'One creature grappled by the chuul must succeed on a save.',
+      'grappled',
+      'mention',
+    ],
+    [
+      'The ankheg spits acid, provided that it has no creature grappled.',
+      'grappled',
+      'mention',
+    ],
+    [
+      'The effect ends early if the target is stable but poisoned.',
+      'poisoned',
+      'exclusion',
+    ],
+    [
+      'while the target is grappled (escape DC 13) and restrained.',
+      'restrained',
+      'gates',
+    ],
+    ['It isn’t subjected to the petrified condition.', 'petrified', 'mention'],
+  ] as const) {
+    it(`keeps ${relation} for ${condition}: ${text}`, () => {
+      expect(relationOf(text, condition)).toBe(relation);
+    });
+  }
+});
