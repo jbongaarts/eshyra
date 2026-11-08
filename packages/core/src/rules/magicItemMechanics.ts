@@ -136,6 +136,13 @@ export interface MagicItemOperation {
      */
     readonly onExhausted?: 'risk-adjudicated';
   }[];
+  /**
+   * Printed either/or with other operations of the same item instance
+   * (Candle of Invocation: the first-light gate is an alternative to burning).
+   * Symmetric and enforced by `useItem` (eshyra-kbzm): this operation is
+   * refused once a listed one has been performed on the instance, and a listed
+   * one is refused once this has been.
+   */
   readonly excludes?: readonly string[];
   readonly doesNotExpend?: readonly string[];
   readonly effects?: readonly string[];

@@ -2680,3 +2680,129 @@ describe('magic-item live instance state', () => {
     expect(tableProcedures).toBe(4);
   });
 });
+
+describe('operation.excludes enforcement (eshyra-kbzm)', () => {
+  const give = (
+    db: ReturnType<typeof freshDbWithSession>,
+    rec: RulesRecord,
+  ) => {
+    const granted = giveItem(
+      db,
+      { id: 'ignored', name: rec.name, packRef: rec.key, stateful: true },
+      MUTATION,
+    );
+    writeItemState(
+      db,
+      granted.id,
+      createInitialItemState(rec.key, rec),
+      MUTATION,
+    );
+    return granted.id;
+  };
+  const either = item('either-or-wand', {
+    economies: {
+      charges: { kind: 'charges', charges: { max: 5 } },
+    },
+    operations: [
+      { id: 'fire', cost: [{ economy: 'charges', amount: 1 }] },
+      {
+        id: 'overload',
+        cost: [{ economy: 'charges', amount: 1 }],
+        excludes: ['fire'],
+      },
+      { id: 'plain' },
+    ],
+  });
+
+  it('is symmetric: using either side of a pairing refuses the other, leaving state untouched', () => {
+    for (const [first, second] of [
+      ['fire', 'overload'],
+      ['overload', 'fire'],
+    ] as const) {
+      const db = freshDbWithSession();
+      try {
+        const rulesPack = pack(either);
+        const id = give(db, either);
+        useItem(db, useInput(rulesPack, id, first));
+        const before = readItemState(db, id);
+        expect(before?.usedOperations).toEqual([first]);
+        expect(() => useItem(db, useInput(rulesPack, id, second))).toThrow(
+          new RegExp(
+            `operation '${second}' is mutually exclusive with '${first}', which has already been used`,
+          ),
+        );
+        expect(readItemState(db, id)).toEqual(before);
+        // The same side may repeat, and an unpaired operation is unaffected
+        // and not recorded.
+        useItem(db, useInput(rulesPack, id, first));
+        useItem(db, useInput(rulesPack, id, 'plain'));
+        expect(readItemState(db, id)?.usedOperations).toEqual([first]);
+      } finally {
+        db.close();
+      }
+    }
+  });
+
+  it('refuses an excluding pairing on an item that keeps no state, rather than leaving it unenforced', () => {
+    const db = freshDbWithSession();
+    try {
+      const stackable = item('stack-either-or', {
+        operations: [{ id: 'a' }, { id: 'b', excludes: ['a'] }],
+      });
+      const granted = giveItem(
+        db,
+        { id: 'ignored', name: 'Stack', packRef: stackable.key },
+        MUTATION,
+      );
+      expect(() =>
+        useItem(db, useInput(pack(stackable), granted.id, 'a')),
+      ).toThrow(/keeps no per-instance state to enforce it/);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('agrees with the Candle of Invocation state machine on the real mechanics', () => {
+    const bundled = getBundledDnd5eSrdPack();
+    const real = bundled.records.find(
+      (record) => record.key === 'magic-item:candle-of-invocation',
+    );
+    if (real === undefined) throw new Error('missing candle');
+    const mechanics = (real.data as { mechanics: Record<string, unknown> })
+      .mechanics;
+    // Same typed mechanics, with the unrelated engine-pending F4 spell
+    // execution clause green so the excludes check itself is reachable.
+    const candle = item('candle-of-invocation-gate-ready', mechanics, true);
+    const rulesPack = pack(candle);
+    const db = freshDbWithSession();
+    try {
+      const id = give(db, candle);
+      db.prepare(
+        `INSERT INTO attunement(campaign_id, character_id, item_id, item_key, display_name,
+           attuned_at, provenance, session_id, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        'campaign-1',
+        'pc-1',
+        id,
+        candle.key,
+        candle.name,
+        MUTATION.at,
+        MUTATION.provenance,
+        MUTATION.sessionId,
+        MUTATION.at,
+      );
+      useItem(db, useInput(rulesPack, id, 'light'));
+      useItem(db, useInput(rulesPack, id, 'burn'));
+      const before = readItemState(db, id);
+      expect(before?.usedOperations).toEqual(['burn']);
+      // The typed refusal names the excluding operation; the unlit-only
+      // cast-gate transition would also refuse, so the two never disagree.
+      expect(() => useItem(db, useInput(rulesPack, id, 'cast-gate'))).toThrow(
+        /operation 'cast-gate' is mutually exclusive with 'burn'/,
+      );
+      expect(readItemState(db, id)).toEqual(before);
+    } finally {
+      db.close();
+    }
+  });
+});
