@@ -308,7 +308,7 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
         'creature:aboleth',
         '/actions/*/mechanics/conditions/*/condition',
       ),
-    ).toContainEqual(['mention', 'condition:charmed']);
+    ).toContainEqual(['applies', 'condition:charmed']);
     // Elf Fey Ancestry: advantage on saving throws against being charmed.
     expect(
       resolvedEdge(
@@ -482,7 +482,7 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
     expect(trace.traversals).toContainEqual({
       sourceRecordKey: 'creature:aboleth',
       linkField: 'data.actions[].mechanics.conditions',
-      relation: 'mention',
+      relation: 'applies',
       targetRecordKey: 'condition:charmed',
     });
   });

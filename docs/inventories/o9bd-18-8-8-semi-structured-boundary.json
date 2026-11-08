@@ -5427,11 +5427,11 @@
       ],
       "fieldPath": "data.actions[].mechanics.conditions[].relation",
       "representativeValues": [
-        "mention",
         "applies",
-        "removes",
+        "mention",
         "exclusion",
-        "advantage"
+        "advantage",
+        "immune"
       ],
       "population": 218,
       "valueClass": "scalar-like",
