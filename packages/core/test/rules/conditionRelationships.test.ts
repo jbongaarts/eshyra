@@ -344,6 +344,25 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
         '/mechanics/effects/*/condition',
       ),
     ).toEqual([['imposed-condition', 'condition:charmed']]);
+    // Rod of Rulership: "must succeed on a DC 15 Wisdom saving throw or be
+    // charmed by you for 8 hours".
+    expect(
+      resolvedEdge(
+        'magic-item:rod-of-rulership',
+        '/mechanics/effects/*/conditions/*',
+      ),
+    ).toEqual([['imposed-condition', 'condition:charmed']]);
+    expect(
+      outcomes('magic-item:rod-of-rulership', '/mechanics/effects/*/condition'),
+    ).toEqual([]);
+    // Philter of Love: both the imposesCondition effect and the residual
+    // triggeredEffect ("become charmed by that creature for 1 hour") reach it.
+    expect(
+      resolvedEdge(
+        'magic-item:philter-of-love',
+        '/mechanics/effects/*/conditions/*',
+      ),
+    ).toEqual([['imposed-condition', 'condition:charmed']]);
     // Ball Bearings: "... Dexterity saving throw or fall prone".
     expect(
       resolvedEdge(
@@ -406,6 +425,22 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
         pointer: '/mechanics/effects/*/conditions/*',
         rawValue: 'suffocating',
       }),
+      // eshyra-1fx7: the non-condition entries beside real condition names in
+      // the ends / whip endsOn lists (diseases, dismissal, death).
+      ...['dismiss-action', 'death'].map((rawValue) =>
+        expect.objectContaining({
+          sourceRecordKey: 'magic-item:feather-token',
+          pointer: '/mechanics/effects/*/variants/whip/endsOn/*',
+          rawValue,
+        }),
+      ),
+      ...['disease', 'any-disease'].map((rawValue) =>
+        expect.objectContaining({
+          sourceRecordKey: 'magic-item:restorative-ointment',
+          pointer: '/mechanics/effects/*/ends/*',
+          rawValue,
+        }),
+      ),
     ]);
     // Printed: "A creature affected in this way is incapacitated and
     // suffocating." The pack has rule:suffocating but no condition of that
@@ -444,8 +479,6 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
       if (excludedPointers.size === 0) continue;
       walkFieldPointers(record.data, (pointer, value) => {
         if (!excludedPointers.has(pointer)) return;
-        // Only the excluded entries (not the resolved imposesCondition name)
-        // are checked: a resolved philter-of-love charmed is a name by design.
         if (
           typeof value === 'string' &&
           conditionNames.has(normalizeRulesRecordName(value))
@@ -453,15 +486,10 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
           excludedByRecord.push([record.key, `${pointer}=${value}`]);
       });
     }
-    // The only condition-name leaves under an excluded-capable pointer are the
-    // three `charmed` triggered/imposing effects; the imposesCondition one is
-    // resolved, and the two triggeredEffect ones are the documented
-    // follow-up gap (the table cannot separate them from prose by kind).
-    expect(excludedByRecord.sort()).toEqual([
-      ['magic-item:philter-of-love', '/mechanics/effects/*/condition=charmed'],
-      ['magic-item:philter-of-love', '/mechanics/effects/*/condition=charmed'],
-      ['magic-item:rod-of-rulership', '/mechanics/effects/*/condition=charmed'],
-    ]);
+    // No exceptions: every table-excluded leaf outside condition records is
+    // prose. A condition name under an excluded-capable pointer would be a
+    // silently lost edge (the earlier charmed triggeredEffect gap, eshyra-y0us).
+    expect(excludedByRecord).toEqual([]);
     const lance = outcomes(
       'equipment:lance',
       '/useProfile/clauses/*/semantics/condition',
@@ -485,5 +513,120 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
       relation: 'applies',
       targetRecordKey: 'condition:charmed',
     });
+  });
+});
+
+describe('condition-name leaves under other field names (eshyra-1fx7)', () => {
+  const edges = (key: string, pointerPrefix: string) =>
+    resolveRecordRelationships(manifest, entry(key).record, stack)
+      .filter(
+        (resolution) => resolution.declaration.pointerPrefix === pointerPrefix,
+      )
+      .map((resolution) =>
+        resolution.outcome === 'resolved'
+          ? [resolution.relation, resolution.targetRecordKey]
+          : [
+              resolution.outcome,
+              'rawValue' in resolution ? resolution.rawValue : undefined,
+            ],
+      );
+
+  it('resolves every creature condition immunity entry against the condition kind', () => {
+    // Zombie: "Condition Immunities poisoned".
+    expect(edges('creature:zombie', '/conditionImmunities')).toEqual([
+      ['condition-immunity', 'condition:poisoned'],
+    ]);
+    // Ghoul: "Condition Immunities charmed, exhaustion, poisoned".
+    expect(edges('creature:ghoul', '/conditionImmunities')).toEqual([
+      ['condition-immunity', 'condition:charmed'],
+      ['condition-immunity', 'condition:exhaustion'],
+      ['condition-immunity', 'condition:poisoned'],
+    ]);
+  });
+
+  it('leaves no condition-immunity entry unresolved or indeterminate in any record', () => {
+    const outcomesByKind = new Map<string, number>();
+    for (const record of pack.records) {
+      if (!('conditionImmunities' in (record.data as object))) continue;
+      const found = resolveRecordRelationships(manifest, record, stack).filter(
+        (resolution) =>
+          resolution.declaration.pointerPrefix === '/conditionImmunities',
+      );
+      const printed = (
+        record.data as { conditionImmunities: string }
+      ).conditionImmunities.split(', ');
+      expect(found.map((resolution) => resolution.outcome)).toEqual(
+        printed.map(() => 'resolved'),
+      );
+      outcomesByKind.set(
+        record.kind,
+        (outcomesByKind.get(record.kind) ?? 0) + found.length,
+      );
+    }
+    expect([...outcomesByKind.keys()].sort()).toEqual([
+      'creature',
+      'stat-block',
+    ]);
+  });
+
+  it('lets a seeded creature reach its immunity conditions through one-hop expansion', () => {
+    const trace = expandTypedRelationships([seed('creature:ghoul')], stack, {
+      relationshipManifestSource:
+        bundledDnd5eSrdRecordRelationshipManifestSource(),
+    });
+    for (const target of [
+      'condition:charmed',
+      'condition:exhaustion',
+      'condition:poisoned',
+    ])
+      expect(trace.traversals).toContainEqual({
+        sourceRecordKey: 'creature:ghoul',
+        linkField: 'data.conditionImmunities',
+        relation: 'condition-immunity',
+        targetRecordKey: target,
+      });
+  });
+
+  it('resolves the magic-item state, ends, and whip endsOn leaves against the printed clauses', () => {
+    // "you and each creature and object within 10 feet of you become invisible"
+    expect(
+      edges('magic-item:dust-of-disappearance', '/mechanics/effects/*/state'),
+    ).toEqual([['imposed-condition', 'condition:invisible']]);
+    // "When you drink it, you become invisible for 1 hour."
+    expect(
+      edges('magic-item:potion-of-invisibility', '/mechanics/effects/*/state'),
+    ).toEqual([['imposed-condition', 'condition:invisible']]);
+    // "ceases to be poisoned, and is cured of any disease": disease is not a
+    // condition record and is a declared exclusion.
+    expect(
+      edges('magic-item:restorative-ointment', '/mechanics/effects/*/ends/*'),
+    ).toEqual([
+      ['removed-condition', 'condition:poisoned'],
+      ['excluded', 'disease'],
+      ['removed-condition', 'condition:poisoned'],
+      ['excluded', 'any-disease'],
+    ]);
+    // "The whip disappears ... when you are incapacitated or die."
+    expect(
+      edges(
+        'magic-item:feather-token',
+        '/mechanics/effects/*/variants/whip/endsOn/*',
+      ),
+    ).toEqual([
+      ['excluded', 'dismiss-action'],
+      ['ending-trigger-condition', 'condition:incapacitated'],
+      ['excluded', 'death'],
+    ]);
+  });
+
+  it('leaves nothing unresolved or indeterminate across the whole pack', () => {
+    const bad = pack.records.flatMap((record) =>
+      resolveRecordRelationships(manifest, record, stack).filter(
+        (resolution) =>
+          resolution.outcome === 'unresolved-target' ||
+          resolution.outcome === 'indeterminate',
+      ),
+    );
+    expect(bad).toEqual([]);
   });
 });

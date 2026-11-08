@@ -104,9 +104,10 @@ function prosePrecondition(
  * `imposesCondition` effect (Philter of Love) stores the condition it imposes.
  * The effect `kind` therefore selects the meaning. Every emitted effect kind
  * is listed so a new kind is `indeterminate`, not silently misread.
- * `triggeredEffect` is mixed (Rod of Rulership and Philter of Love's
- * triggered effect store `charmed`; five others store prose) and a table keyed
- * by kind cannot separate them, so it is excluded and tracked as a follow-up.
+ * `triggeredEffect` stores prose only: the two triggered effects that impose
+ * `charmed` (Rod of Rulership, Philter of Love's residual effect) carry it in
+ * `conditions[]` (declared below with the other imposing effects), so no
+ * condition name is left under this field for a table-excluded kind.
  */
 const MAGIC_ITEM_EFFECT_CONDITION_PROSE_KINDS = [
   'abilityScoreIncrease',
@@ -136,6 +137,26 @@ const MAGIC_ITEM_EFFECT_CONDITION_PROSE_KINDS = [
   'triggeredEffect',
   'walkOnLiquids',
 ] as const;
+
+/**
+ * Creature and stat-block `conditionImmunities` is the verbatim printed
+ * stat-block label: a comma-separated list of condition names ("charmed,
+ * exhaustion, poisoned"). Every printed name is a condition record, so each
+ * list entry is a `condition-immunity` reference (the same relation a magic
+ * item's immunity effect uses).
+ */
+const CONDITION_IMMUNITY_DECLARATIONS: readonly RecordRelationshipDeclaration[] =
+  (['creature', 'stat-block'] as const).map((kind) => ({
+    kind,
+    pointerPrefix: '/conditionImmunities',
+    linkField: 'data.conditionImmunities',
+    disposition: 'reference',
+    relation: 'condition-immunity',
+    targetResolution: 'record-name',
+    targetKind: 'condition',
+    listDelimiter: ', ',
+    reason: `The ${kind} record's printed "Condition Immunities" label lists the conditions it is immune to as a comma-separated string; each printed name resolves against the condition kind (for example the zombie's "poisoned", the ghoul's "charmed, exhaustion, poisoned").`,
+  }));
 
 /** Curated relationship meaning for the fields formerly guessed by discovery. */
 export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationshipDeclaration[] =
@@ -455,7 +476,58 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
         ),
       },
       reason:
-        'Overloaded field: an imposesCondition effect names the condition it imposes (Philter of Love: charmed), while every other effect kind stores a prose activation precondition here (for example "while the sword is ablaze") that is excluded. triggeredEffect is mixed (two charmed names, five prose clauses) and cannot be told apart by kind, so it is excluded and tracked as a follow-up.',
+        'Overloaded field: an imposesCondition effect names the condition it imposes (Philter of Love: charmed), while every other effect kind, triggeredEffect included, stores a prose activation precondition here (for example "while the sword is ablaze") that is excluded. The importer emits the condition a triggeredEffect imposes (Rod of Rulership, Philter of Love) in its conditions[] array, not here.',
+    },
+    // eshyra-o9bd.19.3.5.2 (eshyra-1fx7): condition names under field names
+    // other than condition/conditions/failedSaveCondition.
+    ...CONDITION_IMMUNITY_DECLARATIONS,
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/state',
+      linkField: 'data.mechanics.effects[].state',
+      disposition: 'reference',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: 'kind',
+      relationByFieldValue: { visibility: 'imposed-condition' },
+      reason:
+        'A visibility effect names the condition it imposes: Dust of Disappearance ("you and each creature and object within 10 feet of you become invisible for 2d4 minutes") and Potion of Invisibility ("you become invisible for 1 hour"). The SRD defines Invisible as a condition (Appendix PH-A). Any other effect kind carrying a state is indeterminate, not silently read.',
+    },
+    {
+      kind: 'condition',
+      pointerPrefix: '/mechanics/effects/*/state',
+      linkField: 'data.mechanics.effects[].state',
+      disposition: 'not-a-reference',
+      reason:
+        'The Invisible condition record describes its own state ("impossible-to-see"), a descriptor of that condition, not a condition name.',
+    },
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/ends/*',
+      linkField: 'data.mechanics.effects[].ends',
+      disposition: 'reference',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: '../kind',
+      relationByFieldValue: {
+        conditionEndsWhen: 'removed-condition',
+        triggeredEffect: 'removed-condition',
+      },
+      excludedLeafValues: ['disease', 'any-disease'],
+      reason:
+        'What a magic-item effect ends. Restorative Ointment: "ceases to be poisoned, and is cured of any disease" lists the poisoned condition it removes beside diseases. Diseases are not condition records (the SRD treats them as a separate rules topic), so disease and any-disease are declared excluded leaf values rather than unresolved references.',
+    },
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/mechanics/effects/*/variants/whip/endsOn/*',
+      linkField: 'data.mechanics.effects[].variants.whip.endsOn',
+      disposition: 'reference',
+      relation: 'ending-trigger-condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      excludedLeafValues: ['dismiss-action', 'death'],
+      reason:
+        'Feather Token (whip): "The whip disappears after 1 hour, when you use an action to dismiss it, or when you are incapacitated or die." The incapacitated entry names the condition that ends the effect; dismiss-action and death are not conditions and are declared excluded leaf values.',
     },
     prosePrecondition(
       'magic-item',

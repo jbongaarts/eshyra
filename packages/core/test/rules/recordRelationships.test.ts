@@ -599,6 +599,10 @@ describe('F3: the bounded coverage gate is two-directional', () => {
       '/mechanics/damage/*/typeOptions/*/condition',
       '/useProfile/clauses/*/semantics/condition',
       '/useProfile/clauses/*/semantics/failureCondition',
+      '/conditionImmunities',
+      '/mechanics/effects/*/state',
+      '/mechanics/effects/*/ends/*',
+      '/mechanics/effects/*/variants/whip/endsOn/*',
     ]);
   });
 
@@ -1070,6 +1074,13 @@ describe('committed SRD pack relationship integrity (eshyra-o9bd.19.3.4)', () =>
     // The single printed non-condition value in a conditions list.
     const justifiedLeafExclusions = new Set([
       'magic-item:dust-of-sneezing-and-choking|/mechanics/effects/*/conditions/*|suffocating',
+      // Restorative Ointment: "ceases to be poisoned, and is cured of any disease".
+      'magic-item:restorative-ointment|/mechanics/effects/*/ends/*|disease',
+      'magic-item:restorative-ointment|/mechanics/effects/*/ends/*|any-disease',
+      // Feather Token whip: "... when you use an action to dismiss it, or when
+      // you are incapacitated or die."
+      'magic-item:feather-token|/mechanics/effects/*/variants/whip/endsOn/*|dismiss-action',
+      'magic-item:feather-token|/mechanics/effects/*/variants/whip/endsOn/*|death',
     ]);
     const failures = pack.records
       .flatMap((r) => resolveRecordRelationships(manifest, r, stack))
@@ -1329,6 +1340,64 @@ describe('record-name relation tables and fixed relations', () => {
         },
       ]),
     ).toThrow();
+  });
+
+  it('splits a declared list-delimited leaf into one typed outcome per entry', () => {
+    const declaration: RecordRelationshipDeclaration = {
+      kind: 'creature',
+      pointerPrefix: '/conditionImmunities',
+      linkField: 'data.conditionImmunities',
+      disposition: 'reference',
+      relation: 'condition-immunity',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      listDelimiter: ', ',
+      excludedLeafValues: ['suffocating'],
+      reason: 'synthetic list-delimited leaf',
+    };
+    const manifestUnderTest = buildRecordRelationshipManifest([declaration]);
+    const source = { ...record('action:dodge'), kind: 'creature' as const };
+    const outcomesFor = (conditionImmunities: unknown) =>
+      resolveRecordRelationships(
+        manifestUnderTest,
+        { ...source, data: { conditionImmunities } },
+        stack,
+      );
+    expect(
+      outcomesFor('charmed, Poisoned, suffocating, unknown').map((item) => [
+        item.outcome,
+        item.pointer,
+      ]),
+    ).toEqual([
+      ['resolved', '/conditionImmunities'],
+      ['resolved', '/conditionImmunities'],
+      ['excluded', '/conditionImmunities'],
+      ['unresolved-target', '/conditionImmunities'],
+    ]);
+    // An empty entry is a typed loss, never silently skipped.
+    expect(
+      outcomesFor('charmed, , poisoned').map((item) => item.outcome),
+    ).toEqual(['resolved', 'indeterminate', 'resolved']);
+    expect(outcomesFor('charmed, , poisoned')[1]).toMatchObject({
+      reason: 'list-entry-empty',
+    });
+    expect(outcomesFor(7)[0]).toMatchObject({ reason: 'value-not-a-string' });
+    for (const bad of ['', ' ', 'toolong'])
+      expect(() =>
+        buildRecordRelationshipManifest([
+          { ...declaration, listDelimiter: bad },
+        ]),
+      ).toThrow(/listDelimiter/);
+    expect(() =>
+      buildRecordRelationshipManifest([
+        {
+          ...declaration,
+          excludedLeafValues: undefined,
+          targetResolution: 'record-key',
+          targetKind: undefined,
+        },
+      ]),
+    ).toThrow(/listDelimiter/);
   });
 
   it('rejects malformed relation-table declarations', () => {

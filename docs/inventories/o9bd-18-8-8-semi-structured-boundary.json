@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1882,
+  "rowCount": 1885,
   "dispositionCounts": {
     "complete": 444,
-    "model-adjudicated": 1232,
+    "model-adjudicated": 1235,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -5317,7 +5317,7 @@
         "2d10 + 6",
         "1d8"
       ],
-      "population": 552,
+      "population": 553,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -5357,15 +5357,36 @@
       "recordKinds": [
         "creature"
       ],
-      "fieldPath": "data.actions[].mechanics.attacks[].hitDamageNotProjected",
+      "fieldPath": "data.actions[].mechanics.attacks[].hitDamage[].typeOptions[].condition",
       "representativeValues": [
-        "12 (2d6 + 5) slashing damage plus 3 (1d6) lightning or thunder damage (djinni’s choice)"
+        "djinni’s choice"
       ],
-      "population": 1,
+      "population": 2,
+      "valueClass": "compound mechanical text",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
+      "currentAuditReadiness": "qualifier remains source/entry prose and is not claimed as typed gameplay support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
+      "fieldPath": "data.actions[].mechanics.attacks[].hitDamage[].typeOptions[].type",
+      "representativeValues": [
+        "lightning",
+        "thunder"
+      ],
+      "population": 2,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.actions[].mechanics.attacks[].hitDamageNotProjected",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.actions[].mechanics.attacks[].hitDamage[].typeOptions[].type",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -5457,7 +5478,7 @@
         "1d4",
         "2d10 + 6"
       ],
-      "population": 635,
+      "population": 636,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -5486,6 +5507,47 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.actions[].mechanics.damage[].type",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
+      "fieldPath": "data.actions[].mechanics.damage[].typeOptions[].condition",
+      "representativeValues": [
+        "djinni’s choice"
+      ],
+      "population": 2,
+      "valueClass": "compound mechanical text",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
+      "currentAuditReadiness": "qualifier remains source/entry prose and is not claimed as typed gameplay support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
+      "fieldPath": "data.actions[].mechanics.damage[].typeOptions[].type",
+      "representativeValues": [
+        "lightning",
+        "thunder"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.actions[].mechanics.damage[].typeOptions[].type",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -22222,7 +22284,7 @@
         "if you aren’t a dwarf",
         "rely on moving silently"
       ],
-      "population": 98,
+      "population": 96,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -22266,7 +22328,7 @@
         "frightened",
         "charmed"
       ],
-      "population": 15,
+      "population": 17,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
