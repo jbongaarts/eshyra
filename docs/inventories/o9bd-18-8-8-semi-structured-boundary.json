@@ -22222,7 +22222,7 @@
         "if you aren’t a dwarf",
         "rely on moving silently"
       ],
-      "population": 98,
+      "population": 96,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -22266,7 +22266,7 @@
         "frightened",
         "charmed"
       ],
-      "population": 15,
+      "population": 17,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",

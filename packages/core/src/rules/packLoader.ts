@@ -300,6 +300,7 @@ function parseRecordRelationshipDeclaration(
     'relationField',
     'relationByFieldValue',
     'excludedLeafValues',
+    'listDelimiter',
     'reason',
   ]);
   for (const key of Object.keys(o))
@@ -382,6 +383,16 @@ function parseRecordRelationshipDeclaration(
     throw new RulesPackError(
       `${path}.excludedLeafValues must be an array of non-empty strings when present`,
     );
+  const listDelimiter = o.listDelimiter;
+  if (
+    listDelimiter !== undefined &&
+    (typeof listDelimiter !== 'string' ||
+      listDelimiter.trim().length === 0 ||
+      listDelimiter.length > 4)
+  )
+    throw new RulesPackError(
+      `${path}.listDelimiter must be a short non-blank string when present`,
+    );
   const reason = o.reason;
   if (typeof reason !== 'string' || reason.trim().length === 0)
     throw new RulesPackError(`${path}.reason must be a non-empty string`);
@@ -407,6 +418,7 @@ function parseRecordRelationshipDeclaration(
     ...(excludedLeafValues === undefined
       ? {}
       : { excludedLeafValues: excludedLeafValues as readonly string[] }),
+    ...(listDelimiter === undefined ? {} : { listDelimiter }),
     reason,
   };
 }
