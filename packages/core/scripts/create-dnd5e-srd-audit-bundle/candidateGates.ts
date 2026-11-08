@@ -40,7 +40,7 @@ export const EXPLICIT_NON_CLAIMS: readonly string[] = [
   'No universal clause completeness: no gate claims every source clause is represented or typed.',
   'No universal mechanic completeness: no gate claims every mechanic in the source is implemented or bound.',
   'No deterministic completeness: the absence of a capability binding is not a result, and the unselected magic-item backlog is not covered.',
-  'No discovery completeness: nothing here claims the DM can reach every relevant record (see the unresolved limits disclosed below: eshyra-ry69, eshyra-1fx7, eshyra-y0us).',
+  'No discovery completeness: nothing here claims the DM can reach every relevant record (see the bounded discovery limitation disclosed below).',
   'Passing every gate authorizes independent audit (eshyra-o9bd.16). It is not a re-freeze and is not proof that no defect remains.',
 ];
 

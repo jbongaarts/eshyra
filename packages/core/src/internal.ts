@@ -1333,6 +1333,7 @@ export {
   buildRecordRelationshipManifest,
   CONDITION_NAME_LEAF_POINTER_SHAPES,
   LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES,
+  RECORD_KEY_LEAF_KIND_POINTER_SHAPES,
   RECORD_RELATIONSHIP_SCHEMA,
   RecordRelationshipError,
   relationshipDeclarationForPointer,
