@@ -421,9 +421,16 @@ function readRechargeEntry(
       detail: `${formatRollEvidence(evidence)} vs ${data.rechargeThreshold} → ${data.recharged ? 'recharged' : 'not recharged'}`,
     };
   }
-  // A dawn rechargeFormula restore (e.g. 1d6+1): no threshold, the roll
-  // regains its total in uses.
-  const regained = evidence.total ?? evidence.natural;
+  // A dawn rechargeFormula restore (e.g. 1d6+1): no threshold. The ledger
+  // reports the uses the counter actually regained (`restored`, measured from
+  // state), which stops at zero expended uses; a larger rolled or supplied
+  // total is shown as capped, never as regained.
+  if (typeof data.restored !== 'number') return undefined;
+  const amount = evidence.total ?? evidence.natural;
+  const regained =
+    data.restored < amount
+      ? `regains ${data.restored} (${amount}, capped at uses expended)`
+      : `regains ${data.restored}`;
   return {
     label: 'Restore',
     reason: `${name}${typeof data.reason === 'string' ? data.reason : 'Rolled restore'}`,
@@ -431,8 +438,8 @@ function readRechargeEntry(
     category: 'other',
     detail:
       evidence.source === 'dm-supplied'
-        ? `DM-supplied (${evidence.basis}) regains ${regained}`
-        : `${formatRollEvidence(evidence)} → regains ${regained}`,
+        ? `DM-supplied (${evidence.basis}) ${regained}`
+        : `${formatRollEvidence(evidence)} → ${regained}`,
   };
 }
 

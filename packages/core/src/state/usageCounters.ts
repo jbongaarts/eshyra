@@ -224,6 +224,11 @@ export interface RestoreUsageResult {
   /** Roll mode: engine-rolled die or the recorded DM override. Absent for a
    *  legacy caller-supplied roll with no override. */
   readonly rollEvidence?: RollEvidence;
+  /** Amount mode: uses actually regained, measured from the counter before
+   *  and after. Restoration stops at zero expended uses, so this can be less
+   *  than the rolled or supplied amount (a 1d6+1 total of 5 on a wand with 2
+   *  charges spent regains 2); rollEvidence keeps the full total. */
+  readonly restored?: number;
 }
 
 export interface ResetUsageInput extends UsageMutationContext {
@@ -1790,6 +1795,7 @@ function applyUsesRegained(
   return {
     counter: rowToCounter(after, counterLabel),
     ...(rollEvidence === undefined ? {} : { rollEvidence }),
+    restored: row.uses_used - after.uses_used,
   };
 }
 

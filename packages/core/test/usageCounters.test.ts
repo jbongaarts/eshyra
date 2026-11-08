@@ -1175,6 +1175,85 @@ describe('restoreUsage — dawn rechargeFormula (engine-rolled)', () => {
     expect(spent.depletedHint).not.toMatch(/via the roll tool/);
   });
 
+  it('reports the uses actually regained, not the rolled or supplied total, when restoration is capped', () => {
+    // One charge spent: every 1d6+1 total (minimum 2) exceeds the expended
+    // uses, so the engine roll is capped for any seed. The expectation comes
+    // from the counter state before and after, never from the ledger.
+    const { db, pcId } = setup();
+    giveItem(
+      db,
+      { id: 'wand-1', name: 'Wand of Fireballs' },
+      { characterId: pcId, ...CTX },
+    );
+    const registry = createDefaultToolRegistry();
+    const ctx = {
+      db,
+      rng: createSeededRng(21),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'turn-1',
+      at: NOW,
+    };
+    const usesUsed = () =>
+      readSpentUsageCounters(db, CAMPAIGN).find(
+        (c) => c.displayName === 'Wand of Fireballs charges',
+      )?.usesUsed ?? 0;
+    const cases = [
+      { itemId: 'wand-1', visibility: 'player_visible' },
+      {
+        itemId: 'wand-1',
+        visibility: 'player_visible',
+        amount: 5,
+        rollOverride: { basis: 'dm-adjudicated', reason: 'ruling' },
+      },
+    ];
+    for (const [index, args] of cases.entries()) {
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        itemId: 'wand-1',
+        uses: 1,
+        ...(index === 0
+          ? {
+              declared: {
+                maxUses: 7,
+                reset: 'dawn' as const,
+                rechargeFormula: '1d6+1',
+              },
+            }
+          : {}),
+        ...CTX,
+      });
+      const before = usesUsed();
+      expect(before).toBe(1);
+      const result = registry.invoke('restore_usage', args, ctx);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const data = result.data as {
+        restored: number;
+        rollEvidence: { natural: number; total?: number };
+      };
+      const actual = before - usesUsed();
+      expect(actual).toBe(1);
+      expect(data.restored).toBe(actual);
+      const amount = data.rollEvidence.total ?? data.rollEvidence.natural;
+      expect(amount).toBeGreaterThan(actual);
+      const ledger = appendPlayerVisibleRollLedger('N.', [
+        {
+          tool: 'restore_usage',
+          args,
+          result,
+          mutates: true,
+          source: 'native',
+        },
+      ]);
+      expect(ledger).toContain(
+        `regains ${actual} (${amount}, capped at uses expended)`,
+      );
+      expect(ledger).not.toContain(`regains ${amount}`);
+    }
+  });
+
   it('restore_usage tool: an omitted amount rolls the formula into the ledger; a supplied amount needs an override', () => {
     const { db, pcId } = setup();
     spendWand(db, pcId);
