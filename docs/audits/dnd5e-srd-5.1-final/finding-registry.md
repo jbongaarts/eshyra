@@ -2,9 +2,10 @@
 
 ## What this artifact is
 
-This JSON registry preserves durable audit facts from four independent reviews:
-68 canonical findings and 70 qualified aliases (`opus`, `sol`, `fable`, and
-`indep`). It preserves the audit's conclusions so they remain reviewable during
+This JSON registry preserves durable audit facts from the original four
+independent reviews and the 9a674455 audit:
+69 canonical findings and 71 qualified aliases (`opus`, `sol`, `fable`,
+and `indep`). It preserves the audit's conclusions so they remain reviewable during
 the repair program. The JSON is the source of truth; this document is its
 contract, not a second copy of the row data.
 
