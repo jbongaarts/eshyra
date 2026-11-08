@@ -257,3 +257,30 @@ describe('printed removal phrasings read as removes (eshyra-53fm)', () => {
     });
   }
 });
+
+describe('exiting a swallow prone is printed infliction (eshyra-sexr)', () => {
+  const relationOf = (text: string, condition: string) =>
+    deriveConditionMechanics(text).find((e) => e.condition === condition)
+      ?.relation;
+
+  it('reads the giant frog corpse escape as applying prone', () => {
+    // Exact printed SRD sentence (giant frog Swallow; the giant toad prints
+    // the same). The behir, kraken, purple worm, remorhaz and tarrasque print
+    // the same ending and already read prone as applies.
+    expect(
+      relationOf(
+        'If the frog dies, a swallowed creature is no longer restrained by it and can escape from the corpse using 5 feet of movement, exiting prone.',
+        'prone',
+      ),
+    ).toBe('applies');
+  });
+
+  it('does not read "exiting" without a following condition as infliction', () => {
+    expect(
+      relationOf(
+        'The creature can use its action to try exiting the sphere; a prone creature cannot.',
+        'prone',
+      ),
+    ).not.toBe('applies');
+  });
+});

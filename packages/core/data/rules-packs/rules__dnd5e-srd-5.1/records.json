@@ -34398,7 +34398,7 @@
               },
               {
                 "condition": "prone",
-                "relation": "mention"
+                "relation": "applies"
               },
               {
                 "condition": "restrained",
@@ -36026,7 +36026,7 @@
               },
               {
                 "condition": "prone",
-                "relation": "mention"
+                "relation": "applies"
               },
               {
                 "condition": "restrained",

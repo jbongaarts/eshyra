@@ -322,8 +322,11 @@ const RELATION_PATTERNS: readonly {
         // eshyra-o9bd.18.7.5). The second alternative is Cackle Fever's
         // "gains one level of exhaustion", which applies the condition just
         // like "suffers … levels of" (eshyra-o9bd.18.7.9).
+        // eshyra-sexr: "can escape from the corpse using 5 feet of movement,
+        // exiting prone" (giant frog/toad swallow) leaves the creature prone,
+        // so "exiting <condition>" is printed infliction.
         new RegExp(
-          `\\b(?:becom(?:es?|ing)|falls?|be|is|are|knocked)\\s+${APPLIES_ADVERBS}${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|\\bsubjected\\s+to\\s+the\\s+${c}\\s+condition\\b|\\btrapped\\s+(?:\\w+\\s+){0,3}and\\s+${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|•\\s*\\d+\\s+hit\\s+points\\s+or\\s+fewer:\\s+${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|\\b(?:suffers?|gains?)(?:\\s+\\w+)?\\s+levels?\\s+of\\s+${c}\\b`,
+          `\\bexiting\\s+${c}\\b|\\b(?:becom(?:es?|ing)|falls?|be|is|are|knocked)\\s+${APPLIES_ADVERBS}${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|\\bsubjected\\s+to\\s+the\\s+${c}\\s+condition\\b|\\btrapped\\s+(?:\\w+\\s+){0,3}and\\s+${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|•\\s*\\d+\\s+hit\\s+points\\s+or\\s+fewer:\\s+${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|\\b(?:suffers?|gains?)(?:\\s+\\w+)?\\s+levels?\\s+of\\s+${c}\\b`,
           'gi',
         ),
       ),
