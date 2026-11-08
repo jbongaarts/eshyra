@@ -3946,6 +3946,9 @@ interface ItemGrantBinding {
   /** The bind credit (olc5.12.3) this non-anchored grant redeems with its
    *  effect insert. */
   readonly bindCreditId?: string;
+  /** The grant prints only an upper bound on its count (eshyra-0dtg): a bind
+   *  that linked no creature redeems its credit and ends at once. */
+  readonly upperBounded: boolean;
 }
 
 function normalizedName(value: string): string {
@@ -4558,6 +4561,7 @@ function validateItemGrantBinding(
     ...(receiptConsumedAt === undefined ? {} : { receiptConsumedAt }),
     ...(sourceDestroyedAt === undefined ? {} : { sourceDestroyedAt }),
     ...(bindCreditId === undefined ? {} : { bindCreditId }),
+    upperBounded: upperBound !== undefined,
   };
 }
 
@@ -5955,6 +5959,25 @@ export function createActiveEffect(
       },
       input,
     );
+
+    // eshyra-0dtg: an upper-bound grant bound to no creature (the charge is
+    // wasted) must not leave an empty active summoning effect. The credit is
+    // already redeemed above; end the effect through the same F3 path as the
+    // last-owned-creature rule (closeActorLinkAtZeroHp).
+    if (itemGrant?.upperBounded === true && actors.length === 0) {
+      const created = readEffectRow(txnDb, input.campaignId, input.effectId);
+      if (created !== undefined)
+        finalizeEnd(
+          txnDb,
+          created,
+          {
+            reason: 'source-removed',
+            detail: 'no-creatures-answered',
+            note: "no creature answered the call: 'If there aren't enough rats to form a swarm, the charge is wasted.'",
+          },
+          input,
+        );
+    }
 
     return {
       effect: requireEffectView(txnDb, input.campaignId, input.effectId),

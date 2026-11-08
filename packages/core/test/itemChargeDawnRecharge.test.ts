@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ToolContext } from '../src/internal.js';
 import {
   advanceWorldTime,
+  auditActiveEffectIntegrity,
   createDefaultToolRegistry,
   createInitialItemState,
   createSeededRng,
@@ -330,6 +331,26 @@ describe('charge dawn recharge on the unmodified SRD pack', () => {
       const none = bind('fx-none', [], secondCredit);
       expect(none, none.message).toMatchObject({ ok: true });
       expect(credits()[1]?.redeemed_effect_id).toBe('fx-none');
+      // eshyra-0dtg: no empty active summoning effect lingers; it ended at
+      // once through the last-owned-creature path, and the credit is spent.
+      const noneEffect = listActiveEffects(db, DEFAULT_TEST_CAMPAIGN_ID, {
+        includeEnded: true,
+      }).find((effect) => effect.effectId === 'fx-none');
+      expect(noneEffect?.status).toBe('ended');
+      expect(noneEffect).toMatchObject({
+        endReason: 'source-removed',
+        endDetail: 'no-creatures-answered',
+      });
+      expect(bind('fx-none-again', [], secondCredit)).toMatchObject({
+        ok: false,
+      });
+      // (The fixture's bound swarms are bare combatants, so scope the audit
+      // to the empty effect.)
+      expect(
+        auditActiveEffectIntegrity(db, DEFAULT_TEST_CAMPAIGN_ID).filter(
+          (issue) => issue.effectId === 'fx-none',
+        ),
+      ).toEqual([]);
 
       // The printed text gives no ending: the DM ends a swarm with end_effect,
       // which closes the link to its creatures.
