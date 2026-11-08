@@ -529,6 +529,80 @@
       "reason": "Overloaded field: an imposesCondition effect names the condition it imposes (Philter of Love: charmed), while every other effect kind, triggeredEffect included, stores a prose activation precondition here (for example \"while the sword is ablaze\") that is excluded. The importer emits the condition a triggeredEffect imposes (Rod of Rulership, Philter of Love) in its conditions[] array, not here."
     },
     {
+      "kind": "creature",
+      "pointerPrefix": "/conditionImmunities",
+      "linkField": "data.conditionImmunities",
+      "disposition": "reference",
+      "relation": "condition-immunity",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "listDelimiter": ", ",
+      "reason": "The creature record's printed \"Condition Immunities\" label lists the conditions it is immune to as a comma-separated string; each printed name resolves against the condition kind (for example the zombie's \"poisoned\", the ghoul's \"charmed, exhaustion, poisoned\")."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/conditionImmunities",
+      "linkField": "data.conditionImmunities",
+      "disposition": "reference",
+      "relation": "condition-immunity",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "listDelimiter": ", ",
+      "reason": "The stat-block record's printed \"Condition Immunities\" label lists the conditions it is immune to as a comma-separated string; each printed name resolves against the condition kind (for example the zombie's \"poisoned\", the ghoul's \"charmed, exhaustion, poisoned\")."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/state",
+      "linkField": "data.mechanics.effects[].state",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "kind",
+      "relationByFieldValue": {
+        "visibility": "imposed-condition"
+      },
+      "reason": "A visibility effect names the condition it imposes: Dust of Disappearance (\"you and each creature and object within 10 feet of you become invisible for 2d4 minutes\") and Potion of Invisibility (\"you become invisible for 1 hour\"). The SRD defines Invisible as a condition (Appendix PH-A). Any other effect kind carrying a state is indeterminate, not silently read."
+    },
+    {
+      "kind": "condition",
+      "pointerPrefix": "/mechanics/effects/*/state",
+      "linkField": "data.mechanics.effects[].state",
+      "disposition": "not-a-reference",
+      "reason": "The Invisible condition record describes its own state (\"impossible-to-see\"), a descriptor of that condition, not a condition name."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/ends/*",
+      "linkField": "data.mechanics.effects[].ends",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "../kind",
+      "relationByFieldValue": {
+        "conditionEndsWhen": "removed-condition",
+        "triggeredEffect": "removed-condition"
+      },
+      "excludedLeafValues": [
+        "disease",
+        "any-disease"
+      ],
+      "reason": "What a magic-item effect ends. Restorative Ointment: \"ceases to be poisoned, and is cured of any disease\" lists the poisoned condition it removes beside diseases. Diseases are not condition records (the SRD treats them as a separate rules topic), so disease and any-disease are declared excluded leaf values rather than unresolved references."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/variants/whip/endsOn/*",
+      "linkField": "data.mechanics.effects[].variants.whip.endsOn",
+      "disposition": "reference",
+      "relation": "ending-trigger-condition",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "excludedLeafValues": [
+        "dismiss-action",
+        "death"
+      ],
+      "reason": "Feather Token (whip): \"The whip disappears after 1 hour, when you use an action to dismiss it, or when you are incapacitated or die.\" The incapacitated entry names the condition that ends the effect; dismiss-action and death are not conditions and are declared excluded leaf values."
+    },
+    {
       "kind": "magic-item",
       "pointerPrefix": "/variants/*/mechanics/effects/*/condition",
       "linkField": "data.variants[].mechanics.effects[].condition",
