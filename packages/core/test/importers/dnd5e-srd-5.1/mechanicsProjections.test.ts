@@ -2731,9 +2731,28 @@ describe('creature attack Hit-clause components (eshyra-o9bd.19.6.7.11)', () => 
     expect(noneAttack.hitDamageNotProjected).toBe(
       'the target takes damage equal to its level',
     );
+    const choice = deriveCreatureEntryMechanics(
+      'Scimitar',
+      `${lead}12 (2d6 + 5) slashing damage plus 3 (1d6) lightning or thunder damage (djinni’s choice).`,
+    );
+    const choiceAttack = (choice.attacks as Record<string, unknown>[])[0];
+    expect(choiceAttack.hitDamage).toEqual([
+      { average: 12, dice: '2d6 + 5', type: 'slashing' },
+      {
+        average: 3,
+        dice: '1d6',
+        typeOptions: [
+          { type: 'lightning', condition: 'djinni’s choice' },
+          { type: 'thunder', condition: 'djinni’s choice' },
+        ],
+      },
+    ]);
+    expect(choiceAttack.hitDamageNotProjected).toBeUndefined();
+    expect(choice.damage).toEqual(choiceAttack.hitDamage);
+    // A choice-of-type phrase without a printed chooser is still disclosed.
     const partial = deriveCreatureEntryMechanics(
       'Scimitar',
-      `${lead}12 (2d6 + 5) slashing damage plus 3 (1d6) lightning or thunder damage (choice).`,
+      `${lead}12 (2d6 + 5) slashing damage plus 3 (1d6) lightning or thunder damage.`,
     );
     expect((partial.attacks as Record<string, unknown>[])[0]).toMatchObject({
       hitDamage: [{ average: 12, dice: '2d6 + 5', type: 'slashing' }],
