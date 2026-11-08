@@ -203,3 +203,84 @@ describe('residual non-copular infliction phrasings (eshyra-xogv)', () => {
     });
   }
 });
+
+describe('printed removal phrasings read as removes (eshyra-53fm)', () => {
+  const relationOf = (text: string, condition: string) =>
+    deriveConditionMechanics(text).find((e) => e.condition === condition)
+      ?.relation;
+
+  // Exact printed SRD sentences.
+  for (const [text, condition] of [
+    [
+      'Creatures healed by this spell are also cured of all diseases and any effect making them blinded or deafened.',
+      'blinded',
+    ],
+    [
+      'Creatures healed by this spell are also cured of all diseases and any effect making them blinded or deafened.',
+      'deafened',
+    ],
+    [
+      'This spell can cause the plants created by the entangle spell to release a restrained creature.',
+      'restrained',
+    ],
+    [
+      'If the target is a Large or smaller creature grappled by the kraken, that creature is swallowed, and the grapple ends.',
+      'grappled',
+    ],
+  ] as const) {
+    it(`removes ${condition}: ${text.slice(0, 70)}`, () => {
+      expect(relationOf(text, condition)).toBe('removes');
+    });
+  }
+
+  // Controls: neighbouring phrasings keep their non-removal readings.
+  for (const [text, condition, relation] of [
+    [
+      'The creature is cured of all diseases and poison, becomes immune to poison and being frightened.',
+      'frightened',
+      'immune',
+    ],
+    ['The spell can target a restrained creature.', 'restrained', 'mention'],
+    [
+      'The roper pulls each creature grappled by it up to 25 feet, and the grapple ends.',
+      'grappled',
+      'mention',
+    ],
+    [
+      'It can spend 5 feet of movement to escape from nonmagical restraints or being grappled.',
+      'grappled',
+      'mention',
+    ],
+  ] as const) {
+    it(`keeps ${relation} for ${condition}: ${text.slice(0, 70)}`, () => {
+      expect(relationOf(text, condition)).toBe(relation);
+    });
+  }
+});
+
+describe('exiting a swallow prone is printed infliction (eshyra-sexr)', () => {
+  const relationOf = (text: string, condition: string) =>
+    deriveConditionMechanics(text).find((e) => e.condition === condition)
+      ?.relation;
+
+  it('reads the giant frog corpse escape as applying prone', () => {
+    // Exact printed SRD sentence (giant frog Swallow; the giant toad prints
+    // the same). The behir, kraken, purple worm, remorhaz and tarrasque print
+    // the same ending and already read prone as applies.
+    expect(
+      relationOf(
+        'If the frog dies, a swallowed creature is no longer restrained by it and can escape from the corpse using 5 feet of movement, exiting prone.',
+        'prone',
+      ),
+    ).toBe('applies');
+  });
+
+  it('does not read "exiting" without a following condition as infliction', () => {
+    expect(
+      relationOf(
+        'The creature can use its action to try exiting the sphere; a prone creature cannot.',
+        'prone',
+      ),
+    ).not.toBe('applies');
+  });
+});
