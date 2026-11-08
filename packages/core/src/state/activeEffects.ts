@@ -77,6 +77,7 @@ import {
   liveItemGrantBindingEffects,
   oldestOpenItemGrantBindCredit,
   readItemConsumptionReceipt,
+  readItemGrantBindCreditSpent,
   readItemGrantRolledCount,
   readItemGrantRolledCreature,
   redeemItemConsumptionReceipt,
@@ -3945,6 +3946,9 @@ interface ItemGrantBinding {
   /** The bind credit (olc5.12.3) this non-anchored grant redeems with its
    *  effect insert. */
   readonly bindCreditId?: string;
+  /** The grant prints only an upper bound on its count (eshyra-0dtg): a bind
+   *  that linked no creature redeems its credit and ends at once. */
+  readonly upperBounded: boolean;
 }
 
 function normalizedName(value: string): string {
@@ -4128,7 +4132,14 @@ function validateItemGrantBinding(
       `${label} creates a creature, so the effect must be kind 'summoning'`,
     );
   const actors = input.actors ?? [];
-  if (actors.length === 0)
+  // eshyra-ffoo: a grant that prints only an UPPER BOUND on its count binds
+  // 0..N creatures (the GM may rule too few creatures answered, even none), so
+  // an empty actor list is a legitimate bind there and nowhere else.
+  const upperBound =
+    typeof grant.maxCountPerCost === 'object' && grant.maxCountPerCost !== null
+      ? (grant.maxCountPerCost as { economy?: unknown; perUnit?: unknown })
+      : undefined;
+  if (actors.length === 0 && upperBound === undefined)
     throw new ActiveEffectError(
       `${label} creates a creature, so start_effect needs at least one linked actor`,
     );
@@ -4396,6 +4407,32 @@ function validateItemGrantBinding(
     throw new ActiveEffectError(
       `${label} is not paid for by a use_item bind credit here (it binds through its cooldown spend or a consumption receipt); source.bindCreditId is refused`,
     );
+  // eshyra-ffoo: a grant that prints an upper-bound count (`maxCountPerCost`:
+  // Pipes of the Sewers' one swarm per charge expended) binds 0..N linked
+  // actors against the use's credit, N being the units of the economy that use
+  // spent times the printed per-unit count, as the ENGINE recorded on the
+  // credit. The bound is never taken from the caller, so the credit must be
+  // named and must hold a recorded spend.
+  if (upperBound !== undefined) {
+    if (input.source.bindCreditId === undefined)
+      throw new ActiveEffectError(
+        `${label} prints only an upper bound on its count (up to ${String(upperBound.perUnit)} per unit of '${String(upperBound.economy)}' spent), which belongs to one use; give source.bindCreditId, the creditId use_item returned for the use this creature realizes`,
+      );
+    if (bindCreditId === undefined)
+      throw new ActiveEffectError(
+        `${label} prints an upper-bound count, which only a use_item bind credit can supply; it cannot bind from an anchored spend or a consumption receipt`,
+      );
+    const spent = readItemGrantBindCreditSpent(db, bindCreditId);
+    if (spent === undefined || typeof upperBound.perUnit !== 'number')
+      throw new ActiveEffectError(
+        `${label} prints an upper-bound count, and bind credit '${bindCreditId}' records no spend to bound it; use_item the operation again`,
+      );
+    const max = spent * upperBound.perUnit;
+    if (actors.length > max)
+      throw new ActiveEffectError(
+        `${label} calls at most ${max} (use '${bindCreditId}' spent ${spent} '${String(upperBound.economy)}' at ${upperBound.perUnit} per unit); ${actors.length} linked actor(s) were given`,
+      );
+  }
   // eshyra-olc5.14: a grant that prints a rolled count (`countRoll`) binds
   // exactly the total the ENGINE rolled when use_item issued the credit this
   // bind redeems. The count is never taken from the caller: only a credit that
@@ -4524,6 +4561,7 @@ function validateItemGrantBinding(
     ...(receiptConsumedAt === undefined ? {} : { receiptConsumedAt }),
     ...(sourceDestroyedAt === undefined ? {} : { sourceDestroyedAt }),
     ...(bindCreditId === undefined ? {} : { bindCreditId }),
+    upperBounded: upperBound !== undefined,
   };
 }
 
@@ -5921,6 +5959,25 @@ export function createActiveEffect(
       },
       input,
     );
+
+    // eshyra-0dtg: an upper-bound grant bound to no creature (the charge is
+    // wasted) must not leave an empty active summoning effect. The credit is
+    // already redeemed above; end the effect through the same F3 path as the
+    // last-owned-creature rule (closeActorLinkAtZeroHp).
+    if (itemGrant?.upperBounded === true && actors.length === 0) {
+      const created = readEffectRow(txnDb, input.campaignId, input.effectId);
+      if (created !== undefined)
+        finalizeEnd(
+          txnDb,
+          created,
+          {
+            reason: 'source-removed',
+            detail: 'no-creatures-answered',
+            note: "no creature answered the call: 'If there aren't enough rats to form a swarm, the charge is wasted.'",
+          },
+          input,
+        );
+    }
 
     return {
       effect: requireEffectView(txnDb, input.campaignId, input.effectId),

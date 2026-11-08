@@ -476,6 +476,7 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
         'An existing effect id (whatever its status) is refused, and an id ending in the reserved "<id>:uncontrolled" suffix is refused.',
         'The kind limits which source kinds, concentration, and projections an effect may declare; structurally meaningless combinations, an owned entity that already has an owning effect, and a condition the target already has are refused before any write.',
         'A bonded summon (the instantaneous persistent-linked case above) requires an until-removed duration, a source actor that is a character or campaign actor (not a combatant), and at least one linked actor (and no more than the record maximum, when it gives one), and is refused while the same caster already holds a live effect from that spell with an active actor link (one bond per caster per spell).',
+        "A magic-item creature grant that prints only an upper bound on its count (maxCountPerCost: the Pipes of the Sewers' one swarm per charge expended) binds 0..N linked actors against the named use_item credit (source.bindCreditId, required), N being the units of the economy that use spent times the printed per-unit count as use_item recorded on the credit; binding more than N, binding without the credit, and binding against a credit that recorded no spend are refused with a typed error, while binding none is admitted (the charges are wasted). Such a grant prints no ending (noPrintedEnding), so each creature is ended by the DM with end_effect.",
         'The timed spell-record check compares amount and unit only, not the anchor; a ruling source and a spell record whose duration is unrecognized or absent leave the declared duration to the caller.',
         'Minute/hour/day timers use elapsed world time and expire only when advance_time or a rest tool advances that clock; combat rounds do not convert to elapsed minutes automatically.',
         'If projecting a condition cascades back and ends the effect mid-creation, the creation is refused and nothing is committed.',
@@ -493,6 +494,7 @@ const HP_CONDITIONS_EFFECTS: readonly DeterministicCapabilityInventoryEntry[] =
       evidence: [
         t('activeEffects.test.ts'),
         t('bondedSummonTransitions.test.ts'),
+        t('itemChargeDawnRecharge.test.ts'),
       ],
     }),
     toolEntry('end_effect', 'bounded-procedure', {

@@ -245,6 +245,24 @@ export interface MagicItemEntityGrant {
      *  linked actors (Horn of Valhalla's horn-type row, eshyra-olc5.14).
      *  Mutually exclusive with `count`. */
     readonly countRoll?: string;
+    /** An UPPER BOUND on how many creatures one use may call, tied to the
+     *  units of a cost economy that use spent (Pipes of the Sewers: "expend 1
+     *  to 3 charges, calling forth one swarm of rats with each expended
+     *  charge" -- up to `perUnit` creatures per unit spent, fewer when the GM
+     *  rules too few rats are near). `economy` must be this grant's
+     *  `cooldownEconomy`. start_effect binds 0..(units spent * perUnit)
+     *  creatures against the use's bind credit and refuses more. Mutually
+     *  exclusive with `count`, `countRoll` and `creatureRoll`. */
+    readonly maxCountPerCost?: {
+      readonly economy: string;
+      readonly perUnit: number;
+    };
+    /** Explicit marker that the source prints NO ending for the grant: no
+     *  duration and no reversion event. The DM ends it with end_effect. It
+     *  states a fact about the printed text (never an invented ending) and is
+     *  mutually exclusive with `duration` and `revertOn`, so a grant that
+     *  merely omits its ending is not mistaken for one that prints none. */
+    readonly noPrintedEnding?: true;
     /** A `1dN` expression the ENGINE rolls once per use (use_item); row k of
      *  the roll selects `creatureRefs[k - 1]` (Bag of Tricks' d8 on the bag
      *  color's table, eshyra-olc5.16). The selected creature is persisted on
@@ -1286,6 +1304,8 @@ function entityGrant(
         'variants',
         'count',
         'countRoll',
+        'maxCountPerCost',
+        'noPrintedEnding',
         'creatureRoll',
         'control',
         'duration',
@@ -1370,6 +1390,52 @@ function entityGrant(
           `${grantPath}.countRoll is valid only on a creature grant`,
         );
       dice(grant.countRoll, `${grantPath}.countRoll`);
+    }
+    if (grant.maxCountPerCost !== undefined) {
+      const boundPath = `${grantPath}.maxCountPerCost`;
+      if (kind !== 'creature')
+        throw new RulesPackError(
+          `${boundPath} is valid only on a creature grant`,
+        );
+      if (
+        grant.count !== undefined ||
+        grant.countRoll !== undefined ||
+        grant.creatureRoll !== undefined
+      )
+        throw new RulesPackError(
+          `${boundPath} is mutually exclusive with count, countRoll and creatureRoll`,
+        );
+      const bound = object(grant.maxCountPerCost, boundPath);
+      only(bound, ['economy', 'perUnit'], boundPath);
+      const boundEconomy = id(bound.economy, `${boundPath}.economy`);
+      if (!economies.has(boundEconomy))
+        throw new RulesPackError(
+          `${boundPath}.economy references unknown economy ${JSON.stringify(boundEconomy)}`,
+        );
+      if (grant.cooldownEconomy !== boundEconomy)
+        throw new RulesPackError(
+          `${boundPath}.economy must be the grant's cooldownEconomy: the bound counts the units the use that pays for the grant spent`,
+        );
+      if (
+        typeof bound.perUnit !== 'number' ||
+        !Number.isInteger(bound.perUnit) ||
+        bound.perUnit < 1
+      )
+        throw new RulesPackError(
+          `${boundPath}.perUnit must be a positive integer`,
+        );
+    }
+    if (grant.noPrintedEnding !== undefined) {
+      if (grant.noPrintedEnding !== true)
+        throw new RulesPackError(`${grantPath}.noPrintedEnding must be true`);
+      if (kind !== 'creature')
+        throw new RulesPackError(
+          `${grantPath}.noPrintedEnding is valid only on a creature grant`,
+        );
+      if (grant.duration !== undefined || grant.revertOn !== undefined)
+        throw new RulesPackError(
+          `${grantPath}.noPrintedEnding states that no ending is printed, so it excludes duration and revertOn`,
+        );
     }
     if (grant.creatureRoll !== undefined) {
       if (kind !== 'creature')

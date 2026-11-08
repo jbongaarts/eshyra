@@ -3344,7 +3344,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1369);
+      expect(clauses).toHaveLength(1370);
       // eshyra-o9bd.19.4.5.8 (faithful-or-absent): six manual/tome study
       // rewards, the goat-of-terror aura and Nine Lives Stealer's slain-only
       // charge loss became adjudicated clauses (3 -> 11); the goat aura left
@@ -3523,11 +3523,21 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // effect clauses move green -> engine-pending (333 -> 241; 677 -> 769);
       // total, adjudicated and design-blocked counts stay fixed. The exact
       // witnesses are pinned in magicItemPassiveEffectReadiness.test.ts.
+      // eshyra-ffoo (user decision 2026-11-07, option C): the Pipes of the
+      // Sewers grant types only the printed ceiling (maxCountPerCost, one
+      // swarm per charge expended) and the explicit noPrintedEnding marker, so
+      // creatureGrantLifecycleOwned owns it: m4 engine-pending -> green
+      // (769 -> 768 pending, 241 -> 242 green). Arrival/availability and the
+      // control contest become hook-free adjudicated clauses (+2), the
+      // control span contains and so replaces triage-entityGrant-1 (-1), and
+      // the rat-indifference attitude effect is withheld (engine-pending ->
+      // adjudicated, +1): 358 -> 360 adjudicated, 769 -> 767 pending (the m4
+      // and rat clauses), total 1369 -> 1370. call-rat-swarms becomes ready.
       expect(counts).toEqual({
-        'adjudicated-by-design': 358,
+        'adjudicated-by-design': 360,
         'design-blocked': 1,
-        'engine-pending': 769,
-        green: 241,
+        'engine-pending': 767,
+        green: 242,
       });
       const pipesReadiness = clauses.filter(({ clauseId }) =>
         clauseId.startsWith('magic-item:pipes-of-the-sewers/'),
@@ -3545,7 +3555,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           }),
           expect.objectContaining({
             clauseId: 'magic-item:pipes-of-the-sewers/m4-pipes-of-the-sewers',
-            readiness: 'engine-pending',
+            readiness: 'green',
           }),
         ]),
       );

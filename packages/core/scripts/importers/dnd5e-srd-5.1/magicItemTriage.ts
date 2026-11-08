@@ -1466,6 +1466,10 @@ const GRANT_KEEP = [
   'variants',
   'count',
   'countRoll',
+  // The printed upper bound on a variable-cost call and the explicit marker
+  // that no ending is printed (Pipes of the Sewers): structural, not free text.
+  'maxCountPerCost',
+  'noPrintedEnding',
   'creatureRoll',
   'duration',
   'revertOn',

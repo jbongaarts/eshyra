@@ -17,7 +17,7 @@ describe('magic-item legacy capability backlog', () => {
       scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(890);
+    expect(backlog.candidates).toHaveLength(889);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -131,9 +131,15 @@ describe('magic-item legacy capability backlog', () => {
     // no reviewed runtime consumer now declare their missing F6/F8 owner hook
     // and are engine-pending, so each joins the legacy engine-hook candidate
     // set as an unselected-backlog row (798 -> 890); no existing identity
-    // changed.
+    // changed. eshyra-ffoo (user decision 2026-11-07, option C): Pipes of the
+    // Sewers' rat-indifference effect is withheld as an exact adjudicated
+    // clause (faithful-or-absent), removing its one engine-hook candidate
+    // (890 -> 889); its entityGrant clause is now owned (F3/F5 hooks removed
+    // by creatureGrantLifecycleOwned, F2 control moved to an adjudicated clause),
+    // so that candidate keeps its id but changes its declared hooks, which is the
+    // only identity change.
     expect(fingerprint).toBe(
-      'a82540e183bdf555cf460b61fafc6fdf81f950c67ebade87e6520da44528e8fe',
+      'd0abfbb92aec49db3d033fec081eced8c67601b2c37e0624dfeab8204bafab94',
     );
     expect(
       backlog.candidates.map(({ candidateId }) => candidateId),

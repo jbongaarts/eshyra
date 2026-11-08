@@ -79,7 +79,7 @@ export const startEffectTool: Tool = {
     'first dawn after now; no override). A grant whose cooldown restarts when ' +
     "it ends (use_item's result hint.bindGrant names it) binds only after that " +
     'spend, and only once per spend. A grant naming any other cooldown economy ' +
-    "binds only against an unredeemed use_item credit (hint.bindCredits), oldest first; with none it is refused, and a creature outside the item's economy is a ruling-sourced summoning. A grant with a rolled count (Horn of Valhalla) must name that use's credit in source.bindCreditId and binds exactly the total use_item rolled on it (rolledCounts). A creature grant that can outlive " +
+    "binds only against an unredeemed use_item credit (hint.bindCredits), oldest first; with none it is refused, and a creature outside the item's economy is a ruling-sourced summoning. A grant with a rolled count (Horn of Valhalla) must name that use's credit in source.bindCreditId and binds exactly the total use_item rolled on it (rolledCounts). A grant that prints only an upper bound on its count (Pipes of the Sewers: one swarm per charge expended, maxCountPerCost) must also name that use's credit in source.bindCreditId and binds 0..N linked actors, N being the charges that use spent (the credit's boundedCounts); binding beyond N, or without the credit, is refused, and none (the GM ruled too few rats answered) is a legitimate bind that wastes the charges. That grant prints no ending: the DM ends each swarm with end_effect. A creature grant that can outlive " +
     'the encounter (a persistent actor, or any lifetime longer than rounds: one hour, next dawn, concentration, untimed) needs campaignActorId on each linked actor, so combat closure keeps ' +
     'it. Every other printed ending (owner ' +
     'commands, card moved, wishes, flight distance, and so on) is ' +
@@ -162,7 +162,7 @@ export const startEffectTool: Tool = {
             type: 'string',
             minLength: 1,
             description:
-              "For a grantRef source paid by a use_item credit, the creditId from that use's hint.bindCredits. Required when the grant's count or creature is rolled (rolledCounts, rolledCreatures); otherwise the oldest unredeemed credit is used.",
+              "For a grantRef source paid by a use_item credit, the creditId from that use's hint.bindCredits. Required when the grant's count or creature is rolled (rolledCounts, rolledCreatures) or bounded by the units that use spent (boundedCounts); otherwise the oldest unredeemed credit is used.",
           },
           actor: EFFECT_PARTICIPANT_SCHEMA,
         },
