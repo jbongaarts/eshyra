@@ -294,5 +294,11 @@ describe('roll ledger and capability inventory', () => {
     );
     expect(restore).toMatch(/rechargeFormula/);
     expect(restore).toMatch(/amount on a rechargeFormula counter/);
+    // Review F2: reset_usage must not reassign the formula roll to the DM;
+    // the DM decides the restoration is due and restore_usage rolls it.
+    const reset = JSON.stringify(entry('reset_usage'));
+    expect(reset).not.toMatch(/rolls any formula-based restoration/);
+    expect(reset).toMatch(/restore_usage then rolls the formula/);
+    expect(reset).toMatch(/requires rollOverride/);
   });
 });

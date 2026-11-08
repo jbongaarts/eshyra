@@ -244,8 +244,9 @@ export interface ResetUsageResult {
   readonly event: UsageResetEvent;
   /** Counters restored to full by this event. */
   readonly reset: readonly UsageCounter[];
-  /** Dawn counters with a partial-recharge formula: not zeroed — the DM
-   *  rolls the formula via `roll` and applies it with restoreUsage. */
+  /** Dawn counters with a partial-recharge formula: not zeroed. The DM
+   *  decides the restoration is due; restoreUsage then rolls the formula from
+   *  the seeded RNG by default (a DM-supplied amount requires rollOverride). */
   readonly needsRolledRestore: readonly UsageCounter[];
 }
 

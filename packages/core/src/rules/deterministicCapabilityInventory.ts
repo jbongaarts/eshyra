@@ -1324,7 +1324,7 @@ const SPELLS_RESTS_USAGE: readonly DeterministicCapabilityInventoryEntry[] = [
       'Does not complete a rest; the rest tools do.',
     ],
     residualDmInterpretation: [
-      'The DM decides that the rest or dawn occurred and rolls any formula-based restoration.',
+      'The DM decides that the rest or dawn occurred and when a formula-based restoration is due; restore_usage then rolls the formula from the seeded RNG by default, and a DM-supplied amount requires rollOverride.',
     ],
     runtimeOwner: [
       o('toolResetUsage.ts'),
