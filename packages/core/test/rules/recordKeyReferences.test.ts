@@ -125,6 +125,57 @@ describe('record-key leaves are declared (eshyra-ry69)', () => {
     ]);
   });
 
+  it('never excludes a leaf that is a record key, whatever its sibling category', () => {
+    // A relation-table exclusion carries the sibling value, not the leaf, so
+    // the check above cannot see a record key that a future importer change
+    // files under an excluded category. Counting closes that gap: at every
+    // record-key reference shape, each leaf equal to a record key must yield a
+    // resolved outcome, so resolved count == key-leaf count per record and shape.
+    const mismatches: string[] = [];
+    let checked = 0;
+    for (const record of pack.records) {
+      const keyLeaves = new Map<string, number>();
+      walkFieldPointers(record.data, (pointer, value) => {
+        const declaration = relationshipDeclarationForPointer(
+          manifest,
+          record.kind,
+          pointer,
+        );
+        if (
+          declaration?.disposition !== 'reference' ||
+          declaration.targetResolution !== 'record-key' ||
+          typeof value !== 'string' ||
+          !stack.recordsByKey.has(value)
+        )
+          return;
+        keyLeaves.set(pointer, (keyLeaves.get(pointer) ?? 0) + 1);
+        checked += 1;
+      });
+      if (keyLeaves.size === 0) continue;
+      const resolved = new Map<string, number>();
+      for (const resolution of resolveRecordRelationships(
+        manifest,
+        record,
+        stack,
+      ))
+        if (
+          resolution.outcome === 'resolved' &&
+          resolution.declaration.targetResolution === 'record-key'
+        )
+          resolved.set(
+            resolution.pointer,
+            (resolved.get(resolution.pointer) ?? 0) + 1,
+          );
+      for (const [pointer, count] of keyLeaves)
+        if ((resolved.get(pointer) ?? 0) !== count)
+          mismatches.push(
+            `${record.key}${pointer}: ${count} key leaves, ${resolved.get(pointer) ?? 0} resolved`,
+          );
+    }
+    expect(checked).toBeGreaterThan(1000);
+    expect(mismatches).toEqual([]);
+  });
+
   it('separates mixed shapes truthfully instead of excluding them wholesale', () => {
     const find = (key: string, pointer: string) =>
       outcomes(key).filter((resolution) => resolution.pointer === pointer);
