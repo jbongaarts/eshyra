@@ -394,6 +394,7 @@ describe('encounter combatants', () => {
       'record_death_save',
       {
         combatantId: target.combatantId,
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
         roll: 1,
       },
       ctx,
@@ -1291,17 +1292,29 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     // lethal threshold while the recovery schedule is active.
     stable.registry.invoke(
       'record_death_save',
-      { combatantId: stable.id, roll: 10 },
+      {
+        combatantId: stable.id,
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+        roll: 10,
+      },
       stable.ctx,
     );
     stable.registry.invoke(
       'record_death_save',
-      { combatantId: stable.id, roll: 10 },
+      {
+        combatantId: stable.id,
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+        roll: 10,
+      },
       stable.ctx,
     );
     stable.registry.invoke(
       'record_death_save',
-      { combatantId: stable.id, roll: 10 },
+      {
+        combatantId: stable.id,
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+        roll: 10,
+      },
       stable.ctx,
     );
     expect(stable.read()?.status).toBe('stable');
@@ -1340,7 +1353,15 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
   it('preserves dying counters across suffocation and prevents dead status bypasses', () => {
     const { db, registry, ctx, id, update, read, hpMax } = optedIn();
     update({ hpDelta: -hpMax });
-    registry.invoke('record_death_save', { combatantId: id, roll: 1 }, ctx);
+    registry.invoke(
+      'record_death_save',
+      {
+        combatantId: id,
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+        roll: 1,
+      },
+      ctx,
+    );
     registry.invoke('set_suffocation', { combatantId: id, event: 'drop' }, ctx);
     expect(read()).toMatchObject({
       status: 'dying',
@@ -1565,7 +1586,11 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     for (let i = 0; i < 3; i += 1)
       registry.invoke(
         'record_death_save',
-        { combatantId: stableOld.combatantId, roll: 10 },
+        {
+          combatantId: stableOld.combatantId,
+          rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+          roll: 10,
+        },
         ctx,
       );
     registry.invoke(
@@ -1698,7 +1723,11 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     expect(
       registry.invoke(
         'record_death_save',
-        { combatantId: old.combatantId, roll: 10 },
+        {
+          combatantId: old.combatantId,
+          rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+          roll: 10,
+        },
         ctx,
       ).ok,
     ).toBe(false);
@@ -1938,7 +1967,15 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     const suffocate = (event: string) =>
       registry.invoke('set_suffocation', { combatantId: id, event }, ctx);
     const save = (roll: number) =>
-      registry.invoke('record_death_save', { combatantId: id, roll }, ctx);
+      registry.invoke(
+        'record_death_save',
+        {
+          combatantId: id,
+          rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+          roll,
+        },
+        ctx,
+      );
     expect(suffocate('drop').ok).toBe(true);
     expect(read()).toMatchObject({
       status: 'dying',
@@ -1962,8 +1999,24 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
   it('clears the block when a suffocating combatant dies', () => {
     const { db, registry, ctx, id, read } = optedIn();
     registry.invoke('set_suffocation', { combatantId: id, event: 'drop' }, ctx);
-    registry.invoke('record_death_save', { combatantId: id, roll: 1 }, ctx);
-    registry.invoke('record_death_save', { combatantId: id, roll: 1 }, ctx);
+    registry.invoke(
+      'record_death_save',
+      {
+        combatantId: id,
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+        roll: 1,
+      },
+      ctx,
+    );
+    registry.invoke(
+      'record_death_save',
+      {
+        combatantId: id,
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+        roll: 1,
+      },
+      ctx,
+    );
     expect(read()).toMatchObject({ status: 'dead', recoveryBlock: null });
     db.close();
   });
@@ -1976,6 +2029,7 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
 
     // Bless: natural 9 plus 1 is a success, and the bonus is recorded.
     const blessed = save({
+      rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
       roll: 9,
       saveBonus: 1,
       bonusSources: ['Bless'],
@@ -1993,7 +2047,13 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     expect(read()).toMatchObject({ status: 'dying', deathSaveSuccesses: 1 });
 
     // Natural 1 with a large bonus is still two failures.
-    expect(save({ roll: 1, saveBonus: 10 })).toMatchObject({
+    expect(
+      save({
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+        roll: 1,
+        saveBonus: 10,
+      }),
+    ).toMatchObject({
       ok: true,
       data: { outcome: 'critical-failure', total: 11 },
     });
@@ -2012,7 +2072,12 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     expect(
       registry.invoke(
         'record_death_save',
-        { combatantId: id, roll: 20, saveBonus: -5 },
+        {
+          combatantId: id,
+          rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+          roll: 20,
+          saveBonus: -5,
+        },
         ctx,
       ),
     ).toMatchObject({ ok: true, data: { outcome: 'revived', total: 15 } });
@@ -2034,7 +2099,12 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
       expect(
         registry.invoke(
           'record_death_save',
-          { combatantId: id, roll: 10, ...args },
+          {
+            combatantId: id,
+            rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+            roll: 10,
+            ...args,
+          },
           ctx,
         ),
       ).toMatchObject({ ok: false, code: 'invalid_args' });
