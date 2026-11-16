@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1885,
+  "rowCount": 1886,
   "dispositionCounts": {
     "complete": 444,
-    "model-adjudicated": 1235,
+    "model-adjudicated": 1236,
     "not-mechanical": 197,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -17942,7 +17942,7 @@
         "magic-item:amulet-of-health/m2-amulet-of-health-constitution-score-set",
         "magic-item:amulet-of-proof-against-detection-and-location/c2-residual-proof-against-divination"
       ],
-      "population": 1369,
+      "population": 1370,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17966,7 +17966,7 @@
         "F2",
         "F5"
       ],
-      "population": 1629,
+      "population": 1625,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -17990,7 +17990,7 @@
         "roll mode and targeting modifiers",
         "damage, range, cover, and forced movement"
       ],
-      "population": 1629,
+      "population": 1625,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18014,7 +18014,7 @@
         "F6",
         "F5"
       ],
-      "population": 769,
+      "population": 767,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18038,7 +18038,7 @@
         "F6",
         "F5"
       ],
-      "population": 1323,
+      "population": 1317,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18062,7 +18062,7 @@
         "roll mode and targeting modifiers",
         "damage, range, cover, and forced movement"
       ],
-      "population": 1323,
+      "population": 1317,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18085,7 +18085,7 @@
         "adjudicated-by-design",
         "design-blocked"
       ],
-      "population": 1369,
+      "population": 1370,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18109,7 +18109,7 @@
         "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
         "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
       ],
-      "population": 359,
+      "population": 361,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18133,7 +18133,7 @@
         "stateMachine",
         "structuredField"
       ],
-      "population": 1010,
+      "population": 1009,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18181,7 +18181,7 @@
         "c2-residual-proof-against-divination",
         "c2-residual-plane-shift-check"
       ],
-      "population": 455,
+      "population": 454,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18229,7 +18229,7 @@
         "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.",
         "This printed ability stays DM-adjudicated: no typed structure is kept for it, and the DM model interprets the printed text."
       ],
-      "population": 358,
+      "population": 360,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18321,7 +18321,7 @@
         "The barrel has a hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check.",
         "Ten levers are set in a row at the far end, each in a neutral position, able to move either up or down. When certain levers are used, the apparatus transforms to resemble a giant lobster."
       ],
-      "population": 358,
+      "population": 360,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18342,7 +18342,7 @@
         "parent",
         "variant"
       ],
-      "population": 1369,
+      "population": 1370,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -18390,7 +18390,7 @@
         "M8",
         "M5"
       ],
-      "population": 1369,
+      "population": 1370,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -23383,7 +23383,7 @@
         "c2-residual-proof-against-divination",
         "c2-residual-plane-shift-check"
       ],
-      "population": 466,
+      "population": 465,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -23529,7 +23529,7 @@
         "immunity",
         "acBonus"
       ],
-      "population": 466,
+      "population": 465,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -24186,7 +24186,7 @@
         "apply the exact vehicle control from the source table",
         "resolve DC 17 Constitution save and extra damage"
       ],
-      "population": 75,
+      "population": 74,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25039,7 +25039,7 @@
         "a lever changes position",
         "ranged attack made against a target within 5 feet of wielder"
       ],
-      "population": 102,
+      "population": 101,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25752,6 +25752,26 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.entityGrant.grants[].kind",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.entityGrant.grants[].maxCountPerCost.economy",
+      "representativeValues": [
+        "charges"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.entityGrant.grants[].maxCountPerCost.economy",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,

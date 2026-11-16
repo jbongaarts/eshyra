@@ -135,6 +135,18 @@ const SPECS: ReadonlyMap<string, readonly AdjudicatedEffectSpec[]> = new Map([
     ],
   ],
   [
+    'Pipes of the Sewers',
+    [
+      {
+        kind: 'withhold',
+        effectId: 'c2-residual-rat-indifference',
+        sourceText:
+          'While you are attuned to the pipes, ordinary rats and giant rats are indifferent toward you and will not attack you unless you threaten or harm them.',
+        note: 'An attitude toward the attuned wearer that holds unless the wearer threatens or harms the rats is not a kept effect category (faithful-or-absent triage, 2026-10-12); the typed effect vocabulary cannot state the exception, so the model interprets the printed text.',
+      },
+    ],
+  ],
+  [
     'Nine Lives Stealer',
     [
       {

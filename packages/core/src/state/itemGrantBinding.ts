@@ -15,6 +15,12 @@ export interface ItemGrantBindingRecord {
    *  the creature is reduced to 0 hit points (Staff of the Python). Stored at
    *  bind time, like `cooldownAnchored`, so the ending needs no pack lookup. */
   readonly destroysSourceAtZeroHp?: boolean;
+  /** eshyra-ffoo: the grant prints no ending (`noPrintedEnding`: Pipes of the
+   *  Sewers' called swarms), so a creature that is reduced to 0 hit points in
+   *  the ordinary way closes its own actor link and the effect ends with its
+   *  last owned creature. Stored at bind time so the closure needs no pack
+   *  lookup; absent on every grant that prints an ending. */
+  readonly noPrintedEnding?: true;
   /** S11 tombstone: the ISO time the bound inventory instance was destroyed.
    *  A tombstoned binding ends normally but schedules no cooldown (there is no
    *  item to cool down), and no reader may require the deleted inventory row
@@ -291,6 +297,9 @@ export function issueItemGrantBindCredit(
     readonly rolledCounts?: readonly ItemGrantRolledCount[];
     /** Engine rolls of the credit's grants that print a `creatureRoll`. */
     readonly rolledCreatures?: readonly ItemGrantRolledCreature[];
+    /** Units of `economyId` the issuing use spent (eshyra-ffoo): the count a
+     *  grant's `maxCountPerCost` bounds against. */
+    readonly spentAmount?: number;
   },
 ): string {
   const prefix = `${credit.itemInstanceId}:${credit.operationId}:`;
@@ -305,8 +314,8 @@ export function issueItemGrantBindCredit(
        credit_id, campaign_id, item_instance_id, pack_ref, variant_id,
        economy_id, operation_id, issued_at, issued_elapsed_minutes,
        provenance, session_id, rolled_counts_json, rolled_creatures_json,
-       insertion_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+       spent_amount, insertion_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
        (SELECT COALESCE(MAX(insertion_order), 0) + 1 FROM item_grant_bind_credit))`,
   ).run(
     creditId,
@@ -326,8 +335,28 @@ export function issueItemGrantBindCredit(
     credit.rolledCreatures === undefined || credit.rolledCreatures.length === 0
       ? null
       : JSON.stringify(credit.rolledCreatures),
+    credit.spentAmount ?? null,
   );
   return creditId;
+}
+
+/** The units of its economy the use that issued a credit spent, or undefined
+ *  when the credit recorded none (issued before the spend was recorded, or a
+ *  value that is not a positive integer). Never throws: "no recorded spend"
+ *  refuses the bounded bind. */
+export function readItemGrantBindCreditSpent(
+  db: Db,
+  creditId: string,
+): number | undefined {
+  const row = db
+    .prepare(
+      'SELECT spent_amount FROM item_grant_bind_credit WHERE credit_id = ?',
+    )
+    .get(creditId) as { spent_amount: number | null } | undefined;
+  const spent = row?.spent_amount;
+  return typeof spent === 'number' && Number.isInteger(spent) && spent >= 1
+    ? spent
+    : undefined;
 }
 
 /** The engine roll persisted on a credit for a grant, or undefined when the

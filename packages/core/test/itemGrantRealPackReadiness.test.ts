@@ -102,6 +102,10 @@ const CONFORMANCE_BACKED: readonly string[] = [
   'magic-item:brazier-of-commanding-fire-elementals|summon-fire-elemental',
   'magic-item:censer-of-controlling-air-elementals|summon-air-elemental',
   'magic-item:stone-of-controlling-earth-elementals|summon-earth-elemental',
+  // itemChargeDawnRecharge.test.ts (no readiness waiver; eshyra-ffoo): the
+  // upper-bound count and the explicit no-printed-ending marker own the grant;
+  // spend 2 -> bind at most 2 -> refuse 2 with 1 left -> dawn regain.
+  'magic-item:pipes-of-the-sewers|call-rat-swarms',
 ];
 
 describe('eshyra-c58j real-pack readiness gate for creature-grant operations', () => {

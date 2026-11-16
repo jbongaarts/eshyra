@@ -96,15 +96,24 @@ function independentlyOwned(record: { name: string; data: unknown }): boolean {
         // death-triggered item consequence is not applied by any runtime (P2-2).
         // eshyra-olc5.14: a printed rolled count (`countRoll`) is bound too,
         // against the engine's own roll persisted on the use's bind credit.
+        // eshyra-ffoo: or a declared upper bound per unit of the grant's own
+        // cooldown economy (Pipes of the Sewers).
         (typeof grant.count === 'number' ||
-          typeof grant.countRoll === 'string') &&
+          typeof grant.countRoll === 'string' ||
+          (grant.maxCountPerCost as Obj | undefined)?.economy ===
+            grant.cooldownEconomy) &&
         grant.onEntityDeath === undefined &&
-        endings.length > 0 &&
-        endings.every((ending) =>
-          computed.includes(
-            (ITEM_GRANT_REVERT_DISPOSITIONS[ending] as { kind: string }).kind,
-          ),
-        )
+        // eshyra-ffoo: an engine-computed printed ending, or the explicit
+        // statement that none is printed (with no duration and no revertOn).
+        (grant.noPrintedEnding === true
+          ? endings.length === 0 && grant.duration === undefined
+          : endings.length > 0 &&
+            endings.every((ending) =>
+              computed.includes(
+                (ITEM_GRANT_REVERT_DISPOSITIONS[ending] as { kind: string })
+                  .kind,
+              ),
+            ))
       );
     })
   );
@@ -123,6 +132,7 @@ const OWNED_ITEMS = [
   // eshyra-olc5.15: its printed death consequence is TYPED (a stateMachine
   // condition transition with becomes: nonmagical) and executed by
   // item_state_event, so the guard no longer holds the grant pending.
+  'Pipes of the Sewers',
   'Ring of Djinni Summoning',
   'Stone of Controlling Earth Elementals',
 ];
@@ -135,7 +145,6 @@ const KEPT_ITEMS: Record<string, string> = {
     'owner-command-while-touching and obeyed-owner-command endings are DM-ended',
   'Iron Flask': 'containment release; prints no ending',
   'Manual of Golems': 'prints no ending (remove-on-end would be inferred)',
-  'Pipes of the Sewers': 'prints no ending (remove-on-end would be inferred)',
   'Staff of the Python': 'owner-bonus-action-command ending is DM-ended',
 };
 
@@ -486,6 +495,102 @@ describe('creature-grant lifecycle hook ownership (eshyra-c58j.1)', () => {
       expect(
         creatureGrantLifecycleOwned(
           block([{ ...withRoll, revertOn: ['owner-dies'] }]),
+        ),
+      ).toBe(false);
+    });
+    it('owns an upper-bound count with the explicit no-printed-ending marker, and nothing becomes owned by omission (eshyra-ffoo)', () => {
+      const bounded = {
+        creatureRefs: ['creature:swarm-of-rats'],
+        cooldownEconomy: 'charges',
+        maxCountPerCost: { economy: 'charges', perUnit: 1 },
+        noPrintedEnding: true,
+      };
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(undefined, 'creature', bounded)]),
+        ),
+      ).toBe(true);
+
+      // Neither a count nor the marker: pending (Pipes before eshyra-ffoo).
+      const {
+        maxCountPerCost: _bound,
+        noPrintedEnding: _marker,
+        ...bare
+      } = bounded;
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(undefined, 'creature', bare)]),
+        ),
+      ).toBe(false);
+      // A count but no marker: the grant merely omits its ending.
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(undefined, 'creature', { ...bare, count: 1 })]),
+        ),
+      ).toBe(false);
+      // The bound but no marker, and the marker but no count.
+      const { noPrintedEnding: _m, ...noMarker } = bounded;
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(undefined, 'creature', noMarker)]),
+        ),
+      ).toBe(false);
+      const { maxCountPerCost: _b, ...noBound } = bounded;
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(undefined, 'creature', noBound)]),
+        ),
+      ).toBe(false);
+      // A bound the binder cannot enforce: another economy, or a non-positive
+      // or fractional per-unit count.
+      for (const maxCountPerCost of [
+        { economy: 'uses', perUnit: 1 },
+        { economy: 'charges', perUnit: 0 },
+        { economy: 'charges', perUnit: 1.5 },
+        { economy: 'charges' },
+      ])
+        expect(
+          creatureGrantLifecycleOwned(
+            block([
+              creature(undefined, 'creature', { ...bounded, maxCountPerCost }),
+            ]),
+          ),
+        ).toBe(false);
+      // The marker states that no ending is printed: it cannot sit beside one.
+      expect(
+        creatureGrantLifecycleOwned(
+          block([creature(['one-hour-ended'], 'creature', bounded)]),
+        ),
+      ).toBe(false);
+      expect(
+        creatureGrantLifecycleOwned(
+          block([
+            creature(undefined, 'creature', {
+              ...bounded,
+              duration: { amount: 1, unit: 'hour' },
+            }),
+          ]),
+        ),
+      ).toBe(false);
+      // The rest of the rule is unchanged: one creature, a death consequence.
+      expect(
+        creatureGrantLifecycleOwned(
+          block([
+            creature(undefined, 'creature', {
+              ...bounded,
+              creatureRefs: ['creature:a', 'creature:b'],
+            }),
+          ]),
+        ),
+      ).toBe(false);
+      expect(
+        creatureGrantLifecycleOwned(
+          block([
+            creature(undefined, 'creature', {
+              ...bounded,
+              onEntityDeath: 'the pipes crumble',
+            }),
+          ]),
         ),
       ).toBe(false);
     });

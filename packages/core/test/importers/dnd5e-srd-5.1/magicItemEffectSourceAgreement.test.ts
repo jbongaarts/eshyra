@@ -871,14 +871,16 @@ describe('magic-item effect source agreement (eshyra-o9bd.19.4.5.1)', () => {
     expect(fortress.pushTo).toBe(
       'unoccupied space outside but next to the fortress',
     );
-    // Pipes of the Sewers: the printed ordinary/giant-rat protection (no
-    // attack unless threatened or harmed), without an invented command
-    // exception; the swarm-control contest is a separate procedure.
-    const rats = effect('magic-item:pipes-of-the-sewers', 'rat-indifference');
-    expect(String(rats.result)).toContain(
-      'unless wearer threatens or harms it',
-    );
-    expect(JSON.stringify(rats)).not.toMatch(/command/);
+    // Pipes of the Sewers: the printed ordinary/giant-rat protection (no attack
+    // unless threatened or harmed) is an attitude effect, not a kept category
+    // (faithful-or-absent, user decision 2026-11-07, eshyra-ffoo): it is
+    // withheld as a typed effect and carried as an adjudicated clause whose
+    // verbatim span keeps the printed exception (asserted in the ABSENT table
+    // below). No typed effect may assert it without that exception.
+    expect(
+      effectsOf(recordsByKey.get('magic-item:pipes-of-the-sewers') as never) ??
+        [],
+    ).toEqual([]);
     // Natural-20 riders keep the printed die-result trigger.
     for (const [item, id] of [
       ['magic-item:mace-of-smiting', 'mace-smiting-critical-rider'],
@@ -1489,6 +1491,14 @@ describe('magic-item effects are faithful or absent (eshyra-o9bd.19.4.5.8)', () 
       effect: 'c2-residual-dimensional-movement-block',
       clauseSuffix: 'c2-residual-dimensional-movement-block',
       span: 'They don’t prevent the creature from passing through an interdimensional portal.',
+    },
+    {
+      // User decision 2026-11-07 (eshyra-ffoo): attitude effects are not a kept
+      // category; the span keeps the printed exception.
+      item: 'magic-item:pipes-of-the-sewers',
+      effect: 'c2-residual-rat-indifference',
+      clauseSuffix: 'c2-residual-rat-indifference',
+      span: 'will not attack you unless you threaten or harm them',
     },
     {
       item: 'magic-item:nine-lives-stealer',

@@ -133,8 +133,8 @@ describe('checkpoint serialization', () => {
         ).toBe(false);
         initSchema(restored);
         expect(readMigrationLedger(restored).at(-1)).toMatchObject({
-          version: 55,
-          name: 'creature_long_rest_usage',
+          version: 56,
+          name: 'item_grant_bind_credit_spent_amount',
         });
         expect(
           (

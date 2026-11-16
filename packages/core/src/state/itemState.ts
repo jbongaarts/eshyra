@@ -209,6 +209,14 @@ export interface UseItemResult {
        *  this use and persisted on the credit (eshyra-olc5.16).
        *  start_effect binds exactly `creatureRef` for that grant. */
       readonly rolledCreatures?: readonly ItemGrantRolledCreature[];
+      /** For a listed grant that prints an upper-bound count
+       *  (`maxCountPerCost`), the most linked actors start_effect will bind
+       *  for this credit: units of the economy this use spent times the
+       *  printed per-unit count (eshyra-ffoo). Fewer, even none, may bind. */
+      readonly boundedCounts?: readonly {
+        readonly grantId: string;
+        readonly max: number;
+      }[];
     }[];
   };
   readonly turnResource?: UseItemTurnResource;
@@ -2547,6 +2555,7 @@ function issueBindCredits(
   grantIds: string[];
   rolledCounts?: ItemGrantRolledCount[];
   rolledCreatures?: ItemGrantRolledCreature[];
+  boundedCounts?: { grantId: string; max: number }[];
 }[] {
   const grants = (args.mechanics.entityGrant as Obj | undefined)?.grants;
   if (!Array.isArray(grants)) return [];
@@ -2556,6 +2565,7 @@ function issueBindCredits(
     grantIds: string[];
     rolledCounts?: ItemGrantRolledCount[];
     rolledCreatures?: ItemGrantRolledCreature[];
+    boundedCounts?: { grantId: string; max: number }[];
   }[] = [];
   const charged = new Set(
     args.costs.filter((cost) => cost.amount > 0).map((cost) => cost.economy),
@@ -2638,9 +2648,24 @@ function issueBindCredits(
         creatureRef,
       });
     }
+    const spentAmount = args.costs
+      .filter((cost) => cost.economy === economyId)
+      .reduce((total, cost) => total + cost.amount, 0);
+    // eshyra-ffoo: a grant that prints an upper-bound count is bound by the
+    // units this use spent; the bound is advertised on the credit.
+    const boundedCounts = grantIds.flatMap((grantId) => {
+      const grant = grants.find(
+        (raw) => (raw as Obj | undefined)?.id === grantId,
+      ) as Obj;
+      const bound = grant.maxCountPerCost as Obj | undefined;
+      return typeof bound?.perUnit === 'number'
+        ? [{ grantId, max: spentAmount * bound.perUnit }]
+        : [];
+    });
     const creditId = issueItemGrantBindCredit(db, {
       rolledCounts,
       rolledCreatures,
+      spentAmount,
       campaignId: args.input.campaignId,
       itemInstanceId: args.input.instanceId,
       packRef: args.packRef,
@@ -2658,6 +2683,7 @@ function issueBindCredits(
       grantIds,
       ...(rolledCounts.length === 0 ? {} : { rolledCounts }),
       ...(rolledCreatures.length === 0 ? {} : { rolledCreatures }),
+      ...(boundedCounts.length === 0 ? {} : { boundedCounts }),
     });
   }
   return credits;

@@ -102,8 +102,25 @@ describe('M4 magic-item entity lifecycle family projection', () => {
       );
       for (const entry of lifecycle)
         expect(entry.engineHooks).toEqual([EXTERNAL_EVENT_LIFECYCLE_HOOK]);
-      const controls = rest.filter((entry) => !lifecycle.includes(entry));
+      // eshyra-ffoo: the Pipes' arrival / availability sentence (enough rats
+      // within reach, the wasted charge) is the one other adjudicated clause.
+      const availability = rest.filter((entry) =>
+        entry.id.startsWith('m4-availability-'),
+      );
+      expect(availability.map(() => name)).toEqual(
+        name === 'Pipes of the Sewers' ? [name] : [],
+      );
+      const controls = rest.filter(
+        (entry) => !lifecycle.includes(entry) && !availability.includes(entry),
+      );
       expect(controls.length, name).toBeLessThanOrEqual(1);
+      for (const entry of availability)
+        expect(entry, name).toEqual(
+          expect.objectContaining({
+            tag: 'M4',
+            representation: expect.objectContaining({ adjudicated: true }),
+          }),
+        );
       for (const control of controls)
         expect(control, name).toEqual(
           expect.objectContaining({
@@ -111,7 +128,7 @@ describe('M4 magic-item entity lifecycle family projection', () => {
             representation: expect.objectContaining({ adjudicated: true }),
           }),
         );
-      for (const control of controls)
+      for (const control of [...controls, ...availability])
         expect(control.engineHooks).toBeUndefined();
     }
     expect(

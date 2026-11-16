@@ -93,10 +93,32 @@ const CONTROL_SPANS: ReadonlyMap<string, string> = new Map([
     'If you blow the horn without meeting its requirement, the summoned berserkers attack you. If you meet the requirement, they are friendly to you and your companions and follow your commands.',
   ],
   [
+    'Pipes of the Sewers',
+    'Whenever a swarm of rats that isn’t under another creature’s control comes within 30 feet of you while you are playing the pipes, you can make a Charisma check contested by the swarm’s Wisdom check. If you lose the contest, the swarm behaves as it normally would and can’t be swayed by the pipes’ music for the next 24 hours. If you win the contest, the swarm is swayed by the pipes’ music and becomes friendly to you and your companions for as long as you continue to play the pipes each round as an action. A friendly swarm obeys your commands. If you issue no commands to a friendly swarm, it defends itself but otherwise takes no actions. If a friendly swarm starts its turn and can’t hear the pipes’ music, your control over that swarm ends, and the swarm behaves as it normally would and can’t be swayed by the pipes’ music for the next 24 hours.',
+  ],
+  [
     'Ring of Djinni Summoning',
     'While summoned, the djinni is friendly to you and your companions. It obeys any commands you give it, no matter what language you use. If you fail to command it, the djinni defends itself against attackers but takes no other actions.',
   ],
 ]);
+
+/**
+ * Verbatim printed ARRIVAL / AVAILABILITY sentence(s) for an owned grant whose
+ * creatures only come if the world supplies them (eshyra-ffoo). The grant types
+ * only the ceiling on how many may arrive; whether enough creatures are near,
+ * and what a short supply costs, is the GM's ruling, so it is carried by an
+ * adjudicated clause whose `sourceText` is this exact span (checked verbatim
+ * against the printed description by the clause integrity check).
+ */
+const AVAILABILITY_SPANS: ReadonlyMap<string, string> = new Map([
+  [
+    'Pipes of the Sewers',
+    'provided that enough rats are within half a mile of you to be called in this fashion (as determined by the GM). If there aren’t enough rats to form a swarm, the charge is wasted.',
+  ],
+]);
+
+const AVAILABILITY_NOTE =
+  'Whether enough creatures are within reach to answer, and the wasted charge when too few are, stay DM-adjudicated; the typed grant states only the ceiling on how many may be bound (one per unit of cost spent), so this printed span is interpreted by the DM model.';
 
 const CONTROL_NOTE =
   'Control, obedience and the command action budget of the summoned creature stay DM-adjudicated (recorded decision, eshyra-c58j / olc5.12); the engine owns only the grant binding, lifetime and identity, so this printed span is interpreted by the DM model.';
@@ -589,7 +611,18 @@ const SPECS: ReadonlyMap<string, EntityGrantSpec> = new Map([
             control:
               'initially uncontrolled; each eligible swarm is controlled only after owner wins Charisma-vs-Wisdom contest and while it hears pipes played each round',
             cooldownEconomy: 'charges',
-            note: 'Actual count equals charges spent (1 to 3), subject to enough rats within half a mile. Multiple swarms may coexist. A failed sway or ended control locks that swarm out for 24 hours.',
+            // "expend 1 to 3 charges, calling forth one swarm of rats with
+            // each expended charge, provided that enough rats are within half
+            // a mile ... (as determined by the GM)": at most one swarm per
+            // charge spent. How many rats are near is the GM's call, so fewer
+            // (even none: "the charge is wasted") may arrive; only the
+            // ceiling is printed, so only the ceiling is typed.
+            maxCountPerCost: { economy: 'charges', perUnit: 1 },
+            // The printed text gives called swarms no duration and no ending
+            // (only the separate control contest below): the DM ends a swarm
+            // with end_effect. No ending is invented for them.
+            noPrintedEnding: true,
+            note: 'At most one swarm per charge spent (1 to 3), subject to enough rats within half a mile. Multiple swarms may coexist. A failed sway or ended control locks that swarm out for 24 hours.',
           }),
         ],
       },
@@ -771,6 +804,10 @@ export function projectMagicItemEntityGrants(
   const controlSpan = CONTROL_SPANS.get(item.name);
   const moveControl =
     controlSpan !== undefined && creatureGrantLifecycleOwned(spec.entityGrant);
+  const availabilitySpan = AVAILABILITY_SPANS.get(item.name);
+  const ownedAvailability =
+    availabilitySpan !== undefined &&
+    creatureGrantLifecycleOwned(spec.entityGrant);
   return {
     family: 'm4-entity-lifecycles',
     mechanics: {
@@ -812,6 +849,19 @@ export function projectMagicItemEntityGrants(
               },
               // No engineHooks: like every adjudicated clause (see the
               // triage), the DM-adjudicated control carries no engine hook.
+            },
+          ]
+        : []),
+      ...(ownedAvailability
+        ? [
+            {
+              id: `m4-availability-${slug}`,
+              tag: 'M4' as const,
+              representation: {
+                adjudicated: true as const,
+                note: AVAILABILITY_NOTE,
+                sourceText: availabilitySpan,
+              },
             },
           ]
         : []),

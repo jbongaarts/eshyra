@@ -1878,6 +1878,11 @@ describe('runtime safety across the whole corpus', () => {
     // transition) and executed by item_state_event; real-pack conformance in
     // itemStateEventNonmagical.test.ts.
     'Iron Bands of Binding||throw-bands',
+    // eshyra-ffoo: the upper-bound count (maxCountPerCost) and the explicit
+    // no-printed-ending marker own the grant; control, availability and the
+    // rat attitude are adjudicated clauses with verbatim spans. Real-pack
+    // conformance in itemChargeDawnRecharge.test.ts.
+    'Pipes of the Sewers||call-rat-swarms',
     'Plate Armor of Etherealness||gain-etherealness',
     'Ring of Djinni Summoning||summon-djinni',
     'Ring of Evasion||turn-failed-dex-save-into-success',

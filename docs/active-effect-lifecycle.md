@@ -688,6 +688,17 @@ row and the newest row in an instance is its current projection
   transformed) instead of reverting it, so the shared cleanup seam (effect
   end, concentration break, `remove_effect_target`) refuses any non-`revert`
   policy on a live `revert-form` holder rather than translating it.
+- **No printed ending** (`noPrintedEnding`: Pipes of the Sewers' called rat
+  swarms, eshyra-ffoo): the grant prints no duration, vanish or reversion, so
+  its creature is an ordinary creature. At 0 HP / dead by any route (damage,
+  suffocation drop, `updateCampaignActor` out of combat) it stays in play (the
+  corpse and combatant remain) and only its own actor link closes (`removed`,
+  reason `zero-hit-points`); the effect ends (`source-removed`, detail
+  `zero-hit-points`) only when no owned creature remains. The trigger is the
+  `noPrintedEnding` flag recorded on the effect's item-grant binding at bind
+  time (`closeOrdinaryZeroHpGrantLink`, reusing `closeActorLinkAtZeroHp`), so
+  grants that print an ending are untouched and the redeemed bind credit stays
+  redeemed. Bindings created before the flag was recorded carry none.
 - **S3 wards / transformations / item lifecycles**: suppression tools are
   available, and `zone`/`form` link kinds use canonical S3/C1 projection
   stores through F3 cleanup: `remove` invokes the

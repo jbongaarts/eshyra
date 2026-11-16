@@ -716,7 +716,7 @@ CREATE TABLE item_grant_bind_credit (
   redeemed_at TEXT,
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL
-, rolled_counts_json TEXT, rolled_creatures_json TEXT, insertion_order INTEGER NOT NULL DEFAULT 0);
+, rolled_counts_json TEXT, rolled_creatures_json TEXT, insertion_order INTEGER NOT NULL DEFAULT 0, spent_amount INTEGER);
 
 CREATE TABLE item_state (
   inventory_id TEXT PRIMARY KEY
