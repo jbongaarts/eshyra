@@ -502,7 +502,11 @@ describe('absent combatants', () => {
       }),
       s.call('update_combatant', { combatantId: 'c-b1', status: 'alive' }),
       s.call('update_combatant', { combatantId: 'c-b2', status: 'absent' }),
-      s.call('record_death_save', { combatantId: 'c-b1', roll: 12 }),
+      s.call('record_death_save', {
+        combatantId: 'c-b1',
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+        roll: 12,
+      }),
       s.call('stabilize_character', { combatantId: 'c-b1' }),
       s.call('set_suffocation', { combatantId: 'c-b1', event: 'drop' }),
     ];

@@ -1634,12 +1634,20 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
       expect(row()).toMatchObject({ status: 'dying', hp_current: 0 });
       registry.invoke(
         'record_death_save',
-        { combatantId: HYDRA, roll: 12 },
+        {
+          combatantId: HYDRA,
+          rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+          roll: 12,
+        },
         ctx,
       );
       registry.invoke(
         'record_death_save',
-        { combatantId: HYDRA, roll: 5 },
+        {
+          combatantId: HYDRA,
+          rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+          roll: 5,
+        },
         ctx,
       );
       if (blocked)
