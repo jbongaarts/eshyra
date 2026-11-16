@@ -1331,6 +1331,7 @@ export {
   assertRecordRelationshipDeclarationsAreLive,
   assertRecordRelationshipDeclarationsCoverBoundedShapes,
   buildRecordRelationshipManifest,
+  CONDITION_NAME_LEAF_POINTER_SHAPES,
   LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES,
   RECORD_RELATIONSHIP_SCHEMA,
   RecordRelationshipError,

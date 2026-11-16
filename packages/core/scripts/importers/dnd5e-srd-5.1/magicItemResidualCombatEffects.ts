@@ -1072,7 +1072,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'drinker next sees creature within 10 minutes',
         'impose charmed for one hour',
         {
-          condition: 'charmed',
+          conditions: ['charmed'],
           triggerWindow: { amount: 10, unit: 'minute' },
           duration: { amount: 1, unit: 'hour' },
         },
@@ -1166,7 +1166,7 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'resolve charm save and breaking conditions',
         {
           save: { ability: 'wisdom', dc: 15 },
-          condition: 'charmed',
+          conditions: ['charmed'],
           duration: { amount: 8, unit: 'hour' },
           endsOn: [
             'harmed-by-user-or-companions',

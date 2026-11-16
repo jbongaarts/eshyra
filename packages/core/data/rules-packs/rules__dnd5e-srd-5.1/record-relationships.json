@@ -103,55 +103,220 @@
       "pointerPrefix": "/mechanics/conditions/*/condition",
       "linkField": "data.mechanics.conditions",
       "disposition": "reference",
-      "relation": "condition",
       "targetResolution": "record-name",
       "targetKind": "condition",
       "relationField": "relation",
-      "reason": "Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
+      "relationByFieldValue": {
+        "applies": "applies",
+        "removes": "removes",
+        "prevents": "prevents",
+        "suppresses": "suppresses",
+        "immune": "immune",
+        "advantage": "advantage",
+        "disadvantage": "disadvantage",
+        "exclusion": "exclusion",
+        "gates": "gates",
+        "mention": "mention"
+      },
+      "reason": "Condition names in a action record's mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
     },
     {
       "kind": "feat",
       "pointerPrefix": "/mechanics/conditions/*/condition",
       "linkField": "data.mechanics.conditions",
       "disposition": "reference",
-      "relation": "condition",
       "targetResolution": "record-name",
       "targetKind": "condition",
       "relationField": "relation",
-      "reason": "Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
+      "relationByFieldValue": {
+        "applies": "applies",
+        "removes": "removes",
+        "prevents": "prevents",
+        "suppresses": "suppresses",
+        "immune": "immune",
+        "advantage": "advantage",
+        "disadvantage": "disadvantage",
+        "exclusion": "exclusion",
+        "gates": "gates",
+        "mention": "mention"
+      },
+      "reason": "Condition names in a feat record's mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
     },
     {
       "kind": "feature",
       "pointerPrefix": "/mechanics/conditions/*/condition",
       "linkField": "data.mechanics.conditions",
       "disposition": "reference",
-      "relation": "condition",
       "targetResolution": "record-name",
       "targetKind": "condition",
       "relationField": "relation",
-      "reason": "Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
+      "relationByFieldValue": {
+        "applies": "applies",
+        "removes": "removes",
+        "prevents": "prevents",
+        "suppresses": "suppresses",
+        "immune": "immune",
+        "advantage": "advantage",
+        "disadvantage": "disadvantage",
+        "exclusion": "exclusion",
+        "gates": "gates",
+        "mention": "mention"
+      },
+      "reason": "Condition names in a feature record's mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
     },
     {
       "kind": "hazard",
       "pointerPrefix": "/mechanics/conditions/*/condition",
       "linkField": "data.mechanics.conditions",
       "disposition": "reference",
-      "relation": "condition",
       "targetResolution": "record-name",
       "targetKind": "condition",
       "relationField": "relation",
-      "reason": "Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
+      "relationByFieldValue": {
+        "applies": "applies",
+        "removes": "removes",
+        "prevents": "prevents",
+        "suppresses": "suppresses",
+        "immune": "immune",
+        "advantage": "advantage",
+        "disadvantage": "disadvantage",
+        "exclusion": "exclusion",
+        "gates": "gates",
+        "mention": "mention"
+      },
+      "reason": "Condition names in a hazard record's mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
     },
     {
       "kind": "spell",
       "pointerPrefix": "/mechanics/conditions/*/condition",
       "linkField": "data.mechanics.conditions",
       "disposition": "reference",
-      "relation": "condition",
       "targetResolution": "record-name",
       "targetKind": "condition",
       "relationField": "relation",
-      "reason": "Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
+      "relationByFieldValue": {
+        "applies": "applies",
+        "removes": "removes",
+        "prevents": "prevents",
+        "suppresses": "suppresses",
+        "immune": "immune",
+        "advantage": "advantage",
+        "disadvantage": "disadvantage",
+        "exclusion": "exclusion",
+        "gates": "gates",
+        "mention": "mention"
+      },
+      "reason": "Condition names in a spell record's mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/traits/*/mechanics/conditions/*/condition",
+      "linkField": "data.traits[].mechanics.conditions",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "relation",
+      "relationByFieldValue": {
+        "applies": "applies",
+        "removes": "removes",
+        "prevents": "prevents",
+        "suppresses": "suppresses",
+        "immune": "immune",
+        "advantage": "advantage",
+        "disadvantage": "disadvantage",
+        "exclusion": "exclusion",
+        "gates": "gates",
+        "mention": "mention"
+      },
+      "reason": "Condition names in an ancestry trait's mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/actions/*/mechanics/conditions/*/condition",
+      "linkField": "data.actions[].mechanics.conditions",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "relation",
+      "relationByFieldValue": {
+        "applies": "applies",
+        "removes": "removes",
+        "prevents": "prevents",
+        "suppresses": "suppresses",
+        "immune": "immune",
+        "advantage": "advantage",
+        "disadvantage": "disadvantage",
+        "exclusion": "exclusion",
+        "gates": "gates",
+        "mention": "mention"
+      },
+      "reason": "Condition names in a creature action's mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/legendaryActions/entries/*/mechanics/conditions/*/condition",
+      "linkField": "data.legendaryActions.entries[].mechanics.conditions",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "relation",
+      "relationByFieldValue": {
+        "applies": "applies",
+        "removes": "removes",
+        "prevents": "prevents",
+        "suppresses": "suppresses",
+        "immune": "immune",
+        "advantage": "advantage",
+        "disadvantage": "disadvantage",
+        "exclusion": "exclusion",
+        "gates": "gates",
+        "mention": "mention"
+      },
+      "reason": "Condition names in a creature legendary action's mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/reactions/*/mechanics/conditions/*/condition",
+      "linkField": "data.reactions[].mechanics.conditions",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "relation",
+      "relationByFieldValue": {
+        "applies": "applies",
+        "removes": "removes",
+        "prevents": "prevents",
+        "suppresses": "suppresses",
+        "immune": "immune",
+        "advantage": "advantage",
+        "disadvantage": "disadvantage",
+        "exclusion": "exclusion",
+        "gates": "gates",
+        "mention": "mention"
+      },
+      "reason": "Condition names in a creature reaction's mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/traits/*/mechanics/conditions/*/condition",
+      "linkField": "data.traits[].mechanics.conditions",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "relation",
+      "relationByFieldValue": {
+        "applies": "applies",
+        "removes": "removes",
+        "prevents": "prevents",
+        "suppresses": "suppresses",
+        "immune": "immune",
+        "advantage": "advantage",
+        "disadvantage": "disadvantage",
+        "exclusion": "exclusion",
+        "gates": "gates",
+        "mention": "mention"
+      },
+      "reason": "Condition names in a creature trait's mechanics.conditions are resolved against the condition kind. The sibling relation states what the printed clause says about that condition (applies, removes, prevents, immune, advantage, ...); a missing, non-string, or unrecognized sibling yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
     },
     {
       "kind": "action",
@@ -285,6 +450,265 @@
       "relation": "requires-item",
       "targetResolution": "record-key",
       "reason": "A magic item the printed text names as a prerequisite of this item: worn for attunement (Hammer of Thunderbolts: belt of giant strength, gauntlets of ogre power) or coating its storage container (Sovereign Glue: oil of slipperiness)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/conditions/*",
+      "linkField": "data.mechanics.effects[].conditions",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "../kind",
+      "relationByFieldValue": {
+        "imposesCondition": "imposed-condition",
+        "triggeredEffect": "imposed-condition",
+        "immunity": "condition-immunity"
+      },
+      "excludedLeafValues": [
+        "suffocating"
+      ],
+      "reason": "The conditions a magic-item effect names: imposesCondition and triggeredEffect impose them on a failed save or trigger (Wand of Paralysis: paralyzed; Robe of Eyes: blinded), and immunity states immunity to them (Periapt of Proof against Poison: immune to the poisoned condition). The relation comes from the containing effect kind. Dust of Sneezing and Choking also lists suffocating (\"incapacitated and suffocating\"), which the SRD defines as a rule (rule:suffocating) and not a condition; it is declared as an excluded leaf value rather than left as an unresolved reference, and the importer keeps it in the conditions list because no existing field carries that meaning."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/failedSaveCondition",
+      "linkField": "data.mechanics.effects[].failedSaveCondition",
+      "disposition": "reference",
+      "relation": "failed-save-condition",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "reason": "The condition a creature suffers on a failed saving throw (Dagger of Venom: poisoned; Giant Slayer: prone; Horn of Blasting: deafened; Hammer of Thunderbolts: stunned). Every emitted occurrence is a triggeredEffect failed-save rider with this one meaning."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/onSuccessfulSave/condition",
+      "linkField": "data.mechanics.effects[].onSuccessfulSave.condition",
+      "disposition": "reference",
+      "relation": "successful-save-condition",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "reason": "Mace of Disruption: on a successful save the creature becomes frightened of the wielder until the end of the wielder next turn."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/condition",
+      "linkField": "data.mechanics.effects[].condition",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "kind",
+      "relationByFieldValue": {
+        "imposesCondition": "imposed-condition",
+        "abilityScoreIncrease": null,
+        "abilityScoreSet": null,
+        "acFormula": null,
+        "advantage": null,
+        "breathes": null,
+        "castSpell": null,
+        "climbAnywhere": null,
+        "damageResistance": null,
+        "extraDamage": null,
+        "hover": null,
+        "ignoreDifficultTerrain": null,
+        "immunity": null,
+        "jumpDistanceMultiplier": null,
+        "leavesNoTracks": null,
+        "light": null,
+        "proficiency": null,
+        "regeneration": null,
+        "rollModifier": null,
+        "rollPenaltyDice": null,
+        "sense": null,
+        "slowFall": null,
+        "speedBonus": null,
+        "speedMultiplier": null,
+        "speedSet": null,
+        "triggeredEffect": null,
+        "walkOnLiquids": null
+      },
+      "reason": "Overloaded field: an imposesCondition effect names the condition it imposes (Philter of Love: charmed), while every other effect kind, triggeredEffect included, stores a prose activation precondition here (for example \"while the sword is ablaze\") that is excluded. The importer emits the condition a triggeredEffect imposes (Rod of Rulership, Philter of Love) in its conditions[] array, not here."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/conditionImmunities",
+      "linkField": "data.conditionImmunities",
+      "disposition": "reference",
+      "relation": "condition-immunity",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "listDelimiter": ", ",
+      "reason": "The creature record's printed \"Condition Immunities\" label lists the conditions it is immune to as a comma-separated string; each printed name resolves against the condition kind (for example the zombie's \"poisoned\", the ghoul's \"charmed, exhaustion, poisoned\")."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/conditionImmunities",
+      "linkField": "data.conditionImmunities",
+      "disposition": "reference",
+      "relation": "condition-immunity",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "listDelimiter": ", ",
+      "reason": "The stat-block record's printed \"Condition Immunities\" label lists the conditions it is immune to as a comma-separated string; each printed name resolves against the condition kind (for example the zombie's \"poisoned\", the ghoul's \"charmed, exhaustion, poisoned\")."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/state",
+      "linkField": "data.mechanics.effects[].state",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "kind",
+      "relationByFieldValue": {
+        "visibility": "imposed-condition"
+      },
+      "reason": "A visibility effect names the condition it imposes: Dust of Disappearance (\"you and each creature and object within 10 feet of you become invisible for 2d4 minutes\") and Potion of Invisibility (\"you become invisible for 1 hour\"). The SRD defines Invisible as a condition (Appendix PH-A). Any other effect kind carrying a state is indeterminate, not silently read."
+    },
+    {
+      "kind": "condition",
+      "pointerPrefix": "/mechanics/effects/*/state",
+      "linkField": "data.mechanics.effects[].state",
+      "disposition": "not-a-reference",
+      "reason": "The Invisible condition record describes its own state (\"impossible-to-see\"), a descriptor of that condition, not a condition name."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/ends/*",
+      "linkField": "data.mechanics.effects[].ends",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "../kind",
+      "relationByFieldValue": {
+        "conditionEndsWhen": "removed-condition",
+        "triggeredEffect": "removed-condition"
+      },
+      "excludedLeafValues": [
+        "disease",
+        "any-disease"
+      ],
+      "reason": "What a magic-item effect ends. Restorative Ointment: \"ceases to be poisoned, and is cured of any disease\" lists the poisoned condition it removes beside diseases. Diseases are not condition records (the SRD treats them as a separate rules topic), so disease and any-disease are declared excluded leaf values rather than unresolved references."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/variants/whip/endsOn/*",
+      "linkField": "data.mechanics.effects[].variants.whip.endsOn",
+      "disposition": "reference",
+      "relation": "ending-trigger-condition",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "excludedLeafValues": [
+        "dismiss-action",
+        "death"
+      ],
+      "reason": "Feather Token (whip): \"The whip disappears after 1 hour, when you use an action to dismiss it, or when you are incapacitated or die.\" The incapacitated entry names the condition that ends the effect; dismiss-action and death are not conditions and are declared excluded leaf values."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/variants/*/mechanics/effects/*/condition",
+      "linkField": "data.variants[].mechanics.effects[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/stateMachine/transitions/*/condition",
+      "linkField": "data.mechanics.stateMachine.transitions[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "action",
+      "pointerPrefix": "/mechanics/effects/*/condition",
+      "linkField": "data.mechanics.effects[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/traits/*/mechanics/effects/*/condition",
+      "linkField": "data.traits[].mechanics.effects[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/actions/*/mechanics/effects/*/condition",
+      "linkField": "data.actions[].mechanics.effects[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/traits/*/mechanics/effects/*/condition",
+      "linkField": "data.traits[].mechanics.effects[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/actions/*/mechanics/attacks/*/alternatives/*/condition",
+      "linkField": "data.actions[].mechanics.attacks[].alternatives[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/traits/*/mechanics/effects/*/forms/*/statlineRefs/*/condition",
+      "linkField": "data.traits[].mechanics.effects[].forms[].statlineRefs[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/mechanics/effects/*/condition",
+      "linkField": "data.mechanics.effects[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/mechanics/effects/*/condition",
+      "linkField": "data.mechanics.effects[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/mechanics/damage/*/typeOptions/*/condition",
+      "linkField": "data.mechanics.damage[].typeOptions[].condition",
+      "disposition": "not-a-reference",
+      "reason": "A free-text precondition clause (for example \"While raging\"), not a condition name; it is not a reference to a condition record."
+    },
+    {
+      "kind": "action",
+      "pointerPrefix": "/mechanics/effects/*/conditions/*",
+      "linkField": "data.mechanics.effects[].conditions",
+      "disposition": "not-a-reference",
+      "reason": "Dodge benefitEndsWhen lists the circumstances that end the benefit (you-are-incapacitated, your-speed-is-0), which are clauses, not condition names. The Dodge incapacitated edge is already carried by its mechanics.conditions exclusion entry."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/useProfile/clauses/*/semantics/failureCondition",
+      "linkField": "data.useProfile.clauses[].semantics.failureCondition",
+      "disposition": "reference",
+      "relation": "failed-save-condition",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "reason": "Ball Bearings: a creature moving across the area must succeed on a DC 10 Dexterity saving throw or fall prone."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/useProfile/clauses/*/semantics/condition",
+      "linkField": "data.useProfile.clauses[].semantics.condition",
+      "disposition": "reference",
+      "targetResolution": "record-name",
+      "targetKind": "condition",
+      "relationField": "../owner",
+      "relationByFieldValue": {
+        "F3": "imposed-condition",
+        "model": null
+      },
+      "reason": "Overloaded field in equipment use-profile clauses. The F3 (save/condition) clause owner stores a condition name (Net: a creature hit by a net is restrained until it is freed); the model-owned clause stores a free-text precondition (Lance: wielder-not-mounted), which is excluded. Any other clause owner is indeterminate, not silently read."
     }
   ]
 }
