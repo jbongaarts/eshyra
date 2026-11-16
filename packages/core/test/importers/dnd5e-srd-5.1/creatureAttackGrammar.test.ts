@@ -104,6 +104,17 @@ function printedTerms(hit: string): string[] {
       key: `${normalizeDice(match[2])}|${match[3].toLowerCase()}`,
     });
   }
+  // Choice-of-type terms ("3 (1d6) lightning or thunder damage (djinni's
+  // choice)"), keyed "<dice>|<typeA>/<typeB>" (eshyra-roge).
+  for (const match of hit.matchAll(
+    /(\d+)\s*\((\d+d\d+(?:\s*[+−–-]\s*\d+)?)\)\s+([a-z]+) or ([a-z]+)\s+damage\s*\([^()]*\bchoice\)/gi,
+  )) {
+    found.push({
+      at: match.index,
+      end: match.index + match[0].length,
+      key: `${normalizeDice(match[2])}|${match[3].toLowerCase()}/${match[4].toLowerCase()}`,
+    });
+  }
   for (const match of hit.matchAll(/(?<![\w(])(\d+) ([a-z]+) damage/gi)) {
     const at = match.index;
     const end = at + match[0].length;
@@ -125,11 +136,16 @@ function projectedModes(attack: Record<string, unknown>): string[][] {
     modes.push(alternative.hitDamage);
   }
   return modes.map((mode) =>
-    mode.map((entry) =>
-      entry.dice === undefined
-        ? `amount:${String(entry.amount)}|${String(entry.type)}`
-        : `${normalizeDice(String(entry.dice))}|${String(entry.type)}`,
-    ),
+    mode.map((entry) => {
+      const type = Array.isArray(entry.typeOptions)
+        ? (entry.typeOptions as { type: string }[])
+            .map((option) => option.type)
+            .join('/')
+        : String(entry.type);
+      return entry.dice === undefined
+        ? `amount:${String(entry.amount)}|${type}`
+        : `${normalizeDice(String(entry.dice))}|${type}`;
+    }),
   );
 }
 
@@ -223,7 +239,7 @@ describe('creature attack grammar over the committed pack', () => {
     expect(checked).toBeGreaterThan(0);
   });
 
-  it('lists every printed Hit component: Flying Snake flat plus dice, Jackal en dash, Djinni disclosed (A3-F3)', () => {
+  it('lists every printed Hit component: Flying Snake flat plus dice, Jackal en dash, Djinni choice-of-type (A3-F3)', () => {
     const snake = leadInAttack(recordOf('creature:flying-snake'), 'Bite');
     expect(snake.attack.hitDamage).toEqual([
       { amount: 1, type: 'piercing' },
@@ -239,16 +255,24 @@ describe('creature attack grammar over the committed pack', () => {
     ]);
     expect(jackal.block.mechanics.damage).toEqual(jackal.attack.hitDamage);
 
-    // SRD Djinni Scimitar: "plus 3 (1d6) lightning or thunder
-    // damage (djinni's choice)" is a choice-of-type rider this grammar does
-    // not project, so the attack discloses the printed clause.
+    // SRD Djinni Scimitar: "plus 3 (1d6) lightning or thunder damage
+    // (djinni's choice)" is one roll whose type is the attacker's choice, so it
+    // is projected as a typeOptions entry (as spell Fire Shield does) and the
+    // attack carries no disclosure (eshyra-roge).
     const djinni = leadInAttack(recordOf('creature:djinni'), 'Scimitar');
     expect(djinni.attack.hitDamage).toEqual([
       { average: 12, dice: '2d6 + 5', type: 'slashing' },
+      {
+        average: 3,
+        dice: '1d6',
+        typeOptions: [
+          { type: 'lightning', condition: 'djinni’s choice' },
+          { type: 'thunder', condition: 'djinni’s choice' },
+        ],
+      },
     ]);
-    expect(djinni.attack.hitDamageNotProjected).toBe(
-      '12 (2d6 + 5) slashing damage plus 3 (1d6) lightning or thunder damage (djinni’s choice)',
-    );
+    expect(djinni.attack.hitDamageNotProjected).toBeUndefined();
+    expect(djinni.block.mechanics.damage).toEqual(djinni.attack.hitDamage);
   });
 
   it('never projects a Unicode minus into dice, and never drops a printed minus dice Hit', () => {

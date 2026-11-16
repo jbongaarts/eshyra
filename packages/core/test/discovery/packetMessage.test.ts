@@ -705,3 +705,36 @@ describe('context-packet message renderer', () => {
     expect(rendered.text).not.toContain('- sourceRef: \n');
   });
 });
+
+it('retains Stillness of Mind removal semantics from SRD p.28', () => {
+  const db = freshDbWithSession();
+  try {
+    const trace = runDiscoveryStages({
+      db,
+      scenario: {
+        playerInput: 'I use Stillness of Mind.',
+        stateFields: {},
+      },
+    });
+    const record = getBundledDnd5eSrdPack().records.find(
+      (record) => record.key === 'feature:monk:stillness-of-mind',
+    );
+    expect(record?.provenance.locator).toBe('p. 28');
+    expect(record?.data).toMatchObject({
+      description:
+        'Starting at 7th level, you can use your action to end one effect on yourself that is causing you to be charmed or frightened.',
+      mechanics: {
+        conditions: [
+          { condition: 'charmed', relation: 'removes' },
+          { condition: 'frightened', relation: 'removes' },
+        ],
+      },
+    });
+    const text = renderContextPacketMessage(trace).text;
+    expect(text).toContain('removes -> condition:charmed');
+    expect(text).toContain('removes -> condition:frightened');
+    expect(text).not.toContain('applies -> condition:charmed');
+  } finally {
+    db.close();
+  }
+});

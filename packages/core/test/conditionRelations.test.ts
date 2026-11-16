@@ -60,3 +60,18 @@ describe('review failure classes beyond Rage (eshyra-o9bd.18.7.5)', () => {
     ]);
   });
 });
+
+describe('removal of condition-causing effects (eshyra-30xi)', () => {
+  for (const conditions of ['charmed or frightened', 'frightened or charmed']) {
+    it(`removes both alternatives in ${conditions}`, () => {
+      expect(
+        deriveConditionMechanics(
+          `Starting at 7th level, you can use your action to end one effect on yourself that is causing you to be ${conditions}.`,
+        ),
+      ).toEqual([
+        { condition: 'charmed', relation: 'removes' },
+        { condition: 'frightened', relation: 'removes' },
+      ]);
+    });
+  }
+});

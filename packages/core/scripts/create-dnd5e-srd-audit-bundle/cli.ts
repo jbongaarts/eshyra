@@ -2333,7 +2333,7 @@ function buildReadme(meta: {
     '',
     `Unresolved limits are disclosed in \`${CANDIDATE_RECORD_PATH}\` (gate G-candidate-record fails the run if it is absent).`,
     '',
-    '- eshyra-o9bd.19.3.5 bounded discovery limitation (re-freeze bar #9): undeclared condition-name leaves in creature, ancestry and magic-item records are not reached; one-hop expansion does not reach the imposed condition record. This is a disclosed discovery limit, not a claim of discovery completeness.',
+    '- Bounded discovery limitation (re-freeze bar #9): the condition-name leaves named condition, conditions[] or failedSaveCondition outside condition records are declared and typed (eshyra-o9bd.19.3.5), but undeclared reference leaves remain: record-key leaves owned by eshyra-ry69; condition names under other field names (creature conditionImmunities, magic-item state/ends/endsOn; eshyra-1fx7); and the Rod of Rulership triggeredEffect condition (eshyra-y0us). One-hop expansion does not follow those. This is a disclosed discovery limit, not a claim of discovery completeness.',
     '',
     '## File glossary',
     '',
