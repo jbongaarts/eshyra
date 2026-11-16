@@ -451,6 +451,60 @@ const FAMILIES: readonly (readonly [
     'source-rule',
     'rule:madness-effects',
   ],
+  [
+    'feature:monk:martial-arts',
+    '/mechanics/effects/*/progression/classRef',
+    'class-progression',
+    'class:monk',
+  ],
+  [
+    'feature:bard:magical-secrets',
+    '/choices/*/from/countsAsClassSpell',
+    'counts-as-class-spell',
+    'class:bard',
+  ],
+  [
+    'feature:warlock:pact-boon',
+    '/choices/*/options/*/summonFormExtensions/*/spell',
+    'extended-spell',
+    'spell:find-familiar',
+  ],
+  [
+    'magic-item:universal-solvent',
+    '/mechanics/effects/*/includes',
+    'includes-item',
+    'magic-item:sovereign-glue',
+  ],
+  [
+    'magic-item:sphere-of-annihilation',
+    '/mechanics/interItem/portalInteraction/portalRefs/*',
+    'portal-interaction',
+    'spell:gate',
+  ],
+  [
+    'feature:warlock:eldritch-invocations',
+    '/choices/*/options/*/prerequisites/*/classRef',
+    'prerequisite-class',
+    'class:warlock',
+  ],
+  [
+    'magic-item:potion-of-poison',
+    '/mechanics/effects/*/revealedBy',
+    'revealed-by',
+    'spell:identify',
+  ],
+  [
+    'feature:bard:spellcasting',
+    '/choices/*/from/maxSpellLevel/classRef',
+    'spell-level-class',
+    'class:bard',
+  ],
+  [
+    'magic-item:figurine-of-wondrous-power',
+    '/mechanics/entityGrant/grants/*/statBlockRef',
+    'stat-block-reference',
+    'stat-block:giant-fly',
+  ],
 ];
 
 describe('newly traversed record-key relation families (eshyra-ry69)', () => {
@@ -511,6 +565,30 @@ describe('newly traversed record-key relation families (eshyra-ry69)', () => {
       });
     },
   );
+
+  it('has a FAMILIES row for every relation name a bounded-shape declaration uses', () => {
+    // Derived from the manifest, not a hand list: every relation named by a
+    // reference declaration at an enumerated record-key shape (the shapes this
+    // bead introduced) must have discovery evidence in FAMILIES.
+    const shapes = new Set<string>(RECORD_KEY_LEAF_KIND_POINTER_SHAPES);
+    const used = new Set<string>();
+    for (const declaration of manifest.declarations) {
+      if (
+        declaration.disposition !== 'reference' ||
+        declaration.targetResolution !== 'record-key' ||
+        !shapes.has(`${declaration.kind}${declaration.pointerPrefix}`)
+      )
+        continue;
+      if (declaration.relation !== undefined) used.add(declaration.relation);
+      for (const relation of Object.values(
+        declaration.relationByFieldValue ?? {},
+      ))
+        if (relation !== null) used.add(relation);
+    }
+    expect(used.size).toBeGreaterThan(25);
+    const covered = new Set(FAMILIES.map(([, , relation]) => relation));
+    expect([...used].filter((relation) => !covered.has(relation))).toEqual([]);
+  });
 });
 
 describe('sibling-keyed record-key declarations (eshyra-ry69)', () => {
