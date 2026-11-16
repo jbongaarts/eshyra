@@ -889,4 +889,63 @@ describe('stale persistent actor link audit (eshyra-cxuc)', () => {
       .run();
     expect(staleLinks(s)).toHaveLength(1);
   });
+
+  it('separates current live ownership, retained vanish-bonded absence, and departed/superseded stale ownership', () => {
+    const point = (s: ReturnType<typeof setup>, ref: string) =>
+      s.db
+        .prepare(
+          `UPDATE active_effect_link SET target_kind = 'combatant', target_ref = ?
+           WHERE effect_id = 'fam-fx' AND link_kind = 'actor'`,
+        )
+        .run(ref);
+    const stale = (ref: string) => [
+      {
+        effectId: 'fam-fx',
+        issue: `persistent actor link still points at combatant '${ref}'`,
+      },
+    ];
+
+    // Current live ownership: link on the present combatant.
+    const live = setup();
+    live.bond('fam-fx', 'fam');
+    expect(staleLinks(live)).toEqual([]);
+
+    // Legitimate retained absence: vanish-bonded creature at 0 HP keeps its
+    // combatant-targeted link while the instance is active.
+    const vanished = setup();
+    vanished.bond('fam-fx', 'fam');
+    vanished.must('update_combatant', { combatantId: 'c-fam', hpDelta: -5 });
+    expect(vanished.actor('fam').status).toBe('absent');
+    expect(vanished.combatant('c-fam').status).toBe('absent');
+    expect(
+      vanished.effect('fam-fx').links.find((l) => l.linkKind === 'actor'),
+    ).toMatchObject({ target: { kind: 'combatant', ref: 'c-fam' } });
+    expect(auditActiveEffectIntegrity(vanished.db, campaign)).toEqual([]);
+
+    // Departed: after temporary dismissal the actor is pocketed and its old
+    // row absent; a link restored onto that row is a missed departure rebind.
+    const departed = setup();
+    departed.bond('fam-fx', 'fam');
+    departed.fam('action-temporary-dismissal');
+    expect(departed.actor('fam').status).toBe('pocketed');
+    expect(auditActiveEffectIntegrity(departed.db, campaign)).toEqual([]);
+    point(departed, 'c-fam');
+    expect(staleLinks(departed)).toEqual(stale('c-fam'));
+
+    // Superseded: after dismissal + recall a new row projects the actor; a
+    // link on the old absent row is stale, one on the new row is current.
+    const superseded = setup();
+    superseded.bond('fam-fx', 'fam');
+    superseded.fam('action-temporary-dismissal');
+    superseded.fam('action-recall');
+    const fresh = listCombatants(superseded.db, campaign).find(
+      (c) => c.combatantId !== 'c-fam' && c.identityRef === 'fam',
+    );
+    expect(fresh).toBeDefined();
+    expect(auditActiveEffectIntegrity(superseded.db, campaign)).toEqual([]);
+    point(superseded, 'c-fam');
+    expect(staleLinks(superseded)).toEqual(stale('c-fam'));
+    point(superseded, fresh?.combatantId ?? '');
+    expect(staleLinks(superseded)).toEqual([]);
+  });
 });

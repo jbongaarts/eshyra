@@ -1944,14 +1944,28 @@ export function auditActiveEffectIntegrity(
         issue: `campaign actor '${pocketed.actor_id}' is pocketed but is held by ${holders.length} active actor link(s) of live spell-sourced summoning effects; a pocketed actor needs exactly one`,
       });
   }
-  // A combatant-targeted actor link carrying a campaign_actor_id is the NORMAL
-  // state of a durable summon bound mid-combat: the link stays on the combatant
-  // while its combat instance is active, and is retargeted to the campaign
-  // actor only by rebindCombatantReferencesToActor (combat closure, or a
-  // bonded-summon presence transition). It is therefore stale only when its
-  // combatant can no longer be live: the combatant row is missing, or its
-  // combat instance is not 'active' (closure should have rebound it). Fail
-  // closed: anything not provably in an active instance is still reported.
+  // A combatant-targeted actor link carrying a campaign_actor_id is legitimate
+  // only while it is the actor's CURRENT live ownership reference. The link
+  // stays on the combatant while its combat instance is active and moves to the
+  // campaign actor only through rebindCombatantReferencesToActor (combat
+  // closure, or the departure half of a bonded-summon presence transition:
+  // transitionBondedSummon dismissal/pocket, docs/active-effect-lifecycle.md
+  // section 7). So the link is current iff ALL hold:
+  //   1. its combatant is the campaign actor's own projection
+  //      (identity_kind 'campaign_actor', identity_ref = campaign_actor_id) in
+  //      an ACTIVE combat instance of this campaign;
+  //   2. that combatant is the actor's NEWEST row in the instance. Dismissal +
+  //      recall leaves older absent rows behind and projects a new row
+  //      (findLiveActorCombatantId), and a departure rebound the link away from
+  //      the old one, so a link on an older row is superseded;
+  //   3. the row is either present (status not 'absent'), or it is the one
+  //      legitimate retained absence: a 'vanish-bonded' creature at 0 HP whose
+  //      actor is 'absent' (completeZeroHpVanish / closeActorLinkAtZeroHp keep
+  //      the link). An absent row whose actor is 'pocketed' (temporary
+  //      dismissal) or alive, or one that is not at 0 HP under vanish-bonded,
+  //      is a departure whose rebind was missed.
+  // Anything else (missing row, closed instance, foreign identity, superseded
+  // or departed row) fails closed and is reported.
   const stalePersistentLinks = db
     .prepare(
       `SELECT l.effect_id, l.target_ref FROM active_effect_link l
@@ -1962,7 +1976,21 @@ export function auditActiveEffectIntegrity(
          JOIN combat_instance i
            ON i.campaign_id = c.campaign_id AND i.combat_instance_id = c.combat_instance_id
          WHERE c.campaign_id = l.campaign_id AND c.combatant_id = l.target_ref
-           AND i.status = 'active')`,
+           AND i.status = 'active'
+           AND c.identity_kind = 'campaign_actor' AND c.identity_ref = l.campaign_actor_id
+           AND NOT EXISTS (
+             SELECT 1 FROM encounter_combatant newer
+             WHERE newer.campaign_id = c.campaign_id
+               AND newer.combat_instance_id = c.combat_instance_id
+               AND newer.identity_kind = 'campaign_actor'
+               AND newer.identity_ref = c.identity_ref
+               AND newer.insertion_order > c.insertion_order)
+           AND (c.status <> 'absent'
+             OR (c.zero_hp_rule = 'vanish-bonded' AND c.hp_current = 0
+               AND EXISTS (
+                 SELECT 1 FROM campaign_actor a
+                 WHERE a.campaign_id = c.campaign_id AND a.actor_id = c.identity_ref
+                   AND a.status = 'absent'))))`,
     )
     .all(campaignId) as { effect_id: string; target_ref: string }[];
   for (const link of stalePersistentLinks) {
