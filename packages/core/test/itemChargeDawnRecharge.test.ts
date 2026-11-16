@@ -77,6 +77,39 @@ describe('charge dawn recharge on the unmodified SRD pack', () => {
     }
   });
 
+  it('pins the exact Pipes blocker: its creature grant prints no engine-computed ending or count (eshyra-j9rc)', () => {
+    const record = pack.records.find((entry) => entry.key === PIPES);
+    if (record === undefined) throw new Error('bundled pack has no Pipes');
+    const data = record.data as {
+      mechanics: {
+        entityGrant: { grants: Record<string, unknown>[] };
+      };
+      executionReadiness: {
+        clauses: {
+          clauseId: string;
+          readiness: string;
+          missingEngines?: string[];
+        }[];
+      };
+    };
+    // creatureGrantLifecycleOwned keeps a grant pending unless every grant
+    // prints a count and an engine-computed ending. Pipes prints neither: the
+    // swarm count equals the charges spent (variable) and a called swarm has
+    // no printed ending. While this holds, call-rat-swarms cannot reach cost
+    // validation, so the spend-2 / refuse-2-with-1-remaining sequence is
+    // unreachable without a pack change. When this test fails, the boundary
+    // has moved: add that no-waiver sequence and delete this pin.
+    const [grant] = data.mechanics.entityGrant.grants;
+    expect(grant).not.toHaveProperty('revertOn');
+    expect(grant).not.toHaveProperty('count');
+    expect(grant).not.toHaveProperty('countRoll');
+    const m4 = data.executionReadiness.clauses.find(
+      (clause) => clause.clauseId === `${PIPES}/m4-pipes-of-the-sewers`,
+    );
+    expect(m4).toMatchObject({ readiness: 'engine-pending' });
+    expect(m4?.missingEngines).toEqual(['F2', 'F3', 'F5']);
+  });
+
   it('keeps Pipes refused on its pending grant while the real record can recharge', () => {
     const record = pack.records.find((entry) => entry.key === PIPES);
     if (record === undefined) throw new Error('bundled pack has no Pipes');

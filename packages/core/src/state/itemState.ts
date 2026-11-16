@@ -112,6 +112,12 @@ export interface ItemInstanceState {
     readonly pendingTerminal?: 'destroyed';
   };
   readonly pendingTimers?: readonly ItemStateTimer[];
+  /**
+   * Operations already performed on this instance that take part in a printed
+   * mutual exclusion (`operation.excludes`, eshyra-kbzm). Recorded only for
+   * operations that exclude, or are excluded by, another operation.
+   */
+  readonly usedOperations?: readonly string[];
 }
 
 export interface UseItemInput {
@@ -418,9 +424,21 @@ export function validateItemStateJson(
       'depletions',
       'lifecycle',
       'pendingTimers',
+      'usedOperations',
     ],
     path,
   );
+  if (
+    state.usedOperations !== undefined &&
+    (!Array.isArray(state.usedOperations) ||
+      state.usedOperations.some(
+        (id) => typeof id !== 'string' || id.length === 0,
+      ) ||
+      new Set(state.usedOperations).size !== state.usedOperations.length)
+  )
+    throw new ItemStateError(
+      `${path}.usedOperations must be an array of distinct non-empty strings`,
+    );
   validatePackRef(state.packRef, `${path}.packRef`);
   if (
     state.variantId !== undefined &&
@@ -1378,6 +1396,17 @@ export function validateItemStateForRecord(
     if (declaredEconomies[id] === undefined)
       throw new ItemStateError(
         `item state economy '${id}' is not declared by ${packRef}`,
+      );
+  }
+  const declaredOperationIds = new Set(
+    (Array.isArray(mechanics.operations) ? mechanics.operations : []).map(
+      (raw) => obj(raw, `${packRef}.mechanics.operations[]`).id,
+    ),
+  );
+  for (const id of state.usedOperations ?? []) {
+    if (!declaredOperationIds.has(id))
+      throw new ItemStateError(
+        `item state usedOperations '${id}' is not an operation declared by ${packRef}`,
       );
   }
   for (const resolution of state.depletions ?? []) {
@@ -2734,6 +2763,56 @@ function assertRequiredState(
     );
 }
 
+/** Operations bound to `operationId` by a printed `excludes` pairing, either way. */
+function exclusionPartners(
+  operations: readonly Obj[],
+  operationId: string,
+): { excludes: string[]; excludedBy: string[] } {
+  const own = operations.find((candidate) => candidate.id === operationId);
+  return {
+    excludes: (Array.isArray(own?.excludes) ? own.excludes : []).filter(
+      (id): id is string => typeof id === 'string',
+    ),
+    excludedBy: operations
+      .filter(
+        (candidate) =>
+          Array.isArray(candidate.excludes) &&
+          candidate.excludes.includes(operationId),
+      )
+      .map((candidate) => String(candidate.id)),
+  };
+}
+
+/**
+ * Enforces `operation.excludes` (eshyra-kbzm). `A.excludes = [B]` is a printed
+ * either/or between two operations of ONE item instance (Candle of
+ * Invocation: the first-light gate is an alternative to burning). The pairing
+ * is symmetric: A is refused once B has been performed on the instance, and B
+ * once A has. Fail-closed: an item that cannot remember what it has done
+ * (a stateless stack) is refused rather than silently unenforced.
+ */
+function assertOperationExclusions(
+  operations: readonly Obj[],
+  operationId: string,
+  state: ItemInstanceState | undefined,
+  stateful: boolean,
+  packRef: string,
+): boolean {
+  const partners = exclusionPartners(operations, operationId);
+  const involved = [...partners.excludes, ...partners.excludedBy];
+  if (involved.length === 0) return false;
+  if (!stateful)
+    throw new ItemStateError(
+      `${packRef} operation '${operationId}' is mutually exclusive with ${involved.map((id) => `'${id}'`).join(', ')} but the item keeps no per-instance state to enforce it`,
+    );
+  for (const other of involved)
+    if (state?.usedOperations?.includes(other))
+      throw new ItemStateError(
+        `${packRef} operation '${operationId}' is mutually exclusive with '${other}', which has already been used on this item`,
+      );
+  return true;
+}
+
 export function useItem(db: Db, input: UseItemInput): UseItemResult {
   return withTransaction(db, (txnDb) => {
     const row = txnDb
@@ -2872,6 +2951,14 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       packRef,
       readItemState(txnDb, input.instanceId)?.machineState,
     );
+    const stateful = isStatefulMagicItem(hit.record, variantId);
+    const tracksExclusion = assertOperationExclusions(
+      refs.operations,
+      input.operationId,
+      readItemState(txnDb, input.instanceId),
+      stateful,
+      packRef,
+    );
     const selectedLevers = resolveLeverSelection(
       operation,
       input.levers,
@@ -2913,7 +3000,6 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       const result = lookupRulesRecord(hit.stack, { kind: 'table', ref });
       return result.ok ? result.record : undefined;
     };
-    const stateful = isStatefulMagicItem(hit.record, variantId);
     if (stateful && row.quantity !== 1)
       throw new ItemStateError(
         `stateful item '${input.instanceId}' must have quantity 1`,
@@ -3186,6 +3272,16 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
         {
           ...state,
           economies: nextEconomies,
+          ...(tracksExclusion
+            ? {
+                usedOperations: [
+                  ...new Set([
+                    ...(state.usedOperations ?? []),
+                    input.operationId,
+                  ]),
+                ],
+              }
+            : {}),
           ...(depletionResolutions.length === 0
             ? {}
             : {

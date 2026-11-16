@@ -54,6 +54,7 @@ export interface FindingRegistry {
 
 export const CANONICAL_ROW_ROSTER: Readonly<Record<string, readonly string[]>> =
   {
+    'stillness-removal-causation': ['indep:9a674455-F1'],
     'source-authority-opus-f19': ['opus:F-19'],
     'source-authority-opus-f20': ['opus:F-20'],
     'source-authority-sol-cap-008': ['sol:CAP-008'],

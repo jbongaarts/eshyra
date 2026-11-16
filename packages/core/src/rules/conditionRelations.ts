@@ -139,6 +139,13 @@ const RELATION_PATTERNS: readonly {
   {
     relation: 'removes',
     test: (s, c) =>
+      // Stillness of Mind (SRD p.28): the governing operation ends the
+      // causing effect; the embedded "be charmed" does not inflict it.
+      // Keep this source grammar bounded, including each list alternative.
+      new RegExp(
+        `\\bend one effect on yourself that is causing you to be ${LIST}${c}\\b`,
+        'i',
+      ).test(s) ||
       new RegExp(`\\bno longer\\s+(?:being\\s+)?${LIST}${c}\\b`, 'i').test(s) ||
       new RegExp(`\\bceases?\\s+to\\s+be\\s+${c}\\b`, 'i').test(s) ||
       new RegExp(`\\b${c}\\s+condition\\s+(?:also\\s+)?ends\\b`, 'i').test(s) ||

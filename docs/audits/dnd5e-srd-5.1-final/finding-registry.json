@@ -892,6 +892,19 @@
       },
       "scopeKind": "record",
       "owningBead": "eshyra-o9bd.19.6.3"
+    },
+    {
+      "canonicalId": "stillness-removal-causation",
+      "aliases": ["indep:9a674455-F1"],
+      "invariant": "Removal of an effect causing conditions must not be projected as infliction",
+      "status": "accepted",
+      "statusReasoning": "Independent audit at 9a674455: Stillness of Mind (SRD p.28) ends an effect causing charmed or frightened, but that candidate projected charmed as applies. Registered before repair. eshyra-30xi repairs the bounded removal grammar and regenerates both alternatives as removes. Evidence: packages/core/test/conditionRelations.test.ts covers list order; packages/core/test/discovery/packetMessage.test.ts retains the exact source passage and verifies rendered removal relationships. Acceptance remains blocked pending review and merge of the repair PR.",
+      "provenance": {
+        "auditFinding": "indep:9a674455-F1",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "clause",
+      "owningBead": "eshyra-30xi"
     }
   ]
 }
