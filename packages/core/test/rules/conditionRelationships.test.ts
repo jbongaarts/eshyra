@@ -412,7 +412,10 @@ describe('condition-name leaves outside condition records (eshyra-o9bd.19.3.5)',
       all.filter(
         (resolution) =>
           resolution.outcome === 'excluded' &&
-          resolution.reason === 'leaf-value-exclusion',
+          resolution.reason === 'leaf-value-exclusion' &&
+          // Condition-name lists only; the record-key exclusions that
+          // eshyra-ry69 adds are asserted in recordKeyReferences.test.ts.
+          resolution.declaration.targetResolution === 'record-name',
       ),
     ).toEqual([
       expect.objectContaining({

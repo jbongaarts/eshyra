@@ -551,6 +551,675 @@
       "reason": "The stat-block record's printed \"Condition Immunities\" label lists the conditions it is immune to as a comma-separated string; each printed name resolves against the condition kind (for example the zombie's \"poisoned\", the ghoul's \"charmed, exhaustion, poisoned\")."
     },
     {
+      "kind": "ancestry",
+      "pointerPrefix": "/choices/*/extension/ruleRef",
+      "linkField": "data.choices[].extension.ruleRef",
+      "disposition": "reference",
+      "relation": "governing-rule",
+      "targetResolution": "record-key",
+      "reason": "The language rule an extra-language choice defers to for languages outside the listed set (the rule on languages and the exotic-languages table; the GM approves an exotic pick)."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/choices/*/extension/exoticTableRef",
+      "linkField": "data.choices[].extension.exoticTableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "The exotic-languages table an extra-language choice may pick from with GM approval."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/languages/*/extension/ruleRef",
+      "linkField": "data.languages[].extension.ruleRef",
+      "disposition": "reference",
+      "relation": "governing-rule",
+      "targetResolution": "record-key",
+      "reason": "The language rule an extra-language choice defers to for languages outside the listed set (the rule on languages and the exotic-languages table; the GM approves an exotic pick)."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/languages/*/extension/exoticTableRef",
+      "linkField": "data.languages[].extension.exoticTableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "The exotic-languages table an extra-language choice may pick from with GM approval."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/languages/*/extension/ruleRef",
+      "linkField": "data.languages[].extension.ruleRef",
+      "disposition": "reference",
+      "relation": "governing-rule",
+      "targetResolution": "record-key",
+      "reason": "The language rule an extra-language choice defers to for languages outside the listed set (the rule on languages and the exotic-languages table; the GM approves an exotic pick)."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/languages/*/extension/exoticTableRef",
+      "linkField": "data.languages[].extension.exoticTableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "The exotic-languages table an extra-language choice may pick from with GM approval."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/choices/*/from/*",
+      "linkField": "data.choices[].from",
+      "disposition": "reference",
+      "targetResolution": "record-key",
+      "relationField": "../category",
+      "relationByFieldValue": {
+        "cantrip": "choice-option",
+        "language": null,
+        "skill": null,
+        "tool": null
+      },
+      "reason": "An ancestry choice lists its options. A cantrip choice (High Elf: \"one cantrip of your choice from the wizard spell list\") lists spell records; the language, skill and tool choices list printed names (Elvish, Acrobatics, Smith’s tools) that are not records, so those categories are explicitly excluded. A new category is indeterminate, not silently read."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/subraceOf",
+      "linkField": "data.subraceOf",
+      "disposition": "reference",
+      "relation": "subrace-of",
+      "targetResolution": "record-key",
+      "reason": "A subrace record names the base ancestry it belongs to (High Elf is a subrace of Elf)."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/subraces/*",
+      "linkField": "data.subraces",
+      "disposition": "reference",
+      "relation": "has-subrace",
+      "targetResolution": "record-key",
+      "reason": "A base ancestry lists its subrace records (Dwarf: Hill Dwarf)."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/traits/*/mechanics/spellGrants/*/spell",
+      "linkField": "data.traits[].mechanics.spellGrants[].spell",
+      "disposition": "reference",
+      "relation": "granted-spell",
+      "targetResolution": "record-key",
+      "reason": "A racial trait grants a named spell (Infernal Legacy: hellish rebuke, darkness)."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/choices/*/tableRef",
+      "linkField": "data.choices[].tableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "The personality/ideal/bond/flaw table a background choice is made or rolled from."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/equipmentGrants/*/ref",
+      "linkField": "data.equipmentGrants[].ref",
+      "disposition": "reference",
+      "relation": "starting-equipment",
+      "targetResolution": "record-key",
+      "reason": "An equipment record a background grants as starting equipment."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/features/*",
+      "linkField": "data.features",
+      "disposition": "reference",
+      "relation": "class-feature",
+      "targetResolution": "record-key",
+      "reason": "A feature record the class grants (its printed class feature list)."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/progression/*/advancement/*/ref",
+      "linkField": "data.progression[].advancement[].ref",
+      "disposition": "reference",
+      "relation": "granted-feature",
+      "targetResolution": "record-key",
+      "reason": "A featureGrant advancement names the feature record the class gains at that level. Only featureGrant advancements carry ref."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/progression/*/advancement/*/targetRefs/*",
+      "linkField": "data.progression[].advancement[].targetRefs",
+      "disposition": "reference",
+      "relation": "improved-feature",
+      "targetResolution": "record-key",
+      "reason": "A featureImprovement advancement names the feature records it improves at that level (Cleric Divine Intervention improvement)."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/startingEquipment/entries/*/grants/*/ref",
+      "linkField": "data.startingEquipment.entries[].grants[].ref",
+      "disposition": "reference",
+      "relation": "starting-equipment",
+      "targetResolution": "record-key",
+      "reason": "An equipment record the class grants as starting equipment."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/startingEquipment/entries/*/options/*/grants/*/ref",
+      "linkField": "data.startingEquipment.entries[].options[].grants[].ref",
+      "disposition": "reference",
+      "relation": "starting-equipment",
+      "targetResolution": "record-key",
+      "reason": "An equipment record one printed starting-equipment option grants (for example the barbarian’s greataxe)."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/contents/*/ref",
+      "linkField": "data.contents[].ref",
+      "disposition": "reference",
+      "relation": "pack-contents",
+      "targetResolution": "record-key",
+      "reason": "An equipment record that is part of an equipment pack (Burglar’s Pack: backpack, rations). Only packs carry contents."
+    },
+    {
+      "kind": "subclass",
+      "pointerPrefix": "/features/*",
+      "linkField": "data.features",
+      "disposition": "reference",
+      "relation": "subclass-feature",
+      "targetResolution": "record-key",
+      "reason": "A feature record the subclass grants."
+    },
+    {
+      "kind": "subclass",
+      "pointerPrefix": "/featuresByLevel/*/features/*",
+      "linkField": "data.featuresByLevel[].features",
+      "disposition": "reference",
+      "relation": "subclass-feature",
+      "targetResolution": "record-key",
+      "reason": "A feature record the subclass grants at the stated level."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/from/*",
+      "linkField": "data.choices[].from",
+      "disposition": "reference",
+      "targetResolution": "record-key",
+      "relationField": "../category",
+      "relationByFieldValue": {
+        "subclass": "choice-option",
+        "asiOrFeat": null,
+        "favoredEnemy": null,
+        "fightingStyle": null,
+        "invocation": null,
+        "language": null,
+        "metamagic": null,
+        "naturalExplorer": null,
+        "other": null,
+        "skill": null
+      },
+      "reason": "A feature choice lists its options. A subclass choice lists subclass records (Primal Path: path of the berserker). Every other string-list category lists printed option names or in-record option ids (ability names, skills, languages, fighting styles, invocation ids) that are not records, so those categories are explicitly excluded. A new category is indeterminate, not silently read."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/from/classLists/*",
+      "linkField": "data.choices[].from.classLists",
+      "disposition": "reference",
+      "relation": "spell-list-class",
+      "targetResolution": "record-key",
+      "reason": "A spell-filter choice draws its spells from the spell list of these classes (Bard: the bard spell list)."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/from/countsAsClassSpell",
+      "linkField": "data.choices[].from.countsAsClassSpell",
+      "disposition": "reference",
+      "relation": "counts-as-class-spell",
+      "targetResolution": "record-key",
+      "reason": "Magical Secrets: spells chosen \"count as bard spells for you\"; the class they count as."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/from/maxSpellLevel/classRef",
+      "linkField": "data.choices[].from.maxSpellLevel.classRef",
+      "disposition": "reference",
+      "relation": "spell-level-class",
+      "targetResolution": "record-key",
+      "reason": "The class whose spell-slot progression bounds the highest spell level a spell-filter choice may pick (Magical Secrets: \"of a level you can cast\")."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/mechanics/spellGrants/*/spell",
+      "linkField": "data.choices[].options[].mechanics.spellGrants[].spell",
+      "disposition": "reference",
+      "relation": "granted-spell",
+      "targetResolution": "record-key",
+      "reason": "A choice option grants a named spell (Pact of the Chain: find familiar)."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/prerequisites/*/classRef",
+      "linkField": "data.choices[].options[].prerequisites[].classRef",
+      "disposition": "reference",
+      "relation": "prerequisite-class",
+      "targetResolution": "record-key",
+      "reason": "A choice option requires a level in this class (Eldritch Invocation: \"9th level warlock\")."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/prerequisites/*/featureRef",
+      "linkField": "data.choices[].options[].prerequisites[].featureRef",
+      "disposition": "reference",
+      "relation": "prerequisite-feature",
+      "targetResolution": "record-key",
+      "reason": "A choice option requires this feature (Eldritch Invocation: the Pact Boon feature)."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/prerequisites/*/ref",
+      "linkField": "data.choices[].options[].prerequisites[].ref",
+      "disposition": "reference",
+      "targetResolution": "record-key",
+      "relationField": "kind",
+      "relationByFieldValue": {
+        "cantrip": "prerequisite-spell",
+        "pactBoon": null
+      },
+      "reason": "Overloaded field in an invocation prerequisite. A cantrip prerequisite names the spell record (\"eldritch blast cantrip\"); a pactBoon prerequisite names the in-record pact option id (pact-boon:pact-of-the-tome), which is not a record (its record reference is the sibling featureRef), so it is excluded. A new prerequisite kind is indeterminate."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/summonFormExtensions/*/forms/*/creatureRef",
+      "linkField": "data.choices[].options[].summonFormExtensions[].forms[].creatureRef",
+      "disposition": "reference",
+      "relation": "creation-form",
+      "targetResolution": "record-key",
+      "reason": "Pact of the Chain: the familiar can take these special forms (imp, pseudodragon, quasit, sprite); the creature whose statistics the form uses."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/summonFormExtensions/*/spell",
+      "linkField": "data.choices[].options[].summonFormExtensions[].spell",
+      "disposition": "reference",
+      "relation": "extended-spell",
+      "targetResolution": "record-key",
+      "reason": "Pact of the Chain extends the find familiar spell with additional forms."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/mechanics/effects/*/progression/classRef",
+      "linkField": "data.mechanics.effects[].progression.classRef",
+      "disposition": "reference",
+      "relation": "class-progression",
+      "targetResolution": "record-key",
+      "reason": "The class whose level progression scales this feature effect (Martial Arts: the monk table)."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/mechanics/effects/*/spell",
+      "linkField": "data.mechanics.effects[].spell",
+      "disposition": "reference",
+      "relation": "permanent-spell-effect",
+      "targetResolution": "record-key",
+      "reason": "Purity of Spirit: \"you are always under the effects of a protection from evil and good spell\". Only permanentSpellEffect effects carry spell."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/mechanics/resources/*/appliesTo",
+      "linkField": "data.mechanics.resources[].appliesTo",
+      "disposition": "reference",
+      "relation": "resource-applies-to",
+      "targetResolution": "record-key",
+      "reason": "The feature whose use the resource governs (Font of Inspiration restores Bardic Inspiration)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/executionReadiness/clauses/*/representation/ref",
+      "linkField": "data.executionReadiness.clauses[].representation.ref",
+      "disposition": "not-a-reference",
+      "reason": "Execution-readiness ledger back-pointer: it names the structured field that represents a source clause (table refs, stat-block refs, or a prose attunement/variants value). Every record key it holds duplicates an entry already declared at /tableRefs/* or /statBlockRefs/* on the same item, so the relationship is carried there and a second edge would only repeat it."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/curse/endedBy/*",
+      "linkField": "data.mechanics.curse.endedBy",
+      "disposition": "reference",
+      "relation": "ended-by",
+      "targetResolution": "record-key",
+      "excludedLeafValues": [
+        "similar magic"
+      ],
+      "reason": "What ends the item’s curse (\"remove curse or similar magic\"); the spell record. The prose entry similar magic is not a record."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/curse/revealedBy/*",
+      "linkField": "data.mechanics.curse.revealedBy",
+      "disposition": "reference",
+      "relation": "revealed-by",
+      "targetResolution": "record-key",
+      "excludedLeafValues": [
+        "attunement"
+      ],
+      "reason": "What reveals the item’s curse (\"an identify spell or attunement\"); the spell record. The prose entry attunement is not a record."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/endsOn/*",
+      "linkField": "data.mechanics.effects[].endsOn",
+      "disposition": "reference",
+      "relation": "ended-by",
+      "targetResolution": "record-key",
+      "excludedLeafValues": [
+        "successful-repeat-save",
+        "attack",
+        "cast-spell",
+        "armor-removed",
+        "hat-removed",
+        "command-word-spoken-again-as-action",
+        "ring-removed",
+        "bonus-action-deactivate",
+        "harmed-by-user-or-companions",
+        "command-contrary-to-nature",
+        "wind-of-at-least-10-miles-per-hour"
+      ],
+      "reason": "What ends an item effect. Most entries are printed trigger tokens (successful-repeat-save, attack, armor-removed); Dust of Sneezing and Choking is ended by a lesser restoration spell, the record this declares. The tokens are enumerated as excluded leaf values, so a new token is an unresolved loss, not silently skipped."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/includes",
+      "linkField": "data.mechanics.effects[].includes",
+      "disposition": "reference",
+      "relation": "includes-item",
+      "targetResolution": "record-key",
+      "reason": "Universal Solvent \"instantly dissolves adhesive\" including sovereign glue; the item it covers."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/removableOnlyBy/*",
+      "linkField": "data.mechanics.effects[].removableOnlyBy",
+      "disposition": "reference",
+      "relation": "removable-only-by",
+      "targetResolution": "record-key",
+      "reason": "Sovereign Glue \"can be removed only by ... universal solvent, oil of etherealness, or wish\"; each is a record."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/revealedBy",
+      "linkField": "data.mechanics.effects[].revealedBy",
+      "disposition": "reference",
+      "relation": "revealed-by",
+      "targetResolution": "record-key",
+      "reason": "Potion of Poison: \"an identify spell reveals that it is poison\"; the spell record."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/spell",
+      "linkField": "data.mechanics.effects[].spell",
+      "disposition": "reference",
+      "relation": "effect-spell",
+      "targetResolution": "record-key",
+      "reason": "The spell a castSpell effect casts (Orb of Dragonkind: suggestion)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/spellRef",
+      "linkField": "data.mechanics.effects[].spellRef",
+      "disposition": "reference",
+      "relation": "effect-spell",
+      "targetResolution": "record-key",
+      "reason": "The spell an effect casts or applies (castSpell: Amulet of the Planes casts plane shift; triggeredEffect: Oil of Etherealness applies etherealness). Only castSpell and triggeredEffect effects carry spellRef."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/spellRefs/*",
+      "linkField": "data.mechanics.effects[].spellRefs",
+      "disposition": "reference",
+      "relation": "effect-spell",
+      "targetResolution": "record-key",
+      "reason": "The spells a castSpell effect may cast (Necklace of Prayer Beads: bless, cure wounds, ...)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/economyDeduction/tableRef",
+      "linkField": "data.mechanics.effects[].economyDeduction.tableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "An item effect names the table giving the charges an action deducts; the table record the reader must consult."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/gemTypeTableRef",
+      "linkField": "data.mechanics.effects[].gemTypeTableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "An item effect names the table of gem types; the table record the reader must consult."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/maximumCapacity/tableRef",
+      "linkField": "data.mechanics.effects[].maximumCapacity.tableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "An item effect names the table giving the maximum capacity; the table record the reader must consult."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/saveDcAndAttackBonusTableRef",
+      "linkField": "data.mechanics.effects[].saveDcAndAttackBonusTableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "An item effect names the table of save DC and attack bonus by scroll level; the table record the reader must consult."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/spellSelectionTableRef",
+      "linkField": "data.mechanics.effects[].spellSelectionTableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "An item effect names the table that selects the bead spell; the table record the reader must consult."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/tableRef",
+      "linkField": "data.mechanics.effects[].tableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "An item effect names the source table the effect applies; the table record the reader must consult."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/threshold/tableRef",
+      "linkField": "data.mechanics.effects[].threshold.tableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "An item effect names the table giving the threshold; the table record the reader must consult."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/typeFrom",
+      "linkField": "data.mechanics.effects[].typeFrom",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "An item effect names the table the damage type is chosen from; the table record the reader must consult."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/valueTableRef",
+      "linkField": "data.mechanics.effects[].valueTableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "An item effect names the table giving the effect value; the table record the reader must consult."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/effects/*/variants/bird/creatureRef",
+      "linkField": "data.mechanics.effects[].variants.bird.creatureRef",
+      "disposition": "reference",
+      "relation": "creation-form",
+      "targetResolution": "record-key",
+      "reason": "Feather Token (bird): the large bird has the statistics of a roc but cannot attack."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/entityGrant/grants/*/creatureRefs/*",
+      "linkField": "data.mechanics.entityGrant.grants[].creatureRefs",
+      "disposition": "reference",
+      "relation": "granted-creature",
+      "targetResolution": "record-key",
+      "reason": "The creature records an item can summon or produce (Bag of Tricks: weasel, giant rat, ...)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/entityGrant/grants/*/statBlockRef",
+      "linkField": "data.mechanics.entityGrant.grants[].statBlockRef",
+      "disposition": "reference",
+      "relation": "stat-block-reference",
+      "targetResolution": "record-key",
+      "reason": "The stat-block record of the creature an item grants (Figurine of Wondrous Power: ebony fly)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/entityGrant/grants/*/tableRefs/*",
+      "linkField": "data.mechanics.entityGrant.grants[].tableRefs",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "The table a granted creature is rolled or chosen from (Bag of Tricks, Horn of Valhalla, Elemental Gem)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/interItem/counters/*/itemRefs/*",
+      "linkField": "data.mechanics.interItem.counters[].itemRefs",
+      "disposition": "reference",
+      "relation": "inter-item-counter",
+      "targetResolution": "record-key",
+      "reason": "An item the printed text names as countered by this one (Oil of Slipperiness prevents sovereign glue adhesion)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/interItem/counters/*/targetRef",
+      "linkField": "data.mechanics.interItem.counters[].targetRef",
+      "disposition": "reference",
+      "relation": "inter-item-counter",
+      "targetResolution": "record-key",
+      "reason": "The item a counter-interaction targets (Oil of Slipperiness: sovereign glue)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/interItem/nestingHazard/withItemRefs/*",
+      "linkField": "data.mechanics.interItem.nestingHazard.withItemRefs",
+      "disposition": "reference",
+      "relation": "nesting-hazard",
+      "targetResolution": "record-key",
+      "reason": "Bag of Holding: placing another extradimensional item (handy haversack, portable hole) inside destroys both."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/interItem/portalInteraction/portalRefs/*",
+      "linkField": "data.mechanics.interItem.portalInteraction.portalRefs",
+      "disposition": "reference",
+      "relation": "portal-interaction",
+      "targetResolution": "record-key",
+      "reason": "Sphere of Annihilation: contact with a planar portal or extradimensional space (gate, portable hole, bag of holding) triggers the source table."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/interItem/portalInteraction/tableRefs/*",
+      "linkField": "data.mechanics.interItem.portalInteraction.tableRefs",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "The table the GM rolls on when the sphere contacts a portal."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/operations/*/leverSelection/tableRef",
+      "linkField": "data.mechanics.operations[].leverSelection.tableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "Apparatus of the Crab: the lever table a lever selection is read from."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics/randomProcedure/procedures/*/tableRef",
+      "linkField": "data.mechanics.randomProcedure.procedures[].tableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "The source table a random procedure rolls on (Bag of Beans, Deck of Many Things)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/mechanics/effects/*/creation/creatureRef",
+      "linkField": "data.mechanics.effects[].creation.creatureRef",
+      "disposition": "reference",
+      "relation": "creation-form",
+      "targetResolution": "record-key",
+      "reason": "The creature record whose statistics the created creature uses (Phantom Steed: riding horse)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/mechanics/effects/*/creation/options/*/resultRef",
+      "linkField": "data.mechanics.effects[].creation.options[].resultRef",
+      "disposition": "reference",
+      "relation": "creation-form",
+      "targetResolution": "record-key",
+      "reason": "The creature record one printed creation option produces (Giant Insect: giant centipede)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/mechanics/effects/*/creation/outcomes/*/resultRef",
+      "linkField": "data.mechanics.effects[].creation.outcomes[].resultRef",
+      "disposition": "reference",
+      "relation": "creation-form",
+      "targetResolution": "record-key",
+      "reason": "The creature record one printed creation outcome produces (Animate Dead: skeleton or zombie)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/mechanics/effects/*/scaling/*/options/*/choices/*/creatureRefs/*",
+      "linkField": "data.mechanics.effects[].scaling[].options[].choices[].creatureRefs",
+      "disposition": "reference",
+      "relation": "creation-form",
+      "targetResolution": "record-key",
+      "reason": "The creature records a higher-level cast may create (Create Undead: ghoul, ghast, wight, mummy)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/mechanics/effects/*/statBlockOverlay/tableRef",
+      "linkField": "data.mechanics.effects[].statBlockOverlay.tableRef",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "The table of statistics the created creature uses (Animate Objects)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/mechanics/effects/*/tableRefs/*",
+      "linkField": "data.mechanics.effects[].tableRefs",
+      "disposition": "reference",
+      "relation": "table-reference",
+      "targetResolution": "record-key",
+      "reason": "The tables a staged effect shifts through (Control Weather: precipitation, temperature, wind)."
+    },
+    {
+      "kind": "table",
+      "pointerPrefix": "/projection/sourceRuleRef",
+      "linkField": "data.projection.sourceRuleRef",
+      "disposition": "reference",
+      "relation": "source-rule",
+      "targetResolution": "record-key",
+      "reason": "The rule record the table projection is drawn from (Indefinite Madness: madness effects)."
+    },
+    {
       "kind": "magic-item",
       "pointerPrefix": "/mechanics/effects/*/state",
       "linkField": "data.mechanics.effects[].state",
