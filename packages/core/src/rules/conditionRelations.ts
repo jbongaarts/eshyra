@@ -104,6 +104,20 @@ const CANT = `(?:can(?:['’])?t|cannot)`;
 // the wildcard cannot swallow an unrelated clause.
 const LIST = String.raw`(?:\w+(?:,\s*(?:(?:or|and)\s+)?|\s+(?:or|and)\s+))*`;
 
+// Sentence adverbs that may sit between a copular verb and the condition it
+// inflicts: "be magically charmed", "is also paralyzed", "is instantly
+// petrified", "is either blinded or deafened", "are both restrained". A
+// closed set (eshyra-mx0d). It is deliberately not "any -ly word": "The glyph
+// is nearly invisible" describes concealment, not the Invisible condition.
+const APPLIES_ADVERBS = String.raw`(?:(?:magically|instantly|immediately|permanently|automatically|already|also|either|both|then|instead)\s+)*`;
+
+// Earlier members of a condition list that precede the classified condition:
+// "is deafened and frightened" must classify `frightened` as well as
+// `deafened`; the gate/exclusion grammars use it too, so "a creature that is
+// charmed, frightened, or possessed" gates `frightened` rather than reading
+// as an application. Members are SRD condition names only.
+const APPLIES_CONDITION_LIST_PREFIX = String.raw`(?:(?:${MECHANICS_CONDITION_NAMES.join('|')})(?:,\s*(?:(?:or|and)\s+)?|\s+(?:or|and)\s+))*`;
+
 /**
  * Negation immediately preceding an applies-shaped phrase ("it isn't knocked
  * unconscious", "doesn't fall prone", "can't become invisible"). Tested
@@ -201,7 +215,7 @@ const RELATION_PATTERNS: readonly {
       // The benefit/form ends when the condition arrives; the feature does
       // not apply it (eshyra-o9bd.18.7.5).
       new RegExp(
-        `\\bif\\s+(?:\\w+\\s+){0,3}(?:(?:are|is)\\s+(?:already\\s+)?(?:knocked\\s+)?|falls?\\s+)${c}\\b`,
+        `\\bif\\s+(?:\\w+\\s+){0,3}(?:(?:are|is)\\s+${APPLIES_ADVERBS}(?:knocked\\s+)?|falls?\\s+)${APPLIES_CONDITION_LIST_PREFIX}${c}\\b`,
         'i',
       ).test(s) ||
       // Benefit-eligibility gate phrased as a can't-be list ("To gain this
@@ -223,13 +237,13 @@ const RELATION_PATTERNS: readonly {
       // cannot cross a comma, so "If the target is a Large or smaller
       // creature, it is grappled" keeps its `applies` reading.
       new RegExp(
-        `\\b(?:if|unless|while|until|once)\\s+[^,;:.]*\\b(?:is|are|was|were|becomes?)\\s+(?:already\\s+)?${c}\\b`,
+        `\\b(?:if|unless|while|until|once)\\s+[^,;:.]*\\b(?:is|are|was|were|becomes?)\\s+${APPLIES_ADVERBS}${APPLIES_CONDITION_LIST_PREFIX}${c}\\b`,
         'i',
       ).test(s) ||
       // Relative-clause targeting gate: "a creature that is grappled by the
       // vampire, incapacitated, or restrained".
       new RegExp(
-        `\\b(?:that|who)\\s+(?:is|are)\\s+(?:already\\s+)?${c}\\b`,
+        `\\b(?:that|who)\\s+(?:is|are)\\s+${APPLIES_ADVERBS}${APPLIES_CONDITION_LIST_PREFIX}${c}\\b`,
         'i',
       ).test(s) ||
       // Immunity/auto-success gate on the condition: "Creatures that can't be
@@ -248,7 +262,7 @@ const RELATION_PATTERNS: readonly {
       // "can't become invisible until the spell ends", "The devil can't be
       // frightened while it can see an allied creature".
       new RegExp(
-        `\\b${CANT}\\s+(?:be(?:come)?|being)\\s+${LIST}${c}\\b`,
+        `\\b${CANT}\\s+(?:be(?:come)?|being)\\s+${APPLIES_ADVERBS}${LIST}${c}\\b`,
         'i',
       ).test(s) ||
       // Negated causation: "magical effects can't reduce its speed or cause
@@ -263,14 +277,22 @@ const RELATION_PATTERNS: readonly {
     test: (s, c) =>
       matchesWithoutNegation(
         s,
+        // Copular/passive infliction: "becomes frightened", "is knocked
+        // prone", "or be magically charmed by the aboleth", "is deafened and
+        // frightened", "is also paralyzed", "becoming petrified"
+        // (eshyra-mx0d). Between the verb and the condition the grammar
+        // allows sentence adverbs (APPLIES_ADVERBS) and earlier members of a
+        // condition list (APPLIES_CONDITION_LIST_PREFIX), so a list member or
+        // an adverbed condition classifies the same as the bare form. Both
+        // extensions are bounded: adverbs are a closed word set, list members are SRD condition names only, so the wildcard
+        // cannot swallow an unrelated clause.
         // "both" may interpose ("you and the creature are both restrained"
         // — the Grappler feat's pin applies restrained on success;
-        // eshyra-o9bd.18.7.5).
-        // Cackle Fever's "gains one level of exhaustion" applies the
-        // condition just like the "suffers … levels of" phrasing
-        // (eshyra-o9bd.18.7.9).
+        // eshyra-o9bd.18.7.5). The second alternative is Cackle Fever's
+        // "gains one level of exhaustion", which applies the condition just
+        // like "suffers … levels of" (eshyra-o9bd.18.7.9).
         new RegExp(
-          `\\b(?:becomes?|falls?|be|is|are|knocked|(?:suffers?|gains?)(?:\\s+\\w+)?\\s+levels?\\s+of)\\s+(?:both\\s+)?${c}\\b`,
+          `\\b(?:becom(?:es?|ing)|falls?|be|is|are|knocked)\\s+${APPLIES_ADVERBS}${APPLIES_CONDITION_LIST_PREFIX}${c}\\b|\\b(?:suffers?|gains?)(?:\\s+\\w+)?\\s+levels?\\s+of\\s+${c}\\b`,
           'gi',
         ),
       ),

@@ -75,3 +75,51 @@ describe('removal of condition-causing effects (eshyra-30xi)', () => {
     });
   }
 });
+
+describe('adverbed and listed infliction (eshyra-mx0d)', () => {
+  const relationOf = (text: string, condition: string) =>
+    deriveConditionMechanics(text).find((e) => e.condition === condition)
+      ?.relation;
+
+  it('classifies aboleth Enslave "be magically charmed by the aboleth" as applies', () => {
+    expect(
+      deriveConditionMechanics(
+        'The target must succeed on a DC 14 Wisdom saving throw or be magically charmed by the aboleth until the aboleth dies or until it is on a different plane of existence from the target.',
+      ),
+    ).toEqual([{ condition: 'charmed', relation: 'applies' }]);
+  });
+
+  for (const [text, condition] of [
+    ['it must succeed on a save or be magically charmed.', 'charmed'],
+    ['the creature is instantly petrified.', 'petrified'],
+    ['the target is also paralyzed for the same duration.', 'paralyzed'],
+    ['the target is either blinded or deafened (your choice).', 'deafened'],
+    ['the creature is deafened and frightened for 1 minute.', 'frightened'],
+    ['the target is blinded, restrained, and stunned.', 'stunned'],
+    ['it fails and is turned away, becoming petrified.', 'petrified'],
+  ] as const) {
+    it(`applies ${condition}: ${text}`, () => {
+      expect(relationOf(text, condition)).toBe('applies');
+    });
+  }
+
+  for (const [text, condition, relation] of [
+    ['The target can’t be magically charmed.', 'charmed', 'prevents'],
+    ['It isn’t magically charmed.', 'charmed', 'mention'],
+    ['It is immune to being charmed or frightened.', 'frightened', 'immune'],
+    [
+      'while the vampire is also incapacitated in its resting place.',
+      'incapacitated',
+      'gates',
+    ],
+    [
+      'You can suppress any effect causing a target to be magically charmed.',
+      'charmed',
+      'suppresses',
+    ],
+  ] as const) {
+    it(`keeps ${relation} for ${condition}: ${text}`, () => {
+      expect(relationOf(text, condition)).toBe(relation);
+    });
+  }
+});
