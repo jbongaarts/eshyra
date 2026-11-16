@@ -54,6 +54,7 @@ import {
   mutateState,
   mutateStateBatch,
 } from './mutateState.js';
+import type { RollEvidence } from './rollEvidence.js';
 
 export type LifeState = 'alive' | 'dying' | 'stable' | 'dead';
 
@@ -777,6 +778,8 @@ export interface DeathSaveResult {
   lifeState: LifeState;
   hpCurrent: number;
   recoveryBlocked?: 'suffocating';
+  /** Engine-rolled dice or the recorded DM override; absent on legacy rows. */
+  rollEvidence?: RollEvidence;
 }
 
 /** Pure shared death-save state transition used by characters and combatants. */
@@ -826,9 +829,9 @@ export function resolveDeathSaveTransition(input: {
 }
 
 /**
- * Apply one already-rolled d20 death saving throw to a dying character.
- * The die goes through the `roll` tool (category `death_save`) so it is
- * seeded and ledgered; this mutation owns the outcome semantics. A
+ * Apply one d20 death saving throw to a dying character. The record_death_save
+ * tool rolls the die from the seeded RNG (or records a DM override) and passes
+ * its provenance as `rollEvidence`; this mutation owns the outcome semantics. A
  * saving-throw bonus changes only the total judged against 10; natural 1 and
  * natural 20 are judged on the natural roll alone.
  */
@@ -838,6 +841,7 @@ export function recordDeathSave(
   ctx: DomainMutationContext,
   rng: Rng = createSeededRng(0),
   modifier: DeathSaveModifier = NO_DEATH_SAVE_MODIFIER,
+  rollEvidence?: RollEvidence,
 ): DeathSaveResult {
   if (!Number.isInteger(roll) || roll < 1 || roll > 20) {
     throw new MutateStateError(
@@ -901,6 +905,7 @@ export function recordDeathSave(
       lifeState,
       hpCurrent,
       ...(recoveryBlocked ? { recoveryBlocked: 'suffocating' as const } : {}),
+      ...(rollEvidence === undefined ? {} : { rollEvidence }),
     };
   });
 }

@@ -837,3 +837,115 @@ describe('pocketed integrity audit', () => {
     ]);
   });
 });
+
+describe('stale persistent actor link audit (eshyra-cxuc)', () => {
+  const staleLinks = (s: ReturnType<typeof setup>) =>
+    auditActiveEffectIntegrity(s.db, campaign).filter((i) =>
+      i.issue.includes('persistent actor link still points at combatant'),
+    );
+
+  it('treats a durable summon bound mid-combat as clean while its combat is live', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    const link = s.effect('fam-fx').links.find((l) => l.linkKind === 'actor');
+    expect(link).toMatchObject({
+      target: { kind: 'combatant', ref: 'c-fam' },
+      campaignActorId: 'fam',
+    });
+    expect(auditActiveEffectIntegrity(s.db, campaign)).toEqual([]);
+  });
+
+  it('is clean after combat closure rebinds the link to the campaign actor', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    s.must('close_combat_instance', { status: 'completed' });
+    expect(
+      s.effect('fam-fx').links.find((l) => l.linkKind === 'actor'),
+    ).toMatchObject({ target: { kind: 'campaign_actor', ref: 'fam' } });
+    expect(auditActiveEffectIntegrity(s.db, campaign)).toEqual([]);
+  });
+
+  it('flags a link left on a closed combat combatant, and on a missing one', () => {
+    const s = setup();
+    s.bond('fam-fx', 'fam');
+    s.must('close_combat_instance', { status: 'completed' });
+    // Corrupt: point the rebound link back at the now-closed combatant.
+    s.db
+      .prepare(
+        `UPDATE active_effect_link SET target_kind = 'combatant', target_ref = 'c-fam'
+         WHERE effect_id = 'fam-fx' AND link_kind = 'actor'`,
+      )
+      .run();
+    expect(staleLinks(s)).toEqual([
+      {
+        effectId: 'fam-fx',
+        issue: "persistent actor link still points at combatant 'c-fam'",
+      },
+    ]);
+    s.db
+      .prepare(
+        "UPDATE active_effect_link SET target_ref = 'c-gone' WHERE effect_id = 'fam-fx'",
+      )
+      .run();
+    expect(staleLinks(s)).toHaveLength(1);
+  });
+
+  it('separates current live ownership, retained vanish-bonded absence, and departed/superseded stale ownership', () => {
+    const point = (s: ReturnType<typeof setup>, ref: string) =>
+      s.db
+        .prepare(
+          `UPDATE active_effect_link SET target_kind = 'combatant', target_ref = ?
+           WHERE effect_id = 'fam-fx' AND link_kind = 'actor'`,
+        )
+        .run(ref);
+    const stale = (ref: string) => [
+      {
+        effectId: 'fam-fx',
+        issue: `persistent actor link still points at combatant '${ref}'`,
+      },
+    ];
+
+    // Current live ownership: link on the present combatant.
+    const live = setup();
+    live.bond('fam-fx', 'fam');
+    expect(staleLinks(live)).toEqual([]);
+
+    // Legitimate retained absence: vanish-bonded creature at 0 HP keeps its
+    // combatant-targeted link while the instance is active.
+    const vanished = setup();
+    vanished.bond('fam-fx', 'fam');
+    vanished.must('update_combatant', { combatantId: 'c-fam', hpDelta: -5 });
+    expect(vanished.actor('fam').status).toBe('absent');
+    expect(vanished.combatant('c-fam').status).toBe('absent');
+    expect(
+      vanished.effect('fam-fx').links.find((l) => l.linkKind === 'actor'),
+    ).toMatchObject({ target: { kind: 'combatant', ref: 'c-fam' } });
+    expect(auditActiveEffectIntegrity(vanished.db, campaign)).toEqual([]);
+
+    // Departed: after temporary dismissal the actor is pocketed and its old
+    // row absent; a link restored onto that row is a missed departure rebind.
+    const departed = setup();
+    departed.bond('fam-fx', 'fam');
+    departed.fam('action-temporary-dismissal');
+    expect(departed.actor('fam').status).toBe('pocketed');
+    expect(auditActiveEffectIntegrity(departed.db, campaign)).toEqual([]);
+    point(departed, 'c-fam');
+    expect(staleLinks(departed)).toEqual(stale('c-fam'));
+
+    // Superseded: after dismissal + recall a new row projects the actor; a
+    // link on the old absent row is stale, one on the new row is current.
+    const superseded = setup();
+    superseded.bond('fam-fx', 'fam');
+    superseded.fam('action-temporary-dismissal');
+    superseded.fam('action-recall');
+    const fresh = listCombatants(superseded.db, campaign).find(
+      (c) => c.combatantId !== 'c-fam' && c.identityRef === 'fam',
+    );
+    expect(fresh).toBeDefined();
+    expect(auditActiveEffectIntegrity(superseded.db, campaign)).toEqual([]);
+    point(superseded, 'c-fam');
+    expect(staleLinks(superseded)).toEqual(stale('c-fam'));
+    point(superseded, fresh?.combatantId ?? '');
+    expect(staleLinks(superseded)).toEqual([]);
+  });
+});

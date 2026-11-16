@@ -633,6 +633,7 @@ describe('adjust_exhaustion tool', () => {
       ensurePcDying();
       invoke('deathSave', 'record_death_save', {
         combatantId: activeId('pc'),
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
         roll: 20,
       });
     };
@@ -708,6 +709,7 @@ describe('adjust_exhaustion tool', () => {
       });
       invoke('deathSave', 'record_death_save', {
         combatantId: activeId('pc'),
+        rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
         roll: 20,
       });
     };
@@ -783,7 +785,11 @@ describe('adjust_exhaustion tool', () => {
       invoke(
         'invalidDeathSave',
         'record_death_save',
-        { combatantId: activeId('pc'), roll: 12 },
+        {
+          combatantId: activeId('pc'),
+          rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+          roll: 12,
+        },
         false,
       );
       invoke(
@@ -1431,7 +1437,10 @@ describe('effectiveHpMax floor (eshyra-o9bd.19.5.7.3)', () => {
     expect(
       character.registry.invoke(
         'record_death_save',
-        { roll: 20 },
+        {
+          rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+          roll: 20,
+        },
         character.ctx,
       ),
     ).toMatchObject({
@@ -1475,7 +1484,11 @@ describe('effectiveHpMax floor (eshyra-o9bd.19.5.7.3)', () => {
     expect(
       combatant.registry.invoke(
         'record_death_save',
-        { combatantId: id, roll: 20 },
+        {
+          combatantId: id,
+          rollOverride: { basis: 'dm-adjudicated', reason: 'test fixture' },
+          roll: 20,
+        },
         combatant.ctx,
       ),
     ).toMatchObject({
