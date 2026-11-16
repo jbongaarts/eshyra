@@ -2333,7 +2333,7 @@ function buildReadme(meta: {
     '',
     `Unresolved limits are disclosed in \`${CANDIDATE_RECORD_PATH}\` (gate G-candidate-record fails the run if it is absent).`,
     '',
-    '- Bounded discovery limitation (re-freeze bar #9): the condition-name leaves named condition, conditions[] or failedSaveCondition outside condition records are declared and typed (eshyra-o9bd.19.3.5), but undeclared reference leaves remain: record-key leaves owned by eshyra-ry69; condition names under other field names (creature conditionImmunities, magic-item state/ends/endsOn; eshyra-1fx7); and the Rod of Rulership triggeredEffect condition (eshyra-y0us). One-hop expansion does not follow those. This is a disclosed discovery limit, not a claim of discovery completeness.',
+    '- Bounded discovery limitation (re-freeze bar #9): the condition-name leaves outside condition records (eshyra-o9bd.19.3.5, eshyra-1fx7, eshyra-y0us) and the record-key reference leaves found by the deterministic predicate "a data leaf equal to an existing record key at a shape no declaration covers" (eshyra-ry69) are each declared as a typed reference or an explicit not-a-reference, and the coverage gate enumerates those shapes. The claim is bounded to those enumerated shapes: reference-like data at any other shape, and prose that names a record without storing its key, is not followed by one-hop expansion. This is a disclosed discovery limit, not a claim of discovery completeness.',
     '',
     '## File glossary',
     '',
