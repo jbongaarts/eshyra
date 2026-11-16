@@ -3727,9 +3727,13 @@ export function closeActorLinkAtZeroHp(
    *  end the link or the effect; only the owning effect id is reported. */
   mode: 'close' | 'keep' = 'close',
   /** How the creature's part ended: 'left-play' (it disappeared, or reverted
-   *  to an object), or 'reverted-form' (it returned to its natural form and
-   *  stays in play). Only the audit ledger text differs. */
-  how: 'left-play' | 'reverted-form' = 'left-play',
+   *  to an object), 'reverted-form' (it returned to its natural form and
+   *  stays in play), or 'stays-in-play' (an ordinary 0-hit-point creature
+   *  whose grant prints no ending). Only the audit ledger text differs. */
+  how: 'left-play' | 'reverted-form' | 'stays-in-play' = 'left-play',
+  /** 'no-printed-ending-grant': consider only effects bound to an item grant
+   *  recorded as `noPrintedEnding` (see closeOrdinaryZeroHpGrantLink). */
+  only?: 'no-printed-ending-grant',
 ): { effectId: string | null; effectEnded: boolean } {
   const match = activeActorLinkMatcher(holder);
   const effectIds = db
@@ -3740,6 +3744,11 @@ export function closeActorLinkAtZeroHp(
     )
     .all(campaignId) as { effect_id: string }[];
   for (const { effect_id } of effectIds) {
+    if (
+      only === 'no-printed-ending-grant' &&
+      readItemGrantBinding(db, campaignId, effect_id)?.noPrintedEnding !== true
+    )
+      continue;
     const link = readLinkRows(db, campaignId, effect_id).find(
       (candidate) =>
         candidate.link_kind === 'actor' &&
@@ -3819,13 +3828,43 @@ export function closeActorLinkAtZeroHp(
         note:
           how === 'reverted-form'
             ? `its last owned creature '${link.projection_ref}' dropped to 0 hit points and returned to its natural form`
-            : `its last owned creature '${link.projection_ref}' dropped to 0 hit points and left play`,
+            : how === 'stays-in-play'
+              ? `its last owned creature '${link.projection_ref}' dropped to 0 hit points; the grant prints no ending, so the creature's ownership link closed with it and the effect ended with its last owned creature`
+              : `its last owned creature '${link.projection_ref}' dropped to 0 hit points and left play`,
       },
       ctx,
     );
     return { effectId: effect_id, effectEnded: outcome.performed };
   }
   return { effectId: null, effectEnded: false };
+}
+
+/**
+ * eshyra-ffoo (Option C): the ordinary 0-hit-point rule for a grant that
+ * prints no ending (`noPrintedEnding`: Pipes of the Sewers' called swarms).
+ * Such a creature does not vanish or revert, so it stays in play as an
+ * ordinary creature (the corpse and combatant remain); only its ownership
+ * link closes, "as for any linked creature". The trigger is the grant's
+ * recorded `noPrintedEnding` state, never an item or creature name, so every
+ * grant that prints an ending (Horn of Valhalla's timers, vanish, reversion)
+ * is untouched. It reuses closeActorLinkAtZeroHp, so the effect ends
+ * (source-removed) only when no owned creature remains.
+ */
+export function closeOrdinaryZeroHpGrantLink(
+  db: Db,
+  campaignId: string,
+  holder: { combatantId?: string; actorId?: string },
+  ctx: EffectMutationContext,
+): { effectId: string | null; effectEnded: boolean } {
+  return closeActorLinkAtZeroHp(
+    db,
+    campaignId,
+    holder,
+    ctx,
+    'close',
+    'stays-in-play',
+    'no-printed-ending-grant',
+  );
 }
 
 /** eshyra-qxnc: the bonded-summon effect of an instantaneous spell record: a
@@ -3934,6 +3973,8 @@ interface ItemGrantBinding {
   /** The grant prints that its source item is destroyed at the 0-hit-point
    *  ending (olc5.15). */
   readonly destroysSourceAtZeroHp: boolean;
+  /** The grant prints no ending (`noPrintedEnding`); see ItemGrantBindingRecord. */
+  readonly noPrintedEnding: boolean;
   /** Set when the source item was consumed by use_item and the binding rests on
    *  its one-time receipt: the ISO consumption time. The binding is born
    *  tombstoned at that time. */
@@ -4558,6 +4599,7 @@ function validateItemGrantBinding(
     cleanup,
     cooldownAnchored,
     destroysSourceAtZeroHp: grant.destroysItemOn === 'reduced-to-0-hit-points',
+    noPrintedEnding: grant.noPrintedEnding === true,
     ...(receiptConsumedAt === undefined ? {} : { receiptConsumedAt }),
     ...(sourceDestroyedAt === undefined ? {} : { sourceDestroyedAt }),
     ...(bindCreditId === undefined ? {} : { bindCreditId }),
@@ -5690,6 +5732,7 @@ export function createActiveEffect(
               ...(itemGrant.destroysSourceAtZeroHp
                 ? { destroysSourceAtZeroHp: true }
                 : {}),
+              ...(itemGrant.noPrintedEnding ? { noPrintedEnding: true } : {}),
               ...(itemGrant.sourceDestroyedAt === undefined
                 ? {}
                 : { sourceDestroyedAt: itemGrant.sourceDestroyedAt }),

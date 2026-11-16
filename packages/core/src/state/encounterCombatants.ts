@@ -14,6 +14,7 @@ import {
   applyCombatClosureToEffects,
   breakCombatantConcentration,
   closeActorLinkAtZeroHp,
+  closeOrdinaryZeroHpGrantLink,
   findActiveNaturalForm,
   findRemovePolicyActorLink,
   type NaturalForm,
@@ -417,6 +418,20 @@ export function updateCampaignActor(
         readCombatLifecycle(actor.state)?.zeroHpRule === 'vanish-bonded'
           ? 'keep'
           : 'close',
+      );
+    // Out of combat, a creature that stays in play at 0 hit points / dead
+    // closes only its own ownership link when its grant prints no ending
+    // (in combat updateCombatant does the same).
+    if (
+      projection === undefined &&
+      !vanishesOutOfCombat &&
+      (input.hpCurrent === 0 || input.status === 'dead')
+    )
+      closeOrdinaryZeroHpGrantLink(
+        txnDb,
+        input.campaignId,
+        { actorId: input.actorId },
+        input,
       );
     if (projection !== undefined) {
       updateCombatant(txnDb, {
@@ -2847,7 +2862,13 @@ export function setCombatantSuffocation(
       if (c.zeroHpRule === 'revert-object')
         reverted = completeZeroHpObjectReversion(txn, c, 0, ctx);
       else vanished = completeZeroHpVanish(txn, c, ctx);
-    }
+    } else if (
+      vanished === undefined &&
+      reverted === undefined &&
+      lifecycle.status !== 'absent' &&
+      (settledNow.hpCurrent === 0 || settledNow.status === 'dead')
+    )
+      closeOrdinaryZeroHpGrantLink(txn, campaignId, holderOf(c), ctx);
     return {
       lifeState: settledNow.status,
       hpCurrent: settledNow.hpCurrent,
@@ -4304,6 +4325,21 @@ function updateCombatantInTxn(
       );
     else vanished = completeZeroHpVanish(db, current, input);
   }
+  // A creature that stays in play at 0 hit points / dead (no vanish or
+  // reversion rule applied) closes only its own ownership link when its grant
+  // prints no ending (Pipes of the Sewers); see closeOrdinaryZeroHpGrantLink.
+  if (
+    vanished === undefined &&
+    reverted === undefined &&
+    status !== 'absent' &&
+    (settled.hp === 0 || settled.status === 'dead')
+  )
+    closeOrdinaryZeroHpGrantLink(
+      db,
+      input.campaignId,
+      holderOf(current),
+      input,
+    );
 
   const combatant = readCombatant(db, input.campaignId, input.combatantId);
   if (combatant === undefined) {

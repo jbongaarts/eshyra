@@ -15,6 +15,12 @@ export interface ItemGrantBindingRecord {
    *  the creature is reduced to 0 hit points (Staff of the Python). Stored at
    *  bind time, like `cooldownAnchored`, so the ending needs no pack lookup. */
   readonly destroysSourceAtZeroHp?: boolean;
+  /** eshyra-ffoo: the grant prints no ending (`noPrintedEnding`: Pipes of the
+   *  Sewers' called swarms), so a creature that is reduced to 0 hit points in
+   *  the ordinary way closes its own actor link and the effect ends with its
+   *  last owned creature. Stored at bind time so the closure needs no pack
+   *  lookup; absent on every grant that prints an ending. */
+  readonly noPrintedEnding?: true;
   /** S11 tombstone: the ISO time the bound inventory instance was destroyed.
    *  A tombstoned binding ends normally but schedules no cooldown (there is no
    *  item to cool down), and no reader may require the deleted inventory row
