@@ -39,6 +39,7 @@ import {
 import { effectiveHpMax, exhaustionLevel } from './exhaustion.js';
 import type { CharacterConditionEntry, JsonValue } from './liveStateSchema.js';
 import { closeOpenShortRestRecoveryWindows } from './rest.js';
+import type { RollEvidence } from './rollEvidence.js';
 
 export type CombatInstanceStatus =
   | 'active'
@@ -2662,6 +2663,7 @@ export function resolveCombatantDeathSave(
   },
   rng: Rng = createSeededRng(0),
   modifier: { saveBonus?: unknown; bonusSources?: unknown } = {},
+  rollEvidence?: RollEvidence,
 ) {
   if (!Number.isInteger(roll) || roll < 1 || roll > 20)
     throw new EncounterCombatantError(
@@ -2741,6 +2743,7 @@ export function resolveCombatantDeathSave(
       lifeState: status,
       hpCurrent,
       ...(c.recoveryBlock ? { recoveryBlocked: c.recoveryBlock } : {}),
+      ...(rollEvidence === undefined ? {} : { rollEvidence }),
     };
   });
 }

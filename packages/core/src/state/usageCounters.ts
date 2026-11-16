@@ -70,6 +70,8 @@ import {
   createRulesPackCharacterResolver,
   type ResolvedClassLevel,
 } from '../character/rulesPackResolver.js';
+import { minimumDiceTotal, parseDice } from '../orchestrator/dice.js';
+import type { Rng } from '../orchestrator/rng.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
@@ -92,6 +94,14 @@ import {
   stripTrailingParenthetical,
   trimEdgeChar,
 } from './nameNormalization.js';
+import {
+  dmSuppliedAmountEvidence,
+  dmSuppliedRollEvidence,
+  engineRollEvidence,
+  type RollEvidence,
+  type RollOverride,
+  regainedFromEvidence,
+} from './rollEvidence.js';
 
 /** Who a counter row belongs to: an acting entity, or — for charge
  *  economies — the item itself, so charge state follows the item across
@@ -189,11 +199,20 @@ export interface RestoreUsageInput extends UsageMutationContext {
   readonly owner: UsageOwnerInput;
   readonly ability?: string;
   readonly itemId?: string;
-  /** Natural recharge-die result (rolled via the `roll` tool) for a
-   *  recharge_roll counter. Mutually exclusive with `amount`. */
+  /** DM-supplied natural recharge-die result for a recharge_roll counter
+   *  (the restore_usage tool requires a recorded rollOverride for it).
+   *  Mutually exclusive with `amount`. With neither `roll` nor `amount`
+   *  and an `rng`, the engine rolls the counter's recharge die, or, for a
+   *  dawn counter with a rechargeFormula, the formula. */
   readonly roll?: number;
-  /** Uses/charges regained (e.g. the rolled "1d6 + 1" dawn recharge, or a
-   *  DM ruling). Mutually exclusive with `roll`. */
+  /** Seeded RNG for the engine roll (recharge die or dawn rechargeFormula). */
+  readonly rng?: Rng;
+  /** Recorded override: required with a supplied `roll`, and with a supplied
+   *  `amount` on a dawn rechargeFormula counter. */
+  readonly rollOverride?: RollOverride;
+  /** Uses/charges regained. On a dawn rechargeFormula counter (e.g. "1d6+1")
+   *  this is a DM-supplied amount and needs a rollOverride; on any other
+   *  counter it is a DM ruling. Mutually exclusive with `roll`. */
   readonly amount?: number;
 }
 
@@ -202,6 +221,14 @@ export interface RestoreUsageResult {
   /** For roll mode: whether the recharge threshold was met. */
   readonly recharged?: boolean;
   readonly rechargeThreshold?: string;
+  /** Roll mode: engine-rolled die or the recorded DM override. Absent for a
+   *  legacy caller-supplied roll with no override. */
+  readonly rollEvidence?: RollEvidence;
+  /** Amount mode: uses actually regained, measured from the counter before
+   *  and after. Restoration stops at zero expended uses, so this can be less
+   *  than the rolled or supplied amount (a 1d6+1 total of 5 on a wand with 2
+   *  charges spent regains 2); rollEvidence keeps the full total. */
+  readonly restored?: number;
 }
 
 export interface ResetUsageInput extends UsageMutationContext {
@@ -217,8 +244,9 @@ export interface ResetUsageResult {
   readonly event: UsageResetEvent;
   /** Counters restored to full by this event. */
   readonly reset: readonly UsageCounter[];
-  /** Dawn counters with a partial-recharge formula: not zeroed — the DM
-   *  rolls the formula via `roll` and applies it with restoreUsage. */
+  /** Dawn counters with a partial-recharge formula: not zeroed. The DM
+   *  decides the restoration is due; restoreUsage then rolls the formula from
+   *  the seeded RNG by default (a DM-supplied amount requires rollOverride). */
   readonly needsRolledRestore: readonly UsageCounter[];
 }
 
@@ -661,8 +689,8 @@ function depletedHintFor(counter: UsageCounter): string {
   switch (counter.resetKind) {
     case 'recharge_roll':
       return (
-        `${counter.displayName} is spent: at the start of ${counter.ownerLabel}'s turns, roll ` +
-        `${counter.rechargeRoll ?? 'd6'} via the roll tool and pass the natural result to restore_usage ` +
+        `${counter.displayName} is spent: at the start of ${counter.ownerLabel}'s turns, recharge ` +
+        `the die with restore_usage (omit roll and amount: the engine rolls ${counter.rechargeRoll ?? 'd6'}) ` +
         `(recharges on ${counter.rechargeMinimum}+; also recharges on a short or long rest)`
       );
     case 'short_rest':
@@ -674,7 +702,7 @@ function depletedHintFor(counter: UsageCounter): string {
     case 'dawn':
       return counter.rechargeFormula === undefined
         ? `${counter.displayName} is spent until dawn (reset_usage)`
-        : `${counter.displayName} is out of charges until dawn: roll ${counter.rechargeFormula} via the roll tool and apply it with restore_usage`;
+        : `${counter.displayName} is out of charges until dawn: restore_usage with neither roll nor amount rolls ${counter.rechargeFormula} from the engine RNG (a supplied amount needs rollOverride)`;
   }
 }
 
@@ -1536,9 +1564,24 @@ export function restoreUsage(
   db: Db,
   input: RestoreUsageInput,
 ): RestoreUsageResult {
-  if ((input.roll === undefined) === (input.amount === undefined)) {
+  if (input.roll !== undefined && input.amount !== undefined) {
     throw new UsageCounterError(
-      'pass exactly one of roll (a recharge-die result) or amount (uses regained)',
+      'pass at most one of roll (a recharge-die result) or amount (uses regained)',
+    );
+  }
+  if (
+    input.rollOverride !== undefined &&
+    input.roll === undefined &&
+    input.amount === undefined
+  ) {
+    throw new UsageCounterError(
+      'rollOverride accompanies a supplied roll or amount; omit it to let the engine roll',
+    );
+  }
+  const engineRolls = input.roll === undefined && input.amount === undefined;
+  if (engineRolls && input.rng === undefined) {
+    throw new UsageCounterError(
+      'pass amount (uses regained), or omit roll and amount so the engine rolls the recharge die or dawn formula',
     );
   }
   return withTransaction(db, (txnDb) => {
@@ -1554,11 +1597,59 @@ export function restoreUsage(
       input.resolveRulesPack,
       input,
     );
+    // A dawn counter with a rechargeFormula ("1d6+1") regains a rolled amount
+    // at dawn, not a die: the engine rolls the formula, or a DM-supplied
+    // amount needs a recorded override.
+    const formula =
+      row.reset_kind === 'dawn' && row.recharge_formula !== null
+        ? row.recharge_formula
+        : undefined;
 
-    if (input.roll !== undefined) {
+    if (formula !== undefined && input.roll === undefined) {
+      if (input.amount === undefined) {
+        const parsed = parseFormulaOrThrow(formula, row.display_name);
+        if (minimumDiceTotal(parsed) < 1) {
+          throw new UsageCounterError(
+            `'${row.display_name}' recharge formula '${formula}' can regain less than 1 use`,
+          );
+        }
+        // Rolled after the validation above, so a refused attempt never
+        // consumes the seeded RNG.
+        const rollEvidence = engineRollEvidence(formula, input.rng as Rng);
+        return applyUsesRegained(txnDb, input, {
+          row,
+          counterOwner,
+          counterLabel,
+          amount: regainedFromEvidence(rollEvidence),
+          rollEvidence,
+        });
+      }
+      if (input.rollOverride === undefined) {
+        throw new UsageCounterError(
+          `'${row.display_name}' regains ${formula} at dawn: omit amount so the engine rolls it, or supply amount with rollOverride { basis, reason, ruleId? }`,
+        );
+      }
+      if (!Number.isInteger(input.amount) || input.amount < 1) {
+        throw new UsageCounterError('amount must be a positive integer');
+      }
+      return applyUsesRegained(txnDb, input, {
+        row,
+        counterOwner,
+        counterLabel,
+        amount: input.amount,
+        rollEvidence: dmSuppliedAmountEvidence(
+          input.amount,
+          input.rollOverride,
+        ),
+      });
+    }
+
+    if (engineRolls || input.roll !== undefined) {
       if (row.reset_kind !== 'recharge_roll') {
         throw new UsageCounterError(
-          `'${row.display_name}' is not a recharge-roll ability (it resets on ${row.reset_kind.replace(/_/g, ' ')}); pass amount instead if a restore is due`,
+          engineRolls
+            ? `'${row.display_name}' has no recharge die or dawn rechargeFormula to roll (it resets on ${row.reset_kind.replace(/_/g, ' ')}); pass amount instead if a restore is due`
+            : `'${row.display_name}' is not a recharge-roll ability (it resets on ${row.reset_kind.replace(/_/g, ' ')}); pass amount instead if a restore is due`,
         );
       }
       const faces = Number.parseInt(
@@ -1566,12 +1657,11 @@ export function restoreUsage(
         10,
       );
       if (
-        !Number.isInteger(input.roll) ||
-        input.roll < 1 ||
-        input.roll > faces
+        input.roll !== undefined &&
+        (!Number.isInteger(input.roll) || input.roll < 1 || input.roll > faces)
       ) {
         throw new UsageCounterError(
-          `roll must be a natural ${row.recharge_roll ?? 'd6'} result (1-${faces}), rolled via the roll tool`,
+          `roll must be a natural ${row.recharge_roll ?? 'd6'} result (1-${faces})`,
         );
       }
       // Once per own turn: the attempt is legal only during the acting
@@ -1594,7 +1684,16 @@ export function restoreUsage(
         );
       }
       const threshold = row.recharge_minimum ?? faces;
-      const recharged = input.roll >= threshold;
+      // Rolled only after every window refusal above, so a refused attempt
+      // never consumes the seeded RNG.
+      const rollEvidence: RollEvidence | undefined =
+        input.roll === undefined
+          ? engineRollEvidence(`1d${faces}`, input.rng as Rng)
+          : input.rollOverride === undefined
+            ? undefined
+            : dmSuppliedRollEvidence(input.roll, input.rollOverride);
+      const natural = rollEvidence?.natural ?? (input.roll as number);
+      const recharged = natural >= threshold;
       txnDb
         .prepare(
           `UPDATE entity_usage_counter
@@ -1625,39 +1724,80 @@ export function restoreUsage(
         counter: rowToCounter(after, counterLabel),
         recharged,
         rechargeThreshold: `${threshold}-${faces} on ${row.recharge_roll ?? 'd6'}`,
+        ...(rollEvidence === undefined ? {} : { rollEvidence }),
       };
     }
 
+    if (input.rollOverride !== undefined) {
+      throw new UsageCounterError(
+        `'${row.display_name}' takes no rollOverride for a DM ruling: an amount overrides a roll only on a dawn rechargeFormula counter`,
+      );
+    }
     const amount = input.amount as number;
     if (!Number.isInteger(amount) || amount < 1) {
       throw new UsageCounterError('amount must be a positive integer');
     }
-    txnDb
-      .prepare(
-        `UPDATE entity_usage_counter
-         SET uses_used = MAX(0, uses_used - ?),
-             provenance = ?, session_id = ?, updated_at = ?
-         WHERE campaign_id = ? AND owner_kind = ? AND owner_ref = ?
-           AND counter_key = ?`,
-      )
-      .run(
-        amount,
-        input.provenance,
-        input.sessionId,
-        input.at,
-        input.campaignId,
-        counterOwner.kind,
-        counterOwner.ref,
-        row.counter_key,
-      );
-    const after = readCounterRow(
-      txnDb,
-      input.campaignId,
+    return applyUsesRegained(txnDb, input, {
+      row,
       counterOwner,
-      row.counter_key,
-    ) as CounterRow;
-    return { counter: rowToCounter(after, counterLabel) };
+      counterLabel,
+      amount,
+    });
   });
+}
+
+function parseFormulaOrThrow(formula: string, displayName: string) {
+  try {
+    return parseDice(formula);
+  } catch {
+    throw new UsageCounterError(
+      `'${displayName}' recharge formula '${formula}' is not a dice expression`,
+    );
+  }
+}
+
+/** Regain `amount` uses (never below zero spent) and report the counter. */
+function applyUsesRegained(
+  txnDb: Db,
+  input: RestoreUsageInput,
+  step: {
+    readonly row: CounterRow;
+    readonly counterOwner: UsageOwner;
+    readonly counterLabel: string;
+    readonly amount: number;
+    readonly rollEvidence?: RollEvidence;
+  },
+): RestoreUsageResult {
+  const { row, counterOwner, counterLabel, amount, rollEvidence } = step;
+  txnDb
+    .prepare(
+      `UPDATE entity_usage_counter
+       SET uses_used = MAX(0, uses_used - ?),
+           provenance = ?, session_id = ?, updated_at = ?
+       WHERE campaign_id = ? AND owner_kind = ? AND owner_ref = ?
+         AND counter_key = ?`,
+    )
+    .run(
+      amount,
+      input.provenance,
+      input.sessionId,
+      input.at,
+      input.campaignId,
+      counterOwner.kind,
+      counterOwner.ref,
+      row.counter_key,
+    );
+  const after = readCounterRow(
+    txnDb,
+    input.campaignId,
+    counterOwner,
+    row.counter_key,
+  ) as CounterRow;
+  return {
+    counter: rowToCounter(after, counterLabel),
+    ...(rollEvidence === undefined ? {} : { rollEvidence }),
+    restored: row.uses_used - after.uses_used,
+  };
 }
 
 function ownerLabelMaps(db: Db, campaignId: string) {
