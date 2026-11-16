@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.3",
+  "title": "Generalize class progression resolver from level-1 to arbitrary class level rows",
+  "description": "rulesPackResolver.ts currently parses only a level-1 slice: ResolvedClassData.level1 (type ResolvedClassLevel1), built by parseLevel1(progression) which finds the level-1 row. Generalize this seam to resolve any level row from the pack's progression table — e.g. resolveClassLevel(classKey, level) or classRecord.progression[level] — returning proficiency bonus, features (with refs) granted at that level, and spellcasting cantrips-known / slots-by-level. Preserve the existing level-1 behavior that character creation depends on. Pure read layer over already-present pack data.",
+  "acceptance_criteria": "Resolver returns a typed level-N row for any supported class/level; malformed/missing rows surface as resolution errors; unit tests cover martial (no spellcasting) and caster classes across several levels.",
+  "notes": "In progress in parallel via Codex (separate PR). Do not double-claim.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:20:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T00:59:08Z",
+  "closed_at": "2026-06-27T01:02:28Z",
+  "close_reason": "Implemented typed arbitrary class progression level resolution with tests.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.3",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:20:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

@@ -1,0 +1,54 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.11",
+  "title": "Document rules-pack ingestion policy and model-assistance boundary",
+  "description": "Document the rules-pack ingestion policy: authoritative pack data must come from licensed source material through deterministic scripts. Models and coding agents may assist with parser development, normalization suggestions, and audits, but may not invent or populate authoritative rules data from memory.",
+  "acceptance_criteria": "- Design/report/ADR documents deterministic ingestion policy.\r\n- Documents distinguish reference completeness from mechanical automation completeness.\r\n- Documents allowed model-assistance uses and disallowed authoritative generation uses.\r\n- Documents where future custom/local/helper models may fit.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:01:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:58Z",
+  "started_at": "2026-05-25T16:26:51Z",
+  "closed_at": "2026-05-25T16:28:48Z",
+  "close_reason": "ADR 0007 written: authoritative pack content comes from deterministic importers over vendored licensed source; documents allowed and disallowed model-assistance uses, reference vs. mechanical completeness distinction, and four rejected alternatives",
+  "labels": [
+    "architecture",
+    "docs",
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.11",
+      "depends_on_id": "eshyra-0m9.1",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.11",
+      "depends_on_id": "eshyra-0m9.2",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.11",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:01:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

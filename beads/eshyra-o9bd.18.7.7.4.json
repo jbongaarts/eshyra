@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.4",
+  "title": "Model magic item consumables and single-use payloads (M1)",
+  "description": "Implement family M1 from docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-3-magic-item-mechanics-inventory.md §4: all 31 items whose §2 rows carry tag M1 (exact membership = grep the artifact table): 17 potions, 3 oils, 3 dusts, restorative-ointment, philter-of-love, bead-of-force, elemental-gem, feather-token, marvelous-pigments, sovereign-glue, universal-solvent, spell-scroll. Shape: consumption event (dose/pinch/bead counts incl. dice-determined found-quantities) + typed effect payload reusing the 18.7.7.2 shapes + duration. Flagship needing design first: spell-scroll (class-list gate, higher-level check DC 10+level with loss-on-failure, scroll DC/attack by level table, copy procedure). Validation: committed-pack depth assertions on the exact membership; schema validation; readiness must not count an item green while any clause is unmodeled. Recommended agent: Codex GPT-5.5 rollout; Opus 4.8 for the spell-scroll procedure design. potion-of-heroism temp-HP payload must integrate with the F6 temp-HP owner (see PR #406 execution-boundary artifact), not invent its own.",
+  "notes": "2026-07-08 ADR 0017 adjustment: Consumables should use the same clause-level split: source-grounded consumption/effect payloads in pack data, with dice/HP/temp-HP/conditions/action/slot hooks bound to shared owners. Spell-scroll irregular procedure design may be a curated semantic spec if it satisfies source locator, schema, parity, and drift-failure checks.\nImplemented the source-grounded family projector, strict schema validation, clause registry bindings, generated pack projection, and representative/exhaustive tests. The exact 240-row owner-tag conservation census passes; all magic items now carry reviewed executable mechanics.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-06T23:31:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:24Z",
+  "started_at": "2026-07-18T16:34:30Z",
+  "closed_at": "2026-07-18T20:23:24Z",
+  "close_reason": "Source-faithful executable magic-item family complete; canonical regeneration, conservation gates, deep audit, and full worktree verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.4",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-06T18:31:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

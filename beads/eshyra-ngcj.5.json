@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.5",
+  "title": "Complete ancestry and background character-creation choices",
+  "description": "Problem:\nAncestry and background records are mostly source-complete but still contain important character-creation choices in prose or partially structured form.\n\nKnown examples from the 2026-06-29 audit:\n- ancestry:dragonborn has Draconic Ancestry table text but no structured persisted dragon type choice.\n- dwarf / hill dwarf artisan tool choice is prose only.\n- high elf wizard cantrip and extra language choices are prose or partial.\n- half-elf Skill Versatility is prose only.\n- background:acolyte has structured languages but equipment is prose, and personality/ideal/bond/flaw tables are linked rather than modeled as character-creation rolls/choices.\n\nImplement:\n- Add deterministic choices for ancestry/subrace/background decisions needed during character creation.\n- Link choices to table refs where the source provides a table.\n- Store selected values by stable ids or typed values.\n- Keep source prose and source locations for auditability.\n- Coordinate with starting equipment modeling for background equipment grants.\n\nAcceptance criteria:\n- Character creation can resolve Dragonborn draconic ancestry deterministically.\n- Character creation can resolve ancestry tool, skill, cantrip, and language choices deterministically.\n- Character creation can resolve background equipment and trait/ideal/bond/flaw selection or rolling workflows.\n- Choice-coverage audit does not flag the known ancestry/background cases.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-29T22:04:28Z",
+  "started_at": "2026-06-29T21:46:46Z",
+  "closed_at": "2026-06-29T22:04:28Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.5",
+      "depends_on_id": "eshyra-ngcj",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

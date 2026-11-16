@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-dcln",
+  "title": "Add Codex SDK MCP subscription gameplay provider",
+  "description": "Problem\nEshyra needs a second subscription-backed gameplay provider to spread development and gameplay costs. Codex SDK appears promising because it supports ChatGPT/Codex subscription auth, programmatic control, streamed events, and MCP server integration. Codex is currently blocked by weekly usage limits, so this epic should remain queued/deferred until the adapter seam ADR/refactor lands and usage is available again.\n\nDesign Decision\nCodex support must follow the API-native vs agent-harness model adapter seam:\n- Codex SDK subscription support is an agent-harness adapter.\n- OpenAI API-key support is a separate API-native adapter.\n- These are not interchangeable auth variants hidden behind one class.\n- The Codex subscription adapter must not silently fall back to OpenAI API billing.\n- The Codex subscription adapter must not use fenced-text tool calls.\n\nGoal\nImplement a Codex subscription-backed gameplay provider using Codex SDK plus Eshyra MCP tools, after the adapter seam is codified and the Claude Agent SDK MCP adapter has established the reference agent-harness pattern.\n\nScope\n1. Confirm the Codex SDK provider mode against the model adapter seam:\n   - auth mode: ChatGPT/Codex subscription\n   - transport/client: Codex SDK\n   - tool transport: MCP\n   - turn loop owner: provider-harness-managed\n2. Reuse or create an Eshyra MCP tool surface compatible with the Claude Agent SDK MCP pattern where possible.\n3. Ensure the Codex harness runs in a sterile environment:\n   - temporary working directory, not the Eshyra repo\n   - isolated Codex config/home if possible\n   - no inherited AGENTS.md/project instructions\n   - restrictive sandbox\n   - no web/search/network unless explicitly needed\n4. Configure only Eshyra MCP tools for gameplay.\n5. Map Codex streamed MCP tool-call events into Eshyra debug/transcript records using the same provider-executed-call pattern as the Claude Agent SDK MCP adapter.\n6. Delegate all gameplay tool semantics to Eshyra core.\n7. Provide manual smoke-test commands for the user to run once Codex usage is available.\n\nAcceptance Criteria\n- Codex provider metadata reports subscription auth, Codex SDK transport, agent-harness turn-loop ownership, and MCP tool transport.\n- Debug logs show `toolProtocolMode` or equivalent as `codex-mcp`, not fenced text.\n- A manual smoke turn requiring a d20 roll causes Codex to invoke the Eshyra MCP `roll` tool.\n- No Eshyra repo AGENTS.md/developer instructions are loaded into gameplay context.\n- No non-Eshyra tools are available to gameplay, or unavoidable built-ins are documented and proven harmless.\n- Failure to access subscription-backed Codex is reported clearly and does not fall back to API key or fenced text.\n- API-key OpenAI support remains a separate future adapter mode.\n\nNon-goals\n- Do not implement OpenAI API-native support in this epic unless split into a separate child bead.\n- Do not replace the Claude Agent SDK adapter.\n- Do not remove fenced support repo-wide.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-19T01:49:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-21T04:59:45Z",
+  "closed_at": "2026-06-21T04:59:45Z",
+  "close_reason": "Completed: all child and follow-up beads are closed, and local live smoke tests pass.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

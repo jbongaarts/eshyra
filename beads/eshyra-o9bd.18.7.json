@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7",
+  "title": "Close deterministic gameplay modeling gaps from SRD audit",
+  "description": "Finding sources:\n- Codex readiness review: prose-only buckets still include about 210 magic items, 306 rules, 101 equipment records, 69 features, and 9 actions.\n- Codex mechanical-keyword pass: 369 records with likely gameplay mechanics but no typed mechanics projection.\n- ChatGPT review: conditions, actions, many creature traits/actions, spells, adventuring gear, magic items, and rules are present but not deterministic enough for gameplay tools.\n- Fable observation: prose-only magic-item charge economies and regular-but-still-parse-required fields remain.\n\nPolicy:\n- This is not optional future polish. The audit criterion includes deterministic tool usability and primary DM discoverability.\n- Every category gets implementation, research, or explicit accepted non-issue closure.",
+  "notes": "2026-07-08 ADR 0017 adjustment: Close children using the compiler decision procedure. A category is not automatically required to implement a full engine subsystem here; acceptable closure is clause-level pack semantics plus one of: code-enforced evidence, model-adjudicated-supported disposition with registered primitives, explicit engine-pending hook/family binding, or documented design-blocked owner. Prefer structural parsers/shared semantic grammars for repeated language and source-grounded curated specs for irregular reviewed clause families; never hand-edit generated output.\nCompletion verification: canonical SRD pack regenerates byte-exactly; rules-pack audit reports 0 suspicious records; independent deep audit reports 0 findings; verify:worktree passes Biome, forced typecheck, and 4,533 passing tests (19 documented skips).\nReopened after PR #455 review identified merge-blocking end-to-end execution and readiness gaps.\nReopened for PR #455 holistic re-review task eshyra-o9bd.18.7.7.13.\nReopened for PR #455 source-semantic re-review task eshyra-o9bd.18.7.7.14.\nReopened for PR #455 lifecycle/compatibility re-review task eshyra-o9bd.18.7.7.15.\nFinal magic-item lifecycle/compatibility re-review child .15 complete; local full verification and canonical importer/freeze gates pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-18T21:19:30Z",
+  "closed_at": "2026-07-19T02:44:37Z",
+  "close_reason": "PR #455 review findings and Sol adversarial blockers are closed; full worktree, test, importer reproducibility, and freeze verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

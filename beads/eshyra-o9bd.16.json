@@ -1,0 +1,94 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16",
+  "title": "FINAL: independent ADR-0020 re-audit of the candidate SRD pack",
+  "description": "Perform the independent max-effort audit of the candidate after bounded automated gates\npass and before formal re-freeze. Adversarially inspect source fidelity/provenance,\ndiscovery-supporting relationships, adjudication boundaries, selected capability correctness,\nand state-integrity/runtime ownership as separate concerns. Automated green is entry evidence,\nnot universal completeness proof.",
+  "design": "2026-11-01 DESIGN (Claude Captain). The audit target is the exact candidate: main at the merge commit of PR #697 (the pack bytes are those of fcc76eae; #697 changes only tooling). The independent auditor is GPT-6.1-Sol, read-only, high effort. It is independent of the implementers (Sonnet, Luna and the Captain). Five lanes, each a child bead. At most 2 run concurrently. Each lane reports findings in its own bead notes, and the Captain consolidates them.\nL1 SOURCE FIDELITY and PROVENANCE: every record kind against the vendored PDF. Coverage:\n - attack each registry finding class beyond its original example (recurrence hunt);\n - truthful locators and provenance; no compiler-authored content carrying source provenance or the licence (bar 1, 2, 7);\n - reproducibility (verify:dnd5e-srd-pack).\nL2 DISCOVERY: relationship declarations and their resolution, rule-awareness and discovery expansion, and context packets. Disclosed limits (19.3.5) are reported as limits; any undisclosed discovery defect is reported (bar 9).\nL3 ADJUDICATION SUPPORT and SEMANTIC MODELLING: executionReadiness clause classification (green, engine-pending, adjudicated-by-design); model-facing tool and record descriptions against source and the real tool contracts; the DM-default-interpreter boundary; no unsupported completeness claim in any in-band artifact (bar 4).\nL4 DETERMINISTIC CAPABILITY CORRECTNESS: every deterministic capability inventory and ledger entry in force. It checks that each one:\n - declares its operation, inputs, exclusions and residual interpretation truthfully;\n - fails closed on unrecognized input;\n - has evidence that exercises it (bar 6).\nL5 STATE INTEGRITY and RUNTIME OWNERSHIP: every runtime gate that can block or perform a mutation has a live owner and a regression test (bar 8); migrations, state transitions and idempotency; end-to-end playable validation within the tests.\nEach finding records: lane; BLOCKER or NON-BLOCKER; concrete evidence (record key or file:line, and source page); the registry alias if it recurs a known class; and a suggested owner. Each lane also records explicit LIMITS: what it did not or could not enumerate. A clean lane means no blocker was found, not completeness.\nAfter the lanes, the Captain writes docs/audits/dnd5e-srd-5.1-final/<date>-o9bd-16-independent-candidate-audit.md. It gives per-dimension results, findings with dispositions or owning beads, limits and non-claims. Blockers get beads that block eshyra-o9bd.19.6.4.",
+  "acceptance_criteria": "- Independent audit is performed against the exact candidate and current authority.\n- Source fidelity, discovery, adjudication support, deterministic capability, and state integrity are reported separately.\n- Known defect classes are attacked beyond original examples; any recurrence/new substantive defect blocks re-freeze and receives ownership.\n- Unknown/unrecognized/unenumerable scope is reported as a limit, not a green result.\n- A clean result means no blocker was found against the ADR-0020 truthfulness bar, not universal completeness.",
+  "notes": "2026-07-08 ADR 0017 adjustment: The final max-effort audit should use the compiler guide's dimensions explicitly: reproducibility, source completeness, structural fidelity, semantic modeling, runtime ownership/support, and end-to-end playable validation. Report them separately instead of collapsing them into a single 'represented somewhere' result.\n*** ORDER INVERTED (2026-07-25) ***\nThis bead previously depended on eshyra-o9bd.14, i.e. the final re-audit ran\nAFTER regeneration and re-freeze. That edge is removed. The corrected closure\nchain audits the CANDIDATE bundle BEFORE the formal re-freeze:\n\n  19.6.1 corpus migration -> 19.6.2 regression/finding closure\n  -> 19.6.3 candidate bundle + automated no-repeat gates\n  -> eshyra-o9bd.16 (THIS BEAD) independent max-effort re-audit\n  -> 19.6.4 accept results and certify zero-repeat closure\n  -> eshyra-o9bd.14 formal regeneration and re-freeze\n  -> eshyra-2zyy re-enable post-freeze thaw-note gating\n\nSCOPE CHANGE: this bead now audits a candidate, pre-freeze artifact rather than a\nfrozen one. Its original description (\"After ... the pack is regenerated/re-\nfrozen, perform a MAX-EFFORT re-audit\") reflects the old order — read the\ndependency graph, not that sentence, for sequencing. Everything else about the\nmax-effort standard stands.\n\nThis bead is deliberately NOT superseded by the new program: eshyra-o9bd.19.6.3\ngenerates the candidate and passes automated gates, but independent review\nbelongs here.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T14:19:00Z",
+  "started_at": "2026-11-01T04:06:43Z",
+  "closed_at": "2026-11-01T14:19:00Z",
+  "close_reason": "Independent audit complete: 13 blockers repaired and merged (#699-#703), report merged #704 (6812cc0b)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd.15",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:08:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd.16.5",
+      "type": "blocks",
+      "created_at": "2026-10-31T23:07:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd.16.1",
+      "type": "blocks",
+      "created_at": "2026-10-31T23:06:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd.16.2",
+      "type": "blocks",
+      "created_at": "2026-10-31T23:06:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd.16.4",
+      "type": "blocks",
+      "created_at": "2026-10-31T23:07:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd.19.6.3",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:29:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.16",
+      "depends_on_id": "eshyra-o9bd.16.3",
+      "type": "blocks",
+      "created_at": "2026-10-31T23:06:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 7,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fxxf",
+  "title": "Add OpenAI API-native model adapter",
+  "description": "Why: ADR 0010 establishes that API-native adapters are the preferred clean architecture, and OpenAI is the first non-Anthropic provider targeted for gameplay. An OpenAI adapter would enable API-key-native gameplay via the OpenAI Responses/Chat Completions API, with Eshyra owning the turn loop, tool declaration, tool execution, and diagnostics — matching the pattern of AnthropicNativeModelClient. This bead is the follow-up created by eshyra-ckrg as required by the scope section.\n\nWhat needs to be done:\n1. Implement OpenAiNativeModelClient in packages/core/src/model/openaiNativeClient.ts following the AnthropicNativeModelClient pattern.\n2. Use the OpenAI Node SDK (or fetch directly). Convert ModelToolDefinition[] to OpenAI tool declarations. Parse tool_calls from the response into ModelToolCall[]. Map stop reasons to ModelStopReason.\n3. Expose capabilities: { adapterFamily: 'api-native', toolTransport: 'api-native', turnLoopOwner: 'eshyra', vendor: 'openai', gameplayCapable: true }.\n4. Add OpenAI to PROVIDER_IDS in profiles.ts and wire a premium_dm profile entry.\n5. Add offline unit tests (mock the SDK) matching the AnthropicNativeModelClient test coverage.\n6. Export the new adapter from packages/core/src/index.ts.\n7. Document in docs/agent-sdk-auth.md or a new docs/openai-auth.md how to configure OPENAI_API_KEY.\n8. Update README 'Supported Provider Modes' section to list the OpenAI adapter.\n\nOut of scope here: Codex SDK subscription adapter (see eshyra-jl8n/eshyra-dcln).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-19T04:10:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-20T22:52:46Z",
+  "started_at": "2026-06-20T22:45:44Z",
+  "closed_at": "2026-06-20T22:52:46Z",
+  "close_reason": "Implemented and wired OpenAiNativeModelClient with native tool transport, offline coverage, and provider documentation.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

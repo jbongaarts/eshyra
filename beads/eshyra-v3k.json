@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-v3k",
+  "title": "Add CLI checkpoint list, restore, and fork commands",
+  "description": "Review finding from loreweaver-1ek. Checkpoint restore/fork/list exists in core but has no user-facing CLI workflow; checkpoints are currently write-only for users. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "CLI users can list checkpoints, restore to a new DB, and fork from a checkpoint without mutating the active campaign; tests cover happy paths and unsafe destination handling.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:44:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:44Z",
+  "started_at": "2026-05-22T22:23:11Z",
+  "closed_at": "2026-05-22T22:49:39Z",
+  "close_reason": "Merged: v3k+6rm in PR #45, dy8 in PR #42.",
+  "comments": [
+    {
+      "id": "c6ddd7d5-cc4d-54b5-a114-da7f92daf2b9",
+      "issue_id": "eshyra-v3k",
+      "author": "Joseph Bongaarts",
+      "text": "Implemented in PR #45 — packages/cli/src/checkpoints.ts + index.ts wiring + resolveCampaignDbPath. Pending review.",
+      "created_at": "2026-05-22T22:37:09Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

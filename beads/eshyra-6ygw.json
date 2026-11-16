@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6ygw",
+  "title": "Wire CLI/config provider selection for the Codex (openai) gameplay adapter",
+  "description": "Follow-up to eshyra-jl8n. The CodexSdkMcpModelClient adapter + in-process MCP server + offline tests + docs are landed, but loadConfig (packages/core/src/config.ts) is still Anthropic-specific: it resolves only ANTHROPIC_API_KEY/CLAUDE_CODE_OAUTH_TOKEN and asserts dmProfile.provider==='anthropic'. To make 'eshyra play' actually select Codex, wire: (1) provider-aware auth resolution (a Codex/OpenAI subscription path; no API-key fallback per ADR 0010), (2) drop/extend the provider==='anthropic' assertion so the openai provider instantiates CodexSdkMcpModelClient in buildPlayDeps, (3) route the auditor through the same Codex auth when the DM is Codex, (4) assertGameplayCapable on the Codex adapter at startup. Keep the seam: api-native OpenAI remains a separate adapter (eshyra-fxxf). Add CLI-level tests mirroring the Anthropic path.",
+  "notes": "Implemented in PR #255. 4-provider model (claude-sub/codex-sub/anthropic-api/openai-api) unified into ESHYRA_AUTH_MODE; auto-detect by auth presence (codex via $CODEX_HOME/auth.json auth_mode=chatgpt), >1 present requires ESHYRA_AUTH_MODE. Behavior change: runtime DM model is now ESHYRA_MODEL || per-vendor default (claude-opus-4-8 / gpt-5-codex); ESHYRA_PROFILE_PREMIUM_DM_MODEL no longer drives the runtime model (profile retained for tier/canon metadata only). openai-api resolves in config but errors at adapter wiring (eshyra-fxxf). Proven end-to-end vs a real codex login.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-20T18:26:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-20T21:07:02Z",
+  "started_at": "2026-06-20T20:49:42Z",
+  "closed_at": "2026-06-20T21:07:02Z",
+  "close_reason": "Merged in PR #255. 4-provider selection (claude-sub/codex-sub/anthropic-api/openai-api) unified into ESHYRA_AUTH_MODE with auto-detect by auth presence; Codex selectable in 'eshyra play'. Proven end-to-end against a real codex login.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-6ygw",
+      "depends_on_id": "eshyra-jl8n",
+      "type": "blocks",
+      "created_at": "2026-06-20T13:26:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

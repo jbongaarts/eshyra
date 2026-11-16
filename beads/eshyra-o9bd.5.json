@@ -1,0 +1,53 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.5",
+  "title": "Absorb character-creation overlays into generated pack data",
+  "description": "Deficiency #4 + thaw scope #2. Four deterministic overlays exist outside the pack only because the frozen pack lacked machine-readable facts. Move each into importer output:\n  - packages/core/src/character/srdAncestryAbilityScoreIncreases.ts -> ancestry.data.abilityScoreIncreases (fixed + choice grants). ASIs are prose-only today.\n  - packages/core/src/character/srdClassSpellcasting.ts -> class/feature spellcasting metadata (ability + prepared-caster formulas). Not structured today.\n  - packages/core/src/character/srdClassStartingEquipment.ts -> class.data.startingEquipment with typed choice/fixed item grants. Prose-only today.\n  - packages/core/src/character/srdLanguages.ts -> ancestry.data.languages and background.data.languages as structured grants. Prose/free-text today.\nThese become importer responsibilities during thaw. Overlay RETIREMENT is a separate downstream bead.",
+  "design": "HANDOFF PLAN (authored after .2 landed; self-contained for a clean session).\n\nGOAL: emit the four character-creation overlays' source-backed facts INTO the generated pack so character creation needs no consumer-side overlay. DONE-MARKER: auditSrdPlayability() `overlay-dependence` count -> 0, and the .11 baseline test flips to toBe(0). Overlay RETIREMENT is .15, NOT this bead — leave src/character/srd*.ts overlays + their tests in place; this PR only ADDS pack data.\n\nTARGET FIELDS + SHAPES (these are exactly what the .11 overlay-dependence gate checks in packages/core/src/rules/srdPlayabilityAudit.ts, function checkOverlayDependence):\n- ancestry.data.abilityScoreIncreases: non-empty array. Source data: src/character/srdAncestryAbilityScoreIncreases.ts ANCESTRY_ABILITY_SCORE_INCREASES (13 ancestries, {fixed:[{ability,bonus}], choice?:{choose,bonus,from}, sourceText}).\n- ancestry.data.languages + background.data.languages: non-empty arrays. Source: src/character/srdLanguages.ts (getAncestryLanguages/getBackgroundLanguages, LanguageGrant shape).\n- class.data.spellcastingAbility: non-empty string on spellcasting classes only (gate detects casters via a spellcastingProgression entry in progression[].advancement[]). Source: src/character/srdClassSpellcasting.ts.\n- class.data.startingEquipment.entries[]: typed objects {kind:'choice',options[],sourceText} | {kind:'fixed',text,sourceText}. Source: src/character/srdClassStartingEquipment.ts. IMPORTANT: pack already has startingEquipment.entries as PROSE STRINGS — convert them to typed objects in place (each entry's sourceText must equal the original prose string; the overlay's sourceText already mirrors the pack prose).\n\nDATA SOURCING DECISION: copy the source-cited constant tables FROM the four overlays INTO the importer (packages/core/scripts/importers/dnd5e-srd-5.1/, e.g. a new creationFacts.ts) so generation owns them. Do NOT import runtime src/ overlays from scripts/. (.15 later converts the src overlays' tests into pack-vs-source oracle tests and deletes the runtime code.)\n\nIMPORTER EMIT POINTS (all in packages/core/scripts/importers/dnd5e-srd-5.1/emit.ts buildPack, ~line 1240-1256, post-emit enrichment, mirroring linkAncestryOptionTables / enrichClassChapterRecords):\n- ancestry records: enrich with abilityScoreIncreases + languages (new helper, or extend linkAncestryOptionTables).\n- background records: enrich with languages (backgroundExtractionsToRecords ~line 1245).\n- class records: add spellcastingAbility + replace startingEquipment.entries strings with typed entries — fold into enrichClassChapterRecords in classProgression.ts (it already shapes class.data).\n\nRESOLVER: surface new fields on ResolvedAncestryData / ResolvedBackgroundData / ResolvedClassData in src/character/rulesPackResolver.ts (some types already exist for the overlays; reuse shapes). Keep parsing fail-closed.\n\nGATE + TESTS (packages/core/test/srdPlayabilityAudit.test.ts):\n- Flip the 'RED until eshyra-o9bd.5: overlay-dependence' baseline to expect 0.\n- CRITICAL: once overlay-dependence hits 0, ALL implemented gate categories are 0, so srdPlayabilityHasFindings()===false. The `it.fails('re-freeze readiness...')` ratchet will then FAIL (it was expected-fail, now passes). Convert that it.fails into a normal it() asserting zero findings (green). (Later gates .8/.9 are not yet implemented in .11; .14 re-freeze adds them.)\n- FIX THE STALE TOP COMMENT in srdPlayabilityAudit.ts: the 'Gate coverage status' block still says .2/.3 are RED; update to reflect .2/.3/.5/.6 all GREEN against the committed pack (reviewer-flagged on PR #353).\n\nPROCEDURAL GOTCHAS (learned in .2):\n1. WORKTREE DISCIPLINE: make ALL edits in the worktree path (.worktrees/<name>/...), NOT the parent checkout. (In .2 I accidentally edited the parent /home/jhbongaarts/src/eshyra/... because I'd opened that path pre-worktree; caught it, but verify `git -C <parent> status` stays clean.)\n2. REGENERATE: npm run import:dnd5e-srd -- --pdf packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1/   (dry-run to a scratch --out first to inspect). Expect only records.json (+ maybe source-coverage.json/source-region-ledger.json) to change. NO record COUNT change (adding fields, not records) -> record-counts.md/evidence.json counts stay valid (unlike .2). Confirm via git status.\n3. FREEZE: this is a frozen path (importer + pack + audit docs). Per docs/importer-fix-protocol.md + the umbrella thaw note convention, ADD a per-child thaw note under docs/audits/dnd5e-srd-5.1-final/thaw-notes/<date>-absorb-creation-overlays.md, and update freeze-manifest.json hashes for changed pinned files. Hash-sync script (run AFTER Biome format): python recompute sha256 of every freeze-manifest 'files' entry, write back changed ones. BIOME GOTCHA: `npm run format` reformats audit JSON under docs/audits (not the packages/core/data pack, which Biome ignores) — so run format FIRST, THEN re-sync hashes, else the pins break.\n4. VERIFY: npm run verify:worktree (Biome+typecheck+test) AND npm run verify:dnd5e-srd-freeze -- --base origin/main (hash 13/13 + changed-path authorized by the thaw note — only passes once everything incl. thaw note is COMMITTED, since the guard diffs origin/main...HEAD).\n5. Structure audit must stay 0: node -e check auditSrdStructure(getBundledDnd5eSrdPack()).length===0.\n\nPR: title 'eshyra-o9bd.5 Absorb character-creation overlays into generated pack data'. Note the gate flip, the ratchet conversion, the stale-comment fix, and that overlay retirement remains .15.",
+  "notes": "GATE TARGET SHAPE (from o9bd.11, PR #352): the overlay-dependence gate blesses these exact shapes when absorbing the overlays into pack data:\n- startingEquipment.entries[] of typed objects: {kind:'choice', options[], sourceText} | {kind:'fixed', text, sourceText} — matches srdClassStartingEquipment.ts. NOTE pack already has startingEquipment.entries but as PROSE STRINGS; convert in place.\n- ancestry.data.abilityScoreIncreases: non-empty array\n- ancestry.data.languages + background.data.languages: non-empty array\n- class.data.spellcastingAbility: non-empty string (spellcasting classes only)\nDriving auditSrdPlayability overlay-dependence to 0 is .5's machine-checkable done-marker; also flip the RED baseline assertions in srdPlayabilityAudit.test.ts to toBe(0).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T16:46:51Z",
+  "closed_at": "2026-06-28T17:17:55Z",
+  "close_reason": "Implemented: creation overlays emitted into generated pack; overlay-dependence gate green; pack/freeze verification passing.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.5",
+      "depends_on_id": "eshyra-o9bd.1",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.5",
+      "depends_on_id": "eshyra-o9bd.11",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.5",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 4,
+  "comment_count": 0
+}

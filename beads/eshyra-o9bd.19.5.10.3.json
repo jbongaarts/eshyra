@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.10.3",
+  "title": "Resolve a retained d20 check total against later checks and passive scores (rule:hiding, rule:surprise)",
+  "description": "Problem. SRD rule:hiding: the hider's Dexterity (Stealth) check total is retained ('that check's total is contested by the Wisdom (Perception) check of any creature that actively searches'), a contest tie leaves the situation as it was (the hider stays hidden), and the GM compares the same retained total with each creature's passive Wisdom (Perception) score. No registered tool resolves either comparison: resolve_contest always rolls both sides (it would reroll the hider); resolve_check resolves total >= vs with vs limited to 1..99 (wrong tie direction for a later searcher's roll against the hider's total); calc passive_score computes the score but compares nothing. Comparing totals is the d20 outcome itself, which the Hybrid Contract keeps engine-owned, so the DM may not compare them. Current disclosure: RULE_KNOWN_LIMITS['rule:hiding'] with capability gap 'retained-check-total-resolution' (packages/core/src/rules/ruleKnownLimits.ts).\n\nRequired capability (positive, bounded). Operation: resolve outcomes against a RETAINED check total: (a) a fresh opposing d20 check rolled now vs the retained total, with source contest semantics (higher wins; tie = situation unchanged); (b) one or more passive scores vs the retained total. Inputs: an engine-recorded prior check result (identity from the roll ledger / resolution result, never a model-typed number), the opposing side's declared modifiers/proficiency/advantage, or passive scores derived through calc passive_score inputs. Exclusions: whether a creature is actively searching, can see the hider clearly, whether the hider gave away its position, or whether circumstances permit hiding at all (DM interpretation). Residual DM interpretation: applicability and which observers are relevant.\n\nSibling consumer (do not change without a user decision): set_surprised's description has the DM 'adjudicate the Stealth-vs-passive-Perception determination' (accepted eshyra-2n1t.4 design; state/actionEconomy.ts header). A multi-observer surprise comparison is the same retained-total operation. Downgrading that contract was NOT done in #596 because it would regress surprise support; route it through this capability or an explicit authority decision.\n\nSelection basis: the governing SRD clause requires an engine-owned step (ADR 0020 §3: arithmetic / resolution of a d20 outcome / atomic state mutation / resource accounting / lifecycle), and no registered tool performs it. Under F-09 design amendment A5 (docs/design/rule-record-runtime-statements.md, PR #596) the rule's known limit only DISCLOSES this gap; it does not satisfy or retire the obligation. This bead blocks eshyra-o9bd.19.3.4 (owning rules work for opus:F-09 / sol:CAP-001) until the capability lands or accepted authority explicitly changes the requirement. Do not close it because PR #596 recorded the gap. Enters this engine family by explicit positive selection (the family's out-of-backlog entry clause).",
+  "acceptance_criteria": "- A deterministic operation resolves (a) a fresh opposing check against a retained total and (b) passive scores against a retained total, from an engine-recorded check result, exposed through a provider-neutral tool with tie semantics per source.\n- Tests prove: retained total is never rerolled; tie keeps the hider hidden; passive comparison per observer (including several observers against one Stealth total, as surprise needs); rejects a model-typed total with no recorded identity.\n- set_surprised no longer persists a model-chosen list of surprised participants: surprise is derived through the operation (review @f8cf6322, rejected as won't-fix in PR #596 and owned here), with a tool-registry test proving a model call cannot write an underived surprise outcome.\n- rule:hiding and rule:surprise known limits rewritten or retired under R0; the gap entry is removed from ENGINE_CAPABILITY_GAPS in the same change.\n- set_surprised description and the Hybrid Contract (protocol.ts) restored to a deterministic surprise path that uses the operation.\n- The eshyra-o9bd.19.3.4 dependency resolves only when this lands.",
+  "notes": "2026-10-01: USER DECISION - set_surprised downgraded in PR #596 commit f8cf6322 (accepted regression). Its description and the Hybrid Contract now disclose that no tool compares Stealth totals with passive Perception, so surprise cannot currently be determined; a rule:surprise known limit discloses this gap. The sibling-consumer note in the description is superseded: surprise is now a disclosed consumer of this capability.\n2026-10-02: review @f8cf6322 (PR #596) found that set_surprised still writes a model-supplied surprise outcome. User REJECTED it for #596 as won't-fix: the state is already blocked and undeployable, and repairing the engine belongs to this bead. Closing the write path is now explicit acceptance here.\n2026-10-03: delivered in PR #599 (https://github.com/jbongaarts/eshyra/pull/599), branch eshyra-o9bd.19.3.4.8 @7414d014. Stays in_progress until the PR merges.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-02T01:45:58Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-04T06:22:15Z",
+  "started_at": "2026-10-02T03:41:58Z",
+  "closed_at": "2026-10-04T06:22:15Z",
+  "close_reason": "Landed on main via PR #599 (merge commit 12cdb1f8)",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.10.3",
+      "depends_on_id": "eshyra-o9bd.19.5.10",
+      "type": "parent-child",
+      "created_at": "2026-10-01T20:45:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.10.3",
+      "depends_on_id": "eshyra-o9bd.19.5.10.3.1",
+      "type": "blocks",
+      "created_at": "2026-10-01T23:51:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ox3d",
+  "title": "Biome config schema mismatch: biome.json 2.5.14 vs installed CLI 2.5.15",
+  "description": "olc5.12.1 observation. npm run verify:worktree reports the biome.json schema version does not match the CLI (2.5.14 vs 2.5.15). Not caused by olc5.12.1. Also: creatureAttackGrammar.test.ts line 300 was flagged noUselessStringRaw and was fixed inline in olc5.12.1 (no behavior change).",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "chore",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-15T04:02:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-15T04:02:21Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

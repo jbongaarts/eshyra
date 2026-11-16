@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.2.3",
+  "title": "Model spell-selection class feature choices",
+  "description": "Problem:\nSome higher-level class features require choosing spells, but those choices are not represented as deterministic spell filters.\n\nExamples:\n- feature:bard:magical-secrets\n- feature:college-of-lore:additional-magical-secrets\n- feature:wizard:spell-mastery\n- feature:wizard:signature-spells\n\nImplement:\n- Add schema support for spell-choice filters where needed.\n- Represent constraints such as count, spell level, class list restriction or lack of restriction, and known/prepared relationship according to SRD text.\n- Link these choices from the relevant feature records.\n- Keep selected spells stored by spell record id.\n\nAcceptance criteria:\n- A deterministic character builder can ask for legal Magical Secrets choices.\n- A deterministic character builder can ask for legal Spell Mastery and Signature Spells choices.\n- Constraints are source-derived and tested.\n- The choice-bearing prose audit no longer flags these records.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-29T23:02:01Z",
+  "started_at": "2026-06-29T22:48:16Z",
+  "closed_at": "2026-06-29T23:02:01Z",
+  "close_reason": "Implemented structured spell filters for Magical Secrets, Spell Mastery, Signature Spells, and Warlock option spell choices",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.2.3",
+      "depends_on_id": "eshyra-ngcj.2",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

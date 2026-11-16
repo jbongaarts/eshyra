@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4toj",
+  "title": "Audit bundle: preserve argument boundaries in the Windows command-capture branch",
+  "description": "Sol full review eshyra-o9bd.19.6.3.7 S1 (NON-MATERIAL) of PR #697: packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts captureCommand passes npmArgs with shell:true on win32, and Node 24 joins those args unescaped for cmd.exe. So an output directory containing a space splits --outputFile.json into a positional test filter plus a truncated path. This is a false-red only: G-suite fails, or the dependent gates are failed-to-run. The bundle runs on Linux/WSL today. Fix: quote args for cmd.exe, or invoke npm-cli.js through process.execPath without a shell. Evidence is one invocation test at the real subprocess boundary.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T04:05:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T04:05:14Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

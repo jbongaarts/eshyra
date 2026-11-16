@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lpk9",
+  "title": "Emit complete SRD provenance page ranges for multi-page records",
+  "description": "The SRD 5.1 pack often emits only the starting page in `record.provenance.locator` even when source coverage/ledger evidence shows the record spans additional pages. This weakens primary-DM discoverability and source traceability: a model following the record's locator may not find all source text.\n\nConfirmed in the 2026-06-30 audit bundle `/home/jhbongaarts/src/dnd5e-srd-audit-bundle-0630-1.zip` by comparing `pack/records.json` locators to pages implied by `reports/source-region-ledger.json` and `reports/source-coverage.json`.\n\nCurrent lower-bound result: at least 283 records have covered pages missing from their locator. This is a lower bound because the current source ledger omits some continuation pages and sidebars.\n\nExamples:\n- `action:ready` has locator `p. 93`, but coverage spans p93-p94.\n- `background:acolyte` has locator `p. 60`, but coverage spans p60-p61.\n- `condition:paralyzed` has locator `p. 358`, but coverage spans p358-p359.\n- `creature:adult-brass-dragon` has locator `p. 291`, but coverage spans p291-p292.\n- `rule:wizard-your-spellbook` has locator `p. 54`, while source text continues on p55; this continuation is also affected by the source-ledger coverage bug.\n\nAcceptance criteria:\n- Multi-page records emit complete page ranges or page lists in provenance, not only the first page.\n- Add a regression check that compares provenance locators to coverage/ledger-derived pages after the source coverage evidence is fixed.\n- Document the intended locator format for single-page, contiguous multi-page, and non-contiguous source-backed records.\n",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T04:34:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T13:35:48Z",
+  "closed_at": "2026-07-01T13:35:48Z",
+  "close_reason": "Added enrichProvenanceFromRegionLedger: unions source-region-ledger page evidence into single-page locators (excluding cross-document content-search matches and heading-collision outliers beyond a small continuation gap), giving 345 records complete multi-page provenance. Documented the locator format. Filed eshyra-erf5.6 for an unrelated pre-existing ledger tie-break bug discovered along the way.",
+  "labels": [
+    "importer",
+    "provenance",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lpk9",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

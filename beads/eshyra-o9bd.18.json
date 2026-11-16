@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18",
+  "title": "Close 2026-07-01 D&D SRD audit findings",
+  "description": "Parent epic for every finding from the 2026-07-01 D&D SRD audit synthesis. Do not treat closed older beads as satisfying these findings; the latest audit still found them or found residual issues after those beads closed.\n\nInputs synthesized:\n- ChatGPT manual review of the audit bundle.\n- Codex GPT-5.5 max-effort parallel audit.\n- Claude Fable-5 max-effort independent full-coverage audit.\n\nBundle/repo context:\n- Audit bundle commit: beb9a21.\n- Pack size: 1,812 records.\n- SRD source pages reviewed: 403.\n- All bundle commands and existing gates were green, but the audits still found defects and gate blind spots.\n\nFable verification method worth preserving in downstream beads:\n- Did not reuse repo audit code.\n- Rebuilt column-aware source reading order from items.json coordinates because .txt interleaves columns.\n- Normalized PDF hyphen/ligature/one-half/minus artifacts.\n- Required every 6-token shingle on every source page to be reproducible from pack prose or reconstructed renderings of structured fields.\n- Reconstructed spell headers, full creature statlines including derived ability modifiers and CR-to-XP, equipment/armor/weapon table rows, class hit-point/proficiency boilerplate from hitDie, and class spell lists from spell.classes[].\n- Verified every prose string and every structured field of all 1,812 records against cited source windows.\n- Ran a digit-bearing token pass for DCs, dice, ranges, durations, averages, attack bonuses, CR/XP, equipment values, armorClass structures, and concentration/ritual flags.\n- Reported zero numeric corruptions, exact class spell-list parity, and strong source fidelity overall.\n- Durable copy of the harness and its reports: ~/src/dnd5e-srd-audit-harness-070126/\n\nPolicy for this epic:\n- Every finding below must be closed by code/data fix, durable gate, or explicit documented non-issue decision.\n- Broad findings must be split into children rather than silently deferred.\n- Ambiguous findings require research/verification beads.\n- A subsequent audit should not find any noted issue still present unless an accepted non-issue is recorded.\n- This epic blocks eshyra-o9bd.14 (regenerate + re-freeze): the pack must not be re-frozen while findings here are open or undecided.",
+  "notes": "Final producer-by-producer reconciliation proof passes repository-wide verification: 260 files and 4,636 tests passed (documented skips only).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-18T21:19:29Z",
+  "closed_at": "2026-07-19T06:48:23Z",
+  "close_reason": "All children and producer/resolver proofs complete",
+  "external_ref": "gh-455",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

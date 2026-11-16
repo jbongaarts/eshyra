@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.8.13",
+  "title": "Dispatch: Sol fifth-pass repairs F2, character side (Sonnet 5.5, attempt 1)",
+  "description": "Repair batch F2 (character side) for the integration branch eshyra-o9bd.19.3.4.8, from the Sol fifth pass, bead eshyra-o9bd.19.3.4.8.11 (run `bd show eshyra-o9bd.19.3.4.8.11`; read S33 and S34 in full; batch E design D5 in `bd show eshyra-o9bd.19.3.4.8.10`). A parallel agent (F1) owns the combatant side: do NOT edit combatantLifecycle.ts, encounterCombatants.ts, activeEffects.ts, toolEndEffect.ts, toolStartEffect.ts, toolUpdateCombatant.ts, or their tests. You own state/hpLifecycle.ts, state/domainMutations.ts, state/rest.ts, state/exhaustionMutation.ts (character path only), and hpLifecycle.test.ts / rest.test.ts / a new test file if needed.\n\nSUPERVISOR DECISIONS:\nS33: character exhaustion removal through remove_condition (domainMutations removeCondition with id 'exhaustion' or legacy 'exhausted') is REFUSED with an error that points to adjust_exhaustion (single owner, consistent with add_condition's refusal). Update remove_condition's tool description accordingly (contract only). Audit long-rest and any other direct conditions_json writer that can change the exhaustion level for characters: each must go through the canonical exhaustion/lifecycle transition so a settled zero-maximum stable character re-arms a fresh 1d4-hour schedule when the effective maximum rises above 0 (D5). Test: settle at max 0, then each producer that raises the max (adjust_exhaustion negative delta, long rest reduction) re-arms and the next due advance_time recovers 1 HP; remove_condition is refused with state unchanged.\nS34 (character half): in hpLifecycle's death-save transition, a natural 20 that cannot actually regain HP (effective max 0) counts as one success through the SAME capped-success path as an ordinary success, so a third success stabilizes (counters reset, recovery schedule armed via scheduleStableRecovery) unless a recovery block is set. Positive-max natural 20 revival unchanged; suffocation-blocked behaviour unchanged. Compact generalized test: last roll ordinary vs natural 20 × effective max 0 vs positive × blocked vs unblocked, asserting status, counters, schedule, then the ensuing recovery settlement.\n\nRun `npm ci` if needed, then `npm run verify:worktree` before committing; commit on your branch; record a completion report (files, each finding → tests, verify result) with `bd update <your bead> --append-notes`, then `bd close <your bead>`. Do not push, open a PR, or modify any other bead.",
+  "acceptance_criteria": "Listed findings repaired with generalized regressions; npm run verify:worktree green before commit; completion report in bd notes; bead closed by the agent.",
+  "notes": "Files: state/hpLifecycle.ts (resolveDeathSaveTransition: nat20 that cannot regain HP falls into ordinary capped-success path -> third success stabilizes; shared with combatants), state/domainMutations.ts (removeCondition refuses exhaustion/exhausted -> adjust_exhaustion), orchestrator/toolRemoveCondition.ts (description), state/rest.ts (long-rest exhaustion reduction now via applyCharacterExhaustionChanged), tests hpLifecycle/rest/tools. Tests: hpLifecycle.test 'settled zero-maximum stable recovery rearm (S33)' (adjust_exhaustion rearm+recover, stays settled at max 0, remove_condition refused x2 ids state unchanged); 'natural 20 death save at the third-success boundary (S34)' 8-case matrix; rest.test 'long rest refuses a settled zero-maximum stable character...'. Note: long rest cannot be a rearm producer (hp<1 participants refused) so it is routed canonically but only refusal is tested. Verify: verify:worktree green, 5747 passed/3 skipped.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-03T22:07:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-03T22:11:09Z",
+  "closed_at": "2026-10-03T22:11:09Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8.13",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8",
+      "type": "parent-child",
+      "created_at": "2026-10-03T17:07:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

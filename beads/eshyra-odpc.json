@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-odpc",
+  "title": "Long-rest spell preparation tool/lifecycle (prepared casters)",
+  "description": "Level-up (eshyra-ug4i.2.1) offers only an OPTIONAL 'prepare' descriptor. SRD: cleric/druid/paladin/wizard change their prepared list when they finish a long rest. Add a model tool/lifecycle step that sets sheet.spellcasting.prepared (and the sheet.spells union) after a long rest, reusing levelUpSpells evaluateSpellFilter + the class preparation formula (packages/core/src/character/levelUpSpells.ts). Also owns domain/oath always-prepared spells.",
+  "acceptance_criteria": "- A long-rest preparation tool/lifecycle step operates from the stored character sheet (sheet.spellcasting.prepared and the derived sheet.spells union) for prepared casters only (cleric, druid, paladin, wizard).\n- The prepared count uses each class's own SRD formula (cleric/druid/wizard: spellcasting modifier + class level; paladin: Charisma modifier + half paladin level rounded down; minimum 1); wizard preparation draws only from the spellbook, cleric/druid/paladin from the class list at levels they have slots for.\n- Domain/oath (and, once eshyra-91o0 records the land, circle) always-prepared spells are included and do not count against the limit.\n- Changing the prepared list is bound to finishing a long rest, per the SRD.\n- No rewrite of the general rest engine or of other rest-reset behavior.",
+  "notes": "2026-10-08 (Claude Captain reconciliation): retained at P2; scoped to preparation only (sheet-driven, correct class formula, class/domain/oath rules). Not a universal rest rewrite.\nFrom eshyra-91o0.1 (commit fd5a1236 on branch eshyra-91o0.1, pending integration): the Circle of the Land land pick persists on CharacterSheet.featureChoices as {featureRef:'feature:circle-of-the-land:circle-spells', choiceId:'land', optionIds:['land:<arctic|coast|desert|forest|grassland|mountain|swamp>'], level:3}. Option text is the verbatim circle-spells table rows; the structured per-land spell lists are in table:circle-of-the-land-<land> data.projection (subclassSpellGrants). Consuming always-prepared circle spells is yours.\nPR #615 (head 3ab53d8f) opened 2026-10-09; supervisor reviewed diff + reran verify:worktree green. Stays in_progress until merge. Follow-up eshyra-kn38 (refresh alwaysPrepared at level-up/creation).\nPR #615 review (3ab53d8f) F1 combat gate + F2 name targeting fixed at 123ab7ba; residual (combat opened+closed without clock advance) noted to reviewer. Awaiting re-review.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T02:44:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T01:46:56Z",
+  "started_at": "2026-10-09T01:20:50Z",
+  "closed_at": "2026-10-09T01:46:56Z",
+  "close_reason": "Merged PR #615",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-odpc",
+      "depends_on_id": "eshyra-odpc.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T20:21:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

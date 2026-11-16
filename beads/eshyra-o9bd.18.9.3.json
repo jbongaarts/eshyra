@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.9.3",
+  "title": "Gate spell concentration mechanics against duration semantics",
+  "description": "Finding source:\n- Protection from Evil and Good copied its duration faithfully but mechanics.concentration was false due to the no-comma source wording.\n- Existing gates did not cross-check derived flag semantics.\n\nAcceptance criteria:\n- Add pack-wide check over all 319 spells: concentration duration semantics must match mechanics.concentration.\n- Include no-comma and comma forms.\n- Report spell key, duration, derived value, and expected value on mismatch.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:28:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-02T12:47:23Z",
+  "closed_at": "2026-07-02T12:47:23Z",
+  "close_reason": "Satisfied by PR #383 (with eshyra-o9bd.18.2): spell-concentration-flag check covers all spells both directions, accepts comma/no-comma forms, reports key/duration/derived/expected.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.9.3",
+      "depends_on_id": "eshyra-o9bd.18.9",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:28:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.9",
+  "title": "A2-F4: level-up HP must not apply an unsourced minimum of 1 per level",
+  "description": "Second-audit finding (lane A2 rated non-blocker, low). Captain classifies it a blocker under the standing rule that engine behaviour contradicting the SRD is a hard blocker; consequence is low (Con modifier <= -2 with low rolls). levelUpEngine.ts:1757-1764 hitPointIncrement returns Math.max(1, average + conMod) and its comment calls this 'the SRD floor'. SRD p.56: 'Roll that Hit Die, add your Constitution modifier to the roll, and add the total to your hit point maximum. Alternatively, you can use the fixed value...' - no minimum. Check the rolled path and every sibling HP-increment site.",
+  "design": "2026-11-06 DESIGN (Captain). character/levelUpEngine.ts:1754-1764 hitPointIncrement returns Math.max(1, average + conMod) with a comment claiming an SRD floor; resolveHitPointChoice applies the same on the rolled path (check). SRD p.56: 'Roll that Hit Die, add your Constitution modifier to the roll, and add the total to your hit point maximum. Alternatively, you can use the fixed value...'. Remove the floor on both fixed and rolled paths and fix the comment; grep every other HP-increment/hit-point-maximum computation (creation level 1, multiclass level-up, any recompute of max HP from levels, sheet validation that may reject a level with zero/negative gain) and apply the same rule consistently. Do not add any other lower bound unless a source rule exists; if a downstream invariant requires hpMax >= 1 overall, report it in the bead notes rather than inventing a rule. Tests: CON -1 with rolled natural 1 gains 0; CON -3 fixed-average d6 gains 1 (4-3) and CON -4 gains 0 (4-4) -- check d6 average is 4; existing tests that pinned the floor are corrected, not deleted. Implementer: Haiku 5.5.",
+  "acceptance_criteria": "- Level-up keeps a minimum of 1 HP per level on fixed, rolled and CON-recompute paths, credited to the 2018 PHB errata as separate authority; no comment, declaration or pack field attributes it to SRD 5.1.\n- The level-up capability declaration discloses the minimum and its source.\n- Regression evidence: CON -4 fixed d6 and rolled natural 1 with CON -1 each gain 1.",
+  "notes": "2026-11-05 USER ADJUSTMENT (supersedes conflicting text above): the defect is reachable with CON modifier -1 and a natural roll of 1 (rolled path: 1 + (-1) = 0, floored to 1), not only CON <= -2. Regression evidence must include that case.\nCaptain: integrated after own diff review and own verify:worktree (exit 0). PR https://github.com/jbongaarts/eshyra/pull/713.\nDECISION (logged): Captain added commit 032e90a3 clamping live hp_current at 0 on a negative increment (SRD p.96), because removing the floor otherwise made level-up fail for characters at very low HP.\n2026-11-06 Captain: Sol review .9.2 returned MATERIAL FINDINGS (2) on PR #713 (S3: a level-up that drives live HP to 0 leaves life_state alive / a 0-max initialized character immune to damage; S4: preview accepts a negative computed maximum that apply refuses via hp_max >= 0). SRD p.56/p.81/p.96 define no outcome for a computed maximum below 1. STOPPED for a user decision on that boundary before repairing.\n2026-11-06 USER DECISION (supersedes the removal design and acceptance): keep the minimum of 1 HP per level as the official 2018 Player's Handbook errata ('add the total (minimum of 1)', also in the revised Basic Rules), adopted as separate authority, never attributed to SRD 5.1; the pack and its provenance stay faithful to SRD 5.1. A2-F4 is re-dispositioned: the floor was correct under the official correction; the defect is its false attribution to the SRD. Captain reverted 91d75e4d and 032e90a3 and committed d900749f (comment, level-up-v1 declaration and tests credit the errata; rolled natural 1 with CON -1 gains 1). Sol review .9.2 findings S3/S4 are moot (the maximum can no longer decrease).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-03T02:12:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T04:00:13Z",
+  "started_at": "2026-11-06T02:16:09Z",
+  "closed_at": "2026-11-06T04:00:13Z",
+  "close_reason": "Merged PR #713 (7ea37d1e815fbc5ee015fc42741967876ba7ec39) after clean bounded Sol review .9.3 (errata decision)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.9",
+      "depends_on_id": "eshyra-o9bd.19.6.7.9.1",
+      "type": "blocks",
+      "created_at": "2026-11-05T20:16:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.9",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-02T20:12:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

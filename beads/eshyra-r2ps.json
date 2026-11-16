@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-r2ps",
+  "title": "advanceWorldTime clock commit and stable-recovery resolution are not atomic",
+  "description": "Post-merge review of PR #457 (verified against current main, 2026-07-19).\n\n## Defect\n\nDirect clock advancement and stable recovery are not atomic. `advanceWorldTime` (`packages/core/src/state/rest.ts:159-219`) commits the clock update, effect expiry, and short-rest-window closure inside one `withTransaction`, then calls `resolveStableRecoveries` only *after* that transaction has returned (line 217). Each recovery then runs through its own `adjustHp` transaction (`hpLifecycle.ts:624` maps over due rows calling `adjustHp(db, 1, ...)` per character).\n\nVerified failure modes:\n\n- An exception in `resolveStableRecoveries` (or in one `adjustHp`) leaves elapsed time advanced while recovery is unapplied, or several due characters only partially recovered (the `.map` applies recoveries one transaction at a time).\n- In the orchestrator, tool errors are returned to the model without rolling back the attempt savepoint (`orchestrator.ts` per-turn/per-attempt SAVEPOINT design; a caught `MutateStateError` becomes an err tool result). So a failed `advance_time` tool call retains its already-committed clock mutation inside the surrounding turn savepoint — if the attempt is later accepted, the clock advance lands without its recoveries.\n- Outside the orchestrator (tests, direct core consumers), the inner transaction has already really committed, so the inconsistency is durable.\n\nNote: the rest `complete()` path (`rest.ts:588`) happens to be safe-ish because it passes its own `txn` in, so the post-transaction recovery calls still nest inside the outer rest transaction — the non-atomicity bites the direct `advanceWorldTime` path.\n\n## Required fix (per review)\n\nResolve all due stable recoveries inside the same `withTransaction` callback as the clock transition and return them as part of that atomic result. (better-sqlite3 nests transactions as savepoints, so the inner `adjustHp` calls compose correctly once they run against the transaction connection.) Add a test that an injected failure during recovery rolls back the clock advance.\n\nRelated (same PR #457 review): Demon Armor permanent doff block, migration-0020 stranded stable characters, rest benefits evidence gap (fixing this one changes the shape `complete()` consumes, so coordinate with that bead).\n",
+  "notes": "Sibling beads from PR #457 post-merge review: eshyra-gacz (Demon Armor doff), eshyra-q93i (migration-0020 stranding), eshyra-cc3c (rest evidence gap — fix together with this one, shared advanceWorldTime result shape).\nFix merged to branch eshyra-geny; PR #459 open (https://github.com/jbongaarts/eshyra/pull/459). Close after PR merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:09:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-20T01:12:11Z",
+  "started_at": "2026-07-20T00:14:58Z",
+  "closed_at": "2026-07-20T01:12:11Z",
+  "close_reason": "Fixed in PR #459 (merge commit 846a52f5), including review-round hardening: migration partial-schedule guard and canonical conditions validation.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

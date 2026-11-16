@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.8.1",
+  "title": "Dispatch: custody distinguishes restored/forked copies from crash/resume (attempt 1)",
+  "description": "Implement the design on eshyra-o9bd.19.6.7.8 (bd show it: description, design, acceptance, notes incl. the 2026-11-05 user adjustment). Worktree .worktrees/eshyra-o9bd.19.6.7.8.1, branch eshyra-o9bd.19.6.7.8.1 cut from parent branch eshyra-o9bd.19.6.7.8 (origin/main 6812cc0b). Implementer Claude Sonnet 5.5 subagent.",
+  "notes": "Built: table character_registry_sync(character_id PK, global_character_id, synced_revision) in campaign DB (migration 0054 + schema.snapshot.sql). Stamped at checkout, catch-up, committed/unchanged sync-back, resume acquire (already-held legacy/behind-but-equal copies restamped). classifyResumeConflict: already-held + synced<head + sheet!=head => stale-copy (localRevision=synced rev); sync-back/release no-op (undefined, custody kept) for such copies; idle path unchanged. Inventory entries updated incl. legacy and same-revision-divergence residuals. Tests: 5 new in characterCustody.test.ts (stamping, crash->restore->resume->release head kept, crash->resume original keeps progress, crash between append and stamp, legacy unstamped); ledger-version expectations bumped to 54 in persistence/migrationLegacyAdoption/checkpoint.restore tests. verify:worktree passed (7367 tests). Commit 7f1599c7a48ce38c6c57b16dfaf0565418ccc08f. Residuals: legacy unstamped restored copy undetected until stamped; two same-id copies diverged from same revision indistinguishable until first sync; CLI quit silently no-ops release for a stale copy (no message). Note /tmp/a2-audit/probes/p16-custody-restore.ts was absent; scenario rebuilt from the design.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T01:56:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T02:09:32Z",
+  "closed_at": "2026-11-06T02:09:32Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.8.1",
+      "depends_on_id": "eshyra-o9bd.19.6.7.8",
+      "type": "parent-child",
+      "created_at": "2026-11-05T19:56:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

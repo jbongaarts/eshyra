@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.5",
+  "title": "Replace symbolic seams with real interfaces or remove them",
+  "description": "Review packages/core/src/seams.ts.\r\n\r\nIt currently functions more as symbolic scaffolding than as enforced architecture. Replace empty marker interfaces with real contracts where useful, or remove/retire the file so it does not misrepresent architectural enforcement.",
+  "acceptance_criteria": "- Empty marker interfaces are removed or replaced with meaningful contracts.\r\n- Any retained seams are used by runtime code or tests.\r\n- Documentation no longer implies unused marker interfaces enforce architecture.\r\n- Existing imports/tests are updated.",
+  "notes": "Execution note: During this bead, resolve remaining Biome noBannedTypes warnings only where the correct replacement follows from the real interface/removal decision. Do not replace {} mechanically just to satisfy lint.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:42Z",
+  "started_at": "2026-05-26T04:55:55Z",
+  "closed_at": "2026-05-26T04:59:12Z",
+  "close_reason": "Removed packages/core/src/seams.ts and its self-referential test; cleaned up internal.ts re-exports and 'Fills the X seam' JSDoc trailers. PR #76.",
+  "labels": [
+    "architecture",
+    "refactor",
+    "seams",
+    "technical-debt",
+    "types"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.5",
+      "depends_on_id": "eshyra-0jq.1",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.5",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:31:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

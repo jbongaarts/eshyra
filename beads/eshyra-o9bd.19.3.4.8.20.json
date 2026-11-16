@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.8.20",
+  "title": "Repair S48-S49 from PR review 5404301046 (captain inline)",
+  "description": "S48: Find Familiar/Find Steed 0 HP -> absent with the link still active (S1 design invariant 8; matrix rows 138-139). Add zero-HP rule 'vanish-bonded' (derived from a zero-hit-points transition that removes presence without ending the effect; declarable as atZeroHitPoints). The creature becomes absent and its link and effect stay active; re-manifesting a bonded actor keeps its rule. 'vanish' stays terminal for the conjure spells and Simulacrum. S49: removal to absent clears pending head-settlement counters, and turn-end head settlement skips absent combatants. Registry evidence for both, plus controls.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-04T04:23:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-04T04:28:30Z",
+  "closed_at": "2026-10-04T04:28:30Z",
+  "close_reason": "Repaired on eshyra-o9bd.19.3.4.8 (pushed); negative-proved; verify green",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8.20",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8",
+      "type": "parent-child",
+      "created_at": "2026-10-03T23:23:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

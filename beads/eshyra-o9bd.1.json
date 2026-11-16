@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.1",
+  "title": "Thaw frozen D&D 5e SRD importer & rules-pack",
+  "description": "ENABLING STEP for the re-freeze epic. Lift the freeze on the SRD 5.1 importer/extractor/parser, generated rules-pack, and audit oracle so modeling work can proceed. Per docs/importer-fix-protocol.md and CLAUDE.md frozen-path rules, add thaw notes under docs/audits/dnd5e-srd-5.1-final/thaw-notes/ recording scope, rationale (move from archival/source-complete bar to complete-accurate-playable bar), and the re-freeze plan. Affected paths: packages/core/scripts/importers/, packages/core/test/importers/, packages/core/data/rules-packs/rules__dnd5e-srd-5.1/, packages/core/src/rules/srdAudit.ts. Do NOT weaken existing regression tests/audit expectations — they remain green through the thaw; new playable-model gates are ADDED, not substituted.",
+  "notes": "Implemented: umbrella thaw note (docs/audits/dnd5e-srd-5.1-final/thaw-notes/2026-06-28-reaudit-playable-bar-thaw.md) + freeze-manifest.json status frozen->thawed-reaudit with re-audit pointers. No importer/pack/test/expectation changed. Freeze guard proof: changed-path PASSED (thaw note authorizes the manifest edit), hash check 13/13 match. verify:worktree green (2826 passed). PR #351 open (branch eshyra-o9bd-1-thaw-reaudit). Close when #351 merges; that unblocks the modeling children. Note for children: each protected-path change still needs its OWN dated thaw note + manifest hash updates per the umbrella note.\nLanded on main: PR #351 merged (merge 009e50a, first-parent on main). Branch + worktree cleaned up. Closing.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T06:30:33Z",
+  "closed_at": "2026-06-28T06:48:01Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.1",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 11,
+  "comment_count": 0
+}

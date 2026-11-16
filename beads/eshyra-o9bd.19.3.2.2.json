@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.2.2",
+  "title": "Review: Sol final review of PR #644 (eshyra-o9bd.19.3.2 @ 4eaa58ec)",
+  "description": "Final read-only review of PR #644 (branch eshyra-o9bd.19.3.2, exact head 4eaa58ec467df43e4be48c1d42e191e319b57cde) by GPT-6.1-Sol, full review, profile rules-clause-complete. Findings in notes; ends with a VERDICT line.",
+  "notes": "Dispatched gpt-6.1-sol effort high; PGID 1895440\nFINAL FRESH FULL REVIEW of PR #644, rules-clause-complete, exact head 4eaa58ec467df43e4be48c1d42e191e319b57cde.\n\nAuthority: read AGENTS.md, docs/design-and-pr-review-policy.md (including From observation to finding and Findings discipline), docs/importer-fix-protocol.md, ADR 0020, compiler guide/ADR 0017, the live owning bead eshyra-o9bd.19.3.2 and dispatch child .1. refs/beads/state is stale (2026-09-10 projection with pre-ADR owning scope); reconciled against live Beads, whose October DESIGN and Lane A rebaseline control. No unresolved design invalidation or blocker was identified.\n\nScope completed: all 12 files in git diff origin/main...HEAD and both commits in git log origin/main..HEAD, including the main-merge integration. Reviewed projector relations, count/minimum/progression extraction, conditional-reset exclusion, feature-reference resolver, printed save-DC formula, schema validation and its callers, removal of the staged withheld projection, generated records, registry dispositions, accepted-prose membership, inventory artifacts, and changed/new permanent evidence. 1799 records conserved; 38 records have semantic changes, plus font-of-magic has only object-key-order churn (39 textual record changes). Every resource delta is in the owning DESIGN EXPECTED/REMOVE map; no unexplained generated churn.\n\nSource review: independently extracted the vendored SRD_CC_v5.1.pdf with pdftotext and checked every changed resource governing clause and count/scaling/minimum against the PDF and committed record text. Checked the eight caster formula lines individually against the PDF; Ki's Wisdom DC agrees with the source. Confirmed rest occasions, counter resets, partial restoration, and Divine Intervention's alternative conditional branch remain prose. Full source prose and provenance are preserved by this diff. Mystic Arcanum and Signature Spells retain their per-spell scope in unchanged source prose, as expressly authorized by DESIGN.\n\nSibling/boundary analysis: examined all admitted feature, feat, ancestry-trait and background-feature owners, including every rest-bearing owner without resources. The omitted set is exactly the eight named removals plus font-of-magic, whose retained procedure pool already supplies its long-rest reset. Checked class and subclass level anchors, all three use-scaling records, both modifier/minimum records, Divine Sense's additive count, Font of Inspiration's resolving appliesTo, spell-slot versus use resources, and multiple Infernal Legacy clauses. Excluded option-catalog semantics remain the separately owned option-local lane. Traced real producers and consumers: classResources/rulesPackResolver use class-table resourceProgression, not feature mechanics.resources; discovery preserves source-prose versus compiler-projection boundaries. The new fields neither acquire deterministic capability authority nor change runtime resource accounting.\n\nPermanent evidence reviewed: the exact EXPECTED/REMOVE table preserves source-backed named regressions; full emitted-resource membership, the separately written governing-sentence predicate, grammar negatives, schema checks and real-pack appliesTo resolution supplement it. The predicate is bounded supporting evidence, not a universal semantic proof; the exact table prevents the original named bad states. Old keyword/withheld expectations are replaced under the source-backed owning design, not weakened to bless corruption. Registry narrowing and six accepted-prose additions agree with ADR 0020 and preserved source obligations. Inventory generation is independently recomputed by its existing test.\n\nVerification (read-only in the repository):\n- npx --no-install vitest run: featureResourceProjection, srdGeneratedPack, findingRegistry, dnd5eSrdAuditBundle: 4 files, 326 tests passed.\n- npx --no-install vitest run: mechanicsProjections, kindSchemasEffects, diagnosticFixtureCorpus, semiStructuredBoundaryInventory, fieldProvenanceGate: 5 files, 302 tests passed.\n- npm run verify:dnd5e-srd-pack: exit 0; regenerated outside the repository, zero pack differences; source-inventory, source-coverage, source-region-ledger, field-provenance and record-relationships match regenerated output exactly.\n- Additional ephemeral assertions: 1074 checks across 179 feature records; prepend/append short-rest occasions, long-rest occasions, and DC-counter-reset sentences do not alter the original resource projections.\n- git diff --check: passed. Working tree clean and HEAD unchanged before recording review.\n\nBLOCKING findings: none.\nNOT A FINDING: Requiring new deterministic feature handlers, typed Ki costs, or global feature-procedure closure is no requirement under the operative Lane A DESIGN and ADR 0020.\nNOT A FINDING: Requiring additional per-spell resource identity for Mystic Arcanum/Signature Spells is no requirement in this repair; DESIGN explicitly authorizes the emitted uses:1 projections with their retained per-spell prose.\nVERDICT: APPROVED at exact head 4eaa58ec467df43e4be48c1d42e191e319b57cde",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T03:15:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T03:19:57Z",
+  "closed_at": "2026-10-10T03:19:57Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.2.2",
+      "depends_on_id": "eshyra-o9bd.19.3.2",
+      "type": "parent-child",
+      "created_at": "2026-10-09T22:15:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

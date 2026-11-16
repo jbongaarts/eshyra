@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-mdke.3",
+  "title": "Fix: Sol S1 on PR #631 (optional choice in creation wizard) (Sonnet 5.5)",
+  "description": "Fix the MATERIAL finding from the Sol review of PR #631 (read in full: `bd show eshyra-mdke.2`). Branch from origin/eshyra-mdke. Deps installed. Edit only packages/cli/src/characterWizard.ts and packages/cli/test/characterWizard.test.ts (do not change core; keep satisfied=true for an empty optional choice in the engine).\n\nThe creation wizard's runChoiceGroup (~1006-1018, ~1047-1056) treats satisfied as \"already answered\": for an OPTIONAL choice (choice.optional / the favored-enemy-language choice) with an empty selection it shows no options and \"Enter to keep, or clear\", and clear advances without re-prompting. Fix: when a choice is optional and its selection is empty, show the numbered options with an explicit \"press Enter to skip\" prompt; a populated optional choice shows the selection with keep/clear, and clear returns to the picker (does not auto-advance). Required choices behave exactly as today.\n\nEVIDENCE: one generalized optional-choice wizard regression (Human Ranger, humanoids + gnoll/orc): initial empty display lists language options; Enter skips and finalizes; picking a language persists it (lands on sheet.languages after finalize); clear on a populated choice re-shows the picker and a new pick replaces it. Confirm the new test fails on the pre-fix wizard.\n\nPROTOCOL: `npm run verify:worktree` BEFORE committing; commit on your branch; `bd update <your-bead> --append-notes`; `bd close <your-bead>`. Do not push or open/comment on PRs.",
+  "notes": "Commit 83e7088b. Fix in packages/cli/src/characterWizard.ts runChoiceGroup: optional+empty choice is treated as unanswered (shows options + 'Optional — press Enter to skip.', Enter skips and advances, a pick auto-advances); populated optional keeps keep/clear and clear returns to picker. Engine satisfied=true unchanged. Test: 'character wizard — optional choice' in packages/cli/test/characterWizard.test.ts (Human Ranger humanoids gnoll/orc: initial display, skip, pick persists to sheet.languages, clear+repick). Fails on pre-fix wizard (no option list), passes after. verify:worktree green (6185 passed, 3 skipped).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:01:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:05:40Z",
+  "closed_at": "2026-10-09T05:05:40Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-mdke.3",
+      "depends_on_id": "eshyra-mdke",
+      "type": "parent-child",
+      "created_at": "2026-10-09T00:01:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b0hg.1",
+  "title": "Dispatch: b0hg (Sonnet 5.5, attempt 1)",
+  "description": "Plan for parent eshyra-b0hg (bd show eshyra-b0hg). Decisions made; STOP and note if code contradicts.\nWORKTREE: .worktrees/eshyra-b0hg.1 (branch eshyra-b0hg.1 from origin/main). Deps installed. A parallel task edits packages/core/src/character/levelUpSpells.ts, finalizeCharacter.ts (spellcasting) and spell-related level-up code: do not edit those.\n\nCODE: packages/core/src/character/derivedValues.ts (no skill bonuses today); levelUpExpertise.ts characterExpertise(sheet) (expertise set from featureChoices choiceId 'expertise'); srdCreationChoices.ts SRD_5_1_SKILLS + SRD_5_1_SKILL_ABILITIES (skill -> ability); sheet.skillProficiencies, sheet.toolProficiencies, abilityScores[*].modifier, proficiencyBonus; orchestrator/contextAssembler.ts (character sheet context; currently renders no skills); orchestrator/toolResolveCheck.ts (resolve_check: caller declares modifiers and a proficiency multiplier — contract stays unchanged here).\n\nDECISIONS\n1. Add a pure derivation (derivedValues.ts or a new small module) deriveSkillBonuses(sheet, resolver?) -> for each of the 18 SRD skills {skill, ability, proficiency: 'none'|'proficient'|'expertise', bonus}. bonus = ability modifier + proficiencyBonus x (2 expertise | 1 proficient | 0). SRD feature adjustments that apply deterministically to ability checks, only when the sheet holds the feature at its level: Jack of All Trades (bard 2+: add floor(PB/2) to ability checks that don't already include proficiency) and Remarkable Athlete (champion 7+: add ceil(PB/2) to non-proficient Strength/Dexterity/Constitution checks). Cite the SRD text in comments. Also passive Perception = 10 + Perception bonus.\n2. Model context: render a compact skills line for the character sheet in contextAssembler, listing proficient/expertise skills with bonuses (e.g. 'Stealth +7 (expertise), Perception +4') plus passive Perception, and a short note when Jack of All Trades / Remarkable Athlete applies to the rest. Keep it short.\n3. resolve_check contract unchanged (the DM still passes modifiers/multiplier); update its tool description only if it would otherwise contradict the new context line (it should tell the model the sheet shows derived skill bonuses). File a follow-up bead (P3) for deriving check modifiers server-side from the sheet.\nEVIDENCE: rogue with Stealth expertise (+DEX and 2xPB), proficient skill, non-proficient skill; bard 2 Jack of All Trades on a non-proficient skill; champion 7 Remarkable Athlete on Athletics when not proficient; passive Perception; one context-assembly assertion. Real pack/sheet fixtures.\nPROTOCOL: npm run verify:worktree BEFORE commit; commit (Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>); bd update eshyra-b0hg.1 --append-notes; bd close eshyra-b0hg.1. No push/PR. Never use git stash.",
+  "notes": "Done in 3893c1cc: skillBonuses.ts (deriveSkillBonuses, renderSkillsLine), context Skills line, resolve_check description note, tests; verify:worktree green. Follow-up eshyra-r8en. Feature gating hardcoded by class/subclass key+level (no resolver).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:28:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:32:45Z",
+  "closed_at": "2026-10-09T05:32:45Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b0hg.1",
+      "depends_on_id": "eshyra-b0hg",
+      "type": "parent-child",
+      "created_at": "2026-10-09T00:28:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

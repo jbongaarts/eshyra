@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5.6",
+  "title": "findRepresentingRecord picks wrong candidate when heading-slug matches every ambiguous option",
+  "description": "Discovered while implementing eshyra-lpk9 (multi-page provenance enrichment), which surfaced this as a page-span outlier but did not fix it — it is a pre-existing source-region-ledger classification bug, unrelated to lpk9's own root cause, and out of scope to fix safely without a broader audit of its blast radius.\n\nsourceRegionLedger.ts's findRepresentingRecord (used by classifyRegion as a document-wide text-content search fallback) prefers a candidate record whose key matches EITHER the region's section slug OR its heading slug:\n\n  const preferred = matches.find(\n    (record) =>\n      (sectionSlug !== undefined && record.key.includes(`:${sectionSlug}:`)) ||\n      (headingSlug !== undefined &&\n        (record.key.endsWith(`:${headingSlug}`) ||\n          record.key.includes(`:${headingSlug}:`))),\n  );\n\nWhen ALL matching candidates share the same heading-slug suffix (e.g. every class's \"Ability Score Improvement\" feature is named feature:<class>:ability-score-improvement and all 12 have byte-identical boilerplate text: \"When you reach 4th level, and again at 8th, 12th, 16th, and 19th level...\"), `.find()` returns the FIRST array element satisfying the OR — which is always true via the heading-slug branch for every candidate — so it never reaches a later, section-slug-correct candidate. In practice this means every class chapter's \"Ability Score Improvement\" region (Bard p13, Cleric p17, Druid p21, ... — verified in the committed source-region-ledger.json) resolves to `record:feature:barbarian:ability-score-improvement` regardless of which class chapter it is actually in, because feature:barbarian:... happens to sort first among the matches.\n\nThis does not corrupt the generated pack's own record content (each class's real feature text lives in its own record via the normal parser, independent of the ledger) — it only mis-attributes the LEDGER's evidence for 11 of the 12 classes to the wrong owning record. Confirmed via: grep source-region-ledger.json entries with targetKey == feature:barbarian:ability-score-improvement — 10 entries across pages 9,13,17,21,27,32,37,44,48,53, all with identical firstPhrase text, when only page 9 (Barbarian's own chapter) is genuinely that record's content.\n\nExpected fix: when multiple matches satisfy the heading-slug branch, prefer one that ALSO satisfies the section-slug branch before falling back to the heading-slug-only choice (i.e. check section-slug across all matches first, then heading-slug only among matches lacking a section-slug hit). Likely other same-boilerplate multi-class features are affected (Ability Score Improvement is the only reviewed example so far).\n\nSuggested tests: a source-region-ledger unit test with 3+ synthetic records sharing a heading-slug suffix, only one matching a given owner's section-slug, asserting the section match wins regardless of array order.\n\nLikely files: packages/core/scripts/importers/dnd5e-srd-5.1/sourceRegionLedger.ts (findRepresentingRecord), packages/core/test/importers/dnd5e-srd-5.1/sourceRegionLedger.test.ts.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T13:35:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T22:08:13Z",
+  "started_at": "2026-07-01T21:44:14Z",
+  "closed_at": "2026-07-01T22:08:13Z",
+  "close_reason": "findRepresentingRecord prefers section-slug matches over heading-slug; 12 ledger entries (9 ASI + 3 Extra Attack) re-attributed to the correct owning class. Unit test added. PR #381.",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-erf5.6",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T08:35:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

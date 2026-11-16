@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fe3",
+  "title": "Address PR #157 review feedback",
+  "description": "Review feedback for PR #157: keep the agent worktree workflow, remove the verify-current-worktree temporary Biome config workaround, and make the pre-verification fix path run Biome's safe write pass via biome check --write. Validate with npm run agent:preflight and npm run verify:worktree.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T00:42:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:47Z",
+  "started_at": "2026-06-06T00:43:22Z",
+  "closed_at": "2026-06-06T00:49:05Z",
+  "close_reason": "Addressed PR #157 review feedback: verifier is simple and temp-config-free, pre-verification fix uses biome check --write, AGENTS documents the workflow, and .worktrees remains ignored via .gitignore/VCS ignore; verification passed with npm run agent:preflight and npm run verify:worktree.",
+  "comments": [
+    {
+      "id": "eabe6341-05fb-519c-a3ec-c1bfb10a4ffb",
+      "issue_id": "eshyra-fe3",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 1 as expected; failures show AGENTS still documents temporary Biome config and package.json format is still 'biome format --write .' instead of 'biome check --write .'.",
+      "created_at": "2026-06-06T00:44:24Z"
+    },
+    {
+      "id": "d9f39f0f-c20c-5e0d-9f44-e2d77c134d05",
+      "issue_id": "eshyra-fe3",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 0; 9 tests passed after switching format to 'biome check --write .', removing temporary Biome config handling from verify-current-worktree.ps1, and updating AGENTS.md.",
+      "created_at": "2026-06-06T00:45:30Z"
+    },
+    {
+      "id": "925d6788-393c-57e4-8d5a-abd8df2b8814",
+      "issue_id": "eshyra-fe3",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run agent:preflight -> exit 0; fetched origin/main/FETCH_HEAD 580d738bd41fcb6b0ceeda03f8ae102a7c27eb6d and did not run Biome/tests/build. npm run verify:worktree -> exit 0 from D:/src/loreweaver/.worktrees/loreweaver-ij1-1; format/check/typecheck/test all passed, Biome checked 234 files, hidden Unicode scan checked 270 tracked text files, Vitest 89 files passed / 2 skipped and 1194 tests passed / 3 skipped. Extra probe: git check-ignore confirmed .worktrees/ ignored via .gitignore and npx biome check . still checked 234 files. git diff --check -> exit 0.",
+      "created_at": "2026-06-06T00:48:56Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 3
+}

@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-nwu2",
+  "title": "Surface a message when /quit release is a no-op for a stale restored custody copy",
+  "description": "playClose.releaseCampaignCharacters stays silent when releaseCharacterFromCampaign returns undefined for a restored/forked stale copy (eshyra-o9bd.19.6.7.8.1). Report it so the player knows custody was not released.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T02:09:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T02:09:31Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

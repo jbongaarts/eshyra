@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.7.5",
+  "title": "Review S1/S2/S3 of PR #701: copied option citations, internal-splice provenance, Foresight thaw-note page",
+  "description": "Sol review eshyra-o9bd.16.7.4 of PR #701 @ a45a2b70 found two material findings and one non-material one. Full evidence is in the 16.7.4 notes.\nS1: feature:draconic-bloodline:dragon-ancestor /choices/0/options/1..9/source cite 'SRD 5.1 p. 44', but those rows print on p.45; only Black is on p.44. deriveFeatureChoices.ts:1813 copies table.source before the final locator enrichment (index.ts:3650). The Circle Spells copy site (:1754) is a control and is correct at p.22.\nS2: stripEmbeddedTableProse (emit.ts:2054, stripEmbeddedTableProse.ts:87-99) removes an INTERNAL table span and reflows the seam. The result is an adjacency that is not printed, yet the field still classifies as source-prose. Witnesses: feature:draconic-bloodline:dragon-ancestor /description (pp.44-45) and feature:sorcerer:font-of-magic /description (p.43). A trailing-table removal that leaves a contiguous prefix stays source-prose.\nS3: thaw note 2026-11-01-eshyra-o9bd-16-7-1-source-true-projections.md:42 cites p.155 for Foresight; it should be p.147.",
+  "design": "S1: give each copied option source a truthful field-local citation. Use the row's own printed page when the row/table model carries it; otherwise use the final table span. Never invent pages. Apply this at both copy sites, and make Black (p.44) and Circle Spells (p.22) controls.\nS2: make the producer report what it did. stripEmbeddedTableProse returns, per field, whether the removed span had non-whitespace source text AFTER it, i.e. an internal splice. The compiler derives record-scoped source-derived field-provenance declarations for exactly those (record, pointer) pairs and unions them with the hand declarations. A trailing removal stays source-prose. Do not hand-list witnesses. Check whether the classProgression trimEmbeddedTable path (Destroy Undead / Wild Shape) can use the same mechanism; if not, leave its hand declarations.\nRegenerate with --out to the canonical path and run verify:dnd5e-srd-pack.\nEvidence: (1) a generalized test that copied option citations equal their row's printed page or the enclosing table span, with the nine p.45 rows plus the Black and Circle Spells controls; (2) a producer/classification test for internal splices with both witnesses plus a contiguous tail-trimmed control; (3) a real context-packet check that neither witness renders under the verbatim heading. Follow docs/importer-fix-protocol.md and add a thaw note. Do not weaken any test.",
+  "acceptance_criteria": "S1-S3 repaired; pack regenerated and reproducible; verify:worktree passes; evidence as designed; commit on the child branch.",
+  "notes": "COMPLETE: S1 option sources re-cited (Black p.44, nine rows p.45; Circle Spells p.22 control). S2 producer-reported internal splices -> scoped source-derived declarations for 17 /description fields (2 witnesses + 6 spells + 9 magic items; details in thaw note). S3 fixed. Two test helpers adjusted to target unscoped declarations. verify:worktree PASS, verify:dnd5e-srd-pack matches.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T13:18:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T13:29:07Z",
+  "started_at": "2026-11-01T13:18:28Z",
+  "closed_at": "2026-11-01T13:29:07Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.7.5",
+      "depends_on_id": "eshyra-o9bd.16.7",
+      "type": "parent-child",
+      "created_at": "2026-11-01T07:18:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

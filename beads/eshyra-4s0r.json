@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r",
+  "title": "Address holistic repo review recommendations",
+  "description": "Holistic repo-health follow-up after the major Eshyra base has stabilized pre-1.0.\n\nThis epic collects architectural, release, persistence, and tooling hygiene recommendations from the repo-wide review. The goal is to address durable design risks now, while the project is still pre-1.0 and before these seams become expensive compatibility commitments.\n\nScope:\n- Move SQLite schema management to a migration-first design.\n- Enforce the public/internal package boundary between CLI and core.\n- Harden release launcher portability.\n- Add focused reliability guards around telemetry and tool registration.\n- Strengthen schema-validator coverage for bundled tools.\n- Clean stale documentation/comments after runtime and distribution changes.\n\nNon-goals:\n- Generic lint cleanup.\n- Broad refactors unrelated to the reviewed risks.\n- ORM adoption unless a child bead explicitly determines it is necessary.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T02:48:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-26T05:25:21Z",
+  "close_reason": "All child beads are complete and verified in this branch.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

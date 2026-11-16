@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x1uo",
+  "title": "Green terminal palette and doorway icon for eshyra.app site",
+  "description": "Approved presentation update on top of PR #581: phosphor-green (#88d789) accents on near-black forest (#09130d), green 2B doorway icon (assets on origin/assets/green-terminal-icon c3ea441d), favicon/apple-touch declarations on all pages, mark beside header/footer wordmark. Palette + icon only; artwork and published wording unchanged.",
+  "acceptance_criteria": "All four pages use green palette and icon links; artwork untouched; wording unchanged; site builds; npm run verify:worktree passes; PR open against main, not merged.",
+  "notes": "PR opened from site/green-terminal-icon at 6984b9e4; in_progress until merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T01:30:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-29T02:10:50Z",
+  "started_at": "2026-09-29T01:30:05Z",
+  "closed_at": "2026-09-29T02:10:50Z",
+  "close_reason": "PR #590 merged a1b4c56a; tagged site-v2026.09.28.1",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

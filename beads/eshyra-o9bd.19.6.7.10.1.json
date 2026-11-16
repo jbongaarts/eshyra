@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.10.1",
+  "title": "Dispatch: source-prose composition/substitution class (Iron Flask, interior splices, bullet joins) (attempt 1)",
+  "description": "Implement the design on eshyra-o9bd.19.6.7.10 (description, DESIGN, ACCEPTANCE, 2026-11-05 USER ADJUSTMENT). Worktree .worktrees/eshyra-o9bd.19.6.7.10.1, branch eshyra-o9bd.19.6.7.10.1 from parent branch eshyra-o9bd.19.6.7.10 (origin/main 0e259d209927e492b785ba2152ded5412a68eeef). Implementer Claude Sonnet 5.5 subagent.",
+  "notes": "Commit c705ba8a. Producers: parseRules/removeTableCellLines (PageText.removedBefore), parseGamemasteringRules, parseHalfDragonTemplate, parseConditions, parseFeats, parseActions via new proseComposition.ts; extractions carry composedBy; emit derives scoped source-derived declarations (nothing hand-listed). Generated: rule /text interior-removal x9 (ability-checks, ability-scores-and-modifiers, expenses-lifestyle-expenses, half-dragon-template, hit-points, objects, services, skills, speed), condition:exhaustion interior-removal, 11 conditions bullet-join, feat:grappler bullet-join. Matches the listed ten exactly. feature:monk:martial-arts NOT a member (faithful, keeps bullets, contiguous). weapon-proficiency/improvised-weapons excluded as mid-sentence column-flow interleave. Bullet-join decision: declare source-derived (smaller than restoring glyphs), whole producer class (conditions, feats, actions). Iron Flask now 1-50; new token gate for all reviewed-reconstruction specs (class-progression not covered). Reworded wrong 'intro line' reason. Test: proseCompositionAndSubstitution.test.ts. Regenerated pack; verify:dnd5e-srd-pack pass; verify:worktree pass (7401 passed). Thaw note 2026-11-06-eshyra-o9bd-19-6-7-10-*.md; freeze manifest untouched.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T03:17:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T03:34:29Z",
+  "closed_at": "2026-11-06T03:34:29Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.10.1",
+      "depends_on_id": "eshyra-o9bd.19.6.7.10",
+      "type": "parent-child",
+      "created_at": "2026-11-05T21:17:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-y0us",
+  "title": "Magic-item triggeredEffect 'condition' leaf is overloaded: charmed names (Rod of Rulership, Philter of Love) cannot be separated from prose by effect kind",
+  "description": "In the pack, magic-item /mechanics/effects/*/condition holds a condition name for imposesCondition (resolved, imposed-condition) but for kind triggeredEffect it holds either 'charmed' (magic-item:rod-of-rulership, and magic-item:philter-of-love's c2 residual effect) or a prose precondition (5 others: robe-of-the-archmagi, talisman-of-pure-good x2, talisman-of-ultimate-evil x2). A relationByFieldValue table keyed by kind cannot separate them, so triggeredEffect is excluded in the shipped declaration and Rod of Rulership's charmed edge is not followed (Philter of Love is still reached via its imposesCondition effect). Fix in the importer by emitting the imposed condition under the same field the other imposing effects use (conditions[]) or the prose under a distinct field, then narrow the declaration; regenerate the pack.",
+  "notes": "PLAN (Captain 2026-11-07): importer fix. For the two triggeredEffect effects whose condition leaf is the imposed condition charmed (magic-item:rod-of-rulership; magic-item:philter-of-love's residual effect), emit the condition in the effect's conditions[] array, the shape Dust of Sneezing and Choking's triggeredEffect already uses and that the magic-item effects/*/conditions/* declaration already maps by ../kind. That leaves the triggeredEffect condition field prose-only, so its null mapping becomes truthful. Verify each against the printed text. Update the 3-known-charmed allowlist test added in PR #724 to zero; it must then assert that no table-excluded leaf outside condition records is a condition name, with no exceptions. Regenerate via npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1; review the records.json and record-relationships.json diff; add exact regressions for the Rod of Rulership edge.\nCaptain 2026-11-07: integrated (2b7ffacb y0us, 0168e885 1fx7) after own review and verify (exit 0, 7479 passed; pack exact). PR https://github.com/jbongaarts/eshyra/pull/728 (stacked on #724). Stays in_progress until merged.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:22:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:05:18Z",
+  "started_at": "2026-11-08T00:23:32Z",
+  "closed_at": "2026-11-08T02:05:18Z",
+  "close_reason": "Merged PR #728 (c4877c72).",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-y0us",
+      "depends_on_id": "eshyra-y0us.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T18:23:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-y0us",
+      "depends_on_id": "eshyra-o9bd.19.3.5",
+      "type": "discovered-from",
+      "created_at": "2026-11-07T17:22:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

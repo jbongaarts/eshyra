@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.6",
+  "title": "Derive a state-dependent reaction allowance from tracked creature state (hydra Reactive Heads)",
+  "description": "Found by the read-only Sol review for PR #596 (bead eshyra-o9bd.19.3.4.4.9, finding 2), pre-existing on main (not introduced by #596). packages/core/src/orchestrator/toolUpdateCombatant.ts description and the reactionAllowance schema text tell the model to pass 'the current total reactions per round' for a creature with a state-dependent extraReactions mechanic, e.g. hydra Reactive Heads '1 + heads beyond one'. state/actionEconomy.ts setReactionAllowance checks the creature has a formula grant but records the supplied integer without deriving or validating it; calc.ts has no reaction-allowance formula. Under ADR 0020 §2 and the protocol.ts Hybrid Contract, arithmetic is engine-owned, so the model computes a mechanical value here. Fix options: derive the allowance deterministically from declared current state (e.g. head count) and validate it against the record's extraReactions formula (material runtime change; review the consumer), or disclose the unsupported numeric step without directing model arithmetic. Check siblings: other tool descriptions that ask the caller to supply a derived total.",
+  "acceptance_criteria": "- Engine-tracked state for the mechanic's input (e.g. hydra head count, with the Multiple Heads lose/regrow lifecycle) and a deterministic derivation of the reaction allowance from the record's extraReactions formula; no model-supplied total.\n- The model-facing write path for a supplied total is closed: update_combatant no longer accepts a reactionAllowance integer that reaches setReactionAllowance (review @f8cf6322, rejected as won't-fix in PR #596 and owned here). The actionEconomy.test.ts case that drives update_combatant({ reactionAllowance: 3 }) to success is replaced, and a tool-registry test proves a model call cannot persist a supplied total.\n- update_combatant / spend_turn_resource / the Hybrid Contract describe the derived behavior; the disclosure added in PR #596 is removed in the same change.\n- Tests: derivation per head count, restriction clause (opportunity attacks only) preserved, refusal for creatures without the mechanic.\n- eshyra-o9bd.19.3.4 dependency resolves only when this lands.",
+  "notes": "2026-10-01 (#596 A5 classification): BLOCKING ENGINE-CAPABILITY GAP, wired as a blocker of eshyra-o9bd.19.3.4. The missing capability is deterministic derivation of a state-dependent reaction allowance (creature:hydra Reactive Heads, extraReactions formula one-per-head-beyond-one), which also needs engine-tracked head count (hydra Multiple Heads) - today the head count is untracked and the DM supplies the derived total. CONTRACT CONFLICT, held for a user decision and NOT changed in #596: the accepted eshyra-2n1t.4 design (state/actionEconomy.ts header: 'the DM records the current total through the validated setReactionAllowance grant') and two model-facing producers (toolUpdateCombatant.ts description + reactionAllowance schema; actionEconomy.ts spendTurnResource over-budget grantHint) claim support for hydra extra reactions via a model-supplied derived total. Downgrading them to a disclosed gap (as review @02e4e9e8 finding 1 asks) would remove the only path by which a hydra gets more than one reaction - a functional regression of an accepted runtime contract. Options: (a) downgrade now and accept the regression until derivation lands; (b) implement tracked head count + derived allowance (material runtime change, fresh review); (c) accepted authority declares the DM-read head count a declared input (like an ability modifier) and keeps the contract. Placement: stays a child of eshyra-o9bd.19.3.4 because the tool-contract question is A4 scope; the capability itself is engine:F2 (eshyra-o9bd.19.5.3) work.\n2026-10-01: USER DECISION - downgrade now and accept the regression. PR #596 commit 99212b8e changed the model-facing contract in all four producers (update_combatant description + reactionAllowance schema, actionEconomy over-budget rejection, protocol.ts Hybrid Contract) to disclose that nothing derives the extra reactions, so they cannot currently be recorded; a hydra keeps one reaction per round until this lands. setReactionAllowance storage unchanged. Re-scoped to the capability, reparented under engine:F2 (eshyra-o9bd.19.5.3); still blocks eshyra-o9bd.19.3.4.\n2026-10-02: review @f8cf6322 (PR #596) found that update_combatant still forwards a model-supplied reactionAllowance to setReactionAllowance. User REJECTED it for #596 as won't-fix: the state is already blocked and undeployable, and repairing the engine belongs to this bead. Closing the write path is now explicit acceptance here.\n2026-10-03: delivered in PR #599 (https://github.com/jbongaarts/eshyra/pull/599), branch eshyra-o9bd.19.3.4.8 @7414d014. Stays in_progress until the PR merges.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-01T21:31:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-04T06:22:18Z",
+  "started_at": "2026-10-02T03:42:00Z",
+  "closed_at": "2026-10-04T06:22:18Z",
+  "close_reason": "Landed on main via PR #599 (merge commit 12cdb1f8)",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.6",
+      "depends_on_id": "eshyra-o9bd.19.3.4.6.1",
+      "type": "blocks",
+      "created_at": "2026-10-02T00:20:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.6",
+      "depends_on_id": "eshyra-o9bd.19.5.3",
+      "type": "parent-child",
+      "created_at": "2026-10-01T21:43:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

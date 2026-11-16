@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ffoo.3",
+  "title": "Dispatch: ffoo close a linked creature's link at ordinary 0 HP for a no-printed-ending grant (attempt 2)",
+  "description": "Repair PR #731 per Sol review eshyra-ffoo.2 S1 (bd show eshyra-ffoo.2 in full: the defect, code locations, reproduction, and the required next state). REQUIRED: when a creature bound to a noPrintedEnding item grant (Pipes of the Sewers called-rat-swarms) is reduced to 0 HP / dies in the ordinary way, close exactly that creature's actor link, and finalizeEnd the effect only when no owned creature remains. Cover both seams Sol names: the in-combat update path (state/encounterCombatants.ts ~4290-4305) and the out-of-combat durable campaign actor path (updateCampaignActor ~336-419). Do NOT add an unprinted duration or revertOn to the pack, and do NOT make ordinary dead rats vanish (the corpse and combatant stay; only the ownership link closes). Keep the redeemed credit redeemed. Leave Horn of Valhalla, vanish, vanish-bonded and reversion behavior unchanged. Reuse the existing link-closing and finalizeEnd paths, not a parallel one, and decide the trigger from recorded grant state (the grant's noPrintedEnding), stating the rule in a comment. Evidence: a generalized REAL-PACK lifecycle invariant for Pipes covering one and multiple swarms, partial and last death, in combat and after close_combat_instance via the campaign actor seam, checking link status, effect status, event integrity and the credit. Update model-facing text and the capability inventory only if they state the lifecycle. Base: branch eshyra-ffoo (PR head 1614571e). Worktree .worktrees/eshyra-ffoo.3 on branch eshyra-ffoo.3; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. npm run verify:worktree must pass BEFORE committing; commit on eshyra-ffoo.3 only; no push or PR; do not close eshyra-ffoo.",
+  "notes": "Commit 5aa8d179 on eshyra-ffoo.3 (not pushed). verify:worktree exit 0 (7505 passed, 3 skipped). RULE: a creature bound to a grant whose recorded binding has noPrintedEnding (flag now stored in active_effect.item_grant_json at bind time, like destroysSourceAtZeroHp; itemGrantBinding.ts + validateItemGrantBinding/insert in activeEffects.ts) that is at 0 HP/dead and not vanished/reverted closes only its own link (removed, reason zero-hit-points) via new closeOrdinaryZeroHpGrantLink -> existing closeActorLinkAtZeroHp (new how 'stays-in-play', filter 'no-printed-ending-grant'); effect ends via the same finalizeEnd (source-removed/zero-hit-points) only when no owned creature remains. SEAMS: encounterCombatants.ts updateCombatant (after vanish/reversion block), setCombatantSuffocation drop, updateCampaignActor out of combat (projection undefined). Combatant/corpse stay; credit stays redeemed. UNCHANGED: pack, freeze manifest, thaw notes, conditionRelations untouched; Horn/vanish/vanish-bonded/revert paths not edited (new calls only fire when no vanished/reverted outcome and filter on the recorded flag, so any grant without it is a no-op); full suite passes. Pre-flag stored Pipes bindings carry no flag (feature unreleased). TESTS (packages/core/test/noPrintedEndingZeroHpLifecycle.test.ts, real pack + default registry): in-combat 1 swarm, in-combat 2 swarms (partial then last), after close_combat_instance via updateCampaignActor 1 and 2 swarms; each checks link status/reason per death, effect active until last then ended source-removed/zero-hit-points, one terminal ended event last, credit redeemed, actors/combatants stay dead hp0 not absent, integrity clean. All 4 fail without the src change. Docs: active-effect-lifecycle.md bullet; capability inventory Pipes text updated.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-16T04:15:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-16T04:22:59Z",
+  "closed_at": "2026-11-16T04:22:59Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ffoo.3",
+      "depends_on_id": "eshyra-ffoo",
+      "type": "parent-child",
+      "created_at": "2026-11-15T22:15:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

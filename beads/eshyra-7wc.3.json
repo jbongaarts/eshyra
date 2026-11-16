@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7wc.3",
+  "title": "Task 3: DoltRepo CLI wrapper",
+  "description": "Objective:\n`DoltRepo`: the only file shelling to the `dolt` CLI. Init an isolated campaign\nDolt repo, load a snapshot into a generic `campaign_snapshot` table, commit, and\nlist commits. Dolt-gated tests.\n\nFiles:\n- Create: `packages/core/src/persistence/checkpoint/doltRepo.ts`\n- Modify: `packages/core/src/index.ts`\n- Test:   `packages/core/test/checkpoint.doltRepo.test.ts`\n\nSteps:\n\n1. Write the failing test `packages/core/test/checkpoint.doltRepo.test.ts`:\n```ts\nimport { mkdtempSync } from 'node:fs';\nimport { tmpdir } from 'node:os';\nimport { join } from 'node:path';\nimport { afterAll, describe, expect, it } from 'vitest';\nimport { DoltRepo } from '../src/persistence/checkpoint/doltRepo.js';\nimport type { SnapshotRecord } from '../src/persistence/checkpoint/serialize.js';\n\nconst doltOk = DoltRepo.available();\nconst dirs: string[] = [];\nfunction tmp(): string {\n  const d = mkdtempSync(join(tmpdir(), 'lw-dolt-'));\n  dirs.push(d);\n  return d;\n}\nafterAll(() => {\n  /* temp dirs are OS-cleaned; explicit rm omitted for cross-platform safety */\n});\n\nconst SNAP: SnapshotRecord[] = [\n  { table: 'meta', kind: 'schema', ordinal: 0, payload: JSON.stringify({ create: 'CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)' }) },\n  { table: 'meta', kind: 'row', ordinal: 0, payload: JSON.stringify({ key: 'a', value: '1' }) },\n];\n\ndescribe.skipIf(!doltOk)('DoltRepo', () => {\n  it('init + applySnapshot + commit yields a listable checkpoint', () => {\n    const repo = new DoltRepo(join(tmp(), 'dolt'));\n    repo.init();\n    repo.applySnapshot(SNAP);\n    const id = repo.commit('checkpoint: test');\n    expect(id).toMatch(/\\S+/);\n    const log = repo.log();\n    expect(log.length).toBeGreaterThanOrEqual(1);\n    expect(log[0]?.message).toContain('checkpoint: test');\n  });\n});\n\ndescribe('DoltRepo.available', () => {\n  it('returns a boolean', () => {\n    expect(typeof DoltRepo.available()).toBe('boolean');\n  });\n});\n```\n\n2. Run it to verify FAIL (or the gated suite skipped + the boolean test failing on missing module).\n   Command: `npx vitest run packages/core/test/checkpoint.doltRepo.test.ts`\n   Expected: FAIL — module not found.\n\n3. Create `packages/core/src/persistence/checkpoint/doltRepo.ts`:\n```ts\nimport { execFileSync } from 'node:child_process';\nimport { existsSync, mkdirSync } from 'node:fs';\nimport type { SnapshotRecord } from './serialize.js';\n\nexport interface Checkpoint {\n  id: string;\n  message: string;\n}\n\nfunction sq(s: string): string {\n  return `'${s.replace(/'/g, \"''\")}'`;\n}\n\nexport class DoltRepo {\n  constructor(private readonly dir: string) {}\n\n  static available(): boolean {\n    try {\n      execFileSync('dolt', ['version'], { stdio: 'ignore' });\n      return true;\n    } catch {\n      return false;\n    }\n  }\n\n  private run(args: string[], input?: string): string {\n    return execFileSync('dolt', args, {\n      cwd: this.dir,\n      input,\n      encoding: 'utf8',\n    });\n  }\n\n  init(): void {\n    if (!existsSync(this.dir)) mkdirSync(this.dir, { recursive: true });\n    if (!existsSync(`${this.dir}/.dolt`)) {\n      execFileSync('dolt', ['init'], { cwd: this.dir, stdio: 'ignore' });\n    }\n    this.run(['config', '--local', '--add', 'user.name', 'loreweaver']);\n    this.run(['config', '--local', '--add', 'user.email', 'loreweaver@local']);\n  }\n\n  applySnapshot(records: SnapshotRecord[]): void {\n    const lines: string[] = [\n      'DROP TABLE IF EXISTS campaign_snapshot;',\n      'CREATE TABLE campaign_snapshot (' +\n        'tbl VARCHAR(255), kind VARCHAR(16), ordinal INT, payload LONGTEXT, ' +\n        'PRIMARY KEY (tbl, kind, ordinal));',\n    ];\n    for (const r of records) {\n      lines.push(\n        `INSERT INTO campaign_snapshot (tbl, kind, ordinal, payload) VALUES (` +\n          `${sq(r.table)}, ${sq(r.kind)}, ${r.ordinal}, ${sq(r.payload)});`,\n      );\n    }\n    this.run(['sql'], lines.join('\\n'));\n  }\n\n  commit(message: string): string {\n    this.run(['add', '-A']);\n    this.run(['commit', '--allow-empty', '-m', message]);\n    return this.run(['log', '-n', '1', '--oneline']).trim().split(/\\s+/)[0] ?? '';\n  }\n\n  log(): Checkpoint[] {\n    const out = this.run(['log', '--oneline']).trim();\n    if (!out) return [];\n    return out.split('\\n').map((line) => {\n      const sp = line.indexOf(' ');\n      return sp === -1\n        ? { id: line, message: '' }\n        : { id: line.slice(0, sp), message: line.slice(sp + 1) };\n    });\n  }\n}\n```\n\n4. Add to `packages/core/src/index.ts` (append):\n```ts\nexport { DoltRepo } from './persistence/checkpoint/doltRepo.js';\nexport type { Checkpoint } from './persistence/checkpoint/doltRepo.js';\n```\n\n5. Run the test to verify PASS (gated suite runs only if `dolt` is installed).\n   Command: `npx vitest run packages/core/test/checkpoint.doltRepo.test.ts`\n   Expected: with dolt → 2 passed; without dolt → 1 passed, 1 skipped.\n\n6. Typecheck.\n   Command: `npm run build`\n   Expected: exit 0.\n\n7. Commit.\n   Command: `git add -A && git commit -m \"feat(e8): DoltRepo CLI wrapper (init/apply/commit/log)\"`\n",
+  "design": "Dolt is driven via `execFileSync('dolt', ...)` (argv form, no shell — injection-safe\nfor args; SQL values are single-quote-escaped via `sq`). No long-running\nsql-server: every call is a short CLI invocation, so nothing here can sit in a\nper-turn path. The generic `campaign_snapshot(tbl,kind,ordinal,payload)` table\nsidesteps SQLite->MySQL DDL translation entirely while still giving Dolt real\ntable-level versioning (so `dolt_diff`/`AS OF` work in E8.T5). `--allow-empty`\nkeeps checkpointing idempotent when nothing changed. `available()` probes the\nbinary so suites can `skipIf` on machines/CI without dolt. `log --oneline` parse is\nintentionally minimal (`<id> <message>`); if a future dolt changes oneline format,\nonly this method needs adjusting — the `Checkpoint` shape stays stable.\n",
+  "acceptance_criteria": "npx vitest run packages/core/test/checkpoint.doltRepo.test.ts shows 2 passed with dolt installed or 1 passed + 1 skipped without; npm run build exits 0.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T05:41:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T02:50:36Z",
+  "closed_at": "2026-05-19T02:51:28Z",
+  "close_reason": "DoltRepo implemented; 1 passed + 1 skipped (no dolt binary on this host), build exit 0 — matches acceptance",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7wc.3",
+      "depends_on_id": "eshyra-7wc.2",
+      "type": "blocks",
+      "created_at": "2026-05-17T00:41:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7wc.3",
+      "depends_on_id": "eshyra-7wc",
+      "type": "parent-child",
+      "created_at": "2026-05-17T00:41:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

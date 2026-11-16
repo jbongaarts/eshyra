@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.19.2",
+  "title": "Review: Sol final review of the engine day-phase PR (eshyra-o9bd.19.6.7.19 @ 88613385)",
+  "description": "Read-only Sol final review at exact head 886133852e0b2b21ee56aafe6ca09b3e37f6053c.",
+  "notes": "Captain: dispatched gpt-6.1-sol high, PGID 839728.\nFINAL REVIEW at exact HEAD 886133852e0b2b21ee56aafe6ca09b3e37f6053c (branch eshyra-o9bd.19.6.7.19.2). Read-only repository review; no repository files edited, formatted, built, or created; no GitHub actions. Reviewed the WHOLE git diff origin/main...HEAD (8 files), the owning .19 design/acceptance, implementer .19.1 report, R2 .15 and its original /tmp/a2-reaudit/probes/p23-dawn-phase.mts, docs/design-and-pr-review-policy.md, and accepted ADR 0020. Effective profile: rules-clause-complete for the bounded DM-guidance-to-state execution boundary. Current refs/beads/state resolved to 9e4bb40c789e3364b1605e7321c1537117a4ca02; its metadata is September 10 and predates these beads, so current ownership/design/status were reconciled against live bd show instead.\n\nS1. NON-MATERIAL (no defect): The clock context is anchored to the real elapsed-minute state. contextAssembler.ts:1055 renders describeEngineClock; worldClockBoundaries.ts:67 computes Day=floor(elapsed/1440)+1 and HH:MM from elapsed modulo 1440. Dawn/dusk text in that helper, protocol.ts and toolRest.ts derives from the same 360/1080 constants consumed by the executor. Literal 06:00/18:00 wording in update_clock and the inventory agrees. Initial midnight, pre-dawn, exact dawn, end-of-day and subsequent-day states are covered. Existing narrative labels and their stale marker remain visible alongside the authoritative engine phase.\n\nS2. NON-MATERIAL (no defect): All changed DM-facing lifecycle statements agree with execution. itemResetExecutor.ts:813 crossedBoundaryEvents uses (previousElapsedMinutes, elapsedMinutes] with daily dawn=360 and dusk=1080, ordered chronologically. rest.ts:185 advanceWorldTime advances by validated positive integer minutes and settles elapsed effects, recovery, and item events; complete() calls that same function once with the qualified rest duration (rest.ts:658). update_clock remains label/location only. toolStartEffect.ts:646-663 and activeEffects.ts:4781-4809 use nextDawnAfter, strictly AFTER the bind clock; a grant bound exactly at dawn ends the following dawn. The added wording neither changes these semantics nor promises an immediate reset for a clock already at dawn.\n\nS3. NON-MATERIAL (no defect): The A2-F2 residual class is addressed in band. protocol.ts:315-321 declares midnight Day 1, dawn 06:00/dusk 18:00, requires narrated time to follow the engine clock, directs an opening at another hour through advance_time, and applies generic reset_usage dawn at the SAME crossing as canonical pack-bound resets. A new /tmp-only real-registry probe adapted from p23 follows that instruction: opening advance 480 -> Day 1 08:00; travel to elapsed 1080 -> dusk with no erroneous dawn recharge; long rest from 1320 to 1800 -> Day 2 06:00 and Wand of Secrets recharge; generic dawn counter remains spent until reset_usage dawn at 1800 and is then restored. Advancing from dawn to 06:01 does not reset again. A contradictory label alone leaves the engine phase unchanged. Probe: /tmp/eshyra-final-review-aligned-dawn.mts, PASS. This is model-guided alignment, as authorized, without a schema or automatic-label alignment change.\n\nS4. NON-MATERIAL (no defect): Monster X/Day guidance from #719 remains intact in protocol.ts:312-315 and capability inventory reset_usage/complete_long_rest. Monster long_rest events must be scoped to combatantId; party rest tools accept character participants only. usageCounters.ts:246-249 maps dawn solely to dawn counters and long_rest to long-rest counters; the passing usageCounters suite discriminates creature Enslave/innate per-day long-rest restoration from item dawn restoration. Combat turns/rounds still do not advance world time and the prompt/tool descriptions disclose this. Automatic combat-clock advancement: no requirement (explicitly excluded by this assignment).\n\nS5. NON-MATERIAL (no defect): Permanent evidence is proportionate and discriminating for this presentation repair. The added context test exercises real assembly/rendering at elapsed 0, 359, 360, 1439 and 1800 with independent literal expected day/time values, so the previous elapsed-only context fails. The protocol test asserts the initial phase, opening-hour alignment, exact engine dawn crossing, and same-crossing guidance; previous protocol wording fails. Real registry descriptions are also checked. Existing executor/rest/real-pack grant evidence protects the underlying boundary semantics, including dusk versus dawn, multiple days, and strictly-next dawn. No source-fidelity assertion was weakened; generated pack bytes and runtime reset semantics are unchanged.\n\nS6. NON-MATERIAL (verification/limits; no defect): Direct Vitest execution passed 10 files / 320 tests, zero failures or skips: contextAssembler, protocol, rest, itemResetExecutor, itemChargeDawnRecharge, itemPerDayDawnEconomy, itemGrantSummons, usageCounters, deterministicCapabilityInventory (9 files/311 tests), plus itemGrantRealPackReadiness (1 file/9 tests). Used /tmp/eshyra-final-review-vitest.config.mts with configLoader runner, cacheDir under /tmp and both result/module caches disabled; no npm pretest/build/format/verify invoked. git diff --check passed and git status --short was empty at the pinned HEAD after all probes/tests. Full suite not rerun; implementer/Captain full verification reports are supplementary evidence only. No material or non-material defects requiring repair were found in the authorized scope.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T09:00:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T09:04:46Z",
+  "started_at": "2026-11-06T09:00:15Z",
+  "closed_at": "2026-11-06T09:04:46Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.19.2",
+      "depends_on_id": "eshyra-o9bd.19.6.7.19",
+      "type": "parent-child",
+      "created_at": "2026-11-06T03:00:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

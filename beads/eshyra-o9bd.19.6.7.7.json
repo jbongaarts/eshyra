@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.7",
+  "title": "A2-F2: DM guidance must route elapsed time and dawn through advance_time so effects expire and item economies recharge",
+  "description": "Second-audit blocker (lane A2, verified by Captain at 6812cc0b). protocol.ts:242 tells the DM to use update_clock 'for time', but update_clock only sets a label (toolUpdateClock.ts; advance_time's own description says update_clock labels never fabricate elapsed time). protocol.ts:307 routes dawn/rests to reset_usage, while the same protocol says pack-bound item economies are owned only by use_item, so dawn recharge of pack-bound items only happens through advance_time. The protocol never mentions advance_time (0 occurrences), and advance_time is requiresExplicitAction (toolRest.ts:61), so the inventory guard limits it to explicit player actions. Consequence in normal play: timed effects never expire by time, magic-item dawn recharges never run, stable 1d4-hour recovery never fires. Auditor also reports combat rounds do not advance the clock and that start_effect/end_effect refuse round-based Bless duration and expiry (A2 probes p10-p12, p17, p21, p22); verify those sub-claims during repair. Same class as o9bd.16 L3-F3 (model-facing guidance contradicting the real tool contract).",
+  "design": "2026-11-06 DESIGN (Captain), within the 2026-11-05 user adjustment (no automatic combat-clock advancement). (1) Gating: advance_time (orchestrator/toolRest.ts:58-61) is requiresExplicitAction (since 9ba6b45c, rest engine), so the turn auditor rejects it unless the player explicitly acts. Passing in-game time is DM pacing, not an inventory/player-intent action: drop requiresExplicitAction from advance_time ONLY; keep complete_short_rest/complete_long_rest (the player chooses to rest) explicit. Update the turn auditor guidance (turnAuditor.ts explicit-action list text) if it names advance_time. (2) DM protocol (orchestrator/protocol.ts ~l.240-245 and ~l.300-312): update_clock is label/location only and never elapses time; advance_time (minutes) is the canonical way to pass time whenever the narration says time passes (travel, waiting, downtime, the minutes of an encounter's aftermath); rests go through complete_short_rest/complete_long_rest (state exactly what those tools do, read their code); dawn and pack-bound item recharge happen by advancing time across dawn (verify in the rest/time engine that advance_time runs dawn item economy resets, effect expiry and the stable 1d4-hour recovery; describe only what it really does); reset_usage stays only for the ad-hoc/legacy unbound usage it actually covers. Keep the existing turn-auditor text consistent with the protocol. (3) Round-based durations: verify the A2 sub-claims (start_effect refusing Bless as 10 rounds; end_effect expired refused after 11 rounds; A2 probes p10-p12 may no longer exist in /tmp, rebuild from the bead text). If round-anchored durations already work through combat rounds, document it; if they do not, either fix them in the smallest way within existing duration kinds or disclose truthfully in the tool descriptions and capability inventory. Do NOT add automatic combat-clock advancement. (4) Capability inventory entries for advance_time, update_clock, reset_usage and the rest tools match the new guidance. Tests: a protocol/registry test that advance_time is not explicit-action gated and the protocol names it for elapsed time and no longer routes time to update_clock; an integration test where the DM calls advance_time and a timed effect expires and a pack-bound item's dawn economy recharges; stable recovery through advance_time if not already covered. Implementer: Luna (gpt-6-luna, high).",
+  "acceptance_criteria": "- The DM protocol names advance_time as the canonical way to pass in-game time and routes dawn/rest recharge consistently with the real tool contracts (pack-bound item economies included); update_clock is described as label/location only.\n- advance_time is reachable whenever the DM narrates time passing, not only on explicit player item actions (or the gating is changed with a stated reason).\n- Lifecycle integration is truthful: timed effects expire, pack-bound items recharge at dawn and stable recovery runs through that DM-directed path; round-based durations either work or are truthfully disclosed. No automatic combat-clock advancement is required.\n- Regression evidence: a scripted sequence where the DM advances time and a timed effect expires and a pack-bound item recharges at dawn.",
+  "notes": "2026-11-05 USER ADJUSTMENT (supersedes conflicting text above): do NOT require automatic combat-clock advancement. A truthful, DM-directed advance_time path is sufficient. Existing time advancement works in some paths; the defect is incorrect model guidance and lifecycle integration (expiry, dawn recharge, stable recovery reached through advance_time).\nCaptain: integrated after own diff review and own verify:worktree (exit 0). PR https://github.com/jbongaarts/eshyra/pull/712.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-03T02:12:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T03:06:51Z",
+  "started_at": "2026-11-06T02:16:06Z",
+  "closed_at": "2026-11-06T03:06:51Z",
+  "close_reason": "Merged PR #712 (0e259d209927e492b785ba2152ded5412a68eeef) after Sol review .7.2 M1 repaired and confirmed clean by .7.3",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-02T20:12:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.7",
+      "depends_on_id": "eshyra-o9bd.19.6.7.7.1",
+      "type": "blocks",
+      "created_at": "2026-11-05T20:16:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

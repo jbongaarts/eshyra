@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-qga6.1",
+  "title": "Review: Sol final review of PR #630 (eshyra-qga6 @ 7cae7a82)",
+  "description": "Final read-only review of PR #630 (branch eshyra-qga6, exact head 7cae7a82336de56a9f1e2b2583ce28b719d624e2) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #630 at exact head 7cae7a82336de56a9f1e2b2583ce28b719d624e2 (branch eshyra-qga6.1).\nScope: full origin/main...HEAD diff and origin/main..HEAD history (one commit; three files). Authority: live eshyra-qga6 and eshyra-qga6.1; AGENTS.md; docs/design-and-pr-review-policy.md; character-creation design; ADR 0020. Applied rules-clause-complete review within the bounded skill-choice change. Read importer-fix-protocol.md; no importer, generated pack, or importer-test files changed. refs/beads/state is stale (2026-09-10) and contains neither current bead; used live bd records for current authority.\nFindings: none. No MATERIAL or NON-MATERIAL findings.\nSource/contract evidence: vendored SRD_CC_v5.1.pdf p11 specifies Bard Skills: Choose any three; p78 lists the 18 skills used by SRD_5_1_SKILLS. Actual class:bard pack data has choose:3, any:true, no from. Resolver preserves these fields; requiredChoices now supplies the complete skill universe. Explicit from lists retain precedence. Tool choices and choices lacking any:true retain existing behavior. Half-Elf ancestry retains its explicit skill domain.\nConsumer review: traced characterWizard.runChoiceGroup option display/name-number admission and distinct selection, characterDraft.mechanicalChoices/isChoiceSatisfied count and domain validation, duplicate-proficiency replacement generation, and finalizeCharacterDraft/resolveProficiencySet finalization and resulting proficiency grants. The fallback fixes the blocked Bard picker and maintains these contracts; arbitrary skills are now rejected for the open Bard selection. No schema, public-export, generated-data, or persistence changes.\nEvidence review: both added tests exercise the real bundled Bard through enumeration and creation/finalization, preserving existing assertions. Read-only in-memory execution of actual requiredChoices.ts and its runtime imports passed: all 12 bundled class skill domains, Bard's exact 18 options/count, and five variants for class and ancestry (open any, explicit restricted list, unspecified any, false any, explicit empty list), with tool domains preserved. git diff --check passed; repository status remained clean.\nValidation limitation: no node_modules installed in this worktree, so Vitest and the added end-to-end test were not executed. No dependencies installed, repository files created/edited/formatted, GitHub comments posted, commits/pushes, or merge performed.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:46:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:48:50Z",
+  "closed_at": "2026-10-09T04:48:50Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-qga6.1",
+      "depends_on_id": "eshyra-qga6",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:46:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

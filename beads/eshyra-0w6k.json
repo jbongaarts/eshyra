@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0w6k",
+  "title": "Fix installer verification when provider credentials are present",
+  "description": "The v0.1.1 PowerShell installer successfully installed and verified checksum on native Windows, but printed 'WARNING: Verification did not match expected output; try: eshyra' when ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN was already present in the environment. install.ps1 currently runs the wrapper with no args and only treats output containing ANTHROPIC_API_KEY as verified. With credentials present, the no-arg CLI prints the normal banner ('Eshyra — core v0.1.1 ...') instead, so verification falsely warns. Update install.ps1 (and install.sh if it has the same assumption) to accept stable successful startup/banner output as well as no-config setup guidance. Do not invoke a model call during installer verification. Add tests for verification output with and without provider credentials.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T01:42:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-21T05:55:59Z",
+  "started_at": "2026-06-21T05:52:14Z",
+  "closed_at": "2026-06-21T05:55:59Z",
+  "close_reason": "Fixed in commit 124c3a7: POSIX and PowerShell installers accept either no-config setup guidance or the stable startup banner, while verification remains a bare non-gameplay invocation. Full worktree verification and focused installer/CLI tests pass.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

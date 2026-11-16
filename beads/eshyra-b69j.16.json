@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.16",
+  "title": "Reconcile existing character creation beads with new design",
+  "description": "After the new design/implementation bead hierarchy is accepted, reconcile the older open character creation beads.\n\nExisting beads\n- eshyra-4jiu Replace brittle character creation prompts with guided session-zero flow\n- eshyra-x50w Migrate character creation off SRD_CATALOG and retire the legacy SRD catalog\n\nAcceptance criteria\n- Decide whether each existing bead should be closed as superseded, updated to point at the new children, or left open as the implementation bead for a specific slice.\n- Avoid duplicate work between eshyra-4jiu/x50w and the new bead hierarchy.\n- The bead graph clearly communicates implementation order and overlap.",
+  "notes": "Reconciliation complete. Decisions: (1) eshyra-x50w — CLOSED, fully delivered by b69j.3 (SRD_CATALOG retired, character creation migrated to the generated pack); (2) eshyra-4jiu — CLOSED as superseded, its guided session-zero flow is now covered by b69j.7/8/9/10. No duplicate work remains; the bead graph reflects implementation order under epic b69j.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:24:21Z",
+  "closed_at": "2026-06-24T03:24:21Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.16",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

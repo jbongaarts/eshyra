@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.7.3",
+  "title": "Review: Sol final review of PR #642 (eshyra-olc5.7 @ bb0d9eb2)",
+  "description": "Final read-only review of PR #642 (branch eshyra-olc5.7, exact head bb0d9eb26a07a73495bb378a8219db0fe8b77742) by GPT-6.1-Sol, full review, profile rules-clause-complete (pack typing) + semantic-system (durable sheet ledger). Findings in notes; ends with a VERDICT line.",
+  "notes": "Dispatched gpt-6.1-sol effort high; PGID 1817505\nFINAL REVIEW of PR #642: fresh full review at exact head bb0d9eb26a07a73495bb378a8219db0fe8b77742. Effective profile: rules-clause-complete for pack typing and pack-driven application, including semantic-system review of the durable proficiencyGrants ledger.\n\nAuthority/context: read AGENTS.md, importer AGENTS.md, docs/design-and-pr-review-policy.md (including From observation to finding and Findings discipline), docs/importer-fix-protocol.md, relevant compiler/ADR 0017 context, and ADR 0020. Read live eshyra-olc5.7 scope/DESIGN/D1-D5/acceptance/exclusions/notes and child dispatches .1/.2. The local refs/beads/state projection is dated 2026-09-10 and predates this task; reconciled current ownership, dependencies and scope against live bd show. Reviewed all 16 changed files in git diff origin/main...HEAD, all three commits in git log origin/main..HEAD, and the PR body/head claim independently.\n\nSource and sibling analysis: enumerated every feature/feat description and choice-option text containing 'proficien', and proficiency effects; checked vendored PDF passages at pp. 4, 7, 17, 28, 40, 47-48. The seven changed record keys are source-faithful: Slippery Mind, Diamond Soul, Life Domain Bonus Proficiency, Warlock Eldritch Invocations (only Beguiling Influence option), Elf, High Elf, Half-Orc. Verbatim grants/provenance remain preserved; conditional Stonecunning remains untyped. College of Lore skills, Expertise, and fixed ancestry skills retain their existing owners. Pact of the Blade is wielding-scoped; Deflect Missiles is one attack; Wild Shape requires form state; senses are not sheet state; magic-item grants remain attunement/backlog-owned. No other standing sheet grant in the declared sibling class was silently skipped.\n\nMechanism review: traced PDF extraction/choice derivation/effect projection through schema validation and the generated runtime pack, resolver feature and option grants, level-one finalization, held/target feature reconciliation, option replacement, post-choice Expertise refusal, preview/apply ordering, save recomputation with ability/PB changes, ledger shape/unique identities/idempotency/empty entries, SQLite sheet and registry/revision validators, progression transaction persistence, deriveSkillBonuses and resolve_check. Examined missing legacy ledgers, pre-held skills, removal/reacquisition, multiple selections, sources adding nothing, malformed typed vocabulary, and the captain's removal-before-addition repair across skills/armor/saves. Inventory classifications remain bounded to consumed feature/option fields; ancestry projection and verbatim grant text retain their stated boundaries. Permanent evidence preserves the old grant assertion and adds generalized grammar/pack/state invariants and real named-source scenarios without weakening regressions.\n\nBLOCKING findings: none.\nNOT A FINDING: universal option projection, conditional weapon/form grants, senses, and magic-item state application: no requirement within this bead's explicit exclusions.\nNOT A FINDING: a separate permanent fabricated-pack reproducer for each captain-repair branch: no requirement; proportionate evidence and mechanism/sibling inspection suffice for these currently unexercised SRD combinations.\n\nIndependent verification: targeted Vitest run passed 9 files / 368 tests (proficiencyGrants, typedProficiencyGrants, mechanicsProjections, levelUpEngine, levelUpFeatureChoices, levelUpSubclassChoices, finalizeCharacter, resolveCheckSheetDerivation, semiStructuredBoundaryInventory). npm run verify:dnd5e-srd-pack passed with zero changed/added/removed regenerated records and matching provenance artifacts. An additional temporary-directory regeneration with direct Buffer comparisons proved manifest.json, records.json, source-inventory.json, source-coverage.json, source-region-ledger.json, field-provenance.json, and record-relationships.json byte-identical. An in-memory real-pack Warlock 1->2 probe newly selected Beguiling Influence, preserved pre-held Deception, ledgered only Persuasion, loaded both skills from SQLite, and confirmed both derived resolve_check modifiers include PB. Temporary probes created no repository files. Repository remained clean at the reviewed head; no formatting, edits, commits, pushes, GitHub comments, or merge performed.\n\nVERDICT: APPROVED at exact head bb0d9eb26a07a73495bb378a8219db0fe8b77742",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T02:47:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T02:52:37Z",
+  "closed_at": "2026-10-10T02:52:37Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine-capability",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.7.3",
+      "depends_on_id": "eshyra-olc5.7",
+      "type": "parent-child",
+      "created_at": "2026-10-09T21:47:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

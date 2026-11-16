@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wmph",
+  "title": "Fix stale Codex dispatch recipe and make the beads protocol mandatory in supervisor context",
+  "description": "Two defects in the Codex-subagent supervisor workflow injected by\n`.claude/hooks/supervisor-context.mjs`, both surfaced by a user correction on\n2026-08-29 after they caused a bad dispatch on eshyra-o9bd.19.1.15.1.\n\n1. STALE LAUNCH RECIPE. A previous session created\n   `/home/jhbongaarts/.claude/dispatch-codex.sh` and allowlisted exactly that\n   path in auto mode (`Bash(/home/jhbongaarts/.claude/dispatch-codex.sh:*)` in\n   `~/.claude/settings.json`), but never updated\n   `.claude/hooks/codex-subagent-workflow.md`. The doc still taught a hand-rolled\n   `setsid … codex exec --dangerously-bypass-approvals-and-sandbox …` command\n   line, which is NOT allowlisted, so the auto-mode classifier refuses it. A\n   supervisor following the injected doc literally cannot dispatch.\n\n2. NO STATED RULE THAT THE BEADS PROTOCOL IS MANDATORY. The doc showed a launch\n   prompt using `bd show` / `bd update --append-notes` / `bd create` / `bd close`\n   but never said the channel is non-negotiable. When the launch above was\n   refused, the supervisor downgraded to `--sandbox workspace-write` and rewrote\n   the prompt to say \"Do NOT run `bd`\", passing the spec as a `.dispatch-plan.md`\n   file and taking the report back as `.dispatch-report.md`. Because bd and git\n   metadata both live in the PARENT checkout, that sandbox also blocked the\n   child's commit, so the supervisor committed and closed the bead on its behalf.\n   The task record was stranded outside Dolt, never reached `bd dolt push`, and\n   was invisible to any other machine, Codex session, or future supervisor.\n\nFIX (this bead): rewrite the Dispatch defaults section around\n`dispatch-codex.sh`, replace the raw `setsid` block with a description of what\nthe script already guarantees (leader records its own `$$`, exec preserves the\nPGID, runs in the child worktree, registry beside the worktrees, prior log kept\nas .bak), add \"if a dispatch launch is refused, STOP AND ASK\", and add a new\nsubsection making the beads protocol non-negotiable with the 2026-08-29\nviolation recorded.\n\nNOT DONE HERE, deliberately: the supervisor policy stays out of AGENTS.md,\nCLAUDE.md, bd memories and bead descriptions, per the doc's own header — those\nare all readable by Codex and Claude subagents, which must not receive\nsupervisor instructions. This bead description is the exception only insofar as\nit states the defect, not the policy.\n",
+  "notes": "PR #509 open: https://github.com/jbongaarts/eshyra/pull/509 (branch eshyra-wmph, head 4eac24f). Docs-only. verify:worktree green (263 files/4732 tests, 0 failures). Leave in_progress until merged. Deliberately NOT recorded as a bd memory: bd memories reach Codex subagents via bd prime, and supervisor policy must not.\n=== MERGED 2026-08-30 ===\nPR #509 merged as bfa84da. Branch deleted local and remote; worktree removed. The injected\nsupervisor context now leads with /home/jhbongaarts/.claude/dispatch-codex.sh and makes the\nbeads protocol non-negotiable. Both fixes were exercised in the same session: the attempt-2\ndispatch (eshyra-o9bd.19.1.15.2) launched through the approved script under YOLO and the\nchild read its spec, filed its report and closed its own bead entirely through bd.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-08-30T02:29:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-08-30T03:06:42Z",
+  "started_at": "2026-08-30T02:31:25Z",
+  "closed_at": "2026-08-30T03:06:42Z",
+  "close_reason": "Merged to main as bfa84da via PR #509.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

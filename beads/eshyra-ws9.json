@@ -1,0 +1,80 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ws9",
+  "title": "E5 Orchestrator + turn loop + Context Assembler + tools",
+  "description": "The integrating loop: per-turn cycle via Agent SDK, bounded-context assembly, deterministic tools (roll, mark_scene), and the DM system prompt encoding the refined-Hybrid rules contract.",
+  "design": "Orchestrator: player text to Context Assembler builds bounded prompt (campaign_bible + current arc_summary + last session_recap + full structured-state snapshot + current scene live transcript) to Agent SDK call to execute tool calls deterministically to stream narration to append scene_log to (if scene boundary) write scene_summary. Tools: roll(dice,reason) code-owned RNG, mark_scene(boundary,title). Integrates lookup_srd (E1), mutate_state/overlay (E3/E2), memory_drilldown (E4). System prompt: DM persona + Hybrid contract (narrate freely; all math/dice/state via tools; lookup_srd before running any creature). Turn atomic; tool error returns structured error to model; model/SDK failure leaves pre-turn state intact.",
+  "acceptance_criteria": "1. A full player turn runs end to end: prompt assembled, model called, tools executed, narration streamed, scene_log appended. 2. Assembled prompt contains only the bounded set, excluding older history unless drilled down. 3. roll RNG is code-owned and reproducible under seed in test. 4. Model attempting to change state via prose (not tool) does not mutate canon. 5. lookup_srd invoked before a creature is run in a combat scenario test.",
+  "notes": "SYNTHESIS UPDATE 2026-05-17: E5 owns bounded context and model quality discipline. The Context Assembler must avoid whole-history prompts, use compact active-scene/state/memory slices, and leave room for provider prompt caching where available. Turn orchestration should emit cost/latency/quality instrumentation by model profile and support an evaluation harness for premium_dm continuity, canon, NPC consistency, structured output, rules, tool use, and memory-update quality.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:31:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-20T22:41:35Z",
+  "closed_at": "2026-05-20T23:46:33Z",
+  "close_reason": "All E5 children complete; final verification passed: typecheck, build, and full test suite.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ws9",
+      "depends_on_id": "eshyra-c07",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ws9",
+      "depends_on_id": "eshyra-hlu",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ws9",
+      "depends_on_id": "eshyra-wsv",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ws9",
+      "depends_on_id": "eshyra-zzy",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "8bdb80c5-0dfd-5f10-aac4-ac22df48b39e",
+      "issue_id": "eshyra-ws9",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install (exit 0), npm run build (exit 0), npm run test (exit 0; 20 files passed / 1 skipped, 95 tests passed / 1 skipped). Clean baseline before E5 implementation.",
+      "created_at": "2026-05-20T22:42:52Z"
+    },
+    {
+      "id": "a91ba9ba-4210-51d8-baaf-b50ed7de4b3c",
+      "issue_id": "eshyra-ws9",
+      "author": "Joseph Bongaarts",
+      "text": "E5 core implementation complete. All 5 epic acceptance criteria are met and verified by packages/core/test/e5.integration.test.ts. Delivered (ws9.2-ws9.7, TDD): scene_log/scene-boundary persistence (schema v5); deterministic tool layer (seeded RNG, dice, roll/mark_scene/lookup_srd/mutate_state/world_query/memory_drilldown registry); bounded Context Assembler; DM system prompt + Hybrid contract + text-channel tool-call protocol; atomic Orchestrator turn loop (SAVEPOINT-wrapped). ToolLayer/ContextAssembler/Orchestrator seams filled. npm run typecheck clean; full suite 152 passed / 1 skipped. Remaining child: ws9.1 (model evaluation harness + cost-quality metrics) — a separate auxiliary deliverable from the synthesis notes, not one of the 5 acceptance criteria; epic stays open until it lands.",
+      "created_at": "2026-05-20T23:03:07Z"
+    },
+    {
+      "id": "9f0c6890-98eb-59e9-a93c-86695b345eea",
+      "issue_id": "eshyra-ws9",
+      "author": "Joseph Bongaarts",
+      "text": "Final verification before epic close: npm run typecheck -> passed; npm run build -> passed; npm run test -> 158 passed / 1 skipped. All 7 E5 child issues are closed, including ws9.1 model evaluation harness.",
+      "created_at": "2026-05-20T23:46:33Z"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 2,
+  "comment_count": 3
+}

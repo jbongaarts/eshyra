@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.4.3",
+  "title": "Dispatch: 19.2.4 repair after Sol S1-S3 (attempt 2)",
+  "description": "Repair PR #655 per Sol review eshyra-o9bd.19.2.4.2 (read S1-S3 in full incl. sibling analysis, closure and NOT-A-FINDING lines; do not exceed them). (S1) signals.ts key-only seen guard drops independently meaningful matched-name reasons: when one key is matched by several indexed names (section aliases, nested names like spellcasting vs spellcasting ability/focus, spellbook vs cantrips), keep ONE canonical candidate identity but preserve every matched-name reason with its own correct ambiguousWith sibling set (e.g. evidence carrying all matched names, or multiple reasons on the route), and verify they survive into candidates, rendered packet and durable trace projection; check route-count ranking/retention - do NOT silently change ranking policy (if multiplicity would change ranking, keep one route with a list of matched names and report). (S2) lookup_rules ambiguous branch (packages/core/src/orchestrator/toolLookupRules.ts ~:176-180) must return kind/source/locator-qualified summaries for each shown candidate from the resolved winning entries (reuse the RulesRecordCard/summary helper), keeping candidateKeys, the cap and overflow behavior and re-query flow; correct the F-22 registry reasoning to cite the real boundary. (S3) align input and index normalization for punctuation (apostrophes straight/curly, commas) while preserving word boundaries, so 'Land's Stride' / 'Lands Stride' and 'Food, Drink, and Lodging' (and its existing alias) match their indexed records; no invented alias table, no pack text rewrite, no new ranker. Permanent evidence: generalized invariants - S1 overlapping indexed names with independently derived expected name/key reasons, real examples, index-order variation, assert signal AND packet evidence; S2 ambiguous-tool-output contract over source-distinct rule passages (Darkvision) and same-kind feature collisions (Spellcasting, ASI); S3 input/index normalization with the apostrophe and comma examples, expected keys enumerated from the index, candidates/packet presence. Keep discovery probes M1/M3 green. Update registry reasoning for display-name-qualification and canonical-discovery truthfully (also fix the overbroad 'distinct page locators' wording Sol noted). Host memory: wait until pgrep -fc '^node .*verify-current-worktree' prints 0 or 1; npm run verify:worktree && git commit. Notes per finding; close this bead. No push/PR.",
+  "notes": "Commit cea17589, verify:worktree green (353 files / 6484 tests pass). S1: root cause key-only seen guard dropped other matched names. Change: signals.ts collects per-key reasons; still ONE signal/candidate per key (route count, ranking, retention unchanged -> no policy change); evidence.matchedNames lists every matched name with own kind + ambiguousWith set, primary matchedName chosen by name order (index-order independent). S2: toolLookupRules ambiguous branch now returns data.candidates (buildRulesRecordCard of resolved entries) beside candidateKeys; cap/overflow/message unchanged; tool description updated. S3: input and index names folded identically (apostrophes dropped, other punctuation boundary); input also matched with apostrophe-as-space so possessives still reach bare names; no alias table. Evidence: new test/discovery/nameMentionReasons.test.ts (10 tests fail on old code): index-derived overlapping names in normal and reversed index order, signal+candidate+packet+durable projection for spellbook/cantrips, Land's Stride / Food Drink and Lodging key presence through packet, ambiguous tool contract for Darkvision/Spellcasting/ASI. Registry F-22, CAP-011, F8 reasoning updated (F8 'distinct page locators' wording corrected). Consumers re-checked: candidates/expansion/dedup/retention/packet/projection read routes generically, evidence passes through; M1/M3 probes green.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T15:22:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T15:27:31Z",
+  "closed_at": "2026-10-11T15:27:31Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.4.3",
+      "depends_on_id": "eshyra-o9bd.19.2.4",
+      "type": "parent-child",
+      "created_at": "2026-10-11T10:22:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fak.1",
+  "title": "RED: reproduce missing subclass feature attribution",
+  "description": "Add focused regression assertions for Oath of Devotion and Path of the Berserker and record the expected failures.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T23:19:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-06T23:22:22Z",
+  "closed_at": "2026-06-06T23:24:41Z",
+  "close_reason": "Regression fixtures reproduce both real-PDF parser failures for the expected reasons.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-fak.1",
+      "depends_on_id": "eshyra-fak",
+      "type": "parent-child",
+      "created_at": "2026-06-06T18:19:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "9cb59c23-1e0d-5c74-b6c3-5ee66ebd7fa7",
+      "issue_id": "eshyra-fak.1",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run parseSubclasses.test.ts parseFeatures.test.ts -> 3 expected failures: Berserker feature list was empty; Oath post-table features were class:Paladin; Oath description lacked Aura/Holy Nimbus after the table cell.",
+      "created_at": "2026-06-06T23:24:39Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

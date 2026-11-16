@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x63.4",
+  "title": "Task 4: MemoryConfig type + DEFAULT_MEMORY_CONFIG + PlayDeps wire-up",
+  "description": "## Objective\n\nIntroduce the `MemoryConfig` interface (N and K knobs) and wire it through\n`PlayDeps`. Provide a `DEFAULT_MEMORY_CONFIG` constant so tests and the CLI\nentry point can construct deps without restating defaults. No behavior\nchange yet — this is plumbing for tasks 5 and 6.\n\n## Files\n\n- Create: `packages/core/src/memory/config.ts` — `MemoryConfig` interface +\n  `DEFAULT_MEMORY_CONFIG` constant.\n- Modify: `packages/core/src/internal.ts` — re-export both.\n- Modify: `packages/cli/src/play.ts` — add `memoryConfig: MemoryConfig` as\n  a required field on `PlayDeps`; import from `@loreweaver/core/internal`.\n- Modify: every test or CLI bootstrap site that constructs a `PlayDeps`\n  to include `memoryConfig: { ...DEFAULT_MEMORY_CONFIG }`. Search for\n  `PlayDeps =` and any `baseDeps(` factory in `packages/cli/test/`.\n\n## Design notes\n\n```typescript\n// packages/core/src/memory/config.ts\nexport interface MemoryConfig {\n  /** N — sessions per arc before mechanical rollover. */\n  arcRolloverThreshold: number;\n  /** K — most-recent session recaps inlined verbatim in every assembled context. */\n  recapWindowSize: number;\n}\n\nexport const DEFAULT_MEMORY_CONFIG: MemoryConfig = {\n  arcRolloverThreshold: 5,\n  recapWindowSize: 5,\n};\n```\n\n`PlayDeps` gains `memoryConfig: MemoryConfig` (required, not optional).\nOptional + falling back to defaults makes test setup ambiguous; explicit is\nbetter.\n\n## Steps\n\n1. **Write a small failing test** in\n   `packages/core/test/memoryConfig.test.ts` (new):\n   ```typescript\n   import { describe, it, expect } from 'vitest';\n   import { DEFAULT_MEMORY_CONFIG } from '../src/internal.js';\n\n   describe('DEFAULT_MEMORY_CONFIG', () => {\n     it('has arcRolloverThreshold=5 and recapWindowSize=5', () => {\n       expect(DEFAULT_MEMORY_CONFIG).toEqual({\n         arcRolloverThreshold: 5,\n         recapWindowSize: 5,\n       });\n     });\n   });\n   ```\n\n2. **Verify the test fails.**\n   Command: `npm run test -- packages/core/test/memoryConfig.test.ts`\n   Expected: FAIL (module/export missing).\n\n3. **Create** `packages/core/src/memory/config.ts` with the interface and\n   constant as shown.\n\n4. **Export** from `packages/core/src/internal.ts`:\n   ```typescript\n   export {\n     DEFAULT_MEMORY_CONFIG,\n     type MemoryConfig,\n   } from './memory/config.js';\n   ```\n\n5. **Verify the new test passes.**\n\n6. **Add `memoryConfig: MemoryConfig` to `PlayDeps`** in\n   `packages/cli/src/play.ts`. Import `MemoryConfig` and\n   `DEFAULT_MEMORY_CONFIG` from `@loreweaver/core/internal`.\n\n7. **Find and update every PlayDeps construction site.**\n   Command: `npx grep -nr \"PlayDeps =\" packages/cli` and\n   `npx grep -nr \"baseDeps\" packages/cli` (or the Grep tool).\n   In each, add `memoryConfig: { ...DEFAULT_MEMORY_CONFIG },` to the\n   object literal.\n\n8. **Verify typecheck passes.**\n   Command: `npm run typecheck`\n   Expected: no errors. The compiler enforces that every PlayDeps\n   construction site supplies `memoryConfig`.\n\n9. **Run full gate.**\n   Command: `npm run test`\n   Expected: PASS. No behavioral tests change because nothing reads\n   `memoryConfig` yet.\n\n10. **Commit.**\n    ```\n    git add packages/core/src/memory/config.ts \\\n            packages/core/src/internal.ts \\\n            packages/core/test/memoryConfig.test.ts \\\n            packages/cli/src/play.ts \\\n            packages/cli/test/play.test.ts\n    git commit -m \"Add MemoryConfig + DEFAULT_MEMORY_CONFIG; thread through PlayDeps (loreweaver-x63)\"\n    ```\n    (Adjust the `git add` list if other CLI test files also needed the\n    `memoryConfig` plumbing.)\n\n## Acceptance\n\n- `npm run typecheck` passes. The compiler enforces `memoryConfig` is set\n  at every PlayDeps construction site.\n- `npm run test` passes; the new `memoryConfig.test.ts` is green.\n- `grep -r \"memoryConfig\" packages/cli/test/ | wc -l` is `>0` — at least\n  one test now references it.\n\n## Notes\n\n- This task is intentionally a no-op behaviorally. It is the prerequisite\n  for tasks 5 and 6 to read the config.\n- Do NOT export `MemoryConfig` from `packages/core/src/index.ts` (the\n  root public surface). Per AGENTS.md, new core symbols default to\n  internal-subpath.\n",
+  "acceptance_criteria": "npm run typecheck && npm run test pass. MemoryConfig and DEFAULT_MEMORY_CONFIG exported from internal subpath; PlayDeps requires memoryConfig field; every PlayDeps construction site updated.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-24T21:11:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-24T21:40:46Z",
+  "closed_at": "2026-05-24T22:27:46Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x63.4",
+      "depends_on_id": "eshyra-x63",
+      "type": "parent-child",
+      "created_at": "2026-05-24T16:11:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

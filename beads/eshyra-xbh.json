@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xbh",
+  "title": "parseSpellClassLists: Sorcerer cantrip list truncated by column-wrap on real PDF",
+  "description": "With loreweaver-qqc landing (parseSpells body-boundary fix), Fire Bolt now extracts as its own record but data.classes is still [\"Wizard\"] instead of [\"Sorcerer\",\"Wizard\"].\n\nRoot cause is in parseSpellClassLists, not parseSpells. On SRD 5.1 p109 the column-aware extract emits the class-lists region in column order; the right-column 'Ranger Spells' header lands in the middle of Sorcerer's cantrip list:\n\n  9: 'Sorcerer Spells'\n  12: 'Cantrips (0 Level)'\n  13: 'Raise Dead'      <-- spillover from prior Druid section\n  14: 'Acid Splash'     <-- valid Sorcerer cantrip\n  15: 'Ranger Spells'   <-- resets currentClass to Ranger, inLevelSubsection=false\n  16: 'Chill Touch'     <-- supposed to be Sorcerer cantrip; lost\n  17: 'Dancing Lights'  <-- lost\n  18: 'Fire Bolt'       <-- lost (this is why fire-bolt.classes drops Sorcerer)\n\nEffect: every Sorcerer cantrip after 'Acid Splash' (alphabetically) is silently dropped from the class index. Likely affects other classes whose lists span column wraps similarly.\n\nInvestigation pointers:\n- parseSpellClassLists is in packages/core/scripts/importers/dnd5e-srd-5.1/parseSpells.ts.\n- The extractor's column-aware emit is in packages/core/scripts/importers/dnd5e-srd-5.1/extract.ts (partitionItemsByColumn / bucketItemsIntoRecords).\n- One fix path: keep a per-page two-column reading order in parseSpellClassLists (skip class-header lines that appear AFTER a level subsection has already opened for the current class — i.e. don't let a header in the opposite column reset state mid-list).\n- Another fix path: detect class-list pages in extract and emit them with a different (row-major) ordering than the column-aware spell-descriptions pages.\n\nReproduce: npm run verify:dnd5e-srd-pack on a tree with loreweaver-qqc merged and inspect spell:fire-bolt.data.classes (and any other Sorcerer cantrip).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-02T23:42:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:50Z",
+  "started_at": "2026-06-03T00:04:11Z",
+  "closed_at": "2026-06-03T00:19:17Z",
+  "close_reason": "Fixed in branch fix/srd-spell-class-columns-creature-subtype: extract wide-gutter hatch separates single-x spell-list columns (xbh); parseCreatures preserves parenthetical subtype (2ze). Verified against real SRD PDF; full suite green.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

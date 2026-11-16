@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-qqyj",
+  "title": "Add relation-aware SRD condition mechanics semantics",
+  "description": "Combined vk23 audit follow-up.\n\nThe current mechanics condition projection appears to collect condition mentions without distinguishing what the source text says about the condition. This is useful as a search hint, but unsafe as deterministic game-state logic.\n\nExamples from the vk23 audit review:\n- spell:shield can surface invisible because the prose says \"An invisible barrier...\" but the spell does not apply the Invisible condition.\n- spell:sleep can surface charmed and unconscious, but charmed appears in an immunity clause while unconscious is the effect.\n- spell:color-spray can surface blinded and unconscious, but unconscious appears in an exclusion/targeting clause.\n- creature:death-dog has condition names in a trait that grants advantage against conditions, not conditions it applies.\n- action:dodge mentions incapacitated because the benefit is lost if incapacitated; Dodge does not apply that condition.\n\nThis makes mechanics.conditions too ambiguous for deterministic tools. Runtime code must not treat raw condition mentions as \"apply these conditions.\"\n\nAcceptance criteria:\n- Replace or augment raw condition mention projection with relation-aware semantics.\n- Represent at least these relation classes, either as explicit fields or tagged entries:\n  - applies / imposes condition\n  - removes / ends condition\n  - immunity or unaffected-by condition\n  - advantage or disadvantage involving saves/checks against a condition\n  - targeting exclusion or prerequisite involving a condition\n  - descriptive mention only\n- Add regression tests for Shield, Sleep, Color Spray, Death Dog Two-Headed, and Dodge.\n- Update generated pack output and audit expectations so deterministic tools can identify condition application effects without false positives.\n- Document the intended consumer contract: condition mentions are not authoritative state mutations unless relation says they are.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T22:57:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T23:41:37Z",
+  "started_at": "2026-06-30T23:26:43Z",
+  "closed_at": "2026-06-30T23:41:37Z",
+  "close_reason": "parseConditions now classifies relation (applies/removes/immune/advantage/disadvantage/exclusion/mention) per sentence; regenerated pack; regression tests for all 5 named examples",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-qqyj",
+      "depends_on_id": "eshyra-ajpc",
+      "type": "parent-child",
+      "created_at": "2026-06-30T18:06:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

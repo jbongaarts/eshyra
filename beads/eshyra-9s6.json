@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9s6",
+  "title": "Confirm legal source and convert one third-party adventure into module schema",
+  "description": "GATED follow-up split from E2 (loreweaver-hlu). The module schema, license metadata, template fork, overlay resolution, and world_query ship now, proven by an original authored sample pack. Converting an actual third-party adventure into the schema is a one-time model-assisted CONTENT task gated on confirming the source is open/public-domain/original/publisher-licensed. Do not start until the legal source is confirmed.",
+  "acceptance_criteria": "1. A specific adventure source is confirmed open/PD/original/publisher-licensed in writing. 2. That adventure is converted into schema-conforming module files validated by validateModulePack. 3. Pack license metadata reflects the confirmed source license.",
+  "status": "deferred",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T05:07:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:08Z",
+  "defer_until": "2026-12-31T00:00:00Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-9s6",
+      "depends_on_id": "eshyra-eh54.5",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:15:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-9s6",
+      "depends_on_id": "eshyra-eh54.7.3",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:15:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

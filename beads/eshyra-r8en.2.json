@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-r8en.2",
+  "title": "Review: Sol final review of PR #637 (eshyra-r8en @ c8436cb9)",
+  "description": "Final read-only review of PR #637 (branch eshyra-r8en, exact head c8436cb9f72b0946e311ab61a0ea1b9e14a6722b) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "FINAL REVIEW of PR #637 at exact head c8436cb9f72b0946e311ab61a0ea1b9e14a6722b. Effective profile: rules-clause-complete, bounded to sheet-derived checks/saves and their provider-neutral tool, prompt, ledger, and trace consumers.\n\nReviewed AGENTS.md, docs/design-and-pr-review-policy.md, owning eshyra-r8en and dependency eshyra-r8en.1 (including dispatch decisions), full origin/main...HEAD diff and commit log, PR description/current reviews, canonical sheet persistence/creation/level-up producers, character resolution and acting-character wiring, schema admission, resolver, ledger, and trace consumers. refs/beads/state is stale (2026-09-09) and contains none of these new r8en records; reconciled against live bd records. No prior GitHub review findings/invalidation markers. No importer/pack/audit files changed, so importer-fix protocol changes are not implicated. Checked vendored SRD_CC_v5.1.pdf text for Expertise, Jack of All Trades, Remarkable Athlete, saving throws, and Cover.\n\nS1 — MATERIAL (P2), packages/core/src/orchestrator/toolResolveCheck.ts:223. The additional label-token guard rejects legitimate situational modifiers, exceeding the source-based guard specified in dispatch decision 3 and violating its requirement to add other caller modifiers such as cover. Concrete reproduced scenario: a stored-sheet character with DEX modifier +3, kind=saving_throw, ability=dexterity, vs=15, modifiers=[{label:\"Dexterity saving throw bonus from half cover\",value:2,source:\"cover:half\"}] returns invalid_args and tells the caller to remove the modifier. The identical call with label=\"half cover\" succeeds (natural 10 + DEX 3 + cover 2 = 15). This bonus is independently required by SRD Cover (+2 to Dexterity saving throws); it does not duplicate the sheet-derived ability modifier. The defect class extends to descriptive labels for other legitimate save/check bonuses that mention the governing ability. Suggested fix: retain the mandated source-based guard, but remove or narrow the additional any-token label guard so descriptive situational labels are accepted; align the tool-description refusal guidance. Permanent evidence: generalized invariant in the existing derivation tests that admissibility and arithmetic of an allowed situational bonus do not change when only its descriptive label mentions the governing ability; keep separate baseline-ability/proficiency refusal evidence. This is proportionate to preventing refusal or omission of actual rules bonuses. Owner: PR implementer; repair before merge.\n\nS2 — MATERIAL (P2), packages/core/src/orchestrator/protocol.ts:208. The system prompt applies \"for a character with a sheet pass skill or ability\" to every ability check, saving throw, AND attack, while forbidding that character from declaring ability/proficiency. Attack derivation is explicitly excluded by dispatch decision 4 and refused by deriveFromSheet. Concrete reproduced scenario: a sheet-backed Kira attacking with Dexterity follows the prompt using {kind:\"attack\",actor:\"Kira\",ability:\"dexterity\",vs:15,reason:\"attack\"} and receives invalid_args (\"skill/ability derivation is not supported for attack rolls; declare modifiers instead\"). The legacy declared-modifier/proficiency attack succeeds. Thus a prompt-conforming caller cannot resolve an ordinary character attack without contradicting the system instruction. This applies across weapon/spell attacks and governing abilities; monsters' declared path remains unaffected. Suggested fix: limit sheet-derived prompt guidance to ability checks and saving throws, and explicitly keep attacks on declared modifiers/proficiency regardless of sheet availability. Permanent evidence: generalized prompt/operation-scope regression in existing protocol/resolution tests distinguishing checks/saves from attacks, rather than a live-model test. Owner: PR implementer; repair before merge.\n\nVerification: seven targeted test files passed, 102 tests total (resolveCheckSheetDerivation, skillBonuses, resolutionTools, resolution, playerVisibleRollLedger, protocol, turnTraceProjection). No worktree-local node_modules exists; ran the existing eshyra-r8en.1 Vitest installation against this worktree's exact source, with config/cache/temp storage outside the repository. Additional in-memory probes exercised all six raw check/save abilities, Champion physical half-proficiency rounding up and proficient-skill exclusion, Bard level-5 expertise and half-proficiency rounding down, acting-character default, double-count source refusals, legacy attacks, player-visible ledger, and exact result retention in trace. Both findings were directly reproduced through ToolRegistry schema admission. git diff --check passed; repository status stayed clean; head remained the assigned SHA. No repository edits, verification formatter, commits, pushes, GitHub comments, or merge performed. No additional non-material findings published.\nVERDICT: MATERIAL FINDINGS (2)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T08:14:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T08:22:37Z",
+  "closed_at": "2026-10-09T08:22:37Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-r8en.2",
+      "depends_on_id": "eshyra-r8en",
+      "type": "parent-child",
+      "created_at": "2026-10-09T03:14:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

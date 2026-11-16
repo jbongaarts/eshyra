@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-kk7",
+  "title": "Harden Biome config and ignore boundaries",
+  "description": "﻿Audit and harden the repository's Biome configuration after the recent Dependabot/CI cleanup work.\r\n\r\nContext:\r\n- Recent dependency-update repair work touched Biome-related behavior and `.gitignore` / ignore handling.\r\n- The intended policy is that Biome remains the canonical formatter/linter for the repo, with root scripts operating repo-wide.\r\n- Biome should honor appropriate VCS ignore boundaries without using broad or surprising `.gitignore` changes to hide files from checks.\r\n- Prior repair work restored repo-wide Biome scripts and enabled VCS ignore support; this bead should make sure the final configuration is intentional, minimal, and documented.\r\n\r\nScope:\r\n- Review `biome.json` / Biome config.\r\n- Review root `package.json` scripts for `format`, `format:check`, `lint`, and/or `check`.\r\n- Review `.gitignore` only for Biome-related ignore side effects.\r\n- Review `AGENTS.md` or equivalent contributor guidance if it documents Node/Biome/dependency workflow.\r\n- Do not perform unrelated dependency updates.\r\n\r\nImplementation guidance:\r\n- Prefer repo-wide Biome commands such as checking/formatting `.` rather than narrowly targeting only package directories, unless there is a documented reason.\r\n- Ensure Biome VCS ignore support is enabled intentionally, rather than relying on accidental command narrowing.\r\n- Keep ignored/generated paths explicit and narrow.\r\n- Do not add broad `.gitignore` entries just to silence Biome unless those files are genuinely generated or local-only.\r\n- Preserve existing intended exclusions for dependency folders, build output, generated output, caches, and local runtime state.\r\n- Add or preserve a regression check if one already exists to ensure root-level files covered by Biome remain covered.\r\n- If adding a test/script guard, keep it small and avoid brittle assumptions about every repo file.\r\n\r\nAcceptance criteria:\r\n- `npm run check` passes.\r\n- `npm run format:check` passes, if present.\r\n- `npm run lint` passes, if present.\r\n- Root-level repo files that should be formatted/linted are still included by Biome.\r\n- Generated, vendored, build, cache, and local runtime files are excluded intentionally.\r\n- `.gitignore` contains only defensible project/local/generated exclusions and is not used as a dumping ground for tool failures.\r\n- `AGENTS.md` or contributor docs accurately describe the current Node/Biome expectations if they mention them.\r\n- Final diff is limited to Biome config, scripts, ignore/docs, and any small regression guard needed for this policy.\r\n",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-31T04:40:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:51Z",
+  "started_at": "2026-05-31T17:26:15Z",
+  "closed_at": "2026-05-31T17:33:42Z",
+  "close_reason": "Implemented in PR #121 (branch kk7-1yj-harden-config): split Dependabot PDF tooling groups + ignore pdfjs-dist/pdfkit majors, removed unconfigured npm label, documented PR #118 as superseded; locked Biome generated-data exclusion and documented ignore-boundary policy. npm run check exit 0, full suite 958 passed/3 skipped.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

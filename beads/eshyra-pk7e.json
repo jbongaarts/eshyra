@@ -1,0 +1,24 @@
+{
+  "_type": "issue",
+  "id": "eshyra-pk7e",
+  "title": "Integrate registry identity with clause IR after PR #475",
+  "description": "Replace the intentional local duplication of the obligation identity and EvidenceKind types in findingRegistry.ts with the shared clause-IR types after PR #475 lands. Preserve the serialized obl:::<sourceRef>::<locator>::<facet> identity and all six evidence-kind spellings; add an integration test across the registry and clause IR boundary.",
+  "acceptance_criteria": "Shared types are imported from the landed clause IR without changing serialized registry identity; cross-boundary tests pass.",
+  "notes": "2026-09-22 OBSOLETE. This bead waits for PR #475 to land and then replaces the registry's local obligation-identity and EvidenceKind types, preserving the obl:: identity and six evidence-kind spellings. PR #475 closed unmerged, and eshyra-o9bd.19.1.1 is DESIGN_INVALIDATED. Foundation 2 (eshyra-o9bd.19.1.15, 6bb0709a) has since removed those local types: git grep finds no obl:: identity under packages/, and findingRegistry.ts now declares a local EvidenceBasis that is 'deliberately not an identity shared with Foundation 1's clause-IR EvidenceKind union'. Nothing remains to replace. eshyra-pk7e and eshyra-r8r3 duplicated each other. Any future shared obligation identity would come from eshyra-o9bd.19.1.12, which would own its registry integration.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T02:38:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-22T23:27:36Z",
+  "closed_at": "2026-09-22T23:27:36Z",
+  "close_reason": "Obsolete: PR #475 never landed and Foundation 2 removed the local identity types this bead would replace.",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

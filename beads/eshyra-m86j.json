@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-m86j",
+  "title": "refresh_effect: durationOverride without duration on item-power effect is accepted and silently not recorded",
+  "description": "Found while repairing eshyra-o9bd.19.6.7.12 (A4-F1 declaration). In packages/core/src/state/activeEffects.ts refreshEffect, the item-power branch (itemBound defined) only checks durationProvenance when input.duration is supplied; with durationOverride and no duration the call returns ok:true and records nothing (probe in itemGrantSummons S5: provenance stays typed-fixed). The 'applies only to a duration bound to a printed item' guard only fires when itemBound is undefined. Decide whether to refuse such a call (fail closed) or document it. Runtime behaviour is unchanged by the declarative repair; declaration states the current behaviour.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T02:47:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T02:47:26Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

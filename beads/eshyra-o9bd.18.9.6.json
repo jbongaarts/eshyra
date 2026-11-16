@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.9.6",
+  "title": "Make gameplay-readiness findings actionable and fail-closable",
+  "description": "Finding sources:\n- Codex readiness report still showed prose-only/mechanically shallow records across magic items, rules, equipment, features, and actions.\n- ChatGPT found many deterministic mechanics gaps despite green verification.\n- User policy: every audit finding must be addressed, even if broad or ambiguous.\n\nAcceptance criteria:\n- Readiness report categorizes each likely gameplay-mechanical record as modeled, accepted-prose-only, unsupported-with-reason, or finding.\n- Add fail-closed mode for audit/freeze work.\n- Ensure every finding bucket links to a bead or accepted non-issue rationale.\n- Future audit should not rediscover the same broad bucket without an explicit tracked closure decision.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:28:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-03T15:49:25Z",
+  "started_at": "2026-07-03T03:20:22Z",
+  "closed_at": "2026-07-03T15:49:25Z",
+  "close_reason": "PR #395: readiness report resolves every not-yet-modeled kind x bucket (unresolved-choice-prose/partial-structure/prose-only) against reviewed dispositions (accepted-prose-only/unsupported/finding->bead), fail-closed both ways via assertGameplayReadinessDispositions in the audit-bundle build: uncovered bucket or stale policy entry aborts; every finding links to its eshyra-o9bd.18.7.x modeling bead. Future audits cannot silently rediscover or lose a broad bucket.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.9.6",
+      "depends_on_id": "eshyra-o9bd.18.9",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:28:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-tzl",
+  "title": "SRD: recover remaining swallowed subclass features (When you join / When you take this oath; Warlock Pact Magic)",
+  "description": "Follow-up from eshyra-0m9.13 (feature boundary parsing). The named swallowed cases are fixed, but verification surfaced residual swallowed features whose grant lead-ins are still unrecognized, plus one un-split spellcasting feature. None are introduced by 0m9.13 — they are pre-existing gaps the now-complete feature bodies revealed.\n\nRemaining gaps (generated pack evidence):\n1. feature:college-of-lore:bonus-proficiencies (3rd level) is still swallowed into the College of Lore subclass description. Lead-in 'When you join the College of Lore at 3rd level' is not in parseFeatures LEVEL_LEAD_IN. There is exactly ONE 'When you join' occurrence in the pack, so adding it cleanly completes College of Lore (2->... currently 3 with Cutting Words -> 4). No protected-test collision.\n2. feature:oath-of-devotion:channel-divinity (3rd level) is swallowed into subclass:oath-of-devotion's description. Lead-in 'When you take this oath at 3rd level' is unrecognized. CAUTION: emitting it changes oath-of-devotion's feature count (3->4) and would alter the protected Oath of Devotion description/body design and its enshrined tests (srdGeneratedPack 'keeps the exact reviewed feature count' = 3, and the oath projection test). Per the 0m9.13 phase rules this needs an explicit design decision before changing.\n3. feature:warlock:pact-magic is NOT a separate record in committed OR generated (pre-existing) — Pact Magic is swallowed into feature:warlock:otherworldly-patron even though the warlock progression table lists 'Otherworldly Patron, Pact Magic' as two level-1 features. This also produces the lone remaining auditSrdStructure swallowed-feature-heading finding: 'otherworldly-patron -> Higher', which is actually an AUDIT FALSE POSITIVE on the legitimate spellcasting sub-heading 'Spells Known of 1st Level and Higher' (now present because the 0m9.13 extractor fix correctly completed the Pact Magic body). Splitting Pact Magic would not silence that finding; the audit HEADING_GRANT_PAIR heuristic should also be refined to ignore '… Level and Higher At …' sub-headings.\n\nSuggested work:\n- Add 'When you join' (and, with a design decision, 'When you take this oath') to LEVEL_LEAD_IN; add focused parseFeatures tests; regen + verify; update subclass counts (college-of-lore 3->4; oath-of-devotion 3->4 only if the oath design change is approved).\n- Investigate why 'Pact Magic' (which HAS a level-1 table anchor) is not split from Otherworldly Patron; emit it as feature:warlock:pact-magic.\n- Refine srdAudit HEADING_GRANT_PAIR to not flag the 'Spells Known of 1st Level and Higher' spellcasting sub-heading.\n\nFiles: packages/core/scripts/importers/dnd5e-srd-5.1/parseFeatures.ts, src/rules/srdAudit.ts, test/importers/dnd5e-srd-5.1/parseFeatures.test.ts, test/srdGeneratedPack.test.ts.\nLABELS: ingestion, rules, rules-pack",
+  "notes": "PR opened: https://github.com/jbongaarts/eshyra/pull/181 (branch fix/srd-swallowed-features-eshyra-tzl). All three remaining items done: (#1) College of Lore Bonus Proficiencies L3 via 'When you join' lead-in; (#2) Oath of Devotion Channel Divinity L3 via 'When you take this oath' lead-in — design decision confirmed (consistent with cleric/life-domain Channel Divinity precedent; diff is +2 records only, subclass blurb untouched); (#3) HEADING_GRANT_PAIR negative lookbehind removes the 'Level and Higher At' false positive on pact-magic. Item #3's Pact Magic split was already resolved in PR #179. Pack 167->169, verify clean. Awaiting review/merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-08T05:36:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-08T23:15:37Z",
+  "started_at": "2026-06-08T22:46:39Z",
+  "closed_at": "2026-06-08T23:15:37Z",
+  "close_reason": "Merged in PR #181 (merge commit 64f94b7). All three items done: College of Lore Bonus Proficiencies (L3) and Oath of Devotion Channel Divinity (L3) recovered via new LEVEL_LEAD_IN entry phrases; HEADING_GRANT_PAIR lookbehind removes the 'Level and Higher At' false positive on pact-magic. Pact Magic split was resolved earlier in PR #179. Pack 167->169, verify clean.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-tzl",
+      "depends_on_id": "eshyra-0m9.13",
+      "type": "blocks",
+      "created_at": "2026-06-08T00:39:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

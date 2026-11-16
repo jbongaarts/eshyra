@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ss08.5",
+  "title": "Remembering the World Without Remembering Every Sentence",
+  "description": "Tell the story of layered campaign memory and canon.\n\nNarrative hook and core question: How does an improvised world stay persistent without turning every adjective the model says into canonical database state?\n\nResearch the layers actually used or designed in Eshyra, including authored/module canon as an authoritative spine, campaign overlay for consequential improvised facts, scene-local facts and evidence, continuity or descriptive details that should remain stable, transient narration that should remain transient, retrieval of prior facts into future model context, and provenance or confidence where applicable. Use concrete questions: if a tavern has a blue door, should it remain blue six sessions later; if a bartender polishes a glass, should that become lore; if the bartender says the northern road washed out, is that consequential world truth?\n\nExpected architectural conclusion: persistence requires classification of facts by meaning and lifetime, not indiscriminate transcript storage.\n\nBoundaries: do not invent current architecture. Research repository history and clearly distinguish implemented behavior, committed design, and planned direction. Do not collapse all transcript/context work into canon.\n\nUse repository history, PRs, design docs, ADRs, audits, and playtest transcripts as evidence. Verify claims against artifacts rather than model memory. Keep the story readable without repository knowledge, static, search-indexable, and faithful to Joseph's voice: analytical and curious, concrete before abstraction, dry humor when earned, deliberate we/I attribution, reflect praise, absorb blame, no em dashes, and no generic LLM prose.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T04:27:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-10T04:29:40Z",
+  "labels": [
+    "docs",
+    "site",
+    "storytelling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ss08.5",
+      "depends_on_id": "eshyra-ss08",
+      "type": "parent-child",
+      "created_at": "2026-07-09T23:27:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

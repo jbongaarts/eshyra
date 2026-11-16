@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.14",
+  "title": "Close PR #455 source-semantic re-review gaps",
+  "description": "Address four P1 source-semantic gaps and perform a broader adjacent-class audit: normalize all duration budgets by declared increments; preserve stateless depletion transformations; distinguish relinquishment from destruction while preserving physical identity/state; and gate cursed attunement/end/transfer until a complete atomic curse owner exists.",
+  "acceptance_criteria": "Every generated duration budget has exact unit accounting or remains pending; stateless onDepleted outcomes preserve/transform physical items correctly; remove_item requires an explicit disposition and only actual destruction emits item_destroyed; cursed attunement lifecycle cannot bypass pending ownership; corpus-wide semantic audits, canonical regeneration, full verification and PR CI pass.",
+  "notes": "Implemented PR #455 re-review fixes and adversarial follow-through: exact duration-increment accounting across all 9 bundled budgets; stateless single-use depletion transformations with physical conservation and world custody; explicit destroyed/dropped/sold/lost inventory disposition plus claim path; effective base+addon curse fail-closed attunement lifecycle; per-instance state/counter/attunement-safe disposition and destruction cleanup; exact operation/economy readiness ownership with Arrow source binding and unsafe canonical operations blocked pre-mutation; use_item audit/memory/policy integration. Focused 239 tests pass. Canonical pack regeneration exact; rules audit 0 suspicious; deep audit 0 findings; verify:worktree passes 259 files / 4592 tests with 19 documented skips.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T00:14:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T00:55:04Z",
+  "started_at": "2026-07-19T00:14:51Z",
+  "closed_at": "2026-07-19T00:55:04Z",
+  "close_reason": "PR #455 re-review gaps fixed holistically; canonical importer audits, full worktree verification, and remote CI all pass.",
+  "external_ref": "gh-455",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.14",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-18T19:14:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

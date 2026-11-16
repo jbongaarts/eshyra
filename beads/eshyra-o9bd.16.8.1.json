@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.8.1",
+  "title": "L3-F1: no-hook passive magic-item effects must not be green without a runtime consumer",
+  "description": "Repair independent-audit blocker L3-F1 (full evidence, probes and mechanism in the NOTES of eshyra-o9bd.16.3; read them first). Problem: magicItemPassiveEffects.ts ~196-202 emits representation bindings with no execution hooks, and magicItemCompiler.ts ~1120-1125 marks a clause green whenever missingHooks.length === 0. Two clauses therefore claim green execution readiness that nothing executes. magic-item:ring-of-regeneration m2-ring-of-regeneration-regeneration: no healing on advance_time. magic-item:periapt-of-wound-closure m2-periapt-of-wound-closure-stabilize: no stabilization at begin_turn. ADR-0020 bar 4. This is the readiness-integrity class (registry alias opus:F-21).\n\nDESIGN (decided by the Captain): green must mean that an engine owner actually consumes the typed effect at runtime. \"No hook was declared\" must not imply green. Introduce an explicit, reviewed set of passive effect kinds (or effect kind + trigger/timing shapes) that a runtime consumer really reads. Find each consumer in packages/core/src and cite it in a code comment. Examples of real consumers: AC/save/ability bonuses read by derived-stat code. Only no-hook effects of those kinds stay green. Every other no-hook passive effect becomes engine-pending: the deterministic procedure is printed but no engine owner exists. Do not make it adjudicated-by-design unless it genuinely needs DM judgement. Do not implement new runtime healing or stabilization in this bead. Census every green clause whose binding has no hooks, and classify each against the consumer set. The periapt's separate healingMultiplier clause must be checked the same way. Do not turn structural/reference clauses red, and do not require global execution closure.\n\nRegenerate the canonical pack (`npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1/`) and confirm verify:dnd5e-srd-pack matches. Readiness inventories and backlog artifacts that count green or engine-pending must be regenerated through their producers, never hand-edited. Find every test, inventory, candidate record or registry row that pins those counts. Update them truthfully, and record each old -> new value with its reason in the thaw note docs/audits/dnd5e-srd-5.1-final/thaw-notes/2026-11-01-eshyra-o9bd-16-8-1-passive-readiness-ownership.md.\n\nPermanent evidence: a generalized classifier regression asserting that a no-hook effect outside the consumer set is never green, with exact assertions for the two printed trigger shapes (SRD p.237 ring, p.232 periapt) and a positive control from the consumer set that stays green. Do not weaken tests. Do not touch freeze-manifest hashes or the freeze guard.\n",
+  "notes": "COMPLETION (commit 05eb04de, not pushed). Consumer set: EMPTY after searching packages/core/src for every effect kind of the 92 affected clauses. Only readers of mechanics.effects[].kind are feature/option proficiency grants (character/rulesPackResolver.ts parseProficiencyGrants, never worn items), start_effect duration lookup by effect id (orchestrator/toolStartEffect.ts), and summoning/entityGrant paths; no derived-stat code reads worn-item AC/save/ability/speed/sense/healing effects. Registry MAGIC_ITEM_PASSIVE_EFFECT_RUNTIME_CONSUMERS (magicItemCompiler.ts) is empty with a test seam passiveEffectConsumers. Changed: 92 hook-free effects clauses green -> engine-pending, each declaring+missing hook F6 (regeneration, stabilize, healingMultiplier, hitPointMaximumIncrease) or F8 'passive item effect runtime consumer: <kind>'; includes ring-of-regeneration regeneration, ioun stone regeneration, periapt stabilize and healingMultiplier (full list in thaw note). Hooked greens (elemental gem, staff of swarming insects) and structural clauses unchanged. Pins: green 333->241, engine-pending 677->769 (srdGeneratedPack); inventory regenerated via inventory-semi-structured-boundary.ts (engineHooks 1537->1629, missingHooks 1231->1323, missingEngines 677->769); legacy backlog candidates 798->890 and fingerprint dc9e1714...->a82540e1...; magicItemCompiler.test speedSet binding test now supplies a consumer via the seam (assertions unchanged). Tests: new magicItemPassiveEffectReadiness.test.ts (generalized rule, positive control, ring p.237 and periapt p.232 witnesses). verify:worktree passed (388 files, 7258 tests, 3 skipped). Thaw note: docs/audits/dnd5e-srd-5.1-final/thaw-notes/2026-11-01-eshyra-o9bd-16-8-1-passive-readiness-ownership.md",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:33:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:45:11Z",
+  "started_at": "2026-11-01T08:34:01Z",
+  "closed_at": "2026-11-01T08:45:11Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.8.1",
+      "depends_on_id": "eshyra-o9bd.16.8",
+      "type": "parent-child",
+      "created_at": "2026-11-01T02:32:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7zhm",
+  "title": "Codex/Claude/API installer editions (Option A: variant artifacts + flag)",
+  "description": "Distribution model for multi-provider gameplay binaries. Decision (this session): ship per-edition self-contained release artifacts and let the one-line installer pick one via flag/prompt. Editions: api (lean, api-native SDKs only, no agent CLI binary), claude (today's artifact: Claude Agent SDK), codex (Codex CLI binary), full (both). Mechanism: provider SDKs as optionalDependencies; per-edition npm prune/--omit when packing in release.yml. Installer (install.sh/install.ps1) gains an --edition flag (and interactive prompt). Honors one-line deploy + no manual separate install. Interacts with eshyra-5cd6 (artifact size) — Option A multiplies total release size; coordinate. Needs an ADR. Decoupled from the adapter code (eshyra-jl8n), which lazy-resolves its SDK and works under any edition.",
+  "notes": "Editions (api/claude/codex/full) + prune (fixed to remove heavy platform binaries) + validator + installers + ADR 0011 + tests complete. PR #253 (feat/installer-editions-7zhm). api edition 166MB vs 403MB. api/codex runtime gated on eshyra-ern3 (lazy Claude adapter). Verified: 2130 tests pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-20T06:23:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-20T19:31:15Z",
+  "started_at": "2026-06-20T06:23:31Z",
+  "closed_at": "2026-06-20T19:31:15Z",
+  "close_reason": "Merged in PR #253. Editions packaging deliverable complete. eshyra-ern3 (lazy Claude adapter) is a runtime follow-up that lets api/codex editions run the no-config smoke; tracked independently, not a blocker for this packaging work.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7zhm",
+      "depends_on_id": "eshyra-ern3",
+      "type": "blocks",
+      "created_at": "2026-06-20T13:38:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

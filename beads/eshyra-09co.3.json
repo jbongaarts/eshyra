@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-09co.3",
+  "title": "Fix: Sol review S1/S2 on PR #627 (Sonnet 5.5, attempt 1)",
+  "description": "Fix the two MATERIAL findings from the Sol final review of PR #627 (read them in full: `bd show eshyra-09co.2`). Work on branch eshyra-09co.3, cut from the PR head (origin/eshyra-09co). Deps installed. A parallel task edits packages/core/src/character/ (creation spell counts) — do not edit packages/core/src/character/.\n\nS1 (flexibleCasting.ts ~129/197/213): before evaluating either transition, obtain the sorcery-point balance THROUGH the usage-counter owner so legacy/alias/duplicate counters (e.g. a declared 'ability:font-of-magic') are adopted into the canonical 'ability:sorcery-points' record counter exactly as spend_usage does (most-spent-alias rule, max/reset/source normalized to the class table). Export one small function from packages/core/src/state/usageCounters.ts (e.g. readBoundClassResourceBalance / reconcile + read for one campaign and character) that reuses the existing reconcileBoundCounterRows logic; do not duplicate it. Then spend/restore that same normalized economy atomically.\n\nS2 (usageCounters.ts ~936 resolveBoundClassResource uses getBundledDnd5eCharacterResolver): resolve the class-level capacity from the ACTIVE campaign rules stack (same as flexibleCasting does: lookupStrictCampaignRecord(db, 'class', sheet.class.key, input.resolveRulesPack) -> createRulesPackCharacterResolver(hit.stack)), thread resolveRulesPack through spend/restore/find paths that call it, and never silently fall back to the bundled progression when a campaign binding exists (fail closed if the class record cannot be resolved from the binding). Keep behaviour identical for the default bundled binding.\n\nEVIDENCE (generalized invariants, as Sol suggested; concise):\n- Equivalent canonical, alias-only ('ability:font-of-magic' declared) and duplicate legacy representations yield the same point balance, legality, and slot effect for create and convert, and end as one canonical record counter.\n- With an internally consistent add-on binding overriding class:sorcerer's sorceryPoints (and the Font of Magic procedure maximum) to a value below and above the bundled one, create/convert/spend_usage report and persist that maximum, and no extra spend is possible after exhaustion. Use the existing test support for add-on bindings if present (search tests for add-on/override bindings); keep it small.\n- Existing usageCounters / levelUpEngine class-resource / flexibleCasting / rest tests stay green.\n\nPROTOCOL: run `npm run verify:worktree` BEFORE committing; commit on eshyra-09co.3; `bd update eshyra-09co.3 --append-notes` with the report; `bd close eshyra-09co.3`. Do not push or open/comment on PRs.",
+  "notes": "Commit ceecd132. S1: new readBoundClassResourceBalance in usageCounters.ts reuses reconcileBoundCounterRows (adopts alias/duplicate/legacy rows into canonical ability:sorcery-points); flexibleCasting reads max/used through it. S2: resolveBoundClassResource now resolves class capacity from resolveStrictCampaignRulesStack(db, resolver) (fails closed with UsageCounterError, no bundled fallback); resolver threaded through spendUsage, restoreUsage/findCounter, and toolRestoreUsage. Tests in flexibleCasting.test.ts: canonical/alias/duplicate equivalence for create+convert, add-on bound max 2 and 4 persisted/reported with no spend past exhaustion, fail-closed on unresolvable binding. verify:worktree green (6168 passed).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:14:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:18:41Z",
+  "closed_at": "2026-10-09T04:18:41Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-09co.3",
+      "depends_on_id": "eshyra-09co",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:14:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

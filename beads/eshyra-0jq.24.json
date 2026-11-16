@@ -1,0 +1,59 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.24",
+  "title": "Add failed-turn diagnostic trace outside canon rollback",
+  "description": "Persist minimal diagnostics for failed turns without allowing failed model/tool work to mutate canon.\r\n\r\nSuccessful turns already persist trace/transcript/tool/context data. Failed turns currently roll back canon, which is correct, but the failure details can be lost after the CLI exits. Add a non-canon diagnostic path for debugging failures.\n\n## Context\nObserved gap:\r\n- The turn loop uses rollback/savepoint semantics to protect canon on failure.\r\n- Failed turns return ok:false and an error in memory, but durable failure diagnostics are limited or absent.\r\n- This makes provider/tool/protocol failures harder to debug after the process exits.\r\n\r\nParallel-safety:\r\n- Does not overlap SRD importer parser beads.\r\n- Avoid starting this at the same time as a broad orchestrator/persistence source-layout refactor.\r\n- Keep schema change small and targeted.",
+  "design": "Suggested files to inspect:\r\n- packages/core/src/orchestrator/orchestrator.ts\r\n- packages/core/src/storage/*\r\n- packages/core/src/*trace* or equivalent trace/persistence code\r\n- tests around failed model turns, tool failures, savepoint rollback, transcript persistence\r\n\r\nImplementation guidance:\r\n1. Preserve current canon rollback behavior.\r\n2. Add a diagnostic record that is written after rollback or through a non-canon diagnostic channel.\r\n3. Persist only safe/minimal fields:\r\n   - campaign/session/turn identifiers if available\r\n   - timestamp\r\n   - error name/class\r\n   - sanitized message\r\n   - model round count\r\n   - phase/stage if available\r\n4. Do not persist provider secrets, API keys, raw env, or sensitive request metadata.\r\n5. Add tests that intentionally fail a model/tool call:\r\n   - canon/transcript/tool side effects are rolled back\r\n   - diagnostic record remains available\r\n6. Keep naming clear that this is diagnostic/non-canon, not game history.",
+  "acceptance_criteria": "- Failed model/tool/protocol turn produces a durable non-canon diagnostic record.\r\n- Failed turn still rolls back canon mutations, transcript mutations, and tool-result mutations as currently intended.\r\n- Diagnostic record excludes provider secrets and raw sensitive env/config values.\r\n- Tests cover at least one failed model path and one failed tool/protocol path if feasible.\r\n- Existing successful-turn behavior is unchanged.\r\n- No SRD importer parser files are modified.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "estimated_minutes": 210,
+  "created_at": "2026-05-28T23:17:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T23:53:09Z",
+  "closed_at": "2026-05-29T00:05:41Z",
+  "close_reason": "Failed-turn non-canon diagnostics implemented; canon/transcript/trace rollback preserved; verification npm run test, npm run typecheck, and npm run check passed; TDD evidence recorded in child beads.",
+  "labels": [
+    "architecture",
+    "diagnostics",
+    "orchestrator",
+    "parallel-caution",
+    "persistence",
+    "refactor",
+    "tech-debt",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.24",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-28T18:17:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "7434e10b-569d-5443-9e90-4a1a0b5e51a0",
+      "issue_id": "eshyra-0jq.24",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install -> passed with Node 24 engine warnings; npm run typecheck -> passed; npm run test -> passed (812 passed, 3 skipped); npm run check -> passed.",
+      "created_at": "2026-05-28T23:55:18Z"
+    },
+    {
+      "id": "d4fb450f-7402-5f7d-a1f4-10f5f6e3c9cc",
+      "issue_id": "eshyra-0jq.24",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: TDD evidence recorded in loreweaver-0jq.24.1/.2/.3. Final gates: npm run test -> exit 0 (74 files passed, 2 skipped; 815 tests passed, 3 skipped); npm run typecheck -> exit 0; npm run check -> exit 0. Focused regression: orchestrator+migrations passed (28 tests); persistence passed (11 tests). Known Dolt checkpoint timeout flaked once in full suite and passed in isolation and on rerun.",
+      "created_at": "2026-05-29T00:05:41Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

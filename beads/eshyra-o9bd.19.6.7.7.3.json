@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.7.3",
+  "title": "Review: Sol bounded confirmation of PR #712 M1 repair (eshyra-o9bd.19.6.7.7 @ c3f3f0ee)",
+  "description": "Read-only Sol review of PR #712 at exact head c3f3f0ee72d549650549eff00e5550f9941cb573.",
+  "notes": "Captain: dispatched gpt-6.1-sol high, PGID 222625.\nS1. BOUNDED M1 RE-REVIEW of PR #712 at exact HEAD c3f3f0ee72d549650549eff00e5550f9941cb573 on assigned branch eshyra-o9bd.19.6.7.7.3. Read live bd show for this bead, owning eshyra-o9bd.19.6.7.7 (spec, Captain design, acceptance criteria and USER ADJUSTMENT), implementer child .7.1, and previous Sol review .7.2 including M1 and Captain notes. Read docs/design-and-pr-review-policy.md, applicable ADR 0020 bounded-capability authority and integrated transition design section 5.9. Effective profile: rules-clause-complete within the assigned time-lifecycle guidance repair. refs/beads/state resolves to 9e4bb40c789e3364b1605e7321c1537117a4ca02, generated 2026-09-10, before these beads; live Beads records govern. This is bounded repair confirmation, not a fresh full review of unrelated mechanics.\n\nS2. Prior MATERIAL finding M1 is FIXED at this head. protocol.ts:312-316 names advance_time, complete_short_rest and complete_long_rest in the expiry statement and preserves the combat-round clock disclosure. toolStartEffect.ts:54-58 names the same three public paths and preserves no automatic minute-to-round conversion. toolRest.ts:63 now says advance_time OR a rest completion tool; both actual rest tools are defined at :154-155 and truthfully describe advancing time and settling effects/recovery/item events at :108-109. deterministicCapabilityInventory.ts:480 includes advance_time or a rest tool; :1291 includes time and pack-bound dawn processing through advance_time or rest completion; :1313 truthfully excludes reset_usage as an elapsed-time operation; :1329-1372 and :1399-1419 describe rest/time operations consistently. turnAuditor.ts:186-188 gives nonexclusive matching-state-tool examples including advance_time and update_clock, and makes no exclusive expiry claim. The protocol, start_effect and capability inventory consistently distinguish natural timer expiry from other effect endings. The begin_turn and close_combat_instance disclosures in the PR diff remain consistent with that distinction. No additional false time-lifecycle statement found in the PR diff.\n\nDirect mechanism evidence: toolRest.ts:82 invokes advanceWorldTime; both rest tools dispatch to completeShortRest/completeLongRest at :143-146; state/rest.ts:657-660 advances the same world clock once per new rest, and :674-684 preserves the lifecycle evidence. advanceWorldTime at state/rest.ts:179-253 updates elapsed_minutes, expires due effects at :216, settles stable recovery and processes due item events. Search of all src advanceWorldTime calls finds only this public tool path and rest completion. Thus the descriptions cover all three public elapsed-time paths without changing the engine. Source authority checked directly in bundled records.json: rule:duration, SRD p.102, \"A spell’s duration is the length of time the spell persists\"; short-rest and long-rest, p.87, \"at least 1 hour long\" and \"at least 8 hours long\"; rule:the-order-of-combat, p.90, \"A round represents about 6 seconds in the game world.\" The combat wording discloses an engine clock limit under the explicit USER ADJUSTMENT; it does not redefine fictional SRD time.\n\nS3. Evidence: npx vitest run packages/core/test/protocol.test.ts packages/core/test/rest.test.ts packages/core/test/itemPerDayDawnEconomy.test.ts passed: 3 files, 53 tests. The new protocol.test.ts:24-36 protects M1 with a generalized guidance invariant rather than another permanent runtime matrix: it requires both rest paths in the expiry excerpt and rejects the old exclusive tool-description forms. A /tmp-only guidance probe against the real prompt independently removed each rest path and confirmed the assertion fails for either omission; both original exclusive tool descriptions are rejected and the combat disclosure remains present. Evidence is bounded to that defect class, not every possible future wording.\n\nThe prior real-registry lifecycle reproducer was inspected, copied only to /tmp and repointed to THIS worktree's source imports (/tmp/eshyra-pr712-m1-confirmation.mts). Each of three fresh in-memory real-pack scenarios independently invoked only advance_time(1440), complete_short_rest(durationMinutes=1440), or complete_long_rest(durationMinutes=1440, sleepMinutes=1320, lightActivityMinutes=120, strenuousInterruptionMinutes=0, foodAndDrink=true). Every scenario returned elapsed_minutes=1440; expiredEffects=[minute,hour,day]; stable recovery deadline=180 with the other PC alive at 1 HP; and a spent pack-bound Iron Bands of Binding economy recharged to 1 with one dawn reset. Neither rest scenario invoked the advance_time TOOL. These diagnostic probes confirm the repaired guidance matches existing execution; they are not additional permanent-test requirements.\n\nS4. Diff boundary and disposition: git diff 41364d77..HEAD contains exactly four files, 23 insertions/4 deletions: the three model-description qualifications and 17 protocol-test lines. No runtime behavior, schema, dependency, generated pack or other changes were introduced by this repair. Inspected the original PR's time-lifecycle description changes for sibling falsehoods; none found. git diff --check passed. No MATERIAL or NON-MATERIAL findings remain in the authorized scope; M1 is closed as a finding (the owning implementation bead is unchanged). No repository edits, formatter, verification/build, commit, push, GitHub comment or merge performed; final git status --porcelain was empty. This verdict binds only to c3f3f0ee72d549650549eff00e5550f9941cb573 and does not authorize merge.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T02:44:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T02:47:38Z",
+  "started_at": "2026-11-06T02:44:46Z",
+  "closed_at": "2026-11-06T02:47:38Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.7.3",
+      "depends_on_id": "eshyra-o9bd.19.6.7.7",
+      "type": "parent-child",
+      "created_at": "2026-11-05T20:44:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

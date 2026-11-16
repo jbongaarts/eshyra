@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.9.1",
+  "title": "Dispatch: remove the unsourced level-up HP floor (attempt 1)",
+  "description": "Implement the design on eshyra-o9bd.19.6.7.9 (description, DESIGN, ACCEPTANCE, 2026-11-05 USER ADJUSTMENT). Worktree .worktrees/eshyra-o9bd.19.6.7.9.1, branch eshyra-o9bd.19.6.7.9.1 from parent branch eshyra-o9bd.19.6.7.9 (origin/main 529933db948498e7bbf2239c2fbe1b783f136d19). Implementer Claude Haiku 5.5 subagent.",
+  "notes": "COMPLETION REPORT. Commit 91d75e4d on branch eshyra-o9bd.19.6.7.9.1. Files: packages/core/src/character/levelUpEngine.ts; packages/core/test/levelUpEngine.test.ts.\n\nChange: removed Math.max(1, ...) floor from all level-up HP increment sites; fixed comments. HP sites checked: (1) hitPointIncrement fixed-average path (fixed; comment rewritten, no SRD-floor claim); (2) resolveHitPointChoice rolled path, roll.natural + CON (fixed); (3) applyResolvedChoicesToChangeSet CON-ASI recompute, base + CON (fixed, was also floored); (4) LevelUpHitPoints.increment doc comment (fixed); (5) creation level-1 HP derivedValues.ts:165 and creation.ts:589 = hitDie + CON, no floor (ok); (6) rest.ts Hit Die spend healing clamps Math.max(0, roll+CON) (healing, not max HP; left unchanged, it is a 0 clamp, not a minimum of 1); (7) rest.ts:717 Hit Dice recovery Math.max(1, floor(max/2)) is a Hit Dice pool count, not HP, left unchanged; (8) projectToLiveCharacter raises hp_current by increment, no separate floor (ok). No validation rejects a zero or negative gain; no code checks increment > 0.\n\nTests: corrected 'floors the HP increment at 1' (Wizard d6 CON -4 now gains 0, maxHP 6->6); added fixed-average CON -3 d6 gains 1; added rolled natural 1 with CON -1 gains 0 (rng nextInt->0). Existing suites levelUp*, guidedLevelUpFlow, proficiencyGrants, creationClassChoices, CLI progression: 233 passed.\n\nVerify: npm run verify:worktree EXIT 0 (7388 passed, 3 skipped, 396 files). Formatter reflowed one test call before tests ran.\n\nOpen question for invariants (not added): no downstream invariant requires hpMax >= 1 after a level-up. A zero or negative increment with a very low sheet max could drop maxHitPoints below 1 only if the sheet already had a tiny max; not enforced here, per spec. No push, no PR.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T02:16:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T02:21:32Z",
+  "closed_at": "2026-11-06T02:21:32Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.9.1",
+      "depends_on_id": "eshyra-o9bd.19.6.7.9",
+      "type": "parent-child",
+      "created_at": "2026-11-05T20:16:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

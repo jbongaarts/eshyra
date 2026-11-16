@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5g2",
+  "title": "mutateStateBatch afterMutation callback runs before commit",
+  "description": "Correctness review finding. In packages/core/src/state/mutateState.ts mutateStateBatch wraps the loop in withTransaction and invokes afterMutation inside that transaction, so the callback observes writes that are not yet durable and that a later batch failure rolls back. The contract implied by the name is misleading. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "afterMutation runs after the batch transaction commits, or its pre-commit semantics are documented; tests cover the rollback case.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T05:57:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:02Z",
+  "closed_at": "2026-05-21T22:39:02Z",
+  "close_reason": "Fixed in PR #26 (merged)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

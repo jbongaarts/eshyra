@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-mdke.4",
+  "title": "Review: final review of PR #631 (Opus 5.5 fallback; Sol usage-limited)",
+  "description": "Final read-only review of PR #631 (branch eshyra-mdke, exact head d86fe3ed6a7cf7eeedb57fdcbc54aad521256097) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Sol run aborted: Codex usage limit hit (until 02:43). Review re-run by an adversarial Opus 5.5 agent in the same worktree/head.\nFINAL REVIEW (Opus 5.5 fallback) of PR #631 at exact head d86fe3ed6a7cf7eeedb57fdcbc54aad521256097. Profile: rules-clause-complete. Read AGENTS.md, docs/design-and-pr-review-policy.md, owning bead eshyra-mdke, prior review eshyra-mdke.2 (Sol S1). Reviewed full origin/main...HEAD diff (19 files) and log.\n\nSol S1 fix verification (83e7088b, packages/cli/src/characterWizard.ts:991-1070): an optional choice with an empty selection is no longer treated as answered. startedSatisfied/complete exclude optionalEmpty, so the initial empty state prints 'Choose 1 - 1 remaining', the numbered option list, and 'Optional - press Enter to skip.'; Enter on optionalEmpty prints 'Skipped.' and advances without storing; a pick on choose-1 auto-advances; 'clear' on a populated optional choice stores undefined, loops, and re-shows the picker instead of advancing, so a re-pick is collected. Engine satisfied=true is preserved (creationClassChoices.ts:407-410), so the review/finish gate (applyReview filters !satisfied) and isFinalizable are not blocked. The new wizard test covers initial display, skip, pick->finalize languages, and clear/re-pick. Fix verified; the S1 scenario no longer reproduces by trace.\n\nFurther traces (no defect found): (a) conditional humanoid-races at creation: storedSelections maps class.feature.<x> -> level.1.feature.<x>, matching descriptorId/choiceIdFor; stored values are option names, and for these choices name==id (no options[] metadata, optionsOf falls back to id), so triggerSatisfied sees 'humanoids'. runClassChoices re-reads mechanicalChoices after each group, so the dependent group appears after the trigger pick. Switching away from humanoids drops the descriptor, so finalize ignores the stale stored races. (b) Level-up 6/14: classifyFeatureImprovements now carries sibling choices; the conditional sibling keeps choose 2, the optional language keeps choose 1 with the default label; reusableOptionIds lets 'humanoids' be re-picked while held races remain excluded; the CLI playProgression loop re-previews, so humanoid-races surfaces after the trigger, and optional choices are offered once. (c) Language exclusion: creation passes ancestry/background fixed + chosen languages; level-up uses sheet.languages; resolveFeatureChoiceSelection rejects known languages case-insensitively; finalize collectLanguages and applyLanguagesToSheet dedupe case-insensitively. (d) kindSchemas validates requiresOption against the sibling's from and optional===true; the inventory classifies the two new requiresOption paths; the generated pack changes only feature:ranger:favored-enemy, consistent with the source-guarded deriveFavoredEnemyChoices (three SRD phrase guards, gnoll/orc presence guard, languageOptions tables required).\n\nVerification limit: there is no node_modules in this worktree, so Vitest was not run. These conclusions come from code tracing alone; Sol's earlier native probes are prior evidence.\n\nNon-material:\nS1 (NON-MATERIAL, cosmetic) packages/cli/src/characterWizard.ts ~1462: printReview lists a skipped optional choice as a checkmark followed by an empty value. Optional follow-up: render '(skipped)'.\nS2 (NON-MATERIAL, rules-fidelity nit) records.json humanoid-races: the menu includes 'goblinoid', a creature subtype tag that covers several races rather than a single race. The SRD humanoid-race set is open-ended ('such as gnolls and orcs'), and the source-guarded derivation documents the pack-grounded closed set, so this is within the documented design. Optionally note it for the DM.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:08:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:14:48Z",
+  "closed_at": "2026-10-09T05:14:48Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-mdke.4",
+      "depends_on_id": "eshyra-mdke",
+      "type": "parent-child",
+      "created_at": "2026-10-09T00:08:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

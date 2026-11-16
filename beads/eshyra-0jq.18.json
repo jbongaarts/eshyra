@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.18",
+  "title": "Review and narrow public package export surface before release",
+  "description": "Review packages/core/src/index.ts and internal exports before first published package. The current public surface exports many concrete internals that may not be stable.\r\n\r\nDefine what is actually public and move unstable internals behind explicit subpaths or internal exports.",
+  "acceptance_criteria": "- Public exports are reviewed and categorized.\r\n- Unstable internals are removed from root public surface or explicitly marked.\r\n- CLI still has access to needed internal APIs.\r\n- Package consumers get a narrower stable API.\r\n- Release notes/docs explain the intended public surface.",
+  "notes": "Scope clarification: Execute this bead now as a narrow public-export hygiene pass before resuming 0m9. Focus on preventing rules-pack/importer/generated-data internals from leaking through package public exports. Do not require loreweaver-0jq.16 first, and do not reorganize source layout here. A final export sweep may still be needed after 0jq.16 if lifecycle-domain layout changes public/internal boundaries.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:32:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:57Z",
+  "started_at": "2026-05-27T21:45:53Z",
+  "closed_at": "2026-05-27T21:49:02Z",
+  "close_reason": "Narrow hygiene pass complete: moved DND5E_SRD_RULES_PACK and PATHFINDER2E_REMASTER_RULES_PACK from public surface to internal; two CLI tests updated; PR #90 open for review. Remaining 0jq.16 dep is deferred per scope clarification in notes.",
+  "labels": [
+    "api",
+    "architecture",
+    "refactor",
+    "release",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.18",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:32:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.18",
+      "depends_on_id": "eshyra-0jq.11",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.18",
+      "depends_on_id": "eshyra-0jq.16",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

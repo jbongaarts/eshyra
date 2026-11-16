@@ -1,0 +1,71 @@
+{
+  "_type": "issue",
+  "id": "eshyra-uuk.4",
+  "title": "Task 3: Extract and integrate five gamemastering rules",
+  "description": "Objective:\nExtract the five approved prose rules, wire both gamemastering slices into runImporter, and enforce exact canonical rule/table coverage.\n\nFiles:\n- Create: packages/core/scripts/importers/dnd5e-srd-5.1/parseGamemasteringRules.ts\n- Create: packages/core/test/importers/dnd5e-srd-5.1/parseGamemasteringRules.test.ts\n- Modify: packages/core/scripts/importers/dnd5e-srd-5.1/index.ts\n- Modify: packages/core/scripts/importers/dnd5e-srd-5.1/cli.ts\n- Modify: packages/core/scripts/verify-dnd5e-srd-pack/cli.ts\n- Modify: packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts\n\nSteps:\n1. RED: Add unit fixtures asserting exactly five RuleExtraction values and stable key slugs: madness, going-mad, madness-effects, curing-madness, objects. Assert Madness keeps only its introduction; Going Mad/Madness Effects/Curing Madness stop at their next heading/table boundary; Objects includes Statistics for Objects, Armor Class/Hit Points guidance, Huge and Gargantuan Objects, Objects and Damage Types, and Damage Threshold prose while excluding both object table headers/rows.\n2. RED: Extend the pipeline fixture with Madness -> Objects -> Poisons pages and assert five new rule keys and five new table keys. Add missing-end tests for Madness and Objects boundaries. Run focused parser/pipeline tests and observe expected failures.\n3. GREEN: Implement parseGamemasteringRules(madnessPages, objectPages) using line heights and fixed reviewed captions, returning exactly five keySlug-bearing rules. Slice both sections with the new anchors, parse them, reserve/merge them with existing rules, and feed both slices to parseTables.\n4. Add EXPECTED_SRD_5_1_TABLE_NAMES and TableCoverageError plus expectedTableNames on RunImporterInput. Extend EXPECTED_SRD_5_1_RULE_KEYS with the five rule keys. Pass expected rule/table baselines from both importer CLI and verify CLI, and validate before writing output.\n5. Re-run focused unit/pipeline tests; expect PASS. Run npm run typecheck.\n6. REFACTOR: Keep the parser focused on these two sections and error messages deterministic; do not change generic parseRules.",
+  "design": "parseGamemasteringRules owns the section-root behavior generic parseRules does not model. Madness root text is the pre-Going-Mad introduction; tiered child bodies are bounded by the next heading. Object text is consolidated into one record after filtering exact table caption/header/row shapes, preserving all prose subheadings and paragraphs. Missing starts may remain empty only for reduced fixtures; requireEndHeading errors propagate, and the real CLI/verify exact baselines make canonical missing starts fail closed.",
+  "acceptance_criteria": "- Exactly five approved rule records emit with stable keys and source-faithful bodies.\n- Rules contain no table rows and no Diseases/Poisons bleed.\n- Pipeline emits the five new tables and five rules.\n- Missing Madness->Objects or Objects->Poisons end boundaries throw SectionNotFoundError.\n- Real CLI and verify CLI pass exact full rule-key and table-name baselines to runImporter.\n- Focused tests and typecheck pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T04:35:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-06T04:50:20Z",
+  "closed_at": "2026-06-06T04:58:48Z",
+  "close_reason": "Integrated five gamemastering rules and five tables with exact rule/table coverage gates in importer and verifier; focused tests, typecheck, and real CLI pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-uuk.4",
+      "depends_on_id": "eshyra-uuk.3",
+      "type": "blocks",
+      "created_at": "2026-06-05T23:36:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-uuk.4",
+      "depends_on_id": "eshyra-uuk.2",
+      "type": "blocks",
+      "created_at": "2026-06-05T23:35:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-uuk.4",
+      "depends_on_id": "eshyra-uuk",
+      "type": "parent-child",
+      "created_at": "2026-06-05T23:35:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "7061ea3a-287f-534e-acb0-106e97faff58",
+      "issue_id": "eshyra-uuk.4",
+      "author": "Joseph Bongaarts",
+      "text": "RED parser verification: parseGamemasteringRules.test.ts failed before running tests because the new parser module does not exist, confirming the contract is not implemented.",
+      "created_at": "2026-06-06T04:52:11Z"
+    },
+    {
+      "id": "9d1d7a50-827a-5ac4-b2a8-ca273a59945e",
+      "issue_id": "eshyra-uuk.4",
+      "author": "Joseph Bongaarts",
+      "text": "RED pipeline verification: pipeline suite failed in exactly three intended places before orchestration (rules stayed 2 vs 7; missing Madness and Objects end boundaries did not reject). Coverage assertions were then strengthened to require exact fixture rule/table sets and a dedicated table drift error.",
+      "created_at": "2026-06-06T04:56:26Z"
+    },
+    {
+      "id": "42a08c1b-d266-5d81-9399-93fc9606a87f",
+      "issue_id": "eshyra-uuk.4",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN/REFACTOR verification: parser suites passed 12/12, pipeline passed 37/37 including missing-boundary and table-drift failures, npm run typecheck passed, and the real CLI imported exactly 166 rules and 8 tables from the pinned PDF. Generated five rule bodies were inspected and contain no table rows.",
+      "created_at": "2026-06-06T04:58:45Z"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 3
+}

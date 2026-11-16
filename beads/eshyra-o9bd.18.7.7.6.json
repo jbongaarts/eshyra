@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.6",
+  "title": "Model magic item summoning and controlled-entity lifecycles (M4)",
+  "description": "Implement family M4 from docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-3-magic-item-mechanics-inventory.md §4: 17 rows (exact list in artifact; flagship figurine-of-wondrous-power; also bag-of-tricks, elemental-command bowls/brazier/censer/stone, efreeti-bottle, elemental-gem, feather-token bird/whip, horn-of-valhalla, iron-flask, manual-of-golems, pipes-of-the-sewers, ring-of-djinni-summoning, staff-of-the-python, deck-of-illusions). Shape: creature/statBlock ref + control mode (obedient/friendly/contest/disobedience-chance) + duration + revert/cooldown + death-of-entity consequences (staff-of-the-python shatters; djinni ring goes nonmagical). KEY DESIGN BOUNDARY: pack data (what can be summoned, durations, cooldowns) vs live session state (the summoned combatant instance) — reuse encounter combatant state; do not put live state in the pack. Contest/reuse existing exclusiveInstance-style contracts from 18.7.9 where source semantics match (do NOT collapse distinct recast semantics — see PR #399 review findings). Recommended agent: Opus 4.8 design, Codex rollout.",
+  "notes": "2026-07-08 ADR 0017 adjustment: Summoning work should separate pack-side summonable/entity/control/duration/reversion contracts from live summoned-combatant instances and encounter state. Engine or campaign-state behavior should be named as hooks/owners; do not store mutable summoned state in generated records.\nImplemented the source-grounded family projector, strict schema validation, clause registry bindings, generated pack projection, and representative/exhaustive tests. The exact 240-row owner-tag conservation census passes; all magic items now carry reviewed executable mechanics.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-06T23:31:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:25Z",
+  "started_at": "2026-07-18T16:34:31Z",
+  "closed_at": "2026-07-18T20:23:25Z",
+  "close_reason": "Source-faithful executable magic-item family complete; canonical regeneration, conservation gates, deep audit, and full worktree verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.6",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-06T18:31:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

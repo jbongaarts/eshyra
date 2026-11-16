@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.12",
+  "title": "Close PR #455 magic-item execution contract gaps",
+  "description": "Holistically repair the magic-item execution contract identified by PR #455 review: canonical variant identity/effective mechanics resolution; authoritative attunement enforcement; seeded transactional initialization for every dice-defined state value; declared depletion/lifecycle behavior without losing active state; persisted and audited clause readiness with truthful landed-engine ownership. Independently audit every emitted mechanics shape against runtime dispatch and fail closed or classify engine/model ownership according to ADR 0017.",
+  "acceptance_criteria": "All five unresolved review threads are fixed at their shared invariant boundaries; every canonical variant can be selected and safely initialized/executed; required attunement is enforced from the authoritative ledger; all dice-defined initial state is rolled by the seeded RNG and recorded transactionally; depletion follows onDepleted and preserves active lifecycle state; readiness is persisted/reported and no pending gap is hidden; an exhaustive emitted-mechanics/runtime coverage test proves every operation/state/economy shape is executable or explicitly adjudicated/engine-pending; canonical regeneration, deep audit, full verification, commit, push, and PR update pass.",
+  "notes": "PR #455 review fixed holistically: stable variant identity and effective parent+variant mechanics; immutable inventory/state variant binding; authoritative attunement creation and use gate; seeded transactional economy/card-pool/spell-store initialization with roll evidence; source-declared depletion outcomes and active lifecycle/timer persistence; derived exact-hook readiness persisted, schema-validated, audited, and enforced pre-mutation. Census: 240 items / 1001 clauses / 781 engine-pending / 217 green / 2 adjudicated / 1 design-blocked / 36 variant-scoped. Exhaustive parent+variant initialization oracle passes. verify:worktree: 4555 passed, 19 documented skips; canonical pack regenerates with 0 changes.\nGitHub Advanced Security then identified polynomial regex behavior in canonical variant slugging. Replaced chained collapse/trim regexes with a linear character scan, added a 100,000-hyphen adversarial regression, and pushed follow-up commit 16442d3.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-18T21:19:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T21:57:57Z",
+  "started_at": "2026-07-18T21:19:46Z",
+  "closed_at": "2026-07-18T21:51:53Z",
+  "close_reason": "All PR #455 review classes fixed at compiler/runtime contract boundaries; exhaustive initialization, readiness census, canonical regeneration, and full worktree verification pass.",
+  "external_ref": "gh-455",
+  "labels": [
+    "engine",
+    "gameplay",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.12",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-18T16:19:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

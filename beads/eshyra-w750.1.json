@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-w750.1",
+  "title": "Dispatch: w750 validate effective deduction tables at stack admission (attempt 1, Sonnet)",
+  "description": "Implements eshyra-w750. Read `bd show eshyra-w750` and the olc5.13 notes (`bd show eshyra-olc5.13`, `bd show eshyra-olc5.13.5`), which define the shared deduction contract (economyDeductionViolation in packages/core/src/rules/magicItemMechanics.ts). Locate code by symbol name.\n\nPROBLEM: validateRulesPack checks economyDeduction tables only for the pack that declares the deduction. A table-only add-on can override table:cube-of-force-charges-lost with duplicate keys, a non-string key, or a negative or out-of-domain amount. Such an add-on is admitted, and the error surfaces only at execution (item_state_event), which refuses it safely.\n\nDESIGN (decided):\n1. Find where a campaign's EFFECTIVE rules stack is resolved and admitted: the CampaignRulesPackResolver construction and campaign stack validation, where add-ons are layered over a base. Validate there. For every economyDeduction in the effective stack, resolve its table through the same precedence execution uses, and run the SAME shared contract that execution uses on the effective table. Reuse it; do not duplicate the rules. A violation refuses the stack at admission with a message naming the add-on, the table and the violated rule.\n2. Keep the execution-side refusal as the defence in depth. Do not remove it.\n3. Do not widen validateRulesPack for standalone packs beyond what it does now. The new check runs where the effective stack is known.\n4. Check whether the same seam also leaves other effective-table contracts unchecked at admission. If you find one, record it and file a bead. Do not fix it here.\nPERMANENT EVIDENCE: generalized over the violation classes of the shared contract (duplicate key, non-string key, negative amount, out-of-domain amount, and missing required row if the contract has one). For each class, a table-only add-on overriding the real Cube table is refused at stack admission. A conforming override is admitted and executes. Prove that the execution-side refusal still holds when admission is bypassed: build a resolver directly and call item_state_event.\nVERIFY: run the focused suites, then `npm run verify:worktree` BEFORE committing. No pack change is expected.\nIf a decided point conflicts with code or source, record the precise conflict, leave the bead open, and stop.",
+  "notes": "Dispatched 2026-10-17 as a Claude Sonnet 5.5 Agent in .worktrees/eshyra-w750.1 on branch eshyra-w750.1, cut from eshyra-w750 @ cccdda4f.\nCOMPLETION (Sonnet 5.5). Commit 983061e7 on eshyra-w750.1 (not pushed). Admission seam: resolveRulesStack (rules/stack.ts) calls new assertEffectiveEconomyDeductions (rules/effectiveDeductionAdmission.ts) after layering; every campaign path (resolveStrictCampaignRulesStack, executor lookup) goes through it, and it is the one place the layered table precedence (recordsByKind table byKey, same as executor resolveTable) is known. Runs only with add-ons, and only for items whose winning record or winning table came from an add-on, so standalone/base-only validation is not widened. Message names add-on, item key, table-bearing violation text. Contract reuse: extracted per-record logic from validate.ts into magicItemEconomyDeductionViolation (magicItemMechanics.ts), wrapping economyDeductionViolation; validateRulesPack and stack admission both call it (no rule duplication); executor refusal untouched. Evidence: test/effectiveDeductionAdmission.test.ts (14 violation classes: duplicate key, non-string/empty key, negative number, negative dice floor, fractional, non-dice, ceiling/kh/straddle, missing/duplicate key+amount columns - each refused at resolveRulesStack and resolveStrictCampaignRulesStack naming add-on+table; conforming override admitted and executes; base-only not widened). Contract has no missing-required-row clause. Execution defence-in-depth: itemResetExecutor.test.ts now vi.mocks the admission fn so its existing add-on execution-refusal tests (admission bypassed, resolver built directly, DB unchanged) still prove the executor refuses. Also added inventory disposition for the new file. Sibling gap filed:  (random-initialization table contracts unchecked at admission). Verify: npm run verify:worktree exit 0, 366 files passed/2 skipped, 6968 tests passed/3 skipped, typecheck clean.\nSibling bead id: eshyra-3xi0.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-17T19:59:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-17T20:07:54Z",
+  "closed_at": "2026-10-17T20:07:14Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-w750.1",
+      "depends_on_id": "eshyra-w750",
+      "type": "parent-child",
+      "created_at": "2026-10-17T14:59:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

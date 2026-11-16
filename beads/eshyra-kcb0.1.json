@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-kcb0.1",
+  "title": "Review: Sol review of PR #720 (eshyra-kcb0 @ 6ba26e2a)",
+  "description": "Read-only Sol review of PR #720 at exact head 6ba26e2af01d07ab002dd38ed62dac3a8051dbfa.",
+  "notes": "Captain: dispatched gpt-6.1-sol medium (small test-only PR), PGID 803004.\nRead-only standard review of PR #720 at exact HEAD 6ba26e2af01d07ab002dd38ed62dac3a8051dbfa; reviewed complete git diff origin/main...HEAD, owning/review beads, AGENTS.md Permanent Test Evidence, docs/design-and-pr-review-policy.md, and bd recall dolt-checkpoint-tests-flaky-under-parallel-load. refs/beads/state projection lacks these two beads; current live bd show records supplied authoritative scope.\nS1. NON-MATERIAL (review evidence; no defect): Measured the actual sweep with direct Vitest invocation, --no-cache, --configLoader runner, and fsModuleCachePath under /tmp: 1957 ms alone and 1887 ms within the full hpLifecycle file. Full file: 72 passed, no skips, 6.683 s test time. The parent bead records repeated CI failures around the 5 s default. A finite 20,000 ms timeout for this measured multi-fixture sweep is justified as parallel-load headroom; no requirement mandates a tighter budget.\nS2. NON-MATERIAL (review evidence; no defect): Complete diff changes only hpLifecycle.test.ts. Whitespace-insensitive comparison confirms unchanged 2 life states x 2 critical states x 3 damage boundaries x 3 temp buffers = 36 cases, every assertion, and database cleanup. SWEEP_TEST_TIMEOUT_MS is passed only to this one it; vitest.config.ts and global 5 s default remain untouched. This follows the targeted-timeout principle in the recalled memory without extending its Dolt-specific 30 s value to this unrelated sweep.\nS3. NON-MATERIAL (review evidence; no defect): A disposable /tmp source-import probe reproduced all 36 combinations and checked their results across three runs. Total sweep costs were 1952.1/1894.4/1895.7 ms; initSchema migration alone cost 1925.9/1874.3/1875.1 ms (about 99%), while all 36 adjustHp calls together cost 5.75/4.39/4.64 ms. freshDb creates and migrates a new in-memory database per case; adjustHp performs no migration. Thus the timeout addresses repeated fixture initialization rather than masking a slow per-turn product path. Retaining this bounded generalized state-integrity sweep is proportionate to the death/temporary-HP invariant; no additional permanent probe or reduced enumeration is warranted. Repository remained clean; no format/build/verification mutations, GitHub actions, or other bead changes performed.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T08:42:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T08:44:05Z",
+  "started_at": "2026-11-06T08:42:23Z",
+  "closed_at": "2026-11-06T08:44:05Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-kcb0.1",
+      "depends_on_id": "eshyra-kcb0",
+      "type": "parent-child",
+      "created_at": "2026-11-06T02:42:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

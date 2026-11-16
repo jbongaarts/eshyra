@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eh54.2",
+  "title": "Add adventure module schema and typed records",
+  "description": "Add an initial adventure module schema and typed record model for immutable authored scenario content.\n\nThe schema represents adventure module source only - the authored scenario as written. It must not contain campaign-specific progress fields. Authored elements such as objectives, secrets, scenes, and clocks/threats are modeled as definitions of what is possible in the scenario; whether any of them has been completed, revealed, or advanced is campaign instance state recorded by the campaign-owned adventure run / module binding (eshyra-eh54.4), not by the module record.\n\nThe schema should support a small dungeon/adventure module without assuming every module is a linear script. It should support keyed locations, scenes, hooks, NPC roles, encounters, secrets, objectives, treasure, clocks or threats, exits/transitions, and endings.\n\nThe first version should be intentionally conservative. The goal is to create a stable destination for starter module content and runtime integration, not to model every possible published adventure format.\n",
+  "design": "Suggested initial concepts (authored source only):\n\nAdventureModule\n- id\n- title\n- summary\n- intendedLevels\n- intendedPartySize\n- rulesetRefs\n- settingCompatibility\n- startingSituation\n- hooks\n- locations\n- scenes\n- npcs\n- encounters\n- treasure\n- secrets\n- objectives\n- clocksOrThreats\n- randomTables\n- milestones\n- endingStates\n- provenance\n- license\n\nImportant modeling constraint (ADR 0012):\n\nAuthored module truth and runtime campaign truth must remain separate. The module record is immutable authored scenario source. For example, the module may define that a sealed shrine lies under the old mill. Whether the players found it, destroyed the mill, bypassed the shrine, or changed the situation is recorded in campaign instance state (the campaign-owned adventure run / module binding), never on the module record. Objectives/secrets/clocks here are definitions of possibilities, not progress flags.\n",
+  "acceptance_criteria": "- A typed adventure module root record exists, representing immutable authored scenario source.\n- Module records include stable ids, title/name fields, summary/description fields, tags or categorization where useful, and provenance/license metadata.\n- Initial child concepts are represented for hooks, locations, scenes, NPCs, encounters, secrets, objectives, treasure/rewards, clocks/threats, random tables if already supported by existing table concepts, and ending states - all as authored definitions, not progress.\n- The schema contains no campaign-specific progress/status fields (no \"visited\", \"revealed\", or \"completed\" flags); progress lives in campaign instance state (eshyra-eh54.4).\n- Module records can reference rules-pack content such as creatures, equipment, magic items, rules, actions, and tables without copying mechanical truth into the module.\n- Module records can reference compatible campaign-template/setting ids or locations when applicable.\n- Validation tests cover at least one small valid module fixture and several broken-reference failures.\n- The schema does not mutate or extend SRD rules-pack records to store adventure-specific content.",
+  "notes": "Schema + validator implemented: packages/core/src/adventure/{types,validate}.ts, exported via internal.ts, 18 tests in test/adventureModule.test.ts. PR #262 open for review: https://github.com/jbongaarts/eshyra/pull/262 . Branch feat/eh54.2-adventure-module-schema, worktree .worktrees/eh54.2. Left in_progress (not closed) so dependent eshyra-eh54.3 stays blocked until merge. Close on merge.\nReview fix (commit 989fb8c): removed root-id colon ban so namespaced module ids (eshyra:hollow-beneath-emberfall) validate; child ids stay colon-free. +1 test (now 19). Full suite 2206 pass / 0 fail.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T06:11:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-21T00:51:02Z",
+  "closed_at": "2026-06-21T01:15:50Z",
+  "close_reason": "Adventure module schema + validator merged to main via PR #262 (squash, incl. namespaced-root-id review fix). Unblocks eshyra-eh54.3.",
+  "labels": [
+    "adventure-module",
+    "campaign-runtime",
+    "domain-model",
+    "schema",
+    "validation"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eh54.2",
+      "depends_on_id": "eshyra-eh54.1",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:12:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.2",
+      "depends_on_id": "eshyra-eh54",
+      "type": "parent-child",
+      "created_at": "2026-06-18T01:11:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

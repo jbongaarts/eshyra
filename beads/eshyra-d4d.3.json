@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4d.3",
+  "title": "Tool character targeting",
+  "description": "Let the DM mutate a specific party member. adjust_hp, add_condition, remove_condition, give_item, remove_item expose no character argument and always hit the active PC, although domainMutations already accept ctx.characterId. Add an optional 'character' parameter (resolve by id or name) to these tools, defaulting to the acting/active PC, with a clear tool_result error when the name/id is ambiguous or unknown. Acceptance: each tool can target a non-active PC by id or name; default behavior unchanged when omitted; ambiguous/unknown target returns a correction error not a throw; tests per tool.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T17:53:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:54Z",
+  "started_at": "2026-05-28T18:07:24Z",
+  "closed_at": "2026-05-28T18:11:52Z",
+  "close_reason": "Optional character arg (id or name) on the 5 mutation tools; resolveCharacterRef + invalid_target corrections; defaults to acting/active PC. 9 unit tests. Full suite green this run (755 passed, 3 skipped). Committed bd8d692.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d4d.3",
+      "depends_on_id": "eshyra-d4d",
+      "type": "parent-child",
+      "created_at": "2026-05-28T12:53:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

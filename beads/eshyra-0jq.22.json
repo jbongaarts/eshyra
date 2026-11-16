@@ -1,0 +1,59 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.22",
+  "title": "Add dependency update policy and Dependabot config",
+  "description": "Add dependency-update hygiene for npm packages and GitHub Actions.\r\n\r\nThe repo has runtime/native-sensitive dependencies and fast-moving dev tooling. This bead should introduce a conservative update policy that helps agents and maintainers evaluate dependency PRs without destabilizing active importer work.\n\n## Context\nObserved gap:\r\n- .github currently appears to have CI workflows but no dependency-update policy/config.\r\n- Important dependency categories include:\r\n  - native/runtime-sensitive: better-sqlite3\r\n  - document/import tooling: pdfjs-dist, pdfkit\r\n  - model/provider integration: Claude Agent SDK / related SDKs\r\n  - dev tooling: TypeScript, Vitest, Biome\r\n  - GitHub Actions versions\r\n\r\nParallel-safety:\r\n- Infrastructure/config only.\r\n- Avoid package upgrades in this bead unless needed to validate config syntax.\r\n- Do not modify importer parser files.",
+  "design": "Suggested files to add/update:\r\n- .github/dependabot.yml\r\n- README.md or docs/dependencies.md, if a short policy doc is useful\r\n- AGENTS.md if agents need specific dependency-update instructions\r\n\r\nImplementation guidance:\r\n1. Add Dependabot config for:\r\n   - npm package ecosystem\r\n   - GitHub Actions\r\n2. Use grouping to reduce PR noise:\r\n   - dev tooling group\r\n   - GitHub Actions group\r\n   - runtime/native-sensitive dependencies separate or less automated\r\n3. Document special caution for better-sqlite3:\r\n   - native install/build behavior\r\n   - Node engine compatibility\r\n   - CI must keep the intended no-surprise-native-build assumption visible\r\n4. Do not perform broad dependency upgrades as part of this bead.",
+  "acceptance_criteria": "- .github/dependabot.yml exists and covers npm plus GitHub Actions.\r\n- Dependency groups distinguish low-risk dev tooling from runtime/native-sensitive updates.\r\n- Policy notes document special caution for better-sqlite3 and Node-version compatibility.\r\n- CI still passes without broad package-lock churn beyond what is necessary.\r\n- No importer parser files are modified.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "estimated_minutes": 120,
+  "created_at": "2026-05-28T23:17:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:15Z",
+  "started_at": "2026-05-30T04:10:49Z",
+  "closed_at": "2026-05-30T04:17:08Z",
+  "close_reason": "Added Dependabot npm and GitHub Actions config plus dependency update policy; verification passed with npm run check, npm run typecheck, and npm run test.",
+  "labels": [
+    "architecture",
+    "ci",
+    "dependencies",
+    "github-actions",
+    "parallel-safe",
+    "refactor",
+    "tech-debt",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.22",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-28T18:17:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "7c575c86-257d-541f-bab3-7c9e0232b3c0",
+      "issue_id": "eshyra-0jq.22",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install completed; npm run check passed; npm run typecheck passed.",
+      "created_at": "2026-05-30T04:12:21Z"
+    },
+    {
+      "id": "d03d7eef-5dfd-52c6-8b1e-446eae2c704a",
+      "issue_id": "eshyra-0jq.22",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run check -> exit 0; npm run typecheck -> exit 0; npm run test -> exit 0 (78 passed, 2 skipped files; 896 passed, 3 skipped tests). Changed files are AGENTS.md, README.md, .github/dependabot.yml, docs/dependencies.md; no package-lock or importer parser changes.",
+      "created_at": "2026-05-30T04:17:00Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

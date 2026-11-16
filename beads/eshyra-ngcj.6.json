@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.6",
+  "title": "Add first-pass deterministic mechanics projections for gameplay",
+  "description": "Problem:\nThe pack is source-complete, but many gameplay mechanics remain prose-only after basic top-level fields. This limits deterministic tools for combat, spell use, conditions, resources, and creature actions.\n\nGoal:\nAdd a first-pass projection layer for commonly needed mechanics without attempting to build a complete rules engine in one bead.\n\nPrinciples:\n- Projection must be derived from SRD text.\n- Preserve source prose as canonical audit text.\n- Prefer partial, well-tested typed projections over broad brittle parsing.\n- Unknown or ambiguous effects should remain prose-backed with explicit lack of projection.\n\nScope candidates:\n- Spell concentration flag from duration.\n- Spell attack/save/damage/scaling projection where patterns are clear.\n- Creature/action attack bonus, reach/range, target count, hit damage, save DC, and condition application.\n- Feature resource counts and recharge/rest reset where explicit.\n- Hazard detection/disable/save/damage projections where clear.\n\nAcceptance criteria:\n- A report shows which records gained mechanics projections and which remain prose-only.\n- Projection fields are optional and schema-visible.\n- Tests cover representative spells, creature actions, features, and hazards.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-30T00:11:54Z",
+  "closed_at": "2026-06-30T00:12:08Z",
+  "close_reason": "Implemented first-pass source-backed mechanics projections for spells, creature/action entries, features/ancestry/feats, and hazards; regenerated SRD pack; added schema validation, report, thaw note, and tests.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.6",
+      "depends_on_id": "eshyra-ngcj",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

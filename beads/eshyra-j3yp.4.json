@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-j3yp.4",
+  "title": "Repair PR #600 review 5449078494: successor-id reservation and legacy revert-form cleanup guard (captain inline)",
+  "description": "Review 5449078494 on head 27d013e2 (CHANGES REQUESTED, two blockers).\nB1 (7vh3): '<id>:uncontrolled' is caller-claimable in either order (active or ended squatter), so a concentration break throws in finalizeEnd and rolls back its cause (damage/death, replacement, combat closure). Fix: reserve the ':uncontrolled' effect-id suffix as engine-owned at createActiveEffect, and refuse creating a cast-anchored-removal spell effect whose derived successor id already exists (legacy squatters). Replace the 'refuses to invent another id' test with identity-admission evidence for both orderings plus a causal break (damage-save failure) proving the damage commits and the successor is created.\nB2 (ysr3): migration 0040 leaves a v39 Giant Insect link with remove/remove and no natural form; end/break/remove_effect_target would make it absent. Fix: fail closed at the cleanup seam (cleanupOwnedState + removeEffectTarget) for an actor link whose holder's 0-HP rule is 'revert-form' but whose policy is not 'revert' (no snapshot); never translate legacy remove into absence. Evidence: migrated v39 Giant Insect refused on end, break and target removal with creature/effect unchanged; Animate Objects migration stays the negative sibling.",
+  "notes": "Both blockers repaired in c3b9ffc0 (pushed). verify:worktree green: 326 files, 5915 tests. Negative proofs run for both guards. Inline replies posted; awaiting fresh full review as the reviewer required.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-07T22:38:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-07T22:41:42Z",
+  "started_at": "2026-10-07T22:38:15Z",
+  "closed_at": "2026-10-07T22:41:42Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-j3yp.4",
+      "depends_on_id": "eshyra-j3yp",
+      "type": "parent-child",
+      "created_at": "2026-10-07T17:38:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.5",
+  "title": "Add character creation draft state and dependency-aware validation engine",
+  "description": "Replace brittle whole-prompt character creation validation with a stateful draft and pure creation engine. This covers the core failure modes from eshyra-4jiu.\n\nRequired behavior\n- Preserve prior answers across revisions.\n- Validate fields incrementally.\n- Avoid validation cascades when prerequisites are missing or invalid.\n- Track stale/invalidated dependent choices when class, ancestry, scores, or spellcasting context changes.\n- Allow ability scores to exist before class and class to exist before ability scores.\n- HP validation waits for both class hit die and Constitution modifier.\n\nAcceptance criteria\n- CharacterCreationDraft or equivalent serializable state exists.\n- CharacterCreationEngine or equivalent pure domain layer can apply changes, validate, compute derived values, and report missing required choices without terminal I/O.\n- Changing name does not reset mechanical choices.\n- Changing class preserves identity and scores but invalidates/revalidates class-specific choices.\n- Changing ancestry preserves base scores and recomputes final scores/derived values.\n- Tests cover invalid class, invalid ancestry, non-integer scores, point-buy out-of-range scores, missing name after revision, and HP validation only when prerequisites are valid.",
+  "notes": "PR #287 (open for review): https://github.com/jbongaarts/eshyra/pull/287 — CharacterDraft + pure CharacterCreationEngine; abilities.ts shared math. Internal-only; consumed by b69j.6/.8/.9/.12/.13.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T04:17:44Z",
+  "started_at": "2026-06-24T04:02:22Z",
+  "closed_at": "2026-06-24T04:17:44Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.5",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

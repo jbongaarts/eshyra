@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-zzy.1",
+  "title": "Task 1: SRD catalog types and licensed seed data",
+  "description": "Objective: Create the readonly SRD catalog model and a small SRD 5.1 seed set that proves the data shape for one monster, one spell, and one class build option. Files: create packages/core/src/srd/types.ts; create packages/core/src/srd/data.ts; create packages/core/test/srd.test.ts. Steps: 1. Write failing Vitest coverage that imports SRD_LICENSE and SRD_CATALOG and asserts source title SRD 5.1, license CC-BY-4.0, and presence of refs monster:goblin, spell:fire-bolt, class:fighter. Command: npm run test -- packages/core/test/srd.test.ts. Expected RED: module import fails because srd files do not exist. 2. Implement strict exported TypeScript types and readonly seed data. 3. Run focused test to GREEN. 4. Run npm run build. 5. Commit the task changes.",
+  "design": "types.ts exports SrdKind = monster | spell | class; SrdLicenseMetadata; SrdBaseRecord; SrdMonsterRecord; SrdSpellRecord; SrdClassRecord; SrdRecord union; SrdCatalog. data.ts exports SRD_LICENSE and SRD_CATALOG. Use stable refs like monster:goblin and exact canonical names. Include only compact structured stats needed for lookup tests, with license metadata stored separately.",
+  "acceptance_criteria": "Focused test passes; npm run build passes; no lookup behavior is implemented in this task.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T03:01:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T03:03:51Z",
+  "closed_at": "2026-05-19T03:09:26Z",
+  "close_reason": "Added typed SRD catalog plus licensed seed records for Goblin, Fire Bolt, and Fighter; verification: npm run build passed and npm run test passed with 22 passed / 1 skipped; TDD evidence recorded.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-zzy.1",
+      "depends_on_id": "eshyra-zzy",
+      "type": "parent-child",
+      "created_at": "2026-05-18T22:01:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "5550efc4-6bd4-5880-b758-a5ecf1abe14b",
+      "issue_id": "eshyra-zzy.1",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/srd.test.ts -> failed for expected reason: ../src/srd/data.js does not exist.",
+      "created_at": "2026-05-19T03:04:38Z"
+    },
+    {
+      "id": "d6e2f19e-5e5e-59af-a90e-4c774a31e2cc",
+      "issue_id": "eshyra-zzy.1",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED npm run test -- packages/core/test/srd.test.ts failed because ../src/srd/data.js did not exist; GREEN npm run test -- packages/core/test/srd.test.ts passed with 2 tests; verification npm run build passed and npm run test passed with 22 passed / 1 skipped.",
+      "created_at": "2026-05-19T03:05:44Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 2
+}

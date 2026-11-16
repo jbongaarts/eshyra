@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-53fm",
+  "title": "Condition relations: 'cured of any effect making them blinded' and 'release a restrained creature' read as mention, printed meaning is removal",
+  "description": "Found under eshyra-xogv: spell:mass-heal blinded/deafened ('cured of ... any effect making them blinded or deafened') and spell:speak-with-plants restrained ('release a restrained creature') are removal in the printed text but classify as mention. Non-inflicting so safe, but not the printed relation.",
+  "notes": "Captain 2026-11-07: pre-freeze (wrong relation label in pack data). Same classifier: stack on eshyra-xogv when dispatched.\nCaptain 2026-11-07: integrated 07f2190f after own review and verify (exit 0, 7523; pack exact). PR https://github.com/jbongaarts/eshyra/pull/735 (stacked on #734). Stays in_progress until merged.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T02:17:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:31:54Z",
+  "started_at": "2026-11-08T02:21:34Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-53fm",
+      "depends_on_id": "eshyra-xogv",
+      "type": "blocks",
+      "created_at": "2026-11-07T20:20:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-53fm",
+      "depends_on_id": "eshyra-53fm.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T20:21:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

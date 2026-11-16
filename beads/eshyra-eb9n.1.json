@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eb9n.1",
+  "title": "Dispatch: eb9n creation spell counts + wizard preparation (Sonnet 5.5, attempt 1)",
+  "description": "Implementation plan for parent eshyra-eb9n (bd show eshyra-eb9n). Supervisor decisions below are made; STOP and record in notes if the code contradicts a premise.\n\nWORKTREE/BRANCH: .worktrees/eshyra-eb9n.1 on branch eshyra-eb9n.1 (cut from origin/main AFTER eshyra-kn38 merged). Deps installed.\nFILE BOUNDARY: a parallel task (Flexible Casting) edits packages/core/src/state/spellSlots.ts, a new state/flexibleCasting.ts, migrations/schema snapshot, orchestrator tools/protocol. Do not edit those.\n\nCODE SURVEY\n- packages/core/src/character/requiredChoices.ts: collectSpellcastingChoices emits 'class.cantrips' (choose = cantripsKnown) and spellSelectionChoice 'class.spells' (known casters: spellsKnown; wizard: spellbookStartingSpells = 6; cleric/druid: level1PreparedSpellCount(modifier) when modifiers are supplied).\n- packages/core/src/character/characterDraft.ts: MECHANICAL_CHOICE_KINDS excludes 'cantrips'/'spells', so they never gate finalize; validateSpells (~line 1040) only checks each spell resolves, is on the class list and within level; selections.spells is ONE flat list (cantrips + level-1 spells mixed).\n- packages/core/src/character/finalizeCharacter.ts spellState/finalSpellState (classifies the flat list via effectiveSpellcasting into cantrips + known/spellbook/prepared, plus alwaysPrepared from eshyra-kn38).\n- packages/cli/src/characterWizard.ts applySpells (~line 453): spells are optional (\"Enter level-1 spells, or press Enter to skip\").\n- levelUpSpells.ts evaluatePreparationBasis (shared prepared-spell option set + limit: max(min, mod + floor(level/divisor))).\n\nDECISIONS\n1. Finalization requires exact counts for a class that casts at level 1: cantrips == cantripsKnown (when the class has cantrips); known casters spells == spellsKnown; wizard spellbook == 6 level-1 wizard spells. Cleric/Druid prepared: between 1 and the limit from evaluatePreparationBasis (same rule as long-rest preparation and level-up), counting none of the always-prepared domain spells. Count the flat list by spell level (0 = cantrip). Violations are finalize-blocking diagnostics with a clear message (and surfaced as unsatisfied/missing in the draft), not silent.\n2. Wizard preparation at creation: add a draft selection for the wizard's prepared spells (e.g. selections.preparedSpells), required 1..limit (INT mod + 1, min 1), each must be in the chosen spellbook; mark stale when the spellbook changes. Finalize writes spellcasting.prepared for the wizard.\n3. Do not change level-up/long-rest code paths except to share an exported helper if needed (behaviour unchanged).\n4. CLI wizard: the spell step states the required counts (cantrips N, spells M / spellbook 6 / prepare up to L), no longer says optional for a caster, and for a wizard asks for prepared spells from the chosen spellbook. Non-casters and paladin/ranger (no level-1 spells) skip the step as today.\n5. Existing creation tests that finalize casters with arbitrary spell lists must be updated to legal counts; do not weaken assertions otherwise.\n\nEVIDENCE (concise, real pack)\n- Wizard: 3 cantrips + 6 spellbook + prepared (INT+1) finalizes; 5 spellbook refused; prepared spell not in spellbook refused; spellbook change marks preparation stale.\n- Sorcerer 4 cantrips + 2 known; wrong counts refused. Cleric prepared 0 refused, over limit refused, Life Domain bless not counted.\n- Fighter (non-caster) unaffected. CLI wizard end-to-end for a wizard.\n\nPROTOCOL: run `npm run verify:worktree` from the worktree root BEFORE committing (it rewrites files); commit on eshyra-eb9n.1; append a completion report with `bd update eshyra-eb9n.1 --append-notes`; file follow-ups with bd create; `bd close eshyra-eb9n.1`.",
+  "notes": "Done in f9f051d3. New core/character/creationSpellCounts.ts (level1SpellRequirements via evaluatePreparationBasis). Draft: selections.preparedSpells + setPreparedSpells; shortfalls are pending 'spellCounts.*' diagnostics surfaced by missingRequiredChoices; excess/dupes/not-in-spellbook are errors; preparedSpells marked stale when outside spellbook. Finalize writes wizard prepared. Cleric/druid: 1..limit excluding always-prepared. CLI spell step states counts, wizard second prompt for prepared, set preparedSpells. Tests: new creationSpellCounts.test.ts; existing caster tests updated to legal counts. verify:worktree green (6168 passed).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:13:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:25:26Z",
+  "closed_at": "2026-10-09T04:25:26Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eb9n.1",
+      "depends_on_id": "eshyra-eb9n",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:13:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

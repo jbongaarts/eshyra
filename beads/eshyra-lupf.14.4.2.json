@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.14.4.2",
+  "title": "Add CLI catch-up-to-head resume flow",
+  "description": "The useful, tractable implementation of the conflict-resolution UX. When activateCampaignCustody detects the registry head differs from (is ahead of) the local campaign sheet, present the user a choice instead of only failing closed. Parent: eshyra-lupf.14.4; depends on the policy in eshyra-lupf.14.4.1.",
+  "acceptance_criteria": "- When activateCampaignCustody detects the registry head differs from the local campaign sheet, the CLI does not only fail with an error.\n- CLI presents a choice: cancel; update this campaign to latest character revision; fork/advanced options if available.\n- Catch-up mode: replaces the campaign-local character_sheet with the registry head; stamps globalCharacterId, sourceRevision, and importedAt; re-projects the live character row; acquires custody; does NOT create a new registry revision merely for the catch-up.\n- Tests for scene-boundary catch-up and stale-copy refusal/cancel.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T18:05:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T18:51:01Z",
+  "closed_at": "2026-06-27T18:51:08Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.14.4.2",
+      "depends_on_id": "eshyra-lupf.14.4",
+      "type": "parent-child",
+      "created_at": "2026-06-27T13:05:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.14.4.2",
+      "depends_on_id": "eshyra-lupf.14.4.1",
+      "type": "blocks",
+      "created_at": "2026-06-27T13:06:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.10",
+  "title": "Introduce provider-neutral tool schema definitions",
+  "description": "The current fenced text tool-call protocol is useful as a universal fallback, but the core should also expose provider-neutral tool definitions with JSON-schema-like input schemas so adapters can eventually render native Anthropic/OpenAI/Bedrock tool calls.",
+  "acceptance_criteria": "- ToolDefinition includes name, description, and input schema.\r\n- Existing fenced text tool protocol remains supported.\r\n- Tool registry can expose schema metadata.\r\n- No provider-specific tool assumptions leak into core.\r\n- Tests verify schema metadata for default tools.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-26T05:34:27Z",
+  "closed_at": "2026-05-26T21:42:58Z",
+  "close_reason": "Merged to main via PR #79",
+  "labels": [
+    "architecture",
+    "model",
+    "provider-neutral",
+    "refactor",
+    "technical-debt",
+    "tools"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.10",
+      "depends_on_id": "eshyra-0jq.3",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.10",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:31:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

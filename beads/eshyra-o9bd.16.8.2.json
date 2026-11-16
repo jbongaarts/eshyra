@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.8.2",
+  "title": "L3-F2: context packet must report actual readiness categories, not always engine-pending",
+  "description": "Repair L3-F2 (evidence in eshyra-o9bd.16.3 notes). packet.ts ~457-467 selects every non-green clause and always says the record has engine-pending clauses; packetMessage.ts ~163-166 renders that verbatim. Effect: 21/240 magic items with adjudicated clauses but no engine-pending clauses (e.g. Bag of Devouring, Efficient Quiver, Horn of Valhalla) get a false engine-pending statement. Fix: derive the statement from the actual readiness categories present (engine-pending, adjudicated-by-design, design-blocked, etc.) and say engine-pending only when such clauses exist. Evidence: one generalized category-to-message test with a pure adjudicated item, an engine-pending item and a mixed input.",
+  "notes": "Done by the Captain in commit 8cc290d6 on branch eshyra-o9bd.16.8. packet.ts readinessNote() names only the statuses present. Meanings are given only for the three clause-level categories; any other status is reported as unrecognized. Test: projectionLimitProvenance.test.ts, which checks Bag of Devouring (adjudicated only), Ammunition (engine-pending) and Animated Shield (mixed). verify:worktree passed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:33:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:39:56Z",
+  "closed_at": "2026-11-01T08:39:56Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.8.2",
+      "depends_on_id": "eshyra-o9bd.16.8",
+      "type": "parent-child",
+      "created_at": "2026-11-01T02:33:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

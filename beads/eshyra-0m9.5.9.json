@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.9",
+  "title": "SRD 5.1 importer: section detection + orchestrator",
+  "description": "Add the cross-cutting section-detection layer that finds 'Spells', 'Monsters', 'Classes', etc. section boundaries inside the SRD PDF so each kind parser receives the correct slice of PageText[]. Today the spell parser (`parseSpells.ts`) runs over the entire PDF and tolerates false negatives; once more parsers land, mis-attribution becomes possible (e.g. class-spell-list 'Magic Missile' showing up as a spell-section name line, or 'Hit Points' headers in a class entry being mis-detected by future parsers). This issue adds a section-anchor table and an orchestrator that dispatches the correct page range to each kind parser.\n\nReference implementation: extend `packages/core/scripts/importers/dnd5e-srd-5.1/index.ts` and add a new `sections.ts` module under the same directory. Update `parseSpells.ts` to accept a narrowed slice (no behavior change for tests that already pass narrowed slices).\n\nThis is the architectural prerequisite for every other 0m9.5 child parser. Land first.",
+  "acceptance_criteria": "- New module `packages/core/scripts/importers/dnd5e-srd-5.1/sections.ts` defines a section-anchor table identifying each SRD top-level chapter by header line.\n- Orchestrator in `index.ts` dispatches per-kind page slices to parsers; `parseSpells` is refactored to accept a narrowed slice without behavior change.\n- Existing pipeline test still passes byte-stable; importer output for spells is unchanged for the same PDF.\n- A regression test verifies a known false-positive shape (e.g. a class-list spell name appearing in a non-spell section) is not mis-extracted by the spell parser when run through the orchestrator.\n- README updated to describe the section-anchor table and how to add a new kind to the orchestrator.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:08:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T02:31:17Z",
+  "closed_at": "2026-05-28T02:42:02Z",
+  "close_reason": "Code (sections.ts, orchestrator wiring, regression tests) shipped in #92 as part of the SRD foundation. Remaining README gap (section-anchor table + how-to-add-a-new-kind) closed in PR #93.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.9",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:08:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 10,
+  "comment_count": 0
+}

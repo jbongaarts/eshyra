@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0uyj",
+  "title": "measureRun.test.ts whole-tree memory floor (600 MB) fails under machine load",
+  "description": "packages/core/test/measureRun.test.ts 'reports whole-tree memory, including detached and orphaned descendants' asserts sampled peak RSS > 600 MB. Under concurrent load (parallel agent verifies) it measured 586 MB and 497 MB on 2026-11-07, then passed in isolation and on rerun. The assertion depends on sampling timing and load, not on the measured program's behavior. Make the probe deterministic (assert that the detached and orphaned descendants are counted, not an absolute RSS floor) per AGENTS.md proportionate proof machinery.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T01:44:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T01:44:53Z",
+  "labels": [
+    "tooling"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

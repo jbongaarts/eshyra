@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.8.19",
+  "title": "Repair S45-S47 from the eighth review (captain inline)",
+  "description": "Findings recorded on eshyra-o9bd.19.3.4.8.18. S47 (blocker): start_encounter can admit a 'vanish' creature at 0 HP as dead (a body left behind, link still active). Fix: refuse admitting a vanish creature at 0 HP; tighten I11 so a vanish creature at 0 HP must be absent (dead allowed only by a terminal cause). S46: hpDelta to 0 plus an explicit status on a vanish creature returns a false 'absent' error and rolls back. Fix: refuse up front with a precise message. S45: a replacement concentration effect can link creatures the prior effect's cleanup just made absent. Fix: re-check every participant for absent after the replaced effect ends, and refuse with the cause named. Evidence: one registry test per finding in zeroHpVanishAndRemovePolicy.test.ts.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-04T03:41:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-04T03:44:21Z",
+  "started_at": "2026-10-04T03:41:29Z",
+  "closed_at": "2026-10-04T03:44:21Z",
+  "close_reason": "Repaired in 74334539 on eshyra-o9bd.19.3.4.8 (pushed); negative-proved; verify green",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8.19",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8",
+      "type": "parent-child",
+      "created_at": "2026-10-03T22:41:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

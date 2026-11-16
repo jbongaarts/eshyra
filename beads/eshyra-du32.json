@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-du32",
+  "title": "L4-F3: deterministic capability ledger must use own-key membership (inherited keys bypass unknown-identity checks)",
+  "description": "NON-BLOCKER from independent audit lane L4 (eshyra-o9bd.16.4 notes): deterministicCapabilityLedger.ts ~186-191, ~323-327, ~350-359 use inherited property lookups, so 'constructor', 'toString' and '__proto__' pass unknown-identity checks. No current binding or model tool reaches it; repair before admitting caller-built ledger registries. Fix with own-key membership or null-prototype/Map; one generalized inherited-key refusal test.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:43:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:43:02Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

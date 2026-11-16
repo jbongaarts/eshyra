@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ss08.8",
+  "title": "The Adventure Is Not the World",
+  "description": "Tell the story of first-class adventure modules.\n\nNarrative hook and core question: What is an adventure module in a system that can improvise indefinitely?\n\nWrite only after module architecture is implemented and exercised enough to tell the history honestly. Research why prompt injection of adventure text is insufficient; module as authored canonical spine; module schema and typed records; campaign binding; module progress state; DM runtime context; progress audit; module truth versus player-discovered knowledge; authored content versus campaign divergence; and how improvised consequences overlay authored content without rewriting the source module. Cover Ember Hollow only when the evidence and naming in the repository support it.\n\nExpected architectural conclusion: an adventure module is authored scenario truth with campaign-owned progress and divergence, not the whole world and not a prompt pasted into context.\n\nBoundaries: do not treat the current module epic as complete if it is not. Do not claim module UX or playtest maturity that artifacts do not support. Do not absorb the campaign-memory or rules-pack compiler story.\n\nUse repository history, PRs, design docs, ADRs, audits, and playtest transcripts as evidence. Verify claims against artifacts rather than model memory; distinguish implemented from planned architecture; preserve public readability and search indexing; and follow Joseph's voice rules: analytical and curious, concrete before abstraction, dry humor when earned, deliberate we/I attribution, reflect praise, absorb blame, no em dashes, and no generic LLM prose.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T04:27:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "labels": [
+    "docs",
+    "site",
+    "storytelling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ss08.8",
+      "depends_on_id": "eshyra-eh54",
+      "type": "relates-to",
+      "created_at": "2026-07-09T23:28:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ss08.8",
+      "depends_on_id": "eshyra-ss08",
+      "type": "parent-child",
+      "created_at": "2026-07-09T23:27:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

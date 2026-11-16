@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.7.1",
+  "title": "Dispatch: DM time guidance and advance_time lifecycle integration (attempt 1)",
+  "description": "Implement the design on eshyra-o9bd.19.6.7.7 (description, DESIGN, ACCEPTANCE, 2026-11-05 USER ADJUSTMENT). Worktree .worktrees/eshyra-o9bd.19.6.7.7.1, branch eshyra-o9bd.19.6.7.7.1 from parent branch eshyra-o9bd.19.6.7.7 (origin/main 529933db948498e7bbf2239c2fbe1b783f136d19). Implementer gpt-6-luna high via dispatch-codex.sh.",
+  "notes": "2026-11-06 Captain: dispatched gpt-6-luna high, PGID 94733.\nCOMPLETION REPORT\n\nChanged DM time guidance and tool/capability descriptions so advance_time is available for DM-directed elapsed time, while update_clock is label/location only. Removed the explicit-action gate from advance_time; clarified that combat turns/rounds do not advance elapsed world time, minute/hour/day timers use elapsed time, round timers use combat boundaries, qualified rests use complete_short_rest/complete_long_rest, and pack-bound dawn recharge uses advance_time. Added a scripted tool-registry regression covering timed-effect expiry and a real pack-bound item recharge across dawn, plus prompt and action-gate assertions.\n\nFiles: packages/core/src/orchestrator/protocol.ts, toolBeginTurn.ts, toolCloseCombatInstance.ts, toolRest.ts, toolStartEffect.ts, toolUpdateClock.ts, turnAuditor.ts; packages/core/src/rules/deterministicCapabilityInventory.ts; packages/core/test/itemPerDayDawnEconomy.test.ts, protocol.test.ts, tools.test.ts.\n\nVerification: npm run verify:worktree passed (format, hidden-Unicode check, Biome check, forced typecheck, full tests); 396 test files passed, 2 skipped; 7,388 tests passed, 3 skipped.\n\nA2-F2 sub-claim disposition: its summary that the instructed time tool itself never advances the canonical clock is false of the implementation. advance_time already advances elapsed_minutes and settles elapsed-effect expiry, stable recovery, item timers and dawn economies; the defect was that model guidance omitted it and explicit-action gating rejected its use. Round timers already use combat turn/round boundaries; minute/hour/day spell records must match their declared unit and are not auto-converted to rounds. No automatic combat-clock advancement added.\n\nCommit: 41364d77956cc759fb43e06e735ea1330719a7f0 (eshyra-o9bd.19.6.7.7 DM time lifecycle guidance). No follow-up issues discovered.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T02:16:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T02:27:14Z",
+  "started_at": "2026-11-06T02:16:50Z",
+  "closed_at": "2026-11-06T02:27:14Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.7.1",
+      "depends_on_id": "eshyra-o9bd.19.6.7.7",
+      "type": "parent-child",
+      "created_at": "2026-11-05T20:16:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

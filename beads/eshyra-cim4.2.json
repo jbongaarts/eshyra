@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cim4.2",
+  "title": "Review: Opus (Sol limited) final review of PR #633 (eshyra-cim4 @ bc926812)",
+  "description": "Final read-only review of PR #633 (branch eshyra-cim4, exact head bc926812122c3d23e393b3a243743f8d4f96225d) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Opus final review of PR #633 @ bc926812 (read-only; node_modules absent, so I traced the code and ran no tests).\nChecked and found correct: (a) Atomicity. spendTurnResource runs inside flexibleCasting's outer better-sqlite3 transaction (the nested withTransaction becomes a savepoint). The spend happens after every precondition refusal and before any point or slot mutation, and every later refusal (BoundedProcedureError, SpellSlotError, assertPointChange) throws inside that outer transaction, so a refused conversion also rolls back the bonus-action spend. (b) Refusals. A spend off-turn, before any begin_turn (active participant null), while surprised, by a dead character, or with the bonus action already used all raise ActionEconomyError, which is mapped to FlexibleCastingError -> flexible_casting_error. (c) Participant identity. The participant is {kind:'character', ref: resolved characterId}, and the explicit character target is honored. That matches how beginTurn keys PCs (the tests use PC={kind:'character'}). (d) Outside combat. The spend is gated on getActiveCombatInstance, so nothing is consumed and bonusActionSpent is absent. (e) Spell-cast activity guard. Neither activity string ('Font of Magic: sorcery points into a level N slot' / '...level N slot into sorcery points') matches /\\bcast(?:s|ing)?\\b|\\bspell/i, and no spellRef is passed, so bonus_action_spell_cast stays 0. That is correct: Flexible Casting is not a spell.\nS1 (NON-MATERIAL) packages/core/src/orchestrator/protocol.ts:274-275. The general combat rule still says 'Record every action, bonus action ... with spend_turn_resource' and has no carve-out for flexible_casting (only line 234-235 and the tool description carry one). Scenario: the DM follows the general rule first, then flexible_casting refuses with 'already used their bonus action'. This fails closed and corrupts no state. Suggested fix: add '(except flexible_casting, which spends its own)' to that sentence.\nS2 (NON-MATERIAL) packages/core/src/state/flexibleCasting.ts:163-187. The spend hard-codes resource 'bonus_action' before evaluation, instead of deriving it from the procedure's actionCost (which the SRD pack gives as 'bonus-action'). It is correct for the SRD pack, but a non-bonus actionCost would be silently mis-spent. Optional: assert that the pack's actionCost is 'bonus-action', or derive the spend from it.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:26:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:28:54Z",
+  "closed_at": "2026-10-09T05:28:54Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cim4.2",
+      "depends_on_id": "eshyra-cim4",
+      "type": "parent-child",
+      "created_at": "2026-10-09T00:26:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

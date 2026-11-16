@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1ts",
+  "title": "Reconcile AGENTS.md and CLAUDE.md guidance divergence",
+  "description": "bd preflight --check reports that AGENTS.md and CLAUDE.md user-authored content diverge even though AGENTS.md is intended as the shared source of operational guidance. Investigate the divergence, decide whether CLAUDE.md should import/symlink AGENTS.md or intentionally opt out, and update the files or bd configuration accordingly. This is unrelated to loreweaver-0jq.21 package metadata work.",
+  "acceptance_criteria": "bd preflight --check no longer reports AGENTS.md/CLAUDE.md divergence, or the divergence is explicitly documented with the bd-doctor opt-out comment if intentional.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T17:01:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:14Z",
+  "started_at": "2026-06-05T23:31:41Z",
+  "closed_at": "2026-06-05T23:37:32Z",
+  "close_reason": "Added the explicit bd-doctor divergence opt-out to CLAUDE.md because its short AGENTS.md import stub is intentional; verification: bd preflight --check now reports AGENTS.md/CLAUDE.md in sync, and npm run check:hidden-unicode passed.",
+  "comments": [
+    {
+      "id": "bd13bcd8-da25-5bd2-9cde-97ab5f64bd3a",
+      "issue_id": "eshyra-1ts",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded on Node v24.14.1. bd preflight --check failed with the expected AGENTS.md/CLAUDE.md divergence warning, plus bd's Go-project checks are not applicable in this TypeScript repo (go test has no module; golangci-lint missing). npm run check failed because this nested .worktrees checkout is ignored by Biome via VCS ignore; will verify Biome with VCS ignore disabled from this worktree.",
+      "created_at": "2026-06-05T23:34:33Z"
+    },
+    {
+      "id": "d5e5d9b9-d94e-5100-843b-ea9cfe63a647",
+      "issue_id": "eshyra-1ts",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: bd preflight --check -> exit 1 due unrelated bd Go-project checks (go test ./... has no Go module; golangci-lint missing), but acceptance check now reports: AGENTS.md/CLAUDE.md in sync. npm run check:hidden-unicode -> exit 0; scanned 268 tracked text files; no forbidden hidden/bidi Unicode characters found.",
+      "created_at": "2026-06-05T23:37:20Z"
+    },
+    {
+      "id": "7866c48d-4a83-59f3-a13f-3a5ee911e7d7",
+      "issue_id": "eshyra-1ts",
+      "author": "Joseph Bongaarts",
+      "text": "Pre-PR verification: bd preflight --check -> exit 1 only for non-applicable Go checks (no Go module; golangci-lint unavailable) while AGENTS.md/CLAUDE.md in sync passed; npm run check:hidden-unicode -> exit 0; git diff --check HEAD -> exit 0. Beads hygiene: bd orphans reports unrelated loreweaver-0m9.5; bd stale has none; bd list --status=in_progress shows only unrelated loreweaver-0m9.5.",
+      "created_at": "2026-06-05T23:38:51Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 3
+}

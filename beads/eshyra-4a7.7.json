@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.7",
+  "title": "Complete SRD ancestry option table modeling",
+  "description": "Problem\r\n\r\nAncestry records are broadly present, but at least Dragonborn is missing critical structured option data.\r\n\r\nAudit example\r\n\r\nancestry:dragonborn references the Draconic Ancestry table, but the record does not include the table rows mapping dragon type to damage type and breath weapon. There is also no corresponding table record. A consumer cannot determine the dragonborn breath weapon or resistance options from structured pack data.\r\n\r\nTask\r\n\r\nComplete ancestry option and table modeling.\r\n\r\nImplementation guidance\r\n\r\n- Start with Dragonborn Draconic Ancestry.\r\n- Scan all ancestry records for source references to tables, choices, variant options, or structured lists.\r\n- Represent ancestry option tables either as top-level table records linked from ancestry/feature records or as structured child data.\r\n- Preserve source row text, damage types, breath weapon shapes, and provenance.\r\n- Ensure the coverage gate accounts for ancestry-related tables and options.\r\n\r\nRegression cases\r\n\r\nAdd tests for:\r\n\r\n- Dragonborn Draconic Ancestry table rows.\r\n- Dragonborn Breath Weapon and Damage Resistance linkage to the chosen ancestry.\r\n- Any other ancestry option table/list detected by the source inventory.\r\n\r\nAcceptance criteria\r\n\r\n- Dragonborn structured options are usable from generated records.\r\n- No ancestry source table is only referenced by prose without a structured mapping.\r\n- Existing ancestry record ids remain stable.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T04:30:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-14T03:56:57Z",
+  "closed_at": "2026-06-14T04:06:48Z",
+  "close_reason": "Linked ancestry option tables to ancestry traits via per-trait tableRefs (Dragonborn Draconic Ancestry -> table:draconic-ancestry); added kindSchema validation + ancestry-unlinked-table audit invariant + tests. PR #208.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.7",
+      "depends_on_id": "eshyra-4a7",
+      "type": "parent-child",
+      "created_at": "2026-06-10T23:30:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.7",
+      "depends_on_id": "eshyra-4a7.3",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:22:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

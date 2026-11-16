@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.1",
+  "title": "Add formatter and normalize source layout",
+  "description": "Add a formatter such as Prettier or Biome and apply it across the repository.\r\n\r\nSeveral source files are currently stored as very long compressed lines, which makes review, blame, merging, and future agent edits harder. This should be done before major refactors.",
+  "acceptance_criteria": "- Formatter is configured.\r\n- Formatting command is added to package scripts.\r\n- CI or local check can verify formatting.\r\n- Existing source files are normalized.\r\n- No intentional behavior changes are included in the formatting commit.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-25T16:32:30Z",
+  "closed_at": "2026-05-25T16:53:07Z",
+  "close_reason": "Biome 1.9.4 configured, all source normalized (format + imports), biome ci clean (0 errors), CI step added. PR #68.",
+  "labels": [
+    "architecture",
+    "formatting",
+    "refactor",
+    "technical-debt",
+    "tooling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.1",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:31:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 6,
+  "comment_count": 0
+}

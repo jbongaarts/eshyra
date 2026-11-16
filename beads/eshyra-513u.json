@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-513u",
+  "title": "Represent mutually exclusive damage modes in non-creature spell damage lists (fire-shield, spirit-guardians)",
+  "description": "Found by eshyra-o9bd.19.3.1.1 O3 sweep. spell:fire-shield prints '2d8 fire damage from a warm shield, or 2d8 cold damage from a cold shield' and spell:spirit-guardians prints '3d8 radiant damage (if you are good or neutral) or 3d8 necrotic damage (if you are evil)'. Both project mechanics.damage as a cumulative list ([2d8 fire, 2d8 cold]; [3d8 radiant, 3d8 necrotic]). Needs a damage-list alternative representation (creature attacks use attacks[].alternatives from eshyra-o9bd.19.4.2.1 / PR 646, which is not on the current base). Decide the representation, then repair both plus audit the sibling spells found by the same grammar. Not a parser-strategy change under the owning bead's HARD STOP, so it was not done under 19.3.1.1.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T07:41:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T07:48:33Z",
+  "closed_at": "2026-10-10T07:48:33Z",
+  "close_reason": "Absorbed into eshyra-o9bd.19.3.1 (same PR; O3 cross-kind damage alternatives are this bead's scope; representation decided by the Captain, see 19.3.1 notes)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

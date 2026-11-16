@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ry69.3",
+  "title": "Dispatch: ry69 add the eight missing relation families to the discovery evidence table (attempt 2)",
+  "description": "Repair PR #730 per Sol review eshyra-ry69.2 S1 (bd show eshyra-ry69.2 in full). TEST-ONLY change in packages/core/test/rules/recordKeyReferences.test.ts: add source-backed rows to the existing FAMILIES table, each giving a representative resolved identity AND an actual one-hop expansion assertion through the existing two it.each consumers, for ALL eight missing relation names: class-progression, counts-as-class-spell, extended-spell, includes-item, portal-interaction, prerequisite-class, revealed-by, spell-level-class. Pick each representative record from the committed pack and check it against the printed SRD text. Then add one generalized guard so this cannot recur: every relation name used by a record-key reference declaration this bead introduced (derive the set from the manifest, not a hand list) must appear in FAMILIES. Do not change declarations, the pack, or other tests. Base: branch eshyra-ry69 (PR head 3c63cdf5). Worktree .worktrees/eshyra-ry69.3 on branch eshyra-ry69.3; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. npm run verify:worktree must pass BEFORE committing; commit on eshyra-ry69.3 only; no push or PR; do not close eshyra-ry69.",
+  "notes": "Attempt 2 complete, commit 4a15512b on eshyra-ry69.3 (test-only, recordKeyReferences.test.ts). Rows (source -> target), each verified against printed text and resolved + one-hop expanded via the existing it.each consumers: class-progression feature:monk:martial-arts -> class:monk; counts-as-class-spell feature:bard:magical-secrets -> class:bard; extended-spell feature:warlock:pact-boon -> spell:find-familiar; includes-item magic-item:universal-solvent -> magic-item:sovereign-glue; portal-interaction magic-item:sphere-of-annihilation -> spell:gate; prerequisite-class feature:warlock:eldritch-invocations -> class:warlock (Ascendant Step, level 9); revealed-by magic-item:potion-of-poison -> spell:identify; spell-level-class feature:bard:spellcasting -> class:bard. Extra ninth row: stat-block-reference at /mechanics/entityGrant/grants/*/statBlockRef (figurine-of-wondrous-power -> stat-block:giant-fly), found by the guard (pre-existing relation name used at a newly bounded shape). Guard: derives relation set from manifest declarations (reference, record-key) whose kind+pointerPrefix is in RECORD_KEY_LEAF_KIND_POINTER_SHAPES, incl. non-null relationByFieldValue values, and requires each in FAMILIES. verify:worktree exit 0.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-16T04:15:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-16T04:21:35Z",
+  "closed_at": "2026-11-16T04:21:35Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ry69.3",
+      "depends_on_id": "eshyra-ry69",
+      "type": "parent-child",
+      "created_at": "2026-11-15T22:15:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

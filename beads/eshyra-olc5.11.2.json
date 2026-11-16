@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.11.2",
+  "title": "Dispatch: olc5.11 repair after cloud review r1 S1-S4 (attempt 2)",
+  "description": "Repair PR #663 (eshyra-olc5.11) after cloud final review r1 at 959855a8: CHANGES REQUESTED (4). Branch eshyra-olc5.11.2 from eshyra-olc5.11 at 959855a8. Fix every finding AND its siblings in one pass (whole class, not only the named instance).\n\nS1 packages/core/src/state/activeEffects.ts ~3665: item effects whose TYPED duration amount is a dice expression (Potion of Growth / Potion of Diminution 1d4 hours, Dust ... 2d4, any other) fail the `typeof expected.amount !== 'number'` check, so every start_effect with that effectRef is refused. Closure: a dice-typed duration binds the UNIT and requires the started effect's amount to be a positive integer within the dice range (min..max of the expression) - or, if the existing spell binding treats dice durations as unbound, treat them as unbound with an explicit result note; choose whichever matches the spell-sourced binding's existing behaviour and say which. Add pack-record tests (Potion of Growth accepted/refused).\nS2 importer magicItemSimpleStateMachines.ts ~90: Animated Shield carries 'you are incapacitated' (a fragment that drops 'or die') plus 'until you are incapacitated or die'. Keep exactly one full printed predicate. SIBLINGS: sweep EVERY condition transition in all 21 kept machines (and the census) for fragments that drop part of the printed predicate or duplicate another condition; reviewer note: the Ioun Stone condition drops 'another creature must use an action to grasp or net' - fix it the same way (that text describes an actor's action; decide whether it is an external condition or an operation and say why).\nS3 importer magicItemFaithfulLifecycles.ts ~1366: Rope of Entanglement loose->restraining condition ('The target must succeed on a DC 15 Dexterity saving throw or become restrained') and restraining->loose ('On a success, the creature is no longer restrained by the rope') are outcomes of operations (the command-word entangle action and the escape action), now fireable for free via item_state_event. Closure: bind them to their operations using the existing declared-outcome mechanism (use_item args transitionOutcome / failure paths) so they go through use_item (with its typed cost), and remove them as free conditions; if the existing mechanism cannot express it faithfully, keep them as adjudicated clauses with verbatim spans and EXCLUDE them from item_state_event. SIBLINGS: sweep all condition transitions for any that are really an operation's save/check outcome and treat them the same way. Keep 'the rope drops to 0 hit points' as an external condition.\nS4 packages/core/test/itemResetExecutor.test.ts ~110: item_state_event is only proven on a fixture. Add PACK-record tests: Animated Shield 'incapacitated or die' ends the active state with no turn spend; Dagger of Venom hit uncoats; Wings of Flying condition/timer path fires the olc5.8 state-entered cooldown anchor; undeclared condition refused.\nNote (fold in): Cloak of the Bat cast-polymorph does not inherit polymorph's 1-hour duration unlike the 93 castSpell effects - make it consistent with the rule:spells inheritance (or document the printed reason it differs).\n\nRegenerate the pack (npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1/), verify:dnd5e-srd-pack, regenerate + --check the semi-structured inventory, update the census, update count expectations only with source-backed justification, and if records.json changes update any thaw note hash. Run npm run verify:worktree before committing. Completion notes: per-finding closure, sibling sweep results, clause readiness counts before/after.\n",
+  "notes": "Dispatched gpt-6-luna effort high from 959855a8; PGID 4105626.\nCompleted and committed as fd405d8b (eshyra-olc5.11.2 repair item state outcomes).\n\nS1: item-sourced timed effects now accept dice-typed durations only when the declared duration is a positive integer within the parsed dice range and has the exact typed unit. Fixed numeric durations remain exact matches. Added Potion of Growth pack-record accepted/refused coverage.\n\nS2: swept condition transitions across all 21 kept machines; generated conditions must be full printed predicates and unique per source state. Animated Shield keeps only the full incapacitated-or-die predicate. Ioun Stone retains the entire another-creature action predicate as an external event because that action belongs to a different actor and the DM resolves its outcome before item_state_event records it.\n\nS3: Rope of Entanglement save and escape outcomes now use operation-bound transitions and transitionOutcome failure paths through use_item. retryAfter is optional because the printed rules state no retry delay. The target save and restrained-condition application remain a verbatim DM-adjudicated clause. Rope destruction at 0 HP remains an external condition.\n\nS4: added generated-record conformance for Animated Shield, Dagger of Venom, Wings of Flying, undeclared conditions, and Rope outcomes; narrowed green readiness to the four pack-conformant transition records. Cloak of the Bat now emits a castSpell effect and inherits polymorph duration from the spell record (1 hour).\n\nReadiness clauses before: 1378 total (361 adjudicated, 1 design-blocked, 797 engine-pending, 219 green). After: 1379 total (362 adjudicated, 1 design-blocked, 793 engine-pending, 223 green). Expected changes: Cloak adds one spell-duration clause; Rope effect becomes adjudicated; four tested state-machine clauses move pending to green.\n\nVerification: npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1/; npm run verify:dnd5e-srd-pack passed; semi-structured inventory regenerated and --check passed (1854 rows); npm run verify:worktree passed: 363 test files passed, 2 skipped; 6784 tests passed, 3 skipped. No follow-up issues discovered.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-14T05:28:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-14T05:48:27Z",
+  "started_at": "2026-10-14T05:28:56Z",
+  "closed_at": "2026-10-14T05:48:27Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.11.2",
+      "depends_on_id": "eshyra-olc5.11",
+      "type": "parent-child",
+      "created_at": "2026-10-14T00:28:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.1.5",
+  "title": "Review: Sol bounded re-review of PR #698 round-2 repair (eshyra-o9bd.19.6.1 @ 1693f5d5)",
+  "description": "Bounded read-only re-review of PR #698 at exact head 1693f5d52a14ff8cd58c82dabad5f1b79e970370: S1/S2 from eshyra-o9bd.19.6.1.4 and siblings, plus regressions from the repair commit. Ends with a VERDICT line.",
+  "notes": "BOUNDED READ-ONLY RE-REVIEW of PR #698 at exact head 1693f5d52a14ff8cd58c82dabad5f1b79e970370, repair diff e65ab1ff..HEAD. Effective profile: rules-clause-complete, explicitly bounded by this assignment to prior S1/S2 and repair regressions. Authority: AGENTS.md, docs/design-and-pr-review-policy.md, ADR 0020, docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md section 5.9, and live owning bead plus children .1.1/.1.3/.1.4/.1.5. The refs/beads/state projection remains dated 2026-09-10 and carries superseded parent requirements; live bd show supplies current authority.\n\nS1 - REPAIRED (prior MATERIAL finding; no remaining material or non-material finding). Reviewed the actual checkRecordLocators, checkSpellClassFieldLocators and checkOtherFieldLocators implementation in packages/core/scripts/importers/dnd5e-srd-5.1/recordLocatorCompleteness.ts beside the three changed reasonings in docs/audits/dnd5e-srd-5.1-final/finding-registry.json. The repaired prose distinguishes record-page coverage, exact spell /classes pages, required capacity/primaryAbilities locator presence, and other field-value anchoring on at least one cited page. Read in full, the explicitly stated spell exact-page rejection is the exception to the subsequent general surplus-field-page limitation. The prose no longer claims universal surplus/stale-page rejection. Container-continuation independently states the any-cited-page limitation. This narrows the evidence claim without expanding the importer contract.\n\nConcrete disposable adversarial siblings, requireComplete:true: capacity citations pp. 70, 900 and pp. 69, 70 pass when the capacity prints only on p.70; stale-only p.69 and nonexistent-only p.900 reject. A primaryAbilities string array split across pp.56 and 57 with an additional p.900 passes, while its missing locator rejects. A child-of continuation over pp.93-94 rejects a p.93-only record locator, but accepts pp.93, 94, 900 with the matching source label. Spell /classes p.110 passes its ledger evidence; adding p.900 rejects even when both pages print the spell and class. All ten probes matched the stated distinctions. These probes exercise the mechanism; they do not introduce a new product requirement.\n\nFull-path sibling sweep: independently derived all fourteen rows whose statusReasoning was newly added relative to PR base 93c65107. Every explicit cited .ts/.json/.md file in those fourteen reasonings is now an existing full repository-rooted path. Checked all fourteen strings, including the previously missed source-authority-fable-f1, source-authority-fable-f7, ambiguous-coverage, rock-gnome-boundary and wererat-crossbow siblings. No basename citation remains in that authorized membership. Existing generalized locator assertions are proportionate permanent evidence; manual prose-to-assertion reconciliation and disposable probes suffice for this documentation repair, with no new permanent checker required.\n\nS2 - REPAIRED (prior NON-MATERIAL finding; no remaining finding). The Markdown banner and JSON historicalScope in docs/audits/dnd5e-srd-5.1-final/o9bd-18-7-6-equipment-mechanics-inventory.md and docs/audits/dnd5e-srd-5.1-final/o9bd-18-7-6-equipment-mechanics-inventory.json now correctly distinguish first addition 2026-07-14 at 81709d57 from last regeneration 2026-09-23 at 7b469822. Independently inspected both files' git history. A historian following the labels now attributes the later Vehicles row/census to the September regeneration rather than an invented July 6 inventory. Removing the two banner lines from Markdown, or only historicalScope from JSON, reproduces the preserved c43e149d bodies byte-for-byte. Snapshot identity, withdrawal, section 5.9 and candidate/later-gate pointers remain intact. Direct history and byte comparison are proportionate evidence; no permanent prose test is needed.\n\nS3 - REPAIR REGRESSIONS: NONE FOUND, MATERIAL OR NON-MATERIAL. The repair touches only these three documentation artifacts. Structural JSON comparison confirms the registry changes only eight statusReasoning strings; row membership/status/ownership and all other fields remain identical to e65ab1ff. No pack, importer, runtime, capability, or test assertion changed. Historical inventory payloads remain byte-exactly preserved. No requirement to expand the gate to reject surplus ordinary field or record pages arises from this repair.\n\nValidation: direct Vitest invocation with cache disabled passed packages/core/test/importers/dnd5e-srd-5.1/recordLocatorCompleteness.test.ts and packages/core/test/findingRegistry.test.ts, 2 files / 32 tests. Ten in-memory disposable probes passed via tsx with its cache disabled. All fourteen reasoning paths resolve; inventory body comparisons and git diff --check passed. HEAD stayed 1693f5d5 and git status remained clean. No repository edits, format/build/verification commands, commits, pushes, GitHub comments, or merges performed. Only this assigned review bead is being updated and closed; parent and siblings are untouched.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T03:46:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T03:48:34Z",
+  "closed_at": "2026-11-01T03:48:34Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.1.5",
+      "depends_on_id": "eshyra-o9bd.19.6.1",
+      "type": "parent-child",
+      "created_at": "2026-10-31T22:46:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

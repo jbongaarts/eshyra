@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-citg",
+  "title": "Subclass parser drops sub-subsection prose (Tenets of Devotion, etc.)",
+  "description": "Found during eshyra-4a7.6 PR2 source-coverage closure. The subclass body parser emits the subclass intro paragraph and the per-level subclass FEATURE records, but drops leaf sub-subsection prose that is neither the intro nor a granted feature. Confirmed dropped: the Oath of Devotion's 'Tenets of Devotion' (Honesty, Courage, Compassion, Honor, Duty) is in no emitted record description. Sub-subsection HEADINGS that introduce emitted spell tables (Paladin 'Oath Spells' p33 -> table:oath-of-devotion-spells, Warlock 'Expanded Spell List' p50 -> table:fiend-expanded-spells) are accounted as ignore:subclass-spell-table-heading (table emitted + linked via subclass.data.spellTableRefs). 'Tenets of Devotion' has no such table and is held under a narrow known-gap naming THIS bead. Fix: capture sub-subsection prose into subclass description (or structured field), remove the narrow known-gap, audit other subclasses.",
+  "acceptance_criteria": "Tenets of Devotion prose represented on subclass:oath-of-devotion; narrow known-gap removed; other subclasses audited.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-14T02:46:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-14T03:43:17Z",
+  "started_at": "2026-06-14T03:25:20Z",
+  "closed_at": "2026-06-14T03:43:17Z",
+  "close_reason": "Subclass namedSections mechanism captures Tenets of Devotion as data.sections on subclass:oath-of-devotion. known-gap:eshyra-citg removed. All tests pass. PR #207 open.",
+  "comments": [
+    {
+      "id": "a52b8e56-6f00-5654-9978-34127bec25fb",
+      "issue_id": "eshyra-citg",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: parseSubclasses.test.ts (27/27), sourceInventoryCoverage.test.ts + srdGeneratedPack.test.ts (179/179) — all pass.",
+      "created_at": "2026-06-14T03:26:08Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

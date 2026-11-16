@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.18",
+  "title": "A4-R4-F1: start_effect duration and durationOverride input descriptions state false typed-only boundaries",
+  "description": "Re-audit R4 (eshyra-o9bd.19.6.7.17) blocker, verified by Captain at 9106487d. Same class as A4-F1 (ADR 0020 Decision 3, design 5.9 condition 6), sibling exposed by the expanded query; predates #712/#714. toolStartEffect.ts:181 duration description says it is required except for a typed item effect, but a next-dawn item grant (Bag of Tricks) may omit it and the engine computes the minutes (toolStartEffect.ts ~645-668). :186 durationOverride description says declare only when overriding a typed item duration, but any magic-item source accepts it: typed changes the duration, untyped item power/grant records an unbound dm-override (:672-695); refused for next-dawn grants and for non-magic-item sources (whose error message at ~:640 also says 'typed item duration'). Runtime is correct; descriptions are wrong.",
+  "acceptance_criteria": "- The start_effect duration and durationOverride input descriptions, and the non-item-source refusal message, state exactly the engine's cases (typed item effect omission, next-dawn grant computed omission, override on any magic-item source except next-dawn grants, ruleId only on the typed path, refusal for non-item sources); runtime unchanged.\n- Reviewed declaration assertions protect the corrected descriptions; existing behaviour tests still pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T07:14:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T07:24:47Z",
+  "started_at": "2026-11-06T07:14:52Z",
+  "closed_at": "2026-11-06T07:24:47Z",
+  "close_reason": "Merged PR #718 (1f48027344197f8b73ad748a1a24610002e8c0ca) after clean Sol review .18.1",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.18",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-06T01:14:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

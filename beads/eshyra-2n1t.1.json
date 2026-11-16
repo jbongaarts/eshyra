@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.1",
+  "title": "D1: Decide multiclassing support scope for the engine",
+  "description": "8 rule procedures (channel-divinity, class-features, extra-attack, hit-points-and-hit-dice, multiclassing, multiclassing-proficiency-bonus, spellcasting, unarmored-defense) plus experience-points' multiclass clause are design-blocked because packages/core/src/character/levelUpEngine.ts is single-class by design. Decide: is multiclassing in scope for v1? If yes, this becomes an engine epic of its own (per docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4 D1).",
+  "design": "ADR 0018 explicitly defers multiclassing from the current v1 executable domain. Schema-v1 is single-class; level equals total and sole-class level. Runtime and creation must fail closed through a shared validator. F4/F7/F8 depend on the enforcement bead and may rely on the equality only after validation.",
+  "acceptance_criteria": "A durable ADR chooses a clear multiclass support boundary and covers representation, level semantics, proficiency/HP/Hit Dice/saves/grants/equipment, features/subclasses/prerequisites, Spellcasting/Pact Magic, creation/advancement, pack/compiler needs, compatibility, and failure behavior; F4/F7/F8 contracts and sequencing are explicit; non-duplicate implementation work is represented and dependency-wired; relevant docs/tests/checks pass; bead is closed only after artifacts and beads are pushed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:40:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-11T20:24:52Z",
+  "started_at": "2026-07-11T19:58:48Z",
+  "closed_at": "2026-07-11T20:24:52Z",
+  "close_reason": "Accepted ADR 0018: current v1 engine is explicitly single-class; multiclassing is deferred behind a fail-closed shared validator. F4/F7/F8 contracts and dependencies updated, and enforcement is tracked by eshyra-2n1t.13.",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.1",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-07T00:40:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

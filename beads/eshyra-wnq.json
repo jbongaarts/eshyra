@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wnq",
+  "title": "Include equipment count in SRD importer CLI summary",
+  "description": "## Problem\r\n\r\nrunImporter returns result.counts.equipment, but the CLI summary omits it. This is a small polish/regression issue, but it makes importer output less useful when checking generated pack coverage.\r\n\r\n## Relevant files\r\n\r\n- packages/core/scripts/importers/dnd5e-srd-5.1/index.ts\r\n- packages/core/scripts/importers/dnd5e-srd-5.1/cli.ts\r\n- CLI output tests, if present\r\n\r\n## Requirements\r\n\r\n- Add equipment to the CLI Imported",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-29T00:38:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:15Z",
+  "closed_at": "2026-06-01T04:09:23Z",
+  "close_reason": "Already fixed in PR #116 (commit 838c099): equipment was added to the CLI summary string and is tested in pipeline.test.ts (result.counts.equipment). No code change needed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-wnq",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-28T19:38:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

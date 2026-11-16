@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cxuc.3",
+  "title": "Dispatch: cxuc repair after Sol S1 (departed/superseded combatant rows) (attempt 2)",
+  "description": "Repair PR #732 per the Sol review recorded on eshyra-cxuc.2 (bd show eshyra-cxuc.2: S1 is the defect with its reproduction, S2-S4 are constraints; bd show eshyra-cxuc for the original spec). REQUIRED: auditActiveEffectIntegrity must report a combatant-targeted actor link carrying a campaign_actor_id as stale unless it is the actor's CURRENT live ownership reference: the combatant is in an active combat instance AND the reference has not been superseded by a departure. Stale cases to flag: (a) after transition_bonded_summon temporary dismissal (actor pocketed, old combatant row retained absent) with a link still on that combatant; (b) after dismissal + recall, a link on the OLD absent combatant while a new combatant projects the actor. Legitimate cases that must stay clean: the initial mid-combat link; the vanish-bonded creature at 0 HP that keeps its combatant-targeted link while the instance is active (completeZeroHpVanish / closeActorLinkAtZeroHp); closure rebinds for all four terminal statuses; start_encounter re-admission. Derive the rule from the code and docs/active-effect-lifecycle.md section 7 (state it in the comment), fail closed, and add the small generalized invariant Sol asks for, contrasting current live ownership, legitimate vanish-bonded absence, and departed/superseded stale ownership (reproduce S1's two probes as tests). Base: branch eshyra-cxuc (PR head eb7860ad). Worktree .worktrees/eshyra-cxuc.3 on branch eshyra-cxuc.3; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. npm run verify:worktree must pass BEFORE committing; commit on eshyra-cxuc.3 only; no push or PR; do not close eshyra-cxuc.",
+  "notes": "Commit c30930e1 on eshyra-cxuc.3. Rule (comment above stalePersistentLinks in activeEffects.ts): a combatant-targeted actor link with campaign_actor_id is current iff (1) its combatant is the actor's own projection (identity_kind campaign_actor, identity_ref=campaign_actor_id) in an ACTIVE instance; (2) it is the actor's NEWEST row in that instance (dismissal+recall leaves older absent rows and the departure rebound the link away; cf. findLiveActorCombatantId); (3) status is not absent, OR it is the retained vanish-bonded absence: zero_hp_rule=vanish-bonded AND hp_current=0 AND campaign_actor.status=absent (completeZeroHpVanish/closeActorLinkAtZeroHp keep). Pocketed actor + absent row (transitionBondedSummon temp dismissal) is therefore stale. Fails closed otherwise. Predicate: NOT EXISTS(...) extended with identity match, no-newer-row NOT EXISTS, and the absent clause. Test (bondedSummonTransitions.test.ts, one invariant test): live link clean; vanish-bonded 0HP retained link clean; S1 probe 1 (pocketed, link restored onto absent c-fam) flagged; S1 probe 2 (dismiss+recall, link on old c-fam flagged, on new row clean). Fails on the old predicate (verified by stashing src). Three prior cxuc tests unchanged and passing. verify:worktree exit 0 (7490 passed, 3 skipped).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-16T04:03:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-16T04:07:55Z",
+  "closed_at": "2026-11-16T04:07:55Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cxuc.3",
+      "depends_on_id": "eshyra-cxuc",
+      "type": "parent-child",
+      "created_at": "2026-11-15T22:03:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

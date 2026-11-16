@@ -1,0 +1,71 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.24.3",
+  "title": "REFACTOR: failed-turn diagnostics",
+  "description": "Clean up names, exports, and verification after the diagnostics tests are green.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T23:57:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:52Z",
+  "started_at": "2026-05-29T00:01:12Z",
+  "closed_at": "2026-05-29T00:04:59Z",
+  "close_reason": "Refactor complete; diagnostic read API used by tests; full verification passed after known Dolt timeout flake passed on rerun.",
+  "labels": [
+    "architecture",
+    "diagnostics",
+    "orchestrator",
+    "parallel-caution",
+    "persistence",
+    "refactor",
+    "tech-debt",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.24.3",
+      "depends_on_id": "eshyra-0jq.24.2",
+      "type": "blocks",
+      "created_at": "2026-05-28T18:57:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.24.3",
+      "depends_on_id": "eshyra-0jq.24",
+      "type": "parent-child",
+      "created_at": "2026-05-28T18:57:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "f013f110-ad01-56a5-addb-fe8c0943cc2f",
+      "issue_id": "eshyra-0jq.24.3",
+      "author": "Joseph Bongaarts",
+      "text": "Debug evidence: npm run test failed only in packages/core/test/persistence.test.ts with exports SCHEMA_VERSION 10 expecting 10 but receiving 11. Reproduction is deterministic from the full suite output. Recent change point is intentional SCHEMA_VERSION bump from 10 to 11 for the new turn_failure_diagnostic migration; nearby persistence tests already compare against String(SCHEMA_VERSION), while this one hard-codes the old numeric version. Root cause: stale test literal, not schema runtime behavior.",
+      "created_at": "2026-05-29T00:03:26Z"
+    },
+    {
+      "id": "3031b6eb-609f-5ac6-bbc5-0432c2ef7752",
+      "issue_id": "eshyra-0jq.24.3",
+      "author": "Joseph Bongaarts",
+      "text": "Debug evidence: second npm run test failed only in packages/core/test/checkpoint.restore.test.ts with a 5000ms timeout in a Dolt-gated restore test. This matches existing bd memory dolt-checkpoint-tests-flaky-under-parallel-load. Reproduction check: npx vitest run packages/core/test/checkpoint.restore.test.ts -t \" refuses to restore onto an existing destination\\ passed in isolation (1 passed, 4 skipped). Root cause: known full-suite parallel Dolt timeout flake, not this branch.",
+      "created_at": "2026-05-29T00:04:21Z"
+    },
+    {
+      "id": "43f9bbb7-c236-56b3-8538-1c5530655fc7",
+      "issue_id": "eshyra-0jq.24.3",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: npx vitest run packages/core/test/orchestrator.test.ts packages/core/test/migrations.test.ts -> passed (28 tests); npx vitest run packages/core/test/persistence.test.ts -> passed (11 tests); npm run test -> passed on rerun (815 passed, 3 skipped); npm run typecheck -> passed; npm run check -> passed.",
+      "created_at": "2026-05-29T00:04:59Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 3
+}

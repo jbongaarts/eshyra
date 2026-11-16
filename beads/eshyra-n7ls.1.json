@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-n7ls.1",
+  "title": "Dispatch: n7ls wizard spell-step UX audit (Haiku 5.5, attempt 1)",
+  "description": "Scope for parent eshyra-n7ls (it has no description; this is the plan). After eshyra-eb9n (merged in PR #628) the creation wizard enforces level-1 spell counts. eb9n's CLI evidence covered the Wizard class only. Audit and, where needed, fix the interactive creation wizard's spell step for the OTHER casters.\n\nWORKTREE/BRANCH: .worktrees/eshyra-n7ls.1 on branch eshyra-n7ls.1 (from origin/main). Deps installed.\nFILE BOUNDARY: edit only packages/cli/src/characterWizard.ts and packages/cli/test/characterWizard.test.ts (a parallel task edits core/importer/pack files).\n\nCODE: packages/cli/src/characterWizard.ts (spell step prompt/applySpells, review output); the counts come from packages/core/src/character/creationSpellCounts.ts level1SpellRequirements and the draft's spellCounts.* pending diagnostics (characterDraft.ts validateSpellCounts).\n\nDO:\n1. For a known caster (Sorcerer or Bard) and a prepared caster (Cleric or Druid), drive the wizard in a test the way the existing Wizard-class test does: the spell step prompt must state the exact requirements (cantrips N; known spells M / prepare 1..L), a shortfall must keep the player on the step with a clear message naming what is missing, an excess must show the error, and a legal selection must advance and finalize.\n2. If the prompt or messages are missing/unclear for these classes, fix the wording in characterWizard.ts only (no core changes). If everything already works, the deliverable is just the two tests.\n3. Paladin/Ranger (no level-1 spells) and Fighter skip the step: assert once.\n\nPROTOCOL: run `npm run verify:worktree` from the worktree root BEFORE committing; commit on eshyra-n7ls.1 (Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>); `bd update eshyra-n7ls.1 --append-notes` with what you found/changed; `bd close eshyra-n7ls.1`. Do not push or open PRs.",
+  "notes": "COMPLETE. Commit 3d557df8 on branch eshyra-n7ls.1 (not pushed). Files: packages/cli/src/characterWizard.ts, packages/cli/test/characterWizard.test.ts. Findings: Sorcerer (known) and Cleric (prepared, Life Domain) spell-step prompts, shortfalls, excess errors, and legal advance/finalize were already correct in the engine messages; new tests lock that in. Cleric test also proves always-prepared domain spells (Bless, Cure Wounds) do not count toward the WIS+1 limit. Fixed: non-casters (Fighter; Paladin/Ranger share the rule) were shown 'Enter level-1 spells ... or press Enter' even with no level-1 spells; now 'This class has no level-1 spells to choose; press Enter to continue.' Prepared casters now get a line that always-prepared subclass spells do not count. Wording only, CLI only, no core changes. Known gap (out of this bead's boundary, not changed): Bard 'Choose any three' skill group has no options in the wizard, so a Bard cannot finish class choices and never reaches the spell step; the option list comes from rules-pack data. Needs a follow-up bead (core/importer). Verify: npm run verify:worktree exit 0 (format, check, typecheck, tests: 335 files passed, 2 skipped; 6171 tests passed, 3 skipped). Pre-existing tests: 20 original-equivalent pass unchanged; new tests: 3 added (Sorcerer, Cleric, Fighter) — 2 fail on the pre-change source (Fighter wording and Cleric prepared line), confirming the wording change.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:34:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:40:29Z",
+  "closed_at": "2026-10-09T04:40:29Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-n7ls.1",
+      "depends_on_id": "eshyra-n7ls",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:34:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.15.5",
+  "title": "W15.1 follow-up: held-out P12 variant tests absence not quarantine (starting wealth gone from pack)",
+  "description": "Original P12 false-authority record was removed by B4; the held-out P12 variant (feat:sentinel absent) cannot test quarantine of a known-false record. If W15.2 wants that class, author a synthetic false-authority record case under a new (non-held-out) fixture.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:50:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-07T23:50:59Z",
+  "labels": [
+    "architecture",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.15.5",
+      "depends_on_id": "eshyra-o9bd.19.15",
+      "type": "parent-child",
+      "created_at": "2026-11-07T17:50:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

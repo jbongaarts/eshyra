@@ -1,0 +1,82 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.12",
+  "title": "Capability: item-granted creatures via the summon system",
+  "description": "Selected under the user's 2026-10-12 rule (bd memory magic-item-faithful-or-absent): this structure stays TYPED in the SRD pack because a positive engine capability is more likely than not in the near future, so the capability must exist before the re-freeze (eshyra-o9bd.14). Capability contract per ADR 0020 / eshyra-olc5: operation, inputs, exclusions, residual DM interpretation, real binding to the pack fields, provider-neutral execution, state effects, conformance tests exercising the PACK representation, fail-closed for unsupported input. Pack shape is owned by eshyra-o9bd.19.4.6 (PR #656); coordinate field shapes with it rather than changing the pack later. Scope: entity grants (creature refs, count, duration, reversion at 0 HP / duration end, e.g. Figurine of Wondrous Power, elemental vessels with the conjure-elemental concentration exception, Bag of Tricks, Staff of the Python) create and remove encounter combatants through the existing bonded-summon/combatant lifecycle (RecastBondedSummon, TransitionBondedSummon, encounterCombatants). Control/obedience policy stays DM-adjudicated.",
+  "notes": "STOP CONDITION (user, 2026-10-12): if any KEPT-typed category (economies incl. event anchors, action type, structured equipment prerequisites, kept state machines/duration toggles, grant creature/count/duration/reversion) or any capability bead eshyra-olc5.8-.12 turns out to be particularly difficult to verify in a way that makes convergence unlikely (e.g. repeated review findings in the same kept category, or verification that cannot distinguish faithful from unfaithful cheaply), the captain must SURFACE it to the user with evidence before proceeding - do not keep repairing it and do not silently reclassify it as DM-adjudicated.\nFrom olc5.8 (PR #660): on grant end, call applyItemCooldownAnchorEvent(db, ..., {event:'grant-ended', grantId}) and then land F5 'grant-anchored cooldown reset' (Ring of Djinni Summoning, Efreeti Bottle stopper).\nStarted 2026-10-14 (autonomous). Captain design: bind item grants through start_effect summoning (on top of olc5.11's item-source binding); revertOn mapped explicitly (modeled -> automatic, rest DM end_effect, unmapped fails closed); every grant end fires applyItemCooldownAnchorEvent; land grant-anchored hook. Child eshyra-olc5.12.1 waits for olc5.11 PR.\nSTOP CONDITION TRIGGERED 2026-10-15 (captain): PR #665 Sol r1 (eshyra-olc5.12.5) S1-S7 -> repaired (.12.6 Haiku, .12.10 Sonnet) -> Sol r2 (eshyra-olc5.12.11 @ a3943b51) BLOCKING with six NEW findings S8-S13 in the same kept grant category (creature/duration/reversion lifecycle): S8 as-spell lifetime lost across successor+refresh (P1), S9 cascade-created successor not expired in same advance (P1), S10 nested condition projection drops resolver (P1), S11 destroyed source instance strands anchored grant/locks clock (P2), S12 remove_effect_target final actor delays cooldown (P2), S13 test timeout in CI (P2). Repairs paused; surfaced to user for keep / DM-adjudicate / other. PR #665 head a3943b51 left open, not merged. olc5.13 restacked onto main as PR #666 (independent).\nDESIGN RECONCILIATION after Sol r2 (eshyra-olc5.12.11, S8-S13). Decided by Claude Captain with the user, 2026-10-17. Supersedes further per-finding patching.\n\nPRINCIPLE: the DM declares transitions; the engine computes clocks. Fixed printed clocks and amounts stay deterministic: grant identity and variant admission, cooldown spend, fixed grant lifetime timers, grant-ended anchor arithmetic, and the printed Conjure Elemental uncontrolled-successor deadline (SRD p.128). Transitions the source does not fix, such as partial creature removal, ad-hoc lifetime rewrites, and what a destroyed source item does, are not inferred by the engine. Those paths either refuse and route to an explicit whole-grant end_effect with a ruling, or carry a tombstone that ends cleanly. ADR 0017 hierarchy: procedural where printed, model adjudication otherwise. ADR 0020: the adjudication boundary is recorded as an explicit limit, not a completeness claim.\n\nPER FINDING:\nS8 (successor/refresh lifetime): the successor inherits the predecessor's item_grant_json and duration provenance verbatim. refresh_effect on ANY grant-bound effect (predecessor or successor) refuses every duration change, with or without a dm-adjudicated override, and names end_effect as the route. The S5 refresh-override path for grant-bound effects is withdrawn (narrowing; non-grant effects unchanged). The concentration break then always finds the printed timed row.\nS9 (cascade-created successor not expired): kept deterministic, because the successor is the pre-existing printed spell rule and is not item-specific. expireElapsedWorldEffects becomes a fixpoint loop: repeatedly select the earliest live due world-time row (deadline <= target) and finalize it, until none remains. This processes rows in effective-time order, including rows created during the same advance. It must stay idempotent and atomic and terminate (each iteration ends one row; guard on non-performed claims).\nS10 (resolver dropped): forward resolveRulesPack in the nested character addCondition in toolStartEffect/activeEffects. Make the resolver key REQUIRED (explicitly typed, may be undefined) on the mutation context types, so the compiler forces every construction site to state it.\nS11 (destroyed source): tombstone. destroyInventoryItem (the single choke point for every destruction path, including item-rule consumption such as Elemental Gem) marks the item_grant_json of every live effect bound to that instance as source-destroyed. finalizeEnd then ends the grant without scheduling a cooldown anchor. Expiry, end_effect, refresh-refusal and the resolver lookups must not require the deleted inventory row for a tombstoned binding. Destruction is NOT refused: item rules legitimately destroy sources.\nS12 (final actor via remove_effect_target): remove_effect_target refuses to remove a grant-bound linked creature of a grant-bound effect, routing to end_effect for the whole grant. No partial departure path for bound grants.\nS13: amortize the figurine-variant loop setup (or give it a measured local timeout); keep its assertions. No global timeout changes.\n\nOUT OF SCOPE (unchanged owners): .12.3 non-anchored spend coupling, .12.4 Efreeti outcomes, c58j F3/F2 hooks, control/hostility/obedience.\n\nNEXT: dispatch eshyra-olc5.12.12 (attempt 5, Sonnet 5.5), then supervisor review and one fresh Sol review. STOP CONDITION retained: if that review still has a P1 in the lifecycle, demote the lifecycle to DM adjudication (keep identity, spend and clocks) without more repair loops.\n2026-10-17 update: Sol is reserved for another project. The final review of PR #665 after attempt 5 goes to the USER (human review), not Sol. The stop condition applies to the user's review findings.\n2026-10-17 integration: attempt 5 (eshyra-olc5.12.12, 762067ab) reviewed by the captain. One finding was fixed inline in c8f9a075: a grant-bound refresh with an unchanged duration still re-anchored a non-as-spell timer to now, extending the figurine/Ring lifetime. The guard now refuses any moved world deadline or round anchor. Full verify:worktree exit 0 (6942 passed / 3 skipped). Merged into eshyra-olc5.12 as 7d154713 and pushed; PR #665 MERGEABLE. Final review handed to the USER (no Sol). The bead stays in_progress until the PR merges.\n2026-10-17: user final review (GitHub review 5559300341) CHANGES REQUESTED with 2 P2, 0 P1, so the lifecycle stop condition did not fire. R1: a consumed last-unit source cannot bind its grant (Elemental Gem break-gem). R2: grant identity is invisible in the active-effect view and DM context. Dispatched eshyra-olc5.12.13 (receipt table, migration 0048, + view/context projection).\n2026-10-17 integration: attempt 6 (eshyra-olc5.12.13, a79ff38e) reviewed by the captain with no findings. verify:worktree exit 0 (6948 passed / 3 skipped). Merged as 48c3cd63 and pushed. Note for the reviewer: on the UNMODIFIED pack, use_item break-gem/use-token is still refused by operation readiness (summon-elemental/token-kind-payload have no readiness clause; F3/F2/F5 hooks pending, c58j), so the receipt path is exercised with readiness waived. Stack>1 limitation is filed as eshyra-xt6m. Handed back to the user for review.\n2026-10-17: user re-review (GitHub review 5559632456) CHANGES REQUESTED, 1 P2: a retired item instance id was reissued and its receipt replaced. Fixed inline by the captain in 774a05b9. itemInstanceIdTaken (live row, receipt, or any grant binding) now backs all 4 id allocators (give_item stateful, relinquish, adoption split, nonmagical split). give_item refuses an explicit retired id. A 0048 trigger backstops other insert paths (it skips upserts onto live rows). Receipts are first-write-only. Sibling covered: an id destroyed while a grant still names it. 4 new tests. verify:worktree exit 0 (6952 passed / 3 skipped). Pushed; back to the user for review.\nMerged 2026-10-17 as PR #665, merge commit cccdda4f, after user approval.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-12T23:09:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-17T19:38:09Z",
+  "started_at": "2026-10-14T04:52:27Z",
+  "closed_at": "2026-10-17T19:38:09Z",
+  "close_reason": "PR #665 merged (cccdda4f) after user final review",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.12",
+      "depends_on_id": "eshyra-olc5.12.6",
+      "type": "blocks",
+      "created_at": "2026-10-14T23:46:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.12",
+      "depends_on_id": "eshyra-olc5.12.12",
+      "type": "blocks",
+      "created_at": "2026-10-17T11:14:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.12",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-12T18:09:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.12",
+      "depends_on_id": "eshyra-olc5.12.2",
+      "type": "blocks",
+      "created_at": "2026-10-14T23:04:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.12",
+      "depends_on_id": "eshyra-olc5.12.1",
+      "type": "blocks",
+      "created_at": "2026-10-13T23:53:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.12",
+      "depends_on_id": "eshyra-olc5.12.10",
+      "type": "blocks",
+      "created_at": "2026-10-15T00:18:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.12",
+      "depends_on_id": "eshyra-olc5.12.13",
+      "type": "blocks",
+      "created_at": "2026-10-17T13:23:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 6,
+  "dependent_count": 1,
+  "comment_count": 0
+}

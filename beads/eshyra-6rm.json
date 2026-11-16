@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6rm",
+  "title": "[bug] Checkpoint restore corrupts payloads with backslash/control characters",
+  "description": "DoltRepo.sq() escaped only single quotes, but dolt/MySQL string literals also process backslash escapes — so every JSON escape in a serialized payload (\\n, \\\", \\) was silently corrupted on applySnapshot INSERT (e.g. \\n collapsed to a real newline). Restore of any real campaign then failed JSON.parse. Also, dolt's -r json writer does not escape control characters in string values. Found while implementing loreweaver-v3k.",
+  "acceptance_criteria": "sq() escapes backslashes; readSnapshotAt and log() HEX-decode free-text columns; a checkpoint/restore round-trip of text with newlines/backslashes/quotes is covered by a test.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-22T22:36:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:44Z",
+  "started_at": "2026-05-22T22:36:39Z",
+  "closed_at": "2026-05-22T22:49:40Z",
+  "close_reason": "Merged: v3k+6rm in PR #45, dy8 in PR #42.",
+  "comments": [
+    {
+      "id": "f8f15b38-2090-547e-b600-e408ce946afb",
+      "issue_id": "eshyra-6rm",
+      "author": "Joseph Bongaarts",
+      "text": "Fixed in PR #45 — DoltRepo.sq() backslash escaping + HEX read-back + restore regression test. Pending review.",
+      "created_at": "2026-05-22T22:37:10Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

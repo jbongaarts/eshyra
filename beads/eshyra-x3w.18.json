@@ -1,0 +1,62 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.18",
+  "title": "Task 10: Document rules packs and run final verification",
+  "description": "Objective:\nUpdate user-facing architecture docs and run the final quality gates for the epic.\n\nFiles:\n- Modify: `docs/storage.md`\n- Modify: `docs/world.md`\n- Modify: `docs/character-creation.md`\n- Modify: `README.md` if public feature wording references SRD-only lookup\n- Test: existing full suite\n\nSteps:\n1. Update `docs/storage.md` to explain bundled rules packs, `<root>/rules-packs/`, campaign DB binding, and checkpoint implications.\n2. Update `docs/world.md` to describe `rulesRequirements` and provider-neutral `rulesRef` references.\n3. Update `docs/character-creation.md` to explain system-aware character creation, D&D compatibility, and level-1 Pathfinder scope.\n4. Search with `rg -n lookup_srd README.md docs packages`, `rg -n srdRef README.md docs packages`, and `rg -n rules-packs README.md docs packages`; update stale public-facing wording that conflicts with the implemented model.\n5. Run `npm run typecheck`; expected: PASS.\n6. Run `npm run test`; expected: PASS with only documented skips.\n7. Commit with `git add docs README.md packages` and `git commit -m docs-rules-pack-system-stack` if docs-only, or include any final small test/code adjustments in a clearly named final commit.",
+  "design": "Docs should emphasize the separation already present in the architecture: rules/mechanics, module content, live state, user-private content, and generated memory remain separate. Be explicit that Pathfinder fixture content is ORC-backed and does not imply bundling reserved setting material or Paizo branding.",
+  "acceptance_criteria": "`npm run typecheck` and `npm run test` pass. Docs no longer describe rules lookup or character creation as SRD-only except when discussing compatibility wrappers or legacy behavior.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T05:10:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:59Z",
+  "closed_at": "2026-05-23T22:10:04Z",
+  "close_reason": "Updated docs/storage.md with bundled rules packs, the campaign rules binding singleton table, and legacy/default behavior; docs/character-creation.md with system-aware dispatch and the level-1 D&D/Pathfinder validators; README.md status and bundled-content section reflect multi-system rules packs and lookup_rules. Stale lookup_srd references in non-public tests (memoryTrace, modelEvaluation) updated for consistency. Final verification: npm run typecheck and npm run test pass (388 passed, 2 documented skips across 50 files). All public-facing rules-lookup/character-creation wording is system-neutral except where compatibility/historical context is intended.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.18",
+      "depends_on_id": "eshyra-x3w.14",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:12:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.18",
+      "depends_on_id": "eshyra-x3w.13",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:12:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.18",
+      "depends_on_id": "eshyra-x3w.16",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:12:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.18",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-23T00:10:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.18",
+      "depends_on_id": "eshyra-x3w.17",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:12:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 0,
+  "comment_count": 0
+}

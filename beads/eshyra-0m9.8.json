@@ -1,0 +1,68 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.8",
+  "title": "Implement deterministic Pathfinder rules-pack importer",
+  "description": "Implement a deterministic importer for the approved Pathfinder corpus once the source policy is decided.\r\n\r\nThe importer should generate canonical Loreweaver rules records with provenance and license metadata. Model assistance may be used to develop parser code or audit edge cases, but not as the authoritative source of rules content.\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "acceptance_criteria": "- Importer uses only approved source material.\r\n- Generated records validate against kind-specific schemas.\r\n- Records include source/provenance/license linkage.\r\n- Output is deterministic across repeated runs.\r\n- Importer is documented for future regeneration.",
+  "notes": "Deferred 2026-06-16. No Pathfinder importer until Eshyra demonstrates it works over an extended campaign. The D&D SRD process proved this is very expensive; revisit after campaign validation milestone.",
+  "status": "deferred",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:01:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:52Z",
+  "defer_until": "2026-12-01T00:00:00Z",
+  "labels": [
+    "importer",
+    "ingestion",
+    "pathfinder",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.8",
+      "depends_on_id": "eshyra-0m9.3",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.8",
+      "depends_on_id": "eshyra-0m9.1",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.8",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:01:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.8",
+      "depends_on_id": "eshyra-0m9.7",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.8",
+      "depends_on_id": "eshyra-0m9.2",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 2,
+  "comment_count": 0
+}

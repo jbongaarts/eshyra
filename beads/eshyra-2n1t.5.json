@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.5",
+  "title": "F3: Concentration & active-effect lifecycle",
+  "description": "Durable active-effect/concentration marker (caster, spell ref, started-at), single-instance invariant, auto save prompt on damage (DC max(10, floor(dmg/2)) per source), break-on incapacitated/death/new-concentration. Member: concentration (IMPL). Benefits combining-magical-effects visibility. Source: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4.",
+  "notes": "PR #437 review addressed (2026-07-12): rebased onto post-#433 main (F3 migration renumbered to 0009; stacked coverage census 32/109/21/3/10 restored after silent merge dedup); combatant incapacitation break moved inside updateCombatant's transaction with an injected-failure rollback test; resolve_concentration now rolls the save itself via F9 resolveD20 and the domain accepts only verifiable ConcentrationSaveEvidence (outcome derived from total >= dc, never declared); timer anchors semantically validated (spell-cast needs a spell source; trigger/turn anchors refused pending eshyra-2n1t.5.1). verify:worktree green (4091 passed).\nPR #437 re-review blocker addressed (2026-07-12, db355da): concentration owner capability is now a creation gate — non-alive characters and 0-HP/unconscious/dead combatants are refused before any write (the cleanup hooks fire only on transitions, so this gate prevents an already-down owner from minting a live effect nothing cleans up). 4 new adversarial tests; verify:worktree green (4095 passed). PR body rewritten to current state (migration 0009, engine-rolled saves, census 32/3).\nPR #437 condition-incapacitation blocker addressed (2026-07-12, 81afccc): concentration now breaks on condition-implied incapacitation via the pack's structured impliesCondition relations (paralyzed/petrified/stunned/unconscious), atomically at both canonical condition seams (addCondition for characters incl. start_effect projections; updateCombatant unified across HP/status/condition axes), with the creation gate extended to owners already carrying an incapacitating condition. 8 new adversarial tests (64 total); rule:concentration stays implemented. verify:worktree green (4103 passed).\nPR #437 audit-first round (2026-07-12, 6a41248): committed docs/audits/2026-07-12-f3-mutation-lifecycle-audit.md (mechanical writer/reachability inventory, 17 invariants, field-ownership policy, participant-lifecycle policy), then enforced it — participant reachability predicates (closed-instance combatants refused), closeCombatInstance F3 boundary (owner-removed breaks, combat-ended target/link cleanup, actor-link release + combat-closed ledger event), inactive-transition breaks with cycle-safe finalizeEnd (terminal status before cleanup), self-incapacitation preflight rejection, full integrity-audit coverage with per-invariant corruption tests, owner-state matrix tests, and the mutate_state disposition (orphaned wrapper deleted; primitive documented as trusted /internal seam; registry pin test). 88 domain tests; verify:worktree green (4128). New bead eshyra-2n1t.5.3 for campaign-actor rebinding.\nPR #437 closure/re-entrancy round (2026-07-12, 771aec3): source actors detached at combat closure (created-event keeps provenance; combat-closed event records the detach), round timers anchored to the closing instance settle by expiry as closure precedence step 1 (dead-clock audit check added), and one re-entrancy policy for non-terminal ops (removeEffectTarget provenance-first + superseded:true; create rolls back if its own projection cascade ends it; appendEvent enforces 'ended' as the final ledger event). Audit doc invariants 18/19 + §7 precedence added; 96 domain tests; verify:worktree green (4136).\nPR #437 stale-snapshot round (2026-07-12, f4aa2c0): finalizeEnd claims terminal transitions via conditional UPDATE against the durable row and returns {performed,cleanup}; all eight callers audited (fresh-row vs snapshot-loop, audit invariant 20) and every summary gates on performed; appendEvent refuses a second 'ended' event as ledger-seam defense. 3 new tests on the review's A-expires->B-breaks topology via closure AND the ordinary sweep, plus byte-identical no-op re-run of all terminal paths. 99 domain tests; verify:worktree green (4139).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:40:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-12T01:34:47Z",
+  "closed_at": "2026-07-12T15:21:32Z",
+  "close_reason": "Implemented the F3 concentration & active-effect lifecycle foundation (PR #437): migration 0008 (active_effect/target/link/event tables, CHECK-enforced state machine, partial-unique one-concentration-per-owner), validated lifecycle ops in state/activeEffects.ts (typed kind licenses, spell-record grounding, quantity+unit+anchor timers with deterministic round expiry, reason-typed ends with exact end-vs-break cleanup, partial target removal, suppression, refresh, replay-deterministic audit ledger, load-time validation), F6 hook (incapacitation/death breaks concentration in the HP transaction; adjust_hp/update_combatant surface the DC max(10,floor(dmg/2)) save per damage event), F9 resolve_check evidence seam (resolve_concentration refuses mismatched DCs), five DM tools + context-assembler surface, rule:concentration coverage implemented. 47 adversarial domain tests + tool tests; verify:worktree green. Rollout: eshyra-2n1t.5.1 (F2 turn-boundary expiry), eshyra-2n1t.5.2 (suppression tools + zone/form link runtimes).",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.5",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-07T00:40:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

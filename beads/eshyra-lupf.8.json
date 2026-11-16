@@ -1,0 +1,64 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.8",
+  "title": "Deterministic level-up application engine (core)",
+  "description": "Core engine that applies a single level-up deterministically from rules-pack data, operating on the authoritative character record decided in .13 (persisted/finalized/current character — not the legacy creation draft). It must reuse and generalize the existing deterministic derivation seams rather than reinventing math in the CLI: deriveLevel1Values is explicitly level-1 only, so generalize it (or add a parallel module sharing a common core) so that proficiency bonus, HP increase (hit die + CON per rules-pack/recipe policy), saving throws, spell DC/attack, class-feature grants (by ref), and spellcasting progression all derive from the rules-pack/resolver layer. Builds on the generalized resolver (.3) and progression state (.2). Produces a canonical, auditable change set applied via mutation; invents nothing not in the pack.",
+  "acceptance_criteria": "Engine takes a character + target level and returns/applies a deterministic change set (HP, level, prof bonus, features, spellcasting); applied via auditable mutation; tests assert exact deltas for martial and caster classes.",
+  "notes": "Review fix pushed (edeca25): added fail-closed detectLevelUpRequiredChoices + LevelUpRequiredChoicesError; applyLevelUp blocks subclass/ASI/fighting-style/expertise/spell-learning levels writing nothing. Deterministic rows still apply. Audit-field validation hardening. 11 tests. PR #340 updated.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:21:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T01:03:29Z",
+  "closed_at": "2026-06-28T01:53:13Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.8",
+      "depends_on_id": "eshyra-lupf.14",
+      "type": "blocks",
+      "created_at": "2026-06-26T20:08:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.8",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:21:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.8",
+      "depends_on_id": "eshyra-lupf.13",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:38:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.8",
+      "depends_on_id": "eshyra-lupf.2",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.8",
+      "depends_on_id": "eshyra-lupf.3",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 3,
+  "comment_count": 0
+}

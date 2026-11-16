@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.15",
+  "title": "Structured character currency (wallet) and money flows",
+  "description": "Money is not modeled today: the CharacterSheet carries only prose equipment (equipment: string[]); neither the live character table nor any wallet represents coin. Add a structured, rules-pack-bound wallet to the canonical CharacterSheet plus deterministic money mutations.\n\nCurrency considerations:\n- It is CONTINUITY state and travels with the character under custody (ADR 0012) — not campaign-local unless a campaign explicitly banks/confiscates/converts it.\n- It is distinct from inventory item rows: a wallet, not items. Reconcile the boundary between the wallet, the inventory table, and the sheet's prose equipment.\n- Leveling (XP/level/HP/features/slots) does not need currency, but treasure/quest REWARD flows do; the wallet should exist before reward flows. This epic can proceed in parallel with the progression beads.\n- Coinage is rules-pack-bound (5e cp/sp/ep/gp/pp differs from other systems); it lives behind the pack like the rest of the sheet.",
+  "acceptance_criteria": "- A structured wallet (e.g. {cp,sp,ep,gp,pp} for 5e) lives on the canonical CharacterSheet, rules-pack-bound.\n- Deterministic gain/spend/convert mutations exist and are auditable.\n- The wallet travels with the character under custody and is not silently campaign-local.\n- The boundary between wallet, inventory rows, and prose equipment is defined.\n- CLI/session can view and adjust currency.",
+  "notes": "PR #345 updated after review: /wallet now reports sheetless demo state without crashing, spend history renders negative deltas, and play tests cover both regressions. Verification: npm run verify:worktree.\nVerified landed on main: PR #345 merged (commit 21630d4, reachable from main HEAD). Source present: packages/core/src/character/currency.ts, packages/cli/src/playCurrency.ts, migration 0004_character_wallet_event.sql, test characterCurrency.test.ts. Closing.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T04:33:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-28T05:51:34Z",
+  "started_at": "2026-06-28T03:28:50Z",
+  "closed_at": "2026-06-28T05:51:34Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.15",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T23:33:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eh54.7.1",
+  "title": "Outline The Hollow Beneath Emberfall starter module",
+  "description": "Design the small first-party starter module - The Hollow Beneath Emberfall - at outline level before authoring the full fixture.\n\nThe outline should identify the adventure premise, starting hook, key locations, NPC roles, likely scenes, objectives, secrets, encounter concepts, reward, and possible endings.\n",
+  "design": "Keep this intentionally small. Avoid turning the starter module into a campaign arc.\n\nNaming (ADR 0012): the setting is Emberfall (campaign template); the module is The Hollow Beneath Emberfall (scenario). \"Ember Hollow\" is informal shorthand only, not a separate place. EMBERFALL_HOLLOW is the legacy conflated sample.\n\nPossible placeholder concept:\nA local disturbance near Emberfall reveals an old sealed place below a mundane landmark. The module should demonstrate how authored secrets, keyed locations, NPC motives, and player divergence are handled by the engine.\n",
+  "acceptance_criteria": "- The module has a title (The Hollow Beneath Emberfall), premise, intended level range, intended party assumptions, and short summary.\n- The outline identifies 3 to 5 keyed locations.\n- The outline identifies at least one social encounter, one exploration obstacle, and one combat-capable encounter.\n- The outline identifies secrets/clues and which scenes or locations can reveal them.\n- The outline identifies objectives and ending states.\n- The outline explicitly ties the module to the Emberfall setting without expanding Emberfall into a full adventure script.",
+  "notes": "Outline doc at docs/the-hollow-beneath-emberfall-outline.md; PR #268 open (https://github.com/jbongaarts/eshyra/pull/268). Awaiting review/merge. Mapped to AdventureModule schema for eshyra-eh54.7.2 to author the fixture; blocks eshyra-eh54.7.2.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T06:12:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-21T05:54:56Z",
+  "closed_at": "2026-06-21T06:04:44Z",
+  "close_reason": "Merged via PR #268. Outline at docs/the-hollow-beneath-emberfall-outline.md, mapped to AdventureModule schema. Unblocks eshyra-eh54.7.2.",
+  "labels": [
+    "adventure-module",
+    "campaign-runtime",
+    "design",
+    "domain-model",
+    "ember-hollow",
+    "starter-content"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eh54.7.1",
+      "depends_on_id": "eshyra-eh54.1",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:14:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.7.1",
+      "depends_on_id": "eshyra-eh54.7",
+      "type": "parent-child",
+      "created_at": "2026-06-18T01:12:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-30xi",
+  "title": "Repair removal-over-causation condition projection for Stillness of Mind",
+  "description": "Independent audit of 9a674455 found feature:monk:stillness-of-mind projects charmed as applies, contradicting SRD p.28 removal of an effect causing charmed or frightened. The false relation reaches discovery packets; the shared-classifier audit misses it. Repair governing removal grammar and list-order siblings; preserve positive, prevention and suppression controls. Register finding before repair, regenerate through importer, and retain exact source-backed and generalized regression evidence. Deliverable: reviewed repair PR; blocks re-freeze acceptance.",
+  "acceptance_criteria": "Both printed alternatives truthfully project removal; reordered alternatives do not become infliction; source-backed pack and packet regression evidence; generated diff reviewed; full worktree verification passes.",
+  "notes": "Registered indep:9a674455-F1 in finding-registry and wired this bead as blocker of eshyra-o9bd.19.6.4. Repair worktree eshyra-30xi branches from origin/main 64a9a044 (audit candidate is its ancestor). Red proof: 3 new classifier/packet tests failed before repair. After repair 38 focused tests pass. Generated diff: only Stillness of Mind, charmed applies -> removes and frightened mention -> removes; zero additions/removals or sibling artifact changes. Full verification and reproducibility in progress.\nRepair handoff: https://github.com/jbongaarts/eshyra/pull/726 commit 6d192c20. Full verify:worktree passed (7465 passed, 3 skipped, 0 failed), focused tests 38 passed, verify:dnd5e-srd-pack passed. Generated change is exactly two relation values on feature:monk:stillness-of-mind, no other record/artifact changes. In progress until PR merges; acceptance remains blocked pending review/merge. No merge performed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T20:06:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T00:42:31Z",
+  "started_at": "2026-11-07T20:07:04Z",
+  "closed_at": "2026-11-08T00:42:31Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 4,
+  "comment_count": 0
+}

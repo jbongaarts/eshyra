@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf",
+  "title": "Add rules-pack-backed character progression and leveling",
+  "description": "Eshyra can now create/finalize a level-1 D&D SRD character, but there is no durable progression model. Campaign state has a level and HP fields, but no XP/experience ledger, no milestone policy, no level-up eligibility check, and no guided level-up flow. Play can therefore run sessions without accumulating character advancement, and any level changes would be ad hoc.\n\nThis epic adds a durable, auditable, rules-pack-backed progression and leveling model so that advancement is deterministic and not LLM-improvised.",
+  "design": "This epic EXTENDS the landed guided character-creation architecture (eshyra-b69j, complete) rather than inventing a parallel model. Reuse: the pure incremental CharacterDraft engine and its 'choices keyed by generated descriptors' pattern; the FinalizedCharacter shape; RulesPackCharacterResolver; and the deterministic derived-value seams.\n\nGrounding (verified against current tree):\n- The rules pack rules__dnd5e-srd-5.1 class records carry a full per-level 'progression' table (level, proficiencyBonus, features[] with refs, spellcasting.cantripsKnown / slots by spell level) for levels 1-20 — deterministic level-up is feasible from pack data, not LLM prose.\n- XP thresholds are in the frozen pack as the 'table:character-advancement' record — source thresholds from there.\n- rulesPackResolver.ts parses only a level-1 slice today (ResolvedClassData.level1 via parseLevel1); .3 generalizes that seam.\n- derivedValues.ts deriveLevel1Values is explicitly level-1 only; .8 generalizes it rather than adding CLI-side math.\n- CHARACTER-SHEET AUTHORITY IS UNRESOLVED AND IS THE BIGGEST DESIGN QUESTION (.13): the live SQLite 'character' table is sparse (name/ancestry/class/level/hp/ability_scores_json/conditions_json), while FinalizedCharacter is a much richer artifact persisted as JSON files by the CLI-layer createFileFinalizedCharacterStore — a separate store/package/format. Leveling must pick a single authority before the ledger (.2) and engine (.8) are built.\n- requiredChoices.ts is the established required-choice pattern; .9 mirrors it but must FAIL CLOSED on spell/feature choices the engine can't deterministically apply (unlike the lenient creation-time spell gate).",
+  "acceptance_criteria": "- Character progression state exists: current XP, level, advancement mode, and progression events.\n- XP vs milestone policy is defined per campaign/rules binding.\n- XP/milestone awards are recorded as auditable state mutations.\n- Level-up eligibility is detected deterministically.\n- A guided level-up flow is backed by the rules pack, not LLM prose.\n- Level-up applies deterministically: HP increase, class level, new features, spell slots/spells/choices where supported.\n- Unsupported choices are explicit and blocked rather than inferred.\n- CLI/session commands exist for viewing progression and applying level-up.",
+  "notes": "Decompose into children for: design note, schema+ledger, resolver level-N generalization, advancement policy, award recording, eligibility detection, deterministic apply engine, required-choices+block, guided flow, CLI/session commands, and cross-class integration tests.\nAuthority constraint is now FIXED (eshyra-lupf.13): the canonical character sheet is core-owned (@eshyra/core), not CLI JSON. CLI/web/app all call core character-sheet APIs. Recommended work order: .1 (design note), .3 (resolver generalization), .13 (core character-sheet authority boundary), then .2 (ledger) and .8 (engine) and the rest.\nAll 15 children complete and landed on main: progression model/ledger, advancement policy, eligibility, deterministic level-up engine, guided flow + CLI commands, integration tests, canonical CharacterSheet authority + store/migration, structured currency wallet (.15), and portable character chronicle (.16). Closing epic.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:19:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-28T06:14:16Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

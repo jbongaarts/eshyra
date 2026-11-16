@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5.1",
+  "title": "Fix dropped SRD skill-to-ability mapping and coverage heading collision",
+  "description": "Combined audit finding from Claude Opus 4.8 and ChatGPT review.\n\nThe SRD p.78 skill-to-ability mapping is dropped from the generated records. rule:skills says the skills related to each ability score are shown in the following list, but the actual list is absent from the record body and appears in no structured record.\n\nMissing mapping:\n- Strength: Athletics\n- Dexterity: Acrobatics, Sleight of Hand, Stealth\n- Intelligence: Arcana, History, Investigation, Nature, Religion\n- Wisdom: Animal Handling, Insight, Medicine, Perception, Survival\n- Charisma: Deception, Intimidation, Performance, Persuasion\n- Constitution: no skills\n\nImpact:\n- Deterministic character-sheet tools cannot reliably compute skill modifiers.\n- Class/background skillChoices are structured, but there is no canonical generated-pack mapping from chosen skill to governing ability.\n- The primary DM model sees rule:skills promise a list that is not present.\n- The source-coverage guard falsely reports completeness because duplicate heading names such as Skills > Strength collide with later ability-section headings such as Strength.\n\nAcceptance criteria:\n- Represent the full p.78 skill-to-ability mapping in generated output, preferably as structured data rather than prose-only text.\n- rule:skills no longer ends by referring to a missing list.\n- Deterministic tools can resolve every canonical SRD skill to its governing ability.\n- Add regression coverage for duplicate heading ownership collisions, especially Skills > Strength versus the later Strength ability description.\n- Harden source-region coverage so a region cannot be counted as represented merely because a same-named heading maps to some record; the owning record must either contain the source text or structurally encode the region.\n- Fix the importer/tests, not the committed generated pack by hand.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T05:58:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T06:35:16Z",
+  "started_at": "2026-07-01T06:12:15Z",
+  "closed_at": "2026-07-01T06:35:16Z",
+  "close_reason": "Fixed p78 skill-to-ability mapping loss and the heading-collision auto-match bug",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-erf5.1",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

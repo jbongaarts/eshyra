@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.10",
+  "title": "Model magic item random-procedure devices (M8)",
+  "description": "Implement family M8 from docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-3-magic-item-mechanics-inventory.md §4: 18 rows. Flagships: deck-of-many-things (declared-draw procedure, 1-hour inter-draw limit, card resolution incl. XP/level/alignment/soul-trap outcomes) and wand-of-wonder (d100 procedure with range/centering/random-subject meta-rules). Also: deck-of-illusions (deck missing 1d20-1 cards), bag-of-beans, efreeti-bottle, amulet-of-the-planes (d100 mishap INLINE in prose — evaluate extracting a table record via importer per docs/importer-fix-protocol.md), helm-of-brilliance explosion roll, horn-of-blasting 20%, wind-fan cumulative 20%, staff-of-power/staff-of-the-magi retributive strike, sword-of-sharpness nested d20, figurine obsidian 10%, random found-state rows (iron-flask, ring-of-spell-storing, necklace-of-prayer-beads, robe-of-useful-items). Shape: seeded-roll procedure + tableRef binding + percent-risk clauses. All randomness through the seeded roll tool. Recommended agent: Opus 4.8 for procedure representation; Codex for simple percent-risk rows.",
+  "notes": "2026-07-08 ADR 0017 adjustment: Random-procedure devices should expose seeded-roll/table/procedure semantics in the pack and route all randomness through the roll tool/F1 surface. Irregular card/device outcomes may be curated specs when source-grounded and parity-checked; live persistent outcomes must be runtime state or explicit engine hooks.\nImplemented the source-grounded family projector, strict schema validation, clause registry bindings, generated pack projection, and representative/exhaustive tests. The exact 240-row owner-tag conservation census passes; all magic items now carry reviewed executable mechanics.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-06T23:32:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:27Z",
+  "started_at": "2026-07-18T16:34:37Z",
+  "closed_at": "2026-07-18T20:23:27Z",
+  "close_reason": "Source-faithful executable magic-item family complete; canonical regeneration, conservation gates, deep audit, and full worktree verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.10",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-06T18:32:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

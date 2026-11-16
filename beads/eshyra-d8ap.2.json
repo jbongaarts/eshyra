@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d8ap.2",
+  "title": "Add first-class encounter combatant state for monsters and NPCs",
+  "description": "The first combat playtest exposed that enemies are not addressable durable combatants. Bob's HP was updated correctly, but the near goblin could not be targeted by `adjust_hp`; the model tried several labels such as \"near goblin\", \"goblin\", \"goblin-1\", and \"goblin-ambush\", all failed, and the goblin's death was handled narratively / as lore instead of combat state. Combat needs a deterministic combatant model for monsters and NPCs.\n\nAcceptance criteria:\n\n- Starting an encounter can instantiate combatants from module encounter creatures.\n- Each combatant has a stable id, display label, rulesRef, side/faction, HP, max HP, AC if available, conditions, alive/dead/unconscious status, and location/zone or encounter placement.\n- Combatants can represent multiple creatures of the same type, e.g. `goblin-1`, `goblin-2`.\n- A state mutation tool can update combatant HP and conditions. This may extend `adjust_hp` or introduce a combat-specific tool, but the target model must be unambiguous.\n- Active combatants appear in the DM context with their ids and current status.\n- The auditor can verify creature damage/death against combatant state instead of requiring improvised lore.\n- Regression tests cover: two goblins ambush Bob; Bob damages `goblin-1`; Bob kills `goblin-1`; `goblin-2` remains active; invalid target labels fail clearly and suggest valid combatant ids; no goblin death is represented only as overlay lore when combatant state should exist.\n",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-25T05:21:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-25T06:03:34Z",
+  "closed_at": "2026-06-25T06:13:27Z",
+  "close_reason": "Implemented live encounter combatant state, start/update combatant tools, context/audit prompt support, schema migration, and goblin regression coverage. Verified with npm run verify:worktree.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d8ap.2",
+      "depends_on_id": "eshyra-d8ap",
+      "type": "parent-child",
+      "created_at": "2026-06-25T00:21:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

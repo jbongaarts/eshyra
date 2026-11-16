@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-mxkg",
+  "title": "Prevent read-only inventory questions from mutating equipment",
+  "description": "Problem\nIn session-mqkis411-rlsh20, the player asked \"What am I equipped with?\" This is naturally a read/query intent. The model responded by executing inventory mutation tools to give the character starting equipment. That is unsafe: asking what is currently recorded should not silently create or select equipment.\n\nThis is related to the broader guided session-zero work, but it is a narrower runtime safety rule:\n- inventory/status queries should inspect current state\n- equipment selection or item grants should require an explicit character-creation/session-zero step or explicit player confirmation\n\nGoal\nSeparate read-only character/inventory inspection from inventory mutation so the DM model cannot silently populate equipment in response to a query.\n\nAcceptance Criteria\n- A player asking what they are equipped with does not cause give_item or other inventory mutation tools unless the player has explicitly entered/confirmed an equipment-selection flow.\n- If no equipment is recorded, the answer should say so clearly and offer to begin/continue starting-equipment selection.\n- If starting equipment is incomplete, the system should surface that as session-zero/character setup debt rather than silently patching it.\n- Add tests for:\n  1. \"What am I equipped with?\" with empty inventory does not call mutating tools\n  2. explicit equipment-selection/confirmation path may call mutating tools\n  3. existing inventory can be reported without mutation\n- The rule should not depend only on prompt wording if a deterministic permission/tool-gating mechanism is practical.\n- This bead may integrate with eshyra-4jiu, but should stay focused on preventing query-triggered mutation.\n\nNon-goals\n- Do not fully redesign character creation.\n- Do not implement the complete guided session-zero flow.\n- Do not require an extra model call solely to classify every ordinary inventory query unless no deterministic/gating approach is feasible.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-20T21:15:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-21T05:04:44Z",
+  "closed_at": "2026-06-21T05:04:44Z",
+  "close_reason": "Already completed by eshyra-4ia4 in commit c202f55 (#246): explicit-action inventory tool gating, auditor enforcement, empty/existing inventory query behavior, valid action behavior, and regression coverage. Focused tests pass on 2026-06-21.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

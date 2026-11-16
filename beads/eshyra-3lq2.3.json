@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3lq2.3",
+  "title": "Fix: Sol S1/S2 on PR #635 (Sonnet 5.5)",
+  "description": "Fix the two MATERIAL findings from the Sol review of PR #635 (read in full: `bd show eshyra-3lq2.2`). Branch from origin/eshyra-3lq2. Deps installed. Edit only packages/core/src/character/levelUpSpells.ts (+ finalizeCharacter.ts only if strictly needed) and packages/core/test/levelUpSpellSelection.test.ts. Do not touch skillBonuses.ts (parallel task).\nS1: ritualBook ownership must not count as ordinary known-spell ownership. The learning exclusion (heldRefsOf / spellsUnion-based exclusion), sibling-distinctness checks and replacement candidate filters must be ownership/destination aware: a spell in ritualBook may still be learned as a known spell (and vice versa: an already-known spell may still be inscribed via Book), duplication within the same bucket stays invalid, Book-only rituals stay excluded from replacement, and replacing an independently known copy preserves the ritualBook entry.\nS2: Magical Secrets (and any leveled spell in the bard's `known` bucket) must be replaceable regardless of native class-list membership: the OLD spell's eligibility is \"a leveled spell in this class's known bucket\" (excluding cantrips and ritualBook-only spells); the NEW spell keeps the class-list/level filter. Update the eshyra-3lq2 disposition note (Magical Secrets needed this fix).\nEVIDENCE (generalized invariants, real pack): Tome warlock with Unseen Servant in ritualBook can learn it as the level-6 Pact Magic spell, and replacing that known copy later keeps the ritualBook entry; same-level learn+inscribe of the same ritual allowed; a bard who learned Fireball via Magical Secrets can replace it with a bard-list spell at the next level; negative controls (cantrip not replaceable, ritualBook-only spell not replaceable, duplicate within a bucket refused). Confirm new tests fail on the pre-fix code (copy files aside; never git stash).\nPROTOCOL: npm run verify:worktree BEFORE commit; commit (Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>); bd update <your-bead> --append-notes; bd close <your-bead>. No push/PR.",
+  "notes": "Commit 2dbbb086. S1: heldRefsOf now excludes ritualBook; new heldRitualRefsOf (ritualBook only) used for the Book destination; sibling distinctness skips cross-destination pairs (isRitualDestination). S2: replacementDescriptor OLD-spell filter = leveled spell in sc.known (no class-list check); NEW spell keeps the filter. Disposition for eshyra-3lq2: Magical Secrets needed this fix (off-list leveled secrets must be replaceable); not edited per instruction not to modify the parent. Tests (levelUpSpellSelection.test.ts): 4 new fail on pre-fix source, pass after. verify:worktree green (6315 passed).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T07:51:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T07:57:06Z",
+  "closed_at": "2026-10-09T07:57:06Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-3lq2.3",
+      "depends_on_id": "eshyra-3lq2",
+      "type": "parent-child",
+      "created_at": "2026-10-09T02:51:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

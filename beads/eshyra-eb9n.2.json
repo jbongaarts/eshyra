@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eb9n.2",
+  "title": "Review: Sol final review of PR #628 (eshyra-eb9n @ f9f051d3)",
+  "description": "Final read-only review of PR #628 (branch eshyra-eb9n, exact head f9f051d3e4cd3275103658960bc50389ca94ccd6) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final read-only review of PR #628 at exact head f9f051d3e4cd3275103658960bc50389ca94ccd6, compared with origin/main (one commit; all eight changed files reviewed). Applied rules-clause-complete review depth under AGENTS.md and docs/design-and-pr-review-policy.md. Read live owning bead eshyra-eb9n and its implementation dependency eshyra-eb9n.1 for scope and accepted decisions; refs/beads/state resolves to 9e4bb40c789e3364b1605e7321c1537117a4ca02 (2026-09-09), predates these records, and was reconciled against live Beads. Reviewed ADR 0020 and independently checked the vendored SRD_CC_v5.1.pdf class spellcasting sections, including Bard, Cleric/domain, Druid, Sorcerer, Warlock, and Wizard. The accepted 1..limit preparation range follows the explicit implementation decisions and existing preparation boundary. No importer, pack, provenance, or frozen-path changes; importer-fix protocol has no changed files to govern here.\n\nReviewed draft setters/recompute, diagnostics and missing-choice/finalization gates, class/subclass feature applications, duplicate canonical identity, wizard spellbook membership and stale preparation, final spell bucket construction and union, draft persistence/resume, CLI spell selection and corrections, and level-up/long-rest consumers of structured spellcasting. New helper remains internal; the preparation setter has the real CLI consumer. Existing tests retain their substantive assertions while updating caster inputs to legal counts.\n\nVerification: all four changed test files passed, 73 tests total (creationSpellCounts, creationClassChoices, finalizeCharacter, characterWizard). Worktree-local node_modules is absent; used existing ancestor dependencies with an in-memory Vitest configuration, explicit aliases to this exact worktree core source (both public/internal), disabled result caching, and cache/temp locations outside the repository. Independent in-memory source probes confirmed legal finalization for Bard, Cleric, Druid, Sorcerer, Warlock, Wizard, Fighter, Paladin, and Ranger; caster cantrip shortfalls reject; prepared duplicate aliases, cantrips, and unknown spells reject; JSON roundtrip/recompute preserves valid wizard preparation; changing away from Wizard ignores the wizard-only selection as specified. git diff --check passed and git status remained clean. No repository files edited/created, formatting/full verification run, commit/push, GitHub comment, or merge performed.\n\nFindings: none (MATERIAL: 0; NON-MATERIAL: 0).\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T04:27:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T04:31:00Z",
+  "closed_at": "2026-10-09T04:31:00Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eb9n.2",
+      "depends_on_id": "eshyra-eb9n",
+      "type": "parent-child",
+      "created_at": "2026-10-08T23:27:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

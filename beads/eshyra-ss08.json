@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ss08",
+  "title": "Build the Making of Eshyra engineering story series",
+  "description": "Build a first-class /making-of/ section on eshyra.app for a public long-form engineering-story series about how Eshyra's architecture was discovered through implementation, audit, and play.\n\nPublish durable, search-indexable stories that are technically deep but readable without prior repository knowledge. Prefer concrete failures and discoveries before abstractions. The series should collectively explain the architecture without forcing one article to tell the entire history. Reuse the existing visual language and intentionally small static-site architecture unless a future design bead changes that decision. Stories should cross-link where useful but stand alone, and the homepage must not become a list of every article.\n\neshyra-5f2w, the existing rules-pack compiler story, is the first story and must be reused rather than duplicated. Preserve factual chronology. Do not retrofit later conclusions into earlier events as though they were obvious. Public prose must distinguish observation, interpretation, and later architectural conclusion.\n\nWriting voice: analytical and curious; concrete example before abstraction where useful; dry humor emerging from the situation; audience-calibrated jargon; deliberate pronouns, using we for shared work, discovery, and credit, and I for personal doubt, criticism, responsibility, or negative judgment; reflect praise and absorb blame; no em dashes; avoid generic LLM prose patterns and over-polished artificial cadence.\n\nEpic acceptance criteria:\n- /making-of/ has a coherent information architecture.\n- The existing rules-pack story is represented as part of the series.\n- Each story has stable metadata, canonical URL, social metadata, and internal navigation.\n- The section can grow without turning the homepage into a list of every article.\n- Story pages remain static and search-indexable.\n- Stories clearly separate historical facts from current architecture.\n- The initial backlog is represented by child beads or reused existing beads.\n\nEvery child story must treat repository history, PRs, design docs, ADRs, audits, and playtest transcripts as evidence; verify factual claims against project artifacts rather than model memory; distinguish implemented architecture from planned architecture; preserve public readability and search indexing; and follow the voice rules above.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T04:27:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "labels": [
+    "docs",
+    "site",
+    "storytelling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ss08",
+      "depends_on_id": "eshyra-5f2w",
+      "type": "relates-to",
+      "created_at": "2026-07-09T23:28:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.6.2",
+  "title": "L2-F1: declare four non-condition reference families and disclose the remaining undeclared reference leaves",
+  "description": "Independent audit finding L2-F1 (BLOCKER, bar 9: the non-condition discovery limit is undisclosed). Read the full finding, census and reproducer description with `bd show eshyra-o9bd.16.2`. The auditor's probe is at /tmp/claude-1000/-home-jhbongaarts-src-eshyra/fbbcdead-8263-4bd4-8b2c-f48eaa899a3a/scratchpad/repro/l2-probes.mts.\n\nDECIDED DESIGN (Captain):\n(1) Declare four source-grounded reference families as `reference` / `record-key` relationship declarations in packages/core/scripts/importers/dnd5e-srd-5.1/recordRelationshipDeclarations.ts, with relations named for their meaning:\n  - spell `/mechanics/effects/*/creation/forms/*/creatureRef`: Find Familiar's 15 forms, plus any other spell with the shape. Relation: 'creation-form'.\n  - creature `/traits/*/mechanics/spellcasting/groups/*/spells/*/ref`: creature spellcasting spell refs. Relation: 'spellcasting-spell'. Verify the exact pointer(s) in records.json, including any action-level spellcasting shapes, and cover every emitted variant of the shape.\n  - ancestry `/traits/*/tableRefs/*` and `/choices/*/tableRef`. Relation: 'table-reference'. Dragonborn → table:draconic-ancestry.\n  - magic-item `/mechanics/interItem/requiresItems/*/itemRefs/*`. Relation: 'requires-item'. Hammer of Thunderbolts → Belt of Giant Strength and Gauntlets of Ogre Power.\n  Every declared occurrence must resolve; the importer already rejects declarations that never match. Regenerate the pack, then run verify:dnd5e-srd-pack.\n(2) Disclose the remainder. In docs/audits/dnd5e-srd-5.1-final/2026-11-01-o9bd-19-6-1-candidate-pack.md, under 'Explicit unresolved limits', add an entry owned by eshyra-ry69. Describe the remaining undeclared record-key reference leaves by their deterministic predicate (see bd show eshyra-ry69), state the one-hop consequence (the DM receives the referencing record and its literal ref values, but expansion does not retrieve the referenced record), and keep the existing 19.3.5 entry for condition names. Do not copy generated counts.\n(3) Evidence: one generalized test (extend an existing relationship-declaration/discovery test file rather than adding a new suite) that:\n  - for each of the four families, seeds one source-backed record (Find Familiar, Acolyte, Dragonborn, Hammer of Thunderbolts) through runDiscoveryStages and asserts that the referenced record is retrieved;\n  - asserts every emitted leaf of each declared shape resolves (generalized over the shape, not a hand list).\n  The four seeds must fail on origin/main before the change.\n(4) A thaw note (pack bytes change: record-relationships.json, perhaps field-provenance). Update any relationship-count pins only where they legitimately change, and justify each in the thaw note.\nDo NOT touch packages/core/src/discovery/shadow.ts or packages/core/src/orchestrator/: sibling bead eshyra-o9bd.16.6.1 owns them.\nCompletion: `npm run verify:worktree` passes; commit on the assigned branch only.\n",
+  "notes": "Commit 7bfdfa6e on branch eshyra-o9bd.16.6.2. Declared creation-form (spell, 20 leaves/2 spells), spellcasting-spell (creature, 313/36), table-reference (ancestry traits tableRefs + choices tableRef, 1+1), requires-item (magic-item, 3/2). Manifest 25->30 declarations; only record-relationships.json changed. All 8 new tests failed pre-change, pass after. One pin adjusted: discoveryStages campaign-rule test (fireball gains reverse spellcasting-spell typed route). Disclosure added (ry69) + thaw note. verify:worktree exit 0. Inventory script not run (records.json unchanged).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T04:17:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T04:23:49Z",
+  "started_at": "2026-11-01T04:18:29Z",
+  "closed_at": "2026-11-01T04:23:49Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.6.2",
+      "depends_on_id": "eshyra-o9bd.16.6",
+      "type": "parent-child",
+      "created_at": "2026-10-31T23:17:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

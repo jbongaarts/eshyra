@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9qq",
+  "title": "Document and centralize SQL identifier quoting in checkpoint restore",
+  "description": "Tech-debt review finding. materialize in store.ts concatenates quoted SQL identifiers from snapshot data and forkCampaign.ts builds DELETE FROM from a hardcoded list. Safe today with trusted inputs. Add an explicit trust-assumption comment and a shared quoteIdent helper, and replace the magic temp-file suffix with a named constant. Parent context: loreweaver-d4r.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T21:25:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:21Z",
+  "started_at": "2026-05-22T22:13:41Z",
+  "closed_at": "2026-05-22T22:17:54Z",
+  "close_reason": "Centralized SQLite identifier quoting with quoteIdent, documented trusted identifier assumptions in checkpoint restore and forkCampaign, and named the restore temp suffix. Verification: npx vitest run packages/core/test/sql.test.ts packages/core/test/checkpoint.restore.test.ts packages/core/test/checkpoint.store.test.ts packages/core/test/world.test.ts passed (31 tests); npm run typecheck remains blocked by unrelated CLI TS errors recorded in comments. PR: https://github.com/jbongaarts/loreweaver/pull/41",
+  "comments": [
+    {
+      "id": "a66e298c-e6fd-5beb-b1a2-3b6d724e43e1",
+      "issue_id": "eshyra-9qq",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/sql.test.ts -> failed as expected because ../src/persistence/sql.js does not exist yet for shared quoteIdent helper.",
+      "created_at": "2026-05-22T22:15:06Z"
+    },
+    {
+      "id": "9bb6dba3-1a1d-5ba5-a25a-c9e7db11294d",
+      "issue_id": "eshyra-9qq",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: npx vitest run packages/core/test/sql.test.ts packages/core/test/checkpoint.restore.test.ts packages/core/test/checkpoint.store.test.ts packages/core/test/world.test.ts -> passed (31 tests). Source search confirms quoteIdent is used by checkpoint restore and forkCampaign; no restore- literal remains.",
+      "created_at": "2026-05-22T22:16:09Z"
+    },
+    {
+      "id": "e55f3433-db48-5f36-a051-95ececcedde8",
+      "issue_id": "eshyra-9qq",
+      "author": "Joseph Bongaarts",
+      "text": "Verification caveat: npm run typecheck -> failed on unrelated packages/cli/src/index.ts:111 TS2554/TS2339. Focused verification remains passing.",
+      "created_at": "2026-05-22T22:16:26Z"
+    },
+    {
+      "id": "8d9338ce-cc05-5887-99f0-31d5f0da6259",
+      "issue_id": "eshyra-9qq",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: npx vitest run packages/core/test/sql.test.ts packages/core/test/checkpoint.restore.test.ts packages/core/test/checkpoint.store.test.ts packages/core/test/world.test.ts -> passed (31 tests) after adding restore trust-assumption comment/formatting.",
+      "created_at": "2026-05-22T22:16:58Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

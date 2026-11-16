@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.3",
+  "title": "Correct unsafe mechanics.conditions relation semantics in spells and effects",
+  "description": "Finding source:\n- Codex High finding: mechanics.conditions is not safe as deterministic effect semantics.\n- Codex found 12 likely wrong relation: \"applies\" projections where source text is prevention, removal, immunity/protection, or gating instead.\n- Concrete examples: branding-smite, calm-emotions, lesser-restoration, and protection-from-evil-and-good.\n- ChatGPT confirmed branding-smite was already present before the latest erf5 changes: source says the target becomes visible if invisible and cannot become invisible, but mechanics records condition=invisible relation=applies.\n- Fable independently confirmed in the committed pack: branding-smite marks invisible as applies (source: target cannot become invisible), calm-emotions marks charmed as applies (source: suppresses), lesser-restoration marks blinded as applies (source: ends a condition), protection-from-evil-and-good marks charmed as applies (source: protects against).\n\nWhy it matters:\n- Deterministic tools may apply the opposite of the SRD effect.\n- \"Applies condition\" must not be used for prevents/removes/protects-from/grants-advantage-against/gates-on/mentions.\n\nAcceptance criteria:\n- Audit every mechanics.conditions entry in spells and any shared effect parser output against source text.\n- Replace unsafe relation values with a closed vocabulary that can express at least: inflicts, prevents, removes, suppresses, protectsFrom/immunizesAgainst, grantsAdvantageAgainst, excludes, gatesOn, mentions.\n- Fix all 12 Codex-identified likely wrong cases plus any additional cases found.\n- Add tests for branding-smite, calm-emotions, lesser-restoration, protection-from-evil-and-good, and at least one true condition-inflicting spell/effect to prevent overcorrection.\n- Add a guard so prevention/removal/immunity phrases cannot be emitted as relation=applies.\n- Document relation semantics for deterministic consumers.",
+  "notes": "Implemented in PR #385 (branch eshyra-o9bd.18.3, awaiting review/merge). Shared classifier src/rules/conditionRelations.ts; vocabulary now applies/removes/prevents/suppresses/immune/advantage/disadvantage/exclusion/gates/mention; condition-relation-safety audit gate re-derives all 512 entries; 30 relation values fixed across 21 records (20 wrong applies incl. all Codex cases + 8 more, 10 mention upgrades); thaw note docs/audits/dnd5e-srd-5.1-final/thaw-notes/2026-07-02-o9bd-18-3-condition-relation-safety.md. Close on merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-02T21:59:04Z",
+  "closed_at": "2026-07-02T23:35:38Z",
+  "close_reason": "Merged to main in PR #385 (merge commit 55f5f98). Reviewer non-blocking note recorded: the condition-relation-safety audit gate shares the classifier with the importer, so it is a drift/hand-edit guard, NOT an independent semantic oracle — semantic safety rests on the regression tests and the thaw note's full 512-entry manual audit. If future relation bugs surface, fix them with classifier regression tests (mechanicsProjections.test.ts / conditionRelations), not by relying on the gate.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.3",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

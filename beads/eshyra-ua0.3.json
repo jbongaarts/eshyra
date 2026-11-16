@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ua0.3",
+  "title": "GREEN: session lifecycle persistence",
+  "description": "Implement the minimal core session lifecycle API and schema support needed to pass the RED tests.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T00:24:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-21T00:25:03Z",
+  "closed_at": "2026-05-21T00:26:20Z",
+  "close_reason": "Implemented core session lifecycle persistence and exports; focused and nearby verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ua0.3",
+      "depends_on_id": "eshyra-ua0.4",
+      "type": "blocks",
+      "created_at": "2026-05-20T19:24:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ua0.3",
+      "depends_on_id": "eshyra-ua0",
+      "type": "parent-child",
+      "created_at": "2026-05-20T19:24:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "37cc2746-caf1-56fd-97f0-047cb5dd94ee",
+      "issue_id": "eshyra-ua0.3",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: npm run test -- packages/core/test/session.test.ts passed; nearby npm run test -- packages/core/test/session.test.ts packages/core/test/scene.test.ts packages/core/test/checkpoint.serialize.test.ts passed; npm run typecheck passed.",
+      "created_at": "2026-05-21T00:26:20Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

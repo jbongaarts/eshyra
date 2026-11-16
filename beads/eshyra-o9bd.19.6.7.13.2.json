@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.13.2",
+  "title": "Review: Sol bounded confirmation of PR #717 S2-S4 corrections (eshyra-o9bd.19.6.7.13 @ e51dd76f)",
+  "description": "Read-only bounded Sol confirmation of PR #717 at exact head e51dd76fa67098cfcfa58211af27eca284bb7ff1.",
+  "notes": "Captain: dispatched gpt-6.1-sol high, PGID 598574.\nBounded confirmation review of PR #717 at EXACT HEAD e51dd76fa67098cfcfa58211af27eca284bb7ff1, against prior reviewed head 0b2458247a3ef405b6b0f1e47be7b33a42ddada5. Read-only repository review. Read live beads .7.13.2, .7.13 and .7.13.1, audit parent .7 reconciliation, capability owner .19.5.12 and condition-limit owner .19.3.5; applied repository review policy and ADR 0020. refs/beads/state remains stale at 9e4bb40c, so relevant decisions were reconciled against live bd/Dolt.\n\nS1 NON-MATERIAL / VERIFIED: Exact head matches the assignment. git diff 0b245824..HEAD changes one file only: docs/audits/dnd5e-srd-5.1-final/2026-11-06-o9bd-19-6-7-13-candidate-pack.md, four removed/four added lines. The entire delta consists of the positive-capability paragraph, the condition-limit bullet, and the two downstream bullets; no other edits or implementation changes.\n\nS2 NON-MATERIAL / CORRECTION CONFIRMED: Prior material S2 is resolved. Successor lines 80-81 now require a bounded re-audit of the second-audit repairs before acceptance, name eshyra-o9bd.19.6.7 reconciliation as authority, and preserve the project owner's acceptance/re-freeze authorization decision on eshyra-o9bd.19.6.4 after that re-audit. Live .7 explicitly states that changed candidate repairs require a new pinned candidate plus bounded re-audit. No optional bypass remains in the revised downstream section.\n\nS3 NON-MATERIAL / CORRECTION CONFIRMED: Prior material S3 is resolved. Line 57 identifies DETERMINISTIC_CAPABILITY_INVENTORY in deterministicCapabilityInventory.ts as authority for the full in-force set, consistent with its module declaration and live .19.5.12 acceptance criteria. Direct source-import probe finds 116 inventory entries, four shared ledger contracts and eight rule bindings. All inventory entries contain operation, requiredInputs, exclusions, residualDmInterpretation, runtimeOwner and evidence. record-death-save-v1 and level-up-v1 both exist in the inventory with no ledgerContract and no rule binding. The inventory imports and quotes shared ledger contracts; rule bindings remain the narrower model-facing presentation. The revised paragraph correctly distinguishes these responsibilities and retains the absence-is-not-completeness and unselected-backlog qualifications.\n\nS4 NON-MATERIAL / WORDING CORRECTION CONFIRMED: Prior non-material S4 is resolved. Line 61 explicitly includes declared condition-to-condition nested references and scopes the unresolved families to leaves outside condition records. Production resolveRecordRelationships confirms spell:animal-friendship -> condition:charmed (applies), condition:petrified -> condition:incapacitated and condition:paralyzed -> condition:incapacitated (both implied-condition). The generalized probe also checks all 191 top-level mechanics.conditions references across action/feat/feature/hazard/spell records: all resolve. Actual charmed leaves in creature:aboleth actions/legendary actions and the prone failureCondition in equipment:ball-bearings-bag-of-1-000 have no relationship declaration. Aboleth action index 3 is Enslave (3/Day). All seven example record keys in the successor exist exactly in records.json: spell:animal-friendship, condition:charmed, condition:petrified, condition:paralyzed, condition:incapacitated, creature:aboleth, equipment:ball-bearings-bag-of-1-000.\n\nS5 NON-MATERIAL / NO INDUCED INACCURACY: Read the full successor record and compared the complete correction delta against prior review evidence. No other statement became false through these corrections. Recomputed all seven artifact SHA-256 values and the vendored PDF hash: every value matches the record. packages/core/data, packages/core/src, packages/cli/src and packages/core/sources have identical Git subtree identities at this head, 0b245824 and repaired baseline 73083baf. The revised prose preserves bounded non-claims, disclosed discovery limits, historical-record status and formal re-freeze ownership; it does not claim this confirmation completes the required repair re-audit. Direct source/data probes are proportionate for this documentation-only delta; no new permanent test is needed. No repository writes, formatting, build, verify:worktree, commits, pushes, GitHub comments or merges were performed. Final git status was clean and HEAD unchanged.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T05:19:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T05:22:04Z",
+  "started_at": "2026-11-06T05:19:24Z",
+  "closed_at": "2026-11-06T05:22:04Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.13.2",
+      "depends_on_id": "eshyra-o9bd.19.6.7.13",
+      "type": "parent-child",
+      "created_at": "2026-11-05T23:19:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

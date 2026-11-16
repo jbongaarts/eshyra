@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.20.2",
+  "title": "Review: Sol final review of the X/Day PR (eshyra-o9bd.19.6.7.20 @ 3d49e973)",
+  "description": "Read-only Sol final review at exact head 3d49e973a0e213e5026aec26d67839bd04a35348.",
+  "notes": "Captain: dispatched gpt-6.1-sol high, PGID 760244.\nS1. FINAL REVIEW at exact HEAD 3d49e973a0e213e5026aec26d67839bd04a35348, effective profile rules-clause-complete. Reviewed the complete 10-file origin/main...HEAD diff, AGENTS.md (including Permanent Test Evidence), review policy, ADRs 0020/0015, and live owning/implementation/review beads. refs/beads/state resolves to 9e4bb40c but is stale and omits these beads; live bd was used for current scope and acceptance. Findings classification: 0 MATERIAL, 0 NON-MATERIAL defects.\n\nS2. Source and execution: SRD p.259, rule:limited-usage (packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json:152622), says a \"monster must finish a long rest to regain expended uses\"; independently checked the vendored PDF p.259. packages/core/src/state/usageCounters.ts:382, :507, :516 now derive long_rest for entry X/Day, per-spell innate, and shared innate groups. EVENT_RESETS at :247-249 distinguishes short rest, long rest and dawn; :1836-1854 scopes a monster rest to its exact combatant and keeps default party rests separate. :1866-1869 selects stored reset kinds. Depletion and context hints follow that kind at :672 and :2067. Independent /tmp probe checked all 41 structured creature X/Day entries and 94 innate per-day spell entries against their actual derivations, plus a synthetic shared-pool sibling: all long_rest. No bundled creature record mentions dawn. No SRD contradiction found in this bounded scope.\n\nS3. Migration and state integrity: packages/core/data/migrations/0055_creature_long_rest_usage.sql:9-11 is additive data-only SQL, changing only combatant+dawn reset_kind. Selection is justified by the real producer: combatant declarations are refused (usageCounters.ts:818-825), item charges require a character and belong to item rows (:724-752), and existing creature rows reuse their stored reset (:839-850), making migration necessary. All other columns, non-dawn combatant rows, character/item rows, campaign ownership and spent amounts are preserved. migrationRunner.ts:302-309 applies SQL and ledger atomically. checkpoint/serialize.ts:82-91 retains every table including the ledger; checkpoint/store.ts:89-125 restores historical schema and rows, then normal initSchema applies pending migrations. Independent /tmp probe seeded 48 rows across two campaigns, three owner kinds, four reset kinds, zero/nonzero expenditure and orphan owner refs: exactly four combatant dawn rows changed; every other field remained identical. Pre-0055 restore+open, repeated init, and post-0055 restore+open all passed. No schema snapshot change is needed for this data-only update.\n\nS4. Consumers and truthfulness: rest.ts:738-743 and :757-762 reset only participating characters; advanceWorldTime at rest.ts:232-237 invokes the item clock executor rather than creature resets. itemResetExecutor.ts:750-762 and :1352-1365 operate on inventory/item_state, keeping canonical item dawn behavior separate. Automatic time advance through dawn left the probe's usage counters unchanged. Legacy full/rolled dawn economies retain their existing reset behavior (usageCounters.ts:249, :1892-1896). Relevant protocol guidance (orchestrator/protocol.ts:308-314), reset tool description (orchestrator/toolResetUsage.ts:25-33), capability inventory (:1310-1316, :1362), and comments now agree with p.259. The existing explicitly disclosed ruled-amount restore_usage boundary (capability inventory :1284-1296) remains model-adjudicated; it is not an automatic dawn/reset path.\n\nS5. Evidence disposition and verification: corrected assertions replace the old source-contradicting dawn expectation with the governing long-rest rule; they retain overspend refusal, maxima, provenance, Recharge behavior and owner isolation. usageCounters.test.ts:857-929 discriminates dawn, default party rest, dragon rest and giant rest; :932-982 adds real Aboleth Enslave action evidence; :985-1017 protects legacy item dawn behavior, with existing rolled-charge tests retained. migrationRunner.test.ts:327-435 distinguishes affected creature rows from character/item dawn and other combatant resets. Latest-ledger pins were advanced to 55; the sliced legacy-ledger expectation drops only the now-outside-window entry. These are proportionate generalized boundary invariants plus concrete source-backed creature evidence, not weakened tests. Read-only targeted run passed 8 files / 227 tests (usageCounters, migrationRunner, migrationLegacyAdoption, persistence, checkpoint.restore, rest, itemResetExecutor, itemPerDayDawnEconomy); log /tmp/eshyra-o9bd-20-2-tests.log. Independent probe /tmp/eshyra-o9bd-20-2-probe.mts passed. git diff --check passed; final HEAD unchanged and tracked/untracked git status clean. No repository edits, format/build/verify, commits, pushes, GitHub comments or merges performed.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-06T08:10:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T08:15:51Z",
+  "started_at": "2026-11-06T08:10:59Z",
+  "closed_at": "2026-11-06T08:15:51Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.20.2",
+      "depends_on_id": "eshyra-o9bd.19.6.7.20",
+      "type": "parent-child",
+      "created_at": "2026-11-06T02:10:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

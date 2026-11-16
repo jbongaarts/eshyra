@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0xaq.3",
+  "title": "Review: Sol final review of PR #692 (eshyra-0xaq @ 935f76e9)",
+  "description": "Final read-only review of PR #692 (branch eshyra-0xaq, exact head 935f76e9) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "dispatch: gpt-6.1-sol high, pgid 1763987\nFINAL REVIEW of PR #692 at exact head 935f76e913a1a4f6510371f9785222f6c2b0b776 (branch eshyra-0xaq.3).\nRead AGENTS.md, docs/design-and-pr-review-policy.md, docs/importer-fix-protocol.md, ADR 0020, live owning/implementation/review beads and olc5.14 user decision; inspected complete origin/main...HEAD diff and origin/main..HEAD log, PR metadata, variant model, adoption/give_item consumers, item_state, attunement, bind credits, receipts, active effects, migration runner/snapshot and checkpoint serialization. refs/beads/state is dated 2026-09-10 and lacks these newer tasks; current live bd records were used to reconcile scope. Applied rules-clause-complete review to the bounded pack-driven identity change, including semantic-system lifecycle/state obligations. DM choice and interpretation remain with the DM; declared variant identity, dice/accounting and atomic writes remain engine-owned. No pack/importer changes.\n\nS1 — MATERIAL (P2), packages/core/src/state/itemAdoption.ts:353 and packages/core/data/migrations/0052_item_variant_establishment.sql:9. Durable instance identity is not reserved by the new establishment ledger. Concrete reproduced scenario using real SRD tools on an in-memory database: seed a pre-variant Horn at id horn-of-valhalla#1; adopt_item establishes brass and inserts its permanent trace; remove_item with disposition destroyed deletes the inventory row; give_item for a NEW iron Horn automatically allocates horn-of-valhalla#1 again. The live inventory now says iron while item_variant_establishment still attributes brass to that same instance id. The new table deliberately outlives the inventory row and is keyed only by inventory_id, but itemInstanceIdRetired (packages/core/src/state/itemGrantBinding.ts:228) checks only receipts and effect bindings. This violates the required durable attributable per-instance establishment trace and stable identity/state-integrity boundary (owning dispatch and ADR 0020), even though the newly created physical Horn is distinct. Suggested fix: include item_variant_establishment.inventory_id in the shared retired-id predicate so its durable identity cannot be reissued; preserve the old trace. Sibling search: the same helper governs stateful give_item allocation, explicit-id reassignment, adoption stack splitting, relinquishment allocation and item-state split allocation, so close the shared class rather than special-case Horn grants. Owner: current PR implementation. Required next state: repair and fresh full review at the new exact head before merge. Permanent evidence should be a generalized lifecycle invariant: an establishment record continues to reserve its id after destruction, including automatic allocation and explicit-id reassignment. A compact lifecycle regression is proportionate to durable attribution corruption.\n\nValidation: npx vitest run on itemVariantEstablishment, itemAdoption, persistence and migrationLegacyAdoption: 4 files / 54 tests passed. Targeted itemState, attunement, itemGrantRolledCount, itemGrantBindCredit, itemGrantConsumptionReceipt, itemGrantBagOfTricks, checkpoint.serialize, checkpoint.schemaIntegrity and domainMutations: 9 files / 161 tests passed. Additional repository-file-free in-memory probes reproduced S1 and passed 11 cases covering open/redeemed credits, receipts, live/ended effects, attunement, open review, stack quantity, preserved exhausted cooldown, incompatible state/economies, same-variant retry and serialized trace inclusion; refusal cases preserved the complete serialized database unchanged. git diff --check passed; repository working tree remained clean. No full mutating verification/build/format, commits, pushes, GitHub comments or merges performed.\nNo additional material or non-material findings. SQL UPDATE/DELETE prevention triggers: no requirement; current append-only responsibility has an INSERT-only writer and no exposed mutation route.\nVERDICT: MATERIAL FINDINGS (1)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T21:48:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T21:51:07Z",
+  "closed_at": "2026-10-31T21:51:07Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0xaq.3",
+      "depends_on_id": "eshyra-0xaq",
+      "type": "parent-child",
+      "created_at": "2026-10-31T16:48:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

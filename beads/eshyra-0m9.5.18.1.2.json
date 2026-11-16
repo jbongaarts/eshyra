@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.18.1.2",
+  "title": "Review item 3: feature coverage guard",
+  "description": "Add FeatureCoverageError, runImporter minFeatureCount support, CLI floor, and tests that an empty feature result fails closed before writing output.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-31T03:38:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:51Z",
+  "closed_at": "2026-05-31T03:47:40Z",
+  "close_reason": "Implemented feature coverage guards; verification: focused importer tests, Biome touched-file CI, typecheck, full npm test, and git diff --check passed.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.18.1.2",
+      "depends_on_id": "eshyra-0m9.5.18.1",
+      "type": "parent-child",
+      "created_at": "2026-05-30T22:38:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "3903f45f-8b9f-52dc-8ac0-5043d3996408",
+      "issue_id": "eshyra-0m9.5.18.1.2",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseFeatures.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> exit 0; focused importer suite later -> 79 passed. Added FeatureCoverageError, empty feature fail-closed guard, minFeatureCount, CLI MIN_EXPECTED_SRD_5_1_FEATURES floor, and pipeline tests.",
+      "created_at": "2026-05-31T03:47:28Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

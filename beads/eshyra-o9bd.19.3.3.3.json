@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.3.3",
+  "title": "Dispatch: 19.3.3 repair after Sol S1-S3 (attempt 2)",
+  "description": "Repair PR #652 per Sol review eshyra-o9bd.19.3.3.2 (read S1-S3 in full incl. sibling analysis, closure, and NOT-A-FINDING lines; do not exceed them). Fix each CLASS: (S1) an exhausted/empty language default domain must not act as an unrestricted pool: every outside-domain language pick still requires the source extension and explicit per-choice gmApprovedLanguages approval, including zero remaining defaults; keep non-language open-pool contracts unchanged. (S2) language choices validate DISTINCT additional language identities within and across ancestry/background choice grants (and against fixed/held languages) with one bounded case/whitespace normalization; approval never turns an already-selected language into another grant; finalization must never silently drop a required language. No synonym/dialect ontology. (S3) custom-background language selections get an explicit approval admission path tied to the canonical source grant's extension (gmApprovedLanguages['background.languages']); approved valid picks accepted, absent/wrong approvals refused; existing count/feature/skill constraints preserved; no new CLI UI. Permanent evidence: one small generalized invariant per class (S1: empty/nonempty domain x missing/present approval x fixed/blank picks across both grant shapes; S2: bundled-pack same-group spelling variants + cross-group collisions + distinct-language finalization control; S3: Archivist scenario approved/unapproved), not a per-case explosion. Re-read the governing SRD text (rule:languages p.59, High Elf p.4, Acolyte/Customizing a Background p.60) - no SRD contradiction. Host memory: wait until pgrep -fc '^node .*verify-current-worktree' prints 0 or 1; npm run verify:worktree && git commit. Notes per finding (root cause, change, evidence); close this bead. No push/PR.",
+  "notes": "S1 root cause: isChoiceSatisfied treated empty from as an open pool, so an exhausted language domain skipped the extension/approval check. Change: language choices use isLanguageChoiceSatisfied (characterDraft.ts); empty from is an exhausted domain, every outside pick needs extension + per-choice approval; non-language open pools unchanged. S2 root cause: per-group exact-string Set counts and exact-string finalize dedupe. Change: languageKey (trim, collapse whitespace, lowercase) identity; choices must have choose distinct identities, none held by fixed grants or claimed by an earlier language choice (approval never creates another grant); collectLanguages throws rather than silently drop a collision. S3 root cause: validateBackgroundCustomization derived domain only from fixed/from. Change: outside custom languages admitted iff the canonical grant has the requiresGmApproval extension and gmApprovedLanguages['background.languages'] approves them (normalized); also rejects collision with ancestry fixed languages; counts/feature/skill rules unchanged. Evidence: languageExtensionPoint.test.ts new describe (S1 exhausted-pack matrix x both grant shapes, S2 bundled-pack variants/cross-group + distinct control, S3 Archivist approved/unapproved/standard). Existing fixtures that auto-picked colliding languages (finalizeCharacter, proficiencyGrants, F-18 test) now pick distinct ones. verify:worktree passed (6481 tests).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-11T14:51:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-11T15:00:12Z",
+  "closed_at": "2026-10-11T15:00:12Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.3.3",
+      "depends_on_id": "eshyra-o9bd.19.3.3",
+      "type": "parent-child",
+      "created_at": "2026-10-11T09:51:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

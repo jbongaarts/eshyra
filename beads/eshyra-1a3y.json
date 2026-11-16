@@ -1,0 +1,17 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1a3y",
+  "title": "Synthetic unit test for packet.ts residue disclosure path",
+  "description": "Follow-up from eshyra-o9bd.19.12.8 (PR #543 review finding F2 repair).\n\npacket.ts's splitRecordBody() (the source/projection boundary walk) defensively reports a RecordDataResidue entry {pointer, shape} for any record-body value it cannot classify as plain JSON (a function, symbol, bigint, or non-plain object such as Date/Map), rather than silently assigning it to sourceMaterial or projection. RulesRecord.data is typed `unknown`, so this path exists for defense-in-depth even though every record in the real dnd5e-srd-5.1 pack is plain parsed JSON and never exercises it (verified: residue is empty for every real candidate today).\n\nNo test currently exercises this path directly. It would require hand-constructing a synthetic DiscoveryCandidate/RetentionTrace carrying a non-JSON value (the real pack cannot produce one), which the .12.8 dispatch judged inconsistent with this test file's established real-record-only convention and out of scope under that repair's budget/evidence requirements — the required evidence list for F2 did not name residue.\n\nConsider adding a targeted unit test (e.g. directly against buildContextPacket/packetCandidate with a minimal hand-built DiscoveryCandidate carrying a Date or function value under a projection container) that asserts: (1) the value is reported in candidate.residue with the right pointer and shape, (2) it does NOT appear in candidate.sourceMaterial or candidate.projection, and (3) packetMessage.ts renders it under the \"Unclassified record data\" heading. Low priority: this is a safety net for a shape the current corpus and importer cannot produce.",
+  "notes": "Filed as a follow-up from eshyra-o9bd.19.12.8's report; not a blocker for that bead's closure.\nSTILL OPEN after PR #543 merged (d889116), and its description has drifted: the walk is now classifyRecordBody() and the buckets are sourceProse/sourceDerived/projection/unattested (splitRecordBody/sourceMaterial no longer exist). The path this bead names is the 'unrepresentable-shape' residue reason specifically — a function, symbol, bigint or non-plain object in RulesRecord.data — which is still untested directly. The OTHER residue reason, 'no-provenance-declaration', is now covered by provenanceBinding.test.ts and provenancePartition.test.ts against real records, so only the non-JSON-shape half remains.",
+  "status": "open",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-11T23:21:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-13T00:30:32Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

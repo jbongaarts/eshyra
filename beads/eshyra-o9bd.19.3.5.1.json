@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.5.1",
+  "title": "Dispatch: 19.3.5 declare nested condition-name leaves (attempt 1)",
+  "description": "Implement the plan in eshyra-o9bd.19.3.5 (bd show eshyra-o9bd.19.3.5: description and notes). Worktree .worktrees/eshyra-o9bd.19.3.5.1 on branch eshyra-o9bd.19.3.5.1, cut from eshyra-o9bd.19.3.5 at origin/main e4740161; dependencies installed with npm ci. Implementer: Claude Sonnet 5.5 subagent (2026-11-07). Environment: run every command from the worktree root; npm run verify:worktree must pass BEFORE committing (it rewrites files). Commit on eshyra-o9bd.19.3.5.1 only; do not push, open a PR, or modify eshyra-o9bd.19.3.5.",
+  "notes": "COMPLETE. Commit efe80bf4 on eshyra-o9bd.19.3.5.1 (not pushed). npm run verify:worktree passed (exit 0, 400+ files, all tests pass); npm run verify:dnd5e-srd-pack: committed pack matches importer output exactly. Regenerated with: npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1 (default --out is a scratch dir). Generated diff: only record-relationships.json moved (records.json unchanged; no discovery golden changed after the suffocating decision). OUTCOME COUNTS (kind/shape: before -> after, resolved unless noted): ancestry traits conditions 0->5; creature actions 0->218, legendaryActions entries 0->30, reactions 0->1, traits 0->110; magic-item effects/*/conditions/* 0->15 resolved + 2 excluded(leaf-value, suffocating); failedSaveCondition 0->8; onSuccessfulSave/condition 0->1; effects/*/condition 0->1 resolved (Philter of Love imposesCondition) + 97 excluded(kind table: prose); equipment failureCondition 0->1 (ball bearings->prone), semantics/condition 0->1 resolved (net->restrained) + 1 excluded (lance, owner model). Unchanged: action 1, feat 2, feature 33, hazard 27, spell 128 (relation names identical; placeholder 'condition' replaced by relationByFieldValue identity table over CONDITION_RELATION_VALUES, no nulls). not-a-reference (no outcomes): prose condition shapes in action, ancestry, creature, feature, spell, magic-item variants/stateMachine/typeOptions/alternatives/statlineRefs, and action:dodge effects/*/conditions/*. DECISIONS: (1) suffocating: plan option (ii) (typed unresolved-target) was tried and broke 7 discovery tests because an unresolved edge in the pack is a standing loss in every trace (makes zero-seed passes 'ran'); option (i) rejected (no existing field carries it, would change records.json and source-agreement tests). Chose a third path: new resolver feature excludedLeafValues -> excluded/leaf-value-exclusion, asserted by exact test; rule:suffocating exists, condition:suffocating does not. (2) Plan said relationField 'kind' for magic-item conditions/*; impossible for an array element leaf, so added '../kind' syntax (declared, validated, tested). (3) Null mappings: magic-item effects/*/condition kind table maps imposesCondition->imposed-condition and 26 prose kinds -> null (incl. triggeredEffect, mixed: 2 charmed names vs 5 prose; Rod of Rulership charmed edge not followed, follow-up eshyra-y0us); equipment semantics/condition keyed on ../owner (F3 -> imposed-condition, model -> null for Lance 'wielder-not-mounted'). Test change: condition-record exclusion tests scoped to declaration.kind==='condition' (magic-item pointer shares the prefix); integrity test gained justified overloaded-pointer and leaf-exclusion allowlists, plus a new test that every non-condition table exclusion leaf is not a condition name (only the 3 known charmed). Gate: CONDITION_NAME_LEAF_POINTER_SHAPES (17 enumerated shapes) added to assertRecordRelationshipDeclarationsCoverBoundedShapes. Disclosure text in candidateGates.ts/cli.ts updated; dated audit docs untouched. Finding: Aboleth Enslave resolves with relation 'mention' (classifier misses 'be magically charmed'). FOLLOW-UPS: eshyra-1fx7 (conditionImmunities, state/ends/endsOn; blocks 19.6.7.22), eshyra-y0us (triggeredEffect charmed overload; blocks 19.6.7.22), eshyra-mx0d (P3 classifier).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-07T23:06:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-07T23:27:36Z",
+  "closed_at": "2026-11-07T23:27:36Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.5.1",
+      "depends_on_id": "eshyra-o9bd.19.3.5",
+      "type": "parent-child",
+      "created_at": "2026-11-07T17:06:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

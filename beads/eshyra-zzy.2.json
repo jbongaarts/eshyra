@@ -1,0 +1,63 @@
+{
+  "_type": "issue",
+  "id": "eshyra-zzy.2",
+  "title": "Task 2: Exact lookup_srd store and tool facade",
+  "description": "Objective: Implement exact lookup by ref or canonical name and kind over the bundled SRD catalog. Files: modify packages/core/src/srd/store.ts; create packages/core/src/srd/lookup.ts; modify packages/core/test/srd.test.ts. Steps: 1. Add failing tests for lookupSrd({ kind: monster, ref: monster:goblin }), lookupSrd({ kind: spell, name: Fire Bolt }), and lookupSrd({ kind: class, name: Fighter }). Add failing tests that Gob and wrong-kind Fire Bolt as monster return a typed not_found result. Command: npm run test -- packages/core/test/srd.test.ts. Expected RED: lookupSrd is not exported. 2. Implement exact indexes by kind/ref and normalized full name only; do not add fuzzy or substring matching. 3. Run focused test to GREEN. 4. Run npm run build and npm run test. 5. Commit the task changes.",
+  "design": "store.ts owns buildSrdIndex(catalog) and lookupSrdRecord(input, catalog = SRD_CATALOG). lookup.ts exports lookupSrd(input): SrdLookupResult as the tool-facing API. Result shape is { ok: true, record, license } or { ok: false, code: 'not_found', message }. Name normalization trims and collapses whitespace and lowercases; it must still require complete exact names.",
+  "acceptance_criteria": "Known monster, spell, and class build option resolve by ref or exact name; fuzzy/partial and wrong-kind lookups fail deterministically; full test suite passes.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T03:02:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T03:11:40Z",
+  "closed_at": "2026-05-19T03:21:07Z",
+  "close_reason": "Added exact SRD lookup by kind-scoped ref or complete normalized name, with typed not_found failures for partial, unknown, and wrong-kind inputs; verification: npm run build passed and npm run test passed with 24 passed / 1 skipped; TDD evidence recorded.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-zzy.2",
+      "depends_on_id": "eshyra-zzy",
+      "type": "parent-child",
+      "created_at": "2026-05-18T22:02:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-zzy.2",
+      "depends_on_id": "eshyra-zzy.1",
+      "type": "blocks",
+      "created_at": "2026-05-18T22:03:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "839f0456-4b5e-5e0e-8b03-22eca5664c14",
+      "issue_id": "eshyra-zzy.2",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/srd.test.ts -> failed for expected reason: ../src/srd/lookup.js does not exist.",
+      "created_at": "2026-05-19T03:12:14Z"
+    },
+    {
+      "id": "0e302479-7673-5e3f-8288-7f2dc2c63d72",
+      "issue_id": "eshyra-zzy.2",
+      "author": "Joseph Bongaarts",
+      "text": "Debugging evidence: npm run build failed at packages/core/src/srd/store.ts with TS2345, input.name is string | undefined. Root cause: the union used optional never fields, so the 'ref' in input check does not narrow the name branch enough for strict TypeScript. Fix: narrow on input.ref !== undefined so the else branch has a defined name.",
+      "created_at": "2026-05-19T03:13:28Z"
+    },
+    {
+      "id": "227e7503-9cc8-585b-942c-65b660adefa1",
+      "issue_id": "eshyra-zzy.2",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED npm run test -- packages/core/test/srd.test.ts failed because ../src/srd/lookup.js did not exist; GREEN focused SRD test passed with 4 tests; verification npm run build passed and npm run test passed with 24 passed / 1 skipped. Debugging verification: TS2345 narrowing issue fixed and build rerun passed.",
+      "created_at": "2026-05-19T03:14:03Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 3
+}

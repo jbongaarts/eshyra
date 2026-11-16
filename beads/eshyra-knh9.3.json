@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-knh9.3",
+  "title": "Redirect npm's node-compile-cache and tsx's transform cache off shared TMPDIR",
+  "description": "Follow-up from eshyra-knh9.1 (per-run test temp root + script temp leaks). After the eshyra-knh9.1 fix, running 'TMPDIR=<empty dir> npm run test && npm run verify:dnd5e-srd-pack' leaves exactly two directories behind: node-compile-cache/ (Node's built-in module compile cache, enabled unconditionally by npm's own CLI bootstrap -- npm/lib/cli.js calls module.enableCompileCache() on every npm invocation) and tsx-<uid>/ (tsx's own esbuild transform cache, created because verify:dnd5e-srd-pack runs via 'tsx packages/core/scripts/verify-dnd5e-srd-pack/cli.ts'). Both are confirmed STABLE/reused across repeated runs (same ~7.3MB total on a second run, not growing) -- neither is the unbounded per-run leak eshyra-knh9.1 fixed, and both are third-party tool defaults outside this repo's own code (documented in the empirical proof recorded on eshyra-knh9.1's notes). Optional low-priority follow-up: point NODE_COMPILE_CACHE at a repo-local directory (e.g. node_modules/.cache/node-compile-cache) for npm-invoked scripts, and check whether tsx supports a similar override, so a constrained host's TMPDIR/tmpfs stays completely clean rather than holding two small reused caches. Not required: these do not reproduce the original ENOSPC-causing leak and are bounded in size.",
+  "status": "open",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-24T22:07:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-24T22:07:12Z",
+  "labels": [
+    "testing"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-knh9.3",
+      "depends_on_id": "eshyra-knh9",
+      "type": "parent-child",
+      "created_at": "2026-09-24T17:07:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.9",
+  "title": "Capability: use_item spends the printed activation turn resource",
+  "description": "Selected under the user's 2026-10-12 rule (bd memory magic-item-faithful-or-absent): this structure stays TYPED in the SRD pack because a positive engine capability is more likely than not in the near future, so the capability must exist before the re-freeze (eshyra-o9bd.14). Capability contract per ADR 0020 / eshyra-olc5: operation, inputs, exclusions, residual DM interpretation, real binding to the pack fields, provider-neutral execution, state effects, conformance tests exercising the PACK representation, fail-closed for unsupported input. Pack shape is owned by eshyra-o9bd.19.4.6 (PR #656); coordinate field shapes with it rather than changing the pack later. Scope: when an item operation's typed activation cost is action, bonus-action or reaction, use_item (and the turn loop) spend that turn resource through the existing turn-resource tracking (spend_turn_resource / begin_turn) in combat, refusing when it is unavailable; operations with no typed cost (DM-adjudicated) spend nothing automatically. Include spell-normal-casting-time handling for spells cast from items.",
+  "notes": "STOP CONDITION (user, 2026-10-12): if any KEPT-typed category (economies incl. event anchors, action type, structured equipment prerequisites, kept state machines/duration toggles, grant creature/count/duration/reversion) or any capability bead eshyra-olc5.8-.12 turns out to be particularly difficult to verify in a way that makes convergence unlikely (e.g. repeated review findings in the same kept category, or verification that cannot distinguish faithful from unfaithful cheaply), the captain must SURFACE it to the user with evidence before proceeding - do not keep repairing it and do not silently reclassify it as DM-adjudicated.\nStarted 2026-10-14. User: implement in a cloud session. Child eshyra-olc5.9.1 dispatched to a remote Claude Sonnet agent; parent branch eshyra-olc5.9 pushed at 017f4279; child pushes eshyra-olc5.9.1 only. Review: brief captain review then back to user (user pattern for olc5.x).\nUser 2026-10-14: review via a CLOUD routine (RemoteTrigger, run once, claude-opus-5-5, read-only) once eshyra-olc5.9.1 is pushed; captain relays findings to user.\nChild 936c0f62 ff'd into eshyra-olc5.9; captain verify 6768 pass. PR https://github.com/jbongaarts/eshyra/pull/661. Cloud final review routine trig_01JQgsAp8VRLR8XLNFMZ8P92 (Opus, read-only, run once 03:29Z) at exact head 936c0f62; focus incl. the five PRINTED_CASTING_TIME_OVERRIDES.\nCloud final review (Opus routine trig_01JQgsAp8VRLR8XLNFMZ8P92, runs cse_017JjKV4Az3e6H31xdPnDf5f + cse_01UEad4yUUsb3jXvGwRUKBrC) at 936c0f62: CHANGES REQUESTED (1). S1: Orb scrying / Staff of Magi conjure elemental / Staff of Woodlands awaken are NOT casting-time overrides (rule:spells normal casting time); Ring of Jumping + Elemental Gem are genuine. N3: override evidence regex too weak. Captain closure: remove the three typed action costs from the PACK (faithful-or-absent), shrink override set, exact-phrase evidence. Repair eshyra-olc5.9.2 dispatched to Luna.\nRepair 084a510a ff'd + pushed (verify 6769 pass). Cloud review r2 routine trig_01HcYDpmebVyTDMQV38bDWSD (run 04:00:30Z, Opus) at exact head 084a510a.\nCloud review r2 (trig_01HcYDpmebVyTDMQV38bDWSD) at 084a510a: CHANGES REQUESTED (1) S1 Orb scrying clause full-sentence span deduped the shared triage clause governing 5 casts; N1 note misstated. Captain inline fix 6f6486dd (narrow span 'scrying (3 charges)', corrected note, regression assertion, thaw note). verify 6769 pass.\nCloud review r3 (trig_014g27JWpioAGEMgSLsYLRVt) @6f6486dd: CHANGES REQUESTED (1) stale thaw-note hash only; all prior repairs confirmed. Fixed 54761210. Review r4 trig_01PXnmhyuVAokibTTQLVB7ke @54761210.\nCloud review r4 (trig_01PXnmhyuVAokibTTQLVB7ke) @54761210: APPROVED. PR #661 MERGED 2026-10-14 as b4a892204b381f485726d0f800a4d258e375efed (all checks green incl. CodeQL).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-12T23:09:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-14T04:28:51Z",
+  "started_at": "2026-10-14T03:10:42Z",
+  "closed_at": "2026-10-14T04:28:51Z",
+  "close_reason": "PR #661 merged",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.9",
+      "depends_on_id": "eshyra-olc5.9.1",
+      "type": "blocks",
+      "created_at": "2026-10-13T22:11:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.9",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-12T18:09:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.9",
+      "depends_on_id": "eshyra-olc5.9.2",
+      "type": "blocks",
+      "created_at": "2026-10-13T22:46:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

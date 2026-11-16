@@ -1,0 +1,200 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.2",
+  "title": "Persist campaign rules in canonical campaign history",
+  "description": "Objective\nImplement durable storage and query APIs for campaign-rule records defined by eshyra-jhpt.1. Rules must survive sessions, checkpoints, restores, and replay while remaining campaign-scoped and deterministically ordered.\n\nRequired behavior\nPersist stable rule identity, campaign association, kind, approved prose, status, origin/provenance, optional pack ambiguity/interpretation linkage, effective campaign position, supersedes/superseded-by relation, revocation position, and deterministic ordering. Provide active-rules-at-position queries used by both model contexts. Ordinary rules apply prospectively; a rule created during an immediate adjudication objection may be effective from the start of that disputed turn. Storage mutations participate in canonical campaign history and checkpoint/replay semantics.\n\nArchitecture and references\nBuild on eshyra-x3w.12 campaign rules-pack binding, existing SQLite campaign persistence, and checkpoint/history foundations. Follow ADR 0017: mutable campaign rules never enter the immutable rules pack.\n\nNon-goals\nNo DM/auditor prompt composition; no ambiguity dialogue; no replay orchestration; no arbitrary retroactive effective positions; no interpretation of prose into deterministic effects.",
+  "acceptance_criteria": "Schema and APIs create, read, list, supersede, and revoke campaign rules; active-at-position queries are deterministic; checkpoint/restore round trips preserve identities, ordering, provenance, statuses, and effective positions; tests cover prospective and disputed-turn effective positions plus invalid cross-campaign/supersession combinations.",
+  "notes": "Supervisor review of attempt 1 (87e7587): migration 0025, CHECK constraints, lossless provenance, storage-side revoked_position, and the mandatory migration-ledger test updates are ACCEPTED. Six defects found, two severe and reproduced by probe: (1) activeRulingsForAmbiguities queries with no cutoff so rulings use current-status semantics while house rules use historical semantics - at replay position 5 house rules returned h-old (correct) but rulings returned r-new instead of r-old, which breaks .4 parity and .8 replay; (2) the position-less query ignores effective_position entirely, so a rule effective at ordinal 999 is returned as active at position 1. Also: no test ever creates an ambiguity-provenance ruling, so the positive path of activeRulingsForAmbiguities is untested and its only assertion passes vacuously; checkpoint round-trip, cross-campaign isolation, disputed-turn positions and invalid-supersession tests are missing; storage throws plain Error instead of CampaignRuleError; createCampaignRuleReadSeam lacks a CampaignRuleReadSeam return annotation and casts instead; revoke/supersede do not enforce prospectivity. Attempt 2 dispatched as eshyra-jhpt.2.2.\nAttempt 2 (75ef96d) reviewed: ruling/house-rule temporal divergence CONFIRMED FIXED by supervisor probe (rulings now return r-old at replay position 5). CampaignRuleError, prospectivity validation, position-aware ruling query, typed seam return all accepted. Three defects remain: (1) the position-less fallback resolves to MAX(effective_position) over the rules table, which is self-referential - the latest rule always sets the cutoff to its own position, so a rule effective at ordinal 999 still leaks at position 1, and campaignRuleStore.test.ts:121 now asserts that leak as expected behaviour; (2) discoveryBoundary.test.ts was weakened with an 'import type' exemption to accommodate campaignRuleStore importing CampaignRuleReadSeam from discovery - caused by the attempt-2 dispatch instruction, correct fix is to move the seam type into the campaign domain and revert the guard; (3) the checkpoint round-trip proof sits entirely under describe.skipIf(!doltOk) so it does not run without the dolt binary (skips rose 19 -> 20). Attempt 3 dispatched as eshyra-jhpt.2.3.\nREOPENED 2026-09-02: PR #524 (head 2d6b7c7) blocking review #5097504606 under the semantic-system profile found a lifecycle-admission defect class. Supervisor independently reproduced all four sub-claims: (1) re-superseding an already-superseded rule overwrites its original supersededBy, and the historical query at position 7 then returns BOTH 'old' and its first successor 'first' as active - canonical history corrupted; (2) a revoked rule can be converted to superseded while retaining its revocation position; (3) createCampaignRule accepts a revoked rule whose revokedPosition precedes its effectivePosition, which revokeCampaignRule correctly rejects; (4) createCampaignRule accepts a superseded rule with a dangling supersededBy, because the referential check lives only in validateCampaignRules (plural) which the create path never calls. Root cause: supersedeCampaignRule lacks revokeCampaignRule's status guard AND overwrites prior.status to 'superseded' before validating, so validation structurally cannot see the real admission state. Attempt 4 dispatched as eshyra-jhpt.2.4. Reviewer classified the repair as material state-integrity work requiring a FRESH FULL REVIEW of the new head.\nFix merged into eshyra-jhpt at 0479116 and pushed; PR #524 updated and a response comment posted (issuecomment-5520070142) requesting fresh full review of the new head per the reviewer's material-state-integrity classification. Supervisor independently confirmed the negative proof: checking out campaignRuleStore.ts from 2d6b7c7 under the new tests fails exactly 4 of 11. Full verification under correct module resolution: 276 test files passed/3 skipped, 4848 tests passed/20 skipped. Bead stays in_progress until #524 merges.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T06:10:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-05T06:35:03Z",
+  "started_at": "2026-09-03T01:37:05Z",
+  "closed_at": "2026-09-05T06:35:03Z",
+  "close_reason": "Merged to main via PR #524 (merge of 286c329)",
+  "labels": [
+    "audit",
+    "campaign-runtime",
+    "checkpoint",
+    "model-context",
+    "persistence",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.2.3",
+      "type": "blocks",
+      "created_at": "2026-09-02T20:58:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev2",
+      "type": "blocks",
+      "created_at": "2026-09-02T23:15:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev6",
+      "type": "blocks",
+      "created_at": "2026-09-03T01:49:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.1",
+      "type": "blocks",
+      "created_at": "2026-07-10T01:10:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev7",
+      "type": "blocks",
+      "created_at": "2026-09-03T02:31:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.2.4",
+      "type": "blocks",
+      "created_at": "2026-09-02T22:42:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev10",
+      "type": "blocks",
+      "created_at": "2026-09-04T18:14:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev16",
+      "type": "blocks",
+      "created_at": "2026-09-05T00:27:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev15",
+      "type": "blocks",
+      "created_at": "2026-09-05T00:10:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-x3w.12",
+      "type": "blocks",
+      "created_at": "2026-07-10T01:10:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev4",
+      "type": "blocks",
+      "created_at": "2026-09-03T00:33:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev12",
+      "type": "blocks",
+      "created_at": "2026-09-04T19:42:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.2.1",
+      "type": "blocks",
+      "created_at": "2026-09-02T20:37:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev3",
+      "type": "blocks",
+      "created_at": "2026-09-03T00:03:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev5",
+      "type": "blocks",
+      "created_at": "2026-09-03T01:12:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.2.2",
+      "type": "blocks",
+      "created_at": "2026-09-02T20:50:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev8",
+      "type": "blocks",
+      "created_at": "2026-09-03T07:44:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev11",
+      "type": "blocks",
+      "created_at": "2026-09-04T19:26:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt",
+      "type": "parent-child",
+      "created_at": "2026-07-10T01:10:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev9",
+      "type": "blocks",
+      "created_at": "2026-09-03T08:19:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2",
+      "depends_on_id": "eshyra-jhpt.rev13",
+      "type": "blocks",
+      "created_at": "2026-09-04T19:50:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 20,
+  "dependent_count": 5,
+  "comment_count": 0
+}

@@ -1,0 +1,42 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cxuc",
+  "title": "auditActiveEffectIntegrity reports a live combat link of a durable summon as a stale persistent link",
+  "description": "Found integrating eshyra-0dtg (Pipes test, PR to come). auditActiveEffectIntegrity (packages/core/src/state/activeEffects.ts, stalePersistentLinks) flags EVERY active actor link with target_kind combatant and a non-null campaign_actor_id as 'persistent actor link still points at combatant'. During an ACTIVE combat that is the normal state: rebindCombatantReferencesToActor retargets those links to the campaign actor only at combat closure (or a bonded-summon transition). So the audit appears to over-report for any durable summon bound mid-combat (Pipes swarms; likely Horn of Valhalla berserkers and other untimed or hour-scale item grants). Re-derive: should the predicate exclude links whose combatant is in an active combat instance? Confirm against the closure and replay code and every caller of the audit; fix the predicate or document the intended call point; add a regression for a live durable summon mid-combat (clean) and after closure without a rebind (flagged). Pre-freeze: the integrity audit's in-band scope must be truthful (ADR 0020 bar).",
+  "notes": "Captain 2026-11-07: integrated e1ab87b2 (merged with main) after own review and verify (exit 0, 7489). PR https://github.com/jbongaarts/eshyra/pull/732. Stays in_progress until merged.\nCaptain 2026-11-15: Sol final review eshyra-cxuc.2 of PR #732 @ eb7860ad: MATERIAL FINDINGS (1). S1: the active-instance exemption is too broad; a link left on a departed or superseded combatant row (after transition_bonded_summon temporary dismissal, or dismissal + recall creating a new combatant) audits clean although the ownership reference must already be the campaign actor. S3: do NOT repair by rejecting every absent combatant; a vanish-bonded creature at 0 HP legitimately keeps its combatant-targeted link while the instance is active. Repair = attempt 2.\nCaptain 2026-11-15: Sol re-review eshyra-cxuc.4 of PR #732 @ c30930e1: NO MATERIAL FINDINGS. Merging.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T01:29:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-16T04:37:37Z",
+  "started_at": "2026-11-08T01:39:51Z",
+  "closed_at": "2026-11-16T04:37:37Z",
+  "close_reason": "Merged PR #732 (4936f33f) after clean Sol re-review eshyra-cxuc.4.",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cxuc",
+      "depends_on_id": "eshyra-cxuc.3",
+      "type": "blocks",
+      "created_at": "2026-11-15T22:03:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-cxuc",
+      "depends_on_id": "eshyra-cxuc.1",
+      "type": "blocks",
+      "created_at": "2026-11-07T19:39:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

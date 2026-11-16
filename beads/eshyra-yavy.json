@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-yavy",
+  "title": "Raise Node engines floor to >=24.22.1 for CVE-2026-111497 (Node2Shell)",
+  "description": "Node's bundled Brotli decoder is memory-corruptible (CVE-2026-111497). Fixed in 24.22.1. Raise engines.node to >=24.22.1 <25 in root/core/cli package.json, update nodeRuntimePolicy test and ADR 0008/docs references. Local nvm Node already upgraded.",
+  "notes": "PR open; stays in_progress until merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-27T03:25:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-27T03:36:30Z",
+  "started_at": "2026-10-27T03:26:01Z",
+  "closed_at": "2026-10-27T03:36:30Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

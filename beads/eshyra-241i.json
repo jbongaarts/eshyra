@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-241i",
+  "title": "Integrate finding registry with shared bootstrap capability identity",
+  "description": "After the bootstrap capability-ledger contract lands, replace the temporary local CapabilityIdentity, hook selector, canonical primitive roster, and capability-catalog serialization boundary in findingRegistry.ts with the shared stable types. Preserve engine:F1..F10 spellings, exact clause-hook membership, historical family-epic ownership validation, and the registry compatibility tests; do not import across an unfinished branch.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T00:25:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T01:06:23Z",
+  "closed_at": "2026-10-10T01:06:23Z",
+  "close_reason": "RETIRE/SUPERSEDE (2026-10-09 rebaseline, verified on main a961fb0b): obsolete target. The temporary CapabilityIdentity / hook selector / primitive roster it would replace no longer exist in findingRegistry.ts: Foundation 2 (eshyra-o9bd.19.1.15) rewrote the registry as audit facts and FORBIDS capability, capabilityId and hookSelector keys, and the bootstrap capability-ledger contract it waited on (PR #477) was closed unmerged as DESIGN_INVALIDATED. Capability identity now lives only in the in-force inventory (eshyra-o9bd.19.5.12) and the bounded legacy backlog report (magicItemLegacyCapabilityBacklog.ts). No defect hidden.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jl8n",
+  "title": "Implement Codex SDK MCP subscription gameplay adapter",
+  "description": "Problem\nImplement the first Codex subscription-backed gameplay adapter under the codified API-native vs agent-harness seam. This bead should wait until Codex usage is available again and the adapter seam ADR/refactor has landed.\n\nDependency\nDepends on the model adapter seam ADR/refactor epic. Do not start until provider metadata, auth-mode selection, and tool-loop ownership are explicit enough to support a second agent-harness adapter.\n\nGoal\nAdd a CodexModelClient / CodexHarnessModelClient using `@openai/codex-sdk` and Eshyra MCP tools.\n\nDesign Constraints\n- This is a Codex SDK subscription adapter, not an OpenAI API adapter.\n- It must use ChatGPT/Codex subscription auth for the local development/gameplay path.\n- It must not use or silently fall back to OPENAI_API_KEY.\n- It must not use fenced-text tool calls.\n- It must expose Eshyra tools through MCP or another supported Codex-native mechanism.\n- It must run in a sterile harness environment, not inside the Eshyra repo workspace.\n- It should follow the seam and debug/capability conventions established by the Claude Agent SDK MCP reference adapter.\n- Auditor/retry/recap calls made through this provider mode must remain subscription-backed unless the user explicitly selects API billing.\n\nScope\n1. Build or reuse an Eshyra MCP stdio server exposing a minimal gameplay tool set, starting with `roll`.\n2. Add a CodexModelClient / CodexHarnessModelClient using `@openai/codex-sdk`.\n3. Launch Codex with a sterile environment:\n   - temporary working directory, not the Eshyra repo\n   - isolated Codex config/home if possible\n   - no inherited AGENTS.md/project instructions\n   - restrictive sandbox\n   - no web/search/network unless explicitly needed\n4. Configure only Eshyra MCP tools for gameplay.\n5. Map Codex streamed MCP tool-call events into Eshyra debug/transcript records using the same provider-executed-call pattern as the Claude Agent SDK MCP adapter.\n6. Delegate all gameplay tool semantics to Eshyra core.\n7. Add deterministic tests for adapter configuration, capability metadata, auth isolation, event mapping, and MCP tool exposure.\n8. Provide manual smoke-test commands for the user to run once Codex usage is available.\n\nAcceptance Criteria\n- Provider metadata reports subscription auth, Codex SDK transport, agent-harness turn-loop ownership, and MCP tool transport.\n- Debug logs show `toolProtocolMode` or equivalent as `codex-mcp`, not fenced text.\n- A manual smoke turn requiring a d20 roll causes Codex to invoke the Eshyra MCP `roll` tool.\n- No Eshyra repo AGENTS.md/developer instructions are loaded into gameplay context.\n- No non-Eshyra tools are available to gameplay, or unavoidable built-ins are documented and proven harmless.\n- Failure to access subscription-backed Codex is reported clearly and does not fall back to API key or fenced text.\n\nNon-goals\n- Do not implement OpenAI API-native support here.\n- Do not replace the Claude Agent SDK adapter.\n- Do not remove fenced support repo-wide.",
+  "notes": "Adapter component + in-process MCP server + offline tests + docs complete. PR #252 (feat/codex-adapter-jl8n). CLI/config provider selection split to eshyra-6ygw; lazy-Claude for editions split to eshyra-ern3. Verified: 2123 tests pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-19T01:49:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-20T05:54:12Z",
+  "closed_at": "2026-06-20T19:30:54Z",
+  "close_reason": "Merged in PR #252. Codex SDK MCP adapter + in-process MCP server + offline tests + docs landed. Review non-blockers addressed (401/404 comment, namespace-tolerant call-id correlation). Follow-ups: eshyra-6ygw (CLI wiring), eshyra-ern3 (lazy Claude adapter).",
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

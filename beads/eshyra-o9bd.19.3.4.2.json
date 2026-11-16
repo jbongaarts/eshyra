@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.2",
+  "title": "Design: condition->condition discovery relationships",
+  "description": "Design (docs/design/condition-condition-relationships.md) for the remaining eshyra-o9bd.19.3.4 item (2): condition->condition discovery edges for impliesCondition/imposesCondition in condition records (record-name resolver requires a CONDITION_RELATION_VALUES sibling these effects lack — resolver/shape decision), plus the grappled end-trigger '(see the condition)' cross-reference. Deliverable: design PR for authorization; implementation follows in a separate PR after approval.",
+  "notes": "2026-09-29: Design PR #593 opened (head 48875bd3). Four adversarial self-review rounds applied before opening. Follow-up eshyra-o9bd.19.3.5 filed for out-of-scope sibling leaves. Stays in_progress until the PR merges.\n2026-09-29: design review 1 (null mapping silently erased occurrence) addressed by revision 2, 2bfca47e on PR #593 (typed excluded outcome); awaiting design re-review.\n2026-09-29: design re-review at 2bfca47e (gate + F-09 union reconciliation) addressed by revision 3, c3d054e6 on PR #593 (also amends rule-record-runtime-statements.md as A2); awaiting re-review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T03:54:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-29T21:37:59Z",
+  "started_at": "2026-09-29T03:54:56Z",
+  "closed_at": "2026-09-29T21:37:59Z",
+  "close_reason": "Design authorized (approval at c3d054e6) and merged via PR #593 as 7452fbff.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.2",
+      "depends_on_id": "eshyra-o9bd.19.3.4",
+      "type": "parent-child",
+      "created_at": "2026-09-28T22:54:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

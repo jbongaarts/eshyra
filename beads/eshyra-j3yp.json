@@ -1,0 +1,80 @@
+{
+  "_type": "issue",
+  "id": "eshyra-j3yp",
+  "title": "Integrate the PR #599 follow-ups: summon reversion, uncontrolled 1-hour removal, bonded recast (single PR)",
+  "description": "Supervisor-owned integration bead. One branch and one PR carrying eshyra-ysr3 (Animate Objects / Giant Insect 0-HP reversion), eshyra-7vh3 (Conjure Elemental/Fey cast-anchored 1-hour removal after a concentration break) and eshyra-s02z (Find Familiar / Find Steed recast restores an absent bonded creature). Children are serialized (all three touch packages/core/src/state/activeEffects.ts, encounterCombatants.ts and docs/active-effect-lifecycle.md).\n\nDECISIONS (captain, 2026-10-04):\n- ysr3 Giant Insect: user chose 'snapshot at cast'. start_effect captures each target's natural form (hit points current/max, optional rulesRef) for a target-transformation spell; reversion (0 HP by any route, spell end, concentration break, per-target action dismissal) restores that form with the HP it had when transformed, no damage carry-over (the source states carry-over only for Animate Objects). The creature stays in play.\n- ysr3 Animate Objects: the original form is an object, not a creature: the combatant leaves play (absent), its link closes, the effect ends when no animated object remains, and the result reports the damage beyond 0 carried over to the object (objects are not tracked).\n- 7vh3: a concentration break of Conjure Elemental/Fey ends the controlled effect with release (unchanged) and in the same transaction starts a non-concentration, non-dismissible successor effect inheriting the original cast anchor with a 1-hour timer and remove cleanup, so the creature becomes absent at cast+1h.\n- s02z: recast operation on the existing bonded effect (Find Steed: same actor, max HP; Find Familiar: restore presence + optional new form); refused after release.",
+  "acceptance_criteria": "All three follow-up beads' acceptance met on one branch; npm run verify:worktree green on the integration branch; PR opened to main; follow-up beads closed when the PR merges.",
+  "notes": "2026-10-04: eshyra-j3yp.1 (ysr3) reviewed by captain, verify:worktree green in child worktree (324 files/5881 tests passed, documented skips), merged into eshyra-j3yp as 103b9dd1. eshyra-j3yp.2 (7vh3) dispatched to a Sonnet 5.5 agent in .worktrees/eshyra-j3yp.2.\n2026-10-04: eshyra-j3yp.2 (7vh3) reviewed; captain fixed a break-time throw (anchor gate moved to creation, 7649cd39); verify:worktree green (325 files/5897 tests); merged into eshyra-j3yp as 9c3211e5. eshyra-j3yp.3 (s02z) dispatched to a Sonnet 5.5 agent in .worktrees/eshyra-j3yp.3.\nPR https://github.com/jbongaarts/eshyra/pull/600 opened 2026-10-04 (head 27d013e2); stays in_progress until it merges.\nMerged to main via PR #600 (approved head c3b9ffc0, merge commit c24fea21) on 2026-10-07.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-04T16:33:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-07T23:49:13Z",
+  "started_at": "2026-10-04T16:33:55Z",
+  "closed_at": "2026-10-07T23:49:13Z",
+  "close_reason": "Delivered by PR #600, merged as c24fea21",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-j3yp",
+      "depends_on_id": "eshyra-s02z",
+      "type": "blocks",
+      "created_at": "2026-10-04T11:33:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-j3yp",
+      "depends_on_id": "eshyra-j3yp.3",
+      "type": "blocks",
+      "created_at": "2026-10-04T11:39:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-j3yp",
+      "depends_on_id": "eshyra-j3yp.2",
+      "type": "blocks",
+      "created_at": "2026-10-04T11:39:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-j3yp",
+      "depends_on_id": "eshyra-7vh3",
+      "type": "blocks",
+      "created_at": "2026-10-04T11:33:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-j3yp",
+      "depends_on_id": "eshyra-ysr3",
+      "type": "blocks",
+      "created_at": "2026-10-04T11:33:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-j3yp",
+      "depends_on_id": "eshyra-j3yp.4",
+      "type": "blocks",
+      "created_at": "2026-10-07T17:38:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-j3yp",
+      "depends_on_id": "eshyra-j3yp.1",
+      "type": "blocks",
+      "created_at": "2026-10-04T11:36:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 7,
+  "dependent_count": 0,
+  "comment_count": 0
+}

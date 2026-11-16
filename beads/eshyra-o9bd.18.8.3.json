@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.8.3",
+  "title": "Represent spell-list pages as covered by spell class memberships",
+  "description": "Finding sources:\n- Codex reconstructed pages 105-113 and found exact parity: 70 class/level groups and 778 class spell memberships, no mismatches.\n- Fable independently confirmed exact class spell-list parity both directions against pages 105-113.\n- The problem is coverage accounting: pages are marked ignored:spell-list-header/header-ish rather than represented by spell.data.classes (Fable re-verified the p. 105-113 entries carry status ignored:spell-list-header in the bundle's source-coverage report).\n- ChatGPT also found false ownership where p. 109 Ranger spell-list text \"Commune with Nature Tree Stride\" was attributed to table:circle-of-the-land-forest due to duplicate text.\n- This is residual after closed spell-list parity work; create a new bead because the latest audit still found it.\n\nAcceptance criteria:\n- Source coverage reports p. 105-113 spell-list content as represented by spell class membership, not ignored.\n- Preserve the parity gate and exact 70-group/778-membership reconstruction.\n- Add diagnostics preventing subclass table duplicate text from owning class spell-list source lines.\n- Future audit output should make it clear spell-list source content is represented, not ignored.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-13T04:01:01Z",
+  "started_at": "2026-07-13T04:00:54Z",
+  "closed_at": "2026-07-13T04:01:01Z",
+  "close_reason": "Spell-list pages now have source-positioned structured-field coverage via spell.data.classes; parity remains exact at 70 groups and 778 memberships.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.8.3",
+      "depends_on_id": "eshyra-o9bd.18.8",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

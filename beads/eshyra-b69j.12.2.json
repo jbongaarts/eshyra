@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.12.2",
+  "title": "Structure per-class spellcasting ability and prepared-spell counts",
+  "description": "Level-1 spellcasting COUNTS are already structured on class progression rows (class.data.progression[level==1].spellcasting = {cantripsKnown, spellsKnown?, slots}). Two things remain prose-only: (1) the spellcasting ABILITY per class (Wizard=INT, Cleric=WIS, Bard=CHA, etc.), which lives in the 'Spellcasting' feature text and blocks spell save DC / spell attack (b69j.6 deferred these) and prepared-caster counts; (2) prepared-caster spell counts and Wizard spellbook starting size (Wizard prepares INT mod + level and starts with 6 spellbook spells; Cleric/Druid/Paladin prepare ability mod + level/half-level) — these are formulas in feature prose, not the progression table.",
+  "acceptance_criteria": "Add structured spellcastingAbility to the class schema/importer, and structured prepared-count metadata (formula or known/prepared discriminator) sufficient to compute level-1 spell selection counts without prose parsing. Regenerate via importer (docs/importer-fix-protocol.md) with audit coverage. derivedValues.ts can then compute spell save DC = 8 + prof + ability mod and spell attack. Likely files: importers, kindSchemas.ts validateDnd5eClass, rulesPackResolver.ts, derivedValues.ts.",
+  "notes": "Implemented via consumer-side overlay (srdClassSpellcasting.ts), mirroring eshyra-b69j.12.1. PR #299 open for review: https://github.com/jbongaarts/eshyra/pull/299. Per-class spellcasting ability + prepared/known/spellbook metadata; deriveLevel1Values computes spell save DC / attack (closes b69j.6 deferral); enumerateLevel1RequiredChoices structures level-1 spell count and drops the prose-only spellcasting-ability gap; Ranger empty L1 row no longer emits spurious spell choices. No importer/extractor/frozen-pack files touched. verify:worktree green (2456 passed/19 skipped).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T21:51:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-25T04:33:47Z",
+  "started_at": "2026-06-25T04:04:11Z",
+  "closed_at": "2026-06-25T04:33:47Z",
+  "close_reason": "Merged via PR #299. Per-class spellcasting overlay (srdClassSpellcasting.ts): ability + known/prepared/spellbook metadata; deriveLevel1Values computes spell save DC / attack (closed b69j.6 deferral); enumerateLevel1RequiredChoices structures level-1 spell count and removed the prose-only spellcasting-ability gap; Ranger empty L1 row no longer emits spurious spell choices. No frozen-pack/importer files touched.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.12.2",
+      "depends_on_id": "eshyra-b69j.12",
+      "type": "parent-child",
+      "created_at": "2026-06-24T16:51:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

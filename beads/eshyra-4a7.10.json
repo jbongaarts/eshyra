@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.10",
+  "title": "Import unrepresented SRD prose regions flagged by the source-coverage gate",
+  "description": "Why: the eshyra-4a7.1 source-structure inventory found SRD prose regions that are genuine rules/lore content but are not imported as any record and are not covered by another 4a7 child bead. The coverage gate marks them known-gap against this bead so they stay visible instead of being silently ignored.\n\nRegions (page refs are vendored SRD_CC_v5.1.pdf pages):\n- Races chapter 'Racial Traits' intro (p3): the trait-category explanations (Ability Score Increase, Age, Subraces, ...).\n- Equipment chapter prose: Getting Into and Out of Armor (p64; its Donning and Doffing Armor table is eshyra-4a7.3), Weapon Proficiency + Weapon Properties (p64-65), Improvised Weapons / Silvered Weapons / Special Weapons (p65).\n- Monsters chapter creature-family lore headings (Angels, Animated Objects, Demons, Devils, Dinosaurs, Dragons Chromatic/Metallic plus the ten per-color dragon group intros, Elementals, Fungi, Genies, Ghouls, Giants, Golems, Hags, Half-Dragon Template, Lycanthropes, Mephits, Mummies, Nagas, Oozes, Skeletons, Sphinxes, Vampires, Zombies; template tables are eshyra-4a7.3).\n- Magic Items 'Sentient Magic Items' creation guidance (p251-252: Creating Sentient Magic Items, Abilities, Communication, Special Purpose, Conflict; its roll tables are eshyra-4a7.3).\n- Appendix PH-B pantheon prose (The Celtic/Greek/Egyptian/Norse Pantheon; deity tables are eshyra-4a7.3).\n- Appendix PH-C The Planes of Existence prose (Planar Travel, Transitive Planes, Inner Planes, Outer Planes, Demiplanes).\n- Appendix MM-B 'Customizing NPCs' (p395).\n\nWhat to do: decide per region whether the content becomes rule records (like the gamemastering chapters), structured child data, or a documented intentional exclusion; then import accordingly and replace the known-gap rules in SRD_5_1_COVERAGE_RULES (packages/core/scripts/importers/dnd5e-srd-5.1/sourceInventoryCoverage.ts) with real coverage. Follow docs/importer-fix-protocol.md.",
+  "design": "Decompose by independent parser/content boundary. Each child must follow docs/importer-fix-protocol.md, add focused regression/audit coverage before parser changes, regenerate rather than hand-edit generated records, replace only its owned known-gap predicates with real coverage, and report generated record churn. The parent closes when every child is complete and no source inventory item remains known-gap:eshyra-4a7.10. eshyra-4a7.9 remains the document-wide final audit.",
+  "notes": "From eshyra-4a7.3 (table accounting): 8 additional items are now explicitly known-gap:eshyra-4a7.10 (62 -> 70 total), all belonging to this bead's unimported regions: the four Appendix PH-B deity table captions (Celtic p360, Greek/Egyptian/Norse p361) plus one caption-less deity column run ('Suggested Domains Symbol' p360) — NOTE these tables' deity-name and alignment/domains/symbol column blocks interleave ACROSS pages in extraction order, so reconstruction needs column-block stitching; the two Half-Dragon Template tables (Color/Damage Resistance p320, size/breath-weapon 'Optional' run p321) in the Monsters template region; and the 'Self-Sufficiency' downtime sidebar (p73) — a PROSE callout box whose body renders at table-cell height, so the typography inventory classifies it table-caption; it is prose, not a table.\neshyra-4a7.10.1 completed: 16 Races/Equipment guidance rules added; parent known-gap count reduced from 70 to 59. Remaining scope is children .2-.6.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T18:00:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-14T05:27:18Z",
+  "closed_at": "2026-06-15T02:11:43Z",
+  "close_reason": "All child regions are implemented and source coverage contains no remaining known-gap:eshyra-4a7.10 entries.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.10",
+      "depends_on_id": "eshyra-4a7",
+      "type": "parent-child",
+      "created_at": "2026-06-11T13:00:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

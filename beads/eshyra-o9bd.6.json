@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.6",
+  "title": "Normalize Druid armor proficiency; lift metal restriction to proficiencyNotes",
+  "description": "Deficiency #5. Exported class record folds the Druid metal restriction into the armorProficiencies token: 'shields (druids will not wear armor or use shields made of metal)'. Schema already anticipates proficiencyNotes for exactly this. Fix: normalize Druid armorProficiencies to [\"Light armor\",\"medium armor\",\"shields\"] and emit a separate proficiencyNotes entry with the metal restriction. Generalize to any similar parenthetical mechanical note folded into a proficiency token. Re-freeze gate: no mixed mechanical note tokens in proficiency arrays.",
+  "notes": "STALE-SNAPSHOT FINDING (from o9bd.11 verification 2026-06-28): the committed pack ALREADY has clean armorProficiencies:[Light armor, medium armor, shields] + a proficiencyNotes:[{field,text}] array for Druid. The metal restriction is already lifted. This bead may be largely/fully DONE — re-verify the committed pack before implementing. The o9bd.11 proficiency-note-bleed gate ships GREEN as a regression guard for this.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-28T21:38:22Z",
+  "close_reason": "Verified already complete in committed pack (stale snapshot): class:druid armorProficiencies=[Light armor, medium armor, shields] with proficiencyNotes=[{field:armorProficiencies, text:druids will not wear armor or use shields made of metal}]; 0 mixed-note tokens across all class proficiency arrays. Guarded by the srdPlayabilityAudit proficiency-note gate + regression tests (srdPlayabilityAudit.test.ts) and the committed-pack assertion (srdGeneratedPack.test.ts). No code change needed.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.6",
+      "depends_on_id": "eshyra-o9bd.11",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.6",
+      "depends_on_id": "eshyra-o9bd.1",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.6",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

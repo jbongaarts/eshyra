@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3qrt",
+  "title": "Project attack lead-ins inside variants sections (creature:giant-rat Diseased Giant Rats)",
+  "description": "creature:giant-rat variants[] entry 'Diseased Giant Rats' prints 'Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 4 (1d4 + 2) piercing damage.' but the importer projects no mechanics.attacks for variants entries. Found while sweeping target phrases under eshyra-o9bd.19.4.2.4. Outside that bead's scope (variants section projection). Expected: attacks[] with target 'one target', attackBonus 4, reachFeet 5, hitDamage 4 (1d4 + 2) piercing.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T07:25:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T07:30:13Z",
+  "closed_at": "2026-10-10T07:30:13Z",
+  "close_reason": "Absorbed into PR #646 (eshyra-o9bd.19.4.2.4)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

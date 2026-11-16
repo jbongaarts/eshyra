@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b0hg.3",
+  "title": "Fix: Sol S1/S2 on PR #634 (Sonnet 5.5)",
+  "description": "Fix the MATERIAL finding S1 (and the non-material S2 page nit) from the Sol review of PR #634 (read in full: `bd show eshyra-b0hg.2`). Branch from origin/eshyra-b0hg. Deps installed. Edit only packages/core/src/character/skillBonuses.ts and its test (and contextAssembler test if the render assertion lives there). Do not touch levelUpSpells.ts / finalizeCharacter.ts (parallel task).\nS1: the Jack of All Trades / Remarkable Athlete context notes must be gated on whether the character HOLDS the feature (class/subclass + level, sharing the gating used by the derivation), not on whether some named skill consumed the bonus. Per-skill arithmetic and resolve_check contract unchanged. S2: fix the SRD page citation p.11 -> p.12 for Jack of All Trades.\nEVIDENCE: a generalized rendering invariant varying proficiency coverage and feature level: a level-7 Champion proficient in Athletics, Acrobatics, Stealth, Sleight of Hand still gets the Remarkable Athlete note; level 6 does not; a bard 2 proficient in every skill still gets the Jack of All Trades note. Confirm the new test fails on the pre-fix code (copy files aside; never git stash).\nPROTOCOL: npm run verify:worktree BEFORE commit; commit (Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>); bd update <your-bead> --append-notes; bd close <your-bead>. No push/PR.",
+  "notes": "Commit c0d6e1f165d44259f1e32cc49061e383b9d56e97. renderSkillsLine notes now gated by shared holdsJackOfAllTrades/holdsRemarkableAthlete (also used by derivation); p.11->p.12. Tests: parameterized Champion L7/L6 coverage + bard-all-skills; 2 failed pre-fix (verified by restoring old source), pass post-fix. verify:worktree green (6319 passed).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T07:51:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T07:54:31Z",
+  "closed_at": "2026-10-09T07:54:31Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b0hg.3",
+      "depends_on_id": "eshyra-b0hg",
+      "type": "parent-child",
+      "created_at": "2026-10-09T02:51:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

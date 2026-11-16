@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ldqb",
+  "title": "Define addressable inline option IDs for SRD choices",
+  "description": "Combined vk23 audit follow-up.\n\nThe vk23 pack models several gameplay-significant options as inline structured choices rather than first-class records. This is reasonable for source fidelity, but deterministic tools and retrieval need an explicit addressing contract.\n\nConcrete example:\n- Eldritch Invocation prerequisites reference inline Pact Boon option IDs:\n  - pact-boon:pact-of-the-tome\n  - pact-boon:pact-of-the-chain\n  - pact-boon:pact-of-the-blade\n- These are not top-level records; they exist under feature:warlock:pact-boon.\n\nSimilar categories may include Fighting Styles, Metamagic options, Hunter options, Pact Boons, Eldritch Invocations, and other feature-local choices.\n\nAcceptance criteria:\n- Decide whether gameplay-significant inline options should remain nested addressable entities or be promoted to first-class records.\n- If nested: define a stable address format and add resolver/index support so deterministic tools can resolve inline option IDs.\n- If first-class: generate records for the selected option categories and update references accordingly.\n- Add tests that Warlock invocation prerequisites resolve successfully.\n- Add an audit check that reference-like fields pointing to inline option IDs are either resolvable or explicitly exempted with rationale.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T22:57:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T23:52:10Z",
+  "started_at": "2026-06-30T23:46:28Z",
+  "closed_at": "2026-06-30T23:52:10Z",
+  "close_reason": "Kept inline options nested; added inlineFeatureOptions.ts resolver/index plus unresolvable-inline-option-ref audit gate. All Warlock invocation prerequisites verified resolvable against the committed pack",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ldqb",
+      "depends_on_id": "eshyra-ajpc",
+      "type": "parent-child",
+      "created_at": "2026-06-30T18:06:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

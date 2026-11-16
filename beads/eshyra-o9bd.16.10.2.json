@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.16.10.2",
+  "title": "L4-F2: use_item must refuse unrecognized operation arguments before any mutation",
+  "description": "Repair L4-F2 (evidence and reproducers in eshyra-o9bd.16.4 notes). toolUseItem.ts ~53-57 declares args an open object described as validated; itemState.ts ~1735-1744 reads only transitionOutcome and defaults to success; ~1901-1915 reads only the current variable economy key. A misspelled {transitionOutome:'failure'} on Rope of Entanglement entangle-creature succeeds, spends the action and records the success branch; Bag of Tricks {costs:{uses:0},unknown:'garbage'} succeeds. DESIGN (Captain): validate the complete recognized operation-specific argument shape and the applicable economy keys BEFORE any action, economy, timer, credit or RNG work; refuse unknown names and arguments inapplicable to the selected operation, naming the accepted keys in the error; keep deliberately supported omission defaults. Permanent evidence: a generalized unknown-argument refusal invariant asserting state and budgets unchanged, with one state-machine (Rope of Entanglement) and one economy-backed (Bag of Tricks) real-pack case plus positive declared-input controls.",
+  "notes": "L4-F2 report (commit 2b044c678b2425fa1e597ce7125a8a4b7f8bd74e on branch eshyra-o9bd.16.10.2, not pushed).\n\nACCEPTED ARGS PER OPERATION KIND:\n- No state transition and no variable cost (e.g. Bag of Tricks pull-fuzzy-object, fixed cost 1 uses): args absent or {} only; any key refused, error says 'accepted args: none (this operation takes no args)'.\n- Operation is the via of a stateMachine transition (Rope entangle-creature): transitionOutcome ('success'|'failure', default success) and transitionTo (optional when unambiguous). Any other key refused, error lists 'transitionOutcome, transitionTo'.\n- Operation with variable-amount cost(s): costs = { <variable economyId>: positive integer }, one entry required per variable economy; a costs key outside that set is refused. Costs combined with transition keys are both accepted when both apply.\n- args must be a plain object at the tool boundary; a non-object (string, array, null) returns invalid_args instead of being dropped.\n\nREFUSAL POINT: itemState.ts validateOperationArgs(), called in useItem immediately after the operation is resolved and before assertActivationEquipment, the activation turn-resource spend, economy/cost accounting, timer resolution, credit issuance and RNG use. Registry boundary: toolUseItem.ts inputSchema now declares properties (transitionTo, transitionOutcome, costs) with additionalProperties false, so toolRegistry.invoke refuses unknown names before run().\n\nOMISSION DEFAULTS KEPT: transitionOutcome absent = success; transitionTo optional when one candidate; args absent = no-op.\n\nTESTS: new packages/core/test/itemUseArgsRefusal.test.ts (14 tests). Table of refusals through the registry (Rope {transitionOutome}, Rope {transitionOutcome:'failure',unknownPredicate:true}, Bag {costs:{uses:0},unknown:'garbage'}, plus unknown-only and fixed-cost costs cases), and item-layer cases through useItemTool.run that bypass the schema and assert the accepted-key message. Each refusal asserts the full DB snapshot (all tables) is byte-identical before and after, and Rope machineState unchanged. Positive controls: Rope transitionOutcome failure -> loose/failure; success and omitted -> restraining/success; Bag with no args and with {} -> spends one use.\n\nVERIFY: npm run verify:worktree exit 0 (format, check, typecheck, test: 388 files passed, 2 skipped; 7264 tests passed, 3 skipped).\n\nNOT DONE: no push, no PR. Variable-cost positive path (Pipes call-rat-swarms) is covered by existing itemChargeDawnRecharge and itemGrantBindCredit tests, not re-added here.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-01T08:43:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-01T08:54:26Z",
+  "started_at": "2026-11-01T08:45:04Z",
+  "closed_at": "2026-11-01T08:54:26Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.16.10.2",
+      "depends_on_id": "eshyra-o9bd.16.10",
+      "type": "parent-child",
+      "created_at": "2026-11-01T02:42:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

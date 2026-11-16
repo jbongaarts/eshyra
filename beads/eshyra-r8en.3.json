@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-r8en.3",
+  "title": "Review: Sol final review of PR #637 (eshyra-r8en @ 80275fd4)",
+  "description": "Final read-only review of PR #637 (branch eshyra-r8en, exact head 80275fd4a7f882e008ea6338a127785c794886d6) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "FINAL REVIEW of PR #637 at exact head 80275fd4a7f882e008ea6338a127785c794886d6. Effective profile: rules-clause-complete, bounded to sheet-derived checks/saves, feature arithmetic, and provider-neutral prompt/tool/ledger/trace consumers.\n\nAuthority and scope: read AGENTS.md, docs/design-and-pr-review-policy.md, owning eshyra-r8en, dependency/dispatch eshyra-r8en.1, prior review eshyra-r8en.2, and predecessor eshyra-b0hg.1; inspected ADR 0020 rules-execution boundaries, ADR 0011 canonical sheet ownership, and ADR 0018 single-class boundary. Reviewed the complete git diff origin/main...HEAD and git log origin/main..HEAD, PR prose, current head/checks/reviews, schema admission, sheet persistence/creation/level-up and expertise producers, actor resolution and orchestrator acting-character wiring, resolver, context, player-visible ledger, and turn-trace consumers. refs/beads/state is stale (2026-09-09) and contains no r8en records; reconciled scope/dependencies/findings against live bd. No GitHub review/invalidation markers. No pack/importer/extractor/audit files changed; importer-fix protocol changes are not implicated.\n\nSource review: independently examined vendored packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf for rogue/bard Expertise, Jack of All Trades, Remarkable Athlete, ability/skill checks, saving throws, and Cover. Skill proficiency/expertise, raw-check half-proficiency and its down/up rounding and thresholds, and save proficiency match the bounded dispatch decisions. Legacy declared calls and attack exclusions remain operative.\n\nPrior findings explicitly reconciled:\n- eshyra-r8en.2 S1: FIXED. toolResolveCheck.ts now checks the governing ability only in modifier source, as dispatch decision 3 requires. Descriptive labels mentioning the ability are accepted. Fresh schema-admitted probes varied labels for all six abilities in checks/saves and exercised both +2/+5 Dexterity cover bonuses, while full-name/abbreviation/source-token duplicate guards still refused before consuming RNG.\n- eshyra-r8en.2 S2: FIXED. protocol.ts now limits sheet-derived guidance to ability checks and saving throws, with explicit declared modifiers/proficiency for attacks. The prompt regression passes and an independent sheet-backed declared attack succeeds.\n\nFindings: none. No new MATERIAL or NON-MATERIAL findings published.\n\nVerification: seven targeted repository test files passed, 104 tests total (resolveCheckSheetDerivation, skillBonuses, resolutionTools, resolution, playerVisibleRollLedger, protocol, turnTraceProjection). Three additional temporary adversarial probe tests passed: all 18 skill totals across rogue/bard/Champion sheets; all six raw-check/save abilities across feature thresholds and PB rounding; situational-label invariance and source-guard siblings; no RNG advance on refusal; current ability/PB save derivation after sheet updates; actor id/name/default and ambiguous-name refusal; advantage cancellation; ledger component rendering and exact trace retention; and legacy attack arithmetic. The first temporary probe harness attempt collected no tests because of a wrong import path; corrected harness passed. No worktree-local dependencies were installed: used the existing eshyra-r8en.1 Vitest installation against this worktree's exact source, with config/cache/probes/temp storage outside the repository. git diff --check passed. All GitHub checks are successful for the assigned head. Repository status stayed clean and HEAD remained 80275fd4a7f882e008ea6338a127785c794886d6. No repository edits/formatting/build/verification mutation, commits, pushes, GitHub comments, or merge performed. Owning eshyra-r8en was not modified.\n\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T08:26:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T08:32:45Z",
+  "closed_at": "2026-10-09T08:32:45Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-r8en.3",
+      "depends_on_id": "eshyra-r8en",
+      "type": "parent-child",
+      "created_at": "2026-10-09T03:26:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

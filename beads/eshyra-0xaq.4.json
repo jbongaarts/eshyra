@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0xaq.4",
+  "title": "Review: Sol final review of PR #692 round 2 (eshyra-0xaq @ f013bb25)",
+  "description": "Fresh full read-only review of PR #692 at exact head f013bb25 after repair of S1 from eshyra-0xaq.3. Findings in notes; ends with a VERDICT line.",
+  "notes": "dispatch: gpt-6.1-sol high, pgid 1804812\nFINAL REVIEW, round 2, of PR #692 at exact head f013bb257b4c46fab9878c20c893af1da787bc42 (branch eshyra-0xaq.4). This is a fresh full review after the material round-1 repair, not only a replay of its example. The local HEAD and GitHub PR head still matched at completion.\n\nAuthority/context: read AGENTS.md, docs/design-and-pr-review-policy.md, docs/importer-fix-protocol.md, ADR 0020, live beads eshyra-0xaq.4/.3, eshyra-0xaq, eshyra-0xaq.2 and eshyra-olc5.14, including the persistent per-instance horn-type user decision and the implementation report. refs/beads/state resolves to 9e4bb40c, dated 2026-09-10, and lacks the current owning/review records; reconciled against authoritative live bd records. Inspected the full origin/main...HEAD diff (all nine files), both commits in origin/main..HEAD and current PR metadata.\n\nApplied rules-clause-complete review to the bounded pack-driven identity change, including semantic-system state, compatibility, lifecycle and proof obligations. Reviewed magicItemVariants.ts; adopt_item entry, result propagation and established-state retry; give_item identity admission and allocators; item_state initialization, validation and preservation; attunement identity; credit issuance/redemption and rolled evidence; receipts; active-effect binding/tombstones; destruction; adoption, relinquishment and item-state split allocators; migration discovery/application and snapshot; checkpoint serialization/materialization. Establishment remains a declared once-only NULL-to-variant identity transition with atomic state and trace writes. The DM chooses/interprets the type and residual printed requirements; the engine retains identity, dice, accounting and selected binding procedures. No importer, generated pack or readiness semantics change.\n\nRound-1 S1 disposition: FIXED by f013bb25. packages/core/src/state/itemGrantBinding.ts:240 now includes item_variant_establishment in the shared retired-id predicate, preserving attribution after inventory destruction. The new permanent lifecycle regression protects automatic reuse; independent probes also exercised the stateless explicit-id reassignment branch, adoption stack splitting and relinquishment splitting. These all skip the established-and-destroyed id while preserving its original brass trace. Existing consumption-receipt/effect retirement remains operative. The generalized durable-identity evidence is proportionate to the corruption it prevents.\n\nFindings: no MATERIAL or NON-MATERIAL findings. SQL UPDATE/DELETE prevention triggers on the establishment ledger: no requirement; the product writer is INSERT-only and exposes no mutation route for that trace.\n\nValidation: npx vitest run for itemVariantEstablishment, itemAdoption, itemState, attunement, itemGrantRolledCount, itemGrantBindCredit, itemGrantConsumptionReceipt, itemGrantBagOfTricks, checkpoint.serialize, checkpoint.schemaIntegrity, domainMutations, persistence and migrationLegacyAdoption: 13 files / 216 tests passed. npx vitest run for schemaSnapshot and migrationRunner: 2 files / 31 tests passed. Total: 15 files / 247 tests passed.\n\nAdditional repository-file-free evidence: 21 in-memory probes passed, covering open/redeemed credits with rolled evidence, open/redeemed receipts, active/suppressed/ended item-grant effects, attunement, unresolved review, stateful quantity, mismatched/malformed state, preserved spent cooldown and Bag uses, same-variant idempotence, allocation siblings, migration from version 51 and rollback after an injected trace-insert failure. Refusal cases compared complete serialized database state before/after. A further real unmodified-pack end-to-end probe established a brass Horn, rolled 3d4+3=9 through use_item, refused wrong-type and wrong-count bindings atomically, bound the exact use, destroyed the source, serialized its durable trace and tombstoned effect, and prevented stateless explicit-id reuse.\n\ngit diff --check passed and the worktree remained clean. No repository files edited/created, mutating verification/build/format, commits, pushes, GitHub comments or merges performed. Only this review bead is updated/closed; eshyra-0xaq is unchanged.\nVERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-31T21:55:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T21:59:50Z",
+  "closed_at": "2026-10-31T21:59:50Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0xaq.4",
+      "depends_on_id": "eshyra-0xaq",
+      "type": "parent-child",
+      "created_at": "2026-10-31T16:55:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

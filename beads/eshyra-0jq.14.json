@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.14",
+  "title": "Isolate Dolt command execution and checkpoint repository responsibilities",
+  "description": "DoltRepo currently handles shell execution, SQL assembly, repository initialization, commit/log/read/branch behavior, and checkpoint persistence concerns together.\r\n\r\nSplit lower-level Dolt command execution and SQL encoding from checkpoint repository behavior.",
+  "acceptance_criteria": "- Dolt command execution is isolated.\r\n- Dolt SQL/string encoding is isolated or made safer.\r\n- Checkpoint repository behavior is easier to test.\r\n- Existing checkpoint tests pass.\r\n- No change to user-facing checkpoint behavior.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-27T04:44:39Z",
+  "closed_at": "2026-05-27T04:52:11Z",
+  "close_reason": "Split DoltRepo into DoltCli (low-level CLI: run/query/init/commit/branch) + DoltRepo (campaign_snapshot schema + HEX round-tripping). sqlLiteral exported with regression-guarded unit tests. Public DoltRepo surface unchanged. PR #88.",
+  "labels": [
+    "architecture",
+    "checkpoint",
+    "dolt",
+    "persistence",
+    "refactor",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.14",
+      "depends_on_id": "eshyra-0jq.1",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.14",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:31:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

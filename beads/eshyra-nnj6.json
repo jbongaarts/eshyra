@@ -1,0 +1,59 @@
+{
+  "_type": "issue",
+  "id": "eshyra-nnj6",
+  "title": "Character creation: record level-1 class choices (fighting style, favored enemy, natural explorer, rogue expertise, level-1 subclass)",
+  "description": "Found 2026-10-08 while planning eshyra-ug4i. Level-1 creation (packages/core/src/character/requiredChoices.ts Level1RequiredChoiceKind: skills/tools/equipment/cantrips/spells/spellcasting_ability/ability_increase/languages) never collects the class-feature choices the SRD makes at level 1: feature:fighter:fighting-style, feature:ranger:favored-enemy, feature:ranger:natural-explorer, feature:rogue:expertise, and the level-1 subclasses (feature:cleric:divine-domain, feature:sorcerer:sorcerous-origin, feature:warlock:otherworldly-patron). A finalized fighter therefore has no recorded fighting style, which also weakens the champion-10 no-repeat rule at level-up. Reuse the sheet featureChoices field and the selection validation eshyra-ug4i.3 adds; subclass at level 1 reuses the level-up subclass application.",
+  "acceptance_criteria": "- Level-1 creation collects, validates and durably records the class-feature choices the SRD makes at level 1 (fighting style, favored enemy, natural explorer, rogue expertise) on sheet.featureChoices (expertise in the durable expertise record eshyra-ug4i.1 defines). Auditability comes from the existing character-creation persistence and provenance (finalized sheet + its rules-pack/recipe/creationMode metadata); no new progression-ledger event kind or creation event contract.\n- Level-1 subclasses (cleric divine domain, sorcerous origin, otherworldly patron) are chosen at creation and persisted correctly in sheet.subclass via the level-up subclass application, so their level-1 subclass features are granted and later level-ups see the subclass.\n- Creation writes the structured CharacterSheet.spellcasting buckets (cantrips/known/spellbook/prepared per class) defined by eshyra-ug4i.2.1, not only the flat spells list.\n- Representative finalized characters (fighter, ranger, rogue, cleric, sorcerer, warlock, wizard) round-trip through store and level up without legacy-classification fallbacks.",
+  "notes": "2026-10-08: when eshyra-ug4i.2 lands, creation should also write the structured CharacterSheet.spellcasting buckets (cantrips/known/spellbook/prepared) instead of only the flat spells list; the level-up path classifies legacy flat lists on first level-up.\nFrom eshyra-ug4i.2.1: level-up now persists structured spell state on CharacterSheet.spellcasting ({cantrips, known?, spellbook?, prepared?, mysticArcanum?, designations?}, canonical spell refs, sheet.spells = derived union). Creation should write this field (wizard: cantrips + 6 spellbook spells [+prepared]; known casters: known; prepared casters: prepared) so sheets are not left as legacy flat lists; legacy sheets are classified at their first level-up (see levelUpSpells.ts effectiveSpellcasting).\n2026-10-08 (Claude Captain reconciliation): scope confirmed after #610; acceptance criteria added (level-1 choice collection, correct subclass persistence, initial structured spellcasting). Rogue expertise depends on the record shape eshyra-ug4i.1 introduces — sequence after it or share the shape.\n2026-10-08 (Claude Captain): acceptance corrected per review — the required invariant is durable, auditable recording of creation choices, not progression-ledger rows. ProgressionEventKind is only xp-award | milestone-award | level-up; creation persists via the finalized sheet and its provenance metadata. Adding a creation ledger event would be unrequested architectural expansion.\nFrom eshyra-91o0.1 (commit fd5a1236 on branch eshyra-91o0.1, pending integration): the pack now carries feature:draconic-bloodline:dragon-ancestor choices[] = {id dragon-ancestor, category other, choose 1, level 1, 10 options dragon-ancestor:<slug>, text 'Dragon: Black; Damage Type: Acid'}. Creation-time collection/persistence (featureChoices) is yours; the audit gate now covers level-1 subclass-granted features. Also now modeled for any L1/early subclass flow: college-of-lore skills (category skill, from 18 skill names).\nPR opened (head 78c5a881) 2026-10-09; supervisor reviewed + verify green. Stays in_progress until merge. Follow-ups eshyra-jah7, eshyra-eb9n.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-08T01:55:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T03:12:30Z",
+  "started_at": "2026-10-09T02:42:11Z",
+  "closed_at": "2026-10-09T03:12:30Z",
+  "close_reason": "Merged PR #618",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-nnj6",
+      "depends_on_id": "eshyra-ug4i",
+      "type": "discovered-from",
+      "created_at": "2026-10-07T20:55:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-nnj6",
+      "depends_on_id": "eshyra-ghzh",
+      "type": "relates-to",
+      "created_at": "2026-10-08T16:46:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-nnj6",
+      "depends_on_id": "eshyra-nnj6.1",
+      "type": "blocks",
+      "created_at": "2026-10-08T21:42:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-nnj6",
+      "depends_on_id": "eshyra-ug4i.3",
+      "type": "blocks",
+      "created_at": "2026-10-07T20:56:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

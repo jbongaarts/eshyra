@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x1hq",
+  "title": "Publish readable Beads state projection at refs/beads/state",
+  "description": "Implement the repository lifecycle command npm run beads:sync. It must push canonical Beads/Dolt state, export the full supported bd export JSONL, validate and scan it, construct a parentless Git snapshot containing README.md, metadata.json, issues.jsonl, index.json, and complete per-Bead JSON files, and safely force-update exactly refs/beads/state with race and remote verification checks. Add focused temporary-repository tests, narrowly update active lifecycle guidance, bootstrap the real remote projection, and preserve the main-agent/child Bead lifecycle.",
+  "acceptance_criteria": "npm run beads:sync performs bd dolt push before projection publication; exact remote refs/dolt/data SHA is recorded and race-checked; export failures, malformed records, secrets, and unsafe IDs fail closed; generated snapshot is a parentless root commit with only intended files; only refs/beads/state can be force-updated; worktree and index remain unchanged; focused tests and npm run verify:worktree pass; real refs/beads/state bootstrap is verified.",
+  "notes": "Implementation committed as 9601ed5 and handed off in PR #520: https://github.com/jbongaarts/eshyra/pull/520. Owning Bead remains in_progress until merge per repository lifecycle.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-02T05:05:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-02T05:32:15Z",
+  "started_at": "2026-09-02T05:05:39Z",
+  "closed_at": "2026-09-02T05:32:15Z",
+  "close_reason": "Implemented and merged in PR #520 (merge commit 2f4b90844d10677c6a8d9e93ce0ea088cc1a4154).",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6vpw",
+  "title": "Deterministic pack consumers use a base-only campaign lookup with a silent bundled-D&D fallback",
+  "description": "Verified at main f4b3461. packages/core/src/state/campaignRecordLookup.ts:85-98 lookupCampaignRecord selects a bundled base by packId ALONE, ignores systemId/version and every campaign add-on, and falls back to getBundledDnd5eSrdPack() when no base matches. packages/core/src/state/encounterCombatants.ts:527-533 campaignBasePack repeats the same pattern for creature AC/HP. Strict model-facing lookup uses resolveStrictCampaignRulesStack (campaignRecordLookup.ts:67-76), which resolves exact system/pack/version plus ordered add-ons.\n\nLive legacy callers: state/actionEconomy.ts:297,374,445; state/activeEffects.ts:1824,2560,2583,4031; state/attunement.ts:538; state/usageCounters.ts:785.\n\nConsequence: with a custom or add-on-bearing campaign stack, the DM can obtain the strict active-stack record through lookup_rules while the deterministic consumer that acts on it sees different base data, or silently falls back to bundled D&D. One coherent active-stack evidence path is violated.\n\nDiscovered by eshyra-jued (2026-07-29-existing-discovery-substrate-map.md defect 3). Blocker B3 of 2026-07-30-integrated-transition-design.md: deterministic-agreement measurement and probe P11 (add-on override) are invalid until this is repaired.",
+  "acceptance_criteria": "Deterministic pack consumers resolve through the same exact campaign stack as strict model-facing lookup (system, pack, version, ordered add-ons); no silent bundled-D&D fallback remains on any of the named call sites; a synthetic base+add-on stack test proves strict lookup and the deterministic consumer resolve the same active record, system, version, and override chain.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-30T23:29:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-08-30T03:10:02Z",
+  "started_at": "2026-08-30T02:16:00Z",
+  "closed_at": "2026-08-30T03:10:02Z",
+  "close_reason": "Closed",
+  "labels": [
+    "campaign-runtime",
+    "rules",
+    "state"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-6vpw",
+      "depends_on_id": "eshyra-o9bd.19.8",
+      "type": "related",
+      "created_at": "2026-07-30T18:29:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

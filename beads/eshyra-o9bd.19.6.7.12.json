@@ -1,0 +1,53 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.12",
+  "title": "A4-F1: refresh-effect-v1 capability declaration and refresh_effect description must state the item-power override and item-grant no-rewrite boundary",
+  "description": "Second-audit blocker (lane A4, verified by Captain at 6812cc0b). ADR 0020 Decision 3 / design 5.9 condition 6: a selected capability declares operation, inputs and exclusions truthfully. deterministicCapabilityInventory.ts:559-570 says a supplied duration is not checked against an item source and a missing duration re-anchors; activeEffects.ts:7530-7613 refuses a changed duration or moved clock for item grants (with or without durationOverride) and revalidates item-power durations unless durationOverride is supplied. toolRefreshEffect.ts:19-26 still says 'other effects accept the supplied duration unchecked' before the item exceptions. Runtime guards are correct; do not weaken them. Same class as o9bd.16 L3-F3. Sol probes /tmp/a4-probes.ts, /tmp/a4-refresh-siblings.ts.",
+  "design": "2026-11-06 DESIGN (Captain). Declarative repair only; do not change runtime guards. Read packages/core/src/state/activeEffects.ts refresh path (~l.7520-7620: readItemGrantBinding/refreshGrant, itemBoundTypedDuration, durationProvenance/durationOverride) and the spell-record grounding. Rewrite the refresh-effect-v1 entry in packages/core/src/rules/deterministicCapabilityInventory.ts (~l.559-575: operation, requiredInputs, exclusions, residualDmInterpretation) so it states the three cases exactly as the code behaves: (a) ruling-sourced and other non-item effects: a supplied duration replaces the stored one after shared validation; omitted duration re-anchors; spell-record grounding as today; (b) item-power effects bound to a typed printed duration: a different duration is refused unless durationOverride (basis + reason) is supplied, which records dm-override provenance; omitted duration revalidates the bound duration; (c) effects bound to an item grant: lifetime is never rewritten by refresh (with or without durationOverride); an unchanged duration that would move the clock or anchor is refused; changing or ending it goes through end_effect for the whole grant. Remove the false 'not against a ruling or item source' and unconditional missing-duration re-anchor claims. In packages/core/src/orchestrator/toolRefreshEffect.ts (~l.19-26) remove the contradictory 'other effects accept the supplied duration unchecked' sentence and state the three cases consistently. Evidence: assert the declaration against behaviour for the three source kinds in the existing refresh/duration/grant test files (reviewed declaration assertions plus existing behaviour tests are sufficient; do not add per-item reproducer clutter). Implementer: Claude Haiku 5.5.",
+  "acceptance_criteria": "- refresh-effect-v1 operation/exclusions/residual text and the tool description match the ruling vs item-power vs item-grant behaviour.\n- A declaration/behaviour consistency check (or reviewed declaration assertions) covers the three source kinds; existing duration and grant tests still pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-03T02:12:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T04:24:55Z",
+  "started_at": "2026-11-06T02:39:22Z",
+  "closed_at": "2026-11-06T04:24:55Z",
+  "close_reason": "Merged PR #714 (35f140fe85ec1d4b35051a3a84ffb745b8f5f075) after Sol .12.2 S4 repaired and confirmed clean by .12.4",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.12",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-02T20:12:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.12",
+      "depends_on_id": "eshyra-o9bd.19.6.7.12.3",
+      "type": "blocks",
+      "created_at": "2026-11-05T22:00:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.12",
+      "depends_on_id": "eshyra-o9bd.19.6.7.12.1",
+      "type": "blocks",
+      "created_at": "2026-11-05T20:39:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

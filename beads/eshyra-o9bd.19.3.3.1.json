@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.3.1",
+  "title": "Dispatch: 19.3.3 language extension point, background/ancestry dispositions (attempt 1)",
+  "description": "Implement eshyra-o9bd.19.3.3's DESIGN field (L1 pack + creation + CLI; F-18 verification; indep:004 narrowing; indep:012 disposition). Importer parts follow docs/importer-fix-protocol.md (no hand edits; regenerate with npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1 plus the default .generated run; npm run verify:dnd5e-srd-pack must exit 0; regenerate docs/inventories/o9bd-18-8-8-semi-structured-boundary.{json,md} with npx tsx packages/core/scripts/inventory-semi-structured-boundary.ts if its test requires it). Diff records.json: only language-choice records may change; any other churn: stop and report. Host memory: before npm run verify:worktree wait until pgrep -fc 'node .*verify-current-worktree' prints 0 or 1 (never kill); chain the commit with && after a passing verify. Report (bd notes): design choice for the approval input, changed records, consumer changes, tests, dispositions with evidence. Close this bead. No push/PR.",
+  "notes": "COMPLETION (commit 4754b8b3, verify:worktree PASSED: 6436 passed/3 skipped). Approval-input design: draft selections gain gmApprovedLanguages?: Record<choiceId, string[]> (engine.setGmApprovedLanguages); selection values stay plain strings. A pick outside the choice's from is accepted ONLY if the choice carries the pack extension AND the language is in gmApprovedLanguages[choiceId] AND is non-blank and not already a fixed grant; otherwise refused as before. Pack: extension {ruleRef:'rule:languages', exoticTableRef:'table:exotic-languages', requiresGmApproval:true} beside unchanged Standard from. Validated in kindSchemas (flag must be literally true). CLI: 'other' entry -> asks name + explicit y/n GM-approval confirmation; clear also clears approvals. Changed records (exactly 4, only language-choice data): ancestry:half-elf, ancestry:human, ancestry:high-elf (choices extra-language), background:acolyte. Consumers: rulesPackResolver, requiredChoices, characterDraft, CLI wizard; oracle srdLanguages.ts + 3 tests updated to include extension (strengthened, not weakened); semi-structured inventory regenerated. Tests: packages/core/test/languageExtensionPoint.test.ts (refused w/o approval, wrong-language/choice approval refused, accepted exotic/secret/campaign-common with approval, default domain unchanged, pack invariant), CLI wizard tests. Dispositions: F-18 (background-equipment) SATISFIED: acolyte equipmentGrants structured with quantities/refs/currencyGp:15; finalize credits wallet gp 15 (test 'credits the Acolyte pouch gp ...'; srdCreationChoices.test equipment grant tests). indep:004 narrowed per ADR 0020 to ancestry projections consumed by creation being source-faithful (fixed skills, languages, ASI, traits; prose verbatim); language projections repaired/verified here, no further gap found. indep:012: CANNOT BE EVALUATED - registry row carries only the vague invariant 'Equipment, material, potion, and report records retain their findings' with evidenceBasis audit-finding; original independent review text is not in the repo; equipment mechanics covered by o9bd-18-7-6 inventory. Observation (not fixed): high-elf ancestry choices[extra-language] (category language) is not consumed by creation required-choices (high-elf languages[] is fixed-only), so a High Elf extra language is not currently prompted; worth a follow-up bead. Finding registry not modified.\nFOLLOW-UP (second commit): High Elf extra language now consumed by creation as required choice id ancestry.languages.extra-language (resolver languageChoices -> requiredChoices; default domain minus held, extension marker, GM approval path works); CLI wizard surfaces it (2 existing scripted tests gained the answer; new High Elf GM-approval CLI test). Registry rows updated: language-universe-policy and background-equipment accepted with statusReasoning, ancestry-omissions narrowed, equipment-report statusReasoning (cannot be evaluated); findingRegistry.test pins 25->29 reasoning rows and narrowed list +ancestry-omissions. Pack records unchanged by this commit. verify:worktree passed (6440 passed).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-10T16:39:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T17:05:23Z",
+  "started_at": "2026-10-10T17:02:40Z",
+  "closed_at": "2026-10-10T17:05:23Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.3.1",
+      "depends_on_id": "eshyra-o9bd.19.3.3",
+      "type": "parent-child",
+      "created_at": "2026-10-10T11:39:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

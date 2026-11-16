@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-v0db.2",
+  "title": "Review: Opus (Sol limited) final review of PR #632 (eshyra-v0db @ eac057a8)",
+  "description": "Final read-only review of PR #632 (branch eshyra-v0db, exact head eac057a85d85641fb9e8a2496ab7daf874c886ea) by Sol. Findings recorded in this bead's notes; ends with a VERDICT line.",
+  "notes": "Final review of PR #632 @ eac057a8 (test-only: packages/core/test/kindSchemasFeatureChoices.test.ts, +158). Checked against optFeatureChoiceArray / optBoolTrue in packages/core/src/rules/kindSchemas.ts:624-705 and bead eshyra-v0db AC (missing sibling, optionId not in sibling from, optional:false). All three AC cases covered, plus self-reference, sibling without from, non-object requiresOption, missing optionId, optional:'true', and a positive control. Ran the file: 9/9 pass; biome check clean. Mutation reasoning: removing the 'sibling === entry' guard makes the self-reference test fail (optionId 'common' is deliberately in the dependent's own from); removing the Array.isArray(sibling.from) guard turns the no-from case into a TypeError that fails the message regex; relaxing optBoolTrue to optBool fails the optional:false test; the positive control proves the hand-built base record is otherwise valid, so each rejection is attributable to the targeted field. Permanent-evidence: protects a durable pack-validator contract that the real pack and importer guard tests do not exercise negatively; not a duplicate. S1 (NON-MATERIAL, kindSchemasFeatureChoices.test.ts:70): self-reference regex omits the choices[1].requiresOption.choiceId 'race-language' prefix, so it localizes less tightly than its siblings; optional tightening. S2 (NON-MATERIAL): no case for a sibling whose from is a string/structured object (also rejected by the same Array.isArray branch); optional. VERDICT: NO MATERIAL FINDINGS",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-09T05:26:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-09T05:28:13Z",
+  "closed_at": "2026-10-09T05:28:13Z",
+  "close_reason": "Closed",
+  "labels": [
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-v0db.2",
+      "depends_on_id": "eshyra-v0db",
+      "type": "parent-child",
+      "created_at": "2026-10-09T00:26:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

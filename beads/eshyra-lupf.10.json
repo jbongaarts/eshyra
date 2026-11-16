@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.10",
+  "title": "Guided level-up flow backed by the rules pack",
+  "description": "Orchestrated, guided level-up flow analogous to the guided character setup (characterWizard.ts / playCharacter flow): walk the player through eligibility, required choices, and confirmation, driven entirely by the deterministic engine and required-choices model — narration optional, mechanics never LLM-improvised. Commits the level-up via the auditable apply path.",
+  "acceptance_criteria": "A guided flow validates eligibility, collects required choices, previews the deterministic change set, and commits it; unsupported choices halt the flow with explicit messaging; flow is covered by orchestration tests.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:21:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T02:20:52Z",
+  "closed_at": "2026-06-28T02:25:57Z",
+  "close_reason": "Implemented core guided level-up orchestration with eligibility, required-choice collection, preview, confirmation, commit, and unsupported-choice blocking.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.10",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:21:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.10",
+      "depends_on_id": "eshyra-lupf.8",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.10",
+      "depends_on_id": "eshyra-lupf.9",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

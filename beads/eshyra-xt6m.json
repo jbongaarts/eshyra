@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xt6m",
+  "title": "Elemental Gem / Feather Token stacks >1 cannot be used: grants naming cooldownEconomy make the items stateful (quantity must be 1)",
+  "description": "Found in eshyra-olc5.12.13. isStatefulMagicItemMechanics treats any entityGrant with cooldownEconomy as stateful, so a stack of 2+ gems/tokens is refused by use_item ('stateful item must have quantity 1') though the pack calls them stateless single-use consumables. Also use_item break-gem/use-token on the real pack is blocked by readiness (no clause for operation effects summon-elemental/token-kind-payload; F3/F2/F5 hooks pending). Decide whether stacks should be supported.",
+  "notes": "2026-10-17: PR #669 (stacking half of xt6m; the readiness half is with c58j). Captain-verified 6987 passed. Stays in_progress until merge.\nStacking half merged in PR #669. The readiness half (use_item break-gem/use-token refused on the unmodified pack) stays open, owned with eshyra-c58j.\nReadiness half answered in PR #673: gem/token still not ready; remaining work is in eshyra-xt6m.1, eshyra-olc5.14 and eshyra-olc5.15.\n2026-10-18 reconciliation: the residual readiness half (break-gem/use-token refused on the unmodified pack) is now owned by eshyra-xt6m.1 (design-first boundary decision). xt6m depends on xt6m.1 and closes only after it resolves and PR #669's stacking half (merged) is confirmed.\n2026-10-31 captain: both halves resolved. Stacking: PR #669 (merged); still holds after the gem-type variants (itemGrantConsumptionReceipt.test.ts: a 2-stack emerald use_item break-gem succeeds, leaves quantity 1 and issues a bind credit). Readiness: eshyra-xt6m.1 via PR #693 (break-gem ready for all four types; Feather Token use-token stays truthfully refused with its hooks named).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-17T18:34:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-31T22:14:40Z",
+  "started_at": "2026-10-17T20:21:50Z",
+  "closed_at": "2026-10-31T22:14:40Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-xt6m",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-10-17T14:57:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-xt6m",
+      "depends_on_id": "eshyra-xt6m.1",
+      "type": "blocks",
+      "created_at": "2026-10-18T18:56:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

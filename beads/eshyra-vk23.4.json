@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vk23.4",
+  "title": "Replace SRD free-text choice filters",
+  "description": "Replace free-text SRD choice sources with structured deterministic filters.\n\nProblem:\nSome choices are modeled as choices but still use free-text sources such as:\n- \"the wizard spell list\"\n- \"the bard spell list\"\n- \"your skill proficiencies\"\n\nThese are discoverable by the primary DM model but weak for deterministic tools. Tools should not parse English to determine allowed choices.\n\nScope:\n- Find choice records where from/source/filter is a plain string but could be represented as a typed filter.\n- Convert spell and cantrip choice sources to structured spellFilter objects.\n- Convert character-state-dependent choices, such as expertise from existing skill proficiencies, into typed characterStateFilter-style objects.\n- Add guardrails so future importer changes do not reintroduce string filters for deterministic choice domains.\n- Preserve source prose separately for DM context.\n\nAcceptance criteria:\n- Spell/cantrip choices use structured spell filters with class list and level constraints.\n- Character-state choices use structured filters rather than prose like \"your skill proficiencies\".\n- Any remaining string from/source values are explicitly justified as DM-only prose or unknown/unresolved.\n- New tests or audit gates catch spell/cantrip choices with string filters.\n- npm run typecheck passes.\n- npm test passes.\n- npm run check passes.\n- npm run verify:dnd5e-srd-pack passes and regenerated pack output is intentional.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T03:18:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T04:15:53Z",
+  "started_at": "2026-06-30T04:12:36Z",
+  "closed_at": "2026-06-30T04:15:53Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-vk23.4",
+      "depends_on_id": "eshyra-vk23",
+      "type": "parent-child",
+      "created_at": "2026-06-29T22:18:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

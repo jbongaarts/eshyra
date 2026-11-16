@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ecr.2.2",
+  "title": "Prevent magic item body prose from contaminating names",
+  "description": "After the numeric table-row fix, full generated magic-item name review still found non-title body/prose artifacts promoted into names, including Defender stat text, Demon Armor action text, Dragon Resistance table text, Elemental Gem table text, Ring of Jumping bullet text, and Ring of Djinni Summoning body text. Expected generated magic-item names to match actual item headings only.",
+  "notes": "Evidence: full generated magic-item name listing after canonical regeneration showed 222 records but several names were contaminated by body/prose lines: 'Damage Immunities necrotic, poison Defender Condition Immunities charmed, frightened, paralyzed,', 'Demon Armor Actions', 'Dragon Resistance ... Dragon Slayer', 'Gem Summoned Elemental ... Elven Chain', 'Ring of Jumping • You can cast the following spells from the ring,', and '• Speak with animals Ring of Djinni Summoning'.\nRoot cause evidence: raw extracted pages 218/219/220/235/236 show two-column y-order interleaving. Examples: Defender title at p218 line 26 is separated from its category at line 28 by Avatar stat-block 'Condition Immunities'; Demon Armor title at line 52 is separated from category by Avatar 'Actions'; Ring of Jumping title p236 line 39 is separated from category by a bullet; Ring of Feather Falling's category appears after a left-column prefix in the same extracted line: 'additional properties: Ring, rare (requires attunement)'.\nFailing check: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseMagicItems.test.ts fails with the exact remaining artifact patterns. The fixture receives contaminated names for Defender, Demon Armor, Dragon Slayer, Ring of Jumping, Ring of Djinni Summoning, and misses Ring of Feather Falling because its category starts after a prose prefix on the same extracted line.\nFocused fix verified: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseMagicItems.test.ts passes, 11 tests. The parser now skips interleaved body/stat/bullet/table lines when locating names, parses category substrings that start after prose prefixes, and keeps +N titles plus wrapped names intact.\nAdditional failing check: generated import still produced a body-line record 'While touching the tree and using another action to' because the damage-type table heuristic rejected the real title 'Staff of Thunder and Lightning'. Added a focused fixture; parseMagicItems.test.ts fails until the heuristic distinguishes table rows from item names containing damage words.\nVerified broader fix: full importer suite passes (20 files, 437 tests), scratch npm run import:dnd5e-srd reports 236 magic items, and a generated-name scan found no prior artifact phrases, bullet-prefixed names, lowercase-leading names, trailing punctuation names, or body-line 'While touching...' artifact.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-04T06:31:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:49Z",
+  "started_at": "2026-06-04T06:31:13Z",
+  "closed_at": "2026-06-05T02:31:00Z",
+  "close_reason": "Fixed two-column magic-item body/prose contamination by skipping interleaved body/stat/bullet/table lines, parsing category substrings, and preserving legitimate damage-word titles; verification: parser/importer tests and exact-gated import passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ecr.2.2",
+      "depends_on_id": "eshyra-ecr.2",
+      "type": "parent-child",
+      "created_at": "2026-06-04T01:31:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "f15f2f4c-cbc3-56c3-8ce0-aed0ca1f6d82",
+      "issue_id": "eshyra-ecr.2.2",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseMagicItems.test.ts -> exit 0, 11 tests passed; npx vitest run packages/core/test/importers/dnd5e-srd-5.1 -> exit 0, 20 files / 437 tests passed; npm run import:dnd5e-srd -> exit 0 with 236 magic items and exact EXPECTED_SRD_5_1_MAGIC_ITEM_NAMES gate enabled; generated name scan found no prior prose/table/bullet artifacts.",
+      "created_at": "2026-06-05T02:30:52Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.9.8",
+  "title": "S3b — Model ward boundary semantics",
+  "description": "Model the S3 ward-family spells identified by the classification/design artifacts, including Private Sanctum and Tiny Hut boundaries. Represent deterministic ward flags/boundaries; keep live engine hooks separate where ADR 0017 requires; schema- and source-gate the contract; complete exact membership, pack, freeze, readiness, and audit reconciliation.",
+  "notes": "Complete exact registry/membership removals and count reconciliation; verify readiness-report delta; regenerate through the importer; add committed-pack assertions; update thaw evidence and freeze hash as appropriate; run verify:dnd5e-srd-pack, verify:dnd5e-srd-freeze, relevant focused tests, full required worktree/check/typecheck tests, and audit-bundle verification where required.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T04:09:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-12T15:28:40Z",
+  "started_at": "2026-07-12T15:16:13Z",
+  "closed_at": "2026-07-12T15:28:40Z",
+  "close_reason": "Implemented and verified S3b ward-boundary projections for Private Sanctum and Tiny Hut; S3c and parent S3 remain open.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.9.8",
+      "depends_on_id": "eshyra-o9bd.18.7.9.6",
+      "type": "parent-child",
+      "created_at": "2026-07-10T23:10:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

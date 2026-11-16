@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-mx0d.1",
+  "title": "Dispatch: mx0d (attempt 1)",
+  "description": "Implement eshyra-mx0d (bd show eshyra-mx0d: description and notes are the spec). Base: branch eshyra-mx0d, cut from origin/main b26f40f1. Worktree .worktrees/eshyra-mx0d.1 on branch eshyra-mx0d.1; dependencies installed. Implementer: Claude Sonnet 5.5 subagent. npm run verify:worktree must pass BEFORE committing; commit on eshyra-mx0d.1 only; no push or PR; do not close eshyra-mx0d.",
+  "notes": "Commit be867c0d on eshyra-mx0d.1. Fix: conditionRelations.ts applies grammar now allows a closed adverb set (magically, instantly, immediately, permanently, automatically, already, also, either, both, then, instead; NOT any -ly word: 'nearly invisible' glyph) and earlier SRD condition-list members between be/is/are/becomes/becoming/falls/knocked and the condition; same adverb/list-prefix added to gates, exclusion, prevents so gated/prevented stay so (dispel-evil-and-good, mindless-rage controls). 30xi removal/prevention/suppression tests pass. Affected before: aboleth/dryad/succubus 'be magically charmed' = mention. Generated diff (records.json only, 26 relation leaves, no add/remove): mention->applies: aboleth, dryad, succubus-incubus charmed (magically); androsphinx frightened, elf-drow+hazard drow-poison unconscious (is also), mummy/mummy-lord paralyzed (is also), medusa petrified (becoming/instantly), mimic/water-elemental grappled (is also), rug-of-smothering blinded (is blinded, ...), shambling-mound restrained (blinded, restrained), vampire paralyzed (is then paralyzed), blindness-deafness blinded+deafened (either blinded or deafened), hideous-laughter incapacitated (becoming), mislead/project-image deafened (you are blinded and deafened; judgment call, blinded already applies). removes->applies (swallow 'target is blinded and restrained' inflicts restrained; 'no longer restrained' is secondary, applies outranks removes by existing aggregation): behir, giant-frog, giant-toad, kraken, purple-worm, remorhaz, tarrasque. Tests updated (not weakened): rules/conditionRelationships.test.ts aboleth edge mention->applies (test cites the printed clause); new conditionRelations.test.ts regressions (aboleth exact + class + controls). Inventory docs/inventories/o9bd-18-8-8-semi-structured-boundary.{json,md} regenerated with npx tsx packages/core/scripts/inventory-semi-structured-boundary.ts. Verify: npm run import:dnd5e-srd + verify:dnd5e-srd-pack exact match; npm run verify:worktree exit 0 (7492 tests pass). No finding-registry entry (protocol does not require). No thaw note. Sibling search: all 104 mention leaves + every be/is/are/becomes phrasing reviewed; remaining mention leaves are genuine non-inflicting mentions (isn't incapacitated, can't use blindsight while deafened, invisible objects, 'prone creature' targets, grappled-by-X gates) except residual phrasings deferred to follow-up bead (homunculus, otyugh, flesh-to-stone, prismatic, 'stable but poisoned') filed blocking o9bd.19.6.7.22.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-08T01:40:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-08T02:01:42Z",
+  "closed_at": "2026-11-08T02:01:42Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-mx0d.1",
+      "depends_on_id": "eshyra-mx0d",
+      "type": "parent-child",
+      "created_at": "2026-11-07T19:40:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

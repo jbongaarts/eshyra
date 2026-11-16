@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.7.6",
+  "title": "A2-F1: death saves must apply saving-throw bonuses (Bless, Aura of Protection, Ring of Protection)",
+  "description": "Second-audit blocker (lane A2, verified by Captain at 6812cc0b). SRD p.98 (rule:death-saving-throws): death saves are 'aided only by spells and features that improve your chances of succeeding on a saving throw. Roll a d20. If the roll is 10 or higher, you succeed.' record_death_save (packages/core/src/orchestrator/toolRecordDeathSave.ts; state/hpLifecycle.ts:787; state/encounterCombatants.ts:2668/2691) accepts only the natural d20 and compares it to 10; there is no way to apply a save bonus, and nothing else writes death-save counters. A Blessed character rolling natural 9,9,9 dies in the engine but is stable under the SRD (A2 probe /tmp/a2-audit/probes/p01-death-save.ts). Both the character and player-character-combatant paths are affected. The capability declaration (deterministicCapabilityInventory.ts record_death_save) does not disclose the exclusion. Natural 1/20 semantics must stay keyed to the natural roll.",
+  "design": "2026-11-05 DESIGN (Captain). Add an optional integer input saveBonus (default 0, bounded -20..+20, integer only; anything else refused before mutation) to record_death_save, plus optional bonusSources: string[] (non-empty strings, max 8) naming the spells/features (e.g. Bless d4 already rolled via roll, Aura of Protection, Ring of Protection). Judging order, both paths (state/hpLifecycle.ts recordDeathSave ~l.787 and state/encounterCombatants.ts resolveCombatantDeathSave ~l.2668/2691): natural 1 -> two failures; natural 20 -> existing revive rule; otherwise success iff roll + saveBonus >= 10. Natural 1/20 never depend on saveBonus. Record saveBonus/bonusSources in the existing provenance/event payload. Update toolRecordDeathSave.ts description and schema, and deterministicCapabilityInventory.ts record_death_save operation/requiredInputs/exclusions/residual (DM decides which effects apply and rolls their dice through roll; the tool does not discover bonuses itself). Tests next to existing hpLifecycle/encounterCombatants death-save tests: Bless natural 9 + 1 succeeds; natural 1 with +10 is still two failures; natural 20 with -5 still revives; malformed saveBonus (string, 1.5, 21) refused with no state change; combatant path parity. Keep record_death_save's SRD text check (rule:death-saving-throws, p.98). Implementer: Haiku 5.5.",
+  "acceptance_criteria": "- Death saves succeed on natural d20 + applicable saving-throw bonuses >= 10 for both character and combatant paths.\n- Natural 1 (two failures) and natural 20 (revive to 1 HP, subject to existing blocks) are judged on the natural roll alone, independent of the modified total.\n- The bonus input is bounded and recorded (provenance); the tool description and capability declaration state it truthfully.\n- Regression evidence covers bonus success, natural 1 and 20 with bonuses that would otherwise change the outcome, and refusal of malformed bonus input.",
+  "notes": "2026-11-05 USER ADJUSTMENT (supersedes conflicting text above): natural 1 and natural 20 handling must stay independent of the modified saving-throw total.\n2026-11-06 Captain: integrated .7.6.1 (ee33dc87) after own diff review and own verify:worktree (exit 0, 7386 passed / 3 skipped). PR https://github.com/jbongaarts/eshyra/pull/710. DECISION (logged): accepted the implementer's deviation that saveBonus/bonusSources are returned and carried on the lifecycle event but not persisted per save; follow-up eshyra-212h (P3) owns structured persistence.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-11-03T02:12:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-11-06T02:14:45Z",
+  "started_at": "2026-11-06T01:56:55Z",
+  "closed_at": "2026-11-06T02:14:45Z",
+  "close_reason": "Merged PR #710 (529933db948498e7bbf2239c2fbe1b783f136d19) after clean Sol review .7.6.2",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.6",
+      "depends_on_id": "eshyra-o9bd.19.6.7",
+      "type": "parent-child",
+      "created_at": "2026-11-02T20:12:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.7.6",
+      "depends_on_id": "eshyra-o9bd.19.6.7.6.1",
+      "type": "blocks",
+      "created_at": "2026-11-05T19:56:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-oeur",
+  "title": "Integrate finding registry with shared capability ledger",
+  "description": "After the bootstrap capability-ledger work lands, replace the local capability identity and primitive relation copy in findingRegistry.ts with the shared boundary. Preserve the multi-valued hook-to-primitive relation, qualified membership expansion, exact hook spellings, and family-owner validation.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T02:34:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-10T01:06:24Z",
+  "closed_at": "2026-10-10T01:06:24Z",
+  "close_reason": "RETIRE/SUPERSEDE (2026-10-09 rebaseline, verified on main a961fb0b): duplicate of eshyra-241i with the same obsolete target: registry v2 carries no capability identity or hook-to-primitive relation to integrate (keys forbidden by findingRegistry.ts), and the shared bootstrap ledger never landed (PR #477 DESIGN_INVALIDATED). Replacement: eshyra-o9bd.19.5.12 for capability identity. No defect hidden.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

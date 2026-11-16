@@ -1,0 +1,93 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ua0",
+  "title": "E6 Session lifecycle + thin CLI front-end",
+  "description": "Player-facing wrapper: campaign create/fork, Campaign/Session/Scene lifecycle with explicit start and AUTO-CLOSE on graceful exit, idempotent close pipeline, crash-safe resume, thin CLI over the core.",
+  "design": "Session states open/closed; at most one open session per campaign. Launch: if open session exists offer Resume (reattach, reload scene tail) or Close-and-recap; else Start new. Graceful exit runs close pipeline: final scene_summary, session_recap, state reconciliation, arc roll-up if milestone, mark closed. Crash: session stays open, only current unsummarized scene tail volatile (survives in scene_log), no canon loss. Close pipeline idempotent. CLI is a thin presentation layer (campaign select/create, prompt I/O, streaming, resume prompt) with no game logic.",
+  "acceptance_criteria": "1. Create/fork a campaign from a module template via CLI. 2. Start, play, graceful-exit auto-runs full close pipeline. 3. Simulated crash leaves session open; relaunch offers Resume and Close-and-recap; Resume reloads scene tail with zero canon loss. 4. Re-running close pipeline after partial failure produces no duplication/corruption. 5. CLI contains no game-rule logic.",
+  "notes": "SYNTHESIS UPDATE 2026-05-17: E6 remains CLI/local-first. CLI is the near-term power-user/dev surface and should keep game logic in core. Medium-term public UX is a hosted mobile-friendly web/PWA over the same core; native mobile is deferred. BYOK is the default early billing shape. Hosted BYOK requires separate secret-handling design; hosted credits are future optional and not an MVP blocker.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:31:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-21T00:27:45Z",
+  "closed_at": "2026-05-21T03:44:27Z",
+  "close_reason": "All 12 children complete; thin CLI front-end (ua0.12) merged in PR #12, exit-time Dolt checkpoint in PR #13. Epic acceptance #1-#5 met.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ua0",
+      "depends_on_id": "eshyra-ws9",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ua0",
+      "depends_on_id": "eshyra-ay3",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ua0",
+      "depends_on_id": "eshyra-7wc",
+      "type": "blocks",
+      "created_at": "2026-05-17T00:41:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "fae600f4-49b9-569d-bde0-646f2797981f",
+      "issue_id": "eshyra-ua0",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install completed; npm run typecheck passed; npm run build passed; first parallel npm run test failed because tests raced before @loreweaver/core package entry existed, then npm run test passed after build (28 files passed, 1 skipped; 158 passed, 1 skipped).",
+      "created_at": "2026-05-21T00:23:23Z"
+    },
+    {
+      "id": "e0b1bbbf-d6f5-51ee-80b2-e67fb1356911",
+      "issue_id": "eshyra-ua0",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED npm run test -- packages/core/test/session.test.ts failed as expected with missing startSession; GREEN focused and nearby tests plus typecheck passed; REFACTOR full npm run typecheck, npm run test, and npm run build passed. Implemented first E6 slice: core campaign_session persistence API.",
+      "created_at": "2026-05-21T00:27:28Z"
+    },
+    {
+      "id": "86341999-f2a4-5d38-bd69-6fc7074c1769",
+      "issue_id": "eshyra-ua0",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED npm run test -- packages/core/test/sessionClose.test.ts failed as expected with missing closeSessionGracefully after fixing a test syntax error; GREEN focused and nearby tests plus typecheck passed; REFACTOR full npm run typecheck, npm run test, and npm run build passed. Implemented second E6 slice: core idempotent graceful session close pipeline.",
+      "created_at": "2026-05-21T00:35:46Z"
+    },
+    {
+      "id": "57dd1789-6075-5d7e-8025-e3333081ae74",
+      "issue_id": "eshyra-ua0",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED npm run test -- packages/core/test/sessionLaunch.test.ts failed as expected with missing getSessionLaunchState; GREEN focused and nearby tests plus typecheck passed; REFACTOR full npm run typecheck, npm run test, and npm run build passed. Implemented third E6 slice: core launch-state API for start-new vs resume with current scene tail.",
+      "created_at": "2026-05-21T00:40:08Z"
+    },
+    {
+      "id": "b2dcdcd8-58fa-5fed-a499-fbaf107f82cd",
+      "issue_id": "eshyra-ua0",
+      "author": "Joseph Bongaarts",
+      "text": "Session resume (2026-05-20): rebased codex worktree onto current main. Completed ua0.2 (premium bounded demo campaign mode, TDD) and ua0.1 (ADR 0002 hosted web/PWA BYOK deployment path). All 11 planned children closed. Epic kept OPEN: acceptance #1/#2/#5 need a playable thin CLI front-end not covered by any child — filed as loreweaver-ua0.12. PR #11 opened (typecheck/test 181 pass/build all green).",
+      "created_at": "2026-05-21T00:59:34Z"
+    },
+    {
+      "id": "0bf86698-212e-5c8e-8b91-254d8e7396e2",
+      "issue_id": "eshyra-ua0",
+      "author": "Joseph Bongaarts",
+      "text": "ua0.12 (thin CLI front-end) complete in PR #12: loreweaver play command + core campaign.ts. All 12 children closed; epic acceptance #1/#2/#5 now met. Epic closed once PR #12 merges.",
+      "created_at": "2026-05-21T01:14:18Z"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 6
+}
